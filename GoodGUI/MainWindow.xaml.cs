@@ -459,6 +459,7 @@ namespace GoodGUI
                     //yield return ok;
                 }
             }
+            return null;
         }
 
         private string VerifyState(Task task)
