@@ -108,14 +108,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MetaMorpheusmzML\MetaMorpheusMzML.csproj">
-      <Project>{288cc061-1067-4fbd-8e79-fb4c7b3f3fb4}</Project>
-      <Name>MetaMorpheusMzML</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheusThermo\MetaMorpheusThermo.csproj">
-      <Project>{56f3041e-7b55-44b0-9cc9-b276162f18c2}</Project>
-      <Name>MetaMorpheusThermo</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
       <Name>MetaMorpheus</Name>

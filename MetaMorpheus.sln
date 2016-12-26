@@ -5,23 +5,13 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheus", "MetaMorpheus\MetaMorpheus.csproj", "{D2178D2E-7CBD-48A3-835D-8B13872202FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheusMzML", "MetaMorpheusmzML\MetaMorpheusMzML.csproj", "{288CC061-1067-4FBD-8E79-FB4C7B3F3FB4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheusThermo", "MetaMorpheusThermo\MetaMorpheusThermo.csproj", "{56F3041E-7B55-44B0-9CC9-B276162F18C2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoodGUI", "GoodGUI\GoodGUI.csproj", "{57B2A726-CCA9-432E-B74A-2EFA962D1A74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mzCalIO", "mzCalIO\mzCalIO.csproj", "{06AD5939-8437-4F2A-BF3C-2B181D6F0308}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mzCal", "mzCal\mzCal.csproj", "{475C3B7B-4367-4BC8-8192-2A850C72812B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotchAnalysisCmd", "NotchAnalysisCmd\NotchAnalysisCmd.csproj", "{0D336B79-62E7-49C5-9241-896572364701}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FragmentGeneration", "FragmentGeneration\FragmentGeneration.csproj", "{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{56F3041E-7B55-44B0-9CC9-B276162F18C2} = {56F3041E-7B55-44B0-9CC9-B276162F18C2}
-		{288CC061-1067-4FBD-8E79-FB4C7B3F3FB4} = {288CC061-1067-4FBD-8E79-FB4C7B3F3FB4}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,14 +23,6 @@ Global
 		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{288CC061-1067-4FBD-8E79-FB4C7B3F3FB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{288CC061-1067-4FBD-8E79-FB4C7B3F3FB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{288CC061-1067-4FBD-8E79-FB4C7B3F3FB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{288CC061-1067-4FBD-8E79-FB4C7B3F3FB4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{56F3041E-7B55-44B0-9CC9-B276162F18C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{56F3041E-7B55-44B0-9CC9-B276162F18C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{56F3041E-7B55-44B0-9CC9-B276162F18C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{56F3041E-7B55-44B0-9CC9-B276162F18C2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{57B2A726-CCA9-432E-B74A-2EFA962D1A74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{57B2A726-CCA9-432E-B74A-2EFA962D1A74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57B2A726-CCA9-432E-B74A-2EFA962D1A74}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -53,10 +35,6 @@ Global
 		{475C3B7B-4367-4BC8-8192-2A850C72812B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{475C3B7B-4367-4BC8-8192-2A850C72812B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{475C3B7B-4367-4BC8-8192-2A850C72812B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D336B79-62E7-49C5-9241-896572364701}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D336B79-62E7-49C5-9241-896572364701}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D336B79-62E7-49C5-9241-896572364701}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D336B79-62E7-49C5-9241-896572364701}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}.Release|Any CPU.ActiveCfg = Release|Any CPU

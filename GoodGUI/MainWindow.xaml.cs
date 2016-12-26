@@ -448,15 +448,15 @@ namespace GoodGUI
                 //Console.WriteLine(Path.GetExtension(myListOfEntries[i].filepath));
                 if (Path.GetExtension(filesToSearch[i]).Equals(".mzML"))
                 {
-                    var ok = new MzMLTandemMassSpectra();
-                    ok.filename = filesToSearch[i];
-                    yield return ok;
+                    //var ok = new MzMLTandemMassSpectra();
+                    //ok.filename = filesToSearch[i];
+                    //yield return ok;
                 }
                 else if (Path.GetExtension(filesToSearch[i]).Equals(".raw"))
                 {
-                    var ok = new ThermoTandemMassSpectra();
-                    ok.filename = filesToSearch[i];
-                    yield return ok;
+                    //var ok = new ThermoTandemMassSpectra();
+                    //ok.filename = filesToSearch[i];
+                    //yield return ok;
                 }
             }
         }

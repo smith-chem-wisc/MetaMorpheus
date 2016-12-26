@@ -108,14 +108,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MetaMorpheusmzML\MetaMorpheusMzML.csproj">
-      <Project>{288cc061-1067-4fbd-8e79-fb4c7b3f3fb4}</Project>
-      <Name>MetaMorpheusMzML</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheusThermo\MetaMorpheusThermo.csproj">
-      <Project>{56f3041e-7b55-44b0-9cc9-b276162f18c2}</Project>
-      <Name>MetaMorpheusThermo</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>MetaMorpheus</Name>
@@ -123,10 +115,6 @@
     <ProjectReference Include="..\mzCalIO\mzCalIO.csproj">
       <Project>{06AD5939-8437-4F2A-BF3C-2B181D6F0308}</Project>
       <Name>mzCalIO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NotchAnalysisCmd\NotchAnalysisCmd.csproj">
-      <Project>{0d336b79-62e7-49c5-9241-896572364701}</Project>
-      <Name>NotchAnalysisCmd</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
