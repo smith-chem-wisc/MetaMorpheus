@@ -27,78 +27,88 @@ namespace MetaMorpheus
                 monoisotopicMass = value;
             }
         }
-
+        private string extendedSequence;
         public virtual string ExtendedSequence
         {
             get
             {
-                StringBuilder sequence = new StringBuilder();
-                sequence.Append(PreviousAminoAcid);
-                sequence.Append(".");
-                sequence.Append(Sequence);
-                sequence.Append(".");
-                sequence.Append(NextAminoAcid);
-                return sequence.ToString();
+                if (extendedSequence == null)
+                {
+                    StringBuilder exSeq = new StringBuilder();
+                    exSeq.Append(PreviousAminoAcid);
+                    exSeq.Append(".");
+                    exSeq.Append(Sequence);
+                    exSeq.Append(".");
+                    exSeq.Append(NextAminoAcid);
+                    extendedSequence = exSeq.ToString();
+                }
+                return extendedSequence;
             }
         }
 
+        private string sequence;
         public virtual string Sequence
         {
             get
             {
-                StringBuilder sbsequence = new StringBuilder();
-                List<MorpheusModification> value = null;
-                // fixed modifications on protein N-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.Description + ']');
-                // variable modification on protein N-terminus
-                MorpheusModification prot_n_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_variable_mod))
-                    sbsequence.Append('(' + prot_n_term_variable_mod.Description + ')');
-
-                // fixed modifications on peptide N-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(1, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.Description + ']');
-
-                // variable modification on peptide N-terminus
-                MorpheusModification pep_n_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
-                    sbsequence.Append('(' + pep_n_term_variable_mod.Description + ')');
-
-                for (int r = 0; r < Length; r++)
+                if (sequence == null)
                 {
-                    sbsequence.Append(this[r]);
-                    // fixed modifications on this residue
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out value))
+
+                    StringBuilder sbsequence = new StringBuilder();
+                    List<MorpheusModification> value = null;
+                    // fixed modifications on protein N-terminus
+                    if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
                         foreach (var fixed_modification in value)
                             sbsequence.Append('[' + fixed_modification.Description + ']');
-                    // variable modification on this residue
-                    MorpheusModification residue_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
-                        sbsequence.Append('(' + residue_variable_mod.Description + ')');
+                    // variable modification on protein N-terminus
+                    MorpheusModification prot_n_term_variable_mod;
+                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_variable_mod))
+                        sbsequence.Append('(' + prot_n_term_variable_mod.Description + ')');
+
+                    // fixed modifications on peptide N-terminus
+                    if (modPep.twoBasedFixedModificationss.TryGetValue(1, out value))
+                        foreach (var fixed_modification in value)
+                            sbsequence.Append('[' + fixed_modification.Description + ']');
+
+                    // variable modification on peptide N-terminus
+                    MorpheusModification pep_n_term_variable_mod;
+                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
+                        sbsequence.Append('(' + pep_n_term_variable_mod.Description + ')');
+
+                    for (int r = 0; r < Length; r++)
+                    {
+                        sbsequence.Append(this[r]);
+                        // fixed modifications on this residue
+                        if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out value))
+                            foreach (var fixed_modification in value)
+                                sbsequence.Append('[' + fixed_modification.Description + ']');
+                        // variable modification on this residue
+                        MorpheusModification residue_variable_mod;
+                        if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
+                            sbsequence.Append('(' + residue_variable_mod.Description + ')');
+                    }
+
+                    // fixed modifications on peptide C-terminus
+                    if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out value))
+                        foreach (var fixed_modification in value)
+                            sbsequence.Append('[' + fixed_modification.Description + ']');
+
+                    // variable modification on peptide C-terminus
+                    MorpheusModification pep_c_term_variable_mod;
+                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                        sbsequence.Append('(' + pep_c_term_variable_mod.Description + ')');
+
+                    // fixed modifications on protein C-terminus
+                    if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out value))
+                        foreach (var fixed_modification in value)
+                            sbsequence.Append('[' + fixed_modification.Description + ']');
+                    // variable modification on protein C-terminus
+                    MorpheusModification prot_c_term_variable_mod;
+                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
+                        sbsequence.Append('(' + prot_c_term_variable_mod.Description + ')');
+                    sequence = sbsequence.ToString();
                 }
-
-                // fixed modifications on peptide C-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.Description + ']');
-
-                // variable modification on peptide C-terminus
-                MorpheusModification pep_c_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
-                    sbsequence.Append('(' + pep_c_term_variable_mod.Description + ')');
-
-                // fixed modifications on protein C-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.Description + ']');
-                // variable modification on protein C-terminus
-                MorpheusModification prot_c_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
-                    sbsequence.Append('(' + prot_c_term_variable_mod.Description + ')');
-                return sbsequence.ToString();
+                return sequence;
             }
         }
 

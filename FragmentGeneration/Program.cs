@@ -509,6 +509,7 @@ namespace FragmentGeneration
 
             Console.WriteLine("Identifying AAs in common...");
             MyAnalysisClass.IdentifyAAsInCommon(myTreeStructure);
+
             Console.WriteLine("Identifying mine...");
             MyAnalysisClass.IdentifyMine(myTreeStructure, 0.003);
 
