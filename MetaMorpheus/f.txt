@@ -1,0 +1,7 @@
+﻿A list of fixed modifications
+ID   Carbamidomethylation of C anywhere
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere
+MM   57.02146373
+//
