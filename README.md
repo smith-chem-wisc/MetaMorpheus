@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
+
 # MetaMorpheus
 A bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery. This program integrates
 features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTMD](https://github.com/smith-chem-wisc/gptmd) in a single tool.
