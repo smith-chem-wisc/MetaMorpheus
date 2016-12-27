@@ -97,7 +97,6 @@
     <Compile Include="CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationFunctions\RandomForest.cs" />
-    <Compile Include="CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationFunctions\TrainingPoint.cs" />
     <Compile Include="CalibrationFunctions\SeparateCalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
