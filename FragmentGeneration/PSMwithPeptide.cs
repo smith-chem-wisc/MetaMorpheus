@@ -10,7 +10,7 @@ using System.Text;
 
 namespace FragmentGeneration
 {
-    internal class PSMwithPeptide
+    public class PSMwithPeptide
     {
         private NewPsm newPsm;
         private PeptideWithSetModifications peptideWithSetModifications;
