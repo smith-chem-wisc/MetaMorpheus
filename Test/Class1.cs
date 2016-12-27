@@ -16,8 +16,8 @@ namespace Test
         {
             int a = 1;
             Assert.AreEqual(1, a);
-            //MyNewTreeStructure a = null;
-            //MyAnalysisClass.IdentifyAAsInCommon(a);
+            Bin b = new Bin(2);
+            Assert.AreEqual(1, a);
         }
     }
 }
