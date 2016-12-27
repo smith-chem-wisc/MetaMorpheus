@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FragmentGeneration
 {
-    internal class NewPsmWithFDR
+    public class NewPsmWithFDR
     {
         private int cumulative_target;
         private int cumulative_decoy;

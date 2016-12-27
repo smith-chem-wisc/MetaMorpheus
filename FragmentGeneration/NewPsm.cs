@@ -6,7 +6,7 @@ using System.Text;
 
 namespace FragmentGeneration
 {
-    internal class NewPsm
+    public class NewPsm
     {
         public double scanPrecursorMass { get; private set; }
         public int scanNumber { get; private set; }

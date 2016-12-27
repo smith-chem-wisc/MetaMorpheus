@@ -6,7 +6,7 @@ using System.Linq;
 namespace FragmentGeneration
 {
     [Serializable]
-    internal class CompactPeptide
+    public class CompactPeptide
     {
         public byte[] BaseSequence;
         public ushort varMod1Type;
