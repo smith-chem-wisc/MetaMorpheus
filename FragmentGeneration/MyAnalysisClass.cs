@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace FragmentGeneration
 {
-    internal class MyAnalysisClass
+    public class MyAnalysisClass
     {
         public static void IdentifyAAsInCommon(MyNewTreeStructure myTreeStructure)
         {

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace FragmentGeneration
 {
-    internal class Bin
+    public class Bin
     {
         public string UnimodId = "-";
         public string psimodID = "-";

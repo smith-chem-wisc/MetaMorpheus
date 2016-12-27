@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace FragmentGeneration
 {
-    internal class MyNewTreeStructure
+    public class MyNewTreeStructure
     {
         public List<Bin> finalBins { get; private set; }
         private double dc;
