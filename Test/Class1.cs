@@ -14,7 +14,8 @@ namespace Test
         [Test]
         public void FirstTest()
         {
-            Assert.Equals(1, 1);
+            int a = 1;
+            Assert.AreEqual(1, a);
             //MyNewTreeStructure a = null;
             //MyAnalysisClass.IdentifyAAsInCommon(a);
         }
