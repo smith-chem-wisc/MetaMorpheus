@@ -101,62 +101,25 @@ namespace FragmentGeneration
             searchModes.Add(new SearchMode("greaterThan-187", (double a) => { return a > -187; }));
             searchModes.Add(new SearchMode("greaterThan-500", (double a) => { return a > -500; }));
             searchModes.Add(new SearchMode("greaterThan-6500", (double a) => { return a > -6500; }));
+
+            exclude = PopulateExcludeList();
+
             double tolExclude = 0.0025;
 
             searchModes.Add(new SearchMode("greaterThan-187withExclusions", (double a) =>
             {
-                return a > -187 &&
-(a < -76.134779 - tolExclude || a > -76.134779 + tolExclude) &&
-(a < -48.128629 - tolExclude || a > -48.128629 + tolExclude) &&
-(a < 87.03203 - tolExclude || a > 87.03203 + tolExclude) &&
-(a < 99.06841 - tolExclude || a > 99.06841 + tolExclude) &&
-(a < 113.08406 - tolExclude || a > 113.08406 + tolExclude) &&
-(a < 158.06914 - tolExclude || a > 158.06914 + tolExclude) &&
-(a < 170.10552 - tolExclude || a > 170.10552 + tolExclude) &&
-(a < 186.06405 - tolExclude || a > 186.06405 + tolExclude) &&
-(a < 214.13174 - tolExclude || a > 214.13174 + tolExclude) &&
-(a < 226.16812 - tolExclude || a > 226.16812 + tolExclude) &&
-(a < 241.14264 - tolExclude || a > 241.14264 + tolExclude) &&
-(a < 246.13682 - tolExclude || a > 246.13682 + tolExclude) &&
-(a < 260.15247 - tolExclude || a > 260.15247 + tolExclude) &&
-(a < 242.12665 - tolExclude || a > 242.12665 + tolExclude);
+                return a > -187 && DoNotExclude(a, tolExclude);
             }));
+
+
 
             searchModes.Add(new SearchMode("greaterThan-500withExclusions", (double a) =>
             {
-                return a > -500 &&
-(a < -76.134779 - tolExclude || a > -76.134779 + tolExclude) &&
-(a < -48.128629 - tolExclude || a > -48.128629 + tolExclude) &&
-(a < 87.03203 - tolExclude || a > 87.03203 + tolExclude) &&
-(a < 99.06841 - tolExclude || a > 99.06841 + tolExclude) &&
-(a < 113.08406 - tolExclude || a > 113.08406 + tolExclude) &&
-(a < 158.06914 - tolExclude || a > 158.06914 + tolExclude) &&
-(a < 170.10552 - tolExclude || a > 170.10552 + tolExclude) &&
-(a < 186.06405 - tolExclude || a > 186.06405 + tolExclude) &&
-(a < 214.13174 - tolExclude || a > 214.13174 + tolExclude) &&
-(a < 226.16812 - tolExclude || a > 226.16812 + tolExclude) &&
-(a < 241.14264 - tolExclude || a > 241.14264 + tolExclude) &&
-(a < 246.13682 - tolExclude || a > 246.13682 + tolExclude) &&
-(a < 260.15247 - tolExclude || a > 260.15247 + tolExclude) &&
-(a < 242.12665 - tolExclude || a > 242.12665 + tolExclude);
+                return a > -500 && DoNotExclude(a, tolExclude);
             }));
             searchModes.Add(new SearchMode("greaterThan-6500withExclusions", (double a) =>
             {
-                return a > -6500 &&
-(a < -76.134779 - tolExclude || a > -76.134779 + tolExclude) &&
-(a < -48.128629 - tolExclude || a > -48.128629 + tolExclude) &&
-(a < 87.03203 - tolExclude || a > 87.03203 + tolExclude) &&
-(a < 99.06841 - tolExclude || a > 99.06841 + tolExclude) &&
-(a < 113.08406 - tolExclude || a > 113.08406 + tolExclude) &&
-(a < 158.06914 - tolExclude || a > 158.06914 + tolExclude) &&
-(a < 170.10552 - tolExclude || a > 170.10552 + tolExclude) &&
-(a < 186.06405 - tolExclude || a > 186.06405 + tolExclude) &&
-(a < 214.13174 - tolExclude || a > 214.13174 + tolExclude) &&
-(a < 226.16812 - tolExclude || a > 226.16812 + tolExclude) &&
-(a < 241.14264 - tolExclude || a > 241.14264 + tolExclude) &&
-(a < 246.13682 - tolExclude || a > 246.13682 + tolExclude) &&
-(a < 260.15247 - tolExclude || a > 260.15247 + tolExclude) &&
-(a < 242.12665 - tolExclude || a > 242.12665 + tolExclude);
+                return a > -6500 && DoNotExclude(a, tolExclude);
             }));
 
             searchModes.Add(new SearchMode("500daltonWideSearch", (double a) => { return a > -500 && a < 500; }));
@@ -339,6 +302,59 @@ namespace FragmentGeneration
             Console.Read();
         }
 
+        private static double[] PopulateExcludeList()
+        {
+            // Do not exclude Lysine + Anything
+            // Do not exclude Lysine, Arginine, Glycine, Asparagine, Alanine, Methionine
+
+            // Exclude -76.134779 and -48.128629 - these are real reversed phosphorylations
+
+            List<double> exclude = new List<double>();
+
+            exclude.Add(-76.134779);
+            exclude.Add(-48.128629);
+            HashSet<AminoAcid> doNotExcludeEvenCombos = new HashSet<AminoAcid>() { AminoAcid.GetResidue('K') };
+            HashSet<AminoAcid> doNotExclude = new HashSet<AminoAcid>() {
+                AminoAcid.GetResidue('K'),
+                AminoAcid.GetResidue('R'),
+                AminoAcid.GetResidue('G'),
+                AminoAcid.GetResidue('N'),
+                AminoAcid.GetResidue('A'),
+                AminoAcid.GetResidue('M'),
+            };
+
+            for (char c = 'A'; c <= 'Z'; c++)
+            {
+                AminoAcid residue;
+                if (AminoAcid.TryGetResidue(c, out residue))
+                {
+                    if (!doNotExclude.Contains(residue))
+                        exclude.Add(residue.MonoisotopicMass);
+                    for (char cc = 'A'; cc <= 'Z'; cc++)
+                    {
+                        AminoAcid residueCC;
+                        if (AminoAcid.TryGetResidue(cc, out residueCC))
+                        {
+                            if (!doNotExcludeEvenCombos.Contains(residueCC))
+                                exclude.Add(residue.MonoisotopicMass + residueCC.MonoisotopicMass);
+                        }
+                    }
+                }
+            }
+            return exclude.ToArray();
+        }
+
+        private static double[] exclude;
+        private static bool DoNotExclude(double a, double tolExclude)
+        {
+
+            foreach (var heh in exclude)
+                if (Math.Abs(heh - a) > tolExclude)
+                    return false;
+            return true;
+
+        }
+
         private static void Reassign(List<PSMwithPeptide> orderedPsms, Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch)
         {
             foreach (var huhuh in orderedPsms)
@@ -445,7 +461,7 @@ namespace FragmentGeneration
 
                 case 3:
                     return "peptide end";
-                    
+
                 case 4:
                     return "propeptide start";
 
