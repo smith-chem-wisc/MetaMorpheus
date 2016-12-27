@@ -92,7 +92,6 @@
     <Compile Include="CalibrationFunctions\CalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\ConstantCalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\DataPoint.cs" />
-    <Compile Include="CalibrationFunctions\MyBinaryTree.cs" />
     <Compile Include="CalibrationFunctions\NiceTrainingPoint.cs" />
     <Compile Include="CalibrationFunctions\CubicCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationFunctions\IdentityCalibrationFunction.cs" />
