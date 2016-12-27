@@ -209,10 +209,13 @@ namespace FragmentGeneration
             myInfos.Add(new MyInfo(1.003, "1 MM"));
             myInfos.Add(new MyInfo(2.005, "2 MM"));
             myInfos.Add(new MyInfo(3.008, "3 MM"));
-            myInfos.Add(new MyInfo(3.008, "3 MM"));
             myInfos.Add(new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"));
-            myInfos.Add(new MyInfo(-91.009185, "-Carbamidomethylation - H2S: Usually on cysteine."));
+            myInfos.Add(new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."));
             myInfos.Add(new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"));
+            myInfos.Add(new MyInfo(-79.966331, "neg Phosphorylation. Probably real thing does not have it, but somehow matched! Might want to exclude."));
+            myInfos.Add(new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"));
+            myInfos.Add(new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"));
+            myInfos.Add(new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"));
             foreach (Bin bin in myTreeStructure.finalBins)
             {
                 bin.mine = "";
