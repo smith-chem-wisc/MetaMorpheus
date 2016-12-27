@@ -144,8 +144,8 @@ namespace MetaMorpheus
                 {
                     data_filepaths += data_filepath.filename.ToString() + ", ";
                 }
-                data_filepaths = data_filepaths.Substring(0, data_filepaths.Length - 2);
-                overall_log.WriteLine("Input Data Files: " + data_filepaths);
+                //data_filepaths = data_filepaths.Substring(0, data_filepaths.Length - 2);
+                //overall_log.WriteLine("Input Data Files: " + data_filepaths);
                 overall_log.WriteLine("Unknown Precursor Charge State Range: " + minimumAssumedPrecursorChargeState.ToString("+0;-0;0") + ".." + maximumAssumedPrecursorChargeState.ToString("+0;-0;0"));
                 overall_log.WriteLine("Maximum Number of MS/MS Peaks: " + (maximumNumberOfPeaks >= 0 ? maximumNumberOfPeaks.ToString() : "disabled"));
                 overall_log.WriteLine("Assign Charge States: " + assignChargeStates.ToString().ToLower());
@@ -444,7 +444,7 @@ namespace MetaMorpheus
                 OnFileFinished(spectra.filename);
             }
 
-            if (datasCount > 1)
+            if (datasCount > 1 && overall_log != null)
             {
                 OnStatusUpdate("Performing aggregate post-search analyses...");
                 OnProgress(0);
