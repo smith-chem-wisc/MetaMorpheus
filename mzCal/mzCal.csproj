@@ -92,13 +92,11 @@
     <Compile Include="CalibrationFunctions\CalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\ConstantCalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\DataPoint.cs" />
-    <Compile Include="CalibrationFunctions\MyBinaryTree.cs" />
     <Compile Include="CalibrationFunctions\NiceTrainingPoint.cs" />
     <Compile Include="CalibrationFunctions\CubicCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationFunctions\RandomForest.cs" />
-    <Compile Include="CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationFunctions\TrainingPoint.cs" />
     <Compile Include="CalibrationFunctions\SeparateCalibrationFunction.cs" />
     <Compile Include="CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />

@@ -8,14 +8,14 @@ namespace FragmentGeneration
     [Serializable]
     public class CompactPeptide
     {
-        public byte[] BaseSequence;
-        public ushort varMod1Type;
-        public byte varMod1Loc;
-        public ushort varMod2Type;
-        public byte varMod2Loc;
-        public ushort varMod3Type;
-        public byte varMod3Loc;
-        public float MonoisotopicMass;
+        public readonly byte[] BaseSequence;
+        public readonly ushort varMod1Type;
+        public readonly byte varMod1Loc;
+        public readonly ushort varMod2Type;
+        public readonly byte varMod2Loc;
+        public readonly ushort varMod3Type;
+        public readonly byte varMod3Loc;
+        public readonly float MonoisotopicMass;
 
         public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
