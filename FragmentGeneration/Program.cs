@@ -415,23 +415,17 @@ namespace FragmentGeneration
                 case "peptide end":
                     return 3;
 
-                case "signal peptide start":
+                case "propeptide start":
                     return 4;
 
-                case "signal peptide end":
+                case "propeptide end":
                     return 5;
 
-                case "propeptide start":
+                case "chain start":
                     return 6;
 
-                case "propeptide end":
-                    return 7;
-
-                case "chain start":
-                    return 8;
-
                 case "chain end":
-                    return 9;
+                    return 7;
             }
             return byte.MaxValue;
         }
@@ -451,23 +445,17 @@ namespace FragmentGeneration
 
                 case 3:
                     return "peptide end";
-
+                    
                 case 4:
-                    return "signal peptide start";
-
-                case 5:
-                    return "signal peptide end";
-
-                case 6:
                     return "propeptide start";
 
-                case 7:
+                case 5:
                     return "propeptide end";
 
-                case 8:
+                case 6:
                     return "chain start";
 
-                case 9:
+                case 7:
                     return "chain end";
             }
             return null;

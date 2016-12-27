@@ -148,7 +148,7 @@ namespace MetaMorpheus
                                         }
                                         residue_modifications.AddRange(allModifications[feature_description]);
                                     }
-                                    else if ((feature_type == "peptide" || feature_type == "signal peptide" || feature_type == "propeptide" || feature_type == "chain") && oneBasedbeginPosition >= 0 && oneBasedendPosition >= 0)
+                                    else if ((feature_type == "peptide" || feature_type == "propeptide" || feature_type == "chain") && oneBasedbeginPosition >= 0 && oneBasedendPosition >= 0)
                                     {
                                         oneBasedBeginPositions.Add(oneBasedbeginPosition);
                                         oneBasedEndPositions.Add(oneBasedendPosition);
