@@ -309,7 +309,7 @@ namespace FragmentGeneration
 
             // Exclude -76.134779 and -48.128629 - these are real reversed phosphorylations
 
-            List<double> exclude = new List<double>();
+            HashSet<double> exclude = new HashSet<double>();
 
             exclude.Add(-76.134779);
             exclude.Add(-48.128629);
@@ -349,7 +349,7 @@ namespace FragmentGeneration
         {
 
             foreach (var heh in exclude)
-                if (Math.Abs(heh - a) > tolExclude)
+                if (Math.Abs(heh - a) < tolExclude)
                     return false;
             return true;
 
