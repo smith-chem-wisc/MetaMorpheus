@@ -88,28 +88,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bin.cs" />
-    <Compile Include="CompactPeptide.cs" />
-    <Compile Include="MyAnalysisClass.cs" />
-    <Compile Include="MyInfo.cs" />
-    <Compile Include="MyNewTreeStructure.cs" />
-    <Compile Include="NewPsm.cs" />
     <Compile Include="Indices.cs" />
-    <Compile Include="NewPsmWithFDR.cs" />
-    <Compile Include="OkBin.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="PSMwithPeptide.cs" />
-    <Compile Include="SearchEngine.cs" />
-    <Compile Include="SearchMode.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\IndexSearchAndAnalyze\IndexSearchAndAnalyze.csproj">
+      <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
+      <Name>IndexSearchAndAnalyze</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>MetaMorpheus</Name>
