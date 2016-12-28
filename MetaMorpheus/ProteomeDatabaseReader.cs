@@ -141,6 +141,8 @@ namespace MetaMorpheus
                     }
                 }
             }
+
+            modsReader.Close();
         }
     }
 }
