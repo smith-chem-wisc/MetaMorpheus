@@ -184,7 +184,7 @@ namespace FragmentGeneration
             sb.Append(peptideWithSetModifications[LocalizedScores.IndexOf(LocalizedScores.Max())].ToString(CultureInfo.InvariantCulture) + '\t');
             if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
                 sb.Append("N");
-            else if (LocalizedScores.Max() == LocalizedScores.Last())
+            else if (LocalizedScores.IndexOf(LocalizedScores.Max()) == LocalizedScores.Count - 1)
                 sb.Append("C");
             else
                 sb.Append("");

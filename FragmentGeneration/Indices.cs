@@ -156,7 +156,7 @@ namespace FragmentGeneration
                         }
                     }
                     numProteins++;
-                    if (Math.IEEERemainder(numProteins, 100) == 0)
+                    if (numProteins % 100 == 0)
                         Console.WriteLine("Proteins: " + numProteins + " / " + totalProteins);
                 }
                 lock (myFragmentDictionary)

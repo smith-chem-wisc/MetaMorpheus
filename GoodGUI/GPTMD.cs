@@ -180,9 +180,9 @@ namespace GoodGUI
                     yield return Mod;
                 if (isotopeErrors && Mod.MonoisotopicMassShift > massDiff - tol - 1.003 && Mod.MonoisotopicMassShift < massDiff + tol - 1.003)
                     yield return Mod;
-                if (Mod.AlternativeMassShift != double.NaN && Mod.AlternativeMassShift > massDiff - tol && Mod.AlternativeMassShift < massDiff + tol)
+                if (!double.IsNaN(Mod.AlternativeMassShift) && Mod.AlternativeMassShift > massDiff - tol && Mod.AlternativeMassShift < massDiff + tol)
                     yield return Mod;
-                if (Mod.AlternativeMassShift != double.NaN && isotopeErrors && Mod.AlternativeMassShift > massDiff - tol - 1.003 && Mod.AlternativeMassShift < massDiff + tol - 1.003)
+                if (!double.IsNaN(Mod.AlternativeMassShift) && isotopeErrors && Mod.AlternativeMassShift > massDiff - tol - 1.003 && Mod.AlternativeMassShift < massDiff + tol - 1.003)
                     yield return Mod;
             }
 
