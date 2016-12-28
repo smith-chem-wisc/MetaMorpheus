@@ -309,7 +309,7 @@ namespace FragmentGeneration
 
             // Exclude -76.134779 and -48.128629 - these are real reversed phosphorylations
 
-            List<double> exclude = new List<double>();
+            HashSet<double> exclude = new HashSet<double>();
 
             exclude.Add(-76.134779);
             exclude.Add(-48.128629);
@@ -349,7 +349,7 @@ namespace FragmentGeneration
         {
 
             foreach (var heh in exclude)
-                if (Math.Abs(heh - a) > tolExclude)
+                if (Math.Abs(heh - a) < tolExclude)
                     return false;
             return true;
 
@@ -529,20 +529,20 @@ namespace FragmentGeneration
                         + "\t" + bin.CountTarget.ToString(CultureInfo.InvariantCulture)
                         + "\t" + bin.LocalizeableTarget.ToString(CultureInfo.InvariantCulture)
                         + "\t" + (bin.CountTarget - bin.LocalizeableTarget).ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (bin.Count == 0 ? double.NaN : bin.CountDecoy / bin.Count).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.Count == 0 ? double.NaN : (double)bin.CountDecoy / bin.Count).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (Normal.CDF(0, 1, bin.ComputeZ(0.01))).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (Normal.CDF(0, 1, bin.ComputeZ(0.255))).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.CountTarget == 0 ? double.NaN : bin.LocalizeableTarget / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.CountTarget == 0 ? double.NaN : (double)bin.LocalizeableTarget / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + bin.mine
                         + "\t" + bin.UnimodId
                         + "\t" + bin.UnimodFormulas
                         + "\t" + bin.AA
                         + "\t" + bin.combos
-                        + "\t" + string.Join(",", bin.modsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + b.Value / bin.CountTarget))
-                        + "\t" + string.Join(",", bin.AAsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + b.Value / bin.CountTarget))
+                        + "\t" + string.Join(",", bin.modsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + (double)b.Value / bin.CountTarget))
+                        + "\t" + string.Join(",", bin.AAsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + (double)b.Value / bin.CountTarget))
                         + "\t" + string.Join(",", bin.residueCount.OrderByDescending(b => b.Value).Select(b => b.Key + ":" + b.Value))
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : bin.NlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : bin.ClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.NlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + bin.uniprotID);
                 }
             }

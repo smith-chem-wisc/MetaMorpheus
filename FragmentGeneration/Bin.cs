@@ -14,8 +14,8 @@ namespace FragmentGeneration
         public string combos = "-";
         public double MassShift { get; private set; }
         public Dictionary<char, int> residueCount;
-        public double NlocCount;
-        public double ClocCount;
+        public int NlocCount;
+        public int ClocCount;
 
         public Bin(double MassShift)
         {
@@ -23,7 +23,7 @@ namespace FragmentGeneration
             uniquePSMs = new Dictionary<string, Tuple<string, string, NewPsmWithFDR>>();
         }
 
-        public double Count
+        public int Count
         {
             get
             {
@@ -31,7 +31,7 @@ namespace FragmentGeneration
             }
         }
 
-        public double CountDecoy
+        public int CountDecoy
         {
             get
             {
@@ -39,7 +39,7 @@ namespace FragmentGeneration
             }
         }
 
-        public double CountTarget
+        public int CountTarget
         {
             get
             {
@@ -47,7 +47,7 @@ namespace FragmentGeneration
             }
         }
 
-        public double LocalizeableTarget
+        public int LocalizeableTarget
         {
             get
             {
@@ -76,7 +76,7 @@ namespace FragmentGeneration
 
         public double ComputeZ(double v)
         {
-            return Math.Sqrt(Count) * (CountDecoy / Count - v) / (v * (1 - v));
+            return Math.Sqrt(Count) * ((double)CountDecoy / Count - v) / (v * (1 - v));
         }
     }
 }
