@@ -184,15 +184,12 @@ namespace MetaMorpheus
                         monoisotopicMass += fixed_modification.MonoisotopicMassShift;
                     }
                 // variable modification on this residue
-                if (twoBasedVariableAndLocalizeableModificationss != null)
+                MorpheusModification residue_variable_mod;
+                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 1, out residue_variable_mod))
                 {
-                    MorpheusModification residue_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 1, out residue_variable_mod))
-                    {
-                        if (!residue_variable_mod.labile)
-                            mass_shift += residue_variable_mod.MonoisotopicMassShift;
-                        monoisotopicMass += residue_variable_mod.MonoisotopicMassShift;
-                    }
+                    if (!residue_variable_mod.labile)
+                        mass_shift += residue_variable_mod.MonoisotopicMassShift;
+                    monoisotopicMass += residue_variable_mod.MonoisotopicMassShift;
                 }
                 p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + AminoAcidMasses.GetMonoisotopicMass(this[r - 1]) + mass_shift;
             }
