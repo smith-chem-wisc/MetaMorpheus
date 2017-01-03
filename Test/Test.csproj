@@ -102,6 +102,14 @@
       <Project>{dd89ef8c-a47a-4c6b-97bf-01b81d48847c}</Project>
       <Name>FragmentGeneration</Name>
     </ProjectReference>
+    <ProjectReference Include="..\IndexSearchAndAnalyze\IndexSearchAndAnalyze.csproj">
+      <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
+      <Name>IndexSearchAndAnalyze</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">
+      <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
+      <Name>MetaMorpheus</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />

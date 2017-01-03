@@ -1,45 +1,42 @@
 ﻿using FragmentGeneration;
+using IndexSearchAndAnalyze;
+using MassSpectrometry;
+using MetaMorpheus;
 using NUnit.Framework;
+using Proteomics;
+using Spectra;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Test
 {
     [TestFixture]
-    public class Class1
+    public class AnalysisEngineTest
     {
         [Test]
-        public void TestExclusions()
+        public void TestAnalysis()
         {
-            double tolExclude = 0.0075;
-            double[] exclude = new double[5] { 1, 2, 3, 4, 5 };
 
-            Assert.IsTrue(Exclusions.DoNotExclude(0, tolExclude, exclude));
-            Assert.IsFalse(Exclusions.DoNotExclude(1, tolExclude, exclude));
+            List<NewPsm>[] newPsms = null;
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
+            List<Protein> proteinList = null;
+            List<MorpheusModification> variableModifications = null;
+            List<MorpheusModification> fixedModifications = null;
+            List<MorpheusModification> localizeableModifications = null;
+            IMsDataFile<IMzSpectrum<MzPeak>> iMsDataFile = null;
+            Protease protease = null;
+            List<SearchMode> searchModes = null;
+            double fragmentTolerance = 0;
+            UsefulProteomicsDatabases.Generated.unimod unimodDeserialized = null;
+            Dictionary<int, ChemicalFormulaModification> uniprotDeseralized = null;
 
-            exclude = Exclusions.PopulateExcludeList();
+            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { });
+            AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
 
-            // A real reverse phosphorylation sequence
-            Assert.IsFalse(Exclusions.DoNotExclude(-76.134779, tolExclude, exclude));
+            Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
+                    .With.Property("Message").EqualTo("newPsms is null"));
 
-            // Do not exclude zero
-            Assert.IsTrue(Exclusions.DoNotExclude(0, tolExclude, exclude));
 
-            // Glycine - do not exclude
-            Assert.IsTrue(Exclusions.DoNotExclude(57.02146, tolExclude, exclude));
-
-            // Valine - exclude
-            Assert.IsFalse(Exclusions.DoNotExclude(99.06841, tolExclude, exclude));
-
-            // Combo - exclude
-            Assert.IsFalse(Exclusions.DoNotExclude(57.02146 + 99.06841, tolExclude, exclude));
-
-            // Lysine - do not exclude
-            Assert.IsTrue(Exclusions.DoNotExclude(128.09496, tolExclude, exclude));
-
-            // Lysine combo - do not exclude
-            Assert.IsTrue(Exclusions.DoNotExclude(128.09496 + 57.02146, tolExclude, exclude));
-
-            // Lysine combo - do not exclude
-            Assert.IsTrue(Exclusions.DoNotExclude(128.09496 + 99.06841, tolExclude, exclude));
         }
     }
 }

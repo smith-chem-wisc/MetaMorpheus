@@ -95,6 +95,7 @@
     <Compile Include="SearchMode.cs" />
     <Compile Include="SearchParams.cs" />
     <Compile Include="SearchResults.cs" />
+    <Compile Include="ValidationException.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">

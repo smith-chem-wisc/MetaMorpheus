@@ -2,6 +2,7 @@
 using MetaMorpheus;
 using Spectra;
 using System.Collections.Generic;
+using System;
 
 namespace IndexSearchAndAnalyze
 {
@@ -34,6 +35,11 @@ namespace IndexSearchAndAnalyze
             this.fragmentTolerance = fragmentTolerance;
             this.protease = protease;
             this.searchModes = searchModes;
+        }
+
+        internal override void Validate()
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -12,15 +12,15 @@ namespace IndexSearchAndAnalyze
 {
     public class SearchEngine : MyEngine
     {
-        private SearchParams searchParams;
 
         public SearchEngine(SearchParams searchParams)
         {
-            this.searchParams = searchParams;
+            this.myParams = searchParams;
         }
 
         protected override MyResults RunSpecific()
         {
+            var searchParams = (SearchParams)myParams;
             searchParams.OnOutput("In search method!");
 
             var spectraList = searchParams.myMsDataFile.ToList();
@@ -30,7 +30,7 @@ namespace IndexSearchAndAnalyze
             for (int i = 0; i < searchParams.searchModes.Count; i++)
                 newPsms[i] = new List<NewPsm>(new NewPsm[totalSpectra]);
 
-            int numAllSpectra = 0;
+            //int numAllSpectra = 0;
             int numMS2spectra = 0;
             int[] numMS2spectraMatched = new int[searchParams.searchModes.Count];
 

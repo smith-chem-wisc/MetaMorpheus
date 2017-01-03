@@ -9,15 +9,14 @@ namespace IndexSearchAndAnalyze
 {
     public class AnalysisEngine : MyEngine
     {
-        private AnalysisParams analysisParams;
-
         public AnalysisEngine(AnalysisParams analysisParams)
         {
-            this.analysisParams = analysisParams;
+            this.myParams = analysisParams;
         }
 
         protected override MyResults RunSpecific()
         {
+            var analysisParams = (AnalysisParams)myParams;
             AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 

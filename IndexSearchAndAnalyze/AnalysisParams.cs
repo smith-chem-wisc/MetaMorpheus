@@ -41,5 +41,11 @@ namespace IndexSearchAndAnalyze
             this.action1 = action1;
             this.action2 = action2;
         }
+
+        internal override void Validate()
+        {
+            if (newPsms == null)
+                throw new ValidationException("newPsms is null");
+        }
     }
 }

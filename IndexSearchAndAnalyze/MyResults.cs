@@ -3,7 +3,7 @@ using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
-    public class MyResults
+    public abstract class MyResults
     {
         protected MyParams s;
 
