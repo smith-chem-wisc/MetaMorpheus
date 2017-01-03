@@ -46,6 +46,8 @@ namespace IndexSearchAndAnalyze
         {
             if (newPsms == null)
                 throw new ValidationException("newPsms is null");
+            if (proteinList == null)
+                throw new ValidationException("proteinList is null");
         }
     }
 }
