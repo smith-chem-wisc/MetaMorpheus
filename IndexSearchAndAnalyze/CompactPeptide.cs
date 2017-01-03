@@ -78,7 +78,13 @@ namespace IndexSearchAndAnalyze
 
         public override int GetHashCode()
         {
-            return BaseSequence[0].GetHashCode();
+            unchecked
+            {
+                var result = 0;
+                foreach (byte b in BaseSequence)
+                    result = (result * 31) ^ b;
+                return result;
+            }
         }
     }
 }

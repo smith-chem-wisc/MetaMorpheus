@@ -106,14 +106,14 @@ namespace IndexSearchAndAnalyze
                             if (theBestPeptide != null)
                             {
                                 newPsms[j][thisScan.OneBasedScanNumber - 1] = new NewPsm(thisScan, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
-                                numMS2spectraMatched[j]++;
+                                //numMS2spectraMatched[j]++;
                             }
                         }
-                        numMS2spectra++;
+                        //numMS2spectra++;
                     }
-                    numAllSpectra++;
-                    if (numAllSpectra % 100 == 0)
-                        Console.WriteLine("Spectra: " + numAllSpectra + " / " + totalSpectra);
+                    //numAllSpectra++;
+                    //if (numAllSpectra % 100 == 0)
+                    //    Console.WriteLine("Spectra: " + numAllSpectra + " / " + totalSpectra);
                 }
             });
             return new SearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);

@@ -1,6 +1,7 @@
 ﻿using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UsefulProteomicsDatabases.Generated;
 
@@ -156,7 +157,7 @@ namespace IndexSearchAndAnalyze
                 {
                     if (Math.Abs(hm.Item1 + hm.Item2 - bin.MassShift) <= v && bin.CountTarget < hm.Item3)
                     {
-                        okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2) + " and " + Math.Max(hm.Item1, hm.Item2));
+                        okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
                     }
                 }
                 bin.combos = string.Join(" or ", okk);
