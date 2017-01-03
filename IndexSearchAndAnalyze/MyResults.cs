@@ -5,6 +5,13 @@ namespace IndexSearchAndAnalyze
 {
     public class MyResults
     {
+        protected MyParams s;
+
+        public MyResults(MyParams s)
+        {
+            this.s = s;
+        }
+
         public TimeSpan Time { get; internal set; }
         public override string ToString()
         {

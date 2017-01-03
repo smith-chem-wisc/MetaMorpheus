@@ -15,7 +15,7 @@ namespace IndexSearchAndAnalyze
         public readonly byte varMod2Loc;
         public readonly ushort varMod3Type;
         public readonly byte varMod3Loc;
-        public readonly float MonoisotopicMass;
+        public float MonoisotopicMass;
 
         public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
@@ -60,7 +60,6 @@ namespace IndexSearchAndAnalyze
             }
 
             BaseSequence = yyy.BaseSequence.Select(b => (byte)b).ToArray();
-            MonoisotopicMass = (float)yyy.MonoisotopicMass;
         }
 
         public override bool Equals(object obj)
@@ -79,7 +78,7 @@ namespace IndexSearchAndAnalyze
 
         public override int GetHashCode()
         {
-            return MonoisotopicMass.GetHashCode();
+            return BaseSequence[0].GetHashCode();
         }
     }
 }

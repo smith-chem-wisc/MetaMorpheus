@@ -52,9 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AminoAcidMasses.cs" />
-    <Compile Include="Bin.cs" />
     <Compile Include="MyDoubleEqualityComparer.cs" />
-    <Compile Include="MyTreeStructure.cs" />
     <Compile Include="OkBin.cs" />
     <Compile Include="Peptide.cs" />
     <Compile Include="CleavageSpecificity.cs" />

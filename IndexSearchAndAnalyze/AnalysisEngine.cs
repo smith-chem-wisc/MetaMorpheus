@@ -1,4 +1,6 @@
-﻿using MetaMorpheus;
+﻿using IndexSearchAndAnalyze;
+using MetaMorpheus;
+using Proteomics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -22,20 +24,21 @@ namespace IndexSearchAndAnalyze
 
             AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
-            
+
             for (int j = 0; j < analysisParams.searchModes.Count; j++)
             {
-                PSMwithPeptide[] psmsWithPeptides = new PSMwithPeptide[analysisParams.newPsms.Length];
+                PSMwithPeptide[] psmsWithPeptides = new PSMwithPeptide[analysisParams.newPsms[0].Count];
 
-                Parallel.ForEach(Partitioner.Create(0, analysisParams.newPsms.Length), fff =>
+                Parallel.ForEach(Partitioner.Create(0, analysisParams.newPsms[0].Count), fff =>
                 {
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        if (analysisParams.newPsms[i] != null)
+                        if (analysisParams.newPsms[j] != null)
                         {
-                            var huh = analysisParams.newPsms[i][j];
-                            if (huh != null && huh.ScoreFromSearch >= 1)
-                                psmsWithPeptides[i] = new PSMwithPeptide(huh, fullSequenceToProteinSingleMatch[huh.peptide], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
+                            var huh = analysisParams.newPsms[j][i];
+                            if (huh != null)
+                                if (huh.ScoreFromSearch >= 1)
+                                    psmsWithPeptides[i] = new PSMwithPeptide(huh, fullSequenceToProteinSingleMatch[huh.peptide], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
                         }
                     }
                 });
@@ -46,45 +49,35 @@ namespace IndexSearchAndAnalyze
                 var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
                 if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
                 {
-                    var hm = MyAnalysis(limitedpsms_with_fdr);
-                    analysisParams.onfinished1(hm);
+                    var hm = MyAnalysis(limitedpsms_with_fdr, analysisParams.unimodDeserialized, analysisParams.uniprotDeseralized);
+                    analysisParams.action1(hm, analysisParams.searchModes[j].FileNameAddition);
                 }
 
-                analysisParams.onfinished2(orderedPsmsWithFDR);
+                analysisParams.action2(orderedPsmsWithFDR, analysisParams.searchModes[j].FileNameAddition);
             }
 
-            return new AnalysisResults();
+            return new AnalysisResults(analysisParams);
         }
 
-        private static MyNewTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr)
+        private static MyNewTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
         {
             MyNewTreeStructure myTreeStructure = new MyNewTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, 0.003);
             myTreeStructure.AddToBins(limitedpsms_with_fdr);
-
-            Console.WriteLine("Identifying bins...");
-            MyAnalysisClass.IdentifyUnimodBins(myTreeStructure, 0.003);
-            MyAnalysisClass.IdentifyUniprotBins(myTreeStructure, 0.003);
+            
+            MyAnalysisClass.IdentifyUnimodBins(myTreeStructure, 0.003, unimodDeserialized);
+            MyAnalysisClass.IdentifyUniprotBins(myTreeStructure, 0.003, uniprotDeseralized);
             MyAnalysisClass.IdentifyAA(myTreeStructure, 0.003);
-
-            Console.WriteLine("Identifying combos...");
+            
             MyAnalysisClass.IdentifyCombos(myTreeStructure, 0.003);
-
-            Console.WriteLine("Extracting residues from localizeable...");
+            
             MyAnalysisClass.IdentifyResidues(myTreeStructure);
-
-            Console.WriteLine("Identifying mods in common...");
+            
             MyAnalysisClass.IdentifyMods(myTreeStructure);
-
-            Console.WriteLine("Identifying AAs in common...");
+            
             MyAnalysisClass.IdentifyAAsInCommon(myTreeStructure);
-
-            Console.WriteLine("Identifying mine...");
+            
             MyAnalysisClass.IdentifyMine(myTreeStructure, 0.003);
-
-
-
-            Console.WriteLine("Done with my analysis analysis.. ");
 
             return myTreeStructure;
         }
@@ -119,7 +112,7 @@ namespace IndexSearchAndAnalyze
 
             return ids;
         }
-        private static void AddObservedPeptidesToDictionary(NewPsm[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease)
+        private static void AddObservedPeptidesToDictionary(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease)
         {
             foreach (var ah in newPsms)
             {

@@ -17,9 +17,7 @@ namespace IndexSearchAndAnalyze
             double maxMassShift = listOfMassShifts.Max();
 
             int[] p = new int[listOfMassShifts.Count];
-
-            Console.WriteLine("Populating p...");
-
+            
             int firstIndex = 0;
             int lastIndex = 0;
             for (int i = 0; i < listOfMassShifts.Count; i++)
@@ -36,8 +34,7 @@ namespace IndexSearchAndAnalyze
 
             int maxP = p.Max();
             double[] sigma = new double[listOfMassShifts.Count];
-
-            Console.WriteLine("Populating sigma...");
+            
             for (int i = 0; i < listOfMassShifts.Count; i++)
             {
                 var thisMassShift = listOfMassShifts[i];
@@ -57,7 +54,6 @@ namespace IndexSearchAndAnalyze
                 listokbin.Add(new OkBin(listOfMassShifts[i], sigma[i], p[i]));
 
             HashSet<double> prelimBins = new HashSet<double>();
-            Console.WriteLine("Generating prelimBins...");
             foreach (OkBin okbin in listokbin.OrderByDescending(b => b.p))
             {
                 if (okbin.sigma < dc || okbin.p < 8)
@@ -74,8 +70,7 @@ namespace IndexSearchAndAnalyze
                 if (add)
                     prelimBins.Add(okbin.massShift);
             }
-
-            Console.WriteLine("Generating finalBins...");
+            
             Dictionary<double, List<double>> forFinalBins = new Dictionary<double, List<double>>();
             foreach (double ok in prelimBins)
                 forFinalBins.Add(ok, new List<double>());

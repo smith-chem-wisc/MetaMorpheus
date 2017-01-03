@@ -4,7 +4,7 @@ namespace IndexSearchAndAnalyze
 {
     public class IndexResults : MyResults
     {
-        public IndexResults(List<CompactPeptide> myDictionary, Dictionary<float, List<int>> myFragmentDictionary)
+        public IndexResults(List<CompactPeptide> myDictionary, Dictionary<float, List<int>> myFragmentDictionary, IndexParams indexParams) : base(indexParams)
         {
             this.peptideIndex = myDictionary;
             this.fragmentIndexDict = myFragmentDictionary;

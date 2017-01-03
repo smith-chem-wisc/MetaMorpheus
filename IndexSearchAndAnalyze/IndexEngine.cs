@@ -85,6 +85,7 @@ namespace IndexSearchAndAnalyze
                                 else
                                     myInnerDictionary.Add(rounded, new List<int>() { index });
                             }
+                            ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
                         }
                     }
                     numProteins++;
@@ -109,7 +110,7 @@ namespace IndexSearchAndAnalyze
 
             Console.WriteLine("finished generating peptide index");
 
-            return new IndexResults(myDictionary, myFragmentDictionary);
+            return new IndexResults(myDictionary, myFragmentDictionary, indexParams);
 
         }
     }

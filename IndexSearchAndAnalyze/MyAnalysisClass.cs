@@ -2,13 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UsefulProteomicsDatabases.Generated;
 
 namespace IndexSearchAndAnalyze
 {
     public class MyAnalysisClass
     {
-        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
-        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
+
         public static void IdentifyAAsInCommon(MyNewTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.finalBins)
@@ -105,7 +105,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyUnimodBins(MyNewTreeStructure myTreeStructure, double v)
+        internal static void IdentifyUnimodBins(MyNewTreeStructure myTreeStructure, double v, unimod unimodDeserialized)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {
@@ -124,7 +124,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyUniprotBins(MyNewTreeStructure myTreeStructure, double v)
+        internal static void IdentifyUniprotBins(MyNewTreeStructure myTreeStructure, double v, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {

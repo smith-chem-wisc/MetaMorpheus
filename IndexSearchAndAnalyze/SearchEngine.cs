@@ -21,16 +21,18 @@ namespace IndexSearchAndAnalyze
         }
         protected override MyResults RunSpecific()
         {
-            Console.WriteLine("In search method!");
+            searchParams.OnOutput("In search method!");
 
             var spectraList = searchParams.myMsDataFile.ToList();
             var totalSpectra = searchParams.myMsDataFile.NumSpectra;
 
-            var newPsms = new NewPsm[searchParams.searchModes.Count][];
+            List<NewPsm>[] newPsms = new List<NewPsm>[searchParams.searchModes.Count];
             for (int i = 0; i < searchParams.searchModes.Count; i++)
-                newPsms[i] = new NewPsm[totalSpectra];
+                newPsms[i] = new List<NewPsm>(new NewPsm[totalSpectra]);
 
-            int numSpectra = 0;
+            int numAllSpectra = 0;
+            int numMS2spectra = 0;
+            int[] numMS2spectraMatched = new int[searchParams.searchModes.Count];
 
             var searchModesCount = searchParams.searchModes.Count;
 
@@ -102,16 +104,19 @@ namespace IndexSearchAndAnalyze
                         {
                             CompactPeptide theBestPeptide = bestPeptides[j];
                             if (theBestPeptide != null)
+                            {
                                 newPsms[j][thisScan.OneBasedScanNumber - 1] = new NewPsm(thisScan, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
+                                numMS2spectraMatched[j]++;
+                            }
                         }
-
-                        numSpectra++;
-                        if (numSpectra % 100 == 0)
-                            Console.WriteLine("Spectra: " + numSpectra + " / " + totalSpectra);
+                        numMS2spectra++;
                     }
+                    numAllSpectra++;
+                    if (numAllSpectra % 100 == 0)
+                        Console.WriteLine("Spectra: " + numAllSpectra + " / " + totalSpectra);
                 }
             });
-            return new SearchResults(newPsms);
+            return new SearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
         }
 
 
