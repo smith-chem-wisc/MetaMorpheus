@@ -166,7 +166,7 @@ namespace MetaMorpheus
                                     else
                                         dataset_abbreviation = "uk";
 
-                                    if (!SpecificProteinSelection.enabled || SpecificProteinSelection.ConsiderProtein(accession))
+                                    if (accession != null && sequence != null && !SpecificProteinSelection.enabled || SpecificProteinSelection.ConsiderProtein(accession))
                                     {
                                         Protein protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
 

@@ -62,12 +62,10 @@ namespace IndexSearchAndAnalyze
                                 // Check if makes sense to add due to peptidescore!
                                 var searchMode = searchParams.searchModes[j];
                                 double currentBestScore = bestScores[j];
-                                if (currentBestScore != 0)
+                                if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if (currentBestScore > consideredScore)
-                                        continue;
-                                    else if (currentBestScore == consideredScore)
+                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass) && FirstIsPreferable(candidatePeptide, bestPeptides[j], scanPrecursorMass))
@@ -76,7 +74,7 @@ namespace IndexSearchAndAnalyze
                                             bestScores[j] = consideredScore;
                                         }
                                     }
-                                    else
+                                    else if (currentBestScore < consideredScore)
                                     {
                                         // Score is better, only make sure it is acceptable
                                         if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass))
