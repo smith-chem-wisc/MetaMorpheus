@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace Test
 {
     [TestFixture]
-    public class Class1
+    public class ExclusionsTest
     {
         [Test]
         public void TestExclusions()
