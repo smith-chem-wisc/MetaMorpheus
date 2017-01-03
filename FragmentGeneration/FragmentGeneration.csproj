@@ -94,6 +94,7 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
+    <Compile Include="Writing.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

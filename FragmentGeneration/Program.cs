@@ -2,18 +2,14 @@
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using MathNet.Numerics.Distributions;
 using MetaMorpheus;
-using Proteomics;
 using Spectra;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace FragmentGeneration
 {
@@ -21,13 +17,9 @@ namespace FragmentGeneration
     {
 
         public static string unimodLocation = @"unimod_tables.xml";
-        public static string psimodLocation = @"PSI-MOD.obo.xml";
         public static string elementsLocation = @"elements.dat";
         public static string uniprotLocation = @"ptmlist.txt";
-
-        private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
-        private static ObservableCollection<RawDataAndResults> rawDataAndResultslist = new ObservableCollection<RawDataAndResults>();
-
+        
         private static void Main(string[] args)
         {
             Console.WriteLine("Loading amino acid masses...");
@@ -43,6 +35,7 @@ namespace FragmentGeneration
             Console.WriteLine("Loading amino acid masses...");
             AminoAcidMasses.LoadAminoAcidMasses();
 
+            var xMLdblist = new ObservableCollection<XMLdb>();
             if (args[0].Equals("mouse"))
             {
                 xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
@@ -197,6 +190,8 @@ namespace FragmentGeneration
                                                               @"C:\Users\stepa\Data\CalibrationPaperData\Step2\Jurkat\Calib-0.1.2\120426_Jurkat_highLC_Frac28-Calibrated.mzML" };
             }
 
+            var rawDataAndResultslist = new ObservableCollection<RawDataAndResults>();
+
             foreach (var fileName in dataFiles)
                 rawDataAndResultslist.Add(new RawDataAndResults(fileName, null, null));
 
@@ -234,7 +229,7 @@ namespace FragmentGeneration
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(newPsms[i]);
 
-                AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (MyNewTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
+                AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (MyNewTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -244,58 +239,13 @@ namespace FragmentGeneration
             if (dataFiles.Count > 1)
             {
 
-                AnalysisParams analysisParams = new AnalysisParams(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (MyNewTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate" + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s));
+                AnalysisParams analysisParams = new AnalysisParams(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (MyNewTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate" + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s));
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
             }
 
             Console.WriteLine("All Done!");
             Console.Read();
-        }
-
-        private static void WriteTree(MyNewTreeStructure myTreeStructure, string output_folder, string fileName)
-        {
-            using (StreamWriter output = new StreamWriter(Path.Combine(output_folder, fileName + ".mytsv")))
-            {
-                output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tUniprot");
-                foreach (Bin bin in myTreeStructure.finalBins.OrderByDescending(b => b.Count))
-                {
-                    output.WriteLine(bin.MassShift.ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + bin.Count.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + bin.CountDecoy.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + bin.CountTarget.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + bin.LocalizeableTarget.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (bin.CountTarget - bin.LocalizeableTarget).ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (bin.Count == 0 ? double.NaN : (double)bin.CountDecoy / bin.Count).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (Normal.CDF(0, 1, bin.ComputeZ(0.01))).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (Normal.CDF(0, 1, bin.ComputeZ(0.255))).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.CountTarget == 0 ? double.NaN : (double)bin.LocalizeableTarget / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + bin.mine
-                        + "\t" + bin.UnimodId
-                        + "\t" + bin.UnimodFormulas
-                        + "\t" + bin.AA
-                        + "\t" + bin.combos
-                        + "\t" + string.Join(",", bin.modsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + (double)b.Value / bin.CountTarget))
-                        + "\t" + string.Join(",", bin.AAsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + (double)b.Value / bin.CountTarget))
-                        + "\t" + string.Join(",", bin.residueCount.OrderByDescending(b => b.Value).Select(b => b.Key + ":" + b.Value))
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.NlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + bin.uniprotID);
-                }
-            }
-        }
-
-
-
-        public static void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
-        {
-            Console.WriteLine("Writing psms");
-            using (StreamWriter output = new StreamWriter(Path.Combine(output_folder, fileName + ".psmtsv")))
-            {
-                output.WriteLine("Spectrum File\tScan Number\tRetention Time\tPrecursor MZ\tPrecursor Charge\tPrecursor Intensity\tExperimental Peaks\tTotal Intensity\tPrecursor Mass\tScoreFromSearch\tPreviousAminoAcid\tSequence\tNextAminoAcid\tnumVariableMods\tStart Residue\tEnd Residue\tPeptide\tMissed Cleavages\tPeptide Mass\tProtein\tMass Diff(Da)\tMatched Fragments\tMatched Counts\tLocalized Scores\tImprovement\tImprovment Residue\tImprovement Terminus\tDecoy\tCumulative Target\tCumulative Decoy\tQ-value");
-                for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i].ToString());
-            }
         }
 
         private static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
