@@ -88,9 +88,9 @@ namespace FragmentGeneration
             List<SearchMode> searchModes = new List<SearchMode>();
 
             searchModes.Add(new SearchMode("open", (double a) => { return true; }));
-            //searchModes.Add(new SearchMode("greaterThan-187", (double a) => { return a > -187; }));
-            //searchModes.Add(new SearchMode("greaterThan-500", (double a) => { return a > -500; }));
-            //searchModes.Add(new SearchMode("greaterThan-6500", (double a) => { return a > -6500; }));
+            searchModes.Add(new SearchMode("greaterThan-187", (double a) => { return a > -187; }));
+            searchModes.Add(new SearchMode("greaterThan-500", (double a) => { return a > -500; }));
+            searchModes.Add(new SearchMode("greaterThan-6500", (double a) => { return a > -6500; }));
 
             double[] exclude = Exclusions.PopulateExcludeList();
 
@@ -101,32 +101,32 @@ namespace FragmentGeneration
                 return a > -187 && Exclusions.DoNotExclude(a, tolExclude, exclude);
             }));
 
-            //    searchModes.Add(new SearchMode("greaterThan-500withExclusions", (double a) =>
-            //    {
-            //        return a > -500 && DoNotExclude(a, tolExclude);
-            //    }));
-            //    searchModes.Add(new SearchMode("greaterThan-6500withExclusions", (double a) =>
-            //    {
-            //        return a > -6500 && DoNotExclude(a, tolExclude);
-            //    }));
+            searchModes.Add(new SearchMode("greaterThan-500withExclusions", (double a) =>
+            {
+                return a > -500 && Exclusions.DoNotExclude(a, tolExclude, exclude);
+            }));
+            searchModes.Add(new SearchMode("greaterThan-6500withExclusions", (double a) =>
+            {
+                return a > -6500 && Exclusions.DoNotExclude(a, tolExclude, exclude);
+            }));
 
-            //    searchModes.Add(new SearchMode("500daltonWideSearch", (double a) => { return a > -500 && a < 500; }));
-            //    searchModes.Add(new SearchMode("oldRangeWide", (double a) => { return a > -121.5 && a < 220.5; }));
-            //    searchModes.Add(new SearchMode("oldRangeComb", (double a) => { return a > -121.5 && a < 220.5 && (a % 1 > 0.9 || (a % 1 < 0.2 && a % 1 > -0.1) || a % 1 < -0.8); }));
+            searchModes.Add(new SearchMode("500daltonWideSearch", (double a) => { return a > -500 && a < 500; }));
+            searchModes.Add(new SearchMode("oldRangeWide", (double a) => { return a > -121.5 && a < 220.5; }));
+            searchModes.Add(new SearchMode("oldRangeComb", (double a) => { return a > -121.5 && a < 220.5 && (a % 1 > 0.9 || (a % 1 < 0.2 && a % 1 > -0.1) || a % 1 < -0.8); }));
             searchModes.Add(new SearchMode("withinhalfAdaltonOfZero", (double a) => { return a > -0.5 && a < 0.5; }));
-            //    double tol = 0.0075;
-            //    searchModes.Add(new SearchMode("someNotches", (double a) =>
-            //{
-            //    return ((a > -0.5 && a < 0.5) ||
-            //            (a > -17.026549 - tol && a < -17.026549 + tol) ||
-            //            (a > 0.984016 - tol && a < 0.984016 + tol) ||
-            //            (a > 15.994915 - tol && a < 15.994915 + tol) ||
-            //            (a > 21.981943 - tol && a < 21.981943 + tol) ||
-            //            (a > 31.989829 - tol && a < 31.989829 + tol) ||
-            //            (a > 57.021464 - tol && a < 57.021464 + tol) ||
-            //            (a > 79.966331 - tol && a < 79.966331 + tol) ||
-            //            (a > -18.010565 - tol && a < -18.010565 + tol));
-            //}));
+            double tol = 0.0075;
+            searchModes.Add(new SearchMode("somenotches", (double a) =>
+        {
+            return ((a > -0.5 && a < 0.5) ||
+                    (a > -17.026549 - tol && a < -17.026549 + tol) ||
+                    (a > 0.984016 - tol && a < 0.984016 + tol) ||
+                    (a > 15.994915 - tol && a < 15.994915 + tol) ||
+                    (a > 21.981943 - tol && a < 21.981943 + tol) ||
+                    (a > 31.989829 - tol && a < 31.989829 + tol) ||
+                    (a > 57.021464 - tol && a < 57.021464 + tol) ||
+                    (a > 79.966331 - tol && a < 79.966331 + tol) ||
+                    (a > -18.010565 - tol && a < -18.010565 + tol));
+        }));
 
             var allPsms = new List<NewPsm>[searchModes.Count];
             for (int j = 0; j < searchModes.Count; j++)
