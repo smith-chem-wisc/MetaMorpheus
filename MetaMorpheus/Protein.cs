@@ -191,5 +191,18 @@ namespace MetaMorpheus
             //}
             //}
         }
+
+
+        public override bool Equals(object obj)
+        {
+            Protein q = obj as Protein;
+            return q != null && q.Accession.Equals(Accession);
+        }
+
+        public override int GetHashCode()
+        {
+            return Accession.GetHashCode();
+        }
+
     }
 }

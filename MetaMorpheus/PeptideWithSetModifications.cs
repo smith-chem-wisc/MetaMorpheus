@@ -331,17 +331,15 @@ namespace MetaMorpheus
             }
         }
 
-
         public override bool Equals(object obj)
         {
             PeptideWithSetModifications q = obj as PeptideWithSetModifications;
-            return q != null && q.Sequence.Equals(this.Sequence);
+            return q != null && q.Sequence.Equals(Sequence) && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein && q.protein.Equals(protein);
         }
 
         public override int GetHashCode()
         {
-            return this.MonoisotopicMass.GetHashCode();
+            return ExtendedSequence.GetHashCode();
         }
-
     }
 }
