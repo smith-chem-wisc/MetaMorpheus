@@ -36,6 +36,13 @@ namespace Test
             Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
                     .With.Property("Message").EqualTo("newPsms is null"));
 
+            newPsms = new List<NewPsm>[1];
+            newPsms[0] = new List<NewPsm>();
+
+            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { });
+            analysisEngine = new AnalysisEngine(analysisParams);
+            Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
+                    .With.Property("Message").EqualTo("proteinList is null"));
 
         }
     }

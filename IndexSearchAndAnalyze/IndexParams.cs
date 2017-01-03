@@ -23,7 +23,7 @@ namespace IndexSearchAndAnalyze
 
         internal override void Validate()
         {
-            throw new NotImplementedException();
+            
         }
     }
 }
