@@ -65,84 +65,84 @@ namespace MetaMorpheus
 
         public static IEnumerable<MorpheusModification> ReadModFile(string v)
         {
-            StreamReader modsReader = new StreamReader(Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), v));
-
-            string description = null;
-            string feature_type = null;
-            ModificationType modification_type = ModificationType.AminoAcidResidue;
-            char amino_acid_residue = '\0';
-            char prevAA = '\0';
-            float monoisotopic_mass_shift = float.NaN;
-            string database_name = null;
-            float alternative_mass = float.NaN;
-            string labileOrSticky = "Sticky";
-            while (modsReader.Peek() != -1)
+            using (var modsReader = new StreamReader(Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), v)))
             {
-                string line = modsReader.ReadLine();
-                if (line.Length >= 2)
+
+                string description = null;
+                string feature_type = null;
+                ModificationType modification_type = ModificationType.AminoAcidResidue;
+                char amino_acid_residue = '\0';
+                char prevAA = '\0';
+                float monoisotopic_mass_shift = float.NaN;
+                string database_name = null;
+                float alternative_mass = float.NaN;
+                string labileOrSticky = "Sticky";
+                while (modsReader.Peek() != -1)
                 {
-                    switch (line.Substring(0, 2))
+                    string line = modsReader.ReadLine();
+                    if (line.Length >= 2)
                     {
-                        case "ID":
-                            description = line.Substring(5);
-                            break;
+                        switch (line.Substring(0, 2))
+                        {
+                            case "ID":
+                                description = line.Substring(5);
+                                break;
 
-                        case "FT":
-                            feature_type = line.Substring(5);
-                            break;
+                            case "FT":
+                                feature_type = line.Substring(5);
+                                break;
 
-                        case "TG":
-                            if (feature_type == "MOD_RES")
-                            {
-                                string amino_acid = line.Substring(5);
-                                aminoAcidCodes.TryGetValue(char.ToUpperInvariant(amino_acid[0]) + amino_acid.Substring(1).TrimEnd('.'), out amino_acid_residue);
-                            }
-                            break;
+                            case "TG":
+                                if (feature_type == "MOD_RES")
+                                {
+                                    string amino_acid = line.Substring(5);
+                                    aminoAcidCodes.TryGetValue(char.ToUpperInvariant(amino_acid[0]) + amino_acid.Substring(1).TrimEnd('.'), out amino_acid_residue);
+                                }
+                                break;
 
-                        case "PP":
-                            if (feature_type == "MOD_RES")
-                            {
-                                modificationTypeCodes.TryGetValue(line.Substring(5), out modification_type);
-                            }
-                            break;
+                            case "PP":
+                                if (feature_type == "MOD_RES")
+                                {
+                                    modificationTypeCodes.TryGetValue(line.Substring(5), out modification_type);
+                                }
+                                break;
 
-                        case "MM":
-                            monoisotopic_mass_shift = float.Parse(line.Substring(5));
-                            break;
+                            case "MM":
+                                monoisotopic_mass_shift = float.Parse(line.Substring(5));
+                                break;
 
-                        case "AL":
-                            alternative_mass = float.Parse(line.Substring(5));
-                            break;
+                            case "AL":
+                                alternative_mass = float.Parse(line.Substring(5));
+                                break;
 
-                        case "SL":
-                            labileOrSticky = line.Substring(5);
-                            break;
+                            case "SL":
+                                labileOrSticky = line.Substring(5);
+                                break;
 
-                        case "PS":
-                            prevAA = line[5];
-                            break;
+                            case "PS":
+                                prevAA = line[5];
+                                break;
 
-                        case "//":
-                            if (feature_type == "MOD_RES" && (!float.IsNaN(monoisotopic_mass_shift)))
-                            {
-                                if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
-                                    yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true);
-                                if (labileOrSticky.Equals("Sticky") || labileOrSticky.Equals("Both"))
-                                    yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false);
-                            }
-                            description = null;
-                            feature_type = null;
-                            modification_type = ModificationType.AminoAcidResidue;
-                            amino_acid_residue = '\0';
-                            monoisotopic_mass_shift = float.NaN;
-                            alternative_mass = float.NaN;
-                            labileOrSticky = "Sticky";
-                            break;
+                            case "//":
+                                if (feature_type == "MOD_RES" && (!float.IsNaN(monoisotopic_mass_shift)))
+                                {
+                                    if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true);
+                                    if (labileOrSticky.Equals("Sticky") || labileOrSticky.Equals("Both"))
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false);
+                                }
+                                description = null;
+                                feature_type = null;
+                                modification_type = ModificationType.AminoAcidResidue;
+                                amino_acid_residue = '\0';
+                                monoisotopic_mass_shift = float.NaN;
+                                alternative_mass = float.NaN;
+                                labileOrSticky = "Sticky";
+                                break;
+                        }
                     }
                 }
             }
-
-            modsReader.Close();
         }
     }
 }
