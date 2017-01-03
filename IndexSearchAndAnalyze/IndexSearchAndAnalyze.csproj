@@ -75,22 +75,22 @@
     <Compile Include="AnalysisResults.cs" />
     <Compile Include="Bin.cs" />
     <Compile Include="CompactPeptide.cs" />
-    <Compile Include="MyAnalysisClass.cs" />
+    <Compile Include="Internals\MyAnalysisClass.cs" />
     <Compile Include="MyEngine.cs" />
     <Compile Include="IndexEngine.cs" />
     <Compile Include="IndexParams.cs" />
     <Compile Include="IndexResults.cs" />
-    <Compile Include="MyInfo.cs" />
-    <Compile Include="MyNewTreeStructure.cs" />
+    <Compile Include="Internals\MyInfo.cs" />
+    <Compile Include="BinTreeStructure.cs" />
     <Compile Include="MyParams.cs" />
     <Compile Include="MyResults.cs" />
     <Compile Include="NewPsm.cs" />
     <Compile Include="NewPsmWithFDR.cs" />
-    <Compile Include="OkBin.cs" />
+    <Compile Include="Internals\OkBin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="PSMwithPeptide.cs" />
+    <Compile Include="Internals\PSMwithPeptide.cs" />
     <Compile Include="SearchEngine.cs" />
     <Compile Include="SearchMode.cs" />
     <Compile Include="SearchParams.cs" />

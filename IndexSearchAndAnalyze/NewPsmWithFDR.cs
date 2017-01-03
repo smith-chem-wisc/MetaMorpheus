@@ -1,5 +1,4 @@
-﻿using MetaMorpheus;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 
 namespace IndexSearchAndAnalyze
@@ -9,7 +8,8 @@ namespace IndexSearchAndAnalyze
         private int cumulative_target;
         private int cumulative_decoy;
         public double QValue { get; set; }
-        public PSMwithPeptide thisPSM;
+        internal PSMwithPeptide thisPSM;
+
         public bool isDecoy
         {
             get
@@ -18,7 +18,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        public NewPsmWithFDR(PSMwithPeptide thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
+        internal NewPsmWithFDR(PSMwithPeptide thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
         {
             this.thisPSM = thisPSM;
             this.cumulative_target = cumulative_target;

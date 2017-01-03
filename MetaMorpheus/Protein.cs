@@ -192,7 +192,6 @@ namespace MetaMorpheus
             //}
         }
 
-
         public override bool Equals(object obj)
         {
             Protein q = obj as Protein;
@@ -203,6 +202,5 @@ namespace MetaMorpheus
         {
             return Accession.GetHashCode();
         }
-
     }
 }

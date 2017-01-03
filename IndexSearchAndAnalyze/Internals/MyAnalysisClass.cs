@@ -7,10 +7,9 @@ using UsefulProteomicsDatabases.Generated;
 
 namespace IndexSearchAndAnalyze
 {
-    public class MyAnalysisClass
+    internal class MyAnalysisClass
     {
-
-        public static void IdentifyAAsInCommon(MyNewTreeStructure myTreeStructure)
+        public static void IdentifyAAsInCommon(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.finalBins)
             {
@@ -35,7 +34,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        public static void IdentifyMods(MyNewTreeStructure myTreeStructure)
+        public static void IdentifyMods(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.finalBins)
             {
@@ -77,7 +76,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyResidues(MyNewTreeStructure myTreeStructure)
+        internal static void IdentifyResidues(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.finalBins)
             {
@@ -106,7 +105,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyUnimodBins(MyNewTreeStructure myTreeStructure, double v, unimod unimodDeserialized)
+        internal static void IdentifyUnimodBins(BinTreeStructure myTreeStructure, double v, unimod unimodDeserialized)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {
@@ -125,7 +124,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyUniprotBins(MyNewTreeStructure myTreeStructure, double v, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
+        internal static void IdentifyUniprotBins(BinTreeStructure myTreeStructure, double v, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {
@@ -141,7 +140,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyCombos(MyNewTreeStructure myTreeStructure, double v)
+        internal static void IdentifyCombos(BinTreeStructure myTreeStructure, double v)
         {
             double totalTargetCount = myTreeStructure.finalBins.Select(b => b.CountTarget).Sum();
             HashSet<Tuple<double, double, double>> ok = new HashSet<Tuple<double, double, double>>();
@@ -164,7 +163,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyAA(MyNewTreeStructure myTreeStructure, double v)
+        internal static void IdentifyAA(BinTreeStructure myTreeStructure, double v)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {
@@ -203,7 +202,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static void IdentifyMine(MyNewTreeStructure myTreeStructure, double v)
+        internal static void IdentifyMine(BinTreeStructure myTreeStructure, double v)
         {
             List<MyInfo> myInfos = new List<MyInfo>();
             myInfos.Add(new MyInfo(0, "Exact match!"));

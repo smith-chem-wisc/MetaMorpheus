@@ -13,6 +13,7 @@ namespace IndexSearchAndAnalyze
         }
 
         public TimeSpan Time { get; internal set; }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();

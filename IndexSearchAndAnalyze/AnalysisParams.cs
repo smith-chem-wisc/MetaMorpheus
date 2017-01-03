@@ -21,10 +21,10 @@ namespace IndexSearchAndAnalyze
         public double fragmentTolerance { get; private set; }
         public UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; internal set; }
         public Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
-        public Action<MyNewTreeStructure, string> action1 { get; private set; }
+        public Action<BinTreeStructure, string> action1 { get; private set; }
         public Action<List<NewPsmWithFDR>, string> action2 { get; private set; }
 
-        public AnalysisParams(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, double fragmentTolerance, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized, Action<MyNewTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2)
+        public AnalysisParams(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, double fragmentTolerance, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
@@ -8,6 +7,7 @@ namespace IndexSearchAndAnalyze
         public AnalysisResults(AnalysisParams s) : base(s)
         {
         }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();

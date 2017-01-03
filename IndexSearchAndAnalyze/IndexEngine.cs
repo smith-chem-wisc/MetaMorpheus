@@ -111,7 +111,6 @@ namespace IndexSearchAndAnalyze
             Console.WriteLine("finished generating peptide index");
 
             return new IndexResults(myDictionary, myFragmentDictionary, indexParams);
-
         }
     }
 }

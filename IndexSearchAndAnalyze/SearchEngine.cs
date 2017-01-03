@@ -6,7 +6,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexSearchAndAnalyze
@@ -19,6 +18,7 @@ namespace IndexSearchAndAnalyze
         {
             this.searchParams = searchParams;
         }
+
         protected override MyResults RunSpecific()
         {
             searchParams.OnOutput("In search method!");
@@ -117,7 +117,6 @@ namespace IndexSearchAndAnalyze
             return new SearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
         }
 
-
         private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
         {
             List<MzPeak> filteredList;
@@ -178,8 +177,6 @@ namespace IndexSearchAndAnalyze
             }
             return peptideScores;
         }
-
-
 
         // Want this to return false more!! So less computation is done
         private static bool FirstIsPreferable(CompactPeptide first, CompactPeptide second, double pm)

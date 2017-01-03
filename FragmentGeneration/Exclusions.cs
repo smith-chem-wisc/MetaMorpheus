@@ -50,14 +50,13 @@ namespace FragmentGeneration
             }
             return exclude.ToArray();
         }
+
         public static bool DoNotExclude(double a, double tolExclude, double[] exclude)
         {
-
             foreach (var heh in exclude)
                 if (Math.Abs(heh - a) < tolExclude)
                     return false;
             return true;
-
         }
     }
 }

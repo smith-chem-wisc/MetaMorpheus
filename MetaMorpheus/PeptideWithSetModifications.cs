@@ -27,7 +27,9 @@ namespace MetaMorpheus
                 monoisotopicMass = value;
             }
         }
+
         private string extendedSequence;
+
         public virtual string ExtendedSequence
         {
             get
@@ -47,13 +49,13 @@ namespace MetaMorpheus
         }
 
         private string sequence;
+
         public virtual string Sequence
         {
             get
             {
                 if (sequence == null)
                 {
-
                     StringBuilder sbsequence = new StringBuilder();
                     List<MorpheusModification> value = null;
                     // fixed modifications on protein N-terminus
@@ -274,6 +276,7 @@ namespace MetaMorpheus
         {
             get { return modPep.PeptideDescription; }
         }
+
         public double[] FastUnsortedProductMasses(List<ProductType> productTypes)
         {
             PeptideFragmentMasses p = computeFragmentMasses();

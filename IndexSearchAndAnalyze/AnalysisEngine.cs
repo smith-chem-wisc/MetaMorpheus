@@ -1,11 +1,8 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
+﻿using MetaMorpheus;
 using Proteomics;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexSearchAndAnalyze
@@ -21,7 +18,6 @@ namespace IndexSearchAndAnalyze
 
         protected override MyResults RunSpecific()
         {
-
             AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 
@@ -59,29 +55,28 @@ namespace IndexSearchAndAnalyze
             return new AnalysisResults(analysisParams);
         }
 
-        private static MyNewTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
+        private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
         {
-            MyNewTreeStructure myTreeStructure = new MyNewTreeStructure();
+            BinTreeStructure myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, 0.003);
             myTreeStructure.AddToBins(limitedpsms_with_fdr);
-            
+
             MyAnalysisClass.IdentifyUnimodBins(myTreeStructure, 0.003, unimodDeserialized);
             MyAnalysisClass.IdentifyUniprotBins(myTreeStructure, 0.003, uniprotDeseralized);
             MyAnalysisClass.IdentifyAA(myTreeStructure, 0.003);
-            
+
             MyAnalysisClass.IdentifyCombos(myTreeStructure, 0.003);
-            
+
             MyAnalysisClass.IdentifyResidues(myTreeStructure);
-            
+
             MyAnalysisClass.IdentifyMods(myTreeStructure);
-            
+
             MyAnalysisClass.IdentifyAAsInCommon(myTreeStructure);
-            
+
             MyAnalysisClass.IdentifyMine(myTreeStructure, 0.003);
 
             return myTreeStructure;
         }
-
 
         private static List<NewPsmWithFDR> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithPeptide> items)
         {
@@ -112,6 +107,7 @@ namespace IndexSearchAndAnalyze
 
             return ids;
         }
+
         private static void AddObservedPeptidesToDictionary(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease)
         {
             foreach (var ah in newPsms)
@@ -163,7 +159,5 @@ namespace IndexSearchAndAnalyze
             }
             return outDict;
         }
-
-
     }
 }
