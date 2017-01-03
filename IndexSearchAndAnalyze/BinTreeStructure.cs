@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace IndexSearchAndAnalyze
 {
-    public class MyNewTreeStructure
+    public class BinTreeStructure
     {
         public List<Bin> finalBins { get; private set; }
         private double dc;
@@ -17,7 +17,7 @@ namespace IndexSearchAndAnalyze
             double maxMassShift = listOfMassShifts.Max();
 
             int[] p = new int[listOfMassShifts.Count];
-            
+
             int firstIndex = 0;
             int lastIndex = 0;
             for (int i = 0; i < listOfMassShifts.Count; i++)
@@ -34,7 +34,7 @@ namespace IndexSearchAndAnalyze
 
             int maxP = p.Max();
             double[] sigma = new double[listOfMassShifts.Count];
-            
+
             for (int i = 0; i < listOfMassShifts.Count; i++)
             {
                 var thisMassShift = listOfMassShifts[i];
@@ -70,7 +70,7 @@ namespace IndexSearchAndAnalyze
                 if (add)
                     prelimBins.Add(okbin.massShift);
             }
-            
+
             Dictionary<double, List<double>> forFinalBins = new Dictionary<double, List<double>>();
             foreach (double ok in prelimBins)
                 forFinalBins.Add(ok, new List<double>());

@@ -3,7 +3,7 @@ using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
-    public class MyResults
+    public abstract class MyResults
     {
         protected MyParams s;
 
@@ -13,6 +13,7 @@ namespace IndexSearchAndAnalyze
         }
 
         public TimeSpan Time { get; internal set; }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();

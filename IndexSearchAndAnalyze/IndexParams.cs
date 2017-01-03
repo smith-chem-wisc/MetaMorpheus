@@ -1,9 +1,6 @@
-﻿using System;
+﻿using MetaMorpheus;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MetaMorpheus;
+using System;
 
 namespace IndexSearchAndAnalyze
 {
@@ -22,6 +19,11 @@ namespace IndexSearchAndAnalyze
             this.fixedModifications = fixedModifications;
             this.localizeableModifications = localizeableModifications;
             this.protease = protease;
+        }
+
+        internal override void Validate()
+        {
+            throw new NotImplementedException();
         }
     }
 }

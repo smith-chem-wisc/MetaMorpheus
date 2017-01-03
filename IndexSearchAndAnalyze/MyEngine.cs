@@ -1,12 +1,13 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace IndexSearchAndAnalyze
 {
     public abstract class MyEngine
     {
+        protected MyParams myParams;
         public MyResults Run()
         {
+            myParams.Validate();
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             var myResults = RunSpecific();

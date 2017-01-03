@@ -15,11 +15,10 @@ namespace FragmentGeneration
 {
     internal class Program
     {
-
         public static string unimodLocation = @"unimod_tables.xml";
         public static string elementsLocation = @"elements.dat";
         public static string uniprotLocation = @"ptmlist.txt";
-        
+
         private static void Main(string[] args)
         {
             Console.WriteLine("Loading amino acid masses...");
@@ -101,8 +100,6 @@ namespace FragmentGeneration
             {
                 return a > -187 && Exclusions.DoNotExclude(a, tolExclude, exclude);
             }));
-
-
 
             //    searchModes.Add(new SearchMode("greaterThan-500withExclusions", (double a) =>
             //    {
@@ -229,17 +226,15 @@ namespace FragmentGeneration
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(newPsms[i]);
 
-                AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (MyNewTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
+                AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
                 Console.WriteLine(analysisResults);
-
             }
             if (dataFiles.Count > 1)
             {
-
-                AnalysisParams analysisParams = new AnalysisParams(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (MyNewTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate" + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s));
+                AnalysisParams analysisParams = new AnalysisParams(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate" + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s));
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
             }

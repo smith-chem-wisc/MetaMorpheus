@@ -10,7 +10,7 @@ namespace FragmentGeneration
 {
     public class Writing
     {
-        public static void WriteTree(MyNewTreeStructure myTreeStructure, string output_folder, string fileName)
+        public static void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
         {
             using (StreamWriter output = new StreamWriter(Path.Combine(output_folder, fileName + ".mytsv")))
             {
@@ -42,8 +42,6 @@ namespace FragmentGeneration
             }
         }
 
-
-
         public static void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
         {
             Console.WriteLine("Writing psms");
@@ -54,6 +52,5 @@ namespace FragmentGeneration
                     output.WriteLine(items[i].ToString());
             }
         }
-
     }
 }

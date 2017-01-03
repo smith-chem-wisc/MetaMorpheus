@@ -9,15 +9,14 @@ namespace IndexSearchAndAnalyze
 {
     public class IndexEngine : MyEngine
     {
-        private IndexParams indexParams;
-
         public IndexEngine(IndexParams indexParams)
         {
-            this.indexParams = indexParams;
+            this.myParams = indexParams;
         }
 
         protected override MyResults RunSpecific()
         {
+            var indexParams = (IndexParams)myParams;
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
             int numProteins = 0;
@@ -111,7 +110,6 @@ namespace IndexSearchAndAnalyze
             Console.WriteLine("finished generating peptide index");
 
             return new IndexResults(myDictionary, myFragmentDictionary, indexParams);
-
         }
     }
 }

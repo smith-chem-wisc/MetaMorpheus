@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using IndexSearchAndAnalyze;
 using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
@@ -27,6 +26,7 @@ namespace IndexSearchAndAnalyze
         public List<double> LocalizedScores;
 
         public Dictionary<ProductType, Dictionary<double, double>> matchedIonsList;
+
         public double ScoreFromMatch
         {
             get

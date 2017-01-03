@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
+using System.Collections.Generic;
+using System;
 
 namespace IndexSearchAndAnalyze
 {
@@ -38,6 +35,11 @@ namespace IndexSearchAndAnalyze
             this.fragmentTolerance = fragmentTolerance;
             this.protease = protease;
             this.searchModes = searchModes;
+        }
+
+        internal override void Validate()
+        {
+            throw new NotImplementedException();
         }
     }
 }

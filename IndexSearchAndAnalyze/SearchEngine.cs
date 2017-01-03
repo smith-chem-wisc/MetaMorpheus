@@ -6,21 +6,21 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexSearchAndAnalyze
 {
     public class SearchEngine : MyEngine
     {
-        private SearchParams searchParams;
 
         public SearchEngine(SearchParams searchParams)
         {
-            this.searchParams = searchParams;
+            this.myParams = searchParams;
         }
+
         protected override MyResults RunSpecific()
         {
+            var searchParams = (SearchParams)myParams;
             searchParams.OnOutput("In search method!");
 
             var spectraList = searchParams.myMsDataFile.ToList();
@@ -30,7 +30,7 @@ namespace IndexSearchAndAnalyze
             for (int i = 0; i < searchParams.searchModes.Count; i++)
                 newPsms[i] = new List<NewPsm>(new NewPsm[totalSpectra]);
 
-            int numAllSpectra = 0;
+            //int numAllSpectra = 0;
             int numMS2spectra = 0;
             int[] numMS2spectraMatched = new int[searchParams.searchModes.Count];
 
@@ -117,7 +117,6 @@ namespace IndexSearchAndAnalyze
             return new SearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
         }
 
-
         private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
         {
             List<MzPeak> filteredList;
@@ -178,8 +177,6 @@ namespace IndexSearchAndAnalyze
             }
             return peptideScores;
         }
-
-
 
         // Want this to return false more!! So less computation is done
         private static bool FirstIsPreferable(CompactPeptide first, CompactPeptide second, double pm)

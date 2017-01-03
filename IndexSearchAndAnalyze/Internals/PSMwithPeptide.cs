@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using IndexSearchAndAnalyze;
 using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
@@ -11,7 +10,7 @@ using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
-    public class PSMwithPeptide
+    internal class PSMwithPeptide
     {
         private NewPsm newPsm;
         private PeptideWithSetModifications peptideWithSetModifications;
@@ -47,6 +46,7 @@ namespace IndexSearchAndAnalyze
                 return newPsm.LocalizedScores;
             }
         }
+
         public double PeptideMonoisotopicMass
         {
             get
@@ -54,7 +54,6 @@ namespace IndexSearchAndAnalyze
                 return peptideWithSetModifications.MonoisotopicMass;
             }
         }
-
 
         public string FullSequence
         {
@@ -94,7 +93,6 @@ namespace IndexSearchAndAnalyze
 
                 newPsm.matchedIonsList = MatchedIonDict;
             }
-
 
             if (newPsm.LocalizedScores == null)
             {
@@ -178,11 +176,6 @@ namespace IndexSearchAndAnalyze
             sb.Append((scanPrecursorMass - peptideWithSetModifications.MonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             return sb.ToString();
-        }
-
-        internal void Reassign(Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch)
-        {
-            peptideWithSetModifications = fullSequenceToProteinSingleMatch[newPsm.peptide];
         }
     }
 }

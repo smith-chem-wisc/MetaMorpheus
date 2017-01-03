@@ -67,7 +67,6 @@ namespace MetaMorpheus
         {
             using (var modsReader = new StreamReader(Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), v)))
             {
-
                 string description = null;
                 string feature_type = null;
                 ModificationType modification_type = ModificationType.AminoAcidResidue;

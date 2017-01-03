@@ -40,7 +40,6 @@ namespace Test
 
             // Lysine combo - do not exclude
             Assert.IsTrue(Exclusions.DoNotExclude(128.09496 + 99.06841, tolExclude, exclude));
-
         }
     }
 }
