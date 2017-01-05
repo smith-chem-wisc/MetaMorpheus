@@ -10,10 +10,10 @@ using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
-    internal class PSMwithPeptide
+    public class PSMwithPeptide
     {
-        private NewPsm newPsm;
-        private PeptideWithSetModifications peptideWithSetModifications;
+        public NewPsm newPsm;
+        public PeptideWithSetModifications peptideWithSetModifications;
 
         public bool isDecoy
         {
@@ -87,11 +87,18 @@ namespace IndexSearchAndAnalyze
                 theScan.TryGetSelectedIonGuessChargeStateGuess(out selectedCharge);
                 var scanPrecursorMass = selectedMZ.ToMass(selectedCharge);
 
-                Dictionary<ProductType, Dictionary<double, double>> MatchedIonDict = new Dictionary<ProductType, Dictionary<double, double>>();
+                Dictionary<ProductType, double[]> MatchedIonDict = new Dictionary<ProductType, double[]>();
+                double score = 0;
                 foreach (var huh in allProductTypes)
-                    MatchedIonDict.Add(huh, MatchIons(theScan, fragmentTolerance, peptideWithSetModifications.FastUnsortedProductMasses(new List<ProductType>() { huh })));
+                {
+                    var df = peptideWithSetModifications.FastSortedProductMasses(new List<ProductType>() { huh });
+                    double[] matchedIonList = new double[df.Length];
+                    score += MatchIons(theScan, fragmentTolerance, df, matchedIonList);
+                    MatchedIonDict.Add(huh, matchedIonList);
+                }
 
                 newPsm.matchedIonsList = MatchedIonDict;
+                newPsm.ScoreFromMatch = score;
             }
 
             if (newPsm.LocalizedScores == null)
@@ -101,26 +108,24 @@ namespace IndexSearchAndAnalyze
                 for (int indexToLocalize = 0; indexToLocalize < peptideWithSetModifications.Length; indexToLocalize++)
                 {
                     PeptideWithSetModifications localizedPeptide = peptideWithSetModifications.Localize(indexToLocalize, scanPrecursorMass - peptideWithSetModifications.MonoisotopicMass);
-                    var hm = MatchIons(theScan, fragmentTolerance, localizedPeptide.FastUnsortedProductMasses(allProductTypes));
-                    localizedScores.Add(hm.Count + hm.Select(b => b.Value / theScan.TotalIonCurrent).Sum());
+
+                    var gg = localizedPeptide.FastSortedProductMasses(allProductTypes);
+                    double[] matchedIonList = new double[gg.Length];
+                    var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonList);
+                    localizedScores.Add(score);
                 }
                 newPsm.LocalizedScores = localizedScores;
             }
         }
 
-        private static Dictionary<double, double> MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, double product_mass_tolerance_value, double[] theoretical_product_masses_for_this_peptide)
+        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, double product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
         {
-            Dictionary<double, double> matchedIonsList = new Dictionary<double, double>();
-            if (theoretical_product_masses_for_this_peptide.Length == 0)
-                return matchedIonsList;
+            var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
+            if (TotalProductsHere == 0)
+                return 0;
             int MatchingProductsHere = 0;
             double MatchingIntensityHere = 0;
 
-            List<Tuple<double, double>> listOfMzSandMasses = theoretical_product_masses_for_this_peptide.Select(b => new Tuple<double, double>(b.ToMassToChargeRatio(1), b)).ToList();
-
-            var theoretical_product_mzs_for_this_peptide = listOfMzSandMasses.OrderBy(b => b.Item1).Select(b => b.Item1).ToArray();
-            var masses_all = listOfMzSandMasses.OrderBy(b => b.Item1).Select(b => b.Item2).ToArray();
-            var TotalProductsHere = theoretical_product_mzs_for_this_peptide.Count();
             int theoreticalLeft = TotalProductsHere;
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.xArray;
@@ -128,31 +133,35 @@ namespace IndexSearchAndAnalyze
             int num_experimental_peaks = experimental_mzs.Length;
 
             int theoreticalIndex = 0;
-            double nextTheoreticalMZ;
-            double mass_difference;
+            double nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[0];
+            double nextTheoreticalMZ = nextTheoreticalMass + 1.007276466879;
+            double lb = nextTheoreticalMZ - product_mass_tolerance_value;
+            double ub = nextTheoreticalMZ + product_mass_tolerance_value;
             double currentExperimentalMZ;
-            double nextTheoreticalMass;
             for (int i = 0; i < num_experimental_peaks; i++)
             {
                 currentExperimentalMZ = experimental_mzs[i];
-                nextTheoreticalMZ = theoretical_product_mzs_for_this_peptide[theoreticalIndex];
-                nextTheoreticalMass = masses_all[theoreticalIndex];
-                mass_difference = currentExperimentalMZ - nextTheoreticalMZ;
-                if (Math.Abs(mass_difference) <= product_mass_tolerance_value)
+                if (currentExperimentalMZ >= lb && currentExperimentalMZ <= ub)
                 {
                     MatchingProductsHere++;
                     MatchingIntensityHere += experimental_intensities[i];
-                    matchedIonsList.Add(nextTheoreticalMass, experimental_intensities[i]);
+                    matchedIonsList[theoreticalIndex] = nextTheoreticalMass;
                 }
                 else if (currentExperimentalMZ < nextTheoreticalMZ)
                     continue;
+                else
+                    matchedIonsList[theoreticalIndex] = -nextTheoreticalMass;
                 i--;
                 // Passed a theoretical! Move counter forward
                 theoreticalIndex++;
                 if (theoreticalIndex == TotalProductsHere)
                     break;
+                nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[theoreticalIndex];
+                nextTheoreticalMZ = nextTheoreticalMass + 1.007276466879;
+                lb = nextTheoreticalMZ - product_mass_tolerance_value;
+                ub = nextTheoreticalMZ + product_mass_tolerance_value;
             }
-            return matchedIonsList;
+            return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }
 
         public override string ToString()

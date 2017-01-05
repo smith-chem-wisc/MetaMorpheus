@@ -4,20 +4,15 @@ namespace IndexSearchAndAnalyze
 {
     public abstract class MyParams
     {
-        public event EventHandler<string> outputHandler;
+        public Action<string> outputAction;
+        public Action<int> progressAction;
 
-        public event EventHandler<int> progressHandler;
+        public MyParams(Action<string> a1, Action<int> a2)
+        {
+            this.outputAction = a1;
+            this.progressAction = a2;
+        }
 
         internal abstract void Validate();
-
-        public void OnOutput(string e)
-        {
-            outputHandler?.Invoke(this, e);
-        }
-
-        public void OnProgress(int e)
-        {
-            progressHandler?.Invoke(this, e);
-        }
     }
 }

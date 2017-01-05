@@ -1,5 +1,7 @@
-﻿using MetaMorpheus;
+﻿using IndexSearchAndAnalyze;
+using MetaMorpheus;
 using mzCal;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,18 +22,25 @@ namespace GoodGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static ObservableCollection<RawDataAndResults> rawDataAndResultslist = new ObservableCollection<RawDataAndResults>();
+        private static ObservableCollection<RawData> rawDataAndResultslist = new ObservableCollection<RawData>();
         private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
         private static ObservableCollection<GptmdPTMlist> GPTMDfileList = new ObservableCollection<GptmdPTMlist>();
-        private static ObservableCollection<ModList> SearchfileList = new ObservableCollection<ModList>();
+        private static ObservableCollection<ModList> ModFileList = new ObservableCollection<ModList>();
+        private static ObservableCollection<MyTask> taskList = new ObservableCollection<MyTask>();
         private ParamsObject po;
 
-        private enum Task
+        public int highlightedTaskIndex { get; private set; }
+
+        internal enum MyTaskEnum
         {
             Search,
             GPTMD,
-            Calibrate
+            Calibrate,
+            NewTask
         }
+
+        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
+        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
 
         public MainWindow()
         {
@@ -39,21 +48,19 @@ namespace GoodGUI
 
             mzCalIO.mzCalIO.Load();
 
-            dataGridGPTMD.DataContext = GPTMDfileList;
-            dataGridSearch.DataContext = SearchfileList;
+            modificationsDataGrid.DataContext = ModFileList;
             dataGridXMLs.DataContext = xMLdblist;
-            dataGridDatafilesAndResults.DataContext = rawDataAndResultslist;
+            dataGridDatafiles.DataContext = rawDataAndResultslist;
+            tasksDataGrid.DataContext = taskList;
 
-            GPTMDfileList.Add(new GptmdPTMlist("m.txt", true));
-            GPTMDfileList.Add(new GptmdPTMlist("r.txt", false));
-            GPTMDfileList.Add(new GptmdPTMlist("s.txt", false));
+            ModFileList.Add(new ModList("v.txt", false, false, true, false));
+            ModFileList.Add(new ModList("f.txt", false, false, false, true));
+            ModFileList.Add(new ModList("p.txt", false, true, false, false));
+            ModFileList.Add(new ModList("m.txt", true, true, false, false));
+            ModFileList.Add(new ModList("r.txt", false, false, false, false));
+            ModFileList.Add(new ModList("s.txt", false, false, false, false));
 
-            SearchfileList.Add(new ModList("v.txt", false, true, false));
-            SearchfileList.Add(new ModList("f.txt", false, false, true));
-            SearchfileList.Add(new ModList("p.txt", true, false, false));
-            SearchfileList.Add(new ModList("m.txt", true, false, false));
-            SearchfileList.Add(new ModList("r.txt", false, false, false));
-            SearchfileList.Add(new ModList("s.txt", false, false, false));
+            taskList.Add(new MyTask(-1));
 
             // RAW FILES
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw");
@@ -63,7 +70,7 @@ namespace GoodGUI
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2016-10-20-09-17\04-29-13_B6_Frac1_9uL.mzid");
 
             // XML
-            addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-10-3-2016.xml");
+            addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-10-3-2016.xml");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml");
 
@@ -79,18 +86,20 @@ namespace GoodGUI
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\2016-10-21-15-18\aggregate.psmtsv");
 
             foreach (Protease protease in ProteaseDictionary.Instance.Values)
-                comboBox.Items.Add(protease);
-            comboBox.SelectedIndex = 12;
+                proteaseComboBox.Items.Add(protease);
+            proteaseComboBox.SelectedIndex = 12;
+
             RegOutput(ProteaseDictionary.Instance.Count + " proteases loaded from proteases.tsv");
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-                cboInitiatorMethionineBehavior.Items.Add(initiatior_methionine_behavior.ToLower());
-            cboInitiatorMethionineBehavior.SelectedIndex = 2;
-            comboBox1.Items.Add("Da");
-            comboBox1.Items.Add("ppm");
-            comboBox1.SelectedIndex = 1;
-            comboBox1_Copy.Items.Add("Da");
-            comboBox1_Copy.Items.Add("ppm");
-            comboBox1_Copy.SelectedIndex = 0;
+                initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior.ToLower());
+            initiatorMethionineBehaviorComboBox.SelectedIndex = 2;
+
+            precursorMassToleranceComboBox.Items.Add("Da");
+            precursorMassToleranceComboBox.Items.Add("ppm");
+            precursorMassToleranceComboBox.SelectedIndex = 1;
+            productMassToleranceComboBox.Items.Add("Da");
+            productMassToleranceComboBox.Items.Add("ppm");
+            productMassToleranceComboBox.SelectedIndex = 0;
             AminoAcidMasses.LoadAminoAcidMasses();
             RegOutput("Amino acid masses loaded from amino_acids.tsv");
 
@@ -135,20 +144,6 @@ namespace GoodGUI
             //textBox3.Text = @"-15.95; 0.05; 16.05";
             //textBox3.Text = @"-17.026549";
 
-            textBox3.Text = @"0";
-            //textBox3.Text = @"-18; -17; 0; 1; 2; 12; 16; 22; 32; 42; 80; 113";
-            //textBox3.Text = @"0.05; 1.05; 12.05; 16.05; 80.05";
-
-            //textBox2.Text = @"0.15";
-            //textBox2.Text = @"5";
-            //textBox2.Text = @"10";
-            textBox2.Text = @"1000";
-            comboBox1.SelectedIndex = 0; // Da
-            //comboBox1.SelectedIndex = 1; // ppm
-
-            //checkBoxDecoy.IsChecked = false;
-            checkBoxDecoy.IsChecked = true;
-
             //maxModificationIsoformsTextBox.Text = 10000.ToString();
 
             po = new ParamsObject();
@@ -159,13 +154,115 @@ namespace GoodGUI
             po.outSuccessfullyStartingTaskHandler += NewSuccessfullyStartingTask;
             po.SuccessfullyFinishedFileHandler += NewSuccessfullyFinishedFile;
             po.outTextBoxHandler += NewoutTextBox;
+            po.refreshBetweenTasksHandler += NewRefreshBetweenTasks;
+
+            RemoveTask.IsEnabled = false;
+            RunTasksButton.IsEnabled = false;
+            UpdateTaskStuff();
+        }
+
+        private void TasksDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Need to decide what happened:
+            // If user clicked on one existing one, do something
+
+            DataGrid datagrid = sender as DataGrid; // e.Source could have been used instead of sender as well
+            if (datagrid.SelectedIndex >= 0 && datagrid.SelectedIndex != highlightedTaskIndex)
+            {
+                ((MyTask)datagrid.Items[highlightedTaskIndex]).IsMySelected = false;
+                highlightedTaskIndex = datagrid.SelectedIndex;
+                ((MyTask)datagrid.Items[highlightedTaskIndex]).IsMySelected = true;
+                datagrid.Items.Refresh();
+                UpdateTaskStuff();
+            }
+        }
+
+        private void UpdateTaskStuff()
+        {
+            if (tasksDataGrid.Items.Count > 0)
+            {
+                var selectedTask = tasksDataGrid.Items[highlightedTaskIndex] as MyTask;
+                if (selectedTask != null)
+                {
+                    switch (selectedTask.taskType)
+                    {
+                        case MyTaskEnum.Calibrate:
+                            taskTabControl.SelectedIndex = 0;
+                            ((Control)taskTabControl.Items[0]).IsEnabled = true;
+                            ((Control)taskTabControl.Items[1]).IsEnabled = false;
+                            ((Control)taskTabControl.Items[2]).IsEnabled = false;
+                            addTaskButton.IsEnabled = false;
+                            RemoveTask.IsEnabled = true;
+                            break;
+                        case MyTaskEnum.Search:
+                            taskTabControl.SelectedIndex = 1;
+                            ((Control)taskTabControl.Items[0]).IsEnabled = false;
+                            ((Control)taskTabControl.Items[1]).IsEnabled = true;
+                            ((Control)taskTabControl.Items[2]).IsEnabled = false;
+                            addTaskButton.IsEnabled = false;
+                            RemoveTask.IsEnabled = true;
+                            break;
+                        case MyTaskEnum.GPTMD:
+                            taskTabControl.SelectedIndex = 2;
+                            ((Control)taskTabControl.Items[0]).IsEnabled = false;
+                            ((Control)taskTabControl.Items[1]).IsEnabled = false;
+                            ((Control)taskTabControl.Items[2]).IsEnabled = true;
+                            addTaskButton.IsEnabled = false;
+                            RemoveTask.IsEnabled = true;
+                            break;
+                        case MyTaskEnum.NewTask:
+                            ((Control)taskTabControl.Items[0]).IsEnabled = true;
+                            ((Control)taskTabControl.Items[1]).IsEnabled = true;
+                            ((Control)taskTabControl.Items[2]).IsEnabled = true;
+                            addTaskButton.IsEnabled = true;
+                            RemoveTask.IsEnabled = false;
+                            break;
+                    }
+                    SetTextBoxValues(selectedTask);
+                }
+            }
+        }
+
+        private void SetTextBoxValues(MyTask selectedTask)
+        {
+            precursorMassToleranceTextBox.Text = selectedTask.precursorMassToleranceTextBox;
+            precursorMassToleranceComboBox.SelectedIndex = selectedTask.precursorMassToleranceComboBox;
+            missedCleavagesTextBox.Text = selectedTask.missedCleavagesTextBox;
+            proteaseComboBox.SelectedItem = selectedTask.protease;
+            maxModificationIsoformsTextBox.Text = selectedTask.maxModificationIsoformsTextBox;
+            initiatorMethionineBehaviorComboBox.SelectedIndex = selectedTask.initiatorMethionineBehaviorComboBox;
+            productMassToleranceTextBox.Text = selectedTask.productMassToleranceTextBox;
+            productMassToleranceComboBox.SelectedIndex = selectedTask.productMassToleranceComboBox;
+            bCheckBox.IsChecked = selectedTask.bCheckBox;
+            yCheckBox.IsChecked = selectedTask.yCheckBox;
+            checkBoxDecoy.IsChecked = selectedTask.checkBoxDecoy;
+            acceptedPrecursorMassErrorsTextBox.Text = selectedTask.acceptedPrecursorMassErrorsTextBox;
+            checkBoxMonoisotopic.IsChecked = selectedTask.checkBoxMonoisotopic;
+        }
+
+        private void SetTaskValues(MyTask selectedTask)
+        {
+            selectedTask.precursorMassToleranceTextBox = precursorMassToleranceTextBox.Text;
+            selectedTask.precursorMassToleranceComboBox = precursorMassToleranceComboBox.SelectedIndex;
+            selectedTask.missedCleavagesTextBox = missedCleavagesTextBox.Text;
+            selectedTask.protease = (Protease)proteaseComboBox.SelectedItem;
+            selectedTask.maxModificationIsoformsTextBox = maxModificationIsoformsTextBox.Text;
+            selectedTask.initiatorMethionineBehaviorComboBox = initiatorMethionineBehaviorComboBox.SelectedIndex;
+            selectedTask.productMassToleranceTextBox = productMassToleranceTextBox.Text;
+            selectedTask.productMassToleranceComboBox = productMassToleranceComboBox.SelectedIndex;
+            selectedTask.bCheckBox = bCheckBox.IsChecked;
+            selectedTask.yCheckBox = yCheckBox.IsChecked;
+            selectedTask.checkBoxDecoy = checkBoxDecoy.IsChecked;
+            selectedTask.acceptedPrecursorMassErrorsTextBox = acceptedPrecursorMassErrorsTextBox.Text;
+            selectedTask.checkBoxMonoisotopic = checkBoxMonoisotopic.IsChecked;
+
         }
 
         private void addFile(string filepath)
         {
             var theExtension = Path.GetExtension(filepath);
             filepath = Path.GetFullPath(filepath);
-            RawDataAndResults res;
+            RawData res;
             switch (theExtension)
             {
                 case ".raw":
@@ -174,33 +271,33 @@ namespace GoodGUI
                     if (res != null)
                         res.AddFilePath(filepath);
                     else
-                        rawDataAndResultslist.Add(new RawDataAndResults(filepath, null, null));
+                        rawDataAndResultslist.Add(new RawData(filepath));
                     break;
 
-                case ".psmtsv":
-                    res = GetCorrespondingRawDataAndResultsEntry(filepath);
-                    if (res != null)
-                        res.AddTSV(filepath);
-                    else
-                        rawDataAndResultslist.Add(new RawDataAndResults(null, null, filepath));
-                    break;
+                //case ".psmtsv":
+                //    res = GetCorrespondingRawDataAndResultsEntry(filepath);
+                //    if (res != null)
+                //        res.AddTSV(filepath);
+                //    else
+                //        rawDataAndResultslist.Add(new RawData(null, null, filepath));
+                //    break;
 
-                case ".mzid":
-                    res = GetCorrespondingRawDataAndResultsEntry(filepath);
-                    if (res != null)
-                        res.AddMZID(filepath);
-                    else
-                        rawDataAndResultslist.Add(new RawDataAndResults(null, filepath, null));
-                    break;
+                //case ".mzid":
+                //    res = GetCorrespondingRawDataAndResultsEntry(filepath);
+                //    if (res != null)
+                //        res.AddMZID(filepath);
+                //    else
+                //        rawDataAndResultslist.Add(new RawData(null, filepath, null));
+                //    break;
 
                 case ".xml":
                     xMLdblist.Add(new XMLdb(filepath));
                     break;
             }
-            dataGridDatafilesAndResults.Items.Refresh();
+            dataGridDatafiles.Items.Refresh();
         }
 
-        private RawDataAndResults GetCorrespondingRawDataAndResultsEntry(string filepath)
+        private RawData GetCorrespondingRawDataAndResultsEntry(string filepath)
         {
             var fileNameNoExtension = Path.GetFileNameWithoutExtension(filepath);
             foreach (var a in rawDataAndResultslist)
@@ -211,18 +308,18 @@ namespace GoodGUI
                     if (aNoExtension.Equals(fileNameNoExtension))
                         return a;
                 }
-                if (a.mzidName != null)
-                {
-                    var aNoExtension = Path.GetFileNameWithoutExtension(a.mzidName);
-                    if (aNoExtension.Equals(fileNameNoExtension))
-                        return a;
-                }
-                if (a.psmsTSVName != null)
-                {
-                    var aNoExtension = Path.GetFileNameWithoutExtension(a.psmsTSVName);
-                    if (aNoExtension.Equals(fileNameNoExtension))
-                        return a;
-                }
+                //if (a.mzidName != null)
+                //{
+                //    var aNoExtension = Path.GetFileNameWithoutExtension(a.mzidName);
+                //    if (aNoExtension.Equals(fileNameNoExtension))
+                //        return a;
+                //}
+                //if (a.psmsTSVName != null)
+                //{
+                //    var aNoExtension = Path.GetFileNameWithoutExtension(a.psmsTSVName);
+                //    if (aNoExtension.Equals(fileNameNoExtension))
+                //        return a;
+                //}
             }
             return null;
         }
@@ -232,63 +329,60 @@ namespace GoodGUI
             rawDataAndResultslist.Clear();
         }
 
-        private void ButtonCalibrate_Click(object sender, RoutedEventArgs e)
+        //private void ButtonCalibrate_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (errorMessage != null)
+        //    {
+        //        ErrorOutput(errorMessage);
+        //        return;
+        //    }
+
+        //    var t = new Thread(() => DoTask(MyTaskEnum.Calibrate, po, null));
+        //    t.IsBackground = true;
+        //    t.Start();
+        //}
+
+        //private void ButtonSearch_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (errorMessage != null)
+        //    {
+        //        ErrorOutput(errorMessage);
+        //        return;
+        //    }
+
+        //    List<double> accepted_precursor_mass_errors = new List<double>();
+        //    foreach (string accepted_precursor_mass_error_text in textBox3.Text.Split(';'))
+        //    {
+        //        double accepted_precursor_mass_error;
+        //        double.TryParse(accepted_precursor_mass_error_text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out accepted_precursor_mass_error);
+        //        accepted_precursor_mass_errors.Add(accepted_precursor_mass_error);
+        //    }
+
+        //    //SearchParamsObject spo = new SearchParamsObject(
+        //    //    checkBoxDecoy.IsChecked == true ? true : false,
+        //    //    (Protease)comboBox.SelectedItem,
+        //    //    Convert.ToInt32(missedCleavagesTextBox.Text), (InitiatorMethionineBehavior)Enum.Parse(typeof(InitiatorMethionineBehavior), cboInitiatorMethionineBehavior.Text, true),
+        //    //    new MassTolerance(Convert.ToDouble(textBox2.Text), (MassToleranceUnits)comboBox1.SelectedIndex),
+        //    //    accepted_precursor_mass_errors,
+        //    //    new MassTolerance(Convert.ToDouble(textBox2_Copy.Text), (MassToleranceUnits)comboBox1_Copy.SelectedIndex),
+        //    //    bCheckBox.IsChecked == true ? true : false,
+        //    //    yCheckBox.IsChecked == true ? true : false,
+        //    //    Convert.ToInt32(maxModificationIsoformsTextBox.Text)
+        //    //    );
+
+        //    //var t = new Thread(() => DoTask(Task.Search, po, spo));
+        //    //t.IsBackground = true;
+        //    //t.Start();
+        //}
+
+        private static void DoTask(MyTaskEnum task, ParamsObject po, object customObject)
         {
-            string errorMessage = VerifyState(Task.Calibrate);
-            if (errorMessage != null)
-            {
-                ErrorOutput(errorMessage);
-                return;
-            }
-
-            var t = new Thread(() => DoTask(Task.Calibrate, po, null));
-            t.IsBackground = true;
-            t.Start();
-        }
-
-        private void ButtonSearch_Click(object sender, RoutedEventArgs e)
-        {
-            string errorMessage = VerifyState(Task.Search);
-            if (errorMessage != null)
-            {
-                ErrorOutput(errorMessage);
-                return;
-            }
-
-            List<double> accepted_precursor_mass_errors = new List<double>();
-            foreach (string accepted_precursor_mass_error_text in textBox3.Text.Split(';'))
-            {
-                double accepted_precursor_mass_error;
-                double.TryParse(accepted_precursor_mass_error_text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out accepted_precursor_mass_error);
-                accepted_precursor_mass_errors.Add(accepted_precursor_mass_error);
-            }
-
-            SearchParamsObject spo = new SearchParamsObject(
-                checkBoxDecoy.IsChecked == true ? true : false,
-                (Protease)comboBox.SelectedItem,
-                Convert.ToInt32(missedCleavagesTextBox.Text), (InitiatorMethionineBehavior)Enum.Parse(typeof(InitiatorMethionineBehavior), cboInitiatorMethionineBehavior.Text, true),
-                new MassTolerance(Convert.ToDouble(textBox2.Text), (MassToleranceUnits)comboBox1.SelectedIndex),
-                accepted_precursor_mass_errors,
-                new MassTolerance(Convert.ToDouble(textBox2_Copy.Text), (MassToleranceUnits)comboBox1_Copy.SelectedIndex),
-                bCheckBox.IsChecked == true ? true : false,
-                yCheckBox.IsChecked == true ? true : false,
-                Convert.ToInt32(maxModificationIsoformsTextBox.Text),
-                Convert.ToInt32(maxModificationsTextBox.Text)
-                );
-
-            var t = new Thread(() => DoTask(Task.Search, po, spo));
-            t.IsBackground = true;
-            t.Start();
-        }
-
-        private static void DoTask(Task task, ParamsObject po, object customObject)
-        {
-            po.startingTask();
+            po.startingAllTasks();
             po.statusLabel("Working...");
             po.ReportProgress(0);
             switch (task)
             {
-                case Task.Search:
+                case MyTaskEnum.Search:
                     po.RTBoutput("Starting database search");
                     SearchParamsObject paramsHere = (SearchParamsObject)customObject;
                     bool assign_charge_states = true;
@@ -316,7 +410,7 @@ namespace GoodGUI
                     Dictionary<string, List<MorpheusModification>> modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
                     var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
                     var modsInXMLtoTrim = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
-                    var modsKnown = SearchfileList.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
+                    var modsKnown = ModFileList.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
                     foreach (var knownMod in modsKnown)
                         if (modsInXML.Contains(knownMod.NameInXML))
                         {
@@ -333,17 +427,17 @@ namespace GoodGUI
                     po.RTBoutput(string.Join("\n", modsInXMLtoTrim));
 
                     po.RTBoutput("The following modifications are VARIABLE, i.e. we attempt to place them at every appropriate residue:");
-                    po.RTBoutput(string.Join(", ", SearchfileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
+                    po.RTBoutput(string.Join(", ", ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
 
                     po.RTBoutput("The following modifications are FIXED, i.e. we assign them at every appropriate residue:");
-                    po.RTBoutput(string.Join(", ", SearchfileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
+                    po.RTBoutput(string.Join(", ", ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
 
                     string extraLogStuff = "";
-                    extraLogStuff += "PTM files: " + string.Join(", ", SearchfileList.Where(b => b.Localize).Select(b => b.FileName)) + "\n";
+                    extraLogStuff += "PTM files: " + string.Join(", ", ModFileList.Where(b => b.Localize).Select(b => b.FileName)) + "\n";
                     extraLogStuff += "XML databases: " + string.Join(", ", xMLdblist.Where(b => b.Use).Select(b => b.FileName)) + "\n";
                     extraLogStuff += "Localized mods: " + string.Join(", ", modsToLocalize.Select(b => b.Key)) + "\n";
-                    extraLogStuff += "Variable mods: " + string.Join(", ", SearchfileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
-                    extraLogStuff += "Fixed mods: " + string.Join(", ", SearchfileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
+                    extraLogStuff += "Variable mods: " + string.Join(", ", ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
+                    extraLogStuff += "Fixed mods: " + string.Join(", ", ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
 
                     DatabaseSearcher database_searcher = new DatabaseSearcher(GetDatas(filesToSearch),
                         min_assumed_precursor_charge_state, max_assumed_precursor_charge_state,
@@ -360,8 +454,8 @@ namespace GoodGUI
                         paramsHere.bions,
                         paramsHere.yions,
                         xMLdblist.Where(b => b.Use).SelectMany(b => b.getProteins(on_the_fly_decoys, modsToLocalize)).ToList(),
-                        SearchfileList.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList(),
-                        SearchfileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList(),
+                        ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList(),
+                        ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList(),
                         extraLogStuff,
                         filesToSearch.Count);
                     po.AttachoutRichTextBoxHandlerr(handler => database_searcher.outputHandler += handler);
@@ -371,20 +465,27 @@ namespace GoodGUI
                     database_searcher.DoSearch();
                     break;
 
-                case Task.Calibrate:
+                case MyTaskEnum.Calibrate:
+
+
                     po.RTBoutput("Starting calibrate task");
-                    foreach (var anEntry in rawDataAndResultslist.Where(b => b.FileName != null && b.Use == true && b.mzidName != null && b.UseMzid == true && b.UsePsmsTsv == false).ToList())
+                    foreach (var anEntry in rawDataAndResultslist.Where(b => b.FileName != null && b.Use == true).ToList())
                     {
-                        SoftwareLockMassParams a = mzCalIO.mzCalIO.GetReady(anEntry.FileName, anEntry.mzidName);
-                        po.AttachoutRichTextBoxHandlerr(handler => a.outputHandler += handler);
-                        po.AttachoSuccessfullyFinishedFileHandler(handler => a.finishedFileHandler += handler);
-                        po.AttachoutProgressBarHandler(handler => a.progressHandler += handler);
-                        po.AttachoutRichTextBoxHandlerr(handler => a.watchHandler += handler);
-                        SoftwareLockMassRunner.Run(a);
+
+                        //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
+                        //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
+                        //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
+
+                        //SoftwareLockMassParams a = mzCalIO.mzCalIO.GetReady(anEntry.FileName, anEntry.mzidName);
+                        //po.AttachoutRichTextBoxHandlerr(handler => a.outputHandler += handler);
+                        //po.AttachoSuccessfullyFinishedFileHandler(handler => a.finishedFileHandler += handler);
+                        //po.AttachoutProgressBarHandler(handler => a.progressHandler += handler);
+                        //po.AttachoutRichTextBoxHandlerr(handler => a.watchHandler += handler);
+                        //SoftwareLockMassRunner.Run(a);
                     }
                     break;
 
-                case Task.GPTMD:
+                case MyTaskEnum.GPTMD:
                     po.RTBoutput("Starting GPTMD");
                     GPTMDParamsObject paramsHeree = (GPTMDParamsObject)customObject;
 
@@ -415,7 +516,7 @@ namespace GoodGUI
                     po.AttachoutLabelStatusHandler(handler => gptmd.labelStatusHandler += handler);
 
                     gptmd.GPTMDD(
-                        rawDataAndResultslist.First(b => b.UsePsmsTsv),
+                        rawDataAndResultslist.First(),
                         xMLdblist.Where(b => b.Use).SelectMany(b => b.getProteins(false, modsToLocalize)).ToList(),
                         combos.ToList(),
                         GPTMDfileList.Where(b => b.Use).SelectMany(b => b.getMods()).ToList(),
@@ -427,7 +528,7 @@ namespace GoodGUI
             po.ReportProgress(100);
             po.RTBoutput("SUCCESS!");
             po.statusLabel("Ready");
-            po.FinishedTask();
+            po.FinishedAllTasks();
         }
 
         private static IEnumerable<Tuple<double, double>> ReadCombos(string v)
@@ -462,71 +563,6 @@ namespace GoodGUI
             return null;
         }
 
-        private string VerifyState(Task task)
-        {
-            RegOutput("Verifying state...");
-            switch (task)
-            {
-                case Task.Search:
-                    if (xMLdblist.Where(b => b.Use).Count() == 0)
-                        return "No XML database selected";
-                    foreach (var ye in rawDataAndResultslist)
-                    {
-                        if (ye.UseMzid || ye.UsePsmsTsv)
-                            return "Not searching " + ye.Use + "because corresponding result is checked";
-                        if (ye.Use && (ye.mzidName != null || ye.psmsTSVName != null))
-                            return "Not searching " + ye.Use + "because there are existing results";
-                    }
-                    if (rawDataAndResultslist.Where(b => b.Use).Count() == 0)
-                        return "No files selected for search";
-                    break;
-
-                case Task.Calibrate:
-                    foreach (var ye in rawDataAndResultslist)
-                    {
-                        if (ye.Use == true)
-                        {
-                            // So, seems that want to calibrate this one...
-                            if (ye.UseMzid == false)
-                                return "Please select mzid file for " + ye.FileName;
-                            if (ye.UsePsmsTsv == true)
-                                return "Please unselect tsv file for " + ye.FileName;
-                            if (ye.FileName == null)
-                                return "Filename is null";
-                            if (ye.mzidName == null)
-                                return "mzid is null";
-                        }
-                        if (ye.UseMzid == true)
-                        {
-                            // So, seems that want to calibrate this one...
-                            if (ye.Use == false)
-                                return "Please select spectra file for " + ye.FileName;
-                            if (ye.UsePsmsTsv == true)
-                                return "Please unselect tsv file for " + ye.FileName;
-                            if (ye.FileName == null)
-                                return "Filename is null";
-                            if (ye.mzidName == null)
-                                return "mzid is null";
-                        }
-                    }
-                    break;
-
-                case Task.GPTMD:
-                    if (rawDataAndResultslist.Where(b => b.Use).Count() > 0
-                        || rawDataAndResultslist.Where(b => b.UseMzid).Count() > 0)
-                        return "Please uncheck spectra or mzid files";
-                    if (rawDataAndResultslist.Where(b => b.UsePsmsTsv).Count() != 1
-                        || rawDataAndResultslist.Where(b => b.UseMzid).Count() > 0)
-                        return "GPTMD works on a single tsv file";
-                    if (xMLdblist.Where(b => b.Use).Count() == 0
-                        || rawDataAndResultslist.Where(b => b.UseMzid).Count() > 0)
-                        return "Please select XML database file(s)";
-                    break;
-            }
-            RegOutput("Verified successfully");
-            return null;
-        }
-
         private void ErrorOutput(string v)
         {
             if (outRichTextBox.Document.Blocks.LastBlock.Foreground != Brushes.Red)
@@ -544,29 +580,26 @@ namespace GoodGUI
 
         private void RegOutput(string v)
         {
-            if (outRichTextBox.Document.Blocks.LastBlock.Foreground != Brushes.Black)
+            if (outRichTextBox != null)
             {
-                Paragraph p = new Paragraph(new Run(v + "\n"));
-                p.Margin = new Thickness(0);
-                p.Foreground = Brushes.Black;
-                p.FontSize = 12;
-                outRichTextBox.Document.Blocks.Add(p);
+                if (outRichTextBox.Document.Blocks.LastBlock.Foreground != Brushes.Black)
+                {
+                    Paragraph p = new Paragraph(new Run(v + "\n"));
+                    p.Margin = new Thickness(0);
+                    p.Foreground = Brushes.Black;
+                    p.FontSize = 12;
+                    outRichTextBox.Document.Blocks.Add(p);
+                }
+                else
+                    outRichTextBox.AppendText(v + "\n");
+                outRichTextBox.ScrollToEnd();
             }
-            else
-                outRichTextBox.AppendText(v + "\n");
-            outRichTextBox.ScrollToEnd();
         }
 
         private void ButtonGPTMD_Click(object sender, RoutedEventArgs e)
         {
-            string errorMessage = VerifyState(Task.GPTMD);
-            if (errorMessage != null)
-            {
-                ErrorOutput(errorMessage);
-                return;
-            }
             GPTMDParamsObject gpo = new GPTMDParamsObject(checkBoxMonoisotopic.IsChecked.Value);
-            var t = new Thread(() => DoTask(Task.GPTMD, po, gpo));
+            var t = new Thread(() => DoTask(MyTaskEnum.GPTMD, po, gpo));
             t.IsBackground = true;
             t.Start();
         }
@@ -637,6 +670,88 @@ namespace GoodGUI
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
+        }
+
+        private void TabSelectionChanges(object sender, SelectionChangedEventArgs e)
+        {
+            TabControl tabControl = sender as TabControl; // e.Source could have been used instead of sender as well
+            if (dataGridDatafiles != null)
+            {
+                if (tabControl != null && dataGridDatafiles.Columns.Count > 0)
+                {
+                    if (tabControl.SelectedIndex == 2)
+                        //GPTMD - show extra column
+                        modificationsDataGrid.Columns[0].Visibility = Visibility.Visible;
+
+                    else
+                        // Hide extra column
+                        modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
+                }
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
+            unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(@"unimod_tables.xml");
+            uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(@"ptmlist.txt");
+
+        }
+
+        private void RunTasks_Click(object sender, RoutedEventArgs e)
+        {
+
+            var t = new Thread(() => DoAllTasks(taskList, rawDataAndResultslist, xMLdblist, ModFileList));
+            t.IsBackground = true;
+            t.Start();
+        }
+
+        private void DoAllTasks(ObservableCollection<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModList> searchfileList)
+        {
+            po.startingAllTasks();
+            foreach (var ok in taskList)
+            {
+                ok.DoTask(rawDataAndResultslist, xMLdblist, searchfileList, po);
+                po.refreshTask();
+            }
+            po.FinishedAllTasks();
+        }
+
+        private ObservableCollection<XMLdb> AddAndUncheck(ObservableCollection<XMLdb> xMLdblist, List<string> currentXmlDbList)
+        {
+            throw new NotImplementedException();
+        }
+
+        private ObservableCollection<RawData> AddAndUncheck(ObservableCollection<RawData> rawDataAndResultslist, List<string> currentRawFileList)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ClearTasks_Click(object sender, RoutedEventArgs e)
+        {
+            taskList.Clear();
+            taskList.Add(new MyTask(-1));
+            highlightedTaskIndex = 0;
+            RunTasksButton.IsEnabled = false;
+            UpdateTaskStuff();
+        }
+
+        private void RemoveTask_Click(object sender, RoutedEventArgs e)
+        {
+            if (highlightedTaskIndex < tasksDataGrid.Items.Count - 1)
+                taskList.RemoveAt(highlightedTaskIndex);
+            UpdateTaskStuff();
+
+        }
+
+        private void addTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            var he = new MyTask(taskTabControl.SelectedIndex);
+            SetTaskValues(he);
+            taskList.Insert(tasksDataGrid.Items.Count - 1, he);
+            highlightedTaskIndex = tasksDataGrid.Items.Count - 1;
+            RunTasksButton.IsEnabled = true;
         }
     }
 }

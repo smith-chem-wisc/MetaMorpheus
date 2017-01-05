@@ -50,17 +50,19 @@ namespace FragmentGeneration
             {
                 Console.WriteLine("Generating indices...");
 
-                IndexParams indexParams = new IndexParams(hm, variableModifications, fixedModifications, localizeableModifications, protease);
-                IndexEngine indexEngine = new IndexEngine(indexParams);
-                IndexResults indexResults = (IndexResults)indexEngine.Run();
-                peptideIndex = indexResults.peptideIndex;
-                fragmentIndexDict = indexResults.fragmentIndexDict;
+                //IndexParams indexParams = new IndexParams(hm, variableModifications, fixedModifications, localizeableModifications, protease);
+                //IndexEngine indexEngine = new IndexEngine(indexParams);
+                //IndexResults indexResults = (IndexResults)indexEngine.Run();
+                //peptideIndex = indexResults.peptideIndex;
+                //fragmentIndexDict = indexResults.fragmentIndexDict;
+                peptideIndex = null;
+                fragmentIndexDict = null;
 
-                Console.WriteLine("Writing peptide index...");
-                writePeptideIndex(peptideIndex, peptideIndexFile);
-                Console.WriteLine("Writing fragment index...");
-                writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                Console.WriteLine("Done Writing fragment index");
+                //Console.WriteLine("Writing peptide index...");
+                //writePeptideIndex(peptideIndex, peptideIndexFile);
+                //Console.WriteLine("Writing fragment index...");
+                //writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
+                //Console.WriteLine("Done Writing fragment index");
             }
             else
             {

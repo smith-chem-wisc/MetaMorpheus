@@ -6,7 +6,7 @@ using System;
 
 namespace IndexSearchAndAnalyze
 {
-    public class SearchParams : MyParams
+    public class ModernSearchParams : MyParams
     {
         public List<MorpheusModification> fixedModifications { get; private set; }
         public List<int>[] fragmentIndex { get; private set; }
@@ -21,7 +21,7 @@ namespace IndexSearchAndAnalyze
         public int spectraFileIndex { get; private set; }
         public List<MorpheusModification> variableModifications { get; private set; }
 
-        public SearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes)
+        public ModernSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes, Action<string> a1, Action<int> a2) : base(a1, a2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;

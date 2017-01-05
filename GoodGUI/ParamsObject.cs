@@ -33,7 +33,7 @@ namespace GoodGUI
         public event EventHandler<string> outRichTextBoxHandler;
 
         public event EventHandler outSuccessfullyStartingTaskHandler;
-
+        public event EventHandler refreshBetweenTasksHandler;
         public event EventHandler outSuccessfullyFinishedTaskHandler;
 
         public event EventHandler<string> SuccessfullyFinishedFileHandler;
@@ -48,9 +48,13 @@ namespace GoodGUI
             outTextBoxHandler?.Invoke(this, v);
         }
 
-        internal void startingTask()
+        internal void startingAllTasks()
         {
             outSuccessfullyStartingTaskHandler?.Invoke(this, null);
+        }
+        internal void refreshTask()
+        {
+            refreshBetweenTasksHandler?.Invoke(this, null);
         }
 
         internal void ReportProgress(int v)
@@ -68,7 +72,7 @@ namespace GoodGUI
             SuccessfullyFinishedFileHandler?.Invoke(this, v);
         }
 
-        internal void FinishedTask()
+        internal void FinishedAllTasks()
         {
             outSuccessfullyFinishedTaskHandler?.Invoke(this, null);
         }

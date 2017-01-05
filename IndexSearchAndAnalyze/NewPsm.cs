@@ -25,32 +25,20 @@ namespace IndexSearchAndAnalyze
 
         public List<double> LocalizedScores;
 
-        public Dictionary<ProductType, Dictionary<double, double>> matchedIonsList;
+        public Dictionary<ProductType, double[]> matchedIonsList;
 
-        public double ScoreFromMatch
-        {
-            get
-            {
-                return matchedIonsList.SelectMany(b => b.Value).Count() + matchedIonsList.SelectMany(b => b.Value).Select(b => b.Value / TotalIonCurrent).Sum();
-            }
-        }
+        public double ScoreFromMatch;
 
-        public NewPsm(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
+        public NewPsm(double scanPrecursorMZ, int scanNumber, double scanRT,int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
         {
-            double scanPrecursorMZ;
-            thisScan.TryGetSelectedIonGuessMonoisotopicMZ(out scanPrecursorMZ);
             this.scanPrecursorMZ = scanPrecursorMZ;
-            this.scanNumber = thisScan.OneBasedScanNumber;
-            int scanPrecursorCharge;
-            thisScan.TryGetSelectedIonGuessChargeStateGuess(out scanPrecursorCharge);
+            this.scanNumber = scanNumber;
             this.scanPrecursorCharge = scanPrecursorCharge;
-            this.scanRT = thisScan.RetentionTime;
+            this.scanRT = scanRT;
             this.scanPrecursorMass = scanPrecursorMZ.ToMass(scanPrecursorCharge);
-            double scanPrecursorIntensity;
-            thisScan.TryGetSelectedIonGuessMonoisotopicIntensity(out scanPrecursorIntensity);
-            this.scanPrecursorIntensity = scanPrecursorIntensity;
-            this.scanExperimentalPeaks = thisScan.MassSpectrum.Count;
-            this.TotalIonCurrent = thisScan.TotalIonCurrent;
+            this.scanPrecursorIntensity = precursorIntensity;
+            this.scanExperimentalPeaks = scanExperimentalPeaksCount;
+            this.TotalIonCurrent = totalIonCurrent;
             this.ScoreFromSearch = score;
             this.spectraFileIndex = spectraFileIndex;
             this.peptide = theBestPeptide;
@@ -69,14 +57,14 @@ namespace IndexSearchAndAnalyze
             sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScoreFromSearch.ToString("F3", CultureInfo.InvariantCulture));
+            sb.Append(ScoreFromSearch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
             foreach (var kvp in matchedIonsList)
-                sb.Append("[" + string.Join(",", kvp.Value.Keys.OrderBy(b => b).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
             sb.Append("]" + '\t');
 
-            sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Count())) + '\t');
+            sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Where(c => c > 0).Count())) + '\t');
 
             sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 

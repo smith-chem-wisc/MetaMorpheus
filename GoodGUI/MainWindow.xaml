@@ -5,93 +5,108 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GoodGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Height="736.267" Width="1024"
-        Drop="Window_Drop" AllowDrop="true">
+        Title="MetaMorpheus Not a release" Height="800" Width="1524"
+        Drop="Window_Drop" AllowDrop="true" Loaded="Window_Loaded">
     <StackPanel Margin="5">
-        <Border Name="TopThing" BorderBrush="Black" BorderThickness="2" Grid.Column="1" Margin="5">
-            <StackPanel Margin="5">
-                <Label x:Name="xmlLabel" Content="XML Databases" HorizontalAlignment="Center" />
-                <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100">
-                    <DataGrid.Resources>
-                        <Style TargetType="DataGridCell">
-                            <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
-                        </Style>
-                    </DataGrid.Resources>
-                </DataGrid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button x:Name="AddXML" Content="Add" Click="AddXML_Click" />
-                </StackPanel>
-            </StackPanel>
-        </Border>
-        <Border BorderBrush="Black" BorderThickness="2" Grid.Column="1" Margin="5">
-            <StackPanel Name="DatafilesandresultsPanel" Margin="5">
-                <Label x:Name="Datafilesandresults" Content="Datafiles and results" HorizontalAlignment="Center" />
-                <DataGrid x:Name="dataGridDatafilesAndResults" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
-                    <DataGrid.Resources>
-                        <Style TargetType="DataGridCell">
-                            <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
-                        </Style>
-                    </DataGrid.Resources>
-                </DataGrid>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button x:Name="AddRaw" Content="Add" Click="AddRaw_Click" />
-                    <Button x:Name="ClearRaw" Content="Clear" Click="ClearRaw_Click" />
-                </StackPanel>
-            </StackPanel>
-        </Border>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Name="LeftBottomPanel">
+            <StackPanel Name="LeftPanel">
                 <Border BorderBrush="Black" BorderThickness="2" Margin="5">
-                    <TabControl>
-                        <TabItem Header="Search">
-                            <StackPanel Margin="5">
-                                <DataGrid x:Name="dataGridSearch" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100" />
+                    <DockPanel>
+                        <TabControl Name ="taskTabControl" SelectionChanged="TabSelectionChanges" SelectedIndex="0" DockPanel.Dock="Top" Height="200">
+                            <TabItem Header="Calibrate">
+                                <StackPanel Margin="5">
+                                    <Label Content="Initial Search Parameters:" />
+                                    <Border BorderBrush="Black" BorderThickness="1" Margin="10,0,0,0" Padding="5">
+                                    </Border>
+                                    <Label Content="Calibration Parameters:" />
+                                    <Border BorderBrush="Black" BorderThickness="1" Margin="10,0,0,0" Padding="5">
+                                        <StackPanel Orientation="Vertical">
+                                            <Label Content="Calibration Parameter 1" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="Search">
+                                <StackPanel Margin="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="1*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="5">
+                                            <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys and output FDR" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Label x:Name="label3" Content="Accepted Precursor Mass Errors" />
+                                                <TextBox x:Name="acceptedPrecursorMassErrorsTextBox" TextWrapping="Wrap" Text="0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </TabItem>
+                            <TabItem Header="GPTMD">
+
+                                <StackPanel Margin="5">
+                                    <Label Content="Common (Initial and Final) Search Parameters:" />
+                                    <Border BorderBrush="Black" BorderThickness="1" Margin="10,0,0,0" Padding="5">
+                                        <StackPanel Orientation="Vertical"></StackPanel>
+                                    </Border>
+                                    <Label Content="GPTMD Parameters:" />
+                                    <Border BorderBrush="Black" BorderThickness="1" Margin="10,0,0,0" Padding="5">
+                                        <StackPanel Orientation="Vertical">
+                                            <CheckBox x:Name="checkBoxMonoisotopic" Content="Allow monoisotopic errors" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Label Content="Final Search Parameters:" />
+                                    <Border BorderBrush="Black" BorderThickness="1" Margin="10,0,0,0" Padding="5">
+                                        <StackPanel Orientation="Vertical">
+                                            <Label Content="Final notches:" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </TabItem>
+                        </TabControl>
+                        <Button x:Name="addTaskButton" Content="Add task!" Click="addTaskButton_Click" DockPanel.Dock="Bottom" Height="20" />
+                        <Border BorderBrush="Black" BorderThickness="1" Margin="10,0,0,0" Padding="5"  DockPanel.Dock="Bottom" Height="300">
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal">
+                                    <Label x:Name="label2" Content="Precursor Mass Tolerance" />
+                                    <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="10" />
+                                    <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
+                                </StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="5">
-                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys and output FDR" />
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label x:Name="label_Copy" Content="Protease" />
-                                            <ComboBox x:Name="comboBox" />
-                                        </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox" Text="2" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" Text="4096" />
+                                            <Label x:Name="label_Copy" Content="Protease" />
+                                            <ComboBox x:Name="proteaseComboBox" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
-                                            <Label x:Name="labelmm" Content="Max Variable Mods per peptide" />
-                                            <TextBox x:Name="maxModificationsTextBox" Text="3" />
+                                            <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
+                                            <TextBox x:Name="maxModificationIsoformsTextBox" Text="4096" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <StackPanel Orientation="Horizontal">
                                             <Label x:Name="label1_Copy" Content="Initiator Methionine" />
-                                            <ComboBox x:Name="cboInitiatorMethionineBehavior" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label x:Name="label2" Content="Precursor Mass Tolerance" />
-                                            <TextBox x:Name="textBox2" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="5" />
-                                            <ComboBox x:Name="comboBox1" HorizontalAlignment="Left" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Label x:Name="label3" Content="Accepted Precursor Mass Errors" />
-                                            <TextBox x:Name="textBox3" TextWrapping="Wrap" Text="0" />
+                                            <ComboBox x:Name="initiatorMethionineBehaviorComboBox" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
-                                            <TextBox x:Name="textBox2_Copy" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="0.01" />
-                                            <ComboBox x:Name="comboBox1_Copy" HorizontalAlignment="Left" />
+                                            <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Text="0.01" />
+                                            <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal">
                                             <Label x:Name="label4" Content="Ions to search" />
@@ -100,37 +115,107 @@
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
-                                <Button x:Name="ButtonSearch" Content="Search" Click="ButtonSearch_Click" />
+                                <DataGrid x:Name="modificationsDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
                             </StackPanel>
-                        </TabItem>
-                        <TabItem Header="Calibrate">
-                            <StackPanel Margin="5">
-                                <Button x:Name="ButtonCalibrate" Content="Calibrate" Click="ButtonCalibrate_Click" />
-                            </StackPanel>
-                        </TabItem>
-                        <TabItem Header="GPTMD">
-                            <StackPanel Margin="5">
-                                <Label Content="Add Modifications from:" />
-                                <DataGrid x:Name="dataGridGPTMD" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100" />
-                                <CheckBox x:Name="checkBoxMonoisotopic" Content="Allow monoisotopic errors" />
-                                <Button x:Name="ButtonGPTMD" Content="GPTMD" Click="ButtonGPTMD_Click" />
-                            </StackPanel>
-                        </TabItem>
-                    </TabControl>
+                        </Border>
+                        <Label Content="Search Parameters:" DockPanel.Dock="Bottom" Height="30"/>
+                    </DockPanel>
                 </Border>
-                <Button x:Name="button" Content="HELP" Click="button_Click" />
-            </StackPanel>
-            <Border BorderBrush="Black" BorderThickness="2" Margin="5" Grid.Column="1">
-                <StackPanel  Margin="5">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
-                        <Label x:Name="outLabelStatus" Content="Ready" HorizontalAlignment="Center" />
+                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
+                    <StackPanel  Margin="5">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Label x:Name="labelTasks" Content="Tasks:" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" SelectionChanged="TasksDataGrid_SelectionChanged">
+                            <DataGrid.Resources>
+                                <ResourceDictionary>
+                                    <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsMySelected}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                    <Style TargetType="{x:Type DataGridRow}">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsMySelected}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ResourceDictionary>
+                            </DataGrid.Resources>
+                        </DataGrid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="ClearTasks" Content="Clear" Click="ClearTasks_Click" />
+                            <Button x:Name="RemoveTask" Content="Remove Task" Click="RemoveTask_Click" />
+                        </StackPanel>
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunTasks_Click" />
                     </StackPanel>
-                    <TextBox x:Name="outTextBox" Text="Ready" IsReadOnly="True" />
-                    <ProgressBar x:Name="outProgressBar" Height="15" />
-                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" />
-                </StackPanel>
-            </Border>
+                </Border>
+            </StackPanel>
+            <StackPanel Name="RightPanel" Grid.Column="2">
+                <Border Name="TopThing" BorderBrush="Black" BorderThickness="2" Grid.Column="1" Margin="5">
+                    <StackPanel Margin="5">
+                        <Label x:Name="xmlLabel" Content="XML Databases" HorizontalAlignment="Center" />
+                        <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridCell">
+                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                                </Style>
+                            </DataGrid.Resources>
+                        </DataGrid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="AddXML" Content="Add" Click="AddXML_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="2" Grid.Column="1" Margin="5">
+                    <StackPanel x:Name="DatafilesStackPanel" Margin="5">
+                        <Label x:Name="DatafilesLabel" Content="Datafiles" HorizontalAlignment="Center" />
+                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridCell">
+                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                                </Style>
+                            </DataGrid.Resources>
+                        </DataGrid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="AddRaw" Content="Add" Click="AddRaw_Click" />
+                            <Button x:Name="ClearRaw" Content="Clear" Click="ClearRaw_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
+                    <StackPanel  Margin="5">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
+                            <Label x:Name="outLabelStatus" Content="Ready" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <TextBox x:Name="outTextBox" Text="Ready" IsReadOnly="True" />
+                        <ProgressBar x:Name="outProgressBar" Height="15" />
+                        <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </Grid>
     </StackPanel>
 </Window>

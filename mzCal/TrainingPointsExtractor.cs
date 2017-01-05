@@ -1,6 +1,8 @@
 ﻿using Chemistry;
+using IndexSearchAndAnalyze;
 using MassSpectrometry;
 using MathNet.Numerics.Statistics;
+using MetaMorpheus;
 using Proteomics;
 using Spectra;
 using System;
@@ -14,7 +16,7 @@ namespace mzCal
     {
         private const int numFragmentsNeeded = 10;
 
-        public static List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Identifications identifications, SoftwareLockMassParams p, HashSet<int> matchesToExclude)
+        public static List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<NewPsmWithFDR> identifications, SoftwareLockMassParams p, HashSet<int> matchesToExclude)
         {
             p.OnOutput("Extracting data points:");
             // The final training point list
@@ -27,7 +29,8 @@ namespace mzCal
             // Loop over identifications
             for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
             {
-                if (!identifications.passThreshold(matchIndex))
+                var identification = identifications[matchIndex];
+                if (identification.QValue > 0.01)
                     break;
 
                 // Progress
@@ -35,7 +38,7 @@ namespace mzCal
                     p.OnProgress(100 * matchIndex / numIdentifications);
 
                 // Skip decoys, they are for sure not there!
-                if (identifications.isDecoy(matchIndex))
+                if (identification.isDecoy)
                     continue;
 
                 // Skip exclusions! These are for testing
@@ -43,31 +46,37 @@ namespace mzCal
                     continue;
 
                 // Each identification has an MS2 spectrum attached to it.
-                var spectrumID = identifications.ms2spectrumID(matchIndex);
-                int ms2spectrumIndex = GetOneBasedSpectrumIndexFromID(spectrumID, myMsDataFile);
+                int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
 
                 // Get the peptide, don't forget to add the modifications!!!!
-                Peptide peptideBuilder = new Peptide(identifications.PeptideSequenceWithoutModifications(matchIndex));
-                for (int i = 0; i < identifications.NumModifications(matchIndex); i++)
-                    peptideBuilder.AddModification(new ChemicalFormulaModification(p.getFormulaFromDictionary(identifications.modificationDictionary(matchIndex, i), identifications.modificationAcession(matchIndex, i))), identifications.modificationLocation(matchIndex, i));
-                Peptide peptide = peptideBuilder;
-                int peptideCharge = identifications.chargeState(matchIndex);
+                var peptide = identification.thisPSM.peptideWithSetModifications;
+                if (peptide.numVariableMods > 0)
+                    continue;
+                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
                 #region watch
 
                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                 {
                     p.OnWatch("ms2spectrumIndex: " + ms2spectrumIndex);
-                    p.OnWatch(" calculatedMassToCharge: " + identifications.calculatedMassToCharge(matchIndex));
-                    p.OnWatch(" peptide: " + peptide.GetSequenceWithModifications());
+                    p.OnWatch(" peptide: " + peptide.Sequence);
                 }
 
                 #endregion watch
 
                 int numFragmentsIdentified = -1;
                 List<LabeledDataPoint> candidateTrainingPointsForPeptide = new List<LabeledDataPoint>();
+                Proteomics.Peptide coolPeptide = null;
+                try
+                {
+                    coolPeptide = new Proteomics.Peptide(peptide.Sequence);
+                }
+                catch
+                {
+                    continue;
+                }
 
-                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), peptide, peptideCharge, p, out numFragmentsIdentified);
+                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, p, out numFragmentsIdentified);
 
                 //SoftwareLockMassRunner.WriteDataToFiles(candidateTrainingPointsForPeptide, ms2spectrumIndex.ToString());
 
@@ -79,7 +88,7 @@ namespace mzCal
 
                 // Calculate isotopic distribution of the full peptide
 
-                IsotopicDistribution dist = new IsotopicDistribution(peptideBuilder.GetChemicalFormula(), p.fineResolution, 0.001);
+                IsotopicDistribution dist = new IsotopicDistribution(coolPeptide.GetChemicalFormula(), p.fineResolution, 0.001);
 
                 double[] masses = new double[dist.Masses.Count];
                 double[] intensities = new double[dist.Intensities.Count];
@@ -130,7 +139,7 @@ namespace mzCal
             return oneBasedScanNumber;
         }
 
-        private static List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Peptide peptide, int peptideCharge, SoftwareLockMassParams p, out int candidateFragmentsIdentified)
+        private static List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, SoftwareLockMassParams p, out int candidateFragmentsIdentified)
         {
             List<LabeledDataPoint> myCandidatePoints = new List<LabeledDataPoint>();
 

@@ -75,7 +75,7 @@ namespace IndexSearchAndAnalyze
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.FastUnsortedProductMasses(lp))
+                            foreach (var huhu in yyy.FastSortedProductMasses(lp))
                             {
                                 float rounded = (float)Math.Round(huhu, 3);
                                 List<int> value;

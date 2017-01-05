@@ -3,6 +3,7 @@ using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using MetaMorpheus;
+using mzCal;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -50,9 +51,9 @@ namespace FragmentGeneration
 
             ObservableCollection<ModList> collectionOfModLists = new ObservableCollection<ModList>();
 
-            collectionOfModLists.Add(new ModList("p.txt", true, false, false));
-            collectionOfModLists.Add(new ModList("v.txt", false, true, false));
-            collectionOfModLists.Add(new ModList("f.txt", false, false, true));
+            collectionOfModLists.Add(new ModList("p.txt", false, true, false, false));
+            collectionOfModLists.Add(new ModList("v.txt", false, false, true, false));
+            collectionOfModLists.Add(new ModList("f.txt", false, false, false, true));
 
             bool doFDRanalysis = true;
 
@@ -77,56 +78,56 @@ namespace FragmentGeneration
 
             var protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
 
-            List<CompactPeptide> peptideIndex;
-            Dictionary<float, List<int>> fragmentIndexDict;
+            //List<CompactPeptide> peptideIndex;
+            // Dictionary<float, List<int>> fragmentIndexDict;
 
-            Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, xMLdblist, collectionOfModLists, doFDRanalysis, variableModifications, fixedModifications, localizeableModifications, proteinList, protease);
+            // Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, xMLdblist, collectionOfModLists, doFDRanalysis, variableModifications, fixedModifications, localizeableModifications, proteinList, protease);
 
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            //var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+            //var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
             List<SearchMode> searchModes = new List<SearchMode>();
 
-            searchModes.Add(new SearchMode("open", (double a) => { return true; }));
-            searchModes.Add(new SearchMode("greaterThan-187", (double a) => { return a > -187; }));
-            searchModes.Add(new SearchMode("greaterThan-500", (double a) => { return a > -500; }));
-            searchModes.Add(new SearchMode("greaterThan-6500", (double a) => { return a > -6500; }));
+            //    searchModes.Add(new SearchMode("open", (double a) => { return true; }));
+            //    searchModes.Add(new SearchMode("greaterThan-187", (double a) => { return a > -187; }));
+            //    searchModes.Add(new SearchMode("greaterThan-500", (double a) => { return a > -500; }));
+            //    searchModes.Add(new SearchMode("greaterThan-6500", (double a) => { return a > -6500; }));
 
-            double[] exclude = Exclusions.PopulateExcludeList();
+            //    double[] exclude = Exclusions.PopulateExcludeList();
 
-            double tolExclude = 0.0025;
+            //    double tolExclude = 0.0025;
 
-            searchModes.Add(new SearchMode("greaterThan-187withExclusions", (double a) =>
-            {
-                return a > -187 && Exclusions.DoNotExclude(a, tolExclude, exclude);
-            }));
+            //    searchModes.Add(new SearchMode("greaterThan-187withExclusions", (double a) =>
+            //    {
+            //        return a > -187 && Exclusions.DoNotExclude(a, tolExclude, exclude);
+            //    }));
 
-            searchModes.Add(new SearchMode("greaterThan-500withExclusions", (double a) =>
-            {
-                return a > -500 && Exclusions.DoNotExclude(a, tolExclude, exclude);
-            }));
-            searchModes.Add(new SearchMode("greaterThan-6500withExclusions", (double a) =>
-            {
-                return a > -6500 && Exclusions.DoNotExclude(a, tolExclude, exclude);
-            }));
+            //    searchModes.Add(new SearchMode("greaterThan-500withExclusions", (double a) =>
+            //    {
+            //        return a > -500 && Exclusions.DoNotExclude(a, tolExclude, exclude);
+            //    }));
+            //    searchModes.Add(new SearchMode("greaterThan-6500withExclusions", (double a) =>
+            //    {
+            //        return a > -6500 && Exclusions.DoNotExclude(a, tolExclude, exclude);
+            //    }));
 
-            searchModes.Add(new SearchMode("500daltonWideSearch", (double a) => { return a > -500 && a < 500; }));
-            searchModes.Add(new SearchMode("oldRangeWide", (double a) => { return a > -121.5 && a < 220.5; }));
-            searchModes.Add(new SearchMode("oldRangeComb", (double a) => { return a > -121.5 && a < 220.5 && (a % 1 > 0.9 || (a % 1 < 0.2 && a % 1 > -0.1) || a % 1 < -0.8); }));
+            //    searchModes.Add(new SearchMode("500daltonWideSearch", (double a) => { return a > -500 && a < 500; }));
+            //    searchModes.Add(new SearchMode("oldRangeWide", (double a) => { return a > -121.5 && a < 220.5; }));
+            //    searchModes.Add(new SearchMode("oldRangeComb", (double a) => { return a > -121.5 && a < 220.5 && (a % 1 > 0.9 || (a % 1 < 0.2 && a % 1 > -0.1) || a % 1 < -0.8); }));
             searchModes.Add(new SearchMode("withinhalfAdaltonOfZero", (double a) => { return a > -0.5 && a < 0.5; }));
-            double tol = 0.0075;
-            searchModes.Add(new SearchMode("somenotches", (double a) =>
-        {
-            return ((a > -0.5 && a < 0.5) ||
-                    (a > -17.026549 - tol && a < -17.026549 + tol) ||
-                    (a > 0.984016 - tol && a < 0.984016 + tol) ||
-                    (a > 15.994915 - tol && a < 15.994915 + tol) ||
-                    (a > 21.981943 - tol && a < 21.981943 + tol) ||
-                    (a > 31.989829 - tol && a < 31.989829 + tol) ||
-                    (a > 57.021464 - tol && a < 57.021464 + tol) ||
-                    (a > 79.966331 - tol && a < 79.966331 + tol) ||
-                    (a > -18.010565 - tol && a < -18.010565 + tol));
-        }));
+            //    double tol = 0.0075;
+            //    searchModes.Add(new SearchMode("somenotches", (double a) =>
+            //{
+            //    return ((a > -0.5 && a < 0.5) ||
+            //            (a > -17.026549 - tol && a < -17.026549 + tol) ||
+            //            (a > 0.984016 - tol && a < 0.984016 + tol) ||
+            //            (a > 15.994915 - tol && a < 15.994915 + tol) ||
+            //            (a > 21.981943 - tol && a < 21.981943 + tol) ||
+            //            (a > 31.989829 - tol && a < 31.989829 + tol) ||
+            //            (a > 57.021464 - tol && a < 57.021464 + tol) ||
+            //            (a > 79.966331 - tol && a < 79.966331 + tol) ||
+            //            (a > -18.010565 - tol && a < -18.010565 + tol));
+            //}));
 
             var allPsms = new List<NewPsm>[searchModes.Count];
             for (int j = 0; j < searchModes.Count; j++)
@@ -187,10 +188,10 @@ namespace FragmentGeneration
                                                               @"C:\Users\stepa\Data\CalibrationPaperData\Step2\Jurkat\Calib-0.1.2\120426_Jurkat_highLC_Frac28-Calibrated.mzML" };
             }
 
-            var rawDataAndResultslist = new ObservableCollection<RawDataAndResults>();
+            var rawDataAndResultslist = new ObservableCollection<RawData>();
 
             foreach (var fileName in dataFiles)
-                rawDataAndResultslist.Add(new RawDataAndResults(fileName, null, null));
+                rawDataAndResultslist.Add(new RawData(fileName));
 
             string output_folder = Path.Combine(Path.GetDirectoryName(dataFiles[0]), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
@@ -209,34 +210,56 @@ namespace FragmentGeneration
                 Console.WriteLine("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile);
+                    myMsDataFile = new Mzml(origDataFile, 400);
                 else
                     myMsDataFile = new ThermoRawFile(origDataFile);
                 Console.WriteLine("Opening spectra file...");
                 myMsDataFile.Open();
                 Console.WriteLine("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-                SearchParams searchParams = new SearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes);
-                SearchEngine searchEngine = new SearchEngine(searchParams);
-                SearchResults searchResults = (SearchResults)searchEngine.Run();
-                List<NewPsm>[] newPsms = searchResults.newPsms;
 
-                Console.WriteLine(searchResults);
+                //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
+                //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
+                //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
 
-                for (int i = 0; i < searchModes.Count; i++)
-                    allPsms[i].AddRange(newPsms[i]);
+                //Console.WriteLine(searchResults);
 
-                AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
-                AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
-                AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                //List<NewPsm> newPsms = searchResults.newPsms;
 
-                Console.WriteLine(analysisResults);
+                //AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes[0], myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
+                //AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
+                //AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+
+                //var identifications = analysisResults.allResultingIdentifications;
+
+                myMsDataFile.Close();
+                myMsDataFile = null;
+
+                //SoftwareLockMassParams a = mzCalIO.mzCalIO.GetReady(dataFiles[spectraFileIndex], identifications[0]);
+                //SoftwareLockMassRunner.Run(a);
+
+                
+                //ModernSearchParams searchParams = new ModernSearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes);
+                //ModernSearchEngine searchEngine = new ModernSearchEngine(searchParams);
+                //ModernSearchResults searchResults = (ModernSearchResults)searchEngine.Run();
+                //List<NewPsm>[] newPsms = searchResults.newPsms;
+
+                //Console.WriteLine(searchResults);
+
+                //for (int i = 0; i < searchModes.Count; i++)
+                //    allPsms[i].AddRange(newPsms[i]);
+
+                //AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s));
+                //AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
+                //AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+
+                //Console.WriteLine(analysisResults);
             }
             if (dataFiles.Count > 1)
             {
-                AnalysisParams analysisParams = new AnalysisParams(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate" + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s));
-                AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
-                AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                //AnalysisParams analysisParams = new AnalysisParams(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate" + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s));
+                //AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
+                //AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
             }
 
             Console.WriteLine("All Done!");

@@ -7,6 +7,7 @@ namespace MetaMorpheus
     public class ModList
     {
         private List<MorpheusModification> mods;
+        public bool Augment { get; set; }
         public bool Localize { get; set; }
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
@@ -26,9 +27,10 @@ namespace MetaMorpheus
 
         public string Description { get; private set; }
 
-        public ModList(string fileName, bool Localize, bool Variable, bool Fixed)
+        public ModList(string fileName, bool Augment,  bool Localize, bool Variable, bool Fixed)
         {
             this.FullFileName = Path.GetFullPath(fileName);
+            this.Augment = Augment;
             this.Localize = Localize;
             this.Variable = Variable;
             this.Fixed = Fixed;

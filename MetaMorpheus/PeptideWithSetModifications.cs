@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace MetaMorpheus
@@ -277,15 +278,20 @@ namespace MetaMorpheus
             get { return modPep.PeptideDescription; }
         }
 
-        public double[] FastUnsortedProductMasses(List<ProductType> productTypes)
+        public double[] FastSortedProductMasses(List<ProductType> productTypes)
         {
             PeptideFragmentMasses p = computeFragmentMasses();
-            int len = (productTypes.Contains(ProductType.b) ? Length - 2 : 0) +
-                      (productTypes.Contains(ProductType.y) ? Length - 1 : 0);
-
-            double[] products = new double[len];
             var PRODUCT_CAPS = ProductCaps.Instance;
-            int i = 0;
+            double[] products1 = null;
+            double[] products2 = null;
+            if (productTypes.Contains(ProductType.b))
+                products1 = new double[Length - 2];
+            if (productTypes.Contains(ProductType.y))
+                products2 = new double[Length - 1];
+
+
+            int i1 = 0;
+            int i2 = 0;
             for (int r = 1; r < Length; r++)
             {
                 foreach (ProductType product_type in productTypes)
@@ -297,20 +303,42 @@ namespace MetaMorpheus
                         switch (product_type)
                         {
                             case ProductType.adot:
+                                throw new NotImplementedException();
                             case ProductType.b:
-                            case ProductType.c:
-                                products[i] = p.cumulativeNTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
-                                i++;
+                                products1[i1] = p.cumulativeNTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
+                                i1++;
                                 break;
+                            case ProductType.c:
+                                throw new NotImplementedException();
 
                             case ProductType.x:
+                                throw new NotImplementedException();
                             case ProductType.y:
-                            case ProductType.zdot:
-                                products[i] = p.cumulativeCTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
-                                i++;
+                                products2[i2] = p.cumulativeCTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
+                                i2++;
                                 break;
+                            case ProductType.zdot:
+                                throw new NotImplementedException();
                         }
                     }
+                }
+            }
+            i1 = 0;
+            i2 = 0;
+            int len = (productTypes.Contains(ProductType.b) ? Length - 2 : 0) +
+                      (productTypes.Contains(ProductType.y) ? Length - 1 : 0);
+            double[] products = new double[len];
+            for (int i = 0; i < len; i++)
+            {
+                if (products1 != null && (products2 == null || (i1 != products1.Length && (i2 == products2.Length || products1[i1] <= products2[i2]))))
+                {
+                    products[i] = products1[i1];
+                    i1++;
+                }
+                else
+                {
+                    products[i] = products2[i2];
+                    i2++;
                 }
             }
             return products;

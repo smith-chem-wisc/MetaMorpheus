@@ -5,14 +5,14 @@ using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
-    public class SearchResults : MyResults
+    public class ModernSearchResults : MyResults
     {
         private int numMS2spectra;
         private int[] numMS2spectraMatched;
 
         public List<NewPsm>[] newPsms { get; private set; }
 
-        public SearchResults(List<NewPsm>[] newPsms, int numMS2spectra, int[] numMS2spectraMatched, SearchParams s) : base(s)
+        public ModernSearchResults(List<NewPsm>[] newPsms, int numMS2spectra, int[] numMS2spectraMatched, ModernSearchParams s) : base(s)
         {
             this.numMS2spectra = numMS2spectra;
             this.numMS2spectraMatched = numMS2spectraMatched;
@@ -22,9 +22,9 @@ namespace IndexSearchAndAnalyze
 
         public override string ToString()
         {
-            var sp = (SearchParams)s;
+            var sp = (ModernSearchParams)s;
             StringBuilder sb = new StringBuilder();
-            sb.Append("SearchResults: ");
+            sb.Append("ModernSearchResults: ");
             sb.Append(base.ToString());
             sb.AppendLine();
             sb.Append("Total ms2 spectra seen: " + numMS2spectra);

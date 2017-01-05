@@ -1,4 +1,4 @@
-Modifications from uniprot from 07-Sep-2016
+Uniprot Modified List
 ---------------------------------------------------------------------------
         UniProt Knowledgebase:
           Swiss-Prot Protein Knowledgebase
