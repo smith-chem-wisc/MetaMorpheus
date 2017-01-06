@@ -30,7 +30,7 @@ namespace Test
             UsefulProteomicsDatabases.Generated.unimod unimodDeserialized = null;
             Dictionary<int, ChemicalFormulaModification> uniprotDeseralized = null;
 
-            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { });
+            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, null, null);
             AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
 
             Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
@@ -39,7 +39,7 @@ namespace Test
             newPsms = new List<NewPsm>[1];
             newPsms[0] = new List<NewPsm>();
 
-            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { });
+            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, unimodDeserialized, uniprotDeseralized, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, null, null);
             analysisEngine = new AnalysisEngine(analysisParams);
             Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
                     .With.Property("Message").EqualTo("proteinList is null"));

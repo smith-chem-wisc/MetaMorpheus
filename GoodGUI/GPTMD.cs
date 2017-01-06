@@ -29,7 +29,7 @@ namespace GoodGUI
             labelStatusHandler?.Invoke(this, e);
         }
 
-        internal void GPTMDD(RawDataAndResults ok, IEnumerable<Protein> allProteins, IEnumerable<Tuple<double, double>> combos, IEnumerable<MorpheusModification> allmods, bool isotopeErrors, string outputFileName)
+        internal void GPTMDD(RawData ok, IEnumerable<Protein> allProteins, IEnumerable<Tuple<double, double>> combos, IEnumerable<MorpheusModification> allmods, bool isotopeErrors, string outputFileName)
         {
             // For each PSM, look at modifications
             string line;
@@ -38,38 +38,37 @@ namespace GoodGUI
             OnOutput("Reading PSMs...");
 
             int modsAdded = 0;
-            using (StreamReader file = new StreamReader(ok.psmsTSVName))
-            {
-                file.ReadLine();
-                while ((line = file.ReadLine()) != null)
-                {
-                    string[] parts = line.Split('\t');
-                    double massDiff = Convert.ToDouble(parts[19]);
-                    foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, allmods, combos))
-                    {
-                        string proteinRange = parts[14].Split('|')[1];
-                        int proteinLength = Convert.ToInt32(new string(proteinRange.TakeWhile(char.IsDigit).ToArray()));
-                        var proteinAcession = parts[13].Split('|')[0];
-                        for (int i = 0; i < parts[12].Length; i++)
-                        {
-                            int indexInProtein = Convert.ToInt32(parts[15]) + i;
+            //using (StreamReader file = new StreamReader(ok.psmsTSVName))
+            //{
+            //    file.ReadLine();
+            //    while ((line = file.ReadLine()) != null)
+            //    {
+            //        string[] parts = line.Split('\t');
+            //        double massDiff = Convert.ToDouble(parts[19]);
+            //        foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, allmods, combos))
+            //        {
+            //            string proteinRange = parts[14].Split('|')[1];
+            //            int proteinLength = Convert.ToInt32(new string(proteinRange.TakeWhile(char.IsDigit).ToArray()));
+            //            var proteinAcession = parts[13].Split('|')[0];
+            //            for (int i = 0; i < parts[12].Length; i++)
+            //            {
+            //                int indexInProtein = Convert.ToInt32(parts[15]) + i;
 
-                            if (ModFits(mod, parts[12][i], i > 0 ? parts[12][i] : parts[11][0], i + 1, parts[12].Length, indexInProtein, proteinLength))
-                            {
-                                if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, string>>();
-                                var theTuple = new Tuple<int, string>(indexInProtein, mod.NameInXML);
-                                if (!Mods[proteinAcession].Contains(theTuple))
-                                {
-                                    Mods[proteinAcession].Add(theTuple);
-                                    modsAdded++;
-                                }
-                            }
-                        }
-                    }
-                }
-                file.Close();
-            }
+            //                if (ModFits(mod, parts[12][i], i > 0 ? parts[12][i] : parts[11][0], i + 1, parts[12].Length, indexInProtein, proteinLength))
+            //                {
+            //                    if (!Mods.ContainsKey(proteinAcession))
+            //                        Mods[proteinAcession] = new HashSet<Tuple<int, string>>();
+            //                    var theTuple = new Tuple<int, string>(indexInProtein, mod.NameInXML);
+            //                    if (!Mods[proteinAcession].Contains(theTuple))
+            //                    {
+            //                        Mods[proteinAcession].Add(theTuple);
+            //                        modsAdded++;
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             OnOutput("Modifications added = " + modsAdded);
 

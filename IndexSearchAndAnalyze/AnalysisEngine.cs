@@ -20,6 +20,7 @@ namespace IndexSearchAndAnalyze
             AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 
+            List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
             for (int j = 0; j < analysisParams.searchModes.Count; j++)
             {
                 PSMwithPeptide[] psmsWithPeptides = new PSMwithPeptide[analysisParams.newPsms[0].Count];
@@ -38,20 +39,22 @@ namespace IndexSearchAndAnalyze
                     }
                 });
 
-                var orderedPsms = psmsWithPeptides.Where(b => b != null).OrderByDescending(b => b.ScoreFromSearch);
+                var orderedPsmsWithPeptides = psmsWithPeptides.Where(b => b != null).OrderByDescending(b => b.ScoreFromSearch);
 
-                var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsms);
-                var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
+                var orderedPsmsWithPeptidesAndFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
+                var limitedpsms_with_fdr = orderedPsmsWithPeptidesAndFDR.Where(b => (b.QValue <= 0.01)).ToList();
                 if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
                 {
                     var hm = MyAnalysis(limitedpsms_with_fdr, analysisParams.unimodDeserialized, analysisParams.uniprotDeseralized);
                     analysisParams.action1(hm, analysisParams.searchModes[j].FileNameAddition);
                 }
 
-                analysisParams.action2(orderedPsmsWithFDR, analysisParams.searchModes[j].FileNameAddition);
+                analysisParams.action2(orderedPsmsWithPeptidesAndFDR, analysisParams.searchModes[j].FileNameAddition);
+
+                yeah[j]= orderedPsmsWithPeptidesAndFDR;
             }
 
-            return new AnalysisResults(analysisParams);
+            return new AnalysisResults(analysisParams, yeah);
         }
 
         private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)

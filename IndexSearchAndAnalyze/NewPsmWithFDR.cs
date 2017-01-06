@@ -8,7 +8,7 @@ namespace IndexSearchAndAnalyze
         private int cumulative_target;
         private int cumulative_decoy;
         public double QValue { get; set; }
-        internal PSMwithPeptide thisPSM;
+        public PSMwithPeptide thisPSM;
 
         public bool isDecoy
         {

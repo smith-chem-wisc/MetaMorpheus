@@ -54,6 +54,19 @@ namespace GoodGUI
             }
         }
 
+        private void NewRefreshBetweenTasks(object sender, EventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewRefreshBetweenTasks(sender, e)));
+            }
+            else
+            {
+                dataGridDatafiles.Items.Refresh();
+                dataGridXMLs.Items.Refresh();
+            }
+        }
+
         private void NewSuccessfullyStartingTask(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
@@ -63,9 +76,9 @@ namespace GoodGUI
             else
             {
                 TopThing.IsEnabled = false;
-                DatafilesandresultsPanel.IsEnabled = false;
-                LeftBottomPanel.IsEnabled = false;
-                dataGridDatafilesAndResults.Items.Refresh();
+                DatafilesStackPanel.IsEnabled = false;
+                LeftPanel.IsEnabled = false;
+                dataGridDatafiles.Items.Refresh();
             }
         }
 
@@ -78,9 +91,9 @@ namespace GoodGUI
             else
             {
                 TopThing.IsEnabled = true;
-                DatafilesandresultsPanel.IsEnabled = true;
-                LeftBottomPanel.IsEnabled = true;
-                dataGridDatafilesAndResults.Items.Refresh();
+                DatafilesStackPanel.IsEnabled = true;
+                LeftPanel.IsEnabled = true;
+                dataGridDatafiles.Items.Refresh();
             }
         }
 

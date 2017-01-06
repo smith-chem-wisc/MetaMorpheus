@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Chemistry;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -76,6 +77,7 @@ namespace MetaMorpheus
                 string database_name = null;
                 float alternative_mass = float.NaN;
                 string labileOrSticky = "Sticky";
+                ChemicalFormula ye = null;
                 while (modsReader.Peek() != -1)
                 {
                     string line = modsReader.ReadLine();
@@ -122,13 +124,17 @@ namespace MetaMorpheus
                                 prevAA = line[5];
                                 break;
 
+                            case "CF":
+                                ye = new ChemicalFormula(line.Substring(5).Replace(" ", string.Empty));
+                                break;
+
                             case "//":
                                 if (feature_type == "MOD_RES" && (!float.IsNaN(monoisotopic_mass_shift)))
                                 {
                                     if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true);
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
                                     if (labileOrSticky.Equals("Sticky") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false);
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false, ye);
                                 }
                                 description = null;
                                 feature_type = null;
@@ -137,6 +143,7 @@ namespace MetaMorpheus
                                 monoisotopic_mass_shift = float.NaN;
                                 alternative_mass = float.NaN;
                                 labileOrSticky = "Sticky";
+                                ye = null;
                                 break;
                         }
                     }
