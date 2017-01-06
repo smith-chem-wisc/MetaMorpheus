@@ -1,4 +1,4 @@
-﻿A list of fixed modifications
+﻿Fixed modifications
 ID   Carbamidomethylation of C anywhere
 FT   MOD_RES
 TG   Cysteine

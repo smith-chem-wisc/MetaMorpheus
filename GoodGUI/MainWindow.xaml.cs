@@ -26,17 +26,15 @@ namespace GoodGUI
         private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
         private static ObservableCollection<GptmdPTMlist> GPTMDfileList = new ObservableCollection<GptmdPTMlist>();
         private static ObservableCollection<ModList> ModFileList = new ObservableCollection<ModList>();
-        private static ObservableCollection<MyTask> taskList = new ObservableCollection<MyTask>();
         private ParamsObject po;
 
-        public int highlightedTaskIndex { get; private set; }
+        private static TaskListWrapper taskListWrapper;
 
-        internal enum MyTaskEnum
+        public enum MyTaskEnum
         {
             Search,
             GPTMD,
-            Calibrate,
-            NewTask
+            Calibrate
         }
 
         public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
@@ -47,20 +45,22 @@ namespace GoodGUI
             InitializeComponent();
 
             mzCalIO.mzCalIO.Load();
+            ObservableCollection<MyTask> taskList = new ObservableCollection<MyTask>();
 
-            modificationsDataGrid.DataContext = ModFileList;
+            // modificationsDataGrid.DataContext = ModFileList;
             dataGridXMLs.DataContext = xMLdblist;
             dataGridDatafiles.DataContext = rawDataAndResultslist;
             tasksDataGrid.DataContext = taskList;
 
-            ModFileList.Add(new ModList("v.txt", false, false, true, false));
-            ModFileList.Add(new ModList("f.txt", false, false, false, true));
-            ModFileList.Add(new ModList("p.txt", false, true, false, false));
-            ModFileList.Add(new ModList("m.txt", true, true, false, false));
-            ModFileList.Add(new ModList("r.txt", false, false, false, false));
-            ModFileList.Add(new ModList("s.txt", false, false, false, false));
+            taskListWrapper = new TaskListWrapper(taskList);
 
-            taskList.Add(new MyTask(-1));
+            ModFileList.Add(new ModList("f.txt"));
+            ModFileList.Add(new ModList("v.txt"));
+            ModFileList.Add(new ModList("p.txt"));
+            ModFileList.Add(new ModList("m.txt"));
+            ModFileList.Add(new ModList("r.txt"));
+            ModFileList.Add(new ModList("s.txt"));
+
 
             // RAW FILES
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw");
@@ -85,21 +85,21 @@ namespace GoodGUI
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\2016-10-21-11-07\04-29-13_B6_Frac1_9uL-Calibrated.psmtsv");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\2016-10-21-15-18\aggregate.psmtsv");
 
-            foreach (Protease protease in ProteaseDictionary.Instance.Values)
-                proteaseComboBox.Items.Add(protease);
-            proteaseComboBox.SelectedIndex = 12;
+            //foreach (Protease protease in ProteaseDictionary.Instance.Values)
+            //    proteaseComboBox.Items.Add(protease);
+            //proteaseComboBox.SelectedIndex = 12;
 
             RegOutput(ProteaseDictionary.Instance.Count + " proteases loaded from proteases.tsv");
-            foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-                initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior.ToLower());
-            initiatorMethionineBehaviorComboBox.SelectedIndex = 2;
+            //foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
+            //    initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior.ToLower());
+            //initiatorMethionineBehaviorComboBox.SelectedIndex = 2;
 
-            precursorMassToleranceComboBox.Items.Add("Da");
-            precursorMassToleranceComboBox.Items.Add("ppm");
-            precursorMassToleranceComboBox.SelectedIndex = 1;
-            productMassToleranceComboBox.Items.Add("Da");
-            productMassToleranceComboBox.Items.Add("ppm");
-            productMassToleranceComboBox.SelectedIndex = 0;
+            //precursorMassToleranceComboBox.Items.Add("Da");
+            //precursorMassToleranceComboBox.Items.Add("ppm");
+            //precursorMassToleranceComboBox.SelectedIndex = 1;
+            //productMassToleranceComboBox.Items.Add("Da");
+            //productMassToleranceComboBox.Items.Add("ppm");
+            //productMassToleranceComboBox.SelectedIndex = 0;
             AminoAcidMasses.LoadAminoAcidMasses();
             RegOutput("Amino acid masses loaded from amino_acids.tsv");
 
@@ -150,113 +150,77 @@ namespace GoodGUI
             po.outLabelStatusHandler += NewoutLabelStatus;
             po.outProgressBarHandler += NewoutProgressBar;
             po.outRichTextBoxHandler += NewoutRichTextBox;
-            po.outSuccessfullyFinishedTaskHandler += NewSuccessfullyFinishedTask;
-            po.outSuccessfullyStartingTaskHandler += NewSuccessfullyStartingTask;
+            po.outSuccessfullyFinishedTaskHandler += NewSuccessfullyFinishedAllTasks;
+            po.outSuccessfullyStartingTaskHandler += NewSuccessfullyStartingAllTasks;
             po.SuccessfullyFinishedFileHandler += NewSuccessfullyFinishedFile;
             po.outTextBoxHandler += NewoutTextBox;
             po.refreshBetweenTasksHandler += NewRefreshBetweenTasks;
 
-            RemoveTask.IsEnabled = false;
-            RunTasksButton.IsEnabled = false;
-            UpdateTaskStuff();
+            UpdateTaskGuiStuff();
         }
 
-        private void TasksDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Need to decide what happened:
-            // If user clicked on one existing one, do something
+        //private void TasksDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    // Need to decide what happened:
+        //    // If user clicked on one existing one, do something
 
-            DataGrid datagrid = sender as DataGrid; // e.Source could have been used instead of sender as well
-            if (datagrid.SelectedIndex >= 0 && datagrid.SelectedIndex != highlightedTaskIndex)
-            {
-                ((MyTask)datagrid.Items[highlightedTaskIndex]).IsMySelected = false;
-                highlightedTaskIndex = datagrid.SelectedIndex;
-                ((MyTask)datagrid.Items[highlightedTaskIndex]).IsMySelected = true;
-                datagrid.Items.Refresh();
-                UpdateTaskStuff();
-            }
-        }
+        //    DataGrid datagrid = sender as DataGrid; // e.Source could have been used instead of sender as well
+        //    if (datagrid.SelectedIndex >= 0 && datagrid.SelectedIndex != highlightedTaskIndex)
+        //    {
+        //        ((MyTask)datagrid.Items[highlightedTaskIndex]).IsMySelected = false;
+        //        highlightedTaskIndex = datagrid.SelectedIndex;
+        //        ((MyTask)datagrid.Items[highlightedTaskIndex]).IsMySelected = true;
+        //        datagrid.Items.Refresh();
+        //        //UpdateTaskStuff();
+        //    }
+        //}
 
-        private void UpdateTaskStuff()
-        {
-            if (tasksDataGrid.Items.Count > 0)
-            {
-                var selectedTask = tasksDataGrid.Items[highlightedTaskIndex] as MyTask;
-                if (selectedTask != null)
-                {
-                    switch (selectedTask.taskType)
-                    {
-                        case MyTaskEnum.Calibrate:
-                            taskTabControl.SelectedIndex = 0;
-                            ((Control)taskTabControl.Items[0]).IsEnabled = true;
-                            ((Control)taskTabControl.Items[1]).IsEnabled = false;
-                            ((Control)taskTabControl.Items[2]).IsEnabled = false;
-                            addTaskButton.IsEnabled = false;
-                            RemoveTask.IsEnabled = true;
-                            break;
-                        case MyTaskEnum.Search:
-                            taskTabControl.SelectedIndex = 1;
-                            ((Control)taskTabControl.Items[0]).IsEnabled = false;
-                            ((Control)taskTabControl.Items[1]).IsEnabled = true;
-                            ((Control)taskTabControl.Items[2]).IsEnabled = false;
-                            addTaskButton.IsEnabled = false;
-                            RemoveTask.IsEnabled = true;
-                            break;
-                        case MyTaskEnum.GPTMD:
-                            taskTabControl.SelectedIndex = 2;
-                            ((Control)taskTabControl.Items[0]).IsEnabled = false;
-                            ((Control)taskTabControl.Items[1]).IsEnabled = false;
-                            ((Control)taskTabControl.Items[2]).IsEnabled = true;
-                            addTaskButton.IsEnabled = false;
-                            RemoveTask.IsEnabled = true;
-                            break;
-                        case MyTaskEnum.NewTask:
-                            ((Control)taskTabControl.Items[0]).IsEnabled = true;
-                            ((Control)taskTabControl.Items[1]).IsEnabled = true;
-                            ((Control)taskTabControl.Items[2]).IsEnabled = true;
-                            addTaskButton.IsEnabled = true;
-                            RemoveTask.IsEnabled = false;
-                            break;
-                    }
-                    SetTextBoxValues(selectedTask);
-                }
-            }
-        }
+        //private void UpdateTaskStuff()
+        //{
+        //    if (tasksDataGrid.Items.Count > 0)
+        //    {
+        //        var selectedTask = tasksDataGrid.Items[highlightedTaskIndex] as MyTask;
+        //        if (selectedTask != null)
+        //        {
+        //            switch (selectedTask.taskType)
+        //            {
+        //                case MyTaskEnum.Calibrate:
+        //                    taskTabControl.SelectedIndex = 0;
+        //                    ((Control)taskTabControl.Items[0]).IsEnabled = true;
+        //                    ((Control)taskTabControl.Items[1]).IsEnabled = false;
+        //                    ((Control)taskTabControl.Items[2]).IsEnabled = false;
+        //                    addTaskButton.IsEnabled = false;
+        //                    RemoveTask.IsEnabled = true;
+        //                    break;
+        //                case MyTaskEnum.Search:
+        //                    taskTabControl.SelectedIndex = 1;
+        //                    ((Control)taskTabControl.Items[0]).IsEnabled = false;
+        //                    ((Control)taskTabControl.Items[1]).IsEnabled = true;
+        //                    ((Control)taskTabControl.Items[2]).IsEnabled = false;
+        //                    addTaskButton.IsEnabled = false;
+        //                    RemoveTask.IsEnabled = true;
+        //                    break;
+        //                case MyTaskEnum.GPTMD:
+        //                    taskTabControl.SelectedIndex = 2;
+        //                    ((Control)taskTabControl.Items[0]).IsEnabled = false;
+        //                    ((Control)taskTabControl.Items[1]).IsEnabled = false;
+        //                    ((Control)taskTabControl.Items[2]).IsEnabled = true;
+        //                    addTaskButton.IsEnabled = false;
+        //                    RemoveTask.IsEnabled = true;
+        //                    break;
+        //                case MyTaskEnum.NewTask:
+        //                    ((Control)taskTabControl.Items[0]).IsEnabled = true;
+        //                    ((Control)taskTabControl.Items[1]).IsEnabled = true;
+        //                    ((Control)taskTabControl.Items[2]).IsEnabled = true;
+        //                    addTaskButton.IsEnabled = true;
+        //                    RemoveTask.IsEnabled = false;
+        //                    break;
+        //            }
+        //            SetTextBoxValues(selectedTask);
+        //        }
+        //    }
+        //}
 
-        private void SetTextBoxValues(MyTask selectedTask)
-        {
-            precursorMassToleranceTextBox.Text = selectedTask.precursorMassToleranceTextBox;
-            precursorMassToleranceComboBox.SelectedIndex = selectedTask.precursorMassToleranceComboBox;
-            missedCleavagesTextBox.Text = selectedTask.missedCleavagesTextBox;
-            proteaseComboBox.SelectedItem = selectedTask.protease;
-            maxModificationIsoformsTextBox.Text = selectedTask.maxModificationIsoformsTextBox;
-            initiatorMethionineBehaviorComboBox.SelectedIndex = selectedTask.initiatorMethionineBehaviorComboBox;
-            productMassToleranceTextBox.Text = selectedTask.productMassToleranceTextBox;
-            productMassToleranceComboBox.SelectedIndex = selectedTask.productMassToleranceComboBox;
-            bCheckBox.IsChecked = selectedTask.bCheckBox;
-            yCheckBox.IsChecked = selectedTask.yCheckBox;
-            checkBoxDecoy.IsChecked = selectedTask.checkBoxDecoy;
-            acceptedPrecursorMassErrorsTextBox.Text = selectedTask.acceptedPrecursorMassErrorsTextBox;
-            checkBoxMonoisotopic.IsChecked = selectedTask.checkBoxMonoisotopic;
-        }
-
-        private void SetTaskValues(MyTask selectedTask)
-        {
-            selectedTask.precursorMassToleranceTextBox = precursorMassToleranceTextBox.Text;
-            selectedTask.precursorMassToleranceComboBox = precursorMassToleranceComboBox.SelectedIndex;
-            selectedTask.missedCleavagesTextBox = missedCleavagesTextBox.Text;
-            selectedTask.protease = (Protease)proteaseComboBox.SelectedItem;
-            selectedTask.maxModificationIsoformsTextBox = maxModificationIsoformsTextBox.Text;
-            selectedTask.initiatorMethionineBehaviorComboBox = initiatorMethionineBehaviorComboBox.SelectedIndex;
-            selectedTask.productMassToleranceTextBox = productMassToleranceTextBox.Text;
-            selectedTask.productMassToleranceComboBox = productMassToleranceComboBox.SelectedIndex;
-            selectedTask.bCheckBox = bCheckBox.IsChecked;
-            selectedTask.yCheckBox = yCheckBox.IsChecked;
-            selectedTask.checkBoxDecoy = checkBoxDecoy.IsChecked;
-            selectedTask.acceptedPrecursorMassErrorsTextBox = acceptedPrecursorMassErrorsTextBox.Text;
-            selectedTask.checkBoxMonoisotopic = checkBoxMonoisotopic.IsChecked;
-
-        }
 
         private void addFile(string filepath)
         {
@@ -375,161 +339,161 @@ namespace GoodGUI
         //    //t.Start();
         //}
 
-        private static void DoTask(MyTaskEnum task, ParamsObject po, object customObject)
-        {
-            po.startingAllTasks();
-            po.statusLabel("Working...");
-            po.ReportProgress(0);
-            switch (task)
-            {
-                case MyTaskEnum.Search:
-                    po.RTBoutput("Starting database search");
-                    SearchParamsObject paramsHere = (SearchParamsObject)customObject;
-                    bool assign_charge_states = true;
-                    bool deisotope = false;
-                    bool on_the_fly_decoys = paramsHere.lookAtDecoys;
-                    Protease protease = paramsHere.protease;
-                    int max_missed_cleavages = paramsHere.missedCleavages;
-                    InitiatorMethionineBehavior initiator_methionine_behavior = paramsHere.initiatorMethionineBehavior;
-                    int max_variable_mod_isoforms = paramsHere.max_variable_mod_isoforms;
-                    int max_mods_for_peptide = paramsHere.max_mods_for_peptide;
-                    int min_assumed_precursor_charge_state = 2;
-                    int max_assumed_precursor_charge_state = 4;
-                    int max_peaks = 400;
-                    MassTolerance precursor_mass_tolerance = paramsHere.precursorMassTolerance;
+        //private static void DoTask(MyTaskEnum task, ParamsObject po, object customObject)
+        //{
+        //    po.startingAllTasks();
+        //    po.statusLabel("Working...");
+        //    po.ReportProgress(0);
+        //    switch (task)
+        //    {
+        //        case MyTaskEnum.Search:
+        //            po.RTBoutput("Starting database search");
+        //            SearchParamsObject paramsHere = (SearchParamsObject)customObject;
+        //            bool assign_charge_states = true;
+        //            bool deisotope = false;
+        //            bool on_the_fly_decoys = paramsHere.lookAtDecoys;
+        //            Protease protease = paramsHere.protease;
+        //            int max_missed_cleavages = paramsHere.missedCleavages;
+        //            InitiatorMethionineBehavior initiator_methionine_behavior = paramsHere.initiatorMethionineBehavior;
+        //            int max_variable_mod_isoforms = paramsHere.max_variable_mod_isoforms;
+        //            int max_mods_for_peptide = paramsHere.max_mods_for_peptide;
+        //            int min_assumed_precursor_charge_state = 2;
+        //            int max_assumed_precursor_charge_state = 4;
+        //            int max_peaks = 400;
+        //            MassTolerance precursor_mass_tolerance = paramsHere.precursorMassTolerance;
 
-                    MassTolerance product_mass_tolerance = paramsHere.productMassTolerance;
-                    double max_false_discovery_rate = 0.01;
-                    List<string> filesToSearch = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName).ToList();
-                    string output_folder = Path.Combine(Path.GetDirectoryName(filesToSearch[0]), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+        //            MassTolerance product_mass_tolerance = paramsHere.productMassTolerance;
+        //            double max_false_discovery_rate = 0.01;
+        //            List<string> filesToSearch = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName).ToList();
+        //            string output_folder = Path.Combine(Path.GetDirectoryName(filesToSearch[0]), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
-                    po.RTBoutput("output folder " + output_folder);
-                    if (!Directory.Exists(output_folder))
-                        Directory.CreateDirectory(output_folder);
+        //            po.RTBoutput("output folder " + output_folder);
+        //            if (!Directory.Exists(output_folder))
+        //                Directory.CreateDirectory(output_folder);
 
-                    Dictionary<string, List<MorpheusModification>> modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-                    var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
-                    var modsInXMLtoTrim = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
-                    var modsKnown = ModFileList.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
-                    foreach (var knownMod in modsKnown)
-                        if (modsInXML.Contains(knownMod.NameInXML))
-                        {
-                            if (modsToLocalize.ContainsKey(knownMod.NameInXML))
-                                modsToLocalize[knownMod.NameInXML].Add(knownMod);
-                            else
-                                modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
-                            modsInXMLtoTrim.Remove(knownMod.NameInXML);
-                        }
-                    foreach (var ok in modsInXMLtoTrim)
-                        modsToLocalize.Add(ok, new List<MorpheusModification>() { new MorpheusModification(ok) });
+        //            Dictionary<string, List<MorpheusModification>> modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
+        //            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
+        //            var modsInXMLtoTrim = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
+        //            var modsKnown = ModFileList.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
+        //            foreach (var knownMod in modsKnown)
+        //                if (modsInXML.Contains(knownMod.NameInXML))
+        //                {
+        //                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
+        //                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
+        //                    else
+        //                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
+        //                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
+        //                }
+        //            foreach (var ok in modsInXMLtoTrim)
+        //                modsToLocalize.Add(ok, new List<MorpheusModification>() { new MorpheusModification(ok) });
 
-                    po.RTBoutput("The following modifications are in the XML databases, but not in the selected Localize PTM lists:");
-                    po.RTBoutput(string.Join("\n", modsInXMLtoTrim));
+        //            po.RTBoutput("The following modifications are in the XML databases, but not in the selected Localize PTM lists:");
+        //            po.RTBoutput(string.Join("\n", modsInXMLtoTrim));
 
-                    po.RTBoutput("The following modifications are VARIABLE, i.e. we attempt to place them at every appropriate residue:");
-                    po.RTBoutput(string.Join(", ", ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
+        //            po.RTBoutput("The following modifications are VARIABLE, i.e. we attempt to place them at every appropriate residue:");
+        //            po.RTBoutput(string.Join(", ", ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
 
-                    po.RTBoutput("The following modifications are FIXED, i.e. we assign them at every appropriate residue:");
-                    po.RTBoutput(string.Join(", ", ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
+        //            po.RTBoutput("The following modifications are FIXED, i.e. we assign them at every appropriate residue:");
+        //            po.RTBoutput(string.Join(", ", ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)));
 
-                    string extraLogStuff = "";
-                    extraLogStuff += "PTM files: " + string.Join(", ", ModFileList.Where(b => b.Localize).Select(b => b.FileName)) + "\n";
-                    extraLogStuff += "XML databases: " + string.Join(", ", xMLdblist.Where(b => b.Use).Select(b => b.FileName)) + "\n";
-                    extraLogStuff += "Localized mods: " + string.Join(", ", modsToLocalize.Select(b => b.Key)) + "\n";
-                    extraLogStuff += "Variable mods: " + string.Join(", ", ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
-                    extraLogStuff += "Fixed mods: " + string.Join(", ", ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
+        //            string extraLogStuff = "";
+        //            extraLogStuff += "PTM files: " + string.Join(", ", ModFileList.Where(b => b.Localize).Select(b => b.FileName)) + "\n";
+        //            extraLogStuff += "XML databases: " + string.Join(", ", xMLdblist.Where(b => b.Use).Select(b => b.FileName)) + "\n";
+        //            extraLogStuff += "Localized mods: " + string.Join(", ", modsToLocalize.Select(b => b.Key)) + "\n";
+        //            extraLogStuff += "Variable mods: " + string.Join(", ", ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
+        //            extraLogStuff += "Fixed mods: " + string.Join(", ", ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).Select(b => b.NameInXML)) + "\n";
 
-                    DatabaseSearcher database_searcher = new DatabaseSearcher(GetDatas(filesToSearch),
-                        min_assumed_precursor_charge_state, max_assumed_precursor_charge_state,
-                        max_peaks,
-                        assign_charge_states, deisotope, on_the_fly_decoys,
-                        protease, max_missed_cleavages, initiator_methionine_behavior,
-                        max_variable_mod_isoforms,
-                        max_mods_for_peptide,
-                        precursor_mass_tolerance,
-                        paramsHere.accepted_precursor_mass_errors,
-                        product_mass_tolerance,
-                        max_false_discovery_rate,
-                        output_folder,
-                        paramsHere.bions,
-                        paramsHere.yions,
-                        xMLdblist.Where(b => b.Use).SelectMany(b => b.getProteins(on_the_fly_decoys, modsToLocalize)).ToList(),
-                        ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList(),
-                        ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList(),
-                        extraLogStuff,
-                        filesToSearch.Count);
-                    po.AttachoutRichTextBoxHandlerr(handler => database_searcher.outputHandler += handler);
-                    po.AttachoSuccessfullyFinishedFileHandler(handler => database_searcher.finishedFileHandler += handler);
-                    po.AttachoutProgressBarHandler(handler => database_searcher.progressHandler += handler);
-                    po.AttachoutLabelStatusHandler(handler => database_searcher.labelStatusHandler += handler);
-                    database_searcher.DoSearch();
-                    break;
+        //            DatabaseSearcher database_searcher = new DatabaseSearcher(GetDatas(filesToSearch),
+        //                min_assumed_precursor_charge_state, max_assumed_precursor_charge_state,
+        //                max_peaks,
+        //                assign_charge_states, deisotope, on_the_fly_decoys,
+        //                protease, max_missed_cleavages, initiator_methionine_behavior,
+        //                max_variable_mod_isoforms,
+        //                max_mods_for_peptide,
+        //                precursor_mass_tolerance,
+        //                paramsHere.accepted_precursor_mass_errors,
+        //                product_mass_tolerance,
+        //                max_false_discovery_rate,
+        //                output_folder,
+        //                paramsHere.bions,
+        //                paramsHere.yions,
+        //                xMLdblist.Where(b => b.Use).SelectMany(b => b.getProteins(on_the_fly_decoys, modsToLocalize)).ToList(),
+        //                ModFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList(),
+        //                ModFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList(),
+        //                extraLogStuff,
+        //                filesToSearch.Count);
+        //            po.AttachoutRichTextBoxHandlerr(handler => database_searcher.outputHandler += handler);
+        //            po.AttachoSuccessfullyFinishedFileHandler(handler => database_searcher.finishedFileHandler += handler);
+        //            po.AttachoutProgressBarHandler(handler => database_searcher.progressHandler += handler);
+        //            po.AttachoutLabelStatusHandler(handler => database_searcher.labelStatusHandler += handler);
+        //            database_searcher.DoSearch();
+        //            break;
 
-                case MyTaskEnum.Calibrate:
+        //        case MyTaskEnum.Calibrate:
 
 
-                    po.RTBoutput("Starting calibrate task");
-                    foreach (var anEntry in rawDataAndResultslist.Where(b => b.FileName != null && b.Use == true).ToList())
-                    {
+        //            po.RTBoutput("Starting calibrate task");
+        //            foreach (var anEntry in rawDataAndResultslist.Where(b => b.FileName != null && b.Use == true).ToList())
+        //            {
 
-                        //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
-                        //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
-                        //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
+        //                //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
+        //                //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
+        //                //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
 
-                        //SoftwareLockMassParams a = mzCalIO.mzCalIO.GetReady(anEntry.FileName, anEntry.mzidName);
-                        //po.AttachoutRichTextBoxHandlerr(handler => a.outputHandler += handler);
-                        //po.AttachoSuccessfullyFinishedFileHandler(handler => a.finishedFileHandler += handler);
-                        //po.AttachoutProgressBarHandler(handler => a.progressHandler += handler);
-                        //po.AttachoutRichTextBoxHandlerr(handler => a.watchHandler += handler);
-                        //SoftwareLockMassRunner.Run(a);
-                    }
-                    break;
+        //                //SoftwareLockMassParams a = mzCalIO.mzCalIO.GetReady(anEntry.FileName, anEntry.mzidName);
+        //                //po.AttachoutRichTextBoxHandlerr(handler => a.outputHandler += handler);
+        //                //po.AttachoSuccessfullyFinishedFileHandler(handler => a.finishedFileHandler += handler);
+        //                //po.AttachoutProgressBarHandler(handler => a.progressHandler += handler);
+        //                //po.AttachoutRichTextBoxHandlerr(handler => a.watchHandler += handler);
+        //                //SoftwareLockMassRunner.Run(a);
+        //            }
+        //            break;
 
-                case MyTaskEnum.GPTMD:
-                    po.RTBoutput("Starting GPTMD");
-                    GPTMDParamsObject paramsHeree = (GPTMDParamsObject)customObject;
+        //        case MyTaskEnum.GPTMD:
+        //            po.RTBoutput("Starting GPTMD");
+        //            GPTMDParamsObject paramsHeree = (GPTMDParamsObject)customObject;
 
-                    IEnumerable<Tuple<double, double>> combos = ReadCombos(@"combos.txt");
+        //            IEnumerable<Tuple<double, double>> combos = ReadCombos(@"combos.txt");
 
-                    modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-                    modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
-                    modsInXMLtoTrim = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
-                    var gptmdmodsKnown = GPTMDfileList.Where(b => b.Use).SelectMany(b => b.getMods()).ToList();
-                    foreach (var knownMod in gptmdmodsKnown)
-                        if (modsInXML.Contains(knownMod.NameInXML))
-                        {
-                            if (modsToLocalize.ContainsKey(knownMod.NameInXML))
-                                modsToLocalize[knownMod.NameInXML].Add(knownMod);
-                            else
-                                modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
-                            modsInXMLtoTrim.Remove(knownMod.NameInXML);
-                        }
+        //            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
+        //            modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
+        //            modsInXMLtoTrim = ProteomeDatabaseReader.ReadXMLmodifications(xMLdblist.Where(b => b.Use).Select(b => b.FileName));
+        //            var gptmdmodsKnown = GPTMDfileList.Where(b => b.Use).SelectMany(b => b.getMods()).ToList();
+        //            foreach (var knownMod in gptmdmodsKnown)
+        //                if (modsInXML.Contains(knownMod.NameInXML))
+        //                {
+        //                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
+        //                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
+        //                    else
+        //                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
+        //                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
+        //                }
 
-                    foreach (var ok in modsInXMLtoTrim)
-                        modsToLocalize.Add(ok, new List<MorpheusModification>() { new MorpheusModification(ok) });
+        //            foreach (var ok in modsInXMLtoTrim)
+        //                modsToLocalize.Add(ok, new List<MorpheusModification>() { new MorpheusModification(ok) });
 
-                    var okk = xMLdblist.First(b => b.Use);
-                    var outputFileName = Path.Combine(Path.GetDirectoryName(okk.FileName), Path.GetFileNameWithoutExtension(okk.FileName) + "-GPTMD-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture) + ".xml");
-                    GPTMD gptmd = new GPTMD();
-                    po.AttachoutRichTextBoxHandlerr(handler => gptmd.outputHandler += handler);
-                    po.AttachoutProgressBarHandler(handler => gptmd.progressHandler += handler);
-                    po.AttachoutLabelStatusHandler(handler => gptmd.labelStatusHandler += handler);
+        //            var okk = xMLdblist.First(b => b.Use);
+        //            var outputFileName = Path.Combine(Path.GetDirectoryName(okk.FileName), Path.GetFileNameWithoutExtension(okk.FileName) + "-GPTMD-" + DateTime.Now.ToString("yyyy-MM-dd-HH-mm", CultureInfo.InvariantCulture) + ".xml");
+        //            GPTMD gptmd = new GPTMD();
+        //            po.AttachoutRichTextBoxHandlerr(handler => gptmd.outputHandler += handler);
+        //            po.AttachoutProgressBarHandler(handler => gptmd.progressHandler += handler);
+        //            po.AttachoutLabelStatusHandler(handler => gptmd.labelStatusHandler += handler);
 
-                    gptmd.GPTMDD(
-                        rawDataAndResultslist.First(),
-                        xMLdblist.Where(b => b.Use).SelectMany(b => b.getProteins(false, modsToLocalize)).ToList(),
-                        combos.ToList(),
-                        GPTMDfileList.Where(b => b.Use).SelectMany(b => b.getMods()).ToList(),
-                        paramsHeree.monoisotopic,
-                        outputFileName);
-                    po.FinishedFile(outputFileName);
-                    break;
-            }
-            po.ReportProgress(100);
-            po.RTBoutput("SUCCESS!");
-            po.statusLabel("Ready");
-            po.FinishedAllTasks();
-        }
+        //            gptmd.GPTMDD(
+        //                rawDataAndResultslist.First(),
+        //                xMLdblist.Where(b => b.Use).SelectMany(b => b.getProteins(false, modsToLocalize)).ToList(),
+        //                combos.ToList(),
+        //                GPTMDfileList.Where(b => b.Use).SelectMany(b => b.getMods()).ToList(),
+        //                paramsHeree.monoisotopic,
+        //                outputFileName);
+        //            po.FinishedFile(outputFileName);
+        //            break;
+        //    }
+        //    po.ReportProgress(100);
+        //    po.RTBoutput("SUCCESS!");
+        //    po.statusLabel("Ready");
+        //    po.FinishedAllTasks();
+        //}
 
         private static IEnumerable<Tuple<double, double>> ReadCombos(string v)
         {
@@ -541,27 +505,27 @@ namespace GoodGUI
             }
         }
 
-        private static IEnumerable<TandemMassSpectra> GetDatas(List<string> filesToSearch)
-        {
-            // convert all paths to absolute for outputs
-            for (int i = 0; i < filesToSearch.Count; i++)
-            {
-                //Console.WriteLine(Path.GetExtension(myListOfEntries[i].filepath));
-                if (Path.GetExtension(filesToSearch[i]).Equals(".mzML"))
-                {
-                    //var ok = new MzMLTandemMassSpectra();
-                    //ok.filename = filesToSearch[i];
-                    //yield return ok;
-                }
-                else if (Path.GetExtension(filesToSearch[i]).Equals(".raw"))
-                {
-                    //var ok = new ThermoTandemMassSpectra();
-                    //ok.filename = filesToSearch[i];
-                    //yield return ok;
-                }
-            }
-            return null;
-        }
+        //private static IEnumerable<TandemMassSpectra> GetDatas(List<string> filesToSearch)
+        //{
+        //    // convert all paths to absolute for outputs
+        //    for (int i = 0; i < filesToSearch.Count; i++)
+        //    {
+        //        //Console.WriteLine(Path.GetExtension(myListOfEntries[i].filepath));
+        //        if (Path.GetExtension(filesToSearch[i]).Equals(".mzML"))
+        //        {
+        //            //var ok = new MzMLTandemMassSpectra();
+        //            //ok.filename = filesToSearch[i];
+        //            //yield return ok;
+        //        }
+        //        else if (Path.GetExtension(filesToSearch[i]).Equals(".raw"))
+        //        {
+        //            //var ok = new ThermoTandemMassSpectra();
+        //            //ok.filename = filesToSearch[i];
+        //            //yield return ok;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         private void ErrorOutput(string v)
         {
@@ -596,13 +560,13 @@ namespace GoodGUI
             }
         }
 
-        private void ButtonGPTMD_Click(object sender, RoutedEventArgs e)
-        {
-            GPTMDParamsObject gpo = new GPTMDParamsObject(checkBoxMonoisotopic.IsChecked.Value);
-            var t = new Thread(() => DoTask(MyTaskEnum.GPTMD, po, gpo));
-            t.IsBackground = true;
-            t.Start();
-        }
+        //private void ButtonGPTMD_Click(object sender, RoutedEventArgs e)
+        //{
+        //    GPTMDParamsObject gpo = new GPTMDParamsObject(checkBoxMonoisotopic.IsChecked.Value);
+        //    var t = new Thread(() => DoTask(MyTaskEnum.GPTMD, po, gpo));
+        //    t.IsBackground = true;
+        //    t.Start();
+        //}
 
         private void AddPTMlist_Click(object sender, RoutedEventArgs e)
         {
@@ -652,11 +616,7 @@ namespace GoodGUI
                 addFile(file);
             }
         }
-
-        private void RemoveRaw_Click(object sender, RoutedEventArgs e)
-        {
-        }
-
+        
         private void button_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(@"help.txt");
@@ -672,28 +632,28 @@ namespace GoodGUI
             }
         }
 
-        private void TabSelectionChanges(object sender, SelectionChangedEventArgs e)
-        {
-            TabControl tabControl = sender as TabControl; // e.Source could have been used instead of sender as well
-            if (dataGridDatafiles != null)
-            {
-                if (tabControl != null && dataGridDatafiles.Columns.Count > 0)
-                {
-                    if (tabControl.SelectedIndex == 2)
-                        //GPTMD - show extra column
-                        modificationsDataGrid.Columns[0].Visibility = Visibility.Visible;
+        //private void TabSelectionChanges(object sender, SelectionChangedEventArgs e)
+        //{
+        //    TabControl tabControl = sender as TabControl; // e.Source could have been used instead of sender as well
+        //    if (dataGridDatafiles != null)
+        //    {
+        //        if (tabControl != null && dataGridDatafiles.Columns.Count > 0)
+        //        {
+        //            if (tabControl.SelectedIndex == 2)
+        //                //GPTMD - show extra column
+        //                modificationsDataGrid.Columns[0].Visibility = Visibility.Visible;
 
-                    else
-                        // Hide extra column
-                        modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
-                }
-                dataGridDatafiles.Items.Refresh();
-            }
-        }
+        //            else
+        //                // Hide extra column
+        //                modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
+        //        }
+        //        dataGridDatafiles.Items.Refresh();
+        //    }
+        //}
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
+            //modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
             unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(@"unimod_tables.xml");
             uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(@"ptmlist.txt");
 
@@ -702,17 +662,17 @@ namespace GoodGUI
         private void RunTasks_Click(object sender, RoutedEventArgs e)
         {
 
-            var t = new Thread(() => DoAllTasks(taskList, rawDataAndResultslist, xMLdblist, ModFileList));
+            var t = new Thread(() => DoAllTasks(taskListWrapper.EnumerateTasks(), rawDataAndResultslist, xMLdblist, ModFileList));
             t.IsBackground = true;
             t.Start();
         }
 
-        private void DoAllTasks(ObservableCollection<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModList> searchfileList)
+        private void DoAllTasks(IEnumerable<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModList> searchfileList)
         {
             po.startingAllTasks();
             foreach (var ok in taskList)
             {
-                ok.DoTask(rawDataAndResultslist, xMLdblist, searchfileList, po);
+                ok.DoTask(rawDataAndResultslist, xMLdblist, po);
                 po.refreshTask();
             }
             po.FinishedAllTasks();
@@ -730,28 +690,90 @@ namespace GoodGUI
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
         {
-            taskList.Clear();
-            taskList.Add(new MyTask(-1));
-            highlightedTaskIndex = 0;
-            RunTasksButton.IsEnabled = false;
-            UpdateTaskStuff();
+            taskListWrapper.Clear();
+            UpdateTaskGuiStuff();
         }
 
-        private void RemoveTask_Click(object sender, RoutedEventArgs e)
+        private void UpdateTaskGuiStuff()
         {
-            if (highlightedTaskIndex < tasksDataGrid.Items.Count - 1)
-                taskList.RemoveAt(highlightedTaskIndex);
-            UpdateTaskStuff();
+
+            if (taskListWrapper.Count == 0)
+            {
+                RunTasksButton.IsEnabled = false;
+                RemoveLastTaskButton.IsEnabled = false;
+                ClearTasksButton.IsEnabled = false;
+            }
+            else
+            {
+                RunTasksButton.IsEnabled = true;
+                RemoveLastTaskButton.IsEnabled = true;
+                ClearTasksButton.IsEnabled = true;
+            }
+        }
+
+
+        //private void addTaskButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var he = new MyTask(taskTabControl.SelectedIndex);
+        //    SetTaskValues(he);
+        //    taskList.Insert(tasksDataGrid.Items.Count - 1, he);
+        //    highlightedTaskIndex = tasksDataGrid.Items.Count - 1;
+        //    RunTasksButton.IsEnabled = true;
+        //}
+
+        private void addSearchTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new SearchTaskWindow(ModFileList);
+            if (dialog.ShowDialog() == true)
+            {
+                taskListWrapper.Add(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+            else
+            {
+            }
+        }
+
+        private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
+        {
 
         }
 
-        private void addTaskButton_Click(object sender, RoutedEventArgs e)
+        private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var he = new MyTask(taskTabControl.SelectedIndex);
-            SetTaskValues(he);
-            taskList.Insert(tasksDataGrid.Items.Count - 1, he);
-            highlightedTaskIndex = tasksDataGrid.Items.Count - 1;
-            RunTasksButton.IsEnabled = true;
+
+        }
+
+        private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
+        {
+            taskListWrapper.RemoveLast();
+            UpdateTaskGuiStuff();
+
+        }
+
+        private void tasksDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var a = sender as DataGrid;
+            var ok = (MyTask)a.SelectedItem;
+            switch (ok.taskType)
+            {
+                case MyTaskEnum.Search:
+                    var dialog = new SearchTaskWindow(ok as MySearchTask);
+                    if (dialog.ShowDialog() == true)
+                    {
+                        // Updated a task
+                    }
+                    else
+                    {
+                        // Did not update a task
+                    }
+                    break;
+                case MyTaskEnum.GPTMD:
+                    break;
+                case MyTaskEnum.Calibrate:
+                    break;
+
+            }
         }
     }
 }

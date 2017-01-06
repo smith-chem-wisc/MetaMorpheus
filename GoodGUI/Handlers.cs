@@ -67,32 +67,38 @@ namespace GoodGUI
             }
         }
 
-        private void NewSuccessfullyStartingTask(object sender, EventArgs e)
+        private void NewSuccessfullyStartingAllTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyStartingTask(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyStartingAllTasks(sender, e)));
             }
             else
             {
-                TopThing.IsEnabled = false;
+                XMLdbPanel.IsEnabled = false;
                 DatafilesStackPanel.IsEnabled = false;
-                LeftPanel.IsEnabled = false;
+                addSearchTaskButton.IsEnabled = false;
+                addCalibrateTaskButton.IsEnabled = false;
+                addGPTMDTaskButton.IsEnabled = false;
+                tasksPanel.IsEnabled = false;
                 dataGridDatafiles.Items.Refresh();
             }
         }
 
-        private void NewSuccessfullyFinishedTask(object sender, EventArgs e)
+        private void NewSuccessfullyFinishedAllTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedTask(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedAllTasks(sender, e)));
             }
             else
             {
-                TopThing.IsEnabled = true;
+                XMLdbPanel.IsEnabled = true;
                 DatafilesStackPanel.IsEnabled = true;
-                LeftPanel.IsEnabled = true;
+                addSearchTaskButton.IsEnabled = true;
+                addCalibrateTaskButton.IsEnabled = true;
+                addGPTMDTaskButton.IsEnabled = true;
+                tasksPanel.IsEnabled = true;
                 dataGridDatafiles.Items.Refresh();
             }
         }

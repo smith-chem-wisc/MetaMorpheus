@@ -1,22 +1,12 @@
-﻿using System;
-
-namespace IndexSearchAndAnalyze
+﻿namespace IndexSearchAndAnalyze
 {
-    public class SearchMode
+    public abstract class SearchMode
     {
-        private Func<double, bool> p;
-
-        public SearchMode(string FileNameAddition, Func<double, bool> p)
+        public SearchMode(string fileNameAddition)
         {
-            this.FileNameAddition = FileNameAddition;
-            this.p = p;
+            FileNameAddition = fileNameAddition;
         }
 
         public string FileNameAddition { get; internal set; }
-
-        internal bool Accepts(double dd)
-        {
-            return p(dd);
-        }
     }
 }

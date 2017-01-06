@@ -12,7 +12,7 @@ namespace FragmentGeneration
 {
     internal class Indices
     {
-        public static void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModList> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease)
+        public static void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModListForSearch> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease)
         {
             #region Index file names
 

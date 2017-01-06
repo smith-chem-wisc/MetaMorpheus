@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AminoAcidMasses.cs" />
+    <Compile Include="ModListForSearch.cs" />
     <Compile Include="MyDoubleEqualityComparer.cs" />
     <Compile Include="OkBin.cs" />
     <Compile Include="Peptide.cs" />
@@ -100,8 +101,6 @@
     <Compile Include="FilepathEventArgs.cs" />
     <Compile Include="IdentificationWithFalseDiscoveryRate.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
-    <Compile Include="MassTolerance.cs" />
-    <Compile Include="MassToleranceUnits.cs" />
     <Compile Include="MassType.cs" />
     <Compile Include="MorpheusModification.cs" />
     <Compile Include="ModificationType.cs" />
@@ -127,8 +126,6 @@
     <Compile Include="RawDataAndResults.cs" />
     <Compile Include="SpectraLimits.cs" />
     <Compile Include="StatusEventArgs.cs" />
-    <Compile Include="TandemMassSpectra.cs" />
-    <Compile Include="TandemMassSpectrum.cs" />
     <Compile Include="Terminus.cs" />
     <Compile Include="UniqueModificationsList.cs" />
     <Compile Include="XMLdb.cs" />

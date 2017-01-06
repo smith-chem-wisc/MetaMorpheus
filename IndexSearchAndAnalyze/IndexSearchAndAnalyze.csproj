@@ -90,8 +90,11 @@
     <Compile Include="ClassicSearchResults.cs" />
     <Compile Include="ClassicSpectrumMatch.cs" />
     <Compile Include="CompactPeptide.cs" />
+    <Compile Include="FunctionSearchMode.cs" />
     <Compile Include="Internals\MyAnalysisClass.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
+    <Compile Include="IntervalSearchMode.cs" />
+    <Compile Include="LocalMs2Scan.cs" />
     <Compile Include="MyEngine.cs" />
     <Compile Include="IndexEngine.cs" />
     <Compile Include="IndexParams.cs" />

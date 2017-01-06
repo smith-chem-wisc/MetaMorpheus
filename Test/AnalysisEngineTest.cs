@@ -26,7 +26,7 @@ namespace Test
             IMsDataFile<IMzSpectrum<MzPeak>> iMsDataFile = null;
             Protease protease = null;
             List<SearchMode> searchModes = null;
-            double fragmentTolerance = 0;
+            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             UsefulProteomicsDatabases.Generated.unimod unimodDeserialized = null;
             Dictionary<int, ChemicalFormulaModification> uniprotDeseralized = null;
 

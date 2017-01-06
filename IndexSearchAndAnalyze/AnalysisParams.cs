@@ -19,13 +19,13 @@ namespace IndexSearchAndAnalyze
         public Protease protease { get; private set; }
         public List<SearchMode> searchModes { get; private set; }
         public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
-        public double fragmentTolerance { get; private set; }
+        public Tolerance fragmentTolerance { get; private set; }
         public unimod unimodDeserialized { get; internal set; }
         public Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
         public Action<BinTreeStructure, string> action1 { get; private set; }
         public Action<List<NewPsmWithFDR>, string> action2 { get; private set; }
 
-        public AnalysisParams(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, double fragmentTolerance, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, Action<string> a1, Action<int> a2) : base(a1, a2)
+        public AnalysisParams(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, Action<string> a1, Action<int> a2) : base(a1, a2)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -44,7 +44,7 @@ namespace IndexSearchAndAnalyze
         }
 
         // For a single search mode
-        public AnalysisParams(List<NewPsm> newPsms1, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching1, List<Protein> proteinList1, List<MorpheusModification> variableModifications1, List<MorpheusModification> fixedModifications1, List<MorpheusModification> localizeableModifications1, Protease protease1, SearchMode searchMode, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile1, double fragmentTolerance, unimod unimodDeserialized1, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized1, Action<BinTreeStructure, string> p1, Action<List<NewPsmWithFDR>, string> p2, Action<string> a1, Action<int> a2):base(a1,a2)
+        public AnalysisParams(List<NewPsm> newPsms1, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching1, List<Protein> proteinList1, List<MorpheusModification> variableModifications1, List<MorpheusModification> fixedModifications1, List<MorpheusModification> localizeableModifications1, Protease protease1, SearchMode searchMode, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile1, Tolerance fragmentTolerance, unimod unimodDeserialized1, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized1, Action<BinTreeStructure, string> p1, Action<List<NewPsmWithFDR>, string> p2, Action<string> a1, Action<int> a2):base(a1,a2)
         {
             this.newPsms = new List<NewPsm>[1] { newPsms1 };
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching1;
