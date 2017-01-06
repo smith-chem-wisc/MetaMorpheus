@@ -69,7 +69,7 @@ namespace mzCal
                 Proteomics.Peptide coolPeptide = null;
                 try
                 {
-                    coolPeptide = new Proteomics.Peptide(peptide.Sequence);
+                    coolPeptide = new Proteomics.Peptide(peptide.SequenceWithChemicalFormulas);
                 }
                 catch
                 {
