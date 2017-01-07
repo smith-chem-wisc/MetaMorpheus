@@ -1,34 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace MetaMorpheus
 {
     public class DatabaseSearcher
     {
-        //private IEnumerable<TandemMassSpectra> datas;
-        private int minimumAssumedPrecursorChargeState;
-        private int maximumAssumedPrecursorChargeState;
-        private int maximumNumberOfPeaks;
-        private bool assignChargeStates;
-        private bool deisotope;
-        private bool onTheFlyDecoys;
-        private Protease protease;
-        private int maximumMissedCleavages;
-        private InitiatorMethionineBehavior initiatorMethionineBehavior;
-        private int maximumVariableModificationIsoforms;
-        //private MassTolerance precursorMassTolerance;
-        private IEnumerable<double> acceptedPrecursorMassErrors;
-        //private MassTolerance productMassTolerance;
-        private double maximumFalseDiscoveryRate;
-        private string outputFolder;
-        private bool bIons;
-        private bool yIons;
-        private IEnumerable<Protein> allProteins;
-        private IEnumerable<MorpheusModification> variableModifications;
-        private IEnumerable<MorpheusModification> fixedModifications;
-        private string extraLogStuff;
-        private int datasCount;
-        private int max_mods_for_peptide;
+        ////private IEnumerable<TandemMassSpectra> datas;
+        //private int minimumAssumedPrecursorChargeState;
+        //private int maximumAssumedPrecursorChargeState;
+        //private int maximumNumberOfPeaks;
+        //private bool assignChargeStates;
+        //private bool deisotope;
+        //private bool onTheFlyDecoys;
+        //private Protease protease;
+        //private int maximumMissedCleavages;
+        //private InitiatorMethionineBehavior initiatorMethionineBehavior;
+        //private int maximumVariableModificationIsoforms;
+        ////private MassTolerance precursorMassTolerance;
+        //private IEnumerable<double> acceptedPrecursorMassErrors;
+        ////private MassTolerance productMassTolerance;
+        //private double maximumFalseDiscoveryRate;
+        //private string outputFolder;
+        //private bool bIons;
+        //private bool yIons;
+        //private IEnumerable<Protein> allProteins;
+        //private IEnumerable<MorpheusModification> variableModifications;
+        //private IEnumerable<MorpheusModification> fixedModifications;
+        //private string extraLogStuff;
+        //private int datasCount;
+        //private int max_mods_for_peptide;
 
         public event EventHandler<string> outputHandler;
 

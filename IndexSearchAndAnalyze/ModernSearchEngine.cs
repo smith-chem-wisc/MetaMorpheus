@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MathNet.Numerics.Statistics;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -12,7 +11,6 @@ namespace IndexSearchAndAnalyze
 {
     public class ModernSearchEngine : MyEngine
     {
-
         public ModernSearchEngine(ModernSearchParams searchParams)
         {
             this.myParams = searchParams;

@@ -1,27 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using MetaMorpheus;
-using static GoodGUI.MainWindow;
-using IndexSearchAndAnalyze;
-using Spectra;
-using System.IO;
-using MassSpectrometry;
+﻿using IndexSearchAndAnalyze;
 using IO.MzML;
 using IO.Thermo;
-using System.Linq;
-using mzCal;
-using Proteomics;
-using FragmentGeneration;
+using MassSpectrometry;
+using MetaMorpheus;
+using Spectra;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 
 namespace GoodGUI
 {
-    internal class MyCalibrateTask : MyTask
+    public class MyCalibrateTask : MyTask
     {
         public MyCalibrateTask() : base(0)
         {
         }
+
         public string precursorMassToleranceTextBox { get; internal set; }
         public int precursorMassToleranceComboBox { get; internal set; }
         public string missedCleavagesTextBox { get; internal set; }
@@ -38,7 +35,7 @@ namespace GoodGUI
 
         private ObservableCollection<ModListForSearch> modFileList;
 
-        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, ParamsObject po)
+        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
             string output_folder = Path.Combine(Path.GetDirectoryName(currentRawFileList[0]), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));

@@ -11,6 +11,7 @@ namespace IndexSearchAndAnalyze
             this.FileNameAddition = FileNameAddition;
             this.p = p;
         }
+
         internal bool Accepts(double scanPrecursorMass, double monoisotopicMass)
         {
             return p(scanPrecursorMass, monoisotopicMass);

@@ -49,7 +49,6 @@ namespace IndexSearchAndAnalyze
             return precursorMass.CompareTo(other);
         }
 
-
         public int CompareTo(object obj)
         {
             var other = obj as LocalMs2Scan;

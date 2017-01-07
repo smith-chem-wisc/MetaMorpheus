@@ -1,12 +1,10 @@
-﻿using FragmentGeneration;
-using IndexSearchAndAnalyze;
+﻿using IndexSearchAndAnalyze;
 using MassSpectrometry;
 using MetaMorpheus;
 using NUnit.Framework;
 using Proteomics;
 using Spectra;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Test
 {
@@ -16,7 +14,6 @@ namespace Test
         [Test]
         public void TestAnalysis()
         {
-
             List<NewPsm>[] newPsms = null;
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
             List<Protein> proteinList = null;
@@ -43,7 +40,6 @@ namespace Test
             analysisEngine = new AnalysisEngine(analysisParams);
             Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
                     .With.Property("Message").EqualTo("proteinList is null"));
-
         }
     }
 }

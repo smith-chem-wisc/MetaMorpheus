@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text;
 
 namespace MetaMorpheus
@@ -36,12 +34,12 @@ namespace MetaMorpheus
         public int SpectrumNumber { get; private set; }
         public int SpectrumIndexHere { get; internal set; }
 
-        private string SpectrumTitle;
-        private double RetentionTimeMinutes;
-        private double PrecursorIntensity;
-        private double PrecursorMass;
-        private int totalExperimentalPeaks;
-        private double TotalIntensity;
+        //private string SpectrumTitle;
+        //private double RetentionTimeMinutes;
+        //private double PrecursorIntensity;
+        //private double PrecursorMass;
+        //private int totalExperimentalPeaks;
+        //private double TotalIntensity;
 
         //public PeptideSpectrumMatch(TandemMassSpectrum Spectrum, PeptideWithSetModifications Peptide, MassTolerance productMassTolerance, int needToMatch, List<ProductType> productTypes, int indexHere)
         //{
@@ -168,7 +166,7 @@ namespace MetaMorpheus
             + "\tTheoretical Mass (Da)\tPrecursor Mass Error (Da)\tPrecursor Mass Error (ppm)"
             + "\tMatching Products\tTotal Products\tRatio of Matching Products\tMatching Intensity\tFraction of Intensity Matching\tMetaMorpheus Score\tIon Matches\tIon Counts\tExtended Scores\tImprovement\tImprovementResidue\tImprovementTerminus";
 
-        private List<ProductType> productTypes;
+        //private List<ProductType> productTypes;
         public List<double> LocalizedScores;
 
         //private List<double> theoreticaklMzMatches;
@@ -177,52 +175,52 @@ namespace MetaMorpheus
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append(spectrumFilename.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(SpectrumNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(spectrumID.ToString(CultureInfo.InvariantCulture) + '\t');
-            if (SpectrumTitle == null)
-                sb.Append('\t');
-            else
-                sb.Append(SpectrumTitle.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(RetentionTimeMinutes.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(spectrumPrecursorMZ.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PrecursorIntensity.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(spectrumPrecursorCharge.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PrecursorMass.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(totalExperimentalPeaks.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(TotalIntensity.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(spectrumFilename.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(SpectrumNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(spectrumID.ToString(CultureInfo.InvariantCulture) + '\t');
+            //if (SpectrumTitle == null)
+            //    sb.Append('\t');
+            //else
+            //    sb.Append(SpectrumTitle.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(RetentionTimeMinutes.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(spectrumPrecursorMZ.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(PrecursorIntensity.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(spectrumPrecursorCharge.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(PrecursorMass.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(totalExperimentalPeaks.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(TotalIntensity.ToString(CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append(Peptide.ExtendedSequence + '\t');
-            sb.Append(Peptide.BaseSequence + '\t');
-            sb.Append(Peptide.protein.FullDescription + '\t');
-            sb.Append(Peptide.PeptideDescription + '\t');
-            sb.Append(Peptide.OneBasedStartResidueInProtein.ToString() + '\t');
-            sb.Append(Peptide.OneBasedEndResidueInProtein.ToString() + '\t');
-            //sb.Append(Peptide.MissedCleavages.ToString() + '\t');
-            sb.Append(Peptide.MonoisotopicMass.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(Peptide.ExtendedSequence + '\t');
+            //sb.Append(Peptide.BaseSequence + '\t');
+            //sb.Append(Peptide.protein.FullDescription + '\t');
+            //sb.Append(Peptide.PeptideDescription + '\t');
+            //sb.Append(Peptide.OneBasedStartResidueInProtein.ToString() + '\t');
+            //sb.Append(Peptide.OneBasedEndResidueInProtein.ToString() + '\t');
+            ////sb.Append(Peptide.MissedCleavages.ToString() + '\t');
+            //sb.Append(Peptide.MonoisotopicMass.ToString(CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append(PrecursorMassErrorDa.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PrecursorMassErrorPpm.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(MatchingProducts.ToString() + '\t');
-            sb.Append(TotalProducts.ToString() + '\t');
-            sb.Append(MatchingProductsFraction.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(MatchingIntensity.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(MatchingIntensityFraction.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(MetaMorpheusScore.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append("[");
-            foreach (var kvp in MatchedIonsList)
-                sb.Append("[" + string.Join(",", kvp.Value) + "];");
-            sb.Append("]" + '\t');
-            sb.Append(string.Join(";", MatchedIonsList.Select(b => b.Value.Where(c => c < 0).Count())) + '\t');
-            sb.Append("[" + string.Join(",", LocalizedScores) + "]" + '\t');
-            sb.Append((LocalizedScores.Max() - MetaMorpheusScore).ToString() + '\t');
-            sb.Append(Peptide[LocalizedScores.IndexOf(LocalizedScores.Max())].ToString() + '\t');
-            if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
-                sb.Append("N");
-            else if (LocalizedScores.Max() == LocalizedScores.Last())
-                sb.Append("C");
-            else
-                sb.Append("");
+            //sb.Append(PrecursorMassErrorDa.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(PrecursorMassErrorPpm.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(MatchingProducts.ToString() + '\t');
+            //sb.Append(TotalProducts.ToString() + '\t');
+            //sb.Append(MatchingProductsFraction.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(MatchingIntensity.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(MatchingIntensityFraction.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(MetaMorpheusScore.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append("[");
+            //foreach (var kvp in MatchedIonsList)
+            //    sb.Append("[" + string.Join(",", kvp.Value) + "];");
+            //sb.Append("]" + '\t');
+            //sb.Append(string.Join(";", MatchedIonsList.Select(b => b.Value.Where(c => c < 0).Count())) + '\t');
+            //sb.Append("[" + string.Join(",", LocalizedScores) + "]" + '\t');
+            //sb.Append((LocalizedScores.Max() - MetaMorpheusScore).ToString() + '\t');
+            //sb.Append(Peptide[LocalizedScores.IndexOf(LocalizedScores.Max())].ToString() + '\t');
+            //if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
+            //    sb.Append("N");
+            //else if (LocalizedScores.Max() == LocalizedScores.Last())
+            //    sb.Append("C");
+            //else
+            //    sb.Append("");
 
             return sb.ToString();
         }

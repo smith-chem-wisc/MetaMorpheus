@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using MetaMorpheus;
+﻿using System.Collections.Generic;
 
 namespace MetaMorpheus
 {

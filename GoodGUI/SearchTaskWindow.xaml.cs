@@ -1,10 +1,11 @@
 ﻿using MetaMorpheus;
 using Spectra;
-using System.Globalization;
-using System.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
+using System.Windows;
 
 namespace GoodGUI
 {
@@ -13,33 +14,28 @@ namespace GoodGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
-        private ObservableCollection<ModListForSearch> ModFileList = new ObservableCollection<ModListForSearch>();
+        // Always create a new one, even if updating an existing task
+        private ObservableCollection<ModListForSearch> ModFileListInWindow = new ObservableCollection<ModListForSearch>();
 
         public SearchTaskWindow(IEnumerable<ModList> modList)
         {
             InitializeComponent();
-            PopulateChoices();
+            PopulateChoices(modList);
 
-            foreach (var uu in modList)
-                ModFileList.Add(new ModListForSearch(uu));
-            modificationsDataGrid.DataContext = ModFileList;
-
-            TheTask = new MySearchTask(ModFileList);
-            UpdateFields(TheTask);
+            TheTask = new MySearchTask(modList);
+            UpdateFieldsFromTask(TheTask);
         }
 
-        public SearchTaskWindow(MySearchTask task)
+        public SearchTaskWindow(MySearchTask task, IEnumerable<ModList> modList)
         {
             InitializeComponent();
-            PopulateChoices();
-
-            modificationsDataGrid.DataContext = task.modFileList;
+            PopulateChoices(modList);
 
             TheTask = task;
-            UpdateFields(TheTask);
+            UpdateFieldsFromTask(TheTask);
         }
 
-        private void PopulateChoices()
+        private void PopulateChoices(IEnumerable<ModList> modList)
         {
             foreach (Protease protease in ProteaseDictionary.Instance.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -50,9 +46,14 @@ namespace GoodGUI
 
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
                 productMassToleranceComboBox.Items.Add(toleranceUnit);
+
+            // Always create new ModFileList
+            foreach (var uu in modList)
+                ModFileListInWindow.Add(new ModListForSearch(uu));
+            modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 
-        private void UpdateFields(MySearchTask task)
+        private void UpdateFieldsFromTask(MySearchTask task)
         {
             checkBoxDecoy.IsChecked = task.searchDecoy;
             missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -63,6 +64,16 @@ namespace GoodGUI
             productMassToleranceComboBox.SelectedIndex = (int)task.productMassTolerance.Unit;
             bCheckBox.IsChecked = task.bIons;
             yCheckBox.IsChecked = task.yIons;
+            for (int i = 0; i < ModFileListInWindow.Count; i++)
+            {
+                if (task.listOfModListsForSearch[i].Fixed)
+                    ModFileListInWindow[i].Fixed = true;
+                if (task.listOfModListsForSearch[i].Variable)
+                    ModFileListInWindow[i].Variable = true;
+                if (task.listOfModListsForSearch[i].Localize)
+                    ModFileListInWindow[i].Localize = true;
+            }
+
             modificationsDataGrid.Items.Refresh();
         }
 
@@ -72,6 +83,7 @@ namespace GoodGUI
         {
             DialogResult = false;
         }
+
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
             TheTask.searchDecoy = checkBoxDecoy.IsChecked.Value;
@@ -83,6 +95,7 @@ namespace GoodGUI
             TheTask.productMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.bIons = bCheckBox.IsChecked.Value;
             TheTask.yIons = yCheckBox.IsChecked.Value;
+            TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
 
             DialogResult = true;
         }

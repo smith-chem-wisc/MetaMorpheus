@@ -5,26 +5,26 @@ using System.Windows;
 namespace GoodGUI
 {
     /// <summary>
-    /// Interaction logic for CalibrateTaskWindow.xaml
+    /// Interaction logic for GPTMDTaskWindow.xaml
     /// </summary>
-    public partial class CalibrateTaskWindow : Window
+    public partial class GPTMDTaskWindow : Window
     {
         private ObservableCollection<ModList> modFileList;
-        private MyCalibrateTask myCalibrateTask;
+        private MyGPTMDtask myGPTMDtask;
 
-        public CalibrateTaskWindow()
+        public GPTMDTaskWindow()
         {
             InitializeComponent();
         }
 
-        public CalibrateTaskWindow(ObservableCollection<ModList> modFileList)
+        public GPTMDTaskWindow(ObservableCollection<ModList> modFileList)
         {
             this.modFileList = modFileList;
         }
 
-        public CalibrateTaskWindow(MyCalibrateTask myCalibrateTask, ObservableCollection<ModList> modFileList)
+        public GPTMDTaskWindow(MyGPTMDtask myGPTMDtask, ObservableCollection<ModList> modFileList)
         {
-            this.myCalibrateTask = myCalibrateTask;
+            this.myGPTMDtask = myGPTMDtask;
             this.modFileList = modFileList;
         }
 

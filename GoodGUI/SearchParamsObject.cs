@@ -1,7 +1,4 @@
-﻿using MetaMorpheus;
-using System.Collections.Generic;
-
-namespace GoodGUI
+﻿namespace GoodGUI
 {
     //    internal class SearchParamsObject
     //    {

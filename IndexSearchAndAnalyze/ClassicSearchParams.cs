@@ -18,7 +18,7 @@ namespace IndexSearchAndAnalyze
         public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
         public int spectraFileIndex { get; private set; }
 
-        public ClassicSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, SearchMode searchMode, Action<string> a1, Action<int> a2) :base(a1,a2)
+        public ClassicSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, SearchMode searchMode, Action<string> a1, Action<int> a2) : base(a1, a2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;
@@ -29,11 +29,10 @@ namespace IndexSearchAndAnalyze
             this.productMassTolerance = fragmentTolerance;
             this.protease = protease;
             this.searchMode = searchMode;
-            
         }
+
         internal override void Validate()
         {
-            
         }
     }
 }

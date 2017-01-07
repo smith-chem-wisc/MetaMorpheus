@@ -1,15 +1,15 @@
 ﻿using MetaMorpheus;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System;
+using System.Collections.ObjectModel;
 
 namespace GoodGUI
 {
-    internal class MyGPTMDtask : MyTask
+    public class MyGPTMDtask : MyTask
     {
         public MyGPTMDtask() : base(2)
         {
         }
+
         public string precursorMassToleranceTextBox { get; internal set; }
         public int precursorMassToleranceComboBox { get; internal set; }
         public string missedCleavagesTextBox { get; internal set; }
@@ -24,7 +24,7 @@ namespace GoodGUI
         public string acceptedPrecursorMassErrorsTextBox { get; internal set; }
         public bool? checkBoxMonoisotopic { get; internal set; }
 
-        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, ParamsObject po)
+        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             throw new NotImplementedException();
         }

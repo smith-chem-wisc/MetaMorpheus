@@ -2,7 +2,6 @@
 using IndexSearchAndAnalyze;
 using MassSpectrometry;
 using MathNet.Numerics.Statistics;
-using MetaMorpheus;
 using Proteomics;
 using Spectra;
 using System;

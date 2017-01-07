@@ -1,7 +1,4 @@
-﻿using Chemistry;
-using MassSpectrometry;
-using MathNet.Numerics.Statistics;
-using MetaMorpheus;
+﻿using MetaMorpheus;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -13,7 +10,6 @@ namespace IndexSearchAndAnalyze
 {
     public class ClassicSearchEngine : MyEngine
     {
-
         public ClassicSearchEngine(ClassicSearchParams searchParams)
         {
             this.myParams = searchParams;
@@ -158,7 +154,7 @@ namespace IndexSearchAndAnalyze
             if (index < 0)
                 index = ~index;
 
-            // index of the first element that is larger than value 
+            // index of the first element that is larger than value
             return index;
         }
 

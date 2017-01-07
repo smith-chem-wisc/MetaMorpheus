@@ -96,6 +96,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AllTasksClass.cs" />
+    <Compile Include="GPTMDTaskWindow.xaml.cs">
+      <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="GPTMD.cs" />
     <Compile Include="GPTMDParamsObject.cs" />
     <Compile Include="GptmdPTMlist.cs" />
@@ -104,7 +108,7 @@
     <Compile Include="MyCalibrateTask.cs" />
     <Compile Include="MySearchTask.cs" />
     <Compile Include="MyTask.cs" />
-    <Compile Include="ParamsObject.cs" />
+    <Compile Include="AllTasksParams.cs" />
     <Compile Include="SearchParamsObject.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
@@ -112,7 +116,12 @@
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SingleTaskEventArgs.cs" />
     <Compile Include="TaskListWrapper.cs" />
+    <Page Include="GPTMDTaskWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

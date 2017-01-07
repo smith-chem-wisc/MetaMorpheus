@@ -51,7 +51,7 @@ namespace IndexSearchAndAnalyze
 
                 analysisParams.action2(orderedPsmsWithPeptidesAndFDR, analysisParams.searchModes[j].FileNameAddition);
 
-                yeah[j]= orderedPsmsWithPeptidesAndFDR;
+                yeah[j] = orderedPsmsWithPeptidesAndFDR;
             }
 
             return new AnalysisResults(analysisParams, yeah);

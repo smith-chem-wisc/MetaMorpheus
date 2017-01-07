@@ -1,33 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using MetaMorpheus;
-using static GoodGUI.MainWindow;
-using IndexSearchAndAnalyze;
-using Spectra;
-using System.IO;
-using MassSpectrometry;
+﻿using IndexSearchAndAnalyze;
 using IO.MzML;
 using IO.Thermo;
+using MassSpectrometry;
+using MetaMorpheus;
+using Spectra;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using mzCal;
-using Proteomics;
-using FragmentGeneration;
-using System.Globalization;
 
 namespace GoodGUI
 {
     public class MySearchTask : MyTask
     {
-
-        public MySearchTask(ObservableCollection<ModListForSearch> modFileList) : base(1)
+        public MySearchTask(IEnumerable<ModList> modList) : base(1)
         {
-            this.modFileList = modFileList;
-
-            modFileList[0].Fixed = true;
-            modFileList[1].Variable = true;
-            modFileList[2].Localize = true;
-
             // Set default values here:
             searchDecoy = true;
             maxMissedCleavages = 2;
@@ -37,6 +24,12 @@ namespace GoodGUI
             productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             bIons = true;
             yIons = true;
+            listOfModListsForSearch = new List<ModListForSearch>();
+            foreach (var uu in modList)
+                listOfModListsForSearch.Add(new ModListForSearch(uu));
+            listOfModListsForSearch[0].Fixed = true;
+            listOfModListsForSearch[1].Variable = true;
+            listOfModListsForSearch[2].Localize = true;
         }
 
         public string precursorMassToleranceTextBox { get; internal set; }
@@ -49,9 +42,9 @@ namespace GoodGUI
         public bool bIons { get; internal set; }
         public bool yIons { get; internal set; }
         public bool searchDecoy { get; internal set; }
-        public ObservableCollection<ModListForSearch> modFileList { get; private set; }
+        public List<ModListForSearch> listOfModListsForSearch { get; internal set; }
 
-        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, ParamsObject po)
+        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
@@ -67,9 +60,9 @@ namespace GoodGUI
                 myMsDataFile.Open();
                 po.RTBoutput("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-                List<MorpheusModification> variableModifications = modFileList.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
-                List<MorpheusModification> fixedModifications = modFileList.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
-                List<MorpheusModification> localizeableModifications = modFileList.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
+                List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
+                List<MorpheusModification> fixedModifications = listOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
+                List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
                 Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
                 HashSet<string> unidentifiedModStrings;
                 GenerateModsFromStrings(completeXmlDbList.Select(b => b.FileName).ToList(), localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
@@ -83,7 +76,6 @@ namespace GoodGUI
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
                 po.RTBoutput(searchResults.ToString());
-
             }
         }
     }

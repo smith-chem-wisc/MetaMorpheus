@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using MassSpectrometry;
-using Spectra;
-using System.Linq;
 
 namespace IndexSearchAndAnalyze
 {

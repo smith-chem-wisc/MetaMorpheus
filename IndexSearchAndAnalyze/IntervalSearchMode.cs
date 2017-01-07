@@ -1,6 +1,5 @@
-﻿using System;
+﻿using Spectra;
 using System.Collections.Generic;
-using Spectra;
 
 namespace IndexSearchAndAnalyze
 {
@@ -14,7 +13,6 @@ namespace IndexSearchAndAnalyze
             this.acceptableSortedMassShifts = acceptableSortedMassShifts;
             this.tol = tol;
         }
-
 
         internal IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {

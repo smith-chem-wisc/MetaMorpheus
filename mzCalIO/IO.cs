@@ -3,7 +3,6 @@ using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using mzCal;
-using MzIdentML;
 using Proteomics;
 using Spectra;
 using System;

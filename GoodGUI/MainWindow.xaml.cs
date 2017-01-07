@@ -1,13 +1,8 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
-using mzCal;
-using Proteomics;
+﻿using MetaMorpheus;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,9 +19,8 @@ namespace GoodGUI
     {
         private static ObservableCollection<RawData> rawDataAndResultslist = new ObservableCollection<RawData>();
         private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
-        private static ObservableCollection<GptmdPTMlist> GPTMDfileList = new ObservableCollection<GptmdPTMlist>();
         private static ObservableCollection<ModList> ModFileList = new ObservableCollection<ModList>();
-        private ParamsObject po;
+        private AllTasksParams po;
 
         private static TaskListWrapper taskListWrapper;
 
@@ -36,9 +30,6 @@ namespace GoodGUI
             GPTMD,
             Calibrate
         }
-
-        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
-        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
 
         public MainWindow()
         {
@@ -60,7 +51,6 @@ namespace GoodGUI
             ModFileList.Add(new ModList("m.txt"));
             ModFileList.Add(new ModList("r.txt"));
             ModFileList.Add(new ModList("s.txt"));
-
 
             // RAW FILES
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw");
@@ -85,21 +75,7 @@ namespace GoodGUI
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\2016-10-21-11-07\04-29-13_B6_Frac1_9uL-Calibrated.psmtsv");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\2016-10-21-15-18\aggregate.psmtsv");
 
-            //foreach (Protease protease in ProteaseDictionary.Instance.Values)
-            //    proteaseComboBox.Items.Add(protease);
-            //proteaseComboBox.SelectedIndex = 12;
-
             RegOutput(ProteaseDictionary.Instance.Count + " proteases loaded from proteases.tsv");
-            //foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
-            //    initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior.ToLower());
-            //initiatorMethionineBehaviorComboBox.SelectedIndex = 2;
-
-            //precursorMassToleranceComboBox.Items.Add("Da");
-            //precursorMassToleranceComboBox.Items.Add("ppm");
-            //precursorMassToleranceComboBox.SelectedIndex = 1;
-            //productMassToleranceComboBox.Items.Add("Da");
-            //productMassToleranceComboBox.Items.Add("ppm");
-            //productMassToleranceComboBox.SelectedIndex = 0;
             AminoAcidMasses.LoadAminoAcidMasses();
             RegOutput("Amino acid masses loaded from amino_acids.tsv");
 
@@ -146,17 +122,48 @@ namespace GoodGUI
 
             //maxModificationIsoformsTextBox.Text = 10000.ToString();
 
-            po = new ParamsObject();
+            po = new AllTasksParams();
             po.outLabelStatusHandler += NewoutLabelStatus;
             po.outProgressBarHandler += NewoutProgressBar;
             po.outRichTextBoxHandler += NewoutRichTextBox;
-            po.outSuccessfullyFinishedTaskHandler += NewSuccessfullyFinishedAllTasks;
-            po.outSuccessfullyStartingTaskHandler += NewSuccessfullyStartingAllTasks;
             po.SuccessfullyFinishedFileHandler += NewSuccessfullyFinishedFile;
-            po.outTextBoxHandler += NewoutTextBox;
-            po.refreshBetweenTasksHandler += NewRefreshBetweenTasks;
+
+            po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
+            po.startingSingleTaskHander += Po_startingSingleTaskHander;
+            po.finishedAllTasksHandler += NewSuccessfullyFinishedAllTasks;
+            po.startingAllTasksHander += NewSuccessfullyStartingAllTasks;
 
             UpdateTaskGuiStuff();
+        }
+
+        private void Po_startingSingleTaskHander(object sender, SingleTaskEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => Po_startingSingleTaskHander(sender, s)));
+            }
+            else
+            {
+                s.theTask.IsMySelected = true;
+                statusLabel.Content = "Starting " + s.theTask.taskType + " task";
+                outProgressBar.IsIndeterminate = true;
+                tasksDataGrid.Items.Refresh();
+            }
+        }
+
+        private void Po_finishedSingleTaskHandler(object sender, SingleTaskEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => Po_finishedSingleTaskHandler(sender, s)));
+            }
+            else
+            {
+                s.theTask.IsMySelected = false;
+                statusLabel.Content = "Finished " + s.theTask.taskType + " task";
+                outProgressBar.Value = 100;
+                tasksDataGrid.Items.Refresh();
+            }
         }
 
         //private void TasksDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -220,7 +227,6 @@ namespace GoodGUI
         //        }
         //    }
         //}
-
 
         private void addFile(string filepath)
         {
@@ -431,11 +437,9 @@ namespace GoodGUI
 
         //        case MyTaskEnum.Calibrate:
 
-
         //            po.RTBoutput("Starting calibrate task");
         //            foreach (var anEntry in rawDataAndResultslist.Where(b => b.FileName != null && b.Use == true).ToList())
         //            {
-
         //                //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
         //                //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
         //                //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
@@ -616,7 +620,7 @@ namespace GoodGUI
                 addFile(file);
             }
         }
-        
+
         private void button_Click(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(@"help.txt");
@@ -651,41 +655,11 @@ namespace GoodGUI
         //    }
         //}
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            //modificationsDataGrid.Columns[0].Visibility = Visibility.Hidden;
-            unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(@"unimod_tables.xml");
-            uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(@"ptmlist.txt");
-
-        }
-
-        private void RunTasks_Click(object sender, RoutedEventArgs e)
-        {
-
-            var t = new Thread(() => DoAllTasks(taskListWrapper.EnumerateTasks(), rawDataAndResultslist, xMLdblist, ModFileList));
+            var t = new Thread(() => AllTasksClass.DoAllTasks(taskListWrapper.EnumerateTasks(), rawDataAndResultslist, xMLdblist, po));
             t.IsBackground = true;
             t.Start();
-        }
-
-        private void DoAllTasks(IEnumerable<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModList> searchfileList)
-        {
-            po.startingAllTasks();
-            foreach (var ok in taskList)
-            {
-                ok.DoTask(rawDataAndResultslist, xMLdblist, po);
-                po.refreshTask();
-            }
-            po.FinishedAllTasks();
-        }
-
-        private ObservableCollection<XMLdb> AddAndUncheck(ObservableCollection<XMLdb> xMLdblist, List<string> currentXmlDbList)
-        {
-            throw new NotImplementedException();
-        }
-
-        private ObservableCollection<RawData> AddAndUncheck(ObservableCollection<RawData> rawDataAndResultslist, List<string> currentRawFileList)
-        {
-            throw new NotImplementedException();
         }
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
@@ -696,7 +670,6 @@ namespace GoodGUI
 
         private void UpdateTaskGuiStuff()
         {
-
             if (taskListWrapper.Count == 0)
             {
                 RunTasksButton.IsEnabled = false;
@@ -710,7 +683,6 @@ namespace GoodGUI
                 ClearTasksButton.IsEnabled = true;
             }
         }
-
 
         //private void addTaskButton_Click(object sender, RoutedEventArgs e)
         //{
@@ -736,19 +708,34 @@ namespace GoodGUI
 
         private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-
+            var dialog = new CalibrateTaskWindow(ModFileList);
+            if (dialog.ShowDialog() == true)
+            {
+                taskListWrapper.Add(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+            else
+            {
+            }
         }
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-
+            var dialog = new GPTMDTaskWindow(ModFileList);
+            if (dialog.ShowDialog() == true)
+            {
+                taskListWrapper.Add(dialog.TheTask);
+                UpdateTaskGuiStuff();
+            }
+            else
+            {
+            }
         }
 
         private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
         {
             taskListWrapper.RemoveLast();
             UpdateTaskGuiStuff();
-
         }
 
         private void tasksDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -758,21 +745,19 @@ namespace GoodGUI
             switch (ok.taskType)
             {
                 case MyTaskEnum.Search:
-                    var dialog = new SearchTaskWindow(ok as MySearchTask);
-                    if (dialog.ShowDialog() == true)
-                    {
-                        // Updated a task
-                    }
-                    else
-                    {
-                        // Did not update a task
-                    }
-                    break;
-                case MyTaskEnum.GPTMD:
-                    break;
-                case MyTaskEnum.Calibrate:
+                    var searchDialog = new SearchTaskWindow(ok as MySearchTask, ModFileList);
+                    searchDialog.ShowDialog();
                     break;
 
+                case MyTaskEnum.GPTMD:
+                    var gptmddialog = new GPTMDTaskWindow(ok as MyGPTMDtask, ModFileList);
+                    gptmddialog.ShowDialog();
+                    break;
+
+                case MyTaskEnum.Calibrate:
+                    var calibratedialog = new CalibrateTaskWindow(ok as MyCalibrateTask, ModFileList);
+                    calibratedialog.ShowDialog();
+                    break;
             }
         }
     }

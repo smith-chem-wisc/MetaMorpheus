@@ -1,16 +1,7 @@
-﻿using IndexSearchAndAnalyze;
-using IO.MzML;
-using IO.Thermo;
-using MassSpectrometry;
-using MetaMorpheus;
-using mzCal;
-using Spectra;
+﻿using MetaMorpheus;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.IO;
-using System.Linq;
 
 namespace FragmentGeneration
 {
@@ -217,7 +208,6 @@ namespace FragmentGeneration
             //    myMsDataFile.Open();
             //    Console.WriteLine("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-
             //    //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
             //    //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
             //    //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
@@ -238,7 +228,6 @@ namespace FragmentGeneration
             //    //SoftwareLockMassParams a = mzCalIO.mzCalIO.GetReady(dataFiles[spectraFileIndex], identifications[0]);
             //    //SoftwareLockMassRunner.Run(a);
 
-                
             //    //ModernSearchParams searchParams = new ModernSearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes);
             //    //ModernSearchEngine searchEngine = new ModernSearchEngine(searchParams);
             //    //ModernSearchResults searchResults = (ModernSearchResults)searchEngine.Run();

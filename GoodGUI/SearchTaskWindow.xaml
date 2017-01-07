@@ -8,7 +8,7 @@
         Title="Search Task" Width="550" Height="600" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <Grid>
         <StackPanel>
-            <Label Content="Search Parameters:" Height="30"/>
+            <Label Content="Search Parameters:" Height="30" />
             <StackPanel Margin="5">
                 <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys and do FDR analysis" />
             </StackPanel>

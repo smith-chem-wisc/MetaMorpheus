@@ -44,7 +44,7 @@ namespace IndexSearchAndAnalyze
         }
 
         // For a single search mode
-        public AnalysisParams(List<NewPsm> newPsms1, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching1, List<Protein> proteinList1, List<MorpheusModification> variableModifications1, List<MorpheusModification> fixedModifications1, List<MorpheusModification> localizeableModifications1, Protease protease1, SearchMode searchMode, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile1, Tolerance fragmentTolerance, unimod unimodDeserialized1, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized1, Action<BinTreeStructure, string> p1, Action<List<NewPsmWithFDR>, string> p2, Action<string> a1, Action<int> a2):base(a1,a2)
+        public AnalysisParams(List<NewPsm> newPsms1, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching1, List<Protein> proteinList1, List<MorpheusModification> variableModifications1, List<MorpheusModification> fixedModifications1, List<MorpheusModification> localizeableModifications1, Protease protease1, SearchMode searchMode, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile1, Tolerance fragmentTolerance, unimod unimodDeserialized1, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized1, Action<BinTreeStructure, string> p1, Action<List<NewPsmWithFDR>, string> p2, Action<string> a1, Action<int> a2) : base(a1, a2)
         {
             this.newPsms = new List<NewPsm>[1] { newPsms1 };
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching1;

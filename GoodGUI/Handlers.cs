@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 
 namespace GoodGUI
 {
@@ -13,19 +12,7 @@ namespace GoodGUI
             }
             else
             {
-                outLabelStatus.Content = s;
-            }
-        }
-
-        private void NewoutTextBox(object sender, string s)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => NewoutTextBox(sender, s)));
-            }
-            else
-            {
-                outTextBox.Text = s;
+                statusLabel.Content = s;
             }
         }
 
@@ -37,7 +24,7 @@ namespace GoodGUI
             }
             else
             {
-                Debug.Assert(s >= 0 && s <= 100);
+                outProgressBar.IsIndeterminate = false;
                 outProgressBar.Value = s;
             }
         }
@@ -75,12 +62,17 @@ namespace GoodGUI
             }
             else
             {
+                //TODO: Check those
                 XMLdbPanel.IsEnabled = false;
                 DatafilesStackPanel.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
                 addCalibrateTaskButton.IsEnabled = false;
                 addGPTMDTaskButton.IsEnabled = false;
                 tasksPanel.IsEnabled = false;
+
+                statusLabel.Content = "Starting all tasks...";
+                outProgressBar.IsIndeterminate = true;
+
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -93,12 +85,17 @@ namespace GoodGUI
             }
             else
             {
+                //TODO: Check those
                 XMLdbPanel.IsEnabled = true;
                 DatafilesStackPanel.IsEnabled = true;
                 addSearchTaskButton.IsEnabled = true;
                 addCalibrateTaskButton.IsEnabled = true;
                 addGPTMDTaskButton.IsEnabled = true;
                 tasksPanel.IsEnabled = true;
+
+                statusLabel.Content = "Finished all tasks!";
+                outProgressBar.Value = 100;
+
                 dataGridDatafiles.Items.Refresh();
             }
         }

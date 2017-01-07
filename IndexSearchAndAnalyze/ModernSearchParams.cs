@@ -1,8 +1,8 @@
 ﻿using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 
 namespace IndexSearchAndAnalyze
 {
@@ -39,7 +39,6 @@ namespace IndexSearchAndAnalyze
 
         internal override void Validate()
         {
-
         }
     }
 }

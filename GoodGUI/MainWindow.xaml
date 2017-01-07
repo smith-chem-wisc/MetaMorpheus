@@ -5,21 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GoodGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Height="800" Width="1024"
-        Drop="Window_Drop" AllowDrop="true" Loaded="Window_Loaded"  WindowStartupLocation="CenterScreen">
+        Title="MetaMorpheus Not a release" Height="730" Width="1024"
+        Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinWidth="600">
     <StackPanel Margin="5">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="1*"/>
-                    <RowDefinition Height="1*"/>
-                    <RowDefinition Height="1*"/>
-                </Grid.RowDefinitions>
-                <Border BorderBrush="Black" Grid.Row="0" BorderThickness="2" Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+            <StackPanel>
+                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
                     <StackPanel Margin="5" x:Name="XMLdbPanel">
                         <Label x:Name="xmlLabel" Content="XML Databases" HorizontalAlignment="Center" />
                         <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100">
@@ -34,7 +33,7 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-                <Border BorderBrush="Black" BorderThickness="2" Grid.Row="1" Margin="5">
+                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
                     <StackPanel x:Name="DatafilesStackPanel" Margin="5">
                         <Label x:Name="DatafilesLabel" Content="Datafiles" HorizontalAlignment="Center" />
                         <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
@@ -50,20 +49,20 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-                <Border BorderBrush="Black" BorderThickness="2" Grid.Row="2" Margin="5">
-                    <StackPanel x:Name="OutputFilesStackPanel" Margin="5">
-                        <Label x:Name="outputFilesLabel" Content="Output Files" HorizontalAlignment="Center" />
-                        <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
-                            <DataGrid.Resources>
-                                <Style TargetType="DataGridCell">
-                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
-                                </Style>
-                            </DataGrid.Resources>
-                        </DataGrid>
-                    </StackPanel>
-                </Border>
-            </Grid>
-            <StackPanel x:Name="RightPanel"  Grid.Column="2">
+            </StackPanel>
+            <Border BorderBrush="Black" BorderThickness="2" Grid.Row="1" Margin="5">
+                <StackPanel x:Name="OutputFilesStackPanel" Margin="5">
+                    <Label x:Name="outputFilesLabel" Content="Output Files" HorizontalAlignment="Center" />
+                    <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
+                        <DataGrid.Resources>
+                            <Style TargetType="DataGridCell">
+                                <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                            </Style>
+                        </DataGrid.Resources>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+            <StackPanel x:Name="RightPanel"  Grid.Column="1">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button x:Name="addSearchTaskButton" Content="Add Search Task" Click="addSearchTaskButton_Click" />
                     <Button x:Name="addCalibrateTaskButton" Content="Add Calibrate Task" Click="addCalibrateTaskButton_Click" />
@@ -80,12 +79,12 @@
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Setter Property="Foreground" Value="Black" />
                                         <Style.Triggers>
                                             <Trigger Property="IsSelected" Value="True">
                                                 <Setter Property="Background" Value="Transparent" />
                                                 <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="Foreground" Value="Black" />
                                             </Trigger>
                                             <DataTrigger Binding="{Binding IsMySelected}" Value="True">
                                                 <Setter Property="Foreground" Value="Blue" />
@@ -96,12 +95,12 @@
                                     <Style TargetType="{x:Type DataGridRow}">
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black"/>
+                                        <Setter Property="Foreground" Value="Black" />
                                         <Style.Triggers>
                                             <Trigger Property="IsSelected" Value="True">
                                                 <Setter Property="Background" Value="Transparent" />
                                                 <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="Foreground" Value="Black" />
                                             </Trigger>
                                             <DataTrigger Binding="{Binding IsMySelected}" Value="True">
                                                 <Setter Property="Foreground" Value="Blue" />
@@ -116,21 +115,21 @@
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                         </StackPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunTasks_Click" />
-                    </StackPanel>
-                </Border>
-                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
-                    <StackPanel  Margin="5">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
-                            <Label x:Name="outLabelStatus" Content="Ready" HorizontalAlignment="Center" />
-                        </StackPanel>
-                        <TextBox x:Name="outTextBox" Text="Ready" IsReadOnly="True" />
-                        <ProgressBar x:Name="outProgressBar" Height="15" />
-                        <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" />
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" />
                     </StackPanel>
                 </Border>
             </StackPanel>
+
+            <Border BorderBrush="Black" BorderThickness="2" Margin="5" Grid.Column="1"  Grid.Row="1">
+                <StackPanel  Margin="5">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
+                        <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
+                    </StackPanel>
+                    <ProgressBar x:Name="outProgressBar" Height="15" />
+                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" />
+                </StackPanel>
+            </Border>
         </Grid>
     </StackPanel>
 </Window>

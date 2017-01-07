@@ -1,19 +1,7 @@
-﻿using System;
+﻿using MetaMorpheus;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using MetaMorpheus;
 using static GoodGUI.MainWindow;
-using IndexSearchAndAnalyze;
-using Spectra;
-using System.IO;
-using MassSpectrometry;
-using IO.MzML;
-using IO.Thermo;
-using System.Linq;
-using mzCal;
-using Proteomics;
-using FragmentGeneration;
-using System.Globalization;
 
 namespace GoodGUI
 {
@@ -26,9 +14,11 @@ namespace GoodGUI
                 case 0:
                     taskType = MyTaskEnum.Calibrate;
                     break;
+
                 case 1:
                     taskType = MyTaskEnum.Search;
                     break;
+
                 case 2:
                     taskType = MyTaskEnum.GPTMD;
                     break;
@@ -37,7 +27,8 @@ namespace GoodGUI
 
         public MyTaskEnum taskType { get; internal set; }
         public bool IsMySelected { get; internal set; }
-        internal abstract void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, ParamsObject po);
+
+        internal abstract void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po);
 
         protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
