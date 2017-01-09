@@ -82,7 +82,7 @@ namespace MetaMorpheus
             }
         }
 
-        public Dictionary<int, List<MorpheusModification>> twoBasedFixedModificationss;
+        public Dictionary<int, List<MorpheusModification>> twoBasedFixedModificationss = new Dictionary<int, List<MorpheusModification>>();
         public int missedCleavages { get; private set; }
 
         protected IEnumerable<Dictionary<int, MorpheusModification>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsList> possibleVariableModifications, int max_mods_for_peptide)
