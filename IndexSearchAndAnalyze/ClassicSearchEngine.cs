@@ -127,12 +127,17 @@ namespace IndexSearchAndAnalyze
                 foreach (DoubleRange ye in intervalSearchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
                 {
                     int scanIndex = GetFirstScanWithMassOverOrEqual(listOfSortedms2Scans, ye.Minimum);
-                    var scan = listOfSortedms2Scans[scanIndex];
-                    while (scan.precursorMass <= ye.Maximum)
+                    if (scanIndex < listOfSortedms2Scans.Length)
                     {
-                        yield return scan;
-                        scanIndex++;
-                        scan = listOfSortedms2Scans[scanIndex];
+                        var scan = listOfSortedms2Scans[scanIndex];
+                        while (scan.precursorMass <= ye.Maximum)
+                        {
+                            yield return scan;
+                            scanIndex++;
+                            if (scanIndex == listOfSortedms2Scans.Length)
+                                break;
+                            scan = listOfSortedms2Scans[scanIndex];
+                        }
                     }
                 }
             }
