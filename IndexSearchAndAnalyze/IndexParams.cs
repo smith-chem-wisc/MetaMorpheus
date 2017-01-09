@@ -1,5 +1,4 @@
 ﻿using MetaMorpheus;
-using System;
 using System.Collections.Generic;
 
 namespace IndexSearchAndAnalyze

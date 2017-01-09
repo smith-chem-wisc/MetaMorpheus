@@ -14,7 +14,7 @@ namespace IndexSearchAndAnalyze
         {
             this.myParams = searchParams;
         }
-        
+
         protected override MyResults RunSpecific()
         {
             var searchParams = (ClassicSearchParams)myParams;
@@ -82,7 +82,7 @@ namespace IndexSearchAndAnalyze
 
                                 foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchParams.searchMode).ToList())
                                 {
-                                    var score = PSMwithPeptide.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
                                     ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, ps, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, searchParams.spectraFileIndex);
                                     if (psm.score > 1)
                                     {

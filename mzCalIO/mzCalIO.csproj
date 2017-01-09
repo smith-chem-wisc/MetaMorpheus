@@ -89,7 +89,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IO.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
@@ -108,10 +107,6 @@
     <ProjectReference Include="..\IndexSearchAndAnalyze\IndexSearchAndAnalyze.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>IndexSearchAndAnalyze</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\mzCal\mzCal.csproj">
-      <Project>{475c3b7b-4367-4bc8-8192-2a850c72812b}</Project>
-      <Name>mzCal</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

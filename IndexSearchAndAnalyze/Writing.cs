@@ -1,6 +1,4 @@
-﻿using IndexSearchAndAnalyze;
-using MathNet.Numerics.Distributions;
-using System;
+﻿using MathNet.Numerics.Distributions;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
