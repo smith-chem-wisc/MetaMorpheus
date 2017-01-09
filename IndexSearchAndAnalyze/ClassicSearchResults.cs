@@ -20,7 +20,6 @@ namespace IndexSearchAndAnalyze
             sb.Append(base.ToString());
             sb.AppendLine();
             sb.Append("Total psms: " + newPsms.Count);
-            sb.AppendLine();
 
             return sb.ToString();
         }

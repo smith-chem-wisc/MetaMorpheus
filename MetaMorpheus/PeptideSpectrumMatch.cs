@@ -124,7 +124,7 @@ namespace MetaMorpheus
         //            MatchingIntensityHere += experimental_intensities[i];
         //            if (productTypeToDetailList != ProductType.none)
         //                MatchedIonsList[productTypeToDetailList].Add(-nextTheoretical);
-        //            //Console.WriteLine(theoreticalLeft + " " + nextTheoretical + " + ");
+        //            //p.po.RTBoutput(theoreticalLeft + " " + nextTheoretical + " + ");
         //        }
         //        else if (currentExperimentalMass < nextTheoretical)
         //            continue;

@@ -87,6 +87,19 @@
     <Compile Include="AnalysisParams.cs" />
     <Compile Include="AnalysisResults.cs" />
     <Compile Include="Bin.cs" />
+    <Compile Include="CalibrationFunctions\ByHandCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\CalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\ConstantCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\CubicCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationFunctions\DataPoint.cs" />
+    <Compile Include="CalibrationFunctions\IdentityCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationFunctions\NiceTrainingPoint.cs" />
+    <Compile Include="CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationFunctions\RandomForest.cs" />
+    <Compile Include="CalibrationFunctions\SeparateCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\TrainingPoint.cs" />
+    <Compile Include="CalibrationFunctions\TransformFunction.cs" />
     <Compile Include="ClassicSearchParams.cs" />
     <Compile Include="ClassicSearchResults.cs" />
     <Compile Include="ClassicSpectrumMatch.cs" />
@@ -95,6 +108,7 @@
     <Compile Include="Internals\MyAnalysisClass.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="IntervalSearchMode.cs" />
+    <Compile Include="IO.cs" />
     <Compile Include="LocalMs2Scan.cs" />
     <Compile Include="MyCalibrateTask.cs" />
     <Compile Include="MyEngine.cs" />
@@ -123,6 +137,9 @@
     <Compile Include="ModernSearchResults.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
     <Compile Include="SingleTaskEventArgs.cs" />
+    <Compile Include="SoftwareLockMassParams.cs" />
+    <Compile Include="SoftwareLockMassRunner.cs" />
+    <Compile Include="TrainingPointsExtractor.cs" />
     <Compile Include="ValidationException.cs" />
     <Compile Include="Writing.cs" />
   </ItemGroup>

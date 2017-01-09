@@ -1,7 +1,7 @@
 ﻿using MetaMorpheus;
+using Spectra;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System;
 
 namespace IndexSearchAndAnalyze
 {
@@ -28,6 +28,15 @@ namespace IndexSearchAndAnalyze
         public MyTaskEnum taskType { get; internal set; }
         public bool IsMySelected { get; set; }
         public string output_folder { get; private set; }
+        public int maxMissedCleavages { get; set; }
+        public Protease protease { get; set; }
+        public int maxModificationIsoforms { get; set; }
+        public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
+        public Tolerance productMassTolerance { get; set; }
+        public bool bIons { get; set; }
+        public bool yIons { get; set; }
+
+        public List<ModListForSearch> listOfModListsForSearch { get; set; }
 
         public abstract void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po);
 

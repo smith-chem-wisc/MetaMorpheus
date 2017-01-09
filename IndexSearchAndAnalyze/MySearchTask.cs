@@ -1,9 +1,9 @@
-﻿using IndexSearchAndAnalyze;
-using IO.MzML;
+﻿using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -13,6 +13,7 @@ namespace IndexSearchAndAnalyze
 {
     public class MySearchTask : MyTask
     {
+        public bool searchDecoy { get; set; }
 
         public MySearchTask(IEnumerable<ModList> modList) : base(1)
         {
@@ -33,23 +34,11 @@ namespace IndexSearchAndAnalyze
             listOfModListsForSearch[2].Localize = true;
         }
 
-        public string precursorMassToleranceTextBox { get; set; }
-        public int precursorMassToleranceComboBox { get; set; }
-        public int maxMissedCleavages { get; set; }
-        public Protease protease { get; set; }
-        public int maxModificationIsoforms { get; set; }
-        public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
-        public Tolerance productMassTolerance { get; set; }
-        public bool bIons { get; set; }
-        public bool yIons { get; set; }
-        public bool searchDecoy { get; set; }
-        public List<ModListForSearch> listOfModListsForSearch { get; set; }
-
         public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
@@ -82,7 +71,6 @@ namespace IndexSearchAndAnalyze
                 myMsDataFile.Open();
                 po.RTBoutput("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-
                 ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes[0], po);
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
@@ -105,9 +93,6 @@ namespace IndexSearchAndAnalyze
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
                 po.RTBoutput(analysisResults.ToString());
             }
-
-
         }
-
     }
 }

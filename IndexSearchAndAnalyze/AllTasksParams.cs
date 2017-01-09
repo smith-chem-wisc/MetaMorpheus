@@ -1,8 +1,7 @@
-﻿using IndexSearchAndAnalyze;
+﻿using Proteomics;
 using System;
-using UsefulProteomicsDatabases.Generated;
-using Proteomics;
 using System.Collections.Generic;
+using UsefulProteomicsDatabases.Generated;
 
 namespace IndexSearchAndAnalyze
 {

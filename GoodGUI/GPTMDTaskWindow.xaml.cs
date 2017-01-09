@@ -1,19 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using IndexSearchAndAnalyze;
+﻿using IndexSearchAndAnalyze;
 using MetaMorpheus;
+using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace GoodGUI
 {
@@ -22,25 +10,40 @@ namespace GoodGUI
     /// </summary>
     public partial class GPTMDTaskWindow : Window
     {
-        private ObservableCollection<ModList> modFileList;
-        private MyGPTMDtask myGPTMDtask;
+        // Always create a new one, even if updating an existing task
+        private ObservableCollection<ModListForSearch> ModFileListInWindow = new ObservableCollection<ModListForSearch>();
 
-        public GPTMDTaskWindow()
+        public GPTMDTaskWindow(ObservableCollection<ModList> modFileList)
         {
             InitializeComponent();
         }
 
-        public GPTMDTaskWindow(ObservableCollection<ModList> modFileList)
-        {
-            this.modFileList = modFileList;
-        }
-
         public GPTMDTaskWindow(MyGPTMDtask myGPTMDtask, ObservableCollection<ModList> modFileList)
         {
-            this.myGPTMDtask = myGPTMDtask;
-            this.modFileList = modFileList;
+            InitializeComponent();
         }
 
-        public MyTask TheTask { get; private set; }
+        internal MyGPTMDtask TheTask { get; private set; }
+
+        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
+        private void saveButton_Click(object sender, RoutedEventArgs e)
+        {
+            //TheTask.searchDecoy = checkBoxDecoy.IsChecked.Value;
+            //TheTask.maxMissedCleavages = int.Parse(missedCleavagesTextBox.Text);
+            //TheTask.protease = (Protease)proteaseComboBox.SelectedItem;
+            //TheTask.maxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text);
+            //TheTask.initiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            //TheTask.productMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text);
+            //TheTask.productMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
+            //TheTask.bIons = bCheckBox.IsChecked.Value;
+            //TheTask.yIons = yCheckBox.IsChecked.Value;
+            //TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
+
+            DialogResult = true;
+        }
     }
 }
