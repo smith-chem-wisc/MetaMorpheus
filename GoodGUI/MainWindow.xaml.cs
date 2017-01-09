@@ -246,41 +246,6 @@ namespace GoodGUI
         {
             finishedFileList.Add(new FinishedFile(filepath));
             outputFilesDataGrid.Items.Refresh();
-            //var theExtension = Path.GetExtension(filepath);
-            //filepath = Path.GetFullPath(filepath);
-            //RawData res;
-            //switch (theExtension)
-            //{
-            //    case ".raw":
-            //    case ".mzML":
-            //        res = GetCorrespondingRawDataAndResultsEntry(filepath);
-            //        if (res != null)
-            //            res.AddFilePath(filepath);
-            //        else
-            //            rawDataAndResultslist.Add(new RawData(filepath));
-            //        break;
-
-            //    case ".psmtsv":
-            //        res = GetCorrespondingRawDataAndResultsEntry(filepath);
-            //        if (res != null)
-            //            res.AddTSV(filepath);
-            //        else
-            //            rawDataAndResultslist.Add(new RawData(null, null, filepath));
-            //        break;
-
-            //    case ".mzid":
-            //        res = GetCorrespondingRawDataAndResultsEntry(filepath);
-            //        if (res != null)
-            //            res.AddMZID(filepath);
-            //        else
-            //            rawDataAndResultslist.Add(new RawData(null, filepath, null));
-            //        break;
-
-            //    case ".xml":
-            //        xMLdblist.Add(new XMLdb(filepath));
-            //        break;
-            //}
-            //dataGridDatafiles.Items.Refresh();
         }
 
         private RawData GetCorrespondingRawDataAndResultsEntry(string filepath)
@@ -610,8 +575,9 @@ namespace GoodGUI
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
             {
-                addFinishedFile(openPicker.FileName);
+                xMLdblist.Add(new XMLdb(openPicker.FileName));
             }
+            dataGridXMLs.Items.Refresh();
         }
 
         private void AddRaw_Click(object sender, RoutedEventArgs e)
@@ -625,7 +591,8 @@ namespace GoodGUI
 
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var filepath in openFileDialog1.FileNames)
-                    addFinishedFile(filepath);
+                    rawDataAndResultslist.Add(new RawData(filepath));
+            dataGridDatafiles.Items.Refresh();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -633,7 +600,20 @@ namespace GoodGUI
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (var file in files)
             {
-                addFinishedFile(file);
+                var theExtension = Path.GetExtension(file);
+                switch (theExtension)
+                {
+                    case ".raw":
+                    case ".mzML":
+                        rawDataAndResultslist.Add(new RawData(file));
+                        break;
+
+
+                    case ".xml":
+                        xMLdblist.Add(new XMLdb(file));
+                        break;
+                }
+                dataGridDatafiles.Items.Refresh();
             }
         }
 
