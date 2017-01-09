@@ -128,7 +128,7 @@ namespace IndexSearchAndAnalyze
                     foreach (var fhh in ah)
                     {
                         if (fhh != null && !analysisParams.compactPeptideToProteinPeptideMatching.ContainsKey(fhh.peptide))
-                            analysisParams.compactPeptideToProteinPeptideMatching.Add(fhh.peptide, new ConcurrentBag<PeptideWithSetModifications>());
+                            analysisParams.compactPeptideToProteinPeptideMatching.Add(fhh.peptide, new ConcurrentDictionary<PeptideWithSetModifications, byte>());
                     }
             }
 
@@ -152,10 +152,10 @@ namespace IndexSearchAndAnalyze
                         var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(analysisParams.variableModifications, 4098, 3, analysisParams.localizeableModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            ConcurrentBag<PeptideWithSetModifications> v;
+                            ConcurrentDictionary<PeptideWithSetModifications, byte> v;
                             if (analysisParams.compactPeptideToProteinPeptideMatching.TryGetValue(new CompactPeptide(yyy, analysisParams.variableModifications, analysisParams.localizeableModifications), out v))
                             {
-                                v.Add(yyy);
+                                v.TryAdd(yyy, 0);
                             }
                         }
                     }
@@ -163,7 +163,7 @@ namespace IndexSearchAndAnalyze
             });
         }
 
-        public Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> newDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
@@ -237,7 +237,7 @@ namespace IndexSearchAndAnalyze
             }
 
             // swaps keys and values back for return
-            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> answer = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
 
             foreach (var kvp in parsimonyDict)
             {
@@ -245,13 +245,13 @@ namespace IndexSearchAndAnalyze
                 {
                     if (!answer.ContainsKey(peptide))
                     {
-                        ConcurrentBag<PeptideWithSetModifications> proteins = new ConcurrentBag<PeptideWithSetModifications>();
+                        ConcurrentDictionary<PeptideWithSetModifications, byte> proteins = new ConcurrentDictionary<PeptideWithSetModifications, byte>();
 
                         foreach (var kvp1 in parsimonyDict)
                         {
                             if (kvp1.Value.Contains(peptide))
                             {
-                                proteins.Add(kvp1.Key);
+                                proteins.TryAdd(kvp1.Key, 0);
                             }
                         }
 
@@ -263,7 +263,7 @@ namespace IndexSearchAndAnalyze
             return answer;
         }
 
-        public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> fullSequenceToProteinPeptideMatching)
         {
             // Right now very stupid, add the first decoy one, and if no decoy, add the first one
             Dictionary<CompactPeptide, PeptideWithSetModifications> outDict = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
@@ -274,15 +274,15 @@ namespace IndexSearchAndAnalyze
                 bool sawDecoy = false;
                 foreach (var entry in val)
                 {
-                    if (entry.protein.isDecoy)
+                    if (entry.Key.protein.isDecoy)
                     {
-                        outDict[kvp.Key] = entry;
+                        outDict[kvp.Key] = entry.Key;
                         sawDecoy = true;
                         break;
                     }
                 }
                 if (sawDecoy == false)
-                    outDict[kvp.Key] = kvp.Value.First();
+                    outDict[kvp.Key] = kvp.Value.First().Key;
             }
 
             return outDict;

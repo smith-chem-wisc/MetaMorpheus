@@ -38,7 +38,7 @@ namespace IndexSearchAndAnalyze
         {
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
 
-            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 

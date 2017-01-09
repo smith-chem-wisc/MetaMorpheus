@@ -34,6 +34,9 @@ namespace GoodGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.initiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.productMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = (int)task.productMassTolerance.Unit;
+            precursorMassToleranceTextBox.Text = task.precursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = (int)task.precursorMassTolerance.Unit;
+
             bCheckBox.IsChecked = task.bIons;
             yCheckBox.IsChecked = task.yIons;
             for (int i = 0; i < ModFileListInWindow.Count; i++)
@@ -45,7 +48,6 @@ namespace GoodGUI
                 if (task.listOfModListsForSearch[i].Localize)
                     ModFileListInWindow[i].Localize = true;
             }
-
             modificationsDataGrid.Items.Refresh();
         }
 
@@ -57,6 +59,9 @@ namespace GoodGUI
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+
+            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
+                productMassToleranceComboBox.Items.Add(toleranceUnit);
 
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
                 productMassToleranceComboBox.Items.Add(toleranceUnit);
@@ -94,6 +99,8 @@ namespace GoodGUI
             TheTask.bIons = bCheckBox.IsChecked.Value;
             TheTask.yIons = yCheckBox.IsChecked.Value;
             TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
+            TheTask.productMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text);
+            TheTask.productMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             DialogResult = true;
         }
