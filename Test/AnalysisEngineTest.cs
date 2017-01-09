@@ -17,7 +17,7 @@ namespace Test
         public void TestAnalysis()
         {
             List<NewPsm>[] newPsms = null;
-            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> compactPeptideToProteinPeptideMatching = null;
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
             List<Protein> proteinList = null;
             List<MorpheusModification> variableModifications = null;
             List<MorpheusModification> fixedModifications = null;
@@ -147,10 +147,10 @@ namespace Test
             {
                 foreach (var protein in kvp.Value)
                 {
-                    if(!parsimonyProteinList.Contains(protein.Key))
+                    if(!parsimonyProteinList.Contains(protein))
                     {
-                        parsimonyProteinList.Add(protein.Key);
-                        parsimonyBaseSequences[j] = protein.Key.BaseSequence;
+                        parsimonyProteinList.Add(protein);
+                        parsimonyBaseSequences[j] = protein.BaseSequence;
                         j++;
                     }
                 }

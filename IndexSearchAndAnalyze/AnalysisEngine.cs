@@ -179,7 +179,7 @@ namespace IndexSearchAndAnalyze
             });
         }
 
-        public Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> ApplyProteinParsimony(Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> fullSequenceToProteinPeptideMatching)
+        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> newDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
@@ -187,7 +187,7 @@ namespace IndexSearchAndAnalyze
             {
                 foreach (var protein in kvp.Value)
                 {
-                    if (!newDict.ContainsKey(protein.Key))
+                    if (!newDict.ContainsKey(protein))
                     {
                         HashSet<CompactPeptide> peptides = new HashSet<CompactPeptide>();
 
@@ -199,7 +199,7 @@ namespace IndexSearchAndAnalyze
                             }
                         }
 
-                        newDict.Add(protein.Key, peptides);
+                        newDict.Add(protein, peptides);
                     }
                 }
             }
@@ -253,7 +253,7 @@ namespace IndexSearchAndAnalyze
             }
 
             // swaps keys and values back for return
-            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> answer = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             foreach (var kvp in parsimonyDict)
             {
@@ -261,13 +261,13 @@ namespace IndexSearchAndAnalyze
                 {
                     if (!answer.ContainsKey(peptide))
                     {
-                        ConcurrentDictionary<PeptideWithSetModifications, byte> proteins = new ConcurrentDictionary<PeptideWithSetModifications, byte>();
+                        HashSet<PeptideWithSetModifications> proteins = new HashSet<PeptideWithSetModifications>();
 
                         foreach (var kvp1 in parsimonyDict)
                         {
                             if (kvp1.Value.Contains(peptide))
                             {
-                                proteins.TryAdd(kvp1.Key, 0);
+                                proteins.Add(kvp1.Key);
                             }
                         }
 
