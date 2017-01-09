@@ -49,10 +49,13 @@ namespace IndexSearchAndAnalyze
 
                         if (peptide.OneBasedPossibleLocalizedModifications.Count == 0)
                         {
+                            var hc = peptide.BaseLeucineSequence;
+                            var observed = level3_observed.Contains(hc);
+                            if (observed)
+                                continue;
                             lock (level3_observed)
                             {
-                                var hc = peptide.BaseLeucineSequence;
-                                var observed = level3_observed.Contains(hc);
+                                observed = level3_observed.Contains(hc);
                                 if (observed)
                                     continue;
                                 level3_observed.Add(hc);
@@ -66,32 +69,35 @@ namespace IndexSearchAndAnalyze
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
                             {
+                                var hc = yyy.Sequence;
+                                var observed = level4_observed.Contains(hc);
+                                if (observed)
+                                    continue;
                                 lock (level4_observed)
                                 {
-                                    var hc = yyy.Sequence;
-                                    var observed = level4_observed.Contains(hc);
+                                    observed = level4_observed.Contains(hc);
                                     if (observed)
                                         continue;
                                     level4_observed.Add(hc);
                                 }
+                            }
 
-                                var ps = new CompactPeptide(yyy, searchParams.variableModifications, searchParams.localizeableModifications);
-                                var sortedProductMasses = yyy.FastSortedProductMasses(lp);
-                                double[] matchedIonsArray = new double[sortedProductMasses.Length];
-                                ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
+                            var ps = new CompactPeptide(yyy, searchParams.variableModifications, searchParams.localizeableModifications);
+                            var sortedProductMasses = yyy.FastSortedProductMasses(lp);
+                            double[] matchedIonsArray = new double[sortedProductMasses.Length];
+                            ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
 
-                                foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchParams.searchMode).ToList())
+                            foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchParams.searchMode).ToList())
+                            {
+                                var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, ps, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, searchParams.spectraFileIndex);
+                                if (psm.score > 1)
                                 {
-                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, ps, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, searchParams.spectraFileIndex);
-                                    if (psm.score > 1)
+                                    ClassicSpectrumMatch current_best_psm = psms[scan.OneBasedScanNumber - 1];
+                                    if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
                                     {
-                                        ClassicSpectrumMatch current_best_psm = psms[scan.OneBasedScanNumber - 1];
-                                        if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
-                                        {
-                                            psms[scan.OneBasedScanNumber - 1] = psm;
-                                            matchedIonsArray = new double[sortedProductMasses.Length];
-                                        }
+                                        psms[scan.OneBasedScanNumber - 1] = psm;
+                                        matchedIonsArray = new double[sortedProductMasses.Length];
                                     }
                                 }
                             }

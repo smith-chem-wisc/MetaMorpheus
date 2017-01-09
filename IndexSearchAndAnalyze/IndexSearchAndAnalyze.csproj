@@ -82,6 +82,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AllTasksClass.cs" />
     <Compile Include="AllTasksParams.cs" />
     <Compile Include="AnalysisEngine.cs" />
     <Compile Include="AnalysisParams.cs" />

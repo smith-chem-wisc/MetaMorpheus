@@ -17,7 +17,7 @@ namespace Test
         public void TestAnalysis()
         {
             List<NewPsm>[] newPsms = null;
-            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> compactPeptideToProteinPeptideMatching = null;
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
             List<Protein> proteinList = null;
             List<MorpheusModification> variableModifications = null;
             List<MorpheusModification> fixedModifications = null;
@@ -94,9 +94,9 @@ namespace Test
             }
 
             // creates the initial dictionary of "peptide" and "protein" matches (protein must contain peptide sequence)
-            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> initialDictionary = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[totalProteinList.Count()];
-            ConcurrentDictionary<PeptideWithSetModifications, byte>[] proteinSets = new ConcurrentDictionary<PeptideWithSetModifications, byte>[totalProteinList.Count()];
+            HashSet<PeptideWithSetModifications>[] proteinSets = new HashSet<PeptideWithSetModifications>[totalProteinList.Count()];
 
             // creates peptide list
             for (int i = 0; i < totalProteinList.Count(); i++)
@@ -107,7 +107,7 @@ namespace Test
             // creates protein list
             for (int i = 0; i < proteinSets.Length; i++)
             {
-                proteinSets[i] = new ConcurrentDictionary<PeptideWithSetModifications, byte>();
+                proteinSets[i] = new HashSet<PeptideWithSetModifications>();
 
                 foreach (var protein in totalProteinList)
                 {
@@ -115,7 +115,7 @@ namespace Test
 
                     if (protein.BaseSequence.Contains(peptideBaseSequence))
                     {
-                        proteinSets[i].GetOrAdd(protein, 0);
+                        proteinSets[i].Add(protein);
                         //proteinSets[i].Add(protein);
                     }
                 }
@@ -147,10 +147,10 @@ namespace Test
             {
                 foreach (var protein in kvp.Value)
                 {
-                    if(!parsimonyProteinList.Contains(protein.Key))
+                    if(!parsimonyProteinList.Contains(protein))
                     {
-                        parsimonyProteinList.Add(protein.Key);
-                        parsimonyBaseSequences[j] = protein.Key.BaseSequence;
+                        parsimonyProteinList.Add(protein);
+                        parsimonyBaseSequences[j] = protein.BaseSequence;
                         j++;
                     }
                 }
