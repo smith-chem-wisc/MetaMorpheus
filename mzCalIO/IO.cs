@@ -1,4 +1,5 @@
-﻿using IO.MzML;
+﻿using IndexSearchAndAnalyze;
+using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using mzCal;
@@ -82,10 +83,9 @@ namespace mzCalIO
             p.OnFileFinished(path);
         }
 
-        public static SoftwareLockMassParams GetReady(string origDataFile, string mzidName)
+        public static SoftwareLockMassParams GetReady(string origDataFile, List<NewPsmWithFDR> psms, double searchfragmentTolerance)
         {
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-            bool deconvolute = true;
             if (Path.GetExtension(origDataFile).Equals(".mzML"))
             {
                 myMsDataFile = new Mzml(origDataFile);
@@ -95,16 +95,13 @@ namespace mzCalIO
             {
                 myMsDataFile = new ThermoRawFile(origDataFile);
                 myMsDataFile.Open();
-                if (((ThermoRawFile)myMsDataFile).monoisotopicPrecursorSelectionEnabled)
-                    deconvolute = false;
             }
             int randomSeed = 1;
-            var identifications = new MzidIdentifications(mzidName);
-            var a = new SoftwareLockMassParams(myMsDataFile, randomSeed, deconvolute, identifications.fragmentTolerance.Value * 2);
+            var a = new SoftwareLockMassParams(myMsDataFile, randomSeed, searchfragmentTolerance * 2);
 
             a.postProcessing = MzmlOutput;
             a.getFormulaFromDictionary = getFormulaFromDictionary;
-            a.identifications = identifications;
+            a.identifications = psms;
             a.mzRange = new DoubleRange(0, 0);
 
             //a.MS1spectraToWatch.Add(22557);

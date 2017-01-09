@@ -10,18 +10,18 @@ using System.Threading.Tasks;
 
 namespace IndexSearchAndAnalyze
 {
-    public class SearchEngine : MyEngine
+    public class ModernSearchEngine : MyEngine
     {
 
-        public SearchEngine(SearchParams searchParams)
+        public ModernSearchEngine(ModernSearchParams searchParams)
         {
             this.myParams = searchParams;
         }
 
         protected override MyResults RunSpecific()
         {
-            var searchParams = (SearchParams)myParams;
-            searchParams.OnOutput("In search method!");
+            var searchParams = (ModernSearchParams)myParams;
+            searchParams.outputAction("In modern search method!");
 
             var spectraList = searchParams.myMsDataFile.ToList();
             var totalSpectra = searchParams.myMsDataFile.NumSpectra;
@@ -68,7 +68,7 @@ namespace IndexSearchAndAnalyze
                                     if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
-                                        if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass) && FirstIsPreferable(candidatePeptide, bestPeptides[j], scanPrecursorMass))
+                                        if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], scanPrecursorMass))
                                         {
                                             bestPeptides[j] = candidatePeptide;
                                             bestScores[j] = consideredScore;
@@ -103,7 +103,9 @@ namespace IndexSearchAndAnalyze
                             CompactPeptide theBestPeptide = bestPeptides[j];
                             if (theBestPeptide != null)
                             {
-                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new NewPsm(thisScan, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
+                                double precursorIntensity;
+                                thisScan.TryGetSelectedIonGuessMonoisotopicIntensity(out precursorIntensity);
+                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new NewPsm(selectedMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, selectedCharge, thisScan.MassSpectrum.xArray.Length, thisScan.TotalIonCurrent, precursorIntensity, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
                                 //numMS2spectraMatched[j]++;
                             }
                         }
@@ -114,23 +116,15 @@ namespace IndexSearchAndAnalyze
                     //    Console.WriteLine("Spectra: " + numAllSpectra + " / " + totalSpectra);
                 }
             });
-            return new SearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
+            return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
         }
 
         private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
         {
-            List<MzPeak> filteredList;
-            if (spectrum.MassSpectrum.Count <= maxPeaks)
-                filteredList = spectrum.MassSpectrum.ToList();
-            else
-            {
-                var cutoffIntensity = spectrum.MassSpectrum.yArray.Quantile(1.0 - (double)maxPeaks / spectrum.MassSpectrum.Count);
-                filteredList = spectrum.MassSpectrum.Where(b => b.Intensity > cutoffIntensity).ToList();
-            }
             float[] peptideScores = new float[peptides.Count];
-            foreach (var experimentalPeak in filteredList)
+            foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
-                var experimentalPeakInDaltons = experimentalPeak.MZ.ToMass(1);
+                var experimentalPeakInDaltons = experimentalPeak.MZ - 1.007276466879;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(fragmentMassesAscending, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
@@ -178,8 +172,8 @@ namespace IndexSearchAndAnalyze
             return peptideScores;
         }
 
-        // Want this to return false more!! So less computation is done
-        private static bool FirstIsPreferable(CompactPeptide first, CompactPeptide second, double pm)
+        // Want this to return false more!! So less computation is done. So second is preferable more often.
+        internal static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
         {
             if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
                 return true;

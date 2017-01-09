@@ -1,4 +1,5 @@
-﻿using MassSpectrometry;
+﻿using IndexSearchAndAnalyze;
+using MassSpectrometry;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace mzCal
         public DoubleRange mzRange;
 
         public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-        public Identifications identifications;
+        public List<NewPsmWithFDR> identifications;
 
         public delegate void PostProcessing(SoftwareLockMassParams p);
 
@@ -50,7 +51,7 @@ namespace mzCal
 
         #region Constructors
 
-        public SoftwareLockMassParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, bool deconvolute, double toleranceInMZforMS2Search)
+        public SoftwareLockMassParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search)
         {
             this.myMsDataFile = myMsDataFile;
             MS1spectraToWatch = new HashSet<int>();
