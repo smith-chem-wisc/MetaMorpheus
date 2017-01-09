@@ -1,5 +1,6 @@
 ﻿using MetaMorpheus;
 using Proteomics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -137,14 +138,116 @@ namespace IndexSearchAndAnalyze
                 }
         }
 
-        private static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public static Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        {
+            // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
+            Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> newDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
+            foreach (var kvp in fullSequenceToProteinPeptideMatching)
+            {
+                foreach(var protein in kvp.Value)
+                {
+                    if (!newDict.ContainsKey(protein))
+                    {
+                        HashSet<CompactPeptide> peptides = new HashSet<CompactPeptide>();
+
+                        foreach (var kvp1 in fullSequenceToProteinPeptideMatching)
+                        {
+                            if(kvp1.Value.Contains(protein))
+                            {
+                                peptides.Add(kvp1.Key);
+                            }
+                        }
+
+                        newDict.Add(protein, peptides);
+                    }
+                }
+            }
+
+            // greedy algorithm adds the next protein that will account for the most unique peptides
+            Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
+            HashSet<CompactPeptide> usedPeptides = new HashSet<CompactPeptide>();
+            HashSet<CompactPeptide> bestProteinPeptideList = new HashSet<CompactPeptide>();
+            PeptideWithSetModifications bestProtein = null;
+            int currentBestNumNewPeptides = -1;
+
+            // as long as there are peptides that have not been accounted for, keep going
+            while(currentBestNumNewPeptides != 0)
+            {
+                currentBestNumNewPeptides = 0;
+
+                // attempt to find protein that best accounts for unaccounted-for peptides
+                foreach (var kvp in newDict)
+                {
+                    int comparisonProteinNewPeptides = 0;
+
+                    // determines number of unaccounted-for peptides for the current protein
+                    foreach (CompactPeptide peptide in kvp.Value)
+                    {
+                        if(!usedPeptides.Contains(peptide))
+                        {
+                            comparisonProteinNewPeptides++;
+                        }
+                    }
+
+                    // if the current protein is better than the best so far, current protein is the new best protein
+                    if (comparisonProteinNewPeptides > currentBestNumNewPeptides)
+                    {
+                        bestProtein = kvp.Key;
+                        bestProteinPeptideList = kvp.Value;
+                        currentBestNumNewPeptides = comparisonProteinNewPeptides;
+                    }
+                }
+
+                // adds the best protein if algo found unaccounted-for peptides
+                if(currentBestNumNewPeptides > 0)
+                {
+                    parsimonyDict.Add(bestProtein, bestProteinPeptideList);
+
+                    // the new best protein's peptides have been accounted for
+                    foreach (CompactPeptide peptide in bestProteinPeptideList)
+                    {
+                        usedPeptides.Add(peptide);
+                    }
+                }
+            }
+            
+            // swaps keys and values back for return
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+
+            foreach (var kvp in parsimonyDict)
+            {
+                foreach (var peptide in kvp.Value)
+                {
+                    if (!answer.ContainsKey(peptide))
+                    {
+                        HashSet<PeptideWithSetModifications> proteins = new HashSet<PeptideWithSetModifications>();
+
+                        foreach (var kvp1 in parsimonyDict)
+                        {
+                            if (kvp1.Value.Contains(peptide))
+                            {
+                                proteins.Add(kvp1.Key);
+                            }
+                        }
+
+                        answer.Add(peptide, proteins);
+                    }
+                }
+            }
+
+            return answer;
+        }
+
+        public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // Right now very stupid, add the first decoy one, and if no decoy, add the first one
             Dictionary<CompactPeptide, PeptideWithSetModifications> outDict = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
+                var k = kvp.Key;
+                var val = kvp.Value;
                 bool sawDecoy = false;
-                foreach (var entry in kvp.Value)
+                foreach (var entry in val)
                 {
                     if (entry.protein.isDecoy)
                     {
@@ -156,6 +259,7 @@ namespace IndexSearchAndAnalyze
                 if (sawDecoy == false)
                     outDict[kvp.Key] = kvp.Value.First();
             }
+
             return outDict;
         }
     }
