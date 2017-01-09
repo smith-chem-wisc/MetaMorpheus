@@ -21,8 +21,12 @@ namespace IndexSearchAndAnalyze
             var analysisParams = (AnalysisParams)myParams;
             myParams.allTasksParams.status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
+            myParams.allTasksParams.status("Getting protein parsimony dictionary...");
+            var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
             myParams.allTasksParams.status("Getting single match dictionary...");
-            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
+            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(parsimonyDictionary);
+            //myParams.allTasksParams.status("Getting single match dictionary...");
+            //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 
             List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
             for (int j = 0; j < analysisParams.searchModes.Count; j++)
@@ -169,7 +173,7 @@ namespace IndexSearchAndAnalyze
                     }
                 }
             }
-
+            
             // greedy algorithm adds the next protein that will account for the most unique peptides
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
             HashSet<CompactPeptide> usedPeptides = new HashSet<CompactPeptide>();
