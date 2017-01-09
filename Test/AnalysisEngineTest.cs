@@ -130,9 +130,11 @@ namespace Test
             }
 
             // prints initial dictionary
+            AnalysisParams analysisParams = new AnalysisParams(new List<NewPsm>(), null, null, null, null, null, null, null, null, null, null, null, null);
+            var alysisEngine = new AnalysisEngine(analysisParams);
 
             // apply parsimony to initial dictionary
-            var parsimonyTest = AnalysisEngine.ApplyProteinParsimony(initialDictionary);
+            var parsimonyTest = alysisEngine.ApplyProteinParsimony(initialDictionary);
 
             // apply the single pick version to parsimonious dictionary
             var singlePickTest = AnalysisEngine.GetSingleMatchDictionary(parsimonyTest);

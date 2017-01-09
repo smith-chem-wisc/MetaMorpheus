@@ -163,7 +163,7 @@ namespace IndexSearchAndAnalyze
             });
         }
 
-        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> newDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
@@ -237,7 +237,7 @@ namespace IndexSearchAndAnalyze
             }
 
             // swaps keys and values back for return
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>>();
 
             foreach (var kvp in parsimonyDict)
             {
@@ -245,7 +245,7 @@ namespace IndexSearchAndAnalyze
                 {
                     if (!answer.ContainsKey(peptide))
                     {
-                        HashSet<PeptideWithSetModifications> proteins = new HashSet<PeptideWithSetModifications>();
+                        ConcurrentBag<PeptideWithSetModifications> proteins = new ConcurrentBag<PeptideWithSetModifications>();
 
                         foreach (var kvp1 in parsimonyDict)
                         {
