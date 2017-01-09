@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using IndexSearchAndAnalyze;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -14,9 +15,9 @@ namespace GoodGUI
             this.taskList = taskList;
         }
 
-        internal IEnumerable<MyTask> EnumerateTasks()
+        internal List<MyTask> EnumerateTasks()
         {
-            return taskList.Take(taskList.Count);
+            return taskList.ToList();
         }
 
         internal void Clear()

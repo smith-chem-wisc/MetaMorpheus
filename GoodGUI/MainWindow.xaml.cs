@@ -1,4 +1,5 @@
-﻿using MetaMorpheus;
+﻿using IndexSearchAndAnalyze;
+using MetaMorpheus;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,6 +10,8 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using UsefulProteomicsDatabases.Generated;
+using Proteomics;
 
 namespace GoodGUI
 {
@@ -20,28 +23,36 @@ namespace GoodGUI
         private static ObservableCollection<RawData> rawDataAndResultslist = new ObservableCollection<RawData>();
         private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
         private static ObservableCollection<ModList> ModFileList = new ObservableCollection<ModList>();
+        private static ObservableCollection<FinishedFile> finishedFileList = new ObservableCollection<FinishedFile>();
         private AllTasksParams po;
 
         private static TaskListWrapper taskListWrapper;
 
-        public enum MyTaskEnum
-        {
-            Search,
-            GPTMD,
-            Calibrate
-        }
+        public static string unimodLocation = @"unimod_tables.xml";
+        public static string elementsLocation = @"elements.dat";
+        public static string uniprotLocation = @"ptmlist.txt";
 
         public MainWindow()
         {
             InitializeComponent();
 
             mzCalIO.mzCalIO.Load();
+
+
+            Console.WriteLine("Loading modification and element databases...");
+            UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
+
+            AllTasksParams.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
+            AllTasksParams.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+
+
             ObservableCollection<MyTask> taskList = new ObservableCollection<MyTask>();
 
             // modificationsDataGrid.DataContext = ModFileList;
             dataGridXMLs.DataContext = xMLdblist;
             dataGridDatafiles.DataContext = rawDataAndResultslist;
             tasksDataGrid.DataContext = taskList;
+            outputFilesDataGrid.DataContext = finishedFileList;
 
             taskListWrapper = new TaskListWrapper(taskList);
 
@@ -60,14 +71,14 @@ namespace GoodGUI
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2016-10-20-09-17\04-29-13_B6_Frac1_9uL.mzid");
 
             // XML
-            addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml");
+            xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-10-3-2016.xml");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml");
 
             // Calib FILES
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL-Calibrated.mzML");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac1_9uL-Calibrated.mzML");
-            addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML");
+            rawDataAndResultslist.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Jurkat\Calib-0.1.2\120426_Jurkat_highLC_Frac16-Calibrated.mzML");
 
             // TSV file
@@ -124,9 +135,10 @@ namespace GoodGUI
 
             po = new AllTasksParams();
             po.outLabelStatusHandler += NewoutLabelStatus;
-            po.outProgressBarHandler += NewoutProgressBar;
+            po.outProgressHandler += NewoutProgressBar;
             po.outRichTextBoxHandler += NewoutRichTextBox;
-            po.SuccessfullyFinishedFileHandler += NewSuccessfullyFinishedFile;
+            po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
+
 
             po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             po.startingSingleTaskHander += Po_startingSingleTaskHander;
@@ -145,9 +157,14 @@ namespace GoodGUI
             else
             {
                 s.theTask.IsMySelected = true;
-                statusLabel.Content = "Starting " + s.theTask.taskType + " task";
+                statusLabel.Content = "Running " + s.theTask.taskType + " task";
                 outProgressBar.IsIndeterminate = true;
+
+                // Update highlighting
+
                 tasksDataGrid.Items.Refresh();
+                dataGridDatafiles.Items.Refresh();
+                dataGridXMLs.Items.Refresh();
             }
         }
 
@@ -162,7 +179,11 @@ namespace GoodGUI
                 s.theTask.IsMySelected = false;
                 statusLabel.Content = "Finished " + s.theTask.taskType + " task";
                 outProgressBar.Value = 100;
+
+                // Update highlighting and possibly add to the datafiles/xml list
                 tasksDataGrid.Items.Refresh();
+                dataGridDatafiles.Items.Refresh();
+                dataGridXMLs.Items.Refresh();
             }
         }
 
@@ -228,43 +249,45 @@ namespace GoodGUI
         //    }
         //}
 
-        private void addFile(string filepath)
+        private void addFinishedFile(string filepath)
         {
-            var theExtension = Path.GetExtension(filepath);
-            filepath = Path.GetFullPath(filepath);
-            RawData res;
-            switch (theExtension)
-            {
-                case ".raw":
-                case ".mzML":
-                    res = GetCorrespondingRawDataAndResultsEntry(filepath);
-                    if (res != null)
-                        res.AddFilePath(filepath);
-                    else
-                        rawDataAndResultslist.Add(new RawData(filepath));
-                    break;
+            finishedFileList.Add(new FinishedFile(filepath));
+            outputFilesDataGrid.Items.Refresh();
+            //var theExtension = Path.GetExtension(filepath);
+            //filepath = Path.GetFullPath(filepath);
+            //RawData res;
+            //switch (theExtension)
+            //{
+            //    case ".raw":
+            //    case ".mzML":
+            //        res = GetCorrespondingRawDataAndResultsEntry(filepath);
+            //        if (res != null)
+            //            res.AddFilePath(filepath);
+            //        else
+            //            rawDataAndResultslist.Add(new RawData(filepath));
+            //        break;
 
-                //case ".psmtsv":
-                //    res = GetCorrespondingRawDataAndResultsEntry(filepath);
-                //    if (res != null)
-                //        res.AddTSV(filepath);
-                //    else
-                //        rawDataAndResultslist.Add(new RawData(null, null, filepath));
-                //    break;
+            //    case ".psmtsv":
+            //        res = GetCorrespondingRawDataAndResultsEntry(filepath);
+            //        if (res != null)
+            //            res.AddTSV(filepath);
+            //        else
+            //            rawDataAndResultslist.Add(new RawData(null, null, filepath));
+            //        break;
 
-                //case ".mzid":
-                //    res = GetCorrespondingRawDataAndResultsEntry(filepath);
-                //    if (res != null)
-                //        res.AddMZID(filepath);
-                //    else
-                //        rawDataAndResultslist.Add(new RawData(null, filepath, null));
-                //    break;
+            //    case ".mzid":
+            //        res = GetCorrespondingRawDataAndResultsEntry(filepath);
+            //        if (res != null)
+            //            res.AddMZID(filepath);
+            //        else
+            //            rawDataAndResultslist.Add(new RawData(null, filepath, null));
+            //        break;
 
-                case ".xml":
-                    xMLdblist.Add(new XMLdb(filepath));
-                    break;
-            }
-            dataGridDatafiles.Items.Refresh();
+            //    case ".xml":
+            //        xMLdblist.Add(new XMLdb(filepath));
+            //        break;
+            //}
+            //dataGridDatafiles.Items.Refresh();
         }
 
         private RawData GetCorrespondingRawDataAndResultsEntry(string filepath)
@@ -581,7 +604,7 @@ namespace GoodGUI
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
             {
-                addFile(openPicker.FileName);
+                addFinishedFile(openPicker.FileName);
             }
         }
 
@@ -594,7 +617,7 @@ namespace GoodGUI
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
             {
-                addFile(openPicker.FileName);
+                addFinishedFile(openPicker.FileName);
             }
         }
 
@@ -609,7 +632,7 @@ namespace GoodGUI
 
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var filepath in openFileDialog1.FileNames)
-                    addFile(filepath);
+                    addFinishedFile(filepath);
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -617,7 +640,7 @@ namespace GoodGUI
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (var file in files)
             {
-                addFile(file);
+                addFinishedFile(file);
             }
         }
 

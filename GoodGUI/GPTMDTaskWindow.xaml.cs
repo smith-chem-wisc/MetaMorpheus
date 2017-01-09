@@ -1,6 +1,19 @@
-﻿using MetaMorpheus;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using IndexSearchAndAnalyze;
+using MetaMorpheus;
 
 namespace GoodGUI
 {
@@ -28,16 +41,6 @@ namespace GoodGUI
             this.modFileList = modFileList;
         }
 
-        internal MyTask TheTask { get; set; }
-
-        private void cancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-        }
-
-        private void saveButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-        }
+        public MyTask TheTask { get; private set; }
     }
 }

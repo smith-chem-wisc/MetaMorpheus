@@ -1,8 +1,9 @@
-﻿using MetaMorpheus;
+﻿using IndexSearchAndAnalyze;
+using MetaMorpheus;
 using System;
 using System.Collections.ObjectModel;
 
-namespace GoodGUI
+namespace IndexSearchAndAnalyze
 {
     public class MyGPTMDtask : MyTask
     {
@@ -24,7 +25,7 @@ namespace GoodGUI
         public string acceptedPrecursorMassErrorsTextBox { get; internal set; }
         public bool? checkBoxMonoisotopic { get; internal set; }
 
-        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             throw new NotImplementedException();
         }

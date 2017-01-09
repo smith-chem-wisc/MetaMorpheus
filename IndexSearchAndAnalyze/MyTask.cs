@@ -1,9 +1,9 @@
 ﻿using MetaMorpheus;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using static GoodGUI.MainWindow;
+using System;
 
-namespace GoodGUI
+namespace IndexSearchAndAnalyze
 {
     public abstract class MyTask
     {
@@ -26,9 +26,10 @@ namespace GoodGUI
         }
 
         public MyTaskEnum taskType { get; internal set; }
-        public bool IsMySelected { get; internal set; }
+        public bool IsMySelected { get; set; }
+        public string output_folder { get; private set; }
 
-        internal abstract void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po);
+        public abstract void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po);
 
         protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
@@ -44,6 +45,11 @@ namespace GoodGUI
                         modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
                     modsInXMLtoTrim.Remove(knownMod.NameInXML);
                 }
+        }
+
+        public void setOutputFolder(string thisOutputPath)
+        {
+            this.output_folder = thisOutputPath;
         }
     }
 }

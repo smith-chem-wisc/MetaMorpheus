@@ -12,7 +12,7 @@ namespace IndexSearchAndAnalyze
         public Protease protease { get; private set; }
         public List<MorpheusModification> variableModifications { get; private set; }
 
-        public IndexParams(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, Action<string> a1, Action<int> a2) : base(a1, a2)
+        public IndexParams(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, AllTasksParams a2) : base(a2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;

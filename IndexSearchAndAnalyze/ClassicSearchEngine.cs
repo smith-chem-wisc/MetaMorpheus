@@ -14,13 +14,11 @@ namespace IndexSearchAndAnalyze
         {
             this.myParams = searchParams;
         }
-
-        public double precursorIntensity { get; private set; }
-
+        
         protected override MyResults RunSpecific()
         {
             var searchParams = (ClassicSearchParams)myParams;
-            searchParams.outputAction("In classic search method!");
+            searchParams.allTasksParams.status("In classic search engine!");
 
             int totalProteins = searchParams.proteinList.Count;
 
@@ -36,6 +34,7 @@ namespace IndexSearchAndAnalyze
             int proteinsSeen = 0;
             int old_progress = 0;
 
+            searchParams.allTasksParams.ReportProgress(new ProgressEventArgs(0, "Starting classic search loop"));
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var psms = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
@@ -109,7 +108,7 @@ namespace IndexSearchAndAnalyze
                     int new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        searchParams.progressAction(new_progress);
+                        searchParams.allTasksParams.ReportProgress(new ProgressEventArgs(new_progress, "In classic search loop"));
                         old_progress = new_progress;
                     }
                 }

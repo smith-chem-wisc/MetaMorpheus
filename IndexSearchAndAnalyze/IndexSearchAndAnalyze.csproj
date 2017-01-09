@@ -82,6 +82,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AllTasksParams.cs" />
     <Compile Include="AnalysisEngine.cs" />
     <Compile Include="AnalysisParams.cs" />
     <Compile Include="AnalysisResults.cs" />
@@ -95,17 +96,23 @@
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="IntervalSearchMode.cs" />
     <Compile Include="LocalMs2Scan.cs" />
+    <Compile Include="MyCalibrateTask.cs" />
     <Compile Include="MyEngine.cs" />
     <Compile Include="IndexEngine.cs" />
     <Compile Include="IndexParams.cs" />
     <Compile Include="IndexResults.cs" />
     <Compile Include="Internals\MyInfo.cs" />
     <Compile Include="BinTreeStructure.cs" />
+    <Compile Include="MyGPTMDtask.cs" />
     <Compile Include="MyParams.cs" />
     <Compile Include="MyResults.cs" />
+    <Compile Include="MySearchTask.cs" />
+    <Compile Include="MyTask.cs" />
+    <Compile Include="MyTasksEnum.cs" />
     <Compile Include="NewPsm.cs" />
     <Compile Include="NewPsmWithFDR.cs" />
     <Compile Include="Internals\OkBin.cs" />
+    <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
@@ -114,7 +121,10 @@
     <Compile Include="SearchMode.cs" />
     <Compile Include="ModernSearchParams.cs" />
     <Compile Include="ModernSearchResults.cs" />
+    <Compile Include="SingleFileEventArgs.cs" />
+    <Compile Include="SingleTaskEventArgs.cs" />
     <Compile Include="ValidationException.cs" />
+    <Compile Include="Writing.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">

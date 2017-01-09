@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IndexSearchAndAnalyze;
+using System;
 
 namespace GoodGUI
 {
@@ -12,11 +13,12 @@ namespace GoodGUI
             }
             else
             {
+                outProgressBar.IsIndeterminate = true;
                 statusLabel.Content = s;
             }
         }
 
-        private void NewoutProgressBar(object sender, int s)
+        private void NewoutProgressBar(object sender, ProgressEventArgs s)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -25,7 +27,8 @@ namespace GoodGUI
             else
             {
                 outProgressBar.IsIndeterminate = false;
-                outProgressBar.Value = s;
+                outProgressBar.Value = s.new_progress;
+                statusLabel.Content = s.v;
             }
         }
 
@@ -94,21 +97,22 @@ namespace GoodGUI
                 tasksPanel.IsEnabled = true;
 
                 statusLabel.Content = "Finished all tasks!";
+                outProgressBar.IsIndeterminate = false;
                 outProgressBar.Value = 100;
 
                 dataGridDatafiles.Items.Refresh();
             }
         }
 
-        private void NewSuccessfullyFinishedFile(object sender, string v)
+        private void NewSuccessfullyFinishedWritingFile(object sender, SingleFileEventArgs v)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedFile(sender, v)));
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedWritingFile(sender, v)));
             }
             else
             {
-                addFile(v);
+                addFinishedFile(v.writtenFile);
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GoodGUI
+namespace IndexSearchAndAnalyze
 {
     public class SingleTaskEventArgs : EventArgs
     {

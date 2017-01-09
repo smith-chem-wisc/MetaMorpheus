@@ -11,7 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace GoodGUI
+namespace IndexSearchAndAnalyze
 {
     public class MyCalibrateTask : MyTask
     {
@@ -35,7 +35,7 @@ namespace GoodGUI
 
         private ObservableCollection<ModListForSearch> modFileList;
 
-        internal override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
             string output_folder = Path.Combine(Path.GetDirectoryName(currentRawFileList[0]), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));

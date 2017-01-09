@@ -4,13 +4,11 @@ namespace IndexSearchAndAnalyze
 {
     public abstract class MyParams
     {
-        public Action<string> outputAction;
-        public Action<int> progressAction;
+        public AllTasksParams allTasksParams;
 
-        public MyParams(Action<string> a1, Action<int> a2)
+        public MyParams(AllTasksParams allTasksParams)
         {
-            this.outputAction = a1;
-            this.progressAction = a2;
+            this.allTasksParams = allTasksParams;
         }
 
         internal abstract void Validate();
