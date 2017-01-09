@@ -49,10 +49,13 @@ namespace IndexSearchAndAnalyze
 
                         if (peptide.OneBasedPossibleLocalizedModifications.Count == 0)
                         {
+                            var hc = peptide.BaseLeucineSequence;
+                            var observed = level3_observed.Contains(hc);
+                            if (observed)
+                                continue;
                             lock (level3_observed)
                             {
-                                var hc = peptide.BaseLeucineSequence;
-                                var observed = level3_observed.Contains(hc);
+                                observed = level3_observed.Contains(hc);
                                 if (observed)
                                     continue;
                                 level3_observed.Add(hc);
@@ -66,10 +69,13 @@ namespace IndexSearchAndAnalyze
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
                             {
+                                var hc = yyy.Sequence;
+                                var observed = level4_observed.Contains(hc);
+                                if (observed)
+                                    continue;
                                 lock (level4_observed)
                                 {
-                                    var hc = yyy.Sequence;
-                                    var observed = level4_observed.Contains(hc);
+                                    observed = level4_observed.Contains(hc);
                                     if (observed)
                                         continue;
                                     level4_observed.Add(hc);
