@@ -4,6 +4,7 @@ using MetaMorpheus;
 using NUnit.Framework;
 using Proteomics;
 using Spectra;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,7 +17,7 @@ namespace Test
         public void TestAnalysis()
         {
             List<NewPsm>[] newPsms = null;
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
+            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
             List<Protein> proteinList = null;
             List<MorpheusModification> variableModifications = null;
             List<MorpheusModification> fixedModifications = null;
