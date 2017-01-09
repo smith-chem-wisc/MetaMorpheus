@@ -8,18 +8,11 @@ using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
-    public class PSMwithPeptide
+    public class PSMwithTargetDecoyKnown
     {
         public NewPsm newPsm;
-        public PeptideWithSetModifications peptideWithSetModifications;
 
-        public bool isDecoy
-        {
-            get
-            {
-                return peptideWithSetModifications.protein.isDecoy;
-            }
-        }
+        public bool isDecoy { get; private set; }
 
         public double ScoreFromSearch
         {
@@ -45,34 +38,19 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        public double PeptideMonoisotopicMass
-        {
-            get
-            {
-                return peptideWithSetModifications.MonoisotopicMass;
-            }
-        }
+        public double PeptideMonoisotopicMass { get; private set; }
 
-        public string FullSequence
-        {
-            get
-            {
-                return peptideWithSetModifications.Sequence;
-            }
-        }
+        public string FullSequence { get; private set; }
 
-        public string BaseSequence
-        {
-            get
-            {
-                return peptideWithSetModifications.BaseSequence;
-            }
-        }
+        public string BaseSequence { get; private set; }
+        public int MissedCleavages { get; private set; }
+        public int numVariableMods { get; private set; }
+        public string SequenceWithChemicalFormulas { get; internal set; }
 
-        public PSMwithPeptide(NewPsm newPsm, PeptideWithSetModifications peptideWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
+        public PSMwithTargetDecoyKnown(NewPsm newPsm, PeptideWithSetModifications peptideWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
-            this.peptideWithSetModifications = peptideWithSetModifications;
+            this.isDecoy = peptideWithSetModifications.protein.isDecoy;
 
             var allProductTypes = new List<ProductType>() { ProductType.b, ProductType.y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
@@ -114,6 +92,13 @@ namespace IndexSearchAndAnalyze
                 }
                 newPsm.LocalizedScores = localizedScores;
             }
+
+            this.PeptideMonoisotopicMass = peptideWithSetModifications.MonoisotopicMass;
+            this.FullSequence = peptideWithSetModifications.Sequence;
+            this.BaseSequence = peptideWithSetModifications.BaseSequence;
+            this.SequenceWithChemicalFormulas = peptideWithSetModifications.SequenceWithChemicalFormulas;
+            this.MissedCleavages = peptideWithSetModifications.MissedCleavages;
+            this.numVariableMods = peptideWithSetModifications.numVariableMods;
         }
 
         internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
@@ -165,19 +150,20 @@ namespace IndexSearchAndAnalyze
 
             sb.Append(newPsm.ToString() + '\t');
 
-            sb.Append(peptideWithSetModifications.PreviousAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.Sequence.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.NextAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.PeptideDescription + '\t');
-            sb.Append(peptideWithSetModifications.MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(peptideWithSetModifications.MonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append(peptideWithSetModifications.protein.FullDescription.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.PreviousAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.NextAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.PeptideDescription + '\t');
+            sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append((scanPrecursorMass - peptideWithSetModifications.MonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            // sb.Append(peptideWithSetModifications.protein.FullDescription.ToString(CultureInfo.InvariantCulture) + '\t');
+
+            sb.Append((scanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             return sb.ToString();
         }

@@ -1,5 +1,4 @@
 ﻿using MetaMorpheus;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -13,17 +12,11 @@ namespace FragmentGeneration
 
         private static void Main(string[] args)
         {
-            Console.WriteLine("Loading amino acid masses...");
-
-            Console.WriteLine("Starting program");
-
-            Console.WriteLine("Loading modification and element databases...");
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
 
             var unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             var uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
 
-            Console.WriteLine("Loading amino acid masses...");
             AminoAcidMasses.LoadAminoAcidMasses();
 
             var xMLdblist = new ObservableCollection<XMLdb>();
@@ -48,7 +41,6 @@ namespace FragmentGeneration
 
             //bool doFDRanalysis = true;
 
-            //Console.WriteLine("Reading modifications...");
             //List<MorpheusModification> variableModifications = collectionOfModLists.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
             //List<MorpheusModification> fixedModifications = collectionOfModLists.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
             //List<MorpheusModification> localizeableModifications = collectionOfModLists.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
@@ -56,16 +48,7 @@ namespace FragmentGeneration
             //HashSet<string> unidentifiedModStrings;
             //GenerateModsFromStrings(xMLdblist.Select(b => b.FileName).ToList(), localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
-            //Console.WriteLine("Unknown modifications (can add these to the localize list):");
-            //foreach (var hadsfm in unidentifiedModStrings)
-            //    Console.WriteLine("\t" + hadsfm);
-
-            //Console.WriteLine("loading proteins...");
             //var proteinList = xMLdblist.SelectMany(b => b.getProteins(doFDRanalysis, identifiedModsInXML)).ToList();
-            //Console.WriteLine("loaded!");
-            //Console.WriteLine("Proteins: " + proteinList.Count());
-            //Console.WriteLine("Max Mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Max());
-            //Console.WriteLine("Total Amino Acids: " + proteinList.Select(b => b.Length).Sum());
 
             //var protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
 
@@ -198,21 +181,16 @@ namespace FragmentGeneration
             //for (int spectraFileIndex = 0; spectraFileIndex < dataFiles.Count; spectraFileIndex++)
             //{
             //    var origDataFile = dataFiles[spectraFileIndex];
-            //    Console.WriteLine("Loading spectra file...");
             //    IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
             //    if (Path.GetExtension(origDataFile).Equals(".mzML"))
             //        myMsDataFile = new Mzml(origDataFile, 400);
             //    else
             //        myMsDataFile = new ThermoRawFile(origDataFile);
-            //    Console.WriteLine("Opening spectra file...");
             //    myMsDataFile.Open();
-            //    Console.WriteLine("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
             //    //ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance, protease, searchModes[0]);
             //    //ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
             //    //ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
-
-            //    //Console.WriteLine(searchResults);
 
             //    //List<NewPsm> newPsms = searchResults.newPsms;
 
@@ -233,8 +211,6 @@ namespace FragmentGeneration
             //    //ModernSearchResults searchResults = (ModernSearchResults)searchEngine.Run();
             //    //List<NewPsm>[] newPsms = searchResults.newPsms;
 
-            //    //Console.WriteLine(searchResults);
-
             //    //for (int i = 0; i < searchModes.Count; i++)
             //    //    allPsms[i].AddRange(newPsms[i]);
 
@@ -242,7 +218,6 @@ namespace FragmentGeneration
             //    //AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
             //    //AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-            //    //Console.WriteLine(analysisResults);
             //}
             //if (dataFiles.Count > 1)
             //{
@@ -250,9 +225,6 @@ namespace FragmentGeneration
             //    //AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
             //    //AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
             //}
-
-            Console.WriteLine("All Done!");
-            Console.Read();
         }
 
         private static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)

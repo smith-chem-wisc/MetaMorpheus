@@ -8,7 +8,7 @@ namespace IndexSearchAndAnalyze
         private int cumulative_target;
         private int cumulative_decoy;
         public double QValue { get; set; }
-        public PSMwithPeptide thisPSM;
+        public PSMwithTargetDecoyKnown thisPSM;
 
         public bool isDecoy
         {
@@ -18,7 +18,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal NewPsmWithFDR(PSMwithPeptide thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
+        internal NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
         {
             this.thisPSM = thisPSM;
             this.cumulative_target = cumulative_target;

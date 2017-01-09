@@ -4,9 +4,8 @@ using MetaMorpheus;
 using NUnit.Framework;
 using Proteomics;
 using Spectra;
-using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Test
@@ -18,7 +17,7 @@ namespace Test
         public void TestAnalysis()
         {
             List<NewPsm>[] newPsms = null;
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
+            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
             List<Protein> proteinList = null;
             List<MorpheusModification> variableModifications = null;
             List<MorpheusModification> fixedModifications = null;
@@ -31,7 +30,7 @@ namespace Test
             Dictionary<int, ChemicalFormulaModification> uniprotDeseralized = null;
 
             AllTasksParams po = null;
-            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance,  (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
+            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
             AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
 
             Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
@@ -40,7 +39,7 @@ namespace Test
             newPsms = new List<NewPsm>[1];
             newPsms[0] = new List<NewPsm>();
 
-            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance,  (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
+            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
             analysisEngine = new AnalysisEngine(analysisParams);
             Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
                     .With.Property("Message").EqualTo("proteinList is null"));
@@ -72,7 +71,7 @@ namespace Test
 
             foreach (var protein in digestedList1)
             {
-                IEnumerable <PeptideWithSetModifications> peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
+                IEnumerable<PeptideWithSetModifications> peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
 
                 foreach (var peptide in peptides1)
                     totalProteinList.Add(peptide);
@@ -100,20 +99,20 @@ namespace Test
             HashSet<PeptideWithSetModifications>[] proteinHashSets = new HashSet<PeptideWithSetModifications>[totalProteinList.Count()];
 
             // creates peptide list
-            for(int i = 0; i < totalProteinList.Count(); i++)
+            for (int i = 0; i < totalProteinList.Count(); i++)
             {
                 peptides[i] = new CompactPeptide(totalProteinList.ElementAt(i), temp2, temp2);
             }
 
             // creates protein list
-            for(int i = 0; i < proteinHashSets.Length; i++)
+            for (int i = 0; i < proteinHashSets.Length; i++)
             {
                 proteinHashSets[i] = new HashSet<PeptideWithSetModifications>();
 
                 foreach (var protein in totalProteinList)
                 {
                     string peptideBaseSequence = string.Join("", peptides[i].BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                    
+
                     if (protein.BaseSequence.Contains(peptideBaseSequence))
                     {
                         proteinHashSets[i].Add(protein);
@@ -122,49 +121,23 @@ namespace Test
             }
 
             // populates initial peptide-protein dictionary
-            for(int i = 0; i < peptides.Length; i++)
+            for (int i = 0; i < peptides.Length; i++)
             {
-                if (!initialDictionary.ContainsKey(peptides[i])) {
+                if (!initialDictionary.ContainsKey(peptides[i]))
+                {
                     initialDictionary.Add(peptides[i], proteinHashSets[i]);
                 }
             }
 
             // prints initial dictionary
-            Console.WriteLine("----Initial Dictionary----");
-            foreach (var kvp in initialDictionary)
-            {
-                Console.Write(string.Join("",kvp.Key.BaseSequence.Select(b=>char.ConvertFromUtf32(b)))+ "  \t\t\t  ");
-                foreach (var peptide in kvp.Value)
-                    Console.Write(peptide.BaseSequence + " ;; ");
-                Console.WriteLine();
-            }
-
-            Console.WriteLine("\n----Parsimonious Dictionary----");
+            AnalysisParams analysisParams = new AnalysisParams(new List<NewPsm>(), null, null, null, null, null, null, null, null, null, null, null, null);
+            var alysisEngine = new AnalysisEngine(analysisParams);
 
             // apply parsimony to initial dictionary
-            var parsimonyTest = AnalysisEngine.ApplyProteinParsimony(initialDictionary);
-
-            // prints parsimonious dictionary
-            foreach (var kvp in parsimonyTest)
-            {
-                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
-                foreach (var peptide in kvp.Value)
-                    Console.Write(peptide.BaseSequence + " ;; ");
-                Console.WriteLine();
-
-            }
+            var parsimonyTest = alysisEngine.ApplyProteinParsimony(initialDictionary);
 
             // apply the single pick version to parsimonious dictionary
             var singlePickTest = AnalysisEngine.GetSingleMatchDictionary(parsimonyTest);
-
-            // prints single pick dictionary
-            Console.WriteLine("\n----Single Pick----");
-            foreach (var kvp in singlePickTest)
-            {
-                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
-                Console.Write(kvp.Value.BaseSequence + " ;; ");
-                Console.WriteLine();
-            }
         }
     }
 }

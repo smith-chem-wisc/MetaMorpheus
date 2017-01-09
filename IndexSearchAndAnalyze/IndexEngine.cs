@@ -89,7 +89,7 @@ namespace IndexSearchAndAnalyze
                     }
                     numProteins++;
                     if (numProteins % 100 == 0)
-                        Console.WriteLine("Proteins: " + numProteins + " / " + totalProteins);
+                        myParams.allTasksParams.RTBoutput("Proteins: " + numProteins + " / " + totalProteins);
                 }
                 lock (myFragmentDictionary)
                 {
@@ -107,7 +107,7 @@ namespace IndexSearchAndAnalyze
                 }
             });
 
-            Console.WriteLine("finished generating peptide index");
+            myParams.allTasksParams.RTBoutput("finished generating peptide index");
 
             return new IndexResults(myDictionary, myFragmentDictionary, indexParams);
         }

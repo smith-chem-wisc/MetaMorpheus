@@ -65,7 +65,7 @@ namespace MetaMorpheus
 
         public IEnumerable<PeptideWithPossibleModifications> Digest(Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior)
         {
-            //Console.WriteLine("Digesting " + this.BaseSequence);
+            //p.po.RTBoutput("Digesting " + this.BaseSequence);
             if (protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 // these are the 1-based residue indices the protease cleaves AFTER
@@ -79,7 +79,7 @@ namespace MetaMorpheus
                 {
                     for (int missed_cleavages = 0; missed_cleavages <= maximumMissedCleavages; missed_cleavages++)
                     {
-                        //Console.WriteLine("missed_cleavages: " + missed_cleavages);
+                        //p.po.RTBoutput("missed_cleavages: " + missed_cleavages);
                         for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - missed_cleavages - 1; i++)
                         {
                             // Retain!
@@ -90,9 +90,9 @@ namespace MetaMorpheus
                             // Cleave!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && i == 0 && this[0] == 'M')
                             {
-                                //Console.WriteLine("Start of REG cleave!:");
-                                //Console.WriteLine(" Starting index: " + (2));
-                                //Console.WriteLine("Ending index: " + (oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1]));
+                                //p.po.RTBoutput("Start of REG cleave!:");
+                                //p.po.RTBoutput(" Starting index: " + (2));
+                                //p.po.RTBoutput("Ending index: " + (oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1]));
                                 yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], this, missed_cleavages, "full:M cleaved");
                             }
                         }
@@ -107,18 +107,18 @@ namespace MetaMorpheus
                                 while (oneBasedIndicesToCleaveAfter[i] < oneBasedBeginPositions[chainPeptideIndex])
                                     i++;
                                 // Start peptide
-                                //Console.WriteLine("Start of chain:");
-                                //Console.WriteLine(" Starting index: " + protein.oneBasedBeginPositions[chainPeptideIndex]);
-                                //Console.WriteLine(" Ending index: " + oneBasedIndicesToCleaveAfter[i + missed_cleavages ]);
+                                //p.po.RTBoutput("Start of chain:");
+                                //p.po.RTBoutput(" Starting index: " + protein.oneBasedBeginPositions[chainPeptideIndex]);
+                                //p.po.RTBoutput(" Ending index: " + oneBasedIndicesToCleaveAfter[i + missed_cleavages ]);
                                 if (i + missed_cleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + missed_cleavages] <= oneBasedEndPositions[chainPeptideIndex])
                                     yield return new PeptideWithPossibleModifications(oneBasedBeginPositions[chainPeptideIndex], oneBasedIndicesToCleaveAfter[i + missed_cleavages], this, missed_cleavages, this.bigPeptideTypes[chainPeptideIndex] + " start");
 
                                 while (oneBasedIndicesToCleaveAfter[i] < oneBasedEndPositions[chainPeptideIndex])
                                     i++;
                                 // End
-                                //Console.WriteLine("End of chain:");
-                                //Console.WriteLine(" Starting index: " + (oneBasedIndicesToCleaveAfter[i - missed_cleavages-1]+1));
-                                //Console.WriteLine(" Ending index: " + protein.oneBasedEndPositions[chainPeptideIndex]);
+                                //p.po.RTBoutput("End of chain:");
+                                //p.po.RTBoutput(" Starting index: " + (oneBasedIndicesToCleaveAfter[i - missed_cleavages-1]+1));
+                                //p.po.RTBoutput(" Ending index: " + protein.oneBasedEndPositions[chainPeptideIndex]);
                                 if (i - missed_cleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 >= oneBasedBeginPositions[chainPeptideIndex])
                                     yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, oneBasedEndPositions[chainPeptideIndex], this, missed_cleavages, this.bigPeptideTypes[chainPeptideIndex] + " end");
                             }

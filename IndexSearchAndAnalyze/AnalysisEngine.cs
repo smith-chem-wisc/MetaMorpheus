@@ -1,6 +1,5 @@
 ﻿using MetaMorpheus;
 using Proteomics;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,15 +18,18 @@ namespace IndexSearchAndAnalyze
         {
             myParams.allTasksParams.status("Running analysis engine!");
             var analysisParams = (AnalysisParams)myParams;
+
+            //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             myParams.allTasksParams.status("Adding observed peptides to dictionary...");
-            AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
-            myParams.allTasksParams.status("Getting single match dictionary...");
+            AddObservedPeptidesToDictionary();
+
+            myParams.allTasksParams.status("Getting single match just for FDR purposes...");
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 
             List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
             for (int j = 0; j < analysisParams.searchModes.Count; j++)
             {
-                PSMwithPeptide[] psmsWithPeptides = new PSMwithPeptide[analysisParams.newPsms[0].Count];
+                PSMwithTargetDecoyKnown[] psmsWithPeptides = new PSMwithTargetDecoyKnown[analysisParams.newPsms[0].Count];
 
                 Parallel.ForEach(Partitioner.Create(0, analysisParams.newPsms[0].Count), fff =>
                 {
@@ -38,15 +40,15 @@ namespace IndexSearchAndAnalyze
                             var huh = analysisParams.newPsms[j][i];
                             if (huh != null)
                                 if (huh.ScoreFromSearch >= 1)
-                                    psmsWithPeptides[i] = new PSMwithPeptide(huh, fullSequenceToProteinSingleMatch[huh.peptide], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
+                                    psmsWithPeptides[i] = new PSMwithTargetDecoyKnown(huh, fullSequenceToProteinSingleMatch[huh.peptide], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
                         }
                     }
                 });
 
                 var orderedPsmsWithPeptides = psmsWithPeptides.Where(b => b != null).OrderByDescending(b => b.ScoreFromSearch);
 
-                var orderedPsmsWithPeptidesAndFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
-                var limitedpsms_with_fdr = orderedPsmsWithPeptidesAndFDR.Where(b => (b.QValue <= 0.01)).ToList();
+                var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
+                var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
                 if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
                 {
                     myParams.allTasksParams.status("Running histogram analysis...");
@@ -54,9 +56,9 @@ namespace IndexSearchAndAnalyze
                     analysisParams.action1(hm, analysisParams.searchModes[j].FileNameAddition);
                 }
 
-                analysisParams.action2(orderedPsmsWithPeptidesAndFDR, analysisParams.searchModes[j].FileNameAddition);
+                analysisParams.action2(orderedPsmsWithFDR, analysisParams.searchModes[j].FileNameAddition);
 
-                yeah[j] = orderedPsmsWithPeptidesAndFDR;
+                yeah[j] = orderedPsmsWithFDR;
             }
 
             return new AnalysisResults(analysisParams, yeah);
@@ -85,13 +87,13 @@ namespace IndexSearchAndAnalyze
             return myTreeStructure;
         }
 
-        private static List<NewPsmWithFDR> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithPeptide> items)
+        private static List<NewPsmWithFDR> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithTargetDecoyKnown> items)
         {
             List<NewPsmWithFDR> ids = new List<NewPsmWithFDR>();
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
-            foreach (PSMwithPeptide item in items)
+            foreach (PSMwithTargetDecoyKnown item in items)
             {
                 var isDecoy = item.isDecoy;
                 if (isDecoy)
@@ -115,43 +117,59 @@ namespace IndexSearchAndAnalyze
             return ids;
         }
 
-        private static void AddObservedPeptidesToDictionary(List<NewPsm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease)
+        private void AddObservedPeptidesToDictionary()
         {
-            foreach (var ah in newPsms)
+            var analysisParams = (AnalysisParams)myParams;
+
+            myParams.allTasksParams.status("Adding new keys to peptide dictionary...");
+            foreach (var ah in analysisParams.newPsms)
             {
                 if (ah != null)
                     foreach (var fhh in ah)
                     {
-                        if (fhh != null && !fullSequenceToProteinPeptideMatching.ContainsKey(fhh.peptide))
-                            fullSequenceToProteinPeptideMatching.Add(fhh.peptide, new HashSet<PeptideWithSetModifications>());
+                        if (fhh != null && !analysisParams.compactPeptideToProteinPeptideMatching.ContainsKey(fhh.peptide))
+                            analysisParams.compactPeptideToProteinPeptideMatching.Add(fhh.peptide, new ConcurrentBag<PeptideWithSetModifications>());
                     }
             }
 
-            foreach (var protein in proteinList)
-                foreach (var peptide in protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable).ToList())
+            int totalProteins = analysisParams.proteinList.Count;
+
+            myParams.allTasksParams.status("Adding possible sources to peptide dictionary...");
+
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            {
+                for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    if (peptide.Length == 1 || peptide.Length > 252)
-                        continue;
-                    peptide.SetFixedModifications(fixedModifications);
-                    var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
-                    foreach (var yyy in ListOfModifiedPeptides)
+                    var protein = analysisParams.proteinList[i];
+                    var digestedList = protein.Digest(analysisParams.protease, 2, InitiatorMethionineBehavior.Variable).ToList();
+                    foreach (var peptide in digestedList)
                     {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (fullSequenceToProteinPeptideMatching.TryGetValue(new CompactPeptide(yyy, variableModifications, localizeableModifications), out v))
+                        if (peptide.Length == 1 || peptide.Length > 252)
+                            continue;
+
+                        peptide.SetFixedModifications(analysisParams.fixedModifications);
+
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(analysisParams.variableModifications, 4098, 3, analysisParams.localizeableModifications).ToList();
+                        foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            v.Add(yyy);
+                            ConcurrentBag<PeptideWithSetModifications> v;
+                            if (analysisParams.compactPeptideToProteinPeptideMatching.TryGetValue(new CompactPeptide(yyy, analysisParams.variableModifications, analysisParams.localizeableModifications), out v))
+                            {
+                                v.Add(yyy);
+                            }
                         }
                     }
                 }
+            });
         }
 
-        public static Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> newDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
-                foreach(var protein in kvp.Value)
+                foreach (var protein in kvp.Value)
                 {
                     if (!newDict.ContainsKey(protein))
                     {
@@ -159,7 +177,7 @@ namespace IndexSearchAndAnalyze
 
                         foreach (var kvp1 in fullSequenceToProteinPeptideMatching)
                         {
-                            if(kvp1.Value.Contains(protein))
+                            if (kvp1.Value.Contains(protein))
                             {
                                 peptides.Add(kvp1.Key);
                             }
@@ -178,7 +196,7 @@ namespace IndexSearchAndAnalyze
             int currentBestNumNewPeptides = -1;
 
             // as long as there are peptides that have not been accounted for, keep going
-            while(currentBestNumNewPeptides != 0)
+            while (currentBestNumNewPeptides != 0)
             {
                 currentBestNumNewPeptides = 0;
 
@@ -190,7 +208,7 @@ namespace IndexSearchAndAnalyze
                     // determines number of unaccounted-for peptides for the current protein
                     foreach (CompactPeptide peptide in kvp.Value)
                     {
-                        if(!usedPeptides.Contains(peptide))
+                        if (!usedPeptides.Contains(peptide))
                         {
                             comparisonProteinNewPeptides++;
                         }
@@ -206,7 +224,7 @@ namespace IndexSearchAndAnalyze
                 }
 
                 // adds the best protein if algo found unaccounted-for peptides
-                if(currentBestNumNewPeptides > 0)
+                if (currentBestNumNewPeptides > 0)
                 {
                     parsimonyDict.Add(bestProtein, bestProteinPeptideList);
 
@@ -217,9 +235,9 @@ namespace IndexSearchAndAnalyze
                     }
                 }
             }
-            
+
             // swaps keys and values back for return
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>>();
 
             foreach (var kvp in parsimonyDict)
             {
@@ -227,7 +245,7 @@ namespace IndexSearchAndAnalyze
                 {
                     if (!answer.ContainsKey(peptide))
                     {
-                        HashSet<PeptideWithSetModifications> proteins = new HashSet<PeptideWithSetModifications>();
+                        ConcurrentBag<PeptideWithSetModifications> proteins = new ConcurrentBag<PeptideWithSetModifications>();
 
                         foreach (var kvp1 in parsimonyDict)
                         {
@@ -245,7 +263,7 @@ namespace IndexSearchAndAnalyze
             return answer;
         }
 
-        public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // Right now very stupid, add the first decoy one, and if no decoy, add the first one
             Dictionary<CompactPeptide, PeptideWithSetModifications> outDict = new Dictionary<CompactPeptide, PeptideWithSetModifications>();

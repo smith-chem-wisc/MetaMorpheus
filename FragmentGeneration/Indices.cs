@@ -12,7 +12,7 @@ namespace FragmentGeneration
 {
     internal class Indices
     {
-        public static void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModListForSearch> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease)
+        public static void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, ObservableCollection<XMLdb> xMLdblist, ObservableCollection<ModListForSearch> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, AllTasksParams po)
         {
             #region Index file names
 
@@ -48,7 +48,7 @@ namespace FragmentGeneration
 
             if (!File.Exists(peptideIndexFile) || !File.Exists(fragmentIndexFile))
             {
-                Console.WriteLine("Generating indices...");
+                po.RTBoutput("Generating indices...");
 
                 //IndexParams indexParams = new IndexParams(hm, variableModifications, fixedModifications, localizeableModifications, protease);
                 //IndexEngine indexEngine = new IndexEngine(indexParams);
@@ -58,18 +58,18 @@ namespace FragmentGeneration
                 peptideIndex = null;
                 fragmentIndexDict = null;
 
-                //Console.WriteLine("Writing peptide index...");
+                //p.po.RTBoutput("Writing peptide index...");
                 //writePeptideIndex(peptideIndex, peptideIndexFile);
-                //Console.WriteLine("Writing fragment index...");
+                //p.po.RTBoutput("Writing fragment index...");
                 //writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                //Console.WriteLine("Done Writing fragment index");
+                //p.po.RTBoutput("Done Writing fragment index");
             }
             else
             {
-                Console.WriteLine("Reading peptide index...");
+                po.RTBoutput("Reading peptide index...");
                 peptideIndex = readPeptideIndex(peptideIndexFile);
-                Console.WriteLine("Reading fragment index...");
-                fragmentIndexDict = readFragmentIndexNetSerializer(fragmentIndexFile);
+                po.RTBoutput("Reading fragment index...");
+                fragmentIndexDict = readFragmentIndexNetSerializer(fragmentIndexFile, po);
             }
         }
 
@@ -80,7 +80,7 @@ namespace FragmentGeneration
             yield return type;
         }
 
-        internal static Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
+        internal static Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile, AllTasksParams po)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -97,12 +97,12 @@ namespace FragmentGeneration
             string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
-            Console.WriteLine("Time to read fragment index with netSerializer: " + elapsedTime);
+            po.RTBoutput("Time to read fragment index with netSerializer: " + elapsedTime);
 
             return newPerson;
         }
 
-        internal static void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
+        internal static void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile, AllTasksParams po)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -118,7 +118,7 @@ namespace FragmentGeneration
             string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
-            Console.WriteLine("Time to write fragment index with netserializer: " + elapsedTime);
+            po.RTBoutput("Time to write fragment index with netserializer: " + elapsedTime);
         }
 
         internal static void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)

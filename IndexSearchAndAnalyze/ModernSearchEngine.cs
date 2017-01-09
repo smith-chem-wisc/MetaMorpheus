@@ -111,7 +111,7 @@ namespace IndexSearchAndAnalyze
                     }
                     //numAllSpectra++;
                     //if (numAllSpectra % 100 == 0)
-                    //    Console.WriteLine("Spectra: " + numAllSpectra + " / " + totalSpectra);
+                    //    po.rtboutout("Spectra: " + numAllSpectra + " / " + totalSpectra);
                 }
             });
             return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
@@ -128,7 +128,7 @@ namespace IndexSearchAndAnalyze
                 if (ipos < 0)
                     ipos = ~ipos;
 
-                //Console.WriteLine(" ipos " + ipos);
+                //po.out(" ipos " + ipos);
                 if (ipos > 0)
                 {
                     var downIpos = ipos - 1;
@@ -136,9 +136,9 @@ namespace IndexSearchAndAnalyze
                     while (downIpos >= 0)
                     {
                         closestPeak = fragmentMassesAscending[downIpos];
-                        // Console.WriteLine("  closestPeak "+ closestPeak);
+                        // po.out("  closestPeak "+ closestPeak);
                         if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentTolerance)
-                        {// Console.WriteLine("    ********************************");
+                        {// po.out("    ********************************");
                             foreach (var heh in fragmentIndex[downIpos])
                                 peptideScores[heh] += (float)(1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent);
                         }
@@ -154,10 +154,10 @@ namespace IndexSearchAndAnalyze
                     while (upIpos < fragmentMassesAscending.Length)
                     {
                         closestPeak = fragmentMassesAscending[upIpos];
-                        //Console.WriteLine("  closestPeak " + closestPeak);
+                        //po.out("  closestPeak " + closestPeak);
                         if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentTolerance)
                         {
-                            //Console.WriteLine("    ********************************");
+                            //po.out("    ********************************");
                             foreach (var heh in fragmentIndex[upIpos])
                                 peptideScores[heh] += (float)(1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent);
                         }

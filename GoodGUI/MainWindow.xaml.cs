@@ -10,8 +10,6 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using UsefulProteomicsDatabases.Generated;
-using Proteomics;
 
 namespace GoodGUI
 {
@@ -36,15 +34,11 @@ namespace GoodGUI
         {
             InitializeComponent();
 
-            mzCalIO.mzCalIO.Load();
-
-
-            Console.WriteLine("Loading modification and element databases...");
+            mzCalIO.Load();
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
 
             AllTasksParams.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             AllTasksParams.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
-
 
             ObservableCollection<MyTask> taskList = new ObservableCollection<MyTask>();
 
@@ -138,7 +132,6 @@ namespace GoodGUI
             po.outProgressHandler += NewoutProgressBar;
             po.outRichTextBoxHandler += NewoutRichTextBox;
             po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
-
 
             po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             po.startingSingleTaskHander += Po_startingSingleTaskHander;
@@ -537,7 +530,7 @@ namespace GoodGUI
         //    // convert all paths to absolute for outputs
         //    for (int i = 0; i < filesToSearch.Count; i++)
         //    {
-        //        //Console.WriteLine(Path.GetExtension(myListOfEntries[i].filepath));
+        //        //p.po.RTBoutput(Path.GetExtension(myListOfEntries[i].filepath));
         //        if (Path.GetExtension(filesToSearch[i]).Equals(".mzML"))
         //        {
         //            //var ok = new MzMLTandemMassSpectra();

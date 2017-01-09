@@ -108,14 +108,6 @@
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>MetaMorpheus</Name>
     </ProjectReference>
-    <ProjectReference Include="..\mzCalIO\mzCalIO.csproj">
-      <Project>{06AD5939-8437-4F2A-BF3C-2B181D6F0308}</Project>
-      <Name>mzCalIO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\mzCal\mzCal.csproj">
-      <Project>{475C3B7B-4367-4BC8-8192-2A850C72812B}</Project>
-      <Name>mzCal</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

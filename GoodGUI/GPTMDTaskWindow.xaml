@@ -5,8 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GoodGUI"
         mc:Ignorable="d"
-        Title="GPTMDTaskWindow" Height="300" Width="300">
+        Title="GPTMDTaskWindow" Width="550" Height="600" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <Grid>
-        
     </Grid>
 </Window>

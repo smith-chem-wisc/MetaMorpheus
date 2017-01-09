@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IndexSearchAndAnalyze
+﻿namespace IndexSearchAndAnalyze
 {
     public abstract class MyParams
     {

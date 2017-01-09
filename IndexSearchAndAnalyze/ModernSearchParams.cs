@@ -1,7 +1,6 @@
 ﻿using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
-using System;
 using System.Collections.Generic;
 
 namespace IndexSearchAndAnalyze

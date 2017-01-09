@@ -108,7 +108,6 @@
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Handlers.cs" />
-    <Compile Include="SearchParamsObject.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
@@ -179,14 +178,6 @@
     <ProjectReference Include="..\MetaMorpheus\MetaMorpheus.csproj">
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
       <Name>MetaMorpheus</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\mzCalIO\mzCalIO.csproj">
-      <Project>{06ad5939-8437-4f2a-bf3c-2b181d6f0308}</Project>
-      <Name>mzCalIO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\mzCal\mzCal.csproj">
-      <Project>{475c3b7b-4367-4bc8-8192-2a850c72812b}</Project>
-      <Name>mzCal</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
