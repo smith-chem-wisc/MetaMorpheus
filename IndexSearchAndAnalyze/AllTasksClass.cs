@@ -7,11 +7,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace GoodGUI
+namespace IndexSearchAndAnalyze
 {
-    internal static class AllTasksClass
+    public static class AllTasksClass
     {
-        internal static void DoAllTasks(List<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, AllTasksParams allTasksParams)
+        public static void DoAllTasks(List<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, AllTasksParams allTasksParams)
         {
             allTasksParams.startingAllTasks();
             var startTimeForFilename = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
