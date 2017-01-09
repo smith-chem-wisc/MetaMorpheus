@@ -28,9 +28,6 @@ namespace IndexSearchAndAnalyze
         public MyTaskEnum taskType { get; internal set; }
         public bool IsMySelected { get; set; }
         public string output_folder { get; private set; }
-
-        public string precursorMassToleranceTextBox { get; set; }
-        public int precursorMassToleranceComboBox { get; set; }
         public int maxMissedCleavages { get; set; }
         public Protease protease { get; set; }
         public int maxModificationIsoforms { get; set; }

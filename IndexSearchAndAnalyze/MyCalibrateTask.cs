@@ -16,6 +16,7 @@ namespace IndexSearchAndAnalyze
         public MyCalibrateTask() : base(0)
         {
         }
+        public Tolerance precursorMassTolerance { get; set; }
 
         public MyCalibrateTask(ObservableCollection<ModList> modList) : base(0)
         {
@@ -33,13 +34,14 @@ namespace IndexSearchAndAnalyze
             listOfModListsForSearch[0].Fixed = true;
             listOfModListsForSearch[1].Variable = true;
             listOfModListsForSearch[2].Localize = true;
+            precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
         }
 
         public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
 
-            Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, ConcurrentBag<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
