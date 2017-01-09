@@ -22,9 +22,11 @@ namespace IndexSearchAndAnalyze
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             myParams.allTasksParams.status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
+            myParams.allTasksParams.status("Getting protein parsimony dictionary...");
+            var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
 
             myParams.allTasksParams.status("Getting single match just for FDR purposes...");
-            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
+            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(parsimonyDictionary);
 
             List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
             for (int j = 0; j < analysisParams.searchModes.Count; j++)
@@ -177,7 +179,7 @@ namespace IndexSearchAndAnalyze
             });
         }
 
-        public Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
+        public Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> ApplyProteinParsimony(Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> fullSequenceToProteinPeptideMatching)
         {
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> newDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
@@ -185,7 +187,7 @@ namespace IndexSearchAndAnalyze
             {
                 foreach (var protein in kvp.Value)
                 {
-                    if (!newDict.ContainsKey(protein))
+                    if (!newDict.ContainsKey(protein.Key))
                     {
                         HashSet<CompactPeptide> peptides = new HashSet<CompactPeptide>();
 
@@ -197,7 +199,7 @@ namespace IndexSearchAndAnalyze
                             }
                         }
 
-                        newDict.Add(protein, peptides);
+                        newDict.Add(protein.Key, peptides);
                     }
                 }
             }

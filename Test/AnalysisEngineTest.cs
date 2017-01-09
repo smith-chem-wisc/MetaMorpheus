@@ -96,7 +96,7 @@ namespace Test
             // creates the initial dictionary of "peptide" and "protein" matches (protein must contain peptide sequence)
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[totalProteinList.Count()];
-            HashSet<PeptideWithSetModifications>[] proteinHashSets = new HashSet<PeptideWithSetModifications>[totalProteinList.Count()];
+            HashSet<PeptideWithSetModifications>[] proteinSets = new HashSet<PeptideWithSetModifications>[totalProteinList.Count()];
 
             // creates peptide list
             for (int i = 0; i < totalProteinList.Count(); i++)
@@ -105,9 +105,9 @@ namespace Test
             }
 
             // creates protein list
-            for (int i = 0; i < proteinHashSets.Length; i++)
+            for (int i = 0; i < proteinSets.Length; i++)
             {
-                proteinHashSets[i] = new HashSet<PeptideWithSetModifications>();
+                proteinSets[i] = new HashSet<PeptideWithSetModifications>();
 
                 foreach (var protein in totalProteinList)
                 {
@@ -115,7 +115,8 @@ namespace Test
 
                     if (protein.BaseSequence.Contains(peptideBaseSequence))
                     {
-                        proteinHashSets[i].Add(protein);
+                        proteinSets[i].Add(protein);
+                        //proteinSets[i].Add(protein);
                     }
                 }
             }
@@ -125,19 +126,40 @@ namespace Test
             {
                 if (!initialDictionary.ContainsKey(peptides[i]))
                 {
-                    initialDictionary.Add(peptides[i], proteinHashSets[i]);
+                    initialDictionary.Add(peptides[i], proteinSets[i]);
                 }
             }
-
-            // prints initial dictionary
+            
             AnalysisParams analysisParams = new AnalysisParams(new List<NewPsm>(), null, null, null, null, null, null, null, null, null, null, null, null);
-            var alysisEngine = new AnalysisEngine(analysisParams);
+            var analysisEngine = new AnalysisEngine(analysisParams);
 
             // apply parsimony to initial dictionary
-            var parsimonyTest = alysisEngine.ApplyProteinParsimony(initialDictionary);
+            var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary);
 
             // apply the single pick version to parsimonious dictionary
             var singlePickTest = AnalysisEngine.GetSingleMatchDictionary(parsimonyTest);
+
+            List<PeptideWithSetModifications> parsimonyProteinList = new List<PeptideWithSetModifications>();
+            string[] parsimonyBaseSequences = new string[3];
+            int j = 0;
+
+            foreach (var kvp in parsimonyTest)
+            {
+                foreach (var protein in kvp.Value)
+                {
+                    if(!parsimonyProteinList.Contains(protein.Key))
+                    {
+                        parsimonyProteinList.Add(protein.Key);
+                        parsimonyBaseSequences[j] = protein.Key.BaseSequence;
+                        j++;
+                    }
+                }
+            }
+
+            Assert.That(parsimonyProteinList.Count == 3);
+            Assert.That(parsimonyBaseSequences.Contains(sequence1));
+            Assert.That(parsimonyBaseSequences.Contains(sequence2));
+            Assert.That(parsimonyBaseSequences.Contains(sequence3));
         }
     }
 }
