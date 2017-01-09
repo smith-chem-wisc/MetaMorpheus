@@ -5,6 +5,7 @@ namespace IndexSearchAndAnalyze
     public abstract class MyEngine
     {
         protected MyParams myParams;
+
         public MyResults Run()
         {
             myParams.Validate();

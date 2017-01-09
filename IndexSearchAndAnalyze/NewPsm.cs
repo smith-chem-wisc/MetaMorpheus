@@ -1,7 +1,5 @@
 ﻿using Chemistry;
-using MassSpectrometry;
 using MetaMorpheus;
-using Spectra;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -29,7 +27,7 @@ namespace IndexSearchAndAnalyze
 
         public double ScoreFromMatch;
 
-        public NewPsm(double scanPrecursorMZ, int scanNumber, double scanRT,int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
+        public NewPsm(double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
         {
             this.scanPrecursorMZ = scanPrecursorMZ;
             this.scanNumber = scanNumber;

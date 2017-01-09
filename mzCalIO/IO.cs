@@ -3,7 +3,6 @@ using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using mzCal;
-using MzIdentML;
 using Proteomics;
 using Spectra;
 using System;
@@ -32,9 +31,9 @@ namespace mzCalIO
         public static void Load()
         {
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-            unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-            psimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psimodLocation);
-            uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+            // unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
+            //  psimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psimodLocation);
+            // uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
         }
 
         public static string getFormulaFromDictionary(string dictionary, string acession)

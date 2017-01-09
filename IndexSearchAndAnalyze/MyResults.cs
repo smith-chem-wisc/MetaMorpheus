@@ -17,8 +17,6 @@ namespace IndexSearchAndAnalyze
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("Results:");
-            sb.AppendLine();
             sb.Append("Time to run: " + Time);
             return sb.ToString();
         }

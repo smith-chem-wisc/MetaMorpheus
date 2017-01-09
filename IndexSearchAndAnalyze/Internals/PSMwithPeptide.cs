@@ -2,10 +2,8 @@
 using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 
 namespace IndexSearchAndAnalyze
@@ -71,7 +69,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        public PSMwithPeptide(NewPsm newPsm, PeptideWithSetModifications peptideWithSetModifications, double fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
+        public PSMwithPeptide(NewPsm newPsm, PeptideWithSetModifications peptideWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
             this.peptideWithSetModifications = peptideWithSetModifications;
@@ -118,7 +116,7 @@ namespace IndexSearchAndAnalyze
             }
         }
 
-        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, double product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
+        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)
@@ -135,13 +133,12 @@ namespace IndexSearchAndAnalyze
             int theoreticalIndex = 0;
             double nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[0];
             double nextTheoreticalMZ = nextTheoreticalMass + 1.007276466879;
-            double lb = nextTheoreticalMZ - product_mass_tolerance_value;
-            double ub = nextTheoreticalMZ + product_mass_tolerance_value;
+
             double currentExperimentalMZ;
             for (int i = 0; i < num_experimental_peaks; i++)
             {
                 currentExperimentalMZ = experimental_mzs[i];
-                if (currentExperimentalMZ >= lb && currentExperimentalMZ <= ub)
+                if (product_mass_tolerance_value.Within(currentExperimentalMZ, nextTheoreticalMZ))
                 {
                     MatchingProductsHere++;
                     MatchingIntensityHere += experimental_intensities[i];
@@ -158,8 +155,6 @@ namespace IndexSearchAndAnalyze
                     break;
                 nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[theoreticalIndex];
                 nextTheoreticalMZ = nextTheoreticalMass + 1.007276466879;
-                lb = nextTheoreticalMZ - product_mass_tolerance_value;
-                ub = nextTheoreticalMZ + product_mass_tolerance_value;
             }
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }

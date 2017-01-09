@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace IndexSearchAndAnalyze
@@ -8,10 +7,11 @@ namespace IndexSearchAndAnalyze
     {
         public ClassicSearchResults(MyParams s, List<NewPsm> newPsms) : base(s)
         {
-            this.newPsms =  newPsms;
+            this.newPsms = newPsms;
         }
 
         public List<NewPsm> newPsms { get; private set; }
+
         public override string ToString()
         {
             var sp = (ClassicSearchParams)s;

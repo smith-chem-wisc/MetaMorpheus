@@ -289,7 +289,6 @@ namespace MetaMorpheus
             if (productTypes.Contains(ProductType.y))
                 products2 = new double[Length - 1];
 
-
             int i1 = 0;
             int i2 = 0;
             for (int r = 1; r < Length; r++)
@@ -308,6 +307,7 @@ namespace MetaMorpheus
                                 products1[i1] = p.cumulativeNTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
                                 i1++;
                                 break;
+
                             case ProductType.c:
                                 throw new NotImplementedException();
 
@@ -317,6 +317,7 @@ namespace MetaMorpheus
                                 products2[i2] = p.cumulativeCTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
                                 i2++;
                                 break;
+
                             case ProductType.zdot:
                                 throw new NotImplementedException();
                         }
@@ -415,7 +416,7 @@ namespace MetaMorpheus
                 MorpheusModification prot_c_term_variable_mod;
                 if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
                     sbsequence.Append('[' + prot_c_term_variable_mod.cf.Formula + ']');
-                return  sbsequence.ToString();
+                return sbsequence.ToString();
             }
         }
 

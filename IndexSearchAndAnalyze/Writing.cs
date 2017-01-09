@@ -6,13 +6,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace FragmentGeneration
+namespace IndexSearchAndAnalyze
 {
     public class Writing
     {
-        public static void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
+        public static void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName, AllTasksParams po)
         {
-            using (StreamWriter output = new StreamWriter(Path.Combine(output_folder, fileName + ".mytsv")))
+            var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tUniprot");
                 foreach (Bin bin in myTreeStructure.finalBins.OrderByDescending(b => b.Count))
@@ -40,17 +41,19 @@ namespace FragmentGeneration
                         + "\t" + bin.uniprotID);
                 }
             }
+            po.SucessfullyFinishedWritingFile(new SingleFileEventArgs(writtenFile));
         }
 
-        public static void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
+        public static void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName, AllTasksParams po)
         {
-            Console.WriteLine("Writing psms");
-            using (StreamWriter output = new StreamWriter(Path.Combine(output_folder, fileName + ".psmtsv")))
+            var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Spectrum File\tScan Number\tRetention Time\tPrecursor MZ\tPrecursor Charge\tPrecursor Intensity\tExperimental Peaks\tTotal Intensity\tPrecursor Mass\tScoreFromSearch\tPreviousAminoAcid\tSequence\tNextAminoAcid\tnumVariableMods\tStart Residue\tEnd Residue\tPeptide\tMissed Cleavages\tPeptide Mass\tProtein\tMass Diff(Da)\tMatched Fragments\tMatched Counts\tLocalized Scores\tImprovement\tImprovment Residue\tImprovement Terminus\tDecoy\tCumulative Target\tCumulative Decoy\tQ-value");
                 for (int i = 0; i < items.Count; i++)
                     output.WriteLine(items[i].ToString());
             }
+            po.SucessfullyFinishedWritingFile(new SingleFileEventArgs(writtenFile));
         }
     }
 }

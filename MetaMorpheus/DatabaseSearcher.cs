@@ -1,34 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace MetaMorpheus
 {
     public class DatabaseSearcher
     {
-        private IEnumerable<TandemMassSpectra> datas;
-        private int minimumAssumedPrecursorChargeState;
-        private int maximumAssumedPrecursorChargeState;
-        private int maximumNumberOfPeaks;
-        private bool assignChargeStates;
-        private bool deisotope;
-        private bool onTheFlyDecoys;
-        private Protease protease;
-        private int maximumMissedCleavages;
-        private InitiatorMethionineBehavior initiatorMethionineBehavior;
-        private int maximumVariableModificationIsoforms;
-        private MassTolerance precursorMassTolerance;
-        private IEnumerable<double> acceptedPrecursorMassErrors;
-        private MassTolerance productMassTolerance;
-        private double maximumFalseDiscoveryRate;
-        private string outputFolder;
-        private bool bIons;
-        private bool yIons;
-        private IEnumerable<Protein> allProteins;
-        private IEnumerable<MorpheusModification> variableModifications;
-        private IEnumerable<MorpheusModification> fixedModifications;
-        private string extraLogStuff;
-        private int datasCount;
-        private int max_mods_for_peptide;
+        ////private IEnumerable<TandemMassSpectra> datas;
+        //private int minimumAssumedPrecursorChargeState;
+        //private int maximumAssumedPrecursorChargeState;
+        //private int maximumNumberOfPeaks;
+        //private bool assignChargeStates;
+        //private bool deisotope;
+        //private bool onTheFlyDecoys;
+        //private Protease protease;
+        //private int maximumMissedCleavages;
+        //private InitiatorMethionineBehavior initiatorMethionineBehavior;
+        //private int maximumVariableModificationIsoforms;
+        ////private MassTolerance precursorMassTolerance;
+        //private IEnumerable<double> acceptedPrecursorMassErrors;
+        ////private MassTolerance productMassTolerance;
+        //private double maximumFalseDiscoveryRate;
+        //private string outputFolder;
+        //private bool bIons;
+        //private bool yIons;
+        //private IEnumerable<Protein> allProteins;
+        //private IEnumerable<MorpheusModification> variableModifications;
+        //private IEnumerable<MorpheusModification> fixedModifications;
+        //private string extraLogStuff;
+        //private int datasCount;
+        //private int max_mods_for_peptide;
 
         public event EventHandler<string> outputHandler;
 
@@ -58,48 +57,48 @@ namespace MetaMorpheus
             labelStatusHandler?.Invoke(this, e);
         }
 
-        public DatabaseSearcher(IEnumerable<TandemMassSpectra> datas,
-            int minimumAssumedPrecursorChargeState, int maximumAssumedPrecursorChargeState,
-            int maximumNumberOfPeaks,
-            bool assignChargeStates, bool deisotope, bool onTheFlyDecoys,
-            Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior,
-            int maximumVariableModificationIsoforms, int max_mods_for_peptide,
-            MassTolerance precursorMassTolerance,
-            IEnumerable<double> acceptedPrecursorMassErrors,
-            MassTolerance productMassTolerance,
-            double maximumFalseDiscoveryRate,
-            string outputFolder,
-            bool bIons,
-            bool yIons,
-            IEnumerable<Protein> allProteins, IEnumerable<MorpheusModification> variableModifications, IEnumerable<MorpheusModification> fixedModifications,
-            string extraLogStuff,
-            int datasCount)
-        {
-            this.datas = datas;
-            this.assignChargeStates = assignChargeStates;
-            this.deisotope = deisotope;
-            this.onTheFlyDecoys = onTheFlyDecoys;
-            this.protease = protease;
-            this.maximumMissedCleavages = maximumMissedCleavages;
-            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
-            this.minimumAssumedPrecursorChargeState = minimumAssumedPrecursorChargeState;
-            this.maximumAssumedPrecursorChargeState = maximumAssumedPrecursorChargeState;
-            this.maximumNumberOfPeaks = maximumNumberOfPeaks;
-            this.precursorMassTolerance = precursorMassTolerance;
-            this.acceptedPrecursorMassErrors = acceptedPrecursorMassErrors;
-            this.productMassTolerance = productMassTolerance;
-            this.maximumFalseDiscoveryRate = maximumFalseDiscoveryRate;
-            this.outputFolder = outputFolder;
-            this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
-            this.bIons = bIons;
-            this.yIons = yIons;
-            this.allProteins = allProteins;
-            this.variableModifications = variableModifications;
-            this.fixedModifications = fixedModifications;
-            this.extraLogStuff = extraLogStuff;
-            this.datasCount = datasCount;
-            this.max_mods_for_peptide = max_mods_for_peptide;
-        }
+        //public DatabaseSearcher(IEnumerable<TandemMassSpectra> datas,
+        //    int minimumAssumedPrecursorChargeState, int maximumAssumedPrecursorChargeState,
+        //    int maximumNumberOfPeaks,
+        //    bool assignChargeStates, bool deisotope, bool onTheFlyDecoys,
+        //    Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior,
+        //    int maximumVariableModificationIsoforms, int max_mods_for_peptide,
+        //    MassTolerance precursorMassTolerance,
+        //    IEnumerable<double> acceptedPrecursorMassErrors,
+        //    MassTolerance productMassTolerance,
+        //    double maximumFalseDiscoveryRate,
+        //    string outputFolder,
+        //    bool bIons,
+        //    bool yIons,
+        //    IEnumerable<Protein> allProteins, IEnumerable<MorpheusModification> variableModifications, IEnumerable<MorpheusModification> fixedModifications,
+        //    string extraLogStuff,
+        //    int datasCount)
+        //{
+        //    this.datas = datas;
+        //    this.assignChargeStates = assignChargeStates;
+        //    this.deisotope = deisotope;
+        //    this.onTheFlyDecoys = onTheFlyDecoys;
+        //    this.protease = protease;
+        //    this.maximumMissedCleavages = maximumMissedCleavages;
+        //    this.initiatorMethionineBehavior = initiatorMethionineBehavior;
+        //    this.minimumAssumedPrecursorChargeState = minimumAssumedPrecursorChargeState;
+        //    this.maximumAssumedPrecursorChargeState = maximumAssumedPrecursorChargeState;
+        //    this.maximumNumberOfPeaks = maximumNumberOfPeaks;
+        //    this.precursorMassTolerance = precursorMassTolerance;
+        //    this.acceptedPrecursorMassErrors = acceptedPrecursorMassErrors;
+        //    this.productMassTolerance = productMassTolerance;
+        //    this.maximumFalseDiscoveryRate = maximumFalseDiscoveryRate;
+        //    this.outputFolder = outputFolder;
+        //    this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
+        //    this.bIons = bIons;
+        //    this.yIons = yIons;
+        //    this.allProteins = allProteins;
+        //    this.variableModifications = variableModifications;
+        //    this.fixedModifications = fixedModifications;
+        //    this.extraLogStuff = extraLogStuff;
+        //    this.datasCount = datasCount;
+        //    this.max_mods_for_peptide = max_mods_for_peptide;
+        //}
 
         public void DoSearch()
         {

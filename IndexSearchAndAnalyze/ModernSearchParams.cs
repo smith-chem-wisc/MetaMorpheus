@@ -1,8 +1,8 @@
 ﻿using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 
 namespace IndexSearchAndAnalyze
 {
@@ -17,11 +17,11 @@ namespace IndexSearchAndAnalyze
         public List<CompactPeptide> peptideIndex { get; private set; }
         public Protease protease { get; private set; }
         public List<Protein> proteinList { get; private set; }
-        public List<SearchMode> searchModes { get; private set; }
+        public List<FunctionSearchMode> searchModes { get; private set; }
         public int spectraFileIndex { get; private set; }
         public List<MorpheusModification> variableModifications { get; private set; }
 
-        public ModernSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes, Action<string> a1, Action<int> a2) : base(a1, a2)
+        public ModernSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<FunctionSearchMode> searchModes, AllTasksParams a2) : base(a2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;
@@ -39,7 +39,6 @@ namespace IndexSearchAndAnalyze
 
         internal override void Validate()
         {
-
         }
     }
 }

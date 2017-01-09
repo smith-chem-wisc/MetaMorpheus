@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MathNet.Numerics.Statistics;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -12,7 +11,6 @@ namespace IndexSearchAndAnalyze
 {
     public class ModernSearchEngine : MyEngine
     {
-
         public ModernSearchEngine(ModernSearchParams searchParams)
         {
             this.myParams = searchParams;
@@ -21,7 +19,7 @@ namespace IndexSearchAndAnalyze
         protected override MyResults RunSpecific()
         {
             var searchParams = (ModernSearchParams)myParams;
-            searchParams.outputAction("In modern search method!");
+            searchParams.allTasksParams.RTBoutput("In modern search method!");
 
             var spectraList = searchParams.myMsDataFile.ToList();
             var totalSpectra = searchParams.myMsDataFile.NumSpectra;
@@ -68,7 +66,7 @@ namespace IndexSearchAndAnalyze
                                     if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
-                                        if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], scanPrecursorMass))
+                                        if (searchMode.Accepts(scanPrecursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], scanPrecursorMass))
                                         {
                                             bestPeptides[j] = candidatePeptide;
                                             bestScores[j] = consideredScore;
@@ -77,7 +75,7 @@ namespace IndexSearchAndAnalyze
                                     else if (currentBestScore < consideredScore)
                                     {
                                         // Score is better, only make sure it is acceptable
-                                        if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass))
+                                        if (searchMode.Accepts(scanPrecursorMass, candidatePeptide.MonoisotopicMass))
                                         {
                                             bestPeptides[j] = candidatePeptide;
                                             bestScores[j] = consideredScore;
@@ -87,7 +85,7 @@ namespace IndexSearchAndAnalyze
                                 else
                                 {
                                     // Did not exist! Only make sure that it is acceptable
-                                    if (searchMode.Accepts(scanPrecursorMass - candidatePeptide.MonoisotopicMass))
+                                    if (searchMode.Accepts(scanPrecursorMass, candidatePeptide.MonoisotopicMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;

@@ -17,8 +17,11 @@ namespace IndexSearchAndAnalyze
 
         protected override MyResults RunSpecific()
         {
+            myParams.allTasksParams.status("Running analysis engine!");
             var analysisParams = (AnalysisParams)myParams;
+            myParams.allTasksParams.status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary(analysisParams.newPsms, analysisParams.compactPeptideToProteinPeptideMatching, analysisParams.proteinList, analysisParams.variableModifications, analysisParams.fixedModifications, analysisParams.localizeableModifications, analysisParams.protease);
+            myParams.allTasksParams.status("Getting single match dictionary...");
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 
             List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
@@ -46,13 +49,14 @@ namespace IndexSearchAndAnalyze
                 var limitedpsms_with_fdr = orderedPsmsWithPeptidesAndFDR.Where(b => (b.QValue <= 0.01)).ToList();
                 if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
                 {
+                    myParams.allTasksParams.status("Running histogram analysis...");
                     var hm = MyAnalysis(limitedpsms_with_fdr, analysisParams.unimodDeserialized, analysisParams.uniprotDeseralized);
                     analysisParams.action1(hm, analysisParams.searchModes[j].FileNameAddition);
                 }
 
                 analysisParams.action2(orderedPsmsWithPeptidesAndFDR, analysisParams.searchModes[j].FileNameAddition);
 
-                yeah[j]= orderedPsmsWithPeptidesAndFDR;
+                yeah[j] = orderedPsmsWithPeptidesAndFDR;
             }
 
             return new AnalysisResults(analysisParams, yeah);

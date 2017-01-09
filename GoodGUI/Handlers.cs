@@ -1,5 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using IndexSearchAndAnalyze;
+using System;
 
 namespace GoodGUI
 {
@@ -13,23 +13,12 @@ namespace GoodGUI
             }
             else
             {
-                outLabelStatus.Content = s;
+                outProgressBar.IsIndeterminate = true;
+                statusLabel.Content = s;
             }
         }
 
-        private void NewoutTextBox(object sender, string s)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => NewoutTextBox(sender, s)));
-            }
-            else
-            {
-                outTextBox.Text = s;
-            }
-        }
-
-        private void NewoutProgressBar(object sender, int s)
+        private void NewoutProgressBar(object sender, ProgressEventArgs s)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -37,8 +26,9 @@ namespace GoodGUI
             }
             else
             {
-                Debug.Assert(s >= 0 && s <= 100);
-                outProgressBar.Value = s;
+                outProgressBar.IsIndeterminate = false;
+                outProgressBar.Value = s.new_progress;
+                statusLabel.Content = s.v;
             }
         }
 
@@ -67,45 +57,62 @@ namespace GoodGUI
             }
         }
 
-        private void NewSuccessfullyStartingTask(object sender, EventArgs e)
+        private void NewSuccessfullyStartingAllTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyStartingTask(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyStartingAllTasks(sender, e)));
             }
             else
             {
-                TopThing.IsEnabled = false;
+                //TODO: Check those
+                XMLdbPanel.IsEnabled = false;
                 DatafilesStackPanel.IsEnabled = false;
-                LeftPanel.IsEnabled = false;
+                addSearchTaskButton.IsEnabled = false;
+                addCalibrateTaskButton.IsEnabled = false;
+                addGPTMDTaskButton.IsEnabled = false;
+                tasksPanel.IsEnabled = false;
+
+                statusLabel.Content = "Starting all tasks...";
+                outProgressBar.IsIndeterminate = true;
+
                 dataGridDatafiles.Items.Refresh();
             }
         }
 
-        private void NewSuccessfullyFinishedTask(object sender, EventArgs e)
+        private void NewSuccessfullyFinishedAllTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedTask(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedAllTasks(sender, e)));
             }
             else
             {
-                TopThing.IsEnabled = true;
+                //TODO: Check those
+                XMLdbPanel.IsEnabled = true;
                 DatafilesStackPanel.IsEnabled = true;
-                LeftPanel.IsEnabled = true;
+                addSearchTaskButton.IsEnabled = true;
+                addCalibrateTaskButton.IsEnabled = true;
+                addGPTMDTaskButton.IsEnabled = true;
+                tasksPanel.IsEnabled = true;
+
+                statusLabel.Content = "Finished all tasks!";
+                outProgressBar.IsIndeterminate = false;
+                outProgressBar.Value = 100;
+
                 dataGridDatafiles.Items.Refresh();
             }
         }
 
-        private void NewSuccessfullyFinishedFile(object sender, string v)
+        private void NewSuccessfullyFinishedWritingFile(object sender, SingleFileEventArgs v)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedFile(sender, v)));
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedWritingFile(sender, v)));
             }
             else
             {
-                addFile(v);
+                addFinishedFile(v.writtenFile);
             }
         }
 
