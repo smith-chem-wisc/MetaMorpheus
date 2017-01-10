@@ -1,6 +1,6 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
+﻿using MetaMorpheusLogic;
 using NUnit.Framework;
+using OldInternalLogic;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,14 +15,14 @@ namespace Test
             // creates some test proteins and digests them (simulating a protein database)
             string sequence1 = "AKCKBK";
             string sequence2 = "DKCK";
-            string sequence3 = "AAKAAK";
+            string sequence3 = "AAAAK";
 
             IEnumerable<string> sequencesInducingCleavage = new List<string>() { "K", "R" };
             IEnumerable<string> sequencesPreventingCleavage = new List<string>() { "KP", "RP" };
             Dictionary<int, List<MorpheusModification>> temp1 = new Dictionary<int, List<MorpheusModification>>();
             List<MorpheusModification> temp2 = new List<MorpheusModification>();
             int[] temp3 = new int[0];
-            Protease protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, MetaMorpheus.Terminus.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldInternalLogic.Terminus.C, CleavageSpecificity.Full, null, null, null);
             HashSet<PeptideWithSetModifications> totalProteinList = new HashSet<PeptideWithSetModifications>();
 
             Protein p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);
@@ -95,7 +95,7 @@ namespace Test
             }
 
             var p = new ParentSpectrumMatch[0][];
-            AnalysisParams analysisParams = new AnalysisParams(p, null, null, null, null, null, null, null, null, null, null, null, null);
+            AnalysisParams analysisParams = new AnalysisParams(p, null, null, null, null, null, null, null, null, null, null, null, null, true);
             var analysisEngine = new AnalysisEngine(analysisParams);
 
             // apply parsimony to initial dictionary
@@ -125,6 +125,32 @@ namespace Test
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
             Assert.That(parsimonyBaseSequences.Contains(sequence2));
             Assert.That(parsimonyBaseSequences.Contains(sequence3));
+
+            /*
+            // prints initial dictionary
+            Console.WriteLine("----Initial Dictionary----");
+            foreach (var kvp in initialDictionary)
+            {
+                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
+                foreach (var peptide in kvp.Value)
+                {
+                    Console.Write(peptide.BaseSequence + " ;; ");
+                }
+                Console.WriteLine();
+            }
+
+            // prints parsimony dictionary
+            Console.WriteLine("----Parsimonious Dictionary----");
+            foreach (var kvp in parsimonyTest)
+            {
+                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
+                foreach (var peptide in kvp.Value)
+                {
+                    Console.Write(peptide.BaseSequence + " ;; ");
+                }
+                Console.WriteLine();
+            }
+            */
         }
     }
 }
