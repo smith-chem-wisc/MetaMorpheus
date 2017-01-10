@@ -1,4 +1,4 @@
-﻿namespace MetaMorpheus
+﻿namespace OldInternalLogic
 {
     public static class Constants
     {

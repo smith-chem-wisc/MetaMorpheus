@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class ExceptionEventArgs : EventArgs
     {

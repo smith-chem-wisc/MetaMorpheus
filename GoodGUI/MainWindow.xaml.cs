@@ -1,5 +1,5 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
+﻿using MetaMorpheusLogic;
+using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace GoodGUI
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

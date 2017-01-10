@@ -1,14 +1,14 @@
 ﻿using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using MetaMorpheus;
+using OldInternalLogic;
 using Spectra;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class MyCalibrateTask : MyTask
     {

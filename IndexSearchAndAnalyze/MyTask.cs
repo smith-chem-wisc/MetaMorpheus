@@ -1,10 +1,10 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Xml;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public abstract class MyTask
     {

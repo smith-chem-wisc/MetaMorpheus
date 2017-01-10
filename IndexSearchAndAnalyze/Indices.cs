@@ -1,13 +1,12 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     internal class Indices
     {

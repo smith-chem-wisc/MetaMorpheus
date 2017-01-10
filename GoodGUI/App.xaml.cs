@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace GoodGUI
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Interaction logic for App.xaml

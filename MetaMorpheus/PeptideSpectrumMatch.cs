@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class PeptideSpectrumMatch
     {

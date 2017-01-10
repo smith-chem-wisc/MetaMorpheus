@@ -1,9 +1,9 @@
-﻿<Window x:Class="GoodGUI.MainWindow"
+﻿<Window x:Class="MetaMorpheusGUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:GoodGUI"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="MetaMorpheus Not a release" Height="730" Width="1024"
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinWidth="600">

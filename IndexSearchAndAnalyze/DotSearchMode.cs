@@ -1,8 +1,8 @@
 ﻿using Spectra;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class DotSearchMode : SearchMode
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class PeptideWithPossibleModifications : Peptide
     {

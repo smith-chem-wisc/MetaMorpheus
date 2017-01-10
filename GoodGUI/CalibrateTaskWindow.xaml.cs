@@ -1,5 +1,5 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
+﻿using MetaMorpheusLogic;
+using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.ObjectModel;
@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 
-namespace GoodGUI
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Interaction logic for CalibrateTaskWindow.xaml

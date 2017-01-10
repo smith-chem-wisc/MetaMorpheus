@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class ProteaseDictionary : Dictionary<string, Protease>
     {

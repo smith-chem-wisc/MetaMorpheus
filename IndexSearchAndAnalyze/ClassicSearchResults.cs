@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class ClassicSearchResults : MyResults
     {

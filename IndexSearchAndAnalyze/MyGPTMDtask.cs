@@ -1,8 +1,8 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using System;
 using System.Collections.Generic;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class MyGPTMDtask : MyTask
     {

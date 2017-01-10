@@ -1,4 +1,4 @@
-﻿namespace IndexSearchAndAnalyze
+﻿namespace MetaMorpheusLogic
 {
     internal class OkBin
     {

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using UsefulProteomicsDatabases.Generated;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class AllTasksParams
     {

@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Linq;
 using UsefulProteomicsDatabases.Generated;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     internal class MyAnalysisClass
     {

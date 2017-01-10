@@ -1,7 +1,7 @@
-﻿using IndexSearchAndAnalyze;
+﻿using MetaMorpheusLogic;
 using System;
 
-namespace GoodGUI
+namespace MetaMorpheusGUI
 {
     public partial class MainWindow
     {

@@ -1,11 +1,11 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class IndexEngine : MyEngine
     {

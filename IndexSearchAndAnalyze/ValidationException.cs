@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     [Serializable]
     public class ValidationException : Exception

@@ -1,15 +1,14 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
+﻿using MetaMorpheusLogic;
+using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows;
 
-namespace GoodGUI
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Interaction logic for SearchTaskWindow.xaml
@@ -18,6 +17,7 @@ namespace GoodGUI
     {
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForSearch> ModFileListInWindow = new ObservableCollection<ModListForSearch>();
+
         private ObservableCollection<SearchModeFoSearch> SearchModes = new ObservableCollection<SearchModeFoSearch>();
 
         public SearchTaskWindow(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
@@ -59,7 +59,6 @@ namespace GoodGUI
             foreach (var uu in searchModes)
                 SearchModes.Add(new SearchModeFoSearch(uu));
             allowedPrecursorMassDiffsDataGrid.DataContext = SearchModes;
-
         }
 
         private void UpdateFieldsFromTask(MySearchTask task)
@@ -122,7 +121,7 @@ namespace GoodGUI
 
         private void addNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
         {
-            // Format: name, "interval", intervals 
+            // Format: name, "interval", intervals
             // Format: name, "dot", num, "ppm" or "da", dots
 
             var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
@@ -143,6 +142,7 @@ namespace GoodGUI
                         SearchModes.Add(new SearchModeFoSearch(dsm));
                         allowedPrecursorMassDiffsDataGrid.Items.Refresh();
                         break;
+
                     case "interval":
                         IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[0]), double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[1])));
                         IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);

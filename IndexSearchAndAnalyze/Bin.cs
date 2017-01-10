@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class Bin
     {

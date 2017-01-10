@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9D2C9BF1-3D9C-4D97-9F1B-F4F7167F533B}</ProjectGuid>
+    <ProjectGuid>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Test</RootNamespace>
-    <AssemblyName>Test</AssemblyName>
+    <RootNamespace>MetaMorpheusLogic</RootNamespace>
+    <AssemblyName>MetaMorpheusLogic</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <SonarQubeExclude>true</SonarQubeExclude>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -53,8 +52,8 @@
       <HintPath>..\packages\mzLib.1.0.48\lib\MzML.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="nunit.framework, Version=3.6.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.0\lib\net45\nunit.framework.dll</HintPath>
+    <Reference Include="NetSerializer, Version=4.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetSerializer.4.1.0\lib\net45\NetSerializer.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Proteomics, Version=1.0.48.0, Culture=neutral, processorArchitecture=AMD64">
@@ -67,8 +66,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -89,32 +86,81 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnalysisEngineTest.cs" />
-    <Compile Include="ExclusionsTest.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SetUpTests.cs" />
+    <Compile Include="AllTasksClass.cs" />
+    <Compile Include="AllTasksParams.cs" />
+    <Compile Include="AnalysisEngine.cs" />
+    <Compile Include="AnalysisParams.cs" />
+    <Compile Include="AnalysisResults.cs" />
+    <Compile Include="Bin.cs" />
+    <Compile Include="CalibrationFunctions\ByHandCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\CalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\ConstantCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\CubicCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationFunctions\DataPoint.cs" />
+    <Compile Include="CalibrationFunctions\IdentityCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationFunctions\NiceTrainingPoint.cs" />
+    <Compile Include="CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationFunctions\RandomForest.cs" />
+    <Compile Include="CalibrationFunctions\SeparateCalibrationFunction.cs" />
+    <Compile Include="CalibrationFunctions\TrainingPoint.cs" />
+    <Compile Include="CalibrationFunctions\TransformFunction.cs" />
+    <Compile Include="ClassicSearchParams.cs" />
+    <Compile Include="ClassicSearchResults.cs" />
+    <Compile Include="ClassicSpectrumMatch.cs" />
+    <Compile Include="CompactPeptide.cs" />
+    <Compile Include="FunctionSearchMode.cs" />
+    <Compile Include="Indices.cs" />
+    <Compile Include="Internals\MyAnalysisClass.cs" />
+    <Compile Include="ClassicSearchEngine.cs" />
+    <Compile Include="DotSearchMode.cs" />
+    <Compile Include="IntervalSearchMode.cs" />
+    <Compile Include="IO.cs" />
+    <Compile Include="LocalMs2Scan.cs" />
+    <Compile Include="MyCalibrateTask.cs" />
+    <Compile Include="MyEngine.cs" />
+    <Compile Include="IndexEngine.cs" />
+    <Compile Include="IndexParams.cs" />
+    <Compile Include="IndexResults.cs" />
+    <Compile Include="Internals\MyInfo.cs" />
+    <Compile Include="BinTreeStructure.cs" />
+    <Compile Include="MyGPTMDtask.cs" />
+    <Compile Include="MyParams.cs" />
+    <Compile Include="MyResults.cs" />
+    <Compile Include="MySearchTask.cs" />
+    <Compile Include="MyTask.cs" />
+    <Compile Include="MyTaskResults.cs" />
+    <Compile Include="MyTasksEnum.cs" />
+    <Compile Include="NewPsm.cs" />
+    <Compile Include="NewPsmWithFDR.cs" />
+    <Compile Include="Internals\OkBin.cs" />
+    <Compile Include="ParentSpectrumMatch.cs" />
+    <Compile Include="ProgressEventArgs.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SonarQubeExclude>true</SonarQubeExclude>
+    </Compile>
+    <Compile Include="Internals\PSMwithPeptide.cs" />
+    <Compile Include="ModernSearchEngine.cs" />
+    <Compile Include="SearchMode.cs" />
+    <Compile Include="ModernSearchParams.cs" />
+    <Compile Include="ModernSearchResults.cs" />
+    <Compile Include="SearchModeForDisplay.cs" />
+    <Compile Include="SingleFileEventArgs.cs" />
+    <Compile Include="SingleTaskEventArgs.cs" />
+    <Compile Include="SoftwareLockMassParams.cs" />
+    <Compile Include="SoftwareLockMassRunner.cs" />
+    <Compile Include="TrainingPointsExtractor.cs" />
+    <Compile Include="ValidationException.cs" />
+    <Compile Include="Writing.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FragmentGeneration\MetaMorpheusCommandLine.csproj">
-      <Project>{dd89ef8c-a47a-4c6b-97bf-01b81d48847c}</Project>
-      <Name>MetaMorpheusCommandLine</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\IndexSearchAndAnalyze\MetaMorpheusLogic.csproj">
-      <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
-      <Name>MetaMorpheusLogic</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MetaMorpheus\OldInternalLogic.csproj">
-      <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
+      <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>OldInternalLogic</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

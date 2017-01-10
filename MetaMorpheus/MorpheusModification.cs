@@ -1,6 +1,6 @@
 ﻿using Chemistry;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class MorpheusModification
     {

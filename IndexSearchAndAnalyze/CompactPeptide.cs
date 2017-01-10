@@ -1,9 +1,9 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     [Serializable]
     public class CompactPeptide

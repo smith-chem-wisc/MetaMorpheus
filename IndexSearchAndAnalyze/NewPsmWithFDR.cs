@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class NewPsmWithFDR
     {

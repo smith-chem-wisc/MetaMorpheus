@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class MyTaskResults
     {

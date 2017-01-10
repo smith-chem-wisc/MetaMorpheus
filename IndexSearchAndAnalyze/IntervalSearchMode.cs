@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class IntervalSearchMode : SearchMode
     {
-        List<DoubleRange> intervals;
+        private List<DoubleRange> intervals;
+
         public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
         {
             intervals = doubleRanges.ToList();

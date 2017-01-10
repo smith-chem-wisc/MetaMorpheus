@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class FunctionSearchMode : SearchMode
     {

@@ -1,14 +1,13 @@
 ﻿using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using Proteomics;
 using Spectra;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public static class mzCalIO
     {
@@ -23,7 +22,7 @@ namespace IndexSearchAndAnalyze
         {
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
         }
-        
+
         public static void MzmlOutput(SoftwareLockMassParams p)
         {
             p.po.status("Creating _indexedmzMLConnection, and putting data in it");

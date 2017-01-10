@@ -1,7 +1,7 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using System.Collections.ObjectModel;
 
-namespace FragmentGeneration
+namespace MetaMorpheusCommandLine
 {
     internal class Program
     {

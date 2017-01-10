@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class ModListForSearch
     {

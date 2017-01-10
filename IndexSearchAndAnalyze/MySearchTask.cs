@@ -1,15 +1,13 @@
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using MetaMorpheus;
+using OldInternalLogic;
 using Spectra;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class MySearchTask : MyTask
     {
@@ -18,6 +16,7 @@ namespace IndexSearchAndAnalyze
         public bool classicSearch { get; set; }
 
         public bool doParsimony { get; set; }
+
         public MySearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes) : base(1)
         {
             // Set default values here:
@@ -50,7 +49,6 @@ namespace IndexSearchAndAnalyze
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
-
             po.status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
             List<MorpheusModification> fixedModifications = listOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
@@ -81,7 +79,6 @@ namespace IndexSearchAndAnalyze
 
                 keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
-
             }
 
             var currentRawFileList = po.rawDataAndResultslist;
@@ -141,8 +138,6 @@ namespace IndexSearchAndAnalyze
 
                     po.output(analysisResults.ToString());
                 }
-
-
             }
 
             if (currentRawFileList.Count > 1)

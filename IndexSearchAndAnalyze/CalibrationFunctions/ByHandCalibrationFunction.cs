@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     internal class ByHandCalibrationFunction : CalibrationFunction
     {

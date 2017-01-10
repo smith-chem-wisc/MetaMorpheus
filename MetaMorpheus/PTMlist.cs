@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public class ModList
     {

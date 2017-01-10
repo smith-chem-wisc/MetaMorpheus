@@ -1,12 +1,12 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MetaMorpheus;
+using OldInternalLogic;
 using Spectra;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class PSMwithTargetDecoyKnown
     {

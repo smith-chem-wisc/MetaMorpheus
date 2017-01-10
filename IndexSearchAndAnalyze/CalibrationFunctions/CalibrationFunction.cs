@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public abstract class CalibrationFunction
     {

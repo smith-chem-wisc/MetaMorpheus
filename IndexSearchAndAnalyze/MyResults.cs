@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public abstract class MyResults
     {

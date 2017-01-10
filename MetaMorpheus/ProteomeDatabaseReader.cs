@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     public static class ProteomeDatabaseReader
     {

@@ -1,8 +1,8 @@
 ﻿using Chemistry;
-using MetaMorpheus;
+using OldInternalLogic;
 using System.Collections.Generic;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class ModernSpectrumMatch : ParentSpectrumMatch
     {

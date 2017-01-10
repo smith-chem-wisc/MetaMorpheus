@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class AnalysisResults : MyResults
     {

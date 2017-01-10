@@ -1,9 +1,9 @@
 ﻿using MassSpectrometry;
-using MetaMorpheus;
+using OldInternalLogic;
 using Spectra;
 using System.Collections.Generic;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class ModernSearchParams : MyParams
     {

@@ -1,4 +1,4 @@
-﻿namespace GoodGUI
+﻿namespace MetaMorpheusGUI
 {
     internal class FinishedFile
     {

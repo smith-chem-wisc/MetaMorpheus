@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MetaMorpheus
+namespace OldInternalLogic
 {
     internal class MyDoubleEqualityComparer : IEqualityComparer<double>
     {

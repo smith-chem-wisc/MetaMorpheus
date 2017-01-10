@@ -1,4 +1,4 @@
-﻿namespace IndexSearchAndAnalyze
+﻿namespace MetaMorpheusLogic
 {
     public class TrainingPoint
     {

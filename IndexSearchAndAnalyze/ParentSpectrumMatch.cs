@@ -1,10 +1,10 @@
-﻿using MetaMorpheus;
+﻿using OldInternalLogic;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public abstract class ParentSpectrumMatch
     {

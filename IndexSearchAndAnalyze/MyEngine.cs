@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public abstract class MyEngine
     {

@@ -1,9 +1,9 @@
-﻿using IndexSearchAndAnalyze;
+﻿using MetaMorpheusLogic;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace GoodGUI
+namespace MetaMorpheusGUI
 {
     internal class TaskListWrapper
     {

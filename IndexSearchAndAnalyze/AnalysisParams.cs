@@ -1,12 +1,12 @@
 ﻿using MassSpectrometry;
-using MetaMorpheus;
+using OldInternalLogic;
 using Proteomics;
 using Spectra;
 using System;
 using System.Collections.Generic;
 using UsefulProteomicsDatabases.Generated;
 
-namespace IndexSearchAndAnalyze
+namespace MetaMorpheusLogic
 {
     public class AnalysisParams : MyParams
     {
