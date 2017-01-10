@@ -56,6 +56,7 @@ namespace GoodGUI
 
         private void UpdateFieldsFromTask(MySearchTask task)
         {
+            classicSearchRadioButton.IsChecked = task.classicSearch;
             checkBoxDecoy.IsChecked = task.searchDecoy;
             missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.protease;
@@ -87,6 +88,7 @@ namespace GoodGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
+            TheTask.classicSearch = classicSearchRadioButton.IsChecked.Value;
             TheTask.searchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.maxMissedCleavages = int.Parse(missedCleavagesTextBox.Text);
             TheTask.protease = (Protease)proteaseComboBox.SelectedItem;

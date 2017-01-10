@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -52,6 +52,10 @@
       <HintPath>..\packages\mzLib.1.0.47\lib\MzML.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NetSerializer, Version=4.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NetSerializer.4.1.0\lib\net45\NetSerializer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Proteomics, Version=1.0.47.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.47\lib\Proteomics.dll</HintPath>
       <Private>True</Private>
@@ -82,7 +86,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AllTasksClass.cs" />
     <Compile Include="AllTasksParams.cs" />
     <Compile Include="AnalysisEngine.cs" />
     <Compile Include="AnalysisParams.cs" />
@@ -106,6 +109,7 @@
     <Compile Include="ClassicSpectrumMatch.cs" />
     <Compile Include="CompactPeptide.cs" />
     <Compile Include="FunctionSearchMode.cs" />
+    <Compile Include="Indices.cs" />
     <Compile Include="Internals\MyAnalysisClass.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="IntervalSearchMode.cs" />
@@ -123,12 +127,10 @@
     <Compile Include="MyResults.cs" />
     <Compile Include="MySearchTask.cs" />
     <Compile Include="MyTask.cs" />
-    <Compile Include="MyTaskResults.cs" />
     <Compile Include="MyTasksEnum.cs" />
     <Compile Include="NewPsm.cs" />
     <Compile Include="NewPsmWithFDR.cs" />
     <Compile Include="Internals\OkBin.cs" />
-    <Compile Include="ParentSpectrumMatch.cs" />
     <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
