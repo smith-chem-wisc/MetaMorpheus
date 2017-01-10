@@ -8,6 +8,18 @@
         Title="Search Task" Width="550" Height="600" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <StackPanel>
         <Label Content="Search Parameters:" Height="30" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="4*" />
+            </Grid.ColumnDefinitions>
+            <Label Height="30" >
+                <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType"/>
+            </Label>
+            <Label Height="30" Grid.Column="1" >
+                <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType"/>
+            </Label>
+        </Grid>
         <StackPanel Margin="5">
             <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys and do FDR analysis" />
         </StackPanel>
