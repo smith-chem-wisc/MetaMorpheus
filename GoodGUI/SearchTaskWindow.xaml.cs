@@ -65,6 +65,7 @@ namespace GoodGUI
         private void UpdateFieldsFromTask(MySearchTask task)
         {
             classicSearchRadioButton.IsChecked = task.classicSearch;
+            checkBoxParsimony.IsChecked = task.doParsimony;
             checkBoxDecoy.IsChecked = task.searchDecoy;
             missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.protease;
