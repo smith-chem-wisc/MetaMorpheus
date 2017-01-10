@@ -39,16 +39,18 @@ namespace IndexSearchAndAnalyze
         internal double toleranceInMZforMS1Search = 0.01;
         public HashSet<int> matchesToExclude;
         internal AllTasksParams po;
+        internal MyTaskResults myTaskResults;
 
         #region Constructors
 
-        public SoftwareLockMassParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search)
+        public SoftwareLockMassParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search, MyTaskResults myTaskResults)
         {
             this.myMsDataFile = myMsDataFile;
             MS1spectraToWatch = new HashSet<int>();
             MS2spectraToWatch = new HashSet<int>();
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
+            this.myTaskResults = myTaskResults;
         }
 
         #endregion Constructors

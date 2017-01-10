@@ -1,8 +1,5 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,17 +8,15 @@ namespace IndexSearchAndAnalyze
 {
     public static class AllTasksClass
     {
-        public static void DoAllTasks(List<MyTask> taskList, ObservableCollection<RawData> rawDataAndResultslist, ObservableCollection<XMLdb> xMLdblist, AllTasksParams allTasksParams)
+        public static void DoAllTasks(List<MyTask> taskList, AllTasksParams allTasksParams)
         {
             allTasksParams.startingAllTasks();
             var startTimeForFilename = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
-            var Files = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName);
-
             var MatchingChars =
-                from len in Enumerable.Range(0, Files.Min(s => s.Length)).Reverse()
-                let possibleMatch = Files.First().Substring(0, len)
-                where Files.All(f => f.StartsWith(possibleMatch))
+                from len in Enumerable.Range(0, allTasksParams.rawDataAndResultslist.Min(s => s.Length)).Reverse()
+                let possibleMatch = allTasksParams.rawDataAndResultslist.First().Substring(0, len)
+                where allTasksParams.rawDataAndResultslist.All(f => f.StartsWith(possibleMatch))
                 select possibleMatch;
 
             var longestDir = Path.GetDirectoryName(MatchingChars.First());
@@ -45,7 +40,11 @@ namespace IndexSearchAndAnalyze
                 ok.setOutputFolder(output_folder);
 
                 allTasksParams.startingSingleTask(new SingleTaskEventArgs(ok));
-                ok.DoTask(rawDataAndResultslist, xMLdblist, allTasksParams);
+                MyTaskResults myTaskResults = ok.DoTask(allTasksParams);
+                if (myTaskResults.newDatabases != null)
+                    allTasksParams.NewDBs(myTaskResults.newDatabases);
+                if (myTaskResults.newSpectra != null)
+                    allTasksParams.NewSpectras(myTaskResults.newSpectra);
                 allTasksParams.finishedSingleTask(new SingleTaskEventArgs(ok));
             }
             allTasksParams.FinishedAllTasks();

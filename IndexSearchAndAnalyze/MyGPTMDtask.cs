@@ -1,7 +1,6 @@
 ﻿using MetaMorpheus;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace IndexSearchAndAnalyze
 {
@@ -11,7 +10,7 @@ namespace IndexSearchAndAnalyze
         {
         }
 
-        public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override MyTaskResults DoTask(AllTasksParams po)
         {
             throw new NotImplementedException();// For each PSM, look at modifications
             //string line;
@@ -134,6 +133,7 @@ namespace IndexSearchAndAnalyze
             //    writer.WriteEndDocument();
             //}
         }
+
         private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
         {
             if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
@@ -187,6 +187,5 @@ namespace IndexSearchAndAnalyze
                 }
             }
         }
-
     }
 }

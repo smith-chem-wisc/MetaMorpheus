@@ -123,10 +123,12 @@
     <Compile Include="MyResults.cs" />
     <Compile Include="MySearchTask.cs" />
     <Compile Include="MyTask.cs" />
+    <Compile Include="MyTaskResults.cs" />
     <Compile Include="MyTasksEnum.cs" />
     <Compile Include="NewPsm.cs" />
     <Compile Include="NewPsmWithFDR.cs" />
     <Compile Include="Internals\OkBin.cs" />
+    <Compile Include="ParentSpectrumMatch.cs" />
     <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>

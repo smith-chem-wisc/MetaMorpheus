@@ -1,18 +1,20 @@
-﻿using System;
+﻿using MetaMorpheus;
+using System;
+using System.Collections.Generic;
 
 namespace IndexSearchAndAnalyze
 {
-    internal class ClassicSpectrumMatch
+    internal class ClassicSpectrumMatch : ParentSpectrumMatch
     {
         private double[] hehe;
-        public CompactPeptide ps;
+        public PeptideWithSetModifications ps;
 
-        public ClassicSpectrumMatch(double score, CompactPeptide ps, double[] hehe, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
+        public ClassicSpectrumMatch(double ScoreFromSearch, PeptideWithSetModifications ps, double[] hehe, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
         {
             this.ps = ps;
             this.hehe = hehe;
-            this.score = score;
-            this.precursorMass = precursorMass;
+            this.Score = ScoreFromSearch;
+            this.scanPrecursorMass = precursorMass;
 
             this.scanPrecursorMZ = scanPrecursorMZ;
             this.scanNumber = scanNumber;
@@ -24,31 +26,46 @@ namespace IndexSearchAndAnalyze
             this.spectraFileIndex = spectraFileIndex;
         }
 
-        public double precursorMass { get; private set; }
-        public double score { get; private set; }
         public double scanPrecursorMZ { get; private set; }
-        public int scanNumber { get; private set; }
-        public int scanPrecursorCharge { get; private set; }
         public double scanRT { get; private set; }
         public double scanPrecursorIntensity { get; private set; }
         public int scanExperimentalPeaks { get; private set; }
         public double TotalIonCurrent { get; private set; }
-        public double ScoreFromSearch { get; private set; }
         public int spectraFileIndex { get; private set; }
 
         internal static bool FirstIsPreferable(ClassicSpectrumMatch psm, ClassicSpectrumMatch current_best_psm)
         {
             // Existed! Need to compare with old match
-            if (Math.Abs(psm.score - current_best_psm.score) < 1e-9)
+            if (Math.Abs(psm.Score - current_best_psm.Score) < 1e-9)
             {
                 // Score is same, need to see if accepts and if prefer the new one
-                return ModernSearchEngine.FirstIsPreferableWithoutScore(psm.ps, current_best_psm.ps, psm.precursorMass);
+                return FirstIsPreferableWithoutScore(psm.ps, current_best_psm.ps, psm.scanPrecursorMass);
             }
-            else if (psm.score > current_best_psm.score)
+            else if (psm.Score > current_best_psm.Score)
             {
                 return true;
             }
             return false;
+        }
+
+        private static bool FirstIsPreferableWithoutScore(PeptideWithSetModifications first, PeptideWithSetModifications second, double pm)
+        {
+            if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
+                return true;
+            if (Math.Abs(first.MonoisotopicMass - pm) > 0.5 && Math.Abs(second.MonoisotopicMass - pm) < 0.5)
+                return false;
+
+            if (first.numVariableMods < second.numVariableMods)
+                return true;
+
+            return false;
+        }
+
+        internal override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        {
+            if (compactPeptide == null)
+                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications);
+            return compactPeptide;
         }
     }
 }

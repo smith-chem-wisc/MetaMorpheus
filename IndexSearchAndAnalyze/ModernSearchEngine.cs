@@ -24,9 +24,9 @@ namespace IndexSearchAndAnalyze
             var spectraList = searchParams.myMsDataFile.ToList();
             var totalSpectra = searchParams.myMsDataFile.NumSpectra;
 
-            List<NewPsm>[] newPsms = new List<NewPsm>[searchParams.searchModes.Count];
+            List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchParams.searchModes.Count];
             for (int i = 0; i < searchParams.searchModes.Count; i++)
-                newPsms[i] = new List<NewPsm>(new NewPsm[totalSpectra]);
+                newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
 
             //int numAllSpectra = 0;
             int numMS2spectra = 0;
@@ -94,7 +94,7 @@ namespace IndexSearchAndAnalyze
                             }
                         }
 
-                        var psms = new NewPsm[searchModesCount];
+                        var psms = new ModernSpectrumMatch[searchModesCount];
 
                         for (int j = 0; j < searchModesCount; j++)
                         {
@@ -103,7 +103,7 @@ namespace IndexSearchAndAnalyze
                             {
                                 double precursorIntensity;
                                 thisScan.TryGetSelectedIonGuessMonoisotopicIntensity(out precursorIntensity);
-                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new NewPsm(selectedMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, selectedCharge, thisScan.MassSpectrum.xArray.Length, thisScan.TotalIonCurrent, precursorIntensity, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
+                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(selectedMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, selectedCharge, thisScan.MassSpectrum.xArray.Length, thisScan.TotalIonCurrent, precursorIntensity, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
                                 //numMS2spectraMatched[j]++;
                             }
                         }
@@ -171,7 +171,7 @@ namespace IndexSearchAndAnalyze
         }
 
         // Want this to return false more!! So less computation is done. So second is preferable more often.
-        internal static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
+        private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
         {
             if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
                 return true;

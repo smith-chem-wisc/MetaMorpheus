@@ -84,7 +84,7 @@ namespace IndexSearchAndAnalyze
                 foreach (var hehe in bin.uniquePSMs.Values)
                 {
                     double bestScore = hehe.Item3.thisPSM.LocalizedScores.Max();
-                    if (bestScore >= hehe.Item3.thisPSM.ScoreFromSearch + 1 && !hehe.Item3.isDecoy)
+                    if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.isDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
                         {
