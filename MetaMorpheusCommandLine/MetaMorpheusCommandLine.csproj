@@ -99,11 +99,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\IndexSearchAndAnalyze\MetaMorpheusLogic.csproj">
+    <ProjectReference Include="..\MetaMorpheusLogic\MetaMorpheusLogic.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>MetaMorpheusLogic</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheus\OldInternalLogic.csproj">
+    <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>OldInternalLogic</Name>
     </ProjectReference>

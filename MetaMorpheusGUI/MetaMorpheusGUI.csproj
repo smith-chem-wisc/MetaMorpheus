@@ -164,15 +164,15 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FragmentGeneration\MetaMorpheusCommandLine.csproj">
+    <ProjectReference Include="..\MetaMorpheusCommandLine\MetaMorpheusCommandLine.csproj">
       <Project>{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}</Project>
       <Name>MetaMorpheusCommandLine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\IndexSearchAndAnalyze\MetaMorpheusLogic.csproj">
+    <ProjectReference Include="..\MetaMorpheusLogic\MetaMorpheusLogic.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>MetaMorpheusLogic</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheus\OldInternalLogic.csproj">
+    <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
       <Name>OldInternalLogic</Name>
     </ProjectReference>

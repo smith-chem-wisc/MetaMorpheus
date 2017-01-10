@@ -100,15 +100,15 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FragmentGeneration\MetaMorpheusCommandLine.csproj">
+    <ProjectReference Include="..\MetaMorpheusCommandLine\MetaMorpheusCommandLine.csproj">
       <Project>{dd89ef8c-a47a-4c6b-97bf-01b81d48847c}</Project>
       <Name>MetaMorpheusCommandLine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\IndexSearchAndAnalyze\MetaMorpheusLogic.csproj">
+    <ProjectReference Include="..\MetaMorpheusLogic\MetaMorpheusLogic.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>MetaMorpheusLogic</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheus\OldInternalLogic.csproj">
+    <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
       <Name>OldInternalLogic</Name>
     </ProjectReference>

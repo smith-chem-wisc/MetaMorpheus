@@ -154,7 +154,7 @@
     <Compile Include="Writing.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MetaMorpheus\OldInternalLogic.csproj">
+    <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>OldInternalLogic</Name>
     </ProjectReference>
