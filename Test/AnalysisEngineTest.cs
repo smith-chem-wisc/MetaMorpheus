@@ -1,6 +1,6 @@
-﻿using IndexSearchAndAnalyze;
-using MetaMorpheus;
+﻿using MetaMorpheusLogic;
 using NUnit.Framework;
+using OldInternalLogic;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,7 +22,7 @@ namespace Test
             Dictionary<int, List<MorpheusModification>> temp1 = new Dictionary<int, List<MorpheusModification>>();
             List<MorpheusModification> temp2 = new List<MorpheusModification>();
             int[] temp3 = new int[0];
-            Protease protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, MetaMorpheus.Terminus.C, CleavageSpecificity.Full, null, null, null);
+            Protease protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldInternalLogic.Terminus.C, CleavageSpecificity.Full, null, null, null);
             HashSet<PeptideWithSetModifications> totalProteinList = new HashSet<PeptideWithSetModifications>();
 
             Protein p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);

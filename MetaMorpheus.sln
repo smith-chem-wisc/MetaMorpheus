@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheus", "MetaMorpheus\MetaMorpheus.csproj", "{D2178D2E-7CBD-48A3-835D-8B13872202FF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OldInternalLogic", "OldInternalLogic\OldInternalLogic.csproj", "{D2178D2E-7CBD-48A3-835D-8B13872202FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoodGUI", "GoodGUI\GoodGUI.csproj", "{57B2A726-CCA9-432E-B74A-2EFA962D1A74}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheusGUI", "MetaMorpheusGUI\MetaMorpheusGUI.csproj", "{57B2A726-CCA9-432E-B74A-2EFA962D1A74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FragmentGeneration", "FragmentGeneration\FragmentGeneration.csproj", "{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheusCommandLine", "MetaMorpheusCommandLine\MetaMorpheusCommandLine.csproj", "{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{9D2C9BF1-3D9C-4D97-9F1B-F4F7167F533B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IndexSearchAndAnalyze", "IndexSearchAndAnalyze\IndexSearchAndAnalyze.csproj", "{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheusLogic", "MetaMorpheusLogic\MetaMorpheusLogic.csproj", "{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
