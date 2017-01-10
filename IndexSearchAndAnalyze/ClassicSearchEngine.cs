@@ -29,7 +29,10 @@ namespace IndexSearchAndAnalyze
 
             var listOfSortedms2Scans = searchParams.myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-            var outerPsms = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
+            var outerPsms = new ClassicSpectrumMatch[searchParams.searchModes.Count][];
+            for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
+                outerPsms[aede] = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
+
             object lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
@@ -37,7 +40,9 @@ namespace IndexSearchAndAnalyze
             searchParams.allTasksParams.ReportProgress(new ProgressEventArgs(0, "Starting classic search loop"));
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                var psms = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
+                var psms = new ClassicSpectrumMatch[searchParams.searchModes.Count][];
+                for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
+                    psms[aede] = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = searchParams.proteinList[i];
@@ -82,22 +87,26 @@ namespace IndexSearchAndAnalyze
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy, searchParams.variableModifications, searchParams.localizeableModifications);
+                            //var ps = new CompactPeptide(yyy, searchParams.variableModifications, searchParams.localizeableModifications);
                             var sortedProductMasses = yyy.FastSortedProductMasses(lp);
                             double[] matchedIonsArray = new double[sortedProductMasses.Length];
-                            ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
+                            //ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
 
-                            foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchParams.searchMode).ToList())
+                            for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
                             {
-                                var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, ps, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, searchParams.spectraFileIndex);
-                                if (psm.score > 1)
+                                var searchMode = searchParams.searchModes[aede];
+                                foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    ClassicSpectrumMatch current_best_psm = psms[scan.OneBasedScanNumber - 1];
-                                    if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
+                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, yyy, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, searchParams.spectraFileIndex);
+                                    if (psm.Score > 1)
                                     {
-                                        psms[scan.OneBasedScanNumber - 1] = psm;
-                                        matchedIonsArray = new double[sortedProductMasses.Length];
+                                        ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
+                                        if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
+                                        {
+                                            psms[aede][scan.OneBasedScanNumber - 1] = psm;
+                                            matchedIonsArray = new double[sortedProductMasses.Length];
+                                        }
                                     }
                                 }
                             }
@@ -106,10 +115,11 @@ namespace IndexSearchAndAnalyze
                 }
                 lock (lockObject)
                 {
-                    for (int i = 0; i < outerPsms.Length; i++)
-                        if (psms[i] != null)
-                            if (outerPsms[i] == null || ClassicSpectrumMatch.FirstIsPreferable(psms[i], outerPsms[i]))
-                                outerPsms[i] = psms[i];
+                    for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
+                        for (int i = 0; i < outerPsms[aede].Length; i++)
+                            if (psms[aede][i] != null)
+                                if (outerPsms[aede][i] == null || ClassicSpectrumMatch.FirstIsPreferable(psms[aede][i], outerPsms[aede][i]))
+                                    outerPsms[aede][i] = psms[aede][i];
                     proteinsSeen += fff.Item2 - fff.Item1;
                     int new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
@@ -119,10 +129,7 @@ namespace IndexSearchAndAnalyze
                     }
                 }
             });
-
-            List<NewPsm> newPsms = GetNewPsmsList(outerPsms);
-
-            return new ClassicSearchResults(searchParams, newPsms);
+            return new ClassicSearchResults(searchParams, outerPsms);
         }
 
         private IEnumerable<LocalMs2Scan> GetAcceptableScans(LocalMs2Scan[] listOfSortedms2Scans, double peptideMonoisotopicMass, SearchMode searchMode)
@@ -166,19 +173,6 @@ namespace IndexSearchAndAnalyze
 
             // index of the first element that is larger than value
             return index;
-        }
-
-        private List<NewPsm> GetNewPsmsList(ClassicSpectrumMatch[] outerPsms)
-        {
-            List<NewPsm> newPsms = new List<NewPsm>(outerPsms.Length);
-            foreach (var classicPSM in outerPsms)
-            {
-                if (classicPSM != null)
-                {
-                    newPsms.Add(new NewPsm(classicPSM.scanPrecursorMZ, classicPSM.scanNumber, classicPSM.scanRT, classicPSM.scanPrecursorCharge, classicPSM.scanExperimentalPeaks, classicPSM.TotalIonCurrent, classicPSM.scanPrecursorIntensity, classicPSM.spectraFileIndex, classicPSM.ps, classicPSM.score));
-                }
-            }
-            return newPsms;
         }
     }
 }

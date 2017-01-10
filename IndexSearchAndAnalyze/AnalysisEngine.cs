@@ -22,18 +22,18 @@ namespace IndexSearchAndAnalyze
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             myParams.allTasksParams.status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
-            myParams.allTasksParams.status("Getting protein parsimony dictionary...");
-            var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
+            //myParams.allTasksParams.status("Getting protein parsimony dictionary...");
+            //var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
 
             myParams.allTasksParams.status("Getting single match just for FDR purposes...");
-            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(parsimonyDictionary);
+            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
 
             List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
             for (int j = 0; j < analysisParams.searchModes.Count; j++)
             {
-                PSMwithTargetDecoyKnown[] psmsWithPeptides = new PSMwithTargetDecoyKnown[analysisParams.newPsms[0].Count];
+                PSMwithTargetDecoyKnown[] psmsWithTargetDecoyKnown = new PSMwithTargetDecoyKnown[analysisParams.newPsms[0].Length];
 
-                Parallel.ForEach(Partitioner.Create(0, analysisParams.newPsms[0].Count), fff =>
+                Parallel.ForEach(Partitioner.Create(0, analysisParams.newPsms[0].Length), fff =>
                 {
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
@@ -41,13 +41,13 @@ namespace IndexSearchAndAnalyze
                         {
                             var huh = analysisParams.newPsms[j][i];
                             if (huh != null)
-                                if (huh.ScoreFromSearch >= 1)
-                                    psmsWithPeptides[i] = new PSMwithTargetDecoyKnown(huh, fullSequenceToProteinSingleMatch[huh.peptide], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
+                                if (huh.Score >= 1)
+                                    psmsWithTargetDecoyKnown[i] = new PSMwithTargetDecoyKnown(huh, fullSequenceToProteinSingleMatch[huh.GetCompactPeptide(analysisParams.variableModifications, analysisParams.localizeableModifications)], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
                         }
                     }
                 });
 
-                var orderedPsmsWithPeptides = psmsWithPeptides.Where(b => b != null).OrderByDescending(b => b.ScoreFromSearch);
+                var orderedPsmsWithPeptides = psmsWithTargetDecoyKnown.Where(b => b != null).OrderByDescending(b => b.Score);
 
                 var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
                 var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
@@ -129,8 +129,12 @@ namespace IndexSearchAndAnalyze
                 if (ah != null)
                     foreach (var fhh in ah)
                     {
-                        if (fhh != null && !analysisParams.compactPeptideToProteinPeptideMatching.ContainsKey(fhh.peptide))
-                            analysisParams.compactPeptideToProteinPeptideMatching.Add(fhh.peptide, new HashSet<PeptideWithSetModifications>());
+                        if (fhh != null)
+                        {
+                            var cp = fhh.GetCompactPeptide(analysisParams.variableModifications, analysisParams.localizeableModifications);
+                            if (!analysisParams.compactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                                analysisParams.compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                        }
                     }
             }
 

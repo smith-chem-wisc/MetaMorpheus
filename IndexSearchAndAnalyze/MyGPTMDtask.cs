@@ -11,7 +11,7 @@ namespace IndexSearchAndAnalyze
         {
         }
 
-        public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override MyTaskResults DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
             throw new NotImplementedException();// For each PSM, look at modifications
             //string line;

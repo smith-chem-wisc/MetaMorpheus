@@ -37,8 +37,10 @@ namespace IndexSearchAndAnalyze
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
         }
 
-        public override void DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override MyTaskResults DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
         {
+            MyTaskResults myTaskResults = new MyTaskResults();
+            myTaskResults.newDatabases = new List<string>();
             var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
@@ -47,8 +49,12 @@ namespace IndexSearchAndAnalyze
 
             SearchMode searchMode = new IntervalSearchMode("withinhalfAdaltonOfZero", new List<double>() { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
-            List<NewPsm>[] allPsms = new List<NewPsm>[1];
-            allPsms[0] = new List<NewPsm>();
+
+
+            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModes.Count];
+            for (int j = 0; j < searchModes.Count; j++)
+                allPsms[j] = new List<ParentSpectrumMatch>();
+
 
             po.status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
@@ -74,16 +80,16 @@ namespace IndexSearchAndAnalyze
                 myMsDataFile.Open();
                 po.RTBoutput("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-                ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes[0], po);
+                ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes, po);
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
                 po.RTBoutput(searchResults.ToString());
 
+                for (int i = 0; i < searchModes.Count; i++)
+                    allPsms[i].AddRange(searchResults.outerPsms[i]);
+
                 // Run analysis on single file results
-                allPsms[0].AddRange(searchResults.newPsms);
-                List<NewPsm>[] sssdf = new List<NewPsm>[1];
-                sssdf[0] = searchResults.newPsms;
-                AnalysisParams analysisParams = new AnalysisParams(sssdf, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
+                AnalysisParams analysisParams = new AnalysisParams(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -96,10 +102,11 @@ namespace IndexSearchAndAnalyze
 
                 //Now can calibrate!!!
 
-                SoftwareLockMassParams a = mzCalIO.GetReady(origDataFile, identifications, productMassTolerance, po);
+                SoftwareLockMassParams a = mzCalIO.GetReady(origDataFile, identifications, productMassTolerance, po, myTaskResults);
 
                 SoftwareLockMassRunner.Run(a);
             }
+            return myTaskResults;
         }
     }
 }

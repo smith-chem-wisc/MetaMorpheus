@@ -45,7 +45,21 @@ namespace IndexSearchAndAnalyze
                 ok.setOutputFolder(output_folder);
 
                 allTasksParams.startingSingleTask(new SingleTaskEventArgs(ok));
-                ok.DoTask(rawDataAndResultslist, xMLdblist, allTasksParams);
+                MyTaskResults myTaskResults = ok.DoTask(rawDataAndResultslist, xMLdblist, allTasksParams);
+                if (myTaskResults.newDatabases != null)
+                {
+                    foreach (var ye in xMLdblist)
+                        ye.Use = false;
+                    foreach (var huh in myTaskResults.newDatabases)
+                        xMLdblist.Add(new XMLdb(huh));
+                }
+                if (myTaskResults.newSpectra != null)
+                {
+                    foreach (var ye in rawDataAndResultslist)
+                        ye.Use = false;
+                    foreach (var huh in myTaskResults.newSpectra)
+                        rawDataAndResultslist.Add(new RawData(huh));
+                }
                 allTasksParams.finishedSingleTask(new SingleTaskEventArgs(ok));
             }
             allTasksParams.FinishedAllTasks();

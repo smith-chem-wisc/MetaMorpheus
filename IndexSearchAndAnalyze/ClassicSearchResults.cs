@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
     public class ClassicSearchResults : MyResults
     {
-        public ClassicSearchResults(MyParams s, List<NewPsm> newPsms) : base(s)
-        {
-            this.newPsms = newPsms;
-        }
+        internal ClassicSpectrumMatch[][] outerPsms { get; private set; }
 
-        public List<NewPsm> newPsms { get; private set; }
+        internal ClassicSearchResults(ClassicSearchParams searchParams, ClassicSpectrumMatch[][] outerPsms) : base(searchParams)
+        {
+            this.outerPsms = outerPsms;
+        }
 
         public override string ToString()
         {
@@ -18,8 +19,6 @@ namespace IndexSearchAndAnalyze
             StringBuilder sb = new StringBuilder();
             sb.Append("ClassicSearchResults: ");
             sb.Append(base.ToString());
-            sb.AppendLine();
-            sb.Append("Total psms: " + newPsms.Count);
 
             return sb.ToString();
         }

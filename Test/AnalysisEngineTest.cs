@@ -13,37 +13,6 @@ namespace Test
     [TestFixture]
     public class AnalysisEngineTest
     {
-        [Test]
-        public void TestAnalysis()
-        {
-            List<NewPsm>[] newPsms = null;
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = null;
-            List<Protein> proteinList = null;
-            List<MorpheusModification> variableModifications = null;
-            List<MorpheusModification> fixedModifications = null;
-            List<MorpheusModification> localizeableModifications = null;
-            IMsDataFile<IMzSpectrum<MzPeak>> iMsDataFile = null;
-            Protease protease = null;
-            List<SearchMode> searchModes = null;
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            UsefulProteomicsDatabases.Generated.unimod unimodDeserialized = null;
-            Dictionary<int, ChemicalFormulaModification> uniprotDeseralized = null;
-
-            AllTasksParams po = null;
-            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
-            AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
-
-            Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
-                    .With.Property("Message").EqualTo("newPsms is null"));
-
-            newPsms = new List<NewPsm>[1];
-            newPsms[0] = new List<NewPsm>();
-
-            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
-            analysisEngine = new AnalysisEngine(analysisParams);
-            Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
-                    .With.Property("Message").EqualTo("proteinList is null"));
-        }
 
         [Test]
         public void TestParsimony()
@@ -129,8 +98,9 @@ namespace Test
                     initialDictionary.Add(peptides[i], proteinSets[i]);
                 }
             }
-            
-            AnalysisParams analysisParams = new AnalysisParams(new List<NewPsm>(), null, null, null, null, null, null, null, null, null, null, null, null);
+
+            var p = new ParentSpectrumMatch[0][];
+            AnalysisParams analysisParams = new AnalysisParams(p, null, null, null, null, null, null, null, null, null, null, null, null);
             var analysisEngine = new AnalysisEngine(analysisParams);
 
             // apply parsimony to initial dictionary
@@ -147,7 +117,7 @@ namespace Test
             {
                 foreach (var protein in kvp.Value)
                 {
-                    if(!parsimonyProteinList.Contains(protein))
+                    if (!parsimonyProteinList.Contains(protein))
                     {
                         parsimonyProteinList.Add(protein);
                         parsimonyBaseSequences[j] = protein.BaseSequence;
