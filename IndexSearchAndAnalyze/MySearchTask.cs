@@ -17,10 +17,13 @@ namespace IndexSearchAndAnalyze
 
         public bool classicSearch { get; set; }
 
+        public bool doParsimony { get; set; }
+
         public MySearchTask(IEnumerable<ModList> modList) : base(1)
         {
             // Set default values here:
             classicSearch = true;
+            doParsimony = true;
             searchDecoy = true;
             maxMissedCleavages = 2;
             protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
@@ -109,7 +112,7 @@ namespace IndexSearchAndAnalyze
                     for (int i = 0; i < searchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.outerPsms[i]);
 
-                    AnalysisParams analysisParams = new AnalysisParams(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
+                    AnalysisParams analysisParams = new AnalysisParams(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po, doParsimony);
                     AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -126,7 +129,7 @@ namespace IndexSearchAndAnalyze
                     for (int i = 0; i < searchModes.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 
-                    AnalysisParams analysisParams = new AnalysisParams(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
+                    AnalysisParams analysisParams = new AnalysisParams(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po, doParsimony);
                     AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -138,7 +141,7 @@ namespace IndexSearchAndAnalyze
 
             if (currentRawFileList.Count > 1)
             {
-                AnalysisParams analysisParams = new AnalysisParams(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate", po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s, po), po);
+                AnalysisParams analysisParams = new AnalysisParams(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate", po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s, po), po, doParsimony);
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
                 po.output(analysisResults.ToString());
