@@ -28,8 +28,7 @@ namespace IndexSearchAndAnalyze
         public PostProcessing postProcessing;
 
         public delegate string GetFormulaFromDictionary(string dictionary, string acession);
-
-        public GetFormulaFromDictionary getFormulaFromDictionary;
+        
         public bool calibrateSpectra = true;
         internal int randomSeed;
         public string paramString = "";

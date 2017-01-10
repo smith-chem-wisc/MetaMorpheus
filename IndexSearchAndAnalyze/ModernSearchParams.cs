@@ -16,11 +16,11 @@ namespace IndexSearchAndAnalyze
         public List<CompactPeptide> peptideIndex { get; private set; }
         public Protease protease { get; private set; }
         public List<Protein> proteinList { get; private set; }
-        public List<FunctionSearchMode> searchModes { get; private set; }
+        public List<SearchMode> searchModes { get; private set; }
         public int spectraFileIndex { get; private set; }
         public List<MorpheusModification> variableModifications { get; private set; }
 
-        public ModernSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<FunctionSearchMode> searchModes, AllTasksParams a2) : base(a2)
+        public ModernSearchParams(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes, AllTasksParams a2) : base(a2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;

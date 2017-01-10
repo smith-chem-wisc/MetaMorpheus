@@ -1,5 +1,6 @@
 ﻿using IndexSearchAndAnalyze;
 using MetaMorpheus;
+using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,6 +23,7 @@ namespace GoodGUI
         private static ObservableCollection<RawData> rawDataAndResultslist = new ObservableCollection<RawData>();
         private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
         private static ObservableCollection<ModList> ModFileList = new ObservableCollection<ModList>();
+        private static ObservableCollection<SearchMode> SearchModeList = new ObservableCollection<SearchMode>();
         private static ObservableCollection<FinishedFile> finishedFileList = new ObservableCollection<FinishedFile>();
         private AllTasksParams po;
 
@@ -57,6 +59,8 @@ namespace GoodGUI
             ModFileList.Add(new ModList("m.txt"));
             ModFileList.Add(new ModList("r.txt"));
             ModFileList.Add(new ModList("s.txt"));
+
+            LoadSearchModesFromFile();
 
             // RAW FILES
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw");
@@ -142,6 +146,12 @@ namespace GoodGUI
             po.newSpectrasHandler += AddNewSpectra;
 
             UpdateTaskGuiStuff();
+        }
+
+        private void LoadSearchModesFromFile()
+        {
+            SearchModeList.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            SearchModeList.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
         }
 
         private void AddNewDB(object sender, List<string> e)
@@ -725,7 +735,7 @@ namespace GoodGUI
 
         private void addSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SearchTaskWindow(ModFileList);
+            var dialog = new SearchTaskWindow(ModFileList, SearchModeList);
             if (dialog.ShowDialog() == true)
             {
                 taskListWrapper.Add(dialog.TheTask);
@@ -775,7 +785,7 @@ namespace GoodGUI
             switch (ok.taskType)
             {
                 case MyTaskEnum.Search:
-                    var searchDialog = new SearchTaskWindow(ok as MySearchTask, ModFileList);
+                    var searchDialog = new SearchTaskWindow(ok as MySearchTask, ModFileList, SearchModeList);
                     searchDialog.ShowDialog();
                     break;
 

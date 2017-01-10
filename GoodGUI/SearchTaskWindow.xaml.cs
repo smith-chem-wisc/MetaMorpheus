@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace GoodGUI
@@ -17,26 +18,27 @@ namespace GoodGUI
     {
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForSearch> ModFileListInWindow = new ObservableCollection<ModListForSearch>();
+        private ObservableCollection<SearchModeFoSearch> SearchModes = new ObservableCollection<SearchModeFoSearch>();
 
-        public SearchTaskWindow(IEnumerable<ModList> modList)
+        public SearchTaskWindow(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
         {
             InitializeComponent();
-            PopulateChoices(modList);
+            PopulateChoices(modList, searchModes);
 
-            TheTask = new MySearchTask(modList);
+            TheTask = new MySearchTask(modList, searchModes);
             UpdateFieldsFromTask(TheTask);
         }
 
-        public SearchTaskWindow(MySearchTask task, IEnumerable<ModList> modList)
+        public SearchTaskWindow(MySearchTask task, IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
         {
             InitializeComponent();
-            PopulateChoices(modList);
+            PopulateChoices(modList, searchModes);
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
         }
 
-        private void PopulateChoices(IEnumerable<ModList> modList)
+        private void PopulateChoices(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
         {
             foreach (Protease protease in ProteaseDictionary.Instance.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -52,6 +54,12 @@ namespace GoodGUI
             foreach (var uu in modList)
                 ModFileListInWindow.Add(new ModListForSearch(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
+
+            // Always create new ModFileList
+            foreach (var uu in searchModes)
+                SearchModes.Add(new SearchModeFoSearch(uu));
+            allowedPrecursorMassDiffsDataGrid.DataContext = SearchModes;
+
         }
 
         private void UpdateFieldsFromTask(MySearchTask task)
@@ -78,6 +86,13 @@ namespace GoodGUI
             }
 
             modificationsDataGrid.Items.Refresh();
+
+            for (int i = 0; i < SearchModes.Count; i++)
+            {
+                if (task.searchModes[i].Use)
+                    SearchModes[i].Use = true;
+            }
+            allowedPrecursorMassDiffsDataGrid.Items.Refresh();
         }
 
         internal MySearchTask TheTask { get; private set; }
@@ -100,8 +115,46 @@ namespace GoodGUI
             TheTask.bIons = bCheckBox.IsChecked.Value;
             TheTask.yIons = yCheckBox.IsChecked.Value;
             TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
+            TheTask.searchModes = SearchModes.ToList();
 
             DialogResult = true;
+        }
+
+        private void addNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Format: name, "interval", intervals 
+            // Format: name, "dot", num, "ppm" or "da", dots
+
+            var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
+
+            try
+            {
+                switch (split[1])
+                {
+                    case "dot":
+                        ToleranceUnit tu = ToleranceUnit.PPM;
+                        if (split[3].Equals("ppm"))
+                            tu = ToleranceUnit.PPM;
+                        else if (split[3].Equals("da"))
+                            tu = ToleranceUnit.Absolute;
+                        else
+                            break;
+                        DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2])));
+                        SearchModes.Add(new SearchModeFoSearch(dsm));
+                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                        break;
+                    case "interval":
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[0]), double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[1])));
+                        IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
+                        SearchModes.Add(new SearchModeFoSearch(ism));
+                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                        break;
+                }
+            }
+            catch (Exception ee)
+            {
+                MessageBoxResult result = MessageBox.Show(ee.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
     }
 }

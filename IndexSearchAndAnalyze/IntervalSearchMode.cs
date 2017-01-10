@@ -1,23 +1,21 @@
 ﻿using Spectra;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace IndexSearchAndAnalyze
 {
     public class IntervalSearchMode : SearchMode
     {
-        private List<double> acceptableSortedMassShifts;
-        private Tolerance tol;
-
-        public IntervalSearchMode(string FileNameAddition, List<double> acceptableSortedMassShifts, Tolerance tol) : base(FileNameAddition)
+        List<DoubleRange> intervals;
+        public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
         {
-            this.acceptableSortedMassShifts = acceptableSortedMassShifts;
-            this.tol = tol;
+            intervals = doubleRanges.ToList();
         }
 
-        internal IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            foreach (double huh in acceptableSortedMassShifts)
-                yield return new DoubleRange(peptideMonoisotopicMass - huh, tol);
+            throw new NotImplementedException();
         }
     }
 }

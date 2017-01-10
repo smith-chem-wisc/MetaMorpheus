@@ -8,5 +8,7 @@
         }
 
         public string FileNameAddition { get; internal set; }
+
+        public abstract bool Accepts(double scanPrecursorMass, double peptideMass);
     }
 }

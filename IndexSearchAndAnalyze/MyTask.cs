@@ -38,6 +38,7 @@ namespace IndexSearchAndAnalyze
         public bool yIons { get; set; }
 
         public List<ModListForSearch> listOfModListsForSearch { get; set; }
+        public List<SearchModeFoSearch> searchModes { get; set; }
 
         public abstract MyTaskResults DoTask(AllTasksParams po);
 

@@ -12,9 +12,9 @@ namespace IndexSearchAndAnalyze
             this.p = p;
         }
 
-        internal bool Accepts(double scanPrecursorMass, double monoisotopicMass)
+        public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return p(scanPrecursorMass, monoisotopicMass);
+            return p(scanPrecursorMass, peptideMass);
         }
     }
 }
