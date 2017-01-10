@@ -1,4 +1,4 @@
-﻿using IO.MzML;
+using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using MetaMorpheus;

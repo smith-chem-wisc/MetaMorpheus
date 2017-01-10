@@ -1,10 +1,6 @@
 ﻿using IndexSearchAndAnalyze;
-using MassSpectrometry;
 using MetaMorpheus;
 using NUnit.Framework;
-using Proteomics;
-using Spectra;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,38 +9,6 @@ namespace Test
     [TestFixture]
     public class AnalysisEngineTest
     {
-        [Test]
-        public void TestAnalysis()
-        {
-            List<NewPsm>[] newPsms = null;
-            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> compactPeptideToProteinPeptideMatching = null;
-            List<Protein> proteinList = null;
-            List<MorpheusModification> variableModifications = null;
-            List<MorpheusModification> fixedModifications = null;
-            List<MorpheusModification> localizeableModifications = null;
-            IMsDataFile<IMzSpectrum<MzPeak>> iMsDataFile = null;
-            Protease protease = null;
-            List<SearchMode> searchModes = null;
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            UsefulProteomicsDatabases.Generated.unimod unimodDeserialized = null;
-            Dictionary<int, ChemicalFormulaModification> uniprotDeseralized = null;
-
-            AllTasksParams po = null;
-            AnalysisParams analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
-            AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
-
-            Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
-                    .With.Property("Message").EqualTo("newPsms is null"));
-
-            newPsms = new List<NewPsm>[1];
-            newPsms[0] = new List<NewPsm>();
-
-            analysisParams = new AnalysisParams(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, iMsDataFile, fragmentTolerance, (BinTreeStructure myTreeStructure, string s) => { }, (List<NewPsmWithFDR> h, string s) => { }, po);
-            analysisEngine = new AnalysisEngine(analysisParams);
-            Assert.That(() => analysisEngine.Run(), Throws.TypeOf<ValidationException>()
-                    .With.Property("Message").EqualTo("proteinList is null"));
-        }
-
         [Test]
         public void TestParsimony()
         {
@@ -94,9 +58,9 @@ namespace Test
             }
 
             // creates the initial dictionary of "peptide" and "protein" matches (protein must contain peptide sequence)
-            Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>> initialDictionary = new Dictionary<CompactPeptide, ConcurrentDictionary<PeptideWithSetModifications, byte>>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[totalProteinList.Count()];
-            ConcurrentDictionary<PeptideWithSetModifications, byte>[] proteinSets = new ConcurrentDictionary<PeptideWithSetModifications, byte>[totalProteinList.Count()];
+            HashSet<PeptideWithSetModifications>[] proteinSets = new HashSet<PeptideWithSetModifications>[totalProteinList.Count()];
 
             // creates peptide list
             for (int i = 0; i < totalProteinList.Count(); i++)
@@ -107,7 +71,7 @@ namespace Test
             // creates protein list
             for (int i = 0; i < proteinSets.Length; i++)
             {
-                proteinSets[i] = new ConcurrentDictionary<PeptideWithSetModifications, byte>();
+                proteinSets[i] = new HashSet<PeptideWithSetModifications>();
 
                 foreach (var protein in totalProteinList)
                 {
@@ -115,7 +79,7 @@ namespace Test
 
                     if (protein.BaseSequence.Contains(peptideBaseSequence))
                     {
-                        proteinSets[i].GetOrAdd(protein, 0);
+                        proteinSets[i].Add(protein);
                         //proteinSets[i].Add(protein);
                     }
                 }
@@ -129,8 +93,9 @@ namespace Test
                     initialDictionary.Add(peptides[i], proteinSets[i]);
                 }
             }
-            
-            AnalysisParams analysisParams = new AnalysisParams(new List<NewPsm>(), null, null, null, null, null, null, null, null, null, null, null, null);
+
+            var p = new ParentSpectrumMatch[0][];
+            AnalysisParams analysisParams = new AnalysisParams(p, null, null, null, null, null, null, null, null, null, null, null, null);
             var analysisEngine = new AnalysisEngine(analysisParams);
 
             // apply parsimony to initial dictionary
@@ -147,10 +112,10 @@ namespace Test
             {
                 foreach (var protein in kvp.Value)
                 {
-                    if(!parsimonyProteinList.Contains(protein.Key))
+                    if (!parsimonyProteinList.Contains(protein))
                     {
-                        parsimonyProteinList.Add(protein.Key);
-                        parsimonyBaseSequences[j] = protein.Key.BaseSequence;
+                        parsimonyProteinList.Add(protein);
+                        parsimonyBaseSequences[j] = protein.BaseSequence;
                         j++;
                     }
                 }

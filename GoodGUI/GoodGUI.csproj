@@ -96,13 +96,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="AllTasksClass.cs" />
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="FinishedFile.cs" />
-    <Compile Include="GPTMD.cs" />
-    <Compile Include="GPTMDParamsObject.cs" />
     <Compile Include="GptmdPTMlist.cs" />
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>

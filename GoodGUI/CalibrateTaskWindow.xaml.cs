@@ -64,7 +64,7 @@ namespace GoodGUI
                 productMassToleranceComboBox.Items.Add(toleranceUnit);
 
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                productMassToleranceComboBox.Items.Add(toleranceUnit);
+                precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
             // Always create new ModFileList
             foreach (var uu in modList)
@@ -99,8 +99,8 @@ namespace GoodGUI
             TheTask.bIons = bCheckBox.IsChecked.Value;
             TheTask.yIons = yCheckBox.IsChecked.Value;
             TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
-            TheTask.productMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text);
-            TheTask.productMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+            TheTask.precursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text);
+            TheTask.precursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             DialogResult = true;
         }
