@@ -16,7 +16,7 @@ namespace IndexSearchAndAnalyze
 
         public static List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<NewPsmWithFDR> identifications, SoftwareLockMassParams p, HashSet<int> matchesToExclude)
         {
-            p.po.RTBoutput("Extracting data points:");
+            p.po.output("Extracting data points:");
             // The final training point list
             List<LabeledDataPoint> trainingPointsToReturn = new List<LabeledDataPoint>();
 
@@ -54,8 +54,8 @@ namespace IndexSearchAndAnalyze
 
                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                 {
-                    p.po.RTBoutput("ms2spectrumIndex: " + ms2spectrumIndex);
-                    p.po.RTBoutput(" peptide: " + SequenceWithChemicalFormulas);
+                    p.po.output("ms2spectrumIndex: " + ms2spectrumIndex);
+                    p.po.output(" peptide: " + SequenceWithChemicalFormulas);
                 }
 
                 #endregion watch
@@ -97,9 +97,9 @@ namespace IndexSearchAndAnalyze
 
                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                 {
-                    p.po.RTBoutput(" Isotopologue distribution: ");
-                    p.po.RTBoutput(" masses = " + string.Join(", ", masses) + "...");
-                    p.po.RTBoutput(" intensities = " + string.Join(", ", intensities) + "...");
+                    p.po.output(" Isotopologue distribution: ");
+                    p.po.output(" masses = " + string.Join(", ", masses) + "...");
+                    p.po.output(" intensities = " + string.Join(", ", intensities) + "...");
                 }
 
                 int lowestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, p, peptideCharge);
@@ -108,11 +108,11 @@ namespace IndexSearchAndAnalyze
 
                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                 {
-                    p.po.RTBoutput(" ms1range: " + lowestMS1ind + " to " + highestMS1ind);
+                    p.po.output(" ms1range: " + lowestMS1ind + " to " + highestMS1ind);
                 }
                 trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
             }
-            p.po.RTBoutput("Number of training points: " + trainingPointsToReturn.Count());
+            p.po.output("Number of training points: " + trainingPointsToReturn.Count());
             return trainingPointsToReturn;
         }
 
@@ -158,7 +158,7 @@ namespace IndexSearchAndAnalyze
 
             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
             {
-                p.po.RTBoutput(" Considering individual fragments:");
+                p.po.output(" Considering individual fragments:");
             }
 
             foreach (IHasChemicalFormula fragment in fragmentList)
@@ -170,7 +170,7 @@ namespace IndexSearchAndAnalyze
                 // First look for monoisotopic masses, do not compute distribution spectrum!
                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                 {
-                    p.po.RTBoutput("  Considering fragment " + (fragment as Fragment).Sequence + " with formula " + fragment.ThisChemicalFormula.Formula);
+                    p.po.output("  Considering fragment " + (fragment as Fragment).Sequence + " with formula " + fragment.ThisChemicalFormula.Formula);
                     //if ((fragment as Fragment).Modifications.Count() > 0)
                     //p.po.RTBoutput("  Modifications: " + string.Join(", ", (fragment as Fragment).Modifications));
                 }
@@ -191,8 +191,8 @@ namespace IndexSearchAndAnalyze
                         {
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("    Computing isotopologues because absolute error " + Math.Abs(closestPeakMZ - monoisotopicMZ) + " is smaller than tolerance " + p.toleranceInMZforMS2Search);
-                                p.po.RTBoutput("    Charge was = " + chargeToLookAt + "  closestPeakMZ = " + closestPeakMZ + " while monoisotopicMZ = " + monoisotopicMZ);
+                                p.po.output("    Computing isotopologues because absolute error " + Math.Abs(closestPeakMZ - monoisotopicMZ) + " is smaller than tolerance " + p.toleranceInMZforMS2Search);
+                                p.po.output("    Charge was = " + chargeToLookAt + "  closestPeakMZ = " + closestPeakMZ + " while monoisotopicMZ = " + monoisotopicMZ);
                             }
 
                             IsotopicDistribution dist = new IsotopicDistribution(fragment.ThisChemicalFormula, p.fineResolution, 0.001);
@@ -208,9 +208,9 @@ namespace IndexSearchAndAnalyze
                             computedIsotopologues = true;
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("    Isotopologue distribution: ");
-                                p.po.RTBoutput("    masses = " + string.Join(", ", masses) + "...");
-                                p.po.RTBoutput("    intensities = " + string.Join(", ", intensities) + "...");
+                                p.po.output("    Isotopologue distribution: ");
+                                p.po.output("    masses = " + string.Join(", ", masses) + "...");
+                                p.po.output("    intensities = " + string.Join(", ", intensities) + "...");
                             }
 
                             break;
@@ -226,20 +226,20 @@ namespace IndexSearchAndAnalyze
 
                     if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                     {
-                        p.po.RTBoutput("   Considering individual charges, to get training points:");
+                        p.po.output("   Considering individual charges, to get training points:");
                     }
                     bool startingToAdd = false;
                     for (int chargeToLookAt = 1; chargeToLookAt <= peptideCharge; chargeToLookAt++)
                     {
                         if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                         {
-                            p.po.RTBoutput("    Considering charge " + chargeToLookAt);
+                            p.po.output("    Considering charge " + chargeToLookAt);
                         }
                         if (masses.First().ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
                         {
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("    Out of range: too high");
+                                p.po.output("    Out of range: too high");
                             }
                             continue;
                         }
@@ -247,7 +247,7 @@ namespace IndexSearchAndAnalyze
                         {
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("    Out of range: too low");
+                                p.po.output("    Out of range: too low");
                             }
                             break;
                         }
@@ -259,20 +259,20 @@ namespace IndexSearchAndAnalyze
                             if (npwr == 0)
                             {
                                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
-                                    p.po.RTBoutput("     Breaking because extracted.Count = " + npwr);
+                                    p.po.output("     Breaking because extracted.Count = " + npwr);
                                 break;
                             }
                             if (npwr > 1)
                             {
                                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
-                                    p.po.RTBoutput("     Not looking for " + theMZ + " because extracted.Count = " + npwr);
+                                    p.po.output("     Not looking for " + theMZ + " because extracted.Count = " + npwr);
                                 continue;
                             }
                             var closestPeak = ms2DataScan.MassSpectrum.GetClosestPeak(theMZ);
                             var closestPeakMZ = closestPeak.MZ;
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("     Found       " + closestPeakMZ + "   Error is    " + (closestPeakMZ - theMZ));
+                                p.po.output("     Found       " + closestPeakMZ + "   Error is    " + (closestPeakMZ - theMZ));
                             }
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
@@ -283,7 +283,7 @@ namespace IndexSearchAndAnalyze
                             {
                                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                                 {
-                                    p.po.RTBoutput("     Not using because already added peak");
+                                    p.po.output("     Not using because already added peak");
                                 }
                             }
                         }
@@ -294,7 +294,7 @@ namespace IndexSearchAndAnalyze
                         {
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("    Not adding, since not enought isotopes were seen");
+                                p.po.output("    Not adding, since not enought isotopes were seen");
                             }
                         }
                         else
@@ -316,10 +316,10 @@ namespace IndexSearchAndAnalyze
 
                             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
                             {
-                                p.po.RTBoutput("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS2 SPECTRUM");
-                                p.po.RTBoutput("    a.dp.mz " + a.inputs[1]);
-                                p.po.RTBoutput("    a.dp.rt " + a.inputs[2]);
-                                p.po.RTBoutput("    a.l     " + a.output);
+                                p.po.output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS2 SPECTRUM");
+                                p.po.output("    a.dp.mz " + a.inputs[1]);
+                                p.po.output("    a.dp.rt " + a.inputs[2]);
+                                p.po.output("    a.l     " + a.output);
                             }
                             myCandidatePoints.Add(a);
                         }
@@ -332,9 +332,9 @@ namespace IndexSearchAndAnalyze
             //p.po.RTBoutput(new OutputHandlerEventArgs("ind = " + ms2spectrumIndex + " count = " + countForThisMS2 + " count2 = " + countForThisMS2a + " fragments = " + numFragmentsIdentified));
             if (p.MS2spectraToWatch.Contains(ms2spectrumIndex))
             {
-                p.po.RTBoutput(" countForThisMS2 = " + countForThisMS2);
-                p.po.RTBoutput(" countForThisMS2a = " + countForThisMS2a);
-                p.po.RTBoutput(" numFragmentsIdentified = " + numFragmentsIdentified);
+                p.po.output(" countForThisMS2 = " + countForThisMS2);
+                p.po.output(" countForThisMS2a = " + countForThisMS2a);
+                p.po.output(" numFragmentsIdentified = " + numFragmentsIdentified);
             }
             candidateFragmentsIdentified = numFragmentsIdentified;
             return myCandidatePoints;
@@ -364,7 +364,7 @@ namespace IndexSearchAndAnalyze
                 addedAscan = false;
                 if (p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex))
                 {
-                    p.po.RTBoutput(" Looking in MS1 spectrum " + theIndex + " because of MS2 spectrum " + ms2spectrumIndex);
+                    p.po.output(" Looking in MS1 spectrum " + theIndex + " because of MS2 spectrum " + ms2spectrumIndex);
                 }
                 List<LabeledDataPoint> myCandidatePointsForThisMS1scan = new List<LabeledDataPoint>();
                 var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
@@ -380,7 +380,7 @@ namespace IndexSearchAndAnalyze
                 {
                     if (p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex))
                     {
-                        p.po.RTBoutput("  Looking at charge " + chargeToLookAt);
+                        p.po.output("  Looking at charge " + chargeToLookAt);
                     }
                     if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
                     {
@@ -398,13 +398,13 @@ namespace IndexSearchAndAnalyze
                         if (npwr == 0)
                         {
                             if (p.MS1spectraToWatch.Contains(theIndex))
-                                p.po.RTBoutput("      Breaking because extracted.Count = " + npwr);
+                                p.po.output("      Breaking because extracted.Count = " + npwr);
                             break;
                         }
                         if (npwr > 1)
                         {
                             if (p.MS1spectraToWatch.Contains(theIndex))
-                                p.po.RTBoutput("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
+                                p.po.output("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
                             continue;
                         }
 
@@ -419,7 +419,7 @@ namespace IndexSearchAndAnalyze
                         //}
                         if ((p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex)) && p.mzRange.Contains(theMZ))
                         {
-                            p.po.RTBoutput("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
+                            p.po.output("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
                         }
 
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
@@ -430,7 +430,7 @@ namespace IndexSearchAndAnalyze
                             //if ((p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex)) && p.mzRange.Contains(theMZ))
                             if ((p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex)))
                             {
-                                p.po.RTBoutput("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
+                                p.po.output("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
                             }
                             trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 1, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
                         }
@@ -442,7 +442,7 @@ namespace IndexSearchAndAnalyze
                     {
                         if (p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex))
                         {
-                            p.po.RTBoutput("    Started adding and suddnely stopped, no need to look at higher charges");
+                            p.po.output("    Started adding and suddnely stopped, no need to look at higher charges");
                         }
                         break;
                     }
@@ -450,7 +450,7 @@ namespace IndexSearchAndAnalyze
                     {
                         if (p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex))
                         {
-                            p.po.RTBoutput("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
+                            p.po.output("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
                         }
                         break;
                     }
@@ -458,14 +458,14 @@ namespace IndexSearchAndAnalyze
                     {
                         if ((p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex)))
                         {
-                            p.po.RTBoutput("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
+                            p.po.output("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
                         }
                     }
                     else if (trainingPointsToAverage.Count < Math.Min(p.minMS1, originalIntensities.Count()))
                     {
                         if ((p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex)))
                         {
-                            p.po.RTBoutput("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
+                            p.po.output("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
                         }
                     }
                     else
@@ -479,10 +479,10 @@ namespace IndexSearchAndAnalyze
                         //    p.po.RTBoutput(theIndex + "," + ms2spectrumIndex);
                         if (p.MS2spectraToWatch.Contains(ms2spectrumIndex) || p.MS1spectraToWatch.Contains(theIndex))
                         {
-                            p.po.RTBoutput("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS1 SPECTRUM");
-                            p.po.RTBoutput("    a.dp.mz " + a.inputs[1]);
-                            p.po.RTBoutput("    a.dp.rt " + a.inputs[2]);
-                            p.po.RTBoutput("    a.l     " + a.output);
+                            p.po.output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS1 SPECTRUM");
+                            p.po.output("    a.dp.mz " + a.inputs[1]);
+                            p.po.output("    a.dp.rt " + a.inputs[2]);
+                            p.po.output("    a.l     " + a.output);
                         }
                         myCandidatePointsForThisMS1scan.Add(a);
                     }

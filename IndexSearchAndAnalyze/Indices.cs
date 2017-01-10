@@ -11,14 +11,14 @@ namespace IndexSearchAndAnalyze
 {
     internal class Indices
     {
-        public static void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, ObservableCollection<XMLdb> xMLdblist, List<ModListForSearch> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, AllTasksParams po)
+        public static void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearch> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, AllTasksParams po, string output_folder)
         {
             #region Index file names
 
-            string folderName = Path.GetDirectoryName(xMLdblist.First().FileName);
+            string folderName = output_folder;
             StringBuilder indexFileSB = new StringBuilder();
-            foreach (var heh in xMLdblist)
-                indexFileSB.Append(Path.GetFileNameWithoutExtension(heh.FileName));
+            foreach (var heh in po.xMLdblist)
+                indexFileSB.Append(Path.GetFileNameWithoutExtension(heh));
             if (doFDRanalysis)
                 indexFileSB.Append("-WithDecoys");
             if (collectionOfModLists.Where(b => b.Fixed).Count() > 0)
@@ -47,27 +47,27 @@ namespace IndexSearchAndAnalyze
 
             if (!File.Exists(peptideIndexFile) || !File.Exists(fragmentIndexFile))
             {
-                po.RTBoutput("Generating indices...");
+                po.output("Generating indices...");
 
-                //IndexParams indexParams = new IndexParams(hm, variableModifications, fixedModifications, localizeableModifications, protease);
-                //IndexEngine indexEngine = new IndexEngine(indexParams);
-                //IndexResults indexResults = (IndexResults)indexEngine.Run();
-                //peptideIndex = indexResults.peptideIndex;
-                //fragmentIndexDict = indexResults.fragmentIndexDict;
+                IndexParams indexParams = new IndexParams(hm, variableModifications, fixedModifications, localizeableModifications, protease, po);
+                IndexEngine indexEngine = new IndexEngine(indexParams);
+                IndexResults indexResults = (IndexResults)indexEngine.Run();
+                peptideIndex = indexResults.peptideIndex;
+                fragmentIndexDict = indexResults.fragmentIndexDict;
                 peptideIndex = null;
                 fragmentIndexDict = null;
 
-                //p.po.RTBoutput("Writing peptide index...");
-                //writePeptideIndex(peptideIndex, peptideIndexFile);
-                //p.po.RTBoutput("Writing fragment index...");
-                //writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                //p.po.RTBoutput("Done Writing fragment index");
+                po.output("Writing peptide index...");
+                writePeptideIndex(peptideIndex, peptideIndexFile);
+                po.output("Writing fragment index...");
+                writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile, po);
+                po.output("Done Writing fragment index");
             }
             else
             {
-                po.RTBoutput("Reading peptide index...");
+                po.output("Reading peptide index...");
                 peptideIndex = readPeptideIndex(peptideIndexFile);
-                po.RTBoutput("Reading fragment index...");
+                po.output("Reading fragment index...");
                 fragmentIndexDict = readFragmentIndexNetSerializer(fragmentIndexFile, po);
             }
         }
@@ -96,7 +96,7 @@ namespace IndexSearchAndAnalyze
             string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
-            po.RTBoutput("Time to read fragment index with netSerializer: " + elapsedTime);
+            po.output("Time to read fragment index with netSerializer: " + elapsedTime);
 
             return newPerson;
         }
@@ -117,7 +117,7 @@ namespace IndexSearchAndAnalyze
             string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
-            po.RTBoutput("Time to write fragment index with netserializer: " + elapsedTime);
+            po.output("Time to write fragment index with netserializer: " + elapsedTime);
         }
 
         internal static void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)

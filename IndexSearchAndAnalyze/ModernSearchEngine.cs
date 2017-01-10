@@ -19,7 +19,7 @@ namespace IndexSearchAndAnalyze
         protected override MyResults RunSpecific()
         {
             var searchParams = (ModernSearchParams)myParams;
-            searchParams.allTasksParams.RTBoutput("In modern search method!");
+            searchParams.allTasksParams.output("In modern search method!");
 
             var spectraList = searchParams.myMsDataFile.ToList();
             var totalSpectra = searchParams.myMsDataFile.NumSpectra;
