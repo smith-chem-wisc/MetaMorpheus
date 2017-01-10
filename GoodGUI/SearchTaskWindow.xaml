@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GoodGUI"
         mc:Ignorable="d"
-        Title="Search Task" Width="550" Height="600" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="Search Task" Width="550" Height="650" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <StackPanel>
         <Label Content="Search Parameters:" Height="30" />
         <Grid>
@@ -22,6 +22,14 @@
         </Grid>
         <StackPanel Margin="5">
             <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys and do FDR analysis" />
+        </StackPanel>
+        <StackPanel Margin="5">
+            <Label x:Name="allowedPrecursorMassDiffsLabel" Content="Allowed precursor mass diffs:" />
+            <DataGrid x:Name="allowedPrecursorMassDiffsDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox"  Width="300" />
+                <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="addNewAllowedPrecursorMassDiffsButton_Click" />
+            </StackPanel>
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>

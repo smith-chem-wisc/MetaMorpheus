@@ -54,8 +54,6 @@ namespace IndexSearchAndAnalyze
                 IndexResults indexResults = (IndexResults)indexEngine.Run();
                 peptideIndex = indexResults.peptideIndex;
                 fragmentIndexDict = indexResults.fragmentIndexDict;
-                peptideIndex = null;
-                fragmentIndexDict = null;
 
                 po.output("Writing peptide index...");
                 writePeptideIndex(peptideIndex, peptideIndexFile);

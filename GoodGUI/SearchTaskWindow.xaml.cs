@@ -102,5 +102,10 @@ namespace GoodGUI
 
             DialogResult = true;
         }
+
+        private void addNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
