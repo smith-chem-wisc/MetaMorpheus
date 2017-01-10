@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -137,8 +138,40 @@ namespace GoodGUI
             po.startingSingleTaskHander += Po_startingSingleTaskHander;
             po.finishedAllTasksHandler += NewSuccessfullyFinishedAllTasks;
             po.startingAllTasksHander += NewSuccessfullyStartingAllTasks;
+            po.newDbsHandler += AddNewDB;
+            po.newSpectrasHandler += AddNewSpectra;
 
             UpdateTaskGuiStuff();
+        }
+
+        private void AddNewDB(object sender, List<string> e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => AddNewDB(sender, e)));
+            }
+            else
+            {
+                foreach (var uu in xMLdblist)
+                    uu.Use = false;
+                foreach (var uu in e)
+                    xMLdblist.Add(new XMLdb(uu));
+            }
+        }
+
+        private void AddNewSpectra(object sender, List<string> e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => AddNewSpectra(sender, e)));
+            }
+            else
+            {
+                foreach (var uu in rawDataAndResultslist)
+                    uu.Use = false;
+                foreach (var uu in e)
+                    rawDataAndResultslist.Add(new RawData(uu));
+            }
         }
 
         private void Po_startingSingleTaskHander(object sender, SingleTaskEventArgs s)
@@ -608,7 +641,6 @@ namespace GoodGUI
                         rawDataAndResultslist.Add(new RawData(file));
                         break;
 
-
                     case ".xml":
                         xMLdblist.Add(new XMLdb(file));
                         break;
@@ -653,7 +685,9 @@ namespace GoodGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            var t = new Thread(() => AllTasksClass.DoAllTasks(taskListWrapper.EnumerateTasks(), rawDataAndResultslist, xMLdblist, po));
+            po.rawDataAndResultslist = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName).ToList();
+            po.xMLdblist = xMLdblist.Where(b => b.Use).Select(b => b.FileName).ToList();
+            var t = new Thread(() => AllTasksClass.DoAllTasks(taskListWrapper.EnumerateTasks(), po));
             t.IsBackground = true;
             t.Start();
         }

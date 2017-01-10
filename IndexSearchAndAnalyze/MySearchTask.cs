@@ -3,9 +3,7 @@ using IO.Thermo;
 using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 
@@ -34,10 +32,8 @@ namespace IndexSearchAndAnalyze
             listOfModListsForSearch[2].Localize = true;
         }
 
-        public override MyTaskResults DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override MyTaskResults DoTask(AllTasksParams po)
         {
-            var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
-
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
@@ -55,11 +51,12 @@ namespace IndexSearchAndAnalyze
             List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(completeXmlDbList.Select(b => b.FileName).ToList(), localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            GenerateModsFromStrings(po.xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             po.status("Loading proteins...");
-            var proteinList = completeXmlDbList.SelectMany(b => b.getProteins(searchDecoy, identifiedModsInXML)).ToList();
+            var proteinList = po.xMLdblist.SelectMany(b => getProteins(searchDecoy, identifiedModsInXML, b)).ToList();
 
+            var currentRawFileList = po.rawDataAndResultslist;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];

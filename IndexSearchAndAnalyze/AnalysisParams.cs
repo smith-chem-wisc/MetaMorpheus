@@ -3,7 +3,6 @@ using MetaMorpheus;
 using Proteomics;
 using Spectra;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using UsefulProteomicsDatabases.Generated;
 
@@ -43,6 +42,7 @@ namespace IndexSearchAndAnalyze
             this.unimodDeserialized = AllTasksParams.unimodDeserialized;
             this.uniprotDeseralized = AllTasksParams.uniprotDeseralized;
         }
+
         internal override void Validate()
         {
             if (newPsms == null)

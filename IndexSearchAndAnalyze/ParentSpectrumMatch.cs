@@ -1,9 +1,8 @@
-﻿using System;
+﻿using MetaMorpheus;
 using System.Collections.Generic;
-using MetaMorpheus;
-using System.Text;
-using System.Linq;
 using System.Globalization;
+using System.Linq;
+using System.Text;
 
 namespace IndexSearchAndAnalyze
 {
@@ -29,9 +28,9 @@ namespace IndexSearchAndAnalyze
             //sb.Append(scanRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             //sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-           // sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            // sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             //sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-           // sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            // sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             //sb.Append(ScoreFromSearch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
 

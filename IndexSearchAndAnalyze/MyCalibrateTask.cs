@@ -3,7 +3,6 @@ using IO.Thermo;
 using MassSpectrometry;
 using MetaMorpheus;
 using Spectra;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -16,6 +15,7 @@ namespace IndexSearchAndAnalyze
         public MyCalibrateTask() : base(0)
         {
         }
+
         public Tolerance precursorMassTolerance { get; set; }
 
         public MyCalibrateTask(ObservableCollection<ModList> modList) : base(0)
@@ -37,11 +37,11 @@ namespace IndexSearchAndAnalyze
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
         }
 
-        public override MyTaskResults DoTask(ObservableCollection<RawData> completeRawFileListCollection, ObservableCollection<XMLdb> completeXmlDbList, AllTasksParams po)
+        public override MyTaskResults DoTask(AllTasksParams po)
         {
             MyTaskResults myTaskResults = new MyTaskResults();
-            myTaskResults.newDatabases = new List<string>();
-            var currentRawFileList = completeRawFileListCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
+            myTaskResults.newSpectra = new List<string>();
+            var currentRawFileList = po.rawDataAndResultslist;
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
@@ -50,11 +50,9 @@ namespace IndexSearchAndAnalyze
             SearchMode searchMode = new IntervalSearchMode("withinhalfAdaltonOfZero", new List<double>() { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
-
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModes.Count];
             for (int j = 0; j < searchModes.Count; j++)
                 allPsms[j] = new List<ParentSpectrumMatch>();
-
 
             po.status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
@@ -62,10 +60,10 @@ namespace IndexSearchAndAnalyze
             List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(completeXmlDbList.Select(b => b.FileName).ToList(), localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            GenerateModsFromStrings(po.xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             po.status("Loading proteins...");
-            var proteinList = completeXmlDbList.SelectMany(b => b.getProteins(true, identifiedModsInXML)).ToList();
+            var proteinList = po.xMLdblist.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {

@@ -1,10 +1,6 @@
 ﻿using IndexSearchAndAnalyze;
-using MassSpectrometry;
 using MetaMorpheus;
 using NUnit.Framework;
-using Proteomics;
-using Spectra;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,7 +9,6 @@ namespace Test
     [TestFixture]
     public class AnalysisEngineTest
     {
-
         [Test]
         public void TestParsimony()
         {

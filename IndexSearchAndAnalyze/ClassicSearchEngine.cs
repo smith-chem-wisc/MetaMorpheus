@@ -37,7 +37,7 @@ namespace IndexSearchAndAnalyze
             int proteinsSeen = 0;
             int old_progress = 0;
 
-            searchParams.allTasksParams.ReportProgress(new ProgressEventArgs(0, "Starting classic search loop"));
+            searchParams.allTasksParams.status("Starting classic search loop");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var psms = new ClassicSpectrumMatch[searchParams.searchModes.Count][];
