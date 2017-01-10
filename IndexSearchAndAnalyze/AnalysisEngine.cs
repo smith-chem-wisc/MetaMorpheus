@@ -190,7 +190,7 @@ namespace IndexSearchAndAnalyze
                 }
             }
 
-            // greedy algorithm adds the next protein that will account for the most unique peptides
+            // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
             Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<PeptideWithSetModifications, HashSet<CompactPeptide>>();
             HashSet<CompactPeptide> usedPeptides = new HashSet<CompactPeptide>();
             HashSet<CompactPeptide> bestProteinPeptideList = new HashSet<CompactPeptide>();
