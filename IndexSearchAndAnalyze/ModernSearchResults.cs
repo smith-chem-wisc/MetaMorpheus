@@ -10,9 +10,9 @@ namespace IndexSearchAndAnalyze
         private int numMS2spectra;
         private int[] numMS2spectraMatched;
 
-        public List<NewPsm>[] newPsms { get; private set; }
+        public List<ModernSpectrumMatch>[] newPsms { get; private set; }
 
-        public ModernSearchResults(List<NewPsm>[] newPsms, int numMS2spectra, int[] numMS2spectraMatched, ModernSearchParams s) : base(s)
+        public ModernSearchResults(List<ModernSpectrumMatch>[] newPsms, int numMS2spectra, int[] numMS2spectraMatched, ModernSearchParams s) : base(s)
         {
             this.numMS2spectra = numMS2spectra;
             this.numMS2spectraMatched = numMS2spectraMatched;

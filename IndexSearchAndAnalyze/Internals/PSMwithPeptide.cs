@@ -10,15 +10,15 @@ namespace IndexSearchAndAnalyze
 {
     public class PSMwithTargetDecoyKnown
     {
-        public NewPsm newPsm;
+        public ParentSpectrumMatch newPsm;
 
         public bool isDecoy { get; private set; }
 
-        public double ScoreFromSearch
+        public double Score
         {
             get
             {
-                return newPsm.ScoreFromSearch;
+                return newPsm.Score;
             }
         }
 
@@ -47,7 +47,7 @@ namespace IndexSearchAndAnalyze
         public int numVariableMods { get; private set; }
         public string SequenceWithChemicalFormulas { get; internal set; }
 
-        public PSMwithTargetDecoyKnown(NewPsm newPsm, PeptideWithSetModifications peptideWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
+        public PSMwithTargetDecoyKnown(ParentSpectrumMatch newPsm, PeptideWithSetModifications peptideWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
             this.isDecoy = peptideWithSetModifications.protein.isDecoy;
@@ -64,17 +64,15 @@ namespace IndexSearchAndAnalyze
                 var scanPrecursorMass = selectedMZ.ToMass(selectedCharge);
 
                 Dictionary<ProductType, double[]> MatchedIonDict = new Dictionary<ProductType, double[]>();
-                double score = 0;
                 foreach (var huh in allProductTypes)
                 {
                     var df = peptideWithSetModifications.FastSortedProductMasses(new List<ProductType>() { huh });
                     double[] matchedIonList = new double[df.Length];
-                    score += MatchIons(theScan, fragmentTolerance, df, matchedIonList);
+                    MatchIons(theScan, fragmentTolerance, df, matchedIonList);
                     MatchedIonDict.Add(huh, matchedIonList);
                 }
 
                 newPsm.matchedIonsList = MatchedIonDict;
-                newPsm.ScoreFromMatch = score;
             }
 
             if (newPsm.LocalizedScores == null)

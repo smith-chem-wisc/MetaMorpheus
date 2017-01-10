@@ -1,5 +1,4 @@
 ﻿using MetaMorpheus;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace FragmentGeneration
@@ -225,22 +224,6 @@ namespace FragmentGeneration
             //    //AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
             //    //AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
             //}
-        }
-
-        private static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
-        {
-            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
-            modsInXMLtoTrim = new HashSet<string>(modsInXML);
-            foreach (var knownMod in modsKnown)
-                if (modsInXML.Contains(knownMod.NameInXML))
-                {
-                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
-                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
-                    else
-                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
-                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
-                }
         }
     }
 }

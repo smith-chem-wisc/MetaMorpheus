@@ -51,7 +51,7 @@ namespace IndexSearchAndAnalyze
         {
             get
             {
-                return uniquePSMs.Values.Where(b => !b.Item3.isDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.ScoreFromSearch + 1).Count();
+                return uniquePSMs.Values.Where(b => !b.Item3.isDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.Score + 1).Count();
             }
         }
 
@@ -65,7 +65,7 @@ namespace IndexSearchAndAnalyze
             if (uniquePSMs.ContainsKey(ok.thisPSM.FullSequence))
             {
                 var current = uniquePSMs[ok.thisPSM.FullSequence];
-                if (current.Item3.thisPSM.ScoreFromSearch < ok.thisPSM.ScoreFromSearch)
+                if (current.Item3.thisPSM.Score < ok.thisPSM.Score)
                     uniquePSMs[ok.thisPSM.FullSequence] = new Tuple<string, string, NewPsmWithFDR>(ok.thisPSM.BaseSequence, ok.thisPSM.FullSequence, ok);
             }
             else

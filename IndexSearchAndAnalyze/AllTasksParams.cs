@@ -20,11 +20,19 @@ namespace IndexSearchAndAnalyze
 
         public event EventHandler<string> outLabelStatusHandler;
 
+        public event EventHandler<List<string>> newDbsHandler;
+
+        public event EventHandler<List<string>> newSpectrasHandler;
+
         public event EventHandler<ProgressEventArgs> outProgressHandler;
 
         public event EventHandler<string> outRichTextBoxHandler;
 
         public event EventHandler<SingleFileEventArgs> SuccessfullyFinishedWritingFileHandler;
+
+        public List<string> rawDataAndResultslist;
+
+        public List<string> xMLdblist;
 
         public void status(string v)
         {
@@ -61,9 +69,21 @@ namespace IndexSearchAndAnalyze
             SuccessfullyFinishedWritingFileHandler?.Invoke(this, v);
         }
 
+        internal void NewDBs(List<string> newDatabases)
+        {
+            xMLdblist = newDatabases;
+            newDbsHandler?.Invoke(this, newDatabases);
+        }
+
         public void FinishedAllTasks()
         {
             finishedAllTasksHandler?.Invoke(this, null);
+        }
+
+        internal void NewSpectras(List<string> newSpectra)
+        {
+            rawDataAndResultslist = newSpectra;
+            newSpectrasHandler?.Invoke(this, newSpectra);
         }
     }
 }
