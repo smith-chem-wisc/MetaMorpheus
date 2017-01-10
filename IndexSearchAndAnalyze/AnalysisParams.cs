@@ -24,6 +24,7 @@ namespace IndexSearchAndAnalyze
         public Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
         public Action<BinTreeStructure, string> action1 { get; private set; }
         public Action<List<NewPsmWithFDR>, string> action2 { get; private set; }
+        public bool doParsimony { get; internal set; }
 
         public AnalysisParams(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, AllTasksParams a2) : base(a2)
         {

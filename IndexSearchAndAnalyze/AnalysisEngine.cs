@@ -22,8 +22,6 @@ namespace IndexSearchAndAnalyze
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             myParams.allTasksParams.status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
-            //myParams.allTasksParams.status("Getting protein parsimony dictionary...");
-            //var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
 
             myParams.allTasksParams.status("Getting single match just for FDR purposes...");
             var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
@@ -60,6 +58,11 @@ namespace IndexSearchAndAnalyze
 
                 analysisParams.action2(orderedPsmsWithFDR, analysisParams.searchModes[j].FileNameAddition);
 
+                if (analysisParams.doParsimony)
+                {
+                    myParams.allTasksParams.status("Getting protein parsimony dictionary...");
+                    var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
+                }
                 yeah[j] = orderedPsmsWithFDR;
             }
 
