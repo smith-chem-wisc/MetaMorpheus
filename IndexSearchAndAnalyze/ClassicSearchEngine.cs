@@ -134,7 +134,7 @@ namespace IndexSearchAndAnalyze
 
         private IEnumerable<LocalMs2Scan> GetAcceptableScans(LocalMs2Scan[] listOfSortedms2Scans, double peptideMonoisotopicMass, SearchMode searchMode)
         {
-            IntervalSearchMode intervalSearchMode = searchMode as IntervalSearchMode;
+            DotSearchMode intervalSearchMode = searchMode as DotSearchMode;
             if (intervalSearchMode != null)
             {
                 foreach (DoubleRange ye in intervalSearchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())

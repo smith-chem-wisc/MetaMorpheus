@@ -17,7 +17,7 @@ namespace IndexSearchAndAnalyze
 
         public bool classicSearch { get; set; }
 
-        public MySearchTask(IEnumerable<ModList> modList) : base(1)
+        public MySearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes) : base(1)
         {
             // Set default values here:
             classicSearch = true;
@@ -35,6 +35,11 @@ namespace IndexSearchAndAnalyze
             listOfModListsForSearch[0].Fixed = true;
             listOfModListsForSearch[1].Variable = true;
             listOfModListsForSearch[2].Localize = true;
+
+            searchModes = new List<SearchModeFoSearch>();
+            foreach (var uu in inputSearchModes)
+                searchModes.Add(new SearchModeFoSearch(uu));
+            searchModes[0].Use = true;
         }
 
         public override MyTaskResults DoTask(AllTasksParams po)
@@ -43,12 +48,6 @@ namespace IndexSearchAndAnalyze
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
-            SearchMode searchMode = new IntervalSearchMode("withinhalfAdaltonOfZero", new List<double>() { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
-            List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
-
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModes.Count];
-            for (int j = 0; j < searchModes.Count; j++)
-                allPsms[j] = new List<ParentSpectrumMatch>();
 
             po.status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
@@ -58,17 +57,15 @@ namespace IndexSearchAndAnalyze
             HashSet<string> unidentifiedModStrings;
             GenerateModsFromStrings(po.xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
+            List<SearchMode> searchModesS = searchModes.Where(b => b.Use).Select(b => b.sm).ToList();
+
+            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModesS.Count];
+            for (int j = 0; j < searchModesS.Count; j++)
+                allPsms[j] = new List<ParentSpectrumMatch>();
+
             po.status("Loading proteins...");
             var proteinList = po.xMLdblist.SelectMany(b => getProteins(searchDecoy, identifiedModsInXML, b)).ToList();
 
-            po.status("Making fragment dictionary...");
-            List<CompactPeptide> peptideIndex;
-            Dictionary<float, List<int>> fragmentIndexDict;
-
-            Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, po, output_folder);
-
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
             var currentRawFileList = po.rawDataAndResultslist;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
@@ -95,14 +92,14 @@ namespace IndexSearchAndAnalyze
                 // run classic search
                 if (classicSearch)
                 {
-                    classicSearchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes, po);
+                    classicSearchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModesS, po);
                     classicSearchEngine = new ClassicSearchEngine(classicSearchParams);
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
                     po.output(classicSearchResults.ToString());
-                    for (int i = 0; i < searchModes.Count; i++)
+                    for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.outerPsms[i]);
 
-                    AnalysisParams analysisParams = new AnalysisParams(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
+                    AnalysisParams analysisParams = new AnalysisParams(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
                     AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -112,14 +109,23 @@ namespace IndexSearchAndAnalyze
                 // run modern search
                 else
                 {
-                    modernSearchParams = new ModernSearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, null, po);
+                    po.status("Making fragment dictionary...");
+                    List<CompactPeptide> peptideIndex;
+                    Dictionary<float, List<int>> fragmentIndexDict;
+
+                    Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, po, output_folder);
+
+                    var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+                    var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+
+                    modernSearchParams = new ModernSearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS, po);
                     modernSearchEngine = new ModernSearchEngine(modernSearchParams);
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
                     po.output(modernSearchResults.ToString());
-                    for (int i = 0; i < searchModes.Count; i++)
+                    for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 
-                    AnalysisParams analysisParams = new AnalysisParams(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
+                    AnalysisParams analysisParams = new AnalysisParams(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po);
                     AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -131,7 +137,7 @@ namespace IndexSearchAndAnalyze
 
             if (currentRawFileList.Count > 1)
             {
-                AnalysisParams analysisParams = new AnalysisParams(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate", po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s, po), po);
+                AnalysisParams analysisParams = new AnalysisParams(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate", po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s, po), po);
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
                 po.output(analysisResults.ToString());

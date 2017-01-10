@@ -47,7 +47,7 @@ namespace IndexSearchAndAnalyze
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
-            SearchMode searchMode = new IntervalSearchMode("withinhalfAdaltonOfZero", new List<double>() { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
+            SearchMode searchMode = new DotSearchMode("withinhalfAdaltonOfZero", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModes.Count];
