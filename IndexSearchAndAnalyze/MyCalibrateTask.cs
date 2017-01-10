@@ -76,12 +76,12 @@ namespace IndexSearchAndAnalyze
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
                 po.status("Opening spectra file...");
                 myMsDataFile.Open();
-                po.RTBoutput("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                po.output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchParams searchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes, po);
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(searchParams);
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
-                po.RTBoutput(searchResults.ToString());
+                po.output(searchResults.ToString());
 
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
@@ -91,7 +91,7 @@ namespace IndexSearchAndAnalyze
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                po.RTBoutput(analysisResults.ToString());
+                po.output(analysisResults.ToString());
 
                 var identifications = analysisResults.allResultingIdentifications[0];
 

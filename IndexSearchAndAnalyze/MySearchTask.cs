@@ -65,7 +65,7 @@ namespace IndexSearchAndAnalyze
             List<CompactPeptide> peptideIndex;
             Dictionary<float, List<int>> fragmentIndexDict;
 
-            Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, null, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, po);
+            Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, po, output_folder);
 
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
@@ -82,7 +82,7 @@ namespace IndexSearchAndAnalyze
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
                 po.status("Opening spectra file...");
                 myMsDataFile.Open();
-                po.RTBoutput("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                po.output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchParams classicSearchParams = null;
                 ClassicSearchEngine classicSearchEngine = null;
@@ -95,12 +95,10 @@ namespace IndexSearchAndAnalyze
                 // run classic search
                 if (classicSearch)
                 {
-                    // classic
-                    // IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, SearchMode searchMode, AllTasksParams a2) : base(a2)
                     classicSearchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes, po);
                     classicSearchEngine = new ClassicSearchEngine(classicSearchParams);
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
-                    po.RTBoutput(classicSearchResults.ToString());
+                    po.output(classicSearchResults.ToString());
                     for (int i = 0; i < searchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.outerPsms[i]);
 
@@ -108,18 +106,16 @@ namespace IndexSearchAndAnalyze
                     AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                    po.RTBoutput(analysisResults.ToString());
+                    po.output(analysisResults.ToString());
                 }
 
                 // run modern search
                 else
                 {
-                    // modern
-                    //                                          myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, fragmentTolerance,    protease, searchModes,    a2)
                     modernSearchParams = new ModernSearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, null, po);
                     modernSearchEngine = new ModernSearchEngine(modernSearchParams);
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
-                    po.RTBoutput(modernSearchResults.ToString());
+                    po.output(modernSearchResults.ToString());
                     for (int i = 0; i < searchModes.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 
@@ -127,9 +123,9 @@ namespace IndexSearchAndAnalyze
                     AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                    po.RTBoutput(analysisResults.ToString());
+                    po.output(analysisResults.ToString());
                 }
-                
+
 
             }
 
@@ -138,7 +134,7 @@ namespace IndexSearchAndAnalyze
                 AnalysisParams analysisParams = new AnalysisParams(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate", po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s, po), po);
                 AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-                po.RTBoutput(analysisResults.ToString());
+                po.output(analysisResults.ToString());
             }
             return new MyTaskResults();
         }

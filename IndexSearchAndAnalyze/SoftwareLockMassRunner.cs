@@ -10,16 +10,16 @@ namespace IndexSearchAndAnalyze
     {
         public static void Run(SoftwareLockMassParams p)
         {
-            p.po.RTBoutput("Welcome to my software lock mass implementation");
-            p.po.RTBoutput("Calibrating " + Path.GetFileName(p.myMsDataFile.FilePath));
+            p.po.output("Welcome to my software lock mass implementation");
+            p.po.output("Calibrating " + Path.GetFileName(p.myMsDataFile.FilePath));
 
             List<int> trainingPointCounts = new List<int>();
             List<LabeledDataPoint> pointList;
             for (int calibrationRound = 1; ; calibrationRound++)
             {
-                p.po.RTBoutput("Calibration round " + calibrationRound);
+                p.po.output("Calibration round " + calibrationRound);
 
-                p.po.RTBoutput("Getting Training Points");
+                p.po.output("Getting Training Points");
 
                 pointList = TrainingPointsExtractor.GetDataPoints(p.myMsDataFile, p.identifications, p, p.matchesToExclude);
 
@@ -31,22 +31,22 @@ namespace IndexSearchAndAnalyze
                 var pointList1 = pointList.Where((b) => b.inputs[0] == 1).ToList();
                 if (pointList1.Count == 0)
                 {
-                    p.po.RTBoutput("Not enough MS1 training points, identification quality is poor");
+                    p.po.output("Not enough MS1 training points, identification quality is poor");
                     return;
                 }
                 WriteDataToFiles(pointList1, "pointList1" + p.myMsDataFile.Name + calibrationRound);
-                p.po.RTBoutput("pointList1.Count() = " + pointList1.Count());
+                p.po.output("pointList1.Count() = " + pointList1.Count());
                 var pointList2 = pointList.Where((b) => b.inputs[0] == 2).ToList();
                 if (pointList2.Count == 0)
                 {
-                    p.po.RTBoutput("Not enough MS2 training points, identification quality is poor");
+                    p.po.output("Not enough MS2 training points, identification quality is poor");
                     return;
                 }
                 WriteDataToFiles(pointList2, "pointList2" + p.myMsDataFile.Name + calibrationRound);
-                p.po.RTBoutput("pointList2.Count() = " + pointList2.Count());
+                p.po.output("pointList2.Count() = " + pointList2.Count());
 
                 CalibrationFunction identityPredictor = new IdentityCalibrationFunction();
-                p.po.RTBoutput("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
+                p.po.output("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList, p);
 
@@ -54,11 +54,11 @@ namespace IndexSearchAndAnalyze
                 combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + p.myMsDataFile.Name + "CalibrationRound" + calibrationRound);
             }
 
-            p.po.RTBoutput("Post-processing");
+            p.po.output("Post-processing");
 
             p.postProcessing(p);
 
-            p.po.RTBoutput("Finished running my software lock mass implementation");
+            p.po.output("Finished running my software lock mass implementation");
         }
 
         private static CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints, SoftwareLockMassParams p)
@@ -71,16 +71,16 @@ namespace IndexSearchAndAnalyze
 
             var trainList1 = trainList.Where((b) => b.inputs[0] == 1).ToList();
             WriteDataToFiles(trainList1, "train1" + p.myMsDataFile.Name);
-            p.po.RTBoutput("trainList1.Count() = " + trainList1.Count());
+            p.po.output("trainList1.Count() = " + trainList1.Count());
             var trainList2 = trainList.Where((b) => b.inputs[0] == 2).ToList();
             WriteDataToFiles(trainList2, "train2" + p.myMsDataFile.Name);
-            p.po.RTBoutput("trainList2.Count() = " + trainList2.Count());
+            p.po.output("trainList2.Count() = " + trainList2.Count());
             var testList1 = testList.Where((b) => b.inputs[0] == 1).ToList();
             WriteDataToFiles(testList1, "test1" + p.myMsDataFile.Name);
-            p.po.RTBoutput("testList1.Count() = " + testList1.Count());
+            p.po.output("testList1.Count() = " + testList1.Count());
             var testList2 = testList.Where((b) => b.inputs[0] == 2).ToList();
             WriteDataToFiles(testList2, "test2" + p.myMsDataFile.Name);
-            p.po.RTBoutput("testList2.Count() = " + testList2.Count());
+            p.po.output("testList2.Count() = " + testList2.Count());
 
             CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
             CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
@@ -88,7 +88,7 @@ namespace IndexSearchAndAnalyze
             double bestMS1MSE = bestMS1predictor.getMSE(testList1);
             double bestMS2MSE = bestMS2predictor.getMSE(testList2);
             double combinedMSE = combinedCalibration.getMSE(testList);
-            p.po.RTBoutput("Uncalibrated MSE, " + bestMS1MSE + "," + bestMS2MSE + "," + combinedMSE);
+            p.po.output("Uncalibrated MSE, " + bestMS1MSE + "," + bestMS2MSE + "," + combinedMSE);
 
             CalibrationFunction ms1regressor = new ConstantCalibrationFunction();
             CalibrationFunction ms2regressor = new ConstantCalibrationFunction();
@@ -227,7 +227,7 @@ namespace IndexSearchAndAnalyze
             }
             catch (ArgumentException e)
             {
-                p.po.RTBoutput("Could not calibrate: " + e.Message);
+                p.po.output("Could not calibrate: " + e.Message);
             }
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
@@ -247,9 +247,9 @@ namespace IndexSearchAndAnalyze
                 {
                     if (p.MS2spectraToWatch.Contains(a.OneBasedScanNumber))
                     {
-                        p.po.RTBoutput("Calibrating scan number " + a.OneBasedScanNumber);
-                        p.po.RTBoutput(" before calibration:");
-                        p.po.RTBoutput(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
+                        p.po.output("Calibrating scan number " + a.OneBasedScanNumber);
+                        p.po.output(" before calibration:");
+                        p.po.output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
                     }
 
                     int oneBasedScanNumber;
@@ -282,27 +282,27 @@ namespace IndexSearchAndAnalyze
 
                     if (p.MS2spectraToWatch.Contains(a.OneBasedScanNumber))
                     {
-                        p.po.RTBoutput(" after calibration:");
-                        p.po.RTBoutput(" precursorMZ:" + precursorMZ);
-                        p.po.RTBoutput(" monoisotopicMZ:" + monoisotopicMZ);
-                        p.po.RTBoutput(" newSelectedMZ:" + newSelectedMZ);
-                        p.po.RTBoutput(" newMonoisotopicMZ:" + newMonoisotopicMZ);
-                        p.po.RTBoutput(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
+                        p.po.output(" after calibration:");
+                        p.po.output(" precursorMZ:" + precursorMZ);
+                        p.po.output(" monoisotopicMZ:" + monoisotopicMZ);
+                        p.po.output(" newSelectedMZ:" + newSelectedMZ);
+                        p.po.output(" newMonoisotopicMZ:" + newMonoisotopicMZ);
+                        p.po.output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
                     }
                 }
                 else
                 {
                     if (p.MS1spectraToWatch.Contains(a.OneBasedScanNumber))
                     {
-                        p.po.RTBoutput("Calibrating scan number " + a.OneBasedScanNumber);
-                        p.po.RTBoutput(" before calibration:");
-                        p.po.RTBoutput(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
+                        p.po.output("Calibrating scan number " + a.OneBasedScanNumber);
+                        p.po.output(" before calibration:");
+                        p.po.output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
                     }
                     Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[6] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
                     a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN); if (p.MS1spectraToWatch.Contains(a.OneBasedScanNumber))
                     {
-                        p.po.RTBoutput(" after calibration:");
-                        p.po.RTBoutput(string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
+                        p.po.output(" after calibration:");
+                        p.po.output(string.Join(",", a.MassSpectrum.newSpectrumExtract(p.mzRange).xArray));
                     }
                 }
             }

@@ -59,7 +59,7 @@ namespace IndexSearchAndAnalyze
             outProgressHandler?.Invoke(this, v);
         }
 
-        public void RTBoutput(string v)
+        public void output(string v)
         {
             outRichTextBoxHandler?.Invoke(this, v);
         }
