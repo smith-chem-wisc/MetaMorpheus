@@ -12,14 +12,7 @@ namespace IndexSearchAndAnalyze
 {
     public static class mzCalIO
     {
-        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
-        public static UsefulProteomicsDatabases.Generated.obo psimodDeserialized;
-        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
-
-        public static string unimodLocation = @"unimod_tables.xml";
-        public static string psimodLocation = @"PSI-MOD.obo.xml";
         public static string elementsLocation = @"elements.dat";
-        public static string uniprotLocation = @"ptmlist.txt";
 
         private static int GetLastNumberFromString(string s)
         {
@@ -29,49 +22,8 @@ namespace IndexSearchAndAnalyze
         public static void Load()
         {
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-            // unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-            //  psimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psimodLocation);
-            // uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
         }
-
-        public static string getFormulaFromDictionary(string dictionary, string acession)
-        {
-            if (dictionary == "UNIMOD")
-            {
-                string unimodAcession = acession;
-                var indexToLookFor = GetLastNumberFromString(unimodAcession) - 1;
-                while (unimodDeserialized.modifications[indexToLookFor].record_id != GetLastNumberFromString(unimodAcession))
-                    indexToLookFor--;
-                return Regex.Replace(unimodDeserialized.modifications[indexToLookFor].composition, @"[\s()]", ""); ;
-            }
-            else if (dictionary == "PSI-MOD")
-            {
-                string psimodAcession = acession;
-                UsefulProteomicsDatabases.Generated.oboTerm ksadklfj = (UsefulProteomicsDatabases.Generated.oboTerm)psimodDeserialized.Items[GetLastNumberFromString(psimodAcession) + 2];
-
-                if (GetLastNumberFromString(psimodAcession) != GetLastNumberFromString(ksadklfj.id))
-                    throw new Exception("Error in reading psi-mod file, acession mismatch!");
-                else
-                {
-                    foreach (var a in ksadklfj.xref_analog)
-                    {
-                        if (a.dbname == "DiffFormula")
-                        {
-                            return Regex.Replace(a.name, @"[\s()]", "");
-                        }
-                    }
-                    return uniprotDeseralized[GetLastNumberFromString(psimodAcession)].ThisChemicalFormula.Formula;
-                }
-            }
-            else if (dictionary == "v.tsv" && acession == "v.tsv:35")
-                return "O";
-            else if (dictionary == "f.tsv" && acession == "f.tsv:4")
-                return "CH3NO";
-            else
-                //Not familiar with modification dictionary
-                return null;
-        }
-
+        
         public static void MzmlOutput(SoftwareLockMassParams p)
         {
             p.po.status("Creating _indexedmzMLConnection, and putting data in it");
@@ -99,7 +51,6 @@ namespace IndexSearchAndAnalyze
             var a = new SoftwareLockMassParams(myMsDataFile, randomSeed, searchfragmentTolerance.Value * 2, myTaskResults);
 
             a.postProcessing = MzmlOutput;
-            a.getFormulaFromDictionary = getFormulaFromDictionary;
             a.identifications = psms;
             a.mzRange = new DoubleRange(0, 0);
 
