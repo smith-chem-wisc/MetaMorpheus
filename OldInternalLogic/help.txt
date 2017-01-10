@@ -1,0 +1,33 @@
+The five steps:
+
+a) Wide (i.e. 10ppm) search with decoys
+b) Calibration
+c) Notch search with 5ppm windows around modifications from the next step, or a comb search
+   Notches example: 0; -105.02484; -91.009185; -89.02992; -32.008456; -48.003371; -30.010565; -18.010565; -17.02655; -15.994915; -2.01565; -1.031634; -0.984016; 0.984016; 3.994915; 12; 13.979265; 14.01565; 15.994915; 19.989829; 21.969392; 21.981943; 5.987028; 26.01565; 27.994915; 28.0313; 31.989829; 37.946941; 42.010565; 42.04695; 43.005814; 57.021464; 58.005479; 61.913495; 79.966331; 114.042927; 128.09496; 156.10111; 173.051055; 189.045969
+d) GPTMD
+e) Final search using the augmented database
+
+
+In Search Tab:
+
+		The "Localize" option should be checked, if corresponding modifications in the XML databases should be considered by the search engine.
+		The "Fixed" option will assign every modification in selected file to the corresponding residue.
+		The "Variable" option will consider the option of having the modification on every matching residue, regardless of what the XML database says.
+
+		v.txt - default variable modifications file
+		f.txt - defaul fixed modifications file
+		p.txt - slightly modified uniprot PTM database, corresponds to modifications in original uniprot XML
+		m.txt - Modification database curated by Stefan. Contains PTMS and adducts. 
+		r.txt - amino acid removals
+		s.txt - amino acid substitutions
+		
+In GPTMD Tab:
+
+		Check the "USE" option if you would like to add modifications from the corresponding database to the new XML file.
+
+		m.txt - should always be on
+		r.txt - ONLY if you feel adventurous
+		s.txt - ONLY if you feel VERY adventurous
+
+		The allow monoisotopic errors option should be checked if you feel that your data contains many misassigned monoisotopic masses. 
+

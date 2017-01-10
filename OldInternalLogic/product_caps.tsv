@@ -1,0 +1,7 @@
+Product Type	Product Cap Monoisotopic Mass (Da)	Product Cap Average Mass (Da)	Notes
+adot	-26.987089580091	-27.002274950091	- CO + e- + p+
+b	0	0	+ H - H
+c	17.02654915	17.03052	+ H + NH2 = + NH3
+x	43.98982926	44.0095	+ OH + CO - H = + CO2
+y	18.0105646942	18.01528	+ OH + H = + H2O
+zdot	1.991840552567	1.99258496	+ OH - NH2 + e- + p+ = + O - NH + e- + p+
