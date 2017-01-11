@@ -9,18 +9,28 @@ namespace InternalLogic
 {
     public class IndexEngine : MyEngine
     {
-        public IndexEngine(IndexParams indexParams)
+        public List<MorpheusModification> fixedModifications { get; private set; }
+        public List<Protein> proteinList { get; private set; }
+        public List<MorpheusModification> localizeableModifications { get; private set; }
+        public Protease protease { get; private set; }
+        public List<MorpheusModification> variableModifications { get; private set; }
+
+        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease)
         {
-            this.myParams = indexParams;
+            this.proteinList = proteinList;
+            this.variableModifications = variableModifications;
+            this.fixedModifications = fixedModifications;
+            this.localizeableModifications = localizeableModifications;
+            this.protease = protease;
         }
+
 
         protected override MyResults RunSpecific()
         {
-            var indexParams = (IndexParams)myParams;
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
             int numProteins = 0;
-            int totalProteins = indexParams.proteinList.Count;
+            int totalProteins = proteinList.Count;
             HashSet<string> level3_observed = new HashSet<string>();
             HashSet<string> level4_observed = new HashSet<string>();
 
@@ -30,8 +40,8 @@ namespace InternalLogic
                 Dictionary<float, List<int>> myInnerDictionary = new Dictionary<float, List<int>>(100000);
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    var protein = indexParams.proteinList[i];
-                    var digestedList = protein.Digest(indexParams.protease, 2, InitiatorMethionineBehavior.Variable).ToList();
+                    var protein = proteinList[i];
+                    var digestedList = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length == 1 || peptide.Length > 252)
@@ -49,9 +59,9 @@ namespace InternalLogic
                             }
                         }
 
-                        peptide.SetFixedModifications(indexParams.fixedModifications);
+                        peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(indexParams.variableModifications, 4098, 3, indexParams.localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
@@ -66,7 +76,7 @@ namespace InternalLogic
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy, indexParams.variableModifications, indexParams.localizeableModifications);
+                            var ps = new CompactPeptide(yyy, variableModifications, localizeableModifications);
 
                             int index;
                             lock (myDictionary)
@@ -89,7 +99,7 @@ namespace InternalLogic
                     }
                     numProteins++;
                     if (numProteins % 100 == 0)
-                        myParams.allTasksParams.output("Proteins: " + numProteins + " / " + totalProteins);
+                        output("Proteins: " + numProteins + " / " + totalProteins);
                 }
                 lock (myFragmentDictionary)
                 {
@@ -107,9 +117,14 @@ namespace InternalLogic
                 }
             });
 
-            myParams.allTasksParams.output("finished generating peptide index");
+            output("finished generating peptide index");
 
-            return new IndexResults(myDictionary, myFragmentDictionary, indexParams);
+            return new IndexResults(myDictionary, myFragmentDictionary, this);
+        }
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
         }
     }
 }

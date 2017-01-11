@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace InternalLogic
+namespace InternalLogicCalibration
 {
     internal class SeparateCalibrationFunction : CalibrationFunction
     {

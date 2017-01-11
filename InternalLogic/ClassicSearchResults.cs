@@ -6,14 +6,14 @@ namespace InternalLogic
     {
         public ClassicSpectrumMatch[][] outerPsms { get; private set; }
 
-        internal ClassicSearchResults(ClassicSearchParams searchParams, ClassicSpectrumMatch[][] outerPsms) : base(searchParams)
+        internal ClassicSearchResults(ClassicSearchEngine searchParams, ClassicSpectrumMatch[][] outerPsms) : base(searchParams)
         {
             this.outerPsms = outerPsms;
         }
 
         public override string ToString()
         {
-            var sp = (ClassicSearchParams)s;
+            var sp = (ClassicSearchEngine)s;
             StringBuilder sb = new StringBuilder();
             sb.Append("ClassicSearchResults: ");
             sb.Append(base.ToString());

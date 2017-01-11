@@ -1,6 +1,6 @@
-﻿namespace MetaMorpheusGUI
+﻿namespace InternalLogicWithFileIO
 {
-    internal class FinishedFile
+    public class FinishedFile
     {
         public string filepath { get; private set; }
 

@@ -1,4 +1,4 @@
-﻿namespace InternalLogic
+﻿namespace InternalLogicCalibration
 {
     public class LabeledDataPoint
     {

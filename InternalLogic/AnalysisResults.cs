@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using InternalLogic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -8,11 +9,11 @@ namespace InternalLogic
     {
         public List<NewPsmWithFDR>[] allResultingIdentifications { get; private set; }
 
-        public AnalysisResults(AnalysisParams s) : base(s)
+        public AnalysisResults(AnalysisEngine s) : base(s)
         {
         }
 
-        public AnalysisResults(AnalysisParams s, List<NewPsmWithFDR>[] yeah) : this(s)
+        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] yeah) : this(s)
         {
             this.allResultingIdentifications = yeah;
         }

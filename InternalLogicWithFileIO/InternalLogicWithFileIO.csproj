@@ -86,13 +86,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AllTasksClass.cs" />
-    <Compile Include="Indices.cs" />
+    <Compile Include="AllTasksEngine.cs" />
+    <Compile Include="AllTasksResults.cs" />
+    <Compile Include="FinishedFile.cs" />
     <Compile Include="IO.cs" />
     <Compile Include="MyCalibrateTask.cs" />
     <Compile Include="MyGPTMDtask.cs" />
     <Compile Include="MySearchTask.cs" />
-    <Compile Include="MyTask.cs" />
+    <Compile Include="MyTaskEngine.cs" />
     <Compile Include="MyTaskResults.cs" />
     <Compile Include="MyTasksEnum.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

@@ -5,13 +5,65 @@ using System.Collections.Generic;
 
 namespace InternalLogicWithFileIO
 {
-    public class MyGPTMDtask : MyTask
+    public class MyGPTMDtask : MyTaskEngine
     {
-        public MyGPTMDtask() : base(2)
+
+        private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
         {
+            if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
+                return false;
+            if (!attemptToLocalize.PrevAminoAcid.Equals('\0') && !attemptToLocalize.PrevAminoAcid.Equals(prevAA))
+                return false;
+            if (attemptToLocalize.Type == ModificationType.ProteinNTerminus &&
+                ((proteinIndex > 2) || (proteinIndex == 2 && prevAA != 'M')))
+                return false;
+            if (attemptToLocalize.Type == ModificationType.PeptideNTerminus && peptideIndex > 1)
+                return false;
+            if (attemptToLocalize.Type == ModificationType.PeptideCTerminus && peptideIndex < peptideLength)
+                return false;
+            if (attemptToLocalize.Type == ModificationType.ProteinCTerminus && proteinIndex < proteinLength)
+                return false;
+            return true;
         }
 
-        public override MyTaskResults DoTask(AllTasksParams po)
+        private static IEnumerable<MorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tol)
+        {
+            foreach (var Mod in allMods)
+            {
+                if (Mod.MonoisotopicMassShift > massDiff - tol && Mod.MonoisotopicMassShift < massDiff + tol)
+                    yield return Mod;
+                if (isotopeErrors && Mod.MonoisotopicMassShift > massDiff - tol - 1.003 && Mod.MonoisotopicMassShift < massDiff + tol - 1.003)
+                    yield return Mod;
+                if (!double.IsNaN(Mod.AlternativeMassShift) && Mod.AlternativeMassShift > massDiff - tol && Mod.AlternativeMassShift < massDiff + tol)
+                    yield return Mod;
+                if (!double.IsNaN(Mod.AlternativeMassShift) && isotopeErrors && Mod.AlternativeMassShift > massDiff - tol - 1.003 && Mod.AlternativeMassShift < massDiff + tol - 1.003)
+                    yield return Mod;
+            }
+
+            foreach (var combo in combos)
+            {
+                var m1 = combo.Item1;
+                var m2 = combo.Item2;
+                var combined = m1 + m2;
+                if (combined > massDiff - tol && combined < massDiff + tol)
+                {
+                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tol))
+                        yield return mod;
+                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tol))
+                        yield return mod;
+                }
+                if (isotopeErrors && combined > massDiff - tol - 1.003 && combined < massDiff + tol - 1.003)
+                {
+                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tol))
+                        yield return mod;
+                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tol))
+                        yield return mod;
+                }
+            }
+        }
+        
+
+        protected override MyResults RunSpecific()
         {
             throw new NotImplementedException();// For each PSM, look at modifications
             //string line;
@@ -135,58 +187,9 @@ namespace InternalLogicWithFileIO
             //}
         }
 
-        private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
+        public override void ValidateParams()
         {
-            if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
-                return false;
-            if (!attemptToLocalize.PrevAminoAcid.Equals('\0') && !attemptToLocalize.PrevAminoAcid.Equals(prevAA))
-                return false;
-            if (attemptToLocalize.Type == ModificationType.ProteinNTerminus &&
-                ((proteinIndex > 2) || (proteinIndex == 2 && prevAA != 'M')))
-                return false;
-            if (attemptToLocalize.Type == ModificationType.PeptideNTerminus && peptideIndex > 1)
-                return false;
-            if (attemptToLocalize.Type == ModificationType.PeptideCTerminus && peptideIndex < peptideLength)
-                return false;
-            if (attemptToLocalize.Type == ModificationType.ProteinCTerminus && proteinIndex < proteinLength)
-                return false;
-            return true;
-        }
-
-        private static IEnumerable<MorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tol)
-        {
-            foreach (var Mod in allMods)
-            {
-                if (Mod.MonoisotopicMassShift > massDiff - tol && Mod.MonoisotopicMassShift < massDiff + tol)
-                    yield return Mod;
-                if (isotopeErrors && Mod.MonoisotopicMassShift > massDiff - tol - 1.003 && Mod.MonoisotopicMassShift < massDiff + tol - 1.003)
-                    yield return Mod;
-                if (!double.IsNaN(Mod.AlternativeMassShift) && Mod.AlternativeMassShift > massDiff - tol && Mod.AlternativeMassShift < massDiff + tol)
-                    yield return Mod;
-                if (!double.IsNaN(Mod.AlternativeMassShift) && isotopeErrors && Mod.AlternativeMassShift > massDiff - tol - 1.003 && Mod.AlternativeMassShift < massDiff + tol - 1.003)
-                    yield return Mod;
-            }
-
-            foreach (var combo in combos)
-            {
-                var m1 = combo.Item1;
-                var m2 = combo.Item2;
-                var combined = m1 + m2;
-                if (combined > massDiff - tol && combined < massDiff + tol)
-                {
-                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tol))
-                        yield return mod;
-                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tol))
-                        yield return mod;
-                }
-                if (isotopeErrors && combined > massDiff - tol - 1.003 && combined < massDiff + tol - 1.003)
-                {
-                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tol))
-                        yield return mod;
-                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tol))
-                        yield return mod;
-                }
-            }
+            throw new NotImplementedException();
         }
     }
 }

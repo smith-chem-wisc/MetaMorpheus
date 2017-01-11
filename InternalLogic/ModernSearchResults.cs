@@ -12,17 +12,16 @@ namespace InternalLogic
 
         public List<ModernSpectrumMatch>[] newPsms { get; private set; }
 
-        public ModernSearchResults(List<ModernSpectrumMatch>[] newPsms, int numMS2spectra, int[] numMS2spectraMatched, ModernSearchParams s) : base(s)
+        public ModernSearchResults(List<ModernSpectrumMatch>[] newPsms, int numMS2spectra, int[] numMS2spectraMatched, ModernSearchEngine s) : base(s)
         {
             this.numMS2spectra = numMS2spectra;
             this.numMS2spectraMatched = numMS2spectraMatched;
             this.newPsms = newPsms;
-            this.s = s;
         }
 
         public override string ToString()
         {
-            var sp = (ModernSearchParams)s;
+            var sp = (ModernSearchEngine)s;
             StringBuilder sb = new StringBuilder();
             sb.Append("ModernSearchResults: ");
             sb.Append(base.ToString());

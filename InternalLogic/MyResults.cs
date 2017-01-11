@@ -5,9 +5,9 @@ namespace InternalLogic
 {
     public abstract class MyResults
     {
-        protected MyParams s;
+        protected MyEngine s { get; private set; }
 
-        public MyResults(MyParams s)
+        public MyResults(MyEngine s)
         {
             this.s = s;
         }

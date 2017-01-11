@@ -1,4 +1,5 @@
 ﻿using InternalLogic;
+using InternalLogicCalibration;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -24,43 +25,13 @@ namespace InternalLogicWithFileIO
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
         }
 
-        public static void MzmlOutput(SoftwareLockMassParams p)
-        {
-            p.po.status("Creating _indexedmzMLConnection, and putting data in it");
-            var path = Path.Combine(Path.GetDirectoryName(p.myMsDataFile.FilePath), Path.GetFileNameWithoutExtension(p.myMsDataFile.FilePath) + p.paramString + "-Calibrated.mzML");
-            MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(p.myMsDataFile, path);
-            //p.po.SucessfullyFinishedWritingFile(new SingleFileEventArgs(path));
-            //p.myTaskResults.newSpectra.Add(path);
-        }
-
-        public static SoftwareLockMassParams GetReady(string origDataFile, List<NewPsmWithFDR> psms, Tolerance searchfragmentTolerance, AllTasksParams po, MyTaskResults myTaskResults)
-        {
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-            if (Path.GetExtension(origDataFile).Equals(".mzML"))
-            {
-                myMsDataFile = new Mzml(origDataFile);
-                myMsDataFile.Open();
-            }
-            else
-            {
-                myMsDataFile = new ThermoRawFile(origDataFile);
-                myMsDataFile.Open();
-            }
-            int randomSeed = 1;
-            // TODO: fix the tolerance calculation below
-            var a = new SoftwareLockMassParams(myMsDataFile, randomSeed, searchfragmentTolerance.Value * 2, po);
-
-            a.postProcessing = MzmlOutput;
-            a.identifications = psms;
-            a.mzRange = new DoubleRange(0, 0);
-
-            //a.MS1spectraToWatch.Add(22557);
-
-            //a.MS2spectraToWatch.Add(22564);
-
-            a.matchesToExclude = new HashSet<int>();
-
-            return a;
-        }
+        //public static void MzmlOutput(SoftwareLockMassParams p)
+        //{
+        //    p.po.status("Creating _indexedmzMLConnection, and putting data in it");
+        //    var path = Path.Combine(Path.GetDirectoryName(p.myMsDataFile.FilePath), Path.GetFileNameWithoutExtension(p.myMsDataFile.FilePath) + p.paramString + "-Calibrated.mzML");
+        //    MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(p.myMsDataFile, path);
+        //    //p.po.SucessfullyFinishedWritingFile(new SingleFileEventArgs(path));
+        //    //p.myTaskResults.newSpectra.Add(path);
+        //}
     }
 }

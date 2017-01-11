@@ -7,18 +7,20 @@ using Spectra;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace InternalLogicWithFileIO
 {
-    public class MySearchTask : MyTask
+    public class MySearchTask : MyTaskEngine
     {
+
         public bool searchDecoy { get; set; }
 
         public bool classicSearch { get; set; }
 
         public bool doParsimony { get; set; }
 
-        public MySearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes) : base(1)
+        public MySearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
         {
             // Set default values here:
             classicSearch = true;
@@ -44,19 +46,20 @@ namespace InternalLogicWithFileIO
             searchModes[0].Use = true;
         }
 
-        public override MyTaskResults DoTask(AllTasksParams po)
+
+        protected override MyResults RunSpecific()
         {
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
-            po.status("Loading modifications...");
+            status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
             List<MorpheusModification> fixedModifications = listOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
             List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(po.xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            GenerateModsFromStrings(xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             List<SearchMode> searchModesS = searchModes.Where(b => b.Use).Select(b => b.sm).ToList();
 
@@ -64,8 +67,8 @@ namespace InternalLogicWithFileIO
             for (int j = 0; j < searchModesS.Count; j++)
                 allPsms[j] = new List<ParentSpectrumMatch>();
 
-            po.status("Loading proteins...");
-            var proteinList = po.xMLdblist.SelectMany(b => getProteins(searchDecoy, identifiedModsInXML, b)).ToList();
+            status("Loading proteins...");
+            var proteinList = xMLdblist.SelectMany(b => getProteins(searchDecoy, identifiedModsInXML, b)).ToList();
 
             List<CompactPeptide> peptideIndex = null;
             Dictionary<float, List<int>> fragmentIndexDict = null;
@@ -74,82 +77,82 @@ namespace InternalLogicWithFileIO
 
             if (!classicSearch)
             {
-                po.status("Making fragment dictionary...");
+                status("Making fragment dictionary...");
 
-                Indices.GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, po, output_folder);
+                GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, output_folder);
 
                 keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             }
 
-            var currentRawFileList = po.rawDataAndResultslist;
+            var currentRawFileList = rawDataAndResultslist;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                po.status("Loading spectra file...");
+                status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = new Mzml(origDataFile, 400);
                 else
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
-                po.status("Opening spectra file...");
+                status("Opening spectra file...");
                 myMsDataFile.Open();
-                po.output("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-                ClassicSearchParams classicSearchParams = null;
                 ClassicSearchEngine classicSearchEngine = null;
                 ClassicSearchResults classicSearchResults = null;
 
-                ModernSearchParams modernSearchParams = null;
                 ModernSearchEngine modernSearchEngine = null;
                 ModernSearchResults modernSearchResults = null;
 
                 // run classic search
                 if (classicSearch)
                 {
-                    classicSearchParams = new ClassicSearchParams(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModesS, po);
-                    classicSearchEngine = new ClassicSearchEngine(classicSearchParams);
+                    classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModesS);
+
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
-                    po.output(classicSearchResults.ToString());
+                    output(classicSearchResults.ToString());
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.outerPsms[i]);
 
-                    AnalysisParams analysisParams = new AnalysisParams(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po, doParsimony);
+                    AnalysisEngine analysisEngine = new AnalysisEngine(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
-                    AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                    po.output(analysisResults.ToString());
+                    output(analysisResults.ToString());
                 }
 
                 // run modern search
                 else
                 {
-                    modernSearchParams = new ModernSearchParams(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS, po);
-                    modernSearchEngine = new ModernSearchEngine(modernSearchParams);
+                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS);
+
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
-                    po.output(modernSearchResults.ToString());
+                    output(modernSearchResults.ToString());
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 
-                    AnalysisParams analysisParams = new AnalysisParams(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s, po), po, doParsimony);
+                    AnalysisEngine analysisEngine = new AnalysisEngine(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
-                    AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                    po.output(analysisResults.ToString());
+                    output(analysisResults.ToString());
                 }
             }
 
             if (currentRawFileList.Count > 1)
             {
-                AnalysisParams analysisParams = new AnalysisParams(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate", po), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s, po), po, doParsimony);
+                AnalysisEngine analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), doParsimony);
 
-                AnalysisEngine analysisEngine = new AnalysisEngine(analysisParams);
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-                po.output(analysisResults.ToString());
+                output(analysisResults.ToString());
             }
-            return new MyTaskResults();
+            return new MyTaskResults(this);
+        }
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
         }
     }
 }

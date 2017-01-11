@@ -4,7 +4,7 @@ namespace InternalLogic
 {
     public class IndexResults : MyResults
     {
-        public IndexResults(List<CompactPeptide> myDictionary, Dictionary<float, List<int>> myFragmentDictionary, IndexParams indexParams) : base(indexParams)
+        public IndexResults(List<CompactPeptide> myDictionary, Dictionary<float, List<int>> myFragmentDictionary, IndexEngine indexParams) : base(indexParams)
         {
             this.peptideIndex = myDictionary;
             this.fragmentIndexDict = myFragmentDictionary;

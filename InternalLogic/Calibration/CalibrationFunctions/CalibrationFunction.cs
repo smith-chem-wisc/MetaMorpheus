@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace InternalLogic
+namespace InternalLogicCalibration
 {
     public abstract class CalibrationFunction
     {

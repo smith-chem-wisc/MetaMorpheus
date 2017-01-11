@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InternalLogic
+namespace InternalLogicCalibration
 {
     public class TransformFunction
     {

@@ -28,11 +28,9 @@ namespace MetaMorpheusGUI
         private static ObservableCollection<FinishedFile> finishedFileList = new ObservableCollection<FinishedFile>();
         private AllTasksParams po;
 
-        private static ObservableCollection<MyTask> taskListWrapper = new ObservableCollection<MyTask>();
+        private static ObservableCollection<MyTaskEngine> taskListWrapper = new ObservableCollection<MyTaskEngine>();
 
-        public static string unimodLocation = @"unimod_tables.xml";
         public static string elementsLocation = @"elements.dat";
-        public static string uniprotLocation = @"ptmlist.txt";
 
         public MainWindow()
         {
@@ -40,9 +38,6 @@ namespace MetaMorpheusGUI
 
             mzCalIO.Load();
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-
-            AllTasksParams.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-            AllTasksParams.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
 
             // modificationsDataGrid.DataContext = ModFileList;
             dataGridXMLs.DataContext = xMLdblist;
@@ -130,17 +125,17 @@ namespace MetaMorpheusGUI
             //maxModificationIsoformsTextBox.Text = 10000.ToString();
 
             po = new AllTasksParams();
-            po.outLabelStatusHandler += NewoutLabelStatus;
-            po.outProgressHandler += NewoutProgressBar;
-            po.outRichTextBoxHandler += NewoutRichTextBox;
-            po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
+            //po.outLabelStatusHandler += NewoutLabelStatus;
+            //po.outProgressHandler += NewoutProgressBar;
+            //po.outRichTextBoxHandler += NewoutRichTextBox;
+            //po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
             //po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             //po.startingSingleTaskHander += Po_startingSingleTaskHander;
-            po.finishedAllTasksHandler += NewSuccessfullyFinishedAllTasks;
-            po.startingAllTasksHander += NewSuccessfullyStartingAllTasks;
-            po.newDbsHandler += AddNewDB;
-            po.newSpectrasHandler += AddNewSpectra;
+            //po.finishedAllTasksHandler += NewSuccessfullyFinishedAllTasks;
+            //po.startingAllTasksHander += NewSuccessfullyStartingAllTasks;
+            //po.newDbsHandler += AddNewDB;
+            //po.newSpectrasHandler += AddNewSpectra;
 
             UpdateTaskGuiStuff();
         }
@@ -694,7 +689,8 @@ namespace MetaMorpheusGUI
         {
             po.rawDataAndResultslist = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName).ToList();
             po.xMLdblist = xMLdblist.Where(b => b.Use).Select(b => b.FileName).ToList();
-            var t = new Thread(() => AllTasksClass.DoAllTasks(taskListWrapper.ToList(), po));
+            AllTasksEngine a = new AllTasksEngine(taskListWrapper.ToList());
+            var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
         }
@@ -778,7 +774,7 @@ namespace MetaMorpheusGUI
         private void tasksDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var a = sender as DataGrid;
-            var ok = (MyTask)a.SelectedItem;
+            var ok = (MyTaskEngine)a.SelectedItem;
             switch (ok.taskType)
             {
                 case MyTaskEnum.Search:

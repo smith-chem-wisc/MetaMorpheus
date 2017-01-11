@@ -1,46 +1,74 @@
-﻿using OldInternalLogic;
+﻿using InternalLogic;
+using OldInternalLogic;
 using Proteomics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
+using Spectra;
+using MassSpectrometry;
 
 namespace InternalLogic
 {
     public class AnalysisEngine : MyEngine
     {
-        public AnalysisEngine(AnalysisParams analysisParams)
+        public ParentSpectrumMatch[][] newPsms { get; private set; }
+        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching { get; private set; }
+        public List<Protein> proteinList { get; private set; }
+        public List<MorpheusModification> variableModifications { get; private set; }
+        public List<MorpheusModification> fixedModifications { get; private set; }
+        public List<MorpheusModification> localizeableModifications { get; private set; }
+        public Protease protease { get; private set; }
+        public List<SearchMode> searchModes { get; private set; }
+        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
+        public Tolerance fragmentTolerance { get; private set; }
+        public Action<BinTreeStructure, string> action1 { get; private set; }
+        public Action<List<NewPsmWithFDR>, string> action2 { get; private set; }
+        public bool doParsimony { get; internal set; }
+
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, bool doParsimony)
         {
-            this.myParams = analysisParams;
+            this.doParsimony = doParsimony;
+            this.newPsms = newPsms;
+            this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
+            this.proteinList = proteinList;
+            this.variableModifications = variableModifications;
+            this.fixedModifications = fixedModifications;
+            this.localizeableModifications = localizeableModifications;
+            this.protease = protease;
+            this.searchModes = searchModes;
+            this.myMsDataFile = myMsDataFile;
+            this.fragmentTolerance = fragmentTolerance;
+            this.action1 = action1;
+            this.action2 = action2;
         }
 
         protected override MyResults RunSpecific()
         {
-            myParams.allTasksParams.status("Running analysis engine!");
-            var analysisParams = (AnalysisParams)myParams;
-
+            status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-            myParams.allTasksParams.status("Adding observed peptides to dictionary...");
+            status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
 
-            myParams.allTasksParams.status("Getting single match just for FDR purposes...");
-            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(analysisParams.compactPeptideToProteinPeptideMatching);
+            status("Getting single match just for FDR purposes...");
+            var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
-            List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[analysisParams.searchModes.Count];
-            for (int j = 0; j < analysisParams.searchModes.Count; j++)
+            List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[searchModes.Count];
+            for (int j = 0; j < searchModes.Count; j++)
             {
-                PSMwithTargetDecoyKnown[] psmsWithTargetDecoyKnown = new PSMwithTargetDecoyKnown[analysisParams.newPsms[0].Length];
+                PSMwithTargetDecoyKnown[] psmsWithTargetDecoyKnown = new PSMwithTargetDecoyKnown[newPsms[0].Length];
 
-                Parallel.ForEach(Partitioner.Create(0, analysisParams.newPsms[0].Length), fff =>
+                Parallel.ForEach(Partitioner.Create(0, newPsms[0].Length), fff =>
                 {
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        if (analysisParams.newPsms[j] != null)
+                        if (newPsms[j] != null)
                         {
-                            var huh = analysisParams.newPsms[j][i];
+                            var huh = newPsms[j][i];
                             if (huh != null)
                                 if (huh.Score >= 1)
-                                    psmsWithTargetDecoyKnown[i] = new PSMwithTargetDecoyKnown(huh, fullSequenceToProteinSingleMatch[huh.GetCompactPeptide(analysisParams.variableModifications, analysisParams.localizeableModifications)], analysisParams.fragmentTolerance, analysisParams.myMsDataFile);
+                                    psmsWithTargetDecoyKnown[i] = new PSMwithTargetDecoyKnown(huh, fullSequenceToProteinSingleMatch[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile);
                         }
                     }
                 });
@@ -51,22 +79,22 @@ namespace InternalLogic
                 var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
                 if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
                 {
-                    myParams.allTasksParams.status("Running histogram analysis...");
-                    var hm = MyAnalysis(limitedpsms_with_fdr, analysisParams.unimodDeserialized, analysisParams.uniprotDeseralized);
-                    analysisParams.action1(hm, analysisParams.searchModes[j].FileNameAddition);
+                    status("Running histogram analysis...");
+                    var hm = MyAnalysis(limitedpsms_with_fdr, unimodDeserialized, uniprotDeseralized);
+                    action1(hm, searchModes[j].FileNameAddition);
                 }
 
-                analysisParams.action2(orderedPsmsWithFDR, analysisParams.searchModes[j].FileNameAddition);
+                action2(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
-                if (analysisParams.doParsimony)
+                if (doParsimony)
                 {
-                    myParams.allTasksParams.status("Getting protein parsimony dictionary...");
-                    var parsimonyDictionary = ApplyProteinParsimony(analysisParams.compactPeptideToProteinPeptideMatching);
+                    status("Getting protein parsimony dictionary...");
+                    var parsimonyDictionary = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
                 }
                 yeah[j] = orderedPsmsWithFDR;
             }
 
-            return new AnalysisResults(analysisParams, yeah);
+            return new AnalysisResults(this, yeah);
         }
 
         private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
@@ -124,59 +152,57 @@ namespace InternalLogic
 
         private void AddObservedPeptidesToDictionary()
         {
-            var analysisParams = (AnalysisParams)myParams;
-
-            myParams.allTasksParams.status("Adding new keys to peptide dictionary...");
-            foreach (var ah in analysisParams.newPsms)
+            status("Adding new keys to peptide dictionary...");
+            foreach (var ah in newPsms)
             {
                 if (ah != null)
                     foreach (var fhh in ah)
                     {
                         if (fhh != null)
                         {
-                            var cp = fhh.GetCompactPeptide(analysisParams.variableModifications, analysisParams.localizeableModifications);
-                            if (!analysisParams.compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                analysisParams.compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                            var cp = fhh.GetCompactPeptide(variableModifications, localizeableModifications);
+                            if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                                compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                         }
                     }
             }
 
-            int totalProteins = analysisParams.proteinList.Count;
+            int totalProteins = proteinList.Count;
 
-            myParams.allTasksParams.status("Adding possible sources to peptide dictionary...");
+            status("Adding possible sources to peptide dictionary...");
 
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = analysisParams.compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
+                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
 
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    var protein = analysisParams.proteinList[i];
-                    var digestedList = protein.Digest(analysisParams.protease, 2, InitiatorMethionineBehavior.Variable).ToList();
+                    var protein = proteinList[i];
+                    var digestedList = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length == 1 || peptide.Length > 252)
                             continue;
 
-                        peptide.SetFixedModifications(analysisParams.fixedModifications);
+                        peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(analysisParams.variableModifications, 4098, 3, analysisParams.localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(yyy, analysisParams.variableModifications, analysisParams.localizeableModifications), out v))
+                            if (local.TryGetValue(new CompactPeptide(yyy, variableModifications, localizeableModifications), out v))
                             {
                                 v.Add(yyy);
                             }
                         }
                     }
                 }
-                lock (analysisParams.compactPeptideToProteinPeptideMatching)
+                lock (compactPeptideToProteinPeptideMatching)
                 {
                     foreach (var ye in local)
                     {
                         HashSet<PeptideWithSetModifications> v;
-                        if (analysisParams.compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
                         {
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
@@ -309,6 +335,11 @@ namespace InternalLogic
             }
 
             return outDict;
+        }
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
         }
     }
 }

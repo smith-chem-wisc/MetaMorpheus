@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -11,28 +12,51 @@ namespace InternalLogic
 {
     public class ModernSearchEngine : MyEngine
     {
-        public ModernSearchEngine(ModernSearchParams searchParams)
+        public List<MorpheusModification> fixedModifications { get; private set; }
+        public List<int>[] fragmentIndex { get; private set; }
+        public double fragmentTolerance { get; private set; }
+        public float[] keys { get; private set; }
+        public List<MorpheusModification> localizeableModifications { get; private set; }
+        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
+        public List<CompactPeptide> peptideIndex { get; private set; }
+        public Protease protease { get; private set; }
+        public List<Protein> proteinList { get; private set; }
+        public List<SearchMode> searchModes { get; private set; }
+        public int spectraFileIndex { get; private set; }
+        public List<MorpheusModification> variableModifications { get; private set; }
+
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes)
         {
-            this.myParams = searchParams;
+            this.myMsDataFile = myMsDataFile;
+            this.spectraFileIndex = spectraFileIndex;
+            this.peptideIndex = peptideIndex;
+            this.keys = keys;
+            this.fragmentIndex = fragmentIndex;
+            this.variableModifications = variableModifications;
+            this.fixedModifications = fixedModifications;
+            this.localizeableModifications = localizeableModifications;
+            this.proteinList = proteinList;
+            this.fragmentTolerance = fragmentTolerance;
+            this.protease = protease;
+            this.searchModes = searchModes;
         }
 
         protected override MyResults RunSpecific()
         {
-            var searchParams = (ModernSearchParams)myParams;
-            searchParams.allTasksParams.output("In modern search method!");
+            output("In modern search method!");
 
-            var spectraList = searchParams.myMsDataFile.ToList();
-            var totalSpectra = searchParams.myMsDataFile.NumSpectra;
+            var spectraList = myMsDataFile.ToList();
+            var totalSpectra = myMsDataFile.NumSpectra;
 
-            List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchParams.searchModes.Count];
-            for (int i = 0; i < searchParams.searchModes.Count; i++)
+            List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchModes.Count];
+            for (int i = 0; i < searchModes.Count; i++)
                 newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
 
             //int numAllSpectra = 0;
             int numMS2spectra = 0;
-            int[] numMS2spectraMatched = new int[searchParams.searchModes.Count];
+            int[] numMS2spectraMatched = new int[searchModes.Count];
 
-            var searchModesCount = searchParams.searchModes.Count;
+            var searchModesCount = searchModes.Count;
 
             Parallel.ForEach(Partitioner.Create(0, totalSpectra), fff =>
             {
@@ -47,18 +71,18 @@ namespace InternalLogic
                         thisScan.TryGetSelectedIonGuessChargeStateGuess(out selectedCharge);
                         var scanPrecursorMass = selectedMZ.ToMass(selectedCharge);
 
-                        var fullPeptideScores = CalculatePeptideScores(thisScan, searchParams.peptideIndex, 400, searchParams.keys, searchParams.fragmentIndex, searchParams.fragmentTolerance);
+                        var fullPeptideScores = CalculatePeptideScores(thisScan, peptideIndex, 400, keys, fragmentIndex, fragmentTolerance);
 
                         CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
                         double[] bestScores = new double[searchModesCount];
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            CompactPeptide candidatePeptide = searchParams.peptideIndex[possibleWinningPeptideIndex];
+                            CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                             for (int j = 0; j < searchModesCount; j++)
                             {
                                 // Check if makes sense to add due to peptidescore!
-                                var searchMode = searchParams.searchModes[j];
+                                var searchMode = searchModes[j];
                                 double currentBestScore = bestScores[j];
                                 if (currentBestScore > 1)
                                 {
@@ -103,7 +127,7 @@ namespace InternalLogic
                             {
                                 double precursorIntensity;
                                 thisScan.TryGetSelectedIonGuessMonoisotopicIntensity(out precursorIntensity);
-                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(selectedMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, selectedCharge, thisScan.MassSpectrum.xArray.Length, thisScan.TotalIonCurrent, precursorIntensity, searchParams.spectraFileIndex, theBestPeptide, bestScores[j]);
+                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(selectedMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, selectedCharge, thisScan.MassSpectrum.xArray.Length, thisScan.TotalIonCurrent, precursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
                                 //numMS2spectraMatched[j]++;
                             }
                         }
@@ -114,7 +138,7 @@ namespace InternalLogic
                     //    po.rtboutout("Spectra: " + numAllSpectra + " / " + totalSpectra);
                 }
             });
-            return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, searchParams);
+            return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, this);
         }
 
         private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
@@ -192,6 +216,11 @@ namespace InternalLogic
                 return false;
 
             return false;
+        }
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
         }
     }
 }

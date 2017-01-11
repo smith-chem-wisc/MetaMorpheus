@@ -4,9 +4,9 @@ namespace InternalLogicWithFileIO
 {
     public class SingleTaskEventArgs : EventArgs
     {
-        public MyTask theTask { get; private set; }
+        public MyTaskEngine theTask { get; private set; }
 
-        public SingleTaskEventArgs(MyTask theTask)
+        public SingleTaskEventArgs(MyTaskEngine theTask)
         {
             this.theTask = theTask;
         }

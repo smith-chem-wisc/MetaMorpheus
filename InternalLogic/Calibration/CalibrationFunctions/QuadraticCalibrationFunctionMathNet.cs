@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace InternalLogic
+namespace InternalLogicCalibration
 {
     public class QuadraticCalibrationFunctionMathNet : CalibrationFunction
     {

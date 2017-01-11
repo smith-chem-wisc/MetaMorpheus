@@ -1,4 +1,5 @@
-﻿using OldInternalLogic;
+﻿using MassSpectrometry;
+using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -10,43 +11,60 @@ namespace InternalLogic
 {
     public class ClassicSearchEngine : MyEngine
     {
-        public ClassicSearchEngine(ClassicSearchParams searchParams)
+        internal List<SearchMode> searchModes;
+        public List<Protein> proteinList { get; private set; }
+        public Protease protease { get; private set; }
+        public List<MorpheusModification> fixedModifications { get; private set; }
+        public List<MorpheusModification> localizeableModifications { get; private set; }
+        public List<MorpheusModification> variableModifications { get; private set; }
+        public Tolerance productMassTolerance { get; private set; }
+        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
+        public int spectraFileIndex { get; private set; }
+
+        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes) 
         {
-            this.myParams = searchParams;
+            this.myMsDataFile = myMsDataFile;
+            this.spectraFileIndex = spectraFileIndex;
+            this.variableModifications = variableModifications;
+            this.fixedModifications = fixedModifications;
+            this.localizeableModifications = localizeableModifications;
+            this.proteinList = proteinList;
+            this.productMassTolerance = fragmentTolerance;
+            this.protease = protease;
+            this.searchModes = searchModes;
         }
 
         protected override MyResults RunSpecific()
         {
-            var searchParams = (ClassicSearchParams)myParams;
-            searchParams.allTasksParams.status("In classic search engine!");
+            status("In classic search engine!");
 
-            int totalProteins = searchParams.proteinList.Count;
+            int totalProteins = proteinList.Count;
 
             HashSet<string> level3_observed = new HashSet<string>();
             HashSet<string> level4_observed = new HashSet<string>();
 
             var lp = new List<ProductType>() { ProductType.b, ProductType.y };
 
-            var listOfSortedms2Scans = searchParams.myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-            var outerPsms = new ClassicSpectrumMatch[searchParams.searchModes.Count][];
-            for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
-                outerPsms[aede] = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
+            var outerPsms = new ClassicSpectrumMatch[searchModes.Count][];
+            for (int aede = 0; aede < searchModes.Count; aede++)
+                outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFile.NumSpectra];
 
             object lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
 
-            searchParams.allTasksParams.status("Starting classic search loop");
+            status("Starting classic search loop");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                var psms = new ClassicSpectrumMatch[searchParams.searchModes.Count][];
-                for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
-                    psms[aede] = new ClassicSpectrumMatch[searchParams.myMsDataFile.NumSpectra];
+                var psms = new ClassicSpectrumMatch[searchModes.Count][];
+                for (int aede = 0; aede < searchModes.Count; aede++)
+                    psms[aede] = new ClassicSpectrumMatch[myMsDataFile.NumSpectra];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    var protein = searchParams.proteinList[i];
-                    var digestedList = protein.Digest(searchParams.protease, 2, InitiatorMethionineBehavior.Variable).ToList();
+                    var protein = proteinList[i];
+                    var digestedList = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length == 1 || peptide.Length > 252)
@@ -67,9 +85,9 @@ namespace InternalLogic
                             }
                         }
 
-                        peptide.SetFixedModifications(searchParams.fixedModifications);
+                        peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(searchParams.variableModifications, 4098, 3, searchParams.localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
@@ -87,18 +105,18 @@ namespace InternalLogic
                                 }
                             }
 
-                            //var ps = new CompactPeptide(yyy, searchParams.variableModifications, searchParams.localizeableModifications);
+                            //var ps = new CompactPeptide(yyy, variableModifications, localizeableModifications);
                             var sortedProductMasses = yyy.FastSortedProductMasses(lp);
                             double[] matchedIonsArray = new double[sortedProductMasses.Length];
                             //ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
 
-                            for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
+                            for (int aede = 0; aede < searchModes.Count; aede++)
                             {
-                                var searchMode = searchParams.searchModes[aede];
+                                var searchMode = searchModes[aede];
                                 foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, searchParams.productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, yyy, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, searchParams.spectraFileIndex);
+                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, yyy, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, spectraFileIndex);
                                     if (psm.Score > 1)
                                     {
                                         ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
@@ -115,7 +133,7 @@ namespace InternalLogic
                 }
                 lock (lockObject)
                 {
-                    for (int aede = 0; aede < searchParams.searchModes.Count; aede++)
+                    for (int aede = 0; aede < searchModes.Count; aede++)
                         for (int i = 0; i < outerPsms[aede].Length; i++)
                             if (psms[aede][i] != null)
                                 if (outerPsms[aede][i] == null || ClassicSpectrumMatch.FirstIsPreferable(psms[aede][i], outerPsms[aede][i]))
@@ -124,12 +142,12 @@ namespace InternalLogic
                     int new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        searchParams.allTasksParams.ReportProgress(new ProgressEventArgs(new_progress, "In classic search loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In classic search loop"));
                         old_progress = new_progress;
                     }
                 }
             });
-            return new ClassicSearchResults(searchParams, outerPsms);
+            return new ClassicSearchResults(this, outerPsms);
         }
 
         private IEnumerable<LocalMs2Scan> GetAcceptableScans(LocalMs2Scan[] listOfSortedms2Scans, double peptideMonoisotopicMass, SearchMode searchMode)
@@ -160,6 +178,11 @@ namespace InternalLogic
 
             // index of the first element that is larger than value
             return index;
+        }
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
         }
     }
 }

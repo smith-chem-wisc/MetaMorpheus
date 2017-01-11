@@ -7,17 +7,28 @@ using System.Linq;
 
 namespace InternalLogicWithFileIO
 {
-    public static class AllTasksClass
+    public class AllTasksEngine : MyTaskEngine
     {
-        public static void DoAllTasks(List<MyTask> taskList, AllTasksParams allTasksParams)
+        List<MyTaskEngine> taskList;
+        public AllTasksEngine(List<MyTaskEngine> taskList)
         {
-            allTasksParams.startingAllTasks();
+            this.taskList = taskList;
+        }
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override MyResults RunSpecific()
+        {
+            StartingAllTasks();
             var startTimeForFilename = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             var MatchingChars =
-                from len in Enumerable.Range(0, allTasksParams.rawDataAndResultslist.Min(s => s.Length)).Reverse()
-                let possibleMatch = allTasksParams.rawDataAndResultslist.First().Substring(0, len)
-                where allTasksParams.rawDataAndResultslist.All(f => f.StartsWith(possibleMatch))
+                from len in Enumerable.Range(0, rawDataAndResultslist.Min(s => s.Length)).Reverse()
+                let possibleMatch = rawDataAndResultslist.First().Substring(0, len)
+                where rawDataAndResultslist.All(f => f.StartsWith(possibleMatch))
                 select possibleMatch;
 
             var longestDir = Path.GetDirectoryName(MatchingChars.First());
@@ -41,14 +52,35 @@ namespace InternalLogicWithFileIO
                 ok.setOutputFolder(output_folder);
 
                 //allTasksParams.startingSingleTask(new SingleTaskEventArgs(ok));
-                MyTaskResults myTaskResults = ok.DoTask(allTasksParams);
+                MyTaskResults myTaskResults = (MyTaskResults)ok.Run();
                 if (myTaskResults.newDatabases != null)
-                    allTasksParams.NewDBs(myTaskResults.newDatabases);
+                    NewDBs(myTaskResults.newDatabases);
                 if (myTaskResults.newSpectra != null)
-                    allTasksParams.NewSpectras(myTaskResults.newSpectra);
+                    NewSpectras(myTaskResults.newSpectra);
                 //allTasksParams.finishedSingleTask(new SingleTaskEventArgs(ok));
             }
-            allTasksParams.FinishedAllTasks();
+            FinishedAllTasks();
+            return new AllTasksResults(this);
+        }
+
+        private void NewSpectras(List<string> newSpectra)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void NewDBs(List<string> newDatabases)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void FinishedAllTasks()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void StartingAllTasks()
+        {
+            throw new NotImplementedException();
         }
     }
 }

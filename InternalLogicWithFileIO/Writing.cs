@@ -9,7 +9,7 @@ namespace InternalLogicWithFileIO
 {
     public class Writing
     {
-        public static void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName, AllTasksParams po)
+        public static void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -43,7 +43,7 @@ namespace InternalLogicWithFileIO
             // po.SucessfullyFinishedWritingFile(new SingleFileEventArgs(writtenFile));
         }
 
-        public static void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName, AllTasksParams po)
+        public static void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
