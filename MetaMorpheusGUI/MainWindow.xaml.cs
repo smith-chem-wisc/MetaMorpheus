@@ -1,4 +1,5 @@
-﻿using MetaMorpheusLogic;
+﻿using InternalLogic;
+using InternalLogicWithFileIO;
 using OldInternalLogic;
 using Spectra;
 using System;
@@ -138,8 +139,8 @@ namespace MetaMorpheusGUI
             po.outRichTextBoxHandler += NewoutRichTextBox;
             po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
-            po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
-            po.startingSingleTaskHander += Po_startingSingleTaskHander;
+            //po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
+            //po.startingSingleTaskHander += Po_startingSingleTaskHander;
             po.finishedAllTasksHandler += NewSuccessfullyFinishedAllTasks;
             po.startingAllTasksHander += NewSuccessfullyStartingAllTasks;
             po.newDbsHandler += AddNewDB;

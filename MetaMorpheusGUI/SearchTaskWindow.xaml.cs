@@ -1,4 +1,5 @@
-﻿using MetaMorpheusLogic;
+﻿using InternalLogic;
+using InternalLogicWithFileIO;
 using OldInternalLogic;
 using Spectra;
 using System;

@@ -1,4 +1,5 @@
-﻿using MetaMorpheusLogic;
+﻿using InternalLogic;
+using InternalLogicWithFileIO;
 using NUnit.Framework;
 using OldInternalLogic;
 using System.Collections.Generic;

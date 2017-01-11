@@ -100,13 +100,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\InternalLogic\InternalLogic.csproj">
+      <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
+      <Name>InternalLogic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MetaMorpheusCommandLine\MetaMorpheusCommandLine.csproj">
       <Project>{dd89ef8c-a47a-4c6b-97bf-01b81d48847c}</Project>
       <Name>MetaMorpheusCommandLine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheusLogic\MetaMorpheusLogic.csproj">
+    <ProjectReference Include="..\InternalLogicWithFileIO\InternalLogicWithFileIO.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
-      <Name>MetaMorpheusLogic</Name>
+      <Name>InternalLogicWithFileIO</Name>
     </ProjectReference>
     <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>

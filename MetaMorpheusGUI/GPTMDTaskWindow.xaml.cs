@@ -1,4 +1,4 @@
-﻿using MetaMorpheusLogic;
+﻿using InternalLogicWithFileIO;
 using OldInternalLogic;
 using System.Collections.ObjectModel;
 using System.Windows;
