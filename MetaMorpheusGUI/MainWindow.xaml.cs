@@ -21,14 +21,12 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static ObservableCollection<RawData> rawDataAndResultslist = new ObservableCollection<RawData>();
-        private static ObservableCollection<XMLdb> xMLdblist = new ObservableCollection<XMLdb>();
-        private static ObservableCollection<ModList> ModFileList = new ObservableCollection<ModList>();
-        private static ObservableCollection<SearchMode> SearchModeList = new ObservableCollection<SearchMode>();
-        private static ObservableCollection<FinishedFile> finishedFileList = new ObservableCollection<FinishedFile>();
-        private AllTasksParams po;
-
-        private static ObservableCollection<MyTaskEngine> taskListWrapper = new ObservableCollection<MyTaskEngine>();
+        private static ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
+        private static ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
+        private static ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
+        private static ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
+        private static ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
+        private static ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
 
         public static string elementsLocation = @"elements.dat";
 
@@ -40,17 +38,17 @@ namespace MetaMorpheusGUI
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
 
             // modificationsDataGrid.DataContext = ModFileList;
-            dataGridXMLs.DataContext = xMLdblist;
-            dataGridDatafiles.DataContext = rawDataAndResultslist;
-            tasksDataGrid.DataContext = taskListWrapper;
-            outputFilesDataGrid.DataContext = finishedFileList;
+            dataGridXMLs.DataContext = xmlDBobservableCollection;
+            dataGridDatafiles.DataContext = rawDataObservableCollection;
+            tasksDataGrid.DataContext = taskEngineObservableCollection;
+            outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
-            ModFileList.Add(new ModList("f.txt"));
-            ModFileList.Add(new ModList("v.txt"));
-            ModFileList.Add(new ModList("p.txt"));
-            ModFileList.Add(new ModList("m.txt"));
-            ModFileList.Add(new ModList("r.txt"));
-            ModFileList.Add(new ModList("s.txt"));
+            modListObservableCollection.Add(new ModList("f.txt"));
+            modListObservableCollection.Add(new ModList("v.txt"));
+            modListObservableCollection.Add(new ModList("p.txt"));
+            modListObservableCollection.Add(new ModList("m.txt"));
+            modListObservableCollection.Add(new ModList("r.txt"));
+            modListObservableCollection.Add(new ModList("s.txt"));
 
             LoadSearchModesFromFile();
 
@@ -124,7 +122,6 @@ namespace MetaMorpheusGUI
 
             //maxModificationIsoformsTextBox.Text = 10000.ToString();
 
-            po = new AllTasksParams();
             //po.outLabelStatusHandler += NewoutLabelStatus;
             //po.outProgressHandler += NewoutProgressBar;
             //po.outRichTextBoxHandler += NewoutRichTextBox;
@@ -142,8 +139,8 @@ namespace MetaMorpheusGUI
 
         private void LoadSearchModesFromFile()
         {
-            SearchModeList.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
-            SearchModeList.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
+            searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
         }
 
         private void AddNewDB(object sender, List<string> e)
@@ -154,10 +151,10 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in xMLdblist)
+                foreach (var uu in xmlDBobservableCollection)
                     uu.Use = false;
                 foreach (var uu in e)
-                    xMLdblist.Add(new XMLdb(uu));
+                    xmlDBobservableCollection.Add(new XMLdb(uu));
             }
         }
 
@@ -169,10 +166,10 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in rawDataAndResultslist)
+                foreach (var uu in rawDataObservableCollection)
                     uu.Use = false;
                 foreach (var uu in e)
-                    rawDataAndResultslist.Add(new RawData(uu));
+                    rawDataObservableCollection.Add(new RawData(uu));
             }
         }
 
@@ -279,14 +276,14 @@ namespace MetaMorpheusGUI
 
         private void addFinishedFile(string filepath)
         {
-            finishedFileList.Add(new FinishedFile(filepath));
+            finishedFileObservableCollection.Add(new FinishedFile(filepath));
             outputFilesDataGrid.Items.Refresh();
         }
 
         private RawData GetCorrespondingRawDataAndResultsEntry(string filepath)
         {
             var fileNameNoExtension = Path.GetFileNameWithoutExtension(filepath);
-            foreach (var a in rawDataAndResultslist)
+            foreach (var a in rawDataObservableCollection)
             {
                 if (a.FileName != null)
                 {
@@ -312,7 +309,7 @@ namespace MetaMorpheusGUI
 
         private void ClearRaw_Click(object sender, RoutedEventArgs e)
         {
-            rawDataAndResultslist.Clear();
+            rawDataObservableCollection.Clear();
         }
 
         //private void ButtonCalibrate_Click(object sender, RoutedEventArgs e)
@@ -610,7 +607,7 @@ namespace MetaMorpheusGUI
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
             {
-                xMLdblist.Add(new XMLdb(openPicker.FileName));
+                xmlDBobservableCollection.Add(new XMLdb(openPicker.FileName));
             }
             dataGridXMLs.Items.Refresh();
         }
@@ -626,7 +623,7 @@ namespace MetaMorpheusGUI
 
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var filepath in openFileDialog1.FileNames)
-                    rawDataAndResultslist.Add(new RawData(filepath));
+                    rawDataObservableCollection.Add(new RawData(filepath));
             dataGridDatafiles.Items.Refresh();
         }
 
@@ -640,11 +637,11 @@ namespace MetaMorpheusGUI
                 {
                     case ".raw":
                     case ".mzML":
-                        rawDataAndResultslist.Add(new RawData(file));
+                        rawDataObservableCollection.Add(new RawData(file));
                         break;
 
                     case ".xml":
-                        xMLdblist.Add(new XMLdb(file));
+                        xmlDBobservableCollection.Add(new XMLdb(file));
                         break;
                 }
                 dataGridDatafiles.Items.Refresh();
@@ -687,9 +684,9 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            po.rawDataAndResultslist = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName).ToList();
-            po.xMLdblist = xMLdblist.Where(b => b.Use).Select(b => b.FileName).ToList();
-            AllTasksEngine a = new AllTasksEngine(taskListWrapper.ToList());
+            //po.rawDataAndResultslist = rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
+            //po.xMLdblist = xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
+            AllTasksEngine a = new AllTasksEngine(taskEngineObservableCollection.ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
@@ -697,13 +694,13 @@ namespace MetaMorpheusGUI
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
         {
-            taskListWrapper.Clear();
+            taskEngineObservableCollection.Clear();
             UpdateTaskGuiStuff();
         }
 
         private void UpdateTaskGuiStuff()
         {
-            if (taskListWrapper.Count == 0)
+            if (taskEngineObservableCollection.Count == 0)
             {
                 RunTasksButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = false;
@@ -728,10 +725,10 @@ namespace MetaMorpheusGUI
 
         private void addSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SearchTaskWindow(ModFileList, SearchModeList);
+            var dialog = new SearchTaskWindow(modListObservableCollection, searchModeObservableCollection);
             if (dialog.ShowDialog() == true)
             {
-                taskListWrapper.Add(dialog.TheTask);
+                taskEngineObservableCollection.Add(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
             else
@@ -741,10 +738,10 @@ namespace MetaMorpheusGUI
 
         private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CalibrateTaskWindow(ModFileList);
+            var dialog = new CalibrateTaskWindow(modListObservableCollection);
             if (dialog.ShowDialog() == true)
             {
-                taskListWrapper.Add(dialog.TheTask);
+                taskEngineObservableCollection.Add(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
             else
@@ -754,10 +751,10 @@ namespace MetaMorpheusGUI
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GPTMDTaskWindow(ModFileList);
+            var dialog = new GPTMDTaskWindow(modListObservableCollection);
             if (dialog.ShowDialog() == true)
             {
-                taskListWrapper.Add(dialog.TheTask);
+                taskEngineObservableCollection.Add(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
             else
@@ -767,7 +764,7 @@ namespace MetaMorpheusGUI
 
         private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
         {
-            taskListWrapper.RemoveAt(taskListWrapper.Count - 1);
+            taskEngineObservableCollection.RemoveAt(taskEngineObservableCollection.Count - 1);
             UpdateTaskGuiStuff();
         }
 
@@ -778,19 +775,141 @@ namespace MetaMorpheusGUI
             switch (ok.taskType)
             {
                 case MyTaskEnum.Search:
-                    var searchDialog = new SearchTaskWindow(ok as MySearchTask, ModFileList, SearchModeList);
+                    var searchDialog = new SearchTaskWindow(ok as MySearchTask, modListObservableCollection, searchModeObservableCollection);
                     searchDialog.ShowDialog();
                     break;
 
                 case MyTaskEnum.GPTMD:
-                    var gptmddialog = new GPTMDTaskWindow(ok as MyGPTMDtask, ModFileList);
+                    var gptmddialog = new GPTMDTaskWindow(ok as MyGPTMDtask, modListObservableCollection);
                     gptmddialog.ShowDialog();
                     break;
 
                 case MyTaskEnum.Calibrate:
-                    var calibratedialog = new CalibrateTaskWindow(ok as MyCalibrateTask, ModFileList);
+                    var calibratedialog = new CalibrateTaskWindow(ok as MyCalibrateTask, modListObservableCollection);
                     calibratedialog.ShowDialog();
                     break;
+            }
+        }
+        private void NewoutLabelStatus(object sender, string s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewoutLabelStatus(sender, s)));
+            }
+            else
+            {
+                outProgressBar.IsIndeterminate = true;
+                statusLabel.Content = s;
+            }
+        }
+
+        private void NewoutProgressBar(object sender, ProgressEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewoutProgressBar(sender, s)));
+            }
+            else
+            {
+                outProgressBar.IsIndeterminate = false;
+                outProgressBar.Value = s.new_progress;
+                statusLabel.Content = s.v;
+            }
+        }
+
+        private void NewoutRichTextBox(object sender, string tup)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewoutRichTextBox(sender, tup)));
+            }
+            else
+            {
+                RegOutput(tup);
+            }
+        }
+
+        private void NewRefreshBetweenTasks(object sender, EventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewRefreshBetweenTasks(sender, e)));
+            }
+            else
+            {
+                dataGridDatafiles.Items.Refresh();
+                dataGridXMLs.Items.Refresh();
+            }
+        }
+
+        private void NewSuccessfullyStartingAllTasks(object sender, EventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyStartingAllTasks(sender, e)));
+            }
+            else
+            {
+                //TODO: Check those
+                XMLdbPanel.IsEnabled = false;
+                DatafilesStackPanel.IsEnabled = false;
+                addSearchTaskButton.IsEnabled = false;
+                addCalibrateTaskButton.IsEnabled = false;
+                addGPTMDTaskButton.IsEnabled = false;
+                tasksPanel.IsEnabled = false;
+
+                statusLabel.Content = "Starting all tasks...";
+                outProgressBar.IsIndeterminate = true;
+
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
+
+        private void NewSuccessfullyFinishedAllTasks(object sender, EventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedAllTasks(sender, e)));
+            }
+            else
+            {
+                //TODO: Check those
+                XMLdbPanel.IsEnabled = true;
+                DatafilesStackPanel.IsEnabled = true;
+                addSearchTaskButton.IsEnabled = true;
+                addCalibrateTaskButton.IsEnabled = true;
+                addGPTMDTaskButton.IsEnabled = true;
+                tasksPanel.IsEnabled = true;
+
+                statusLabel.Content = "Finished all tasks!";
+                outProgressBar.IsIndeterminate = false;
+                outProgressBar.Value = 100;
+
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
+
+        private void NewSuccessfullyFinishedWritingFile(object sender, SingleFileEventArgs v)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewSuccessfullyFinishedWritingFile(sender, v)));
+            }
+            else
+            {
+                addFinishedFile(v.writtenFile);
+            }
+        }
+
+        private void NewUnSuccessfullyFinishedTask(object sender, string v)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewUnSuccessfullyFinishedTask(sender, v)));
+            }
+            else
+            {
+                ErrorOutput(v);
             }
         }
     }

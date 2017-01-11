@@ -40,7 +40,6 @@ namespace InternalLogicCalibration
         public double toleranceInMZforMS2Search;
         internal double toleranceInMZforMS1Search = 0.01;
         public HashSet<int> matchesToExclude;
-        public InternalLogic.AllTasksParams po;
 
         public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search)
         {

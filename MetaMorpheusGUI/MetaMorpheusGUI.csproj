@@ -102,7 +102,6 @@
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Handlers.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>

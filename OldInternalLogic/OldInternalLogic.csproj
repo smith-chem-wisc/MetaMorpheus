@@ -113,7 +113,6 @@
     <Compile Include="ProductCaps.cs" />
     <Compile Include="ProductType.cs" />
     <Compile Include="ProductTypes.cs" />
-    <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
