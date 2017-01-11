@@ -1,4 +1,4 @@
-﻿using MetaMorpheusLogic;
+﻿using InternalLogicTaskLayer;
 using OldInternalLogic;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -18,12 +18,12 @@ namespace MetaMorpheusGUI
             InitializeComponent();
         }
 
-        public GPTMDTaskWindow(MyGPTMDtask myGPTMDtask, ObservableCollection<ModList> modFileList)
+        public GPTMDTaskWindow(GPTMDTask myGPTMDtask, ObservableCollection<ModList> modFileList)
         {
             InitializeComponent();
         }
 
-        internal MyGPTMDtask TheTask { get; private set; }
+        internal GPTMDTask TheTask { get; private set; }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {

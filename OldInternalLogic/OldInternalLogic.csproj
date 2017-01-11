@@ -113,18 +113,15 @@
     <Compile Include="ProductCaps.cs" />
     <Compile Include="ProductType.cs" />
     <Compile Include="ProductTypes.cs" />
-    <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="Protease.cs" />
     <Compile Include="ProteaseDictionary.cs" />
     <Compile Include="Protein.cs" />
-    <Compile Include="ProteinLimits.cs" />
     <Compile Include="ProteomeDatabaseReader.cs" />
     <Compile Include="PTMlist.cs" />
     <Compile Include="RawDataAndResults.cs" />
-    <Compile Include="SpectraLimits.cs" />
     <Compile Include="StatusEventArgs.cs" />
     <Compile Include="Terminus.cs" />
     <Compile Include="UniqueModificationsList.cs" />

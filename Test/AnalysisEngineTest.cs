@@ -1,4 +1,5 @@
-﻿using MetaMorpheusLogic;
+﻿using InternalLogicEngineLayer;
+using InternalLogicTaskLayer;
 using NUnit.Framework;
 using OldInternalLogic;
 using System.Collections.Generic;
@@ -95,8 +96,7 @@ namespace Test
             }
 
             var p = new ParentSpectrumMatch[0][];
-            AnalysisParams analysisParams = new AnalysisParams(p, null, null, null, null, null, null, null, null, null, null, null, null, true);
-            var analysisEngine = new AnalysisEngine(analysisParams);
+            var analysisEngine = new AnalysisEngine(p, null, null, null, null, null, null, null, null, null, null, null, true);
 
             // apply parsimony to initial dictionary
             var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary);

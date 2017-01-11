@@ -99,16 +99,12 @@
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="FinishedFile.cs" />
-    <Compile Include="GptmdPTMlist.cs" />
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Handlers.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TaskListWrapper.cs" />
     <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -164,13 +160,17 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\InternalLogic\InternalLogicEngineLayer.csproj">
+      <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
+      <Name>InternalLogicEngineLayer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MetaMorpheusCommandLine\MetaMorpheusCommandLine.csproj">
       <Project>{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}</Project>
       <Name>MetaMorpheusCommandLine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheusLogic\MetaMorpheusLogic.csproj">
+    <ProjectReference Include="..\InternalLogicWithFileIO\InternalLogicTaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
-      <Name>MetaMorpheusLogic</Name>
+      <Name>InternalLogicTaskLayer</Name>
     </ProjectReference>
     <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
