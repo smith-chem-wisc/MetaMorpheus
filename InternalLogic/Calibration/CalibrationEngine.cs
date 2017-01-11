@@ -29,7 +29,7 @@ namespace InternalLogicCalibration
         public DoubleRange mzRange;
 
         public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-        public List<InternalLogic.NewPsmWithFDR> identifications;
+        public List<NewPsmWithFDR> identifications;
 
 
         public bool calibrateSpectra = true;

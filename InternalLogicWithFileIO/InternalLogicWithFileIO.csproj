@@ -89,7 +89,6 @@
     <Compile Include="AllTasksEngine.cs" />
     <Compile Include="AllTasksResults.cs" />
     <Compile Include="FinishedFile.cs" />
-    <Compile Include="IO.cs" />
     <Compile Include="MyCalibrateTask.cs" />
     <Compile Include="MyGPTMDtask.cs" />
     <Compile Include="MySearchTask.cs" />

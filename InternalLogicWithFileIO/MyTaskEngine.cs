@@ -228,7 +228,7 @@ namespace InternalLogicWithFileIO
                                     else
                                         dataset_abbreviation = "uk";
 
-                                    if (accession != null && sequence != null && (!SpecificProteinSelection.enabled || SpecificProteinSelection.ConsiderProtein(accession)))
+                                    if (accession != null && sequence != null)
                                     {
                                         Protein protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
 
