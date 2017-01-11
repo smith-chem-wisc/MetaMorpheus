@@ -54,7 +54,7 @@ namespace InternalLogicEngineLayer
 
             var allProductTypes = new List<ProductType>() { ProductType.b, ProductType.y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
-            if (newPsm.matchedIonsList == null)
+            if (myMsDataFile!=null && newPsm.matchedIonsList == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
                 double selectedMZ;
@@ -75,7 +75,7 @@ namespace InternalLogicEngineLayer
                 newPsm.matchedIonsList = MatchedIonDict;
             }
 
-            if (newPsm.LocalizedScores == null)
+            if (myMsDataFile != null && newPsm.LocalizedScores == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
                 List<double> localizedScores = new List<double>();

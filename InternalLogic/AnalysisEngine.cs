@@ -89,12 +89,12 @@ namespace InternalLogicEngineLayer
                 if (doParsimony)
                 {
                     status("Getting protein parsimony dictionary...");
-                    var parsimonyDictionary = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
+                    compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
                 }
                 yeah[j] = orderedPsmsWithFDR;
             }
 
-            return new AnalysisResults(this, yeah);
+            return new AnalysisResults(this, yeah, compactPeptideToProteinPeptideMatching);
         }
 
         private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)

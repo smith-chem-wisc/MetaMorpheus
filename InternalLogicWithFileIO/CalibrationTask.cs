@@ -1,5 +1,5 @@
-﻿using InternalLogicEngineLayer;
-using InternalLogicCalibration;
+﻿using InternalLogicCalibration;
+using InternalLogicEngineLayer;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -9,13 +9,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System;
 
 namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
         public Tolerance precursorMassTolerance { get; set; }
+
+        public List<ModListForSearch> listOfModListsForSearch { get; set; }
 
         public CalibrationTask(ObservableCollection<ModList> modList)
         {
@@ -59,12 +60,11 @@ namespace InternalLogicTaskLayer
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
-            SearchMode searchMode = new DotSearchMode("withinhalfAdaltonOfZero", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
+            SearchMode searchMode = new DotSearchMode("", new double[] { 0 }, precursorMassTolerance);
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModes.Count];
-            for (int j = 0; j < searchModes.Count; j++)
-                allPsms[j] = new List<ParentSpectrumMatch>();
+            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
+            allPsms[0] = new List<ParentSpectrumMatch>();
 
             status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
@@ -99,7 +99,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
+                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 

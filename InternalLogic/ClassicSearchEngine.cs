@@ -115,7 +115,7 @@ namespace InternalLogicEngineLayer
                                 var searchMode = searchModes[aede];
                                 foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.b, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.theScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
                                     ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, yyy, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, spectraFileIndex);
                                     if (psm.Score > 1)
                                     {

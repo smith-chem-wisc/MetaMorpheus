@@ -1,4 +1,5 @@
-﻿using OldInternalLogic;
+﻿using InternalLogicTaskLayer;
+using OldInternalLogic;
 using System.Collections.ObjectModel;
 
 namespace MetaMorpheusCommandLine

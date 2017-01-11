@@ -17,7 +17,7 @@ namespace InternalLogicEngineLayer
         protected CompactPeptide compactPeptide;
         public double Score { get; protected set; }
 
-        internal abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications);
+        public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications);
 
         public override string ToString()
         {

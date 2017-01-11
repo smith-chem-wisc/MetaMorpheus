@@ -61,7 +61,7 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
-        internal override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
             if (compactPeptide == null)
                 compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications);

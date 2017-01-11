@@ -88,23 +88,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AminoAcidMasses.cs" />
-    <Compile Include="ModListForSearch.cs" />
-    <Compile Include="MyDoubleEqualityComparer.cs" />
-    <Compile Include="OkBin.cs" />
     <Compile Include="Peptide.cs" />
     <Compile Include="CleavageSpecificity.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DatabaseSearcher.cs" />
-    <Compile Include="ExceptionEventArgs.cs" />
     <Compile Include="Exporters.cs" />
     <Compile Include="FalseDiscoveryRate.cs" />
-    <Compile Include="FilepathEventArgs.cs" />
     <Compile Include="IdentificationWithFalseDiscoveryRate.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
     <Compile Include="MassType.cs" />
     <Compile Include="MorpheusModification.cs" />
     <Compile Include="ModificationType.cs" />
-    <Compile Include="MSPeak.cs" />
     <Compile Include="PeptideFragmentMasses.cs" />
     <Compile Include="PeptideWithPossibleModifications.cs" />
     <Compile Include="PeptideSpectrumMatch.cs" />
@@ -120,12 +114,8 @@
     <Compile Include="ProteaseDictionary.cs" />
     <Compile Include="Protein.cs" />
     <Compile Include="ProteomeDatabaseReader.cs" />
-    <Compile Include="PTMlist.cs" />
-    <Compile Include="RawDataAndResults.cs" />
-    <Compile Include="StatusEventArgs.cs" />
     <Compile Include="Terminus.cs" />
     <Compile Include="UniqueModificationsList.cs" />
-    <Compile Include="XMLdb.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="amino_acids.tsv">

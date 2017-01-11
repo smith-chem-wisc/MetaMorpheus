@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using OldInternalLogic;
+using System.Collections.Generic;
 
-namespace OldInternalLogic
+namespace InternalLogicTaskLayer
 {
-    public class ModListForSearch
+    public class ModListForGPTMD
     {
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
         public bool Localize { get; set; }
+        public bool GPTMD { get; set; }
 
         public string FileName
         {
@@ -20,7 +22,7 @@ namespace OldInternalLogic
 
         private ModList uu;
 
-        public ModListForSearch(ModList uu)
+        public ModListForGPTMD(ModList uu)
         {
             this.uu = uu;
         }
