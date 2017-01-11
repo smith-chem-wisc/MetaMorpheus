@@ -1,5 +1,5 @@
-﻿using InternalLogicEngineLayer;
-using InternalLogicCalibration;
+﻿using InternalLogicCalibration;
+using InternalLogicEngineLayer;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System;
 
 namespace InternalLogicTaskLayer
 {
@@ -100,7 +99,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
+                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 

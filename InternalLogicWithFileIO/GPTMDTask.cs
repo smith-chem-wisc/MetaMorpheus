@@ -42,6 +42,7 @@ namespace InternalLogicTaskLayer
             listOfModListsForGPTMD[3].Use = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             this.taskType = MyTaskEnum.GPTMD;
+            tol = 0.003;
         }
 
         private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
@@ -155,14 +156,14 @@ namespace InternalLogicTaskLayer
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
+                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 output(analysisResults.ToString());
             }
 
             if (currentRawFileList.Count > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 output(analysisResults.ToString());
             }
@@ -208,7 +209,7 @@ namespace InternalLogicTaskLayer
                 IndentChars = "  "
             };
 
-            output("Writing XML...");
+            status("Writing XML...");
             using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
             {
                 writer.WriteStartDocument();
@@ -280,7 +281,7 @@ namespace InternalLogicTaskLayer
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
             }
-
+            myGPTMDresults.newDatabases.Add(outputFileName);
             return myGPTMDresults;
         }
 

@@ -1,7 +1,7 @@
-﻿using Spectra;
+﻿using OldInternalLogic;
+using Spectra;
 using System;
 using System.Collections.Generic;
-using OldInternalLogic;
 using System.Linq;
 
 namespace InternalLogicEngineLayer
@@ -19,7 +19,8 @@ namespace InternalLogicEngineLayer
 
         public DotSearchMode(string v, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance tolerance) : base(v)
         {
-            List<double> ok = gptmdModifications.Select(b => b.MonoisotopicMassShift).ToList();
+            List<double> ok = new List<double>() { 0 };
+            ok.AddRange(gptmdModifications.Select(b => b.MonoisotopicMassShift));
             ok.AddRange(combos.Select(b => b.Item1 + b.Item2));
             IEqualityComparer<double> f = new ffff(3);
             acceptableSortedMassShifts = ok.Distinct(f).OrderBy(b => b).ToList();

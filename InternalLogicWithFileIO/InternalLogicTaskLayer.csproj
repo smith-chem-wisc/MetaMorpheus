@@ -101,7 +101,6 @@
     </Compile>
     <Compile Include="SearchModeForDisplay.cs" />
     <Compile Include="SingleTaskEventArgs.cs" />
-    <Compile Include="Writing.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InternalLogic\InternalLogicEngineLayer.csproj">
