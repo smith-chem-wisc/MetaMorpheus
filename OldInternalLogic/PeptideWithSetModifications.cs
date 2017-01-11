@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -194,7 +195,7 @@ namespace OldInternalLogic
                         mass_shift += residue_variable_mod.MonoisotopicMassShift;
                     monoisotopicMass += residue_variable_mod.MonoisotopicMassShift;
                 }
-                p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + AminoAcidMasses.GetMonoisotopicMass(this[r - 1]) + mass_shift;
+                p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[r - 1]] + mass_shift;
             }
 
             p.cumulativeCTerminalMass = new double[Length];
@@ -235,12 +236,12 @@ namespace OldInternalLogic
             }
 
             p.cumulativeCTerminalMass[0] = mass_shift;
-            monoisotopicMass += AminoAcidMasses.GetMonoisotopicMass(BaseSequence[0]);
+            monoisotopicMass += Residue.ResidueMonoisotopicMass[BaseSequence[0]];
 
             for (int r = 1; r < Length; r++)
             {
                 mass_shift = 0.0f;
-                monoisotopicMass += AminoAcidMasses.GetMonoisotopicMass(BaseSequence[r]);
+                monoisotopicMass += Residue.ResidueMonoisotopicMass[BaseSequence[r]];
                 // fixed modifications on this residue
                 if (modPep.twoBasedFixedModificationss.TryGetValue(Length - r + 2, out modificationList))
                     foreach (var fixed_modification in modificationList)
@@ -251,7 +252,7 @@ namespace OldInternalLogic
                 if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length - r + 2, out residue_variable_mod))
                     if (!residue_variable_mod.labile)
                         mass_shift += residue_variable_mod.MonoisotopicMassShift;
-                p.cumulativeCTerminalMass[r] = p.cumulativeCTerminalMass[r - 1] + AminoAcidMasses.GetMonoisotopicMass(this[Length - r]) + mass_shift;
+                p.cumulativeCTerminalMass[r] = p.cumulativeCTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[Length - r]] + mass_shift;
             }
 
             return p;

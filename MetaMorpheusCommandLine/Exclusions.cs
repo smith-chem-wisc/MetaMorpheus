@@ -19,28 +19,28 @@ namespace MetaMorpheusCommandLine
             exclude.Add(-76.134779);
             exclude.Add(-48.128629);
 
-            HashSet<AminoAcid> doNotExcludeEvenCombos = new HashSet<AminoAcid>() { AminoAcid.GetResidue('K') };
+            HashSet<Residue> doNotExcludeEvenCombos = new HashSet<Residue>() { Residue.GetResidue('K') };
 
-            HashSet<AminoAcid> doNotExclude = new HashSet<AminoAcid>() {
-                AminoAcid.GetResidue('K'),
-                AminoAcid.GetResidue('R'),
-                AminoAcid.GetResidue('G'),
-                AminoAcid.GetResidue('N'),
-                AminoAcid.GetResidue('A'),
-                AminoAcid.GetResidue('M'),
+            HashSet<Residue> doNotExclude = new HashSet<Residue>() {
+                Residue.GetResidue('K'),
+                Residue.GetResidue('R'),
+                Residue.GetResidue('G'),
+                Residue.GetResidue('N'),
+                Residue.GetResidue('A'),
+                Residue.GetResidue('M'),
             };
 
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                AminoAcid residue;
-                if (AminoAcid.TryGetResidue(c, out residue))
+                Residue residue;
+                if (Residue.TryGetResidue(c, out residue))
                 {
                     if (!doNotExclude.Contains(residue))
                         exclude.Add(residue.MonoisotopicMass);
                     for (char cc = 'A'; cc <= 'Z'; cc++)
                     {
-                        AminoAcid residueCC;
-                        if (AminoAcid.TryGetResidue(cc, out residueCC))
+                        Residue residueCC;
+                        if (Residue.TryGetResidue(cc, out residueCC))
                         {
                             if (!doNotExcludeEvenCombos.Contains(residueCC) && !doNotExcludeEvenCombos.Contains(residue))
                                 exclude.Add(residue.MonoisotopicMass + residueCC.MonoisotopicMass);

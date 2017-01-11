@@ -170,8 +170,8 @@ namespace InternalLogicEngineLayer
                 HashSet<string> ok = new HashSet<string>();
                 for (char c = 'A'; c <= 'Z'; c++)
                 {
-                    AminoAcid residue;
-                    if (AminoAcid.TryGetResidue(c, out residue))
+                    Residue residue;
+                    if (Residue.TryGetResidue(c, out residue))
                     {
                         if (Math.Abs(residue.MonoisotopicMass - bin.MassShift) <= v)
                         {
@@ -183,8 +183,8 @@ namespace InternalLogicEngineLayer
                         }
                         for (char cc = 'A'; cc <= 'Z'; cc++)
                         {
-                            AminoAcid residueCC;
-                            if (AminoAcid.TryGetResidue(cc, out residueCC))
+                            Residue residueCC;
+                            if (Residue.TryGetResidue(cc, out residueCC))
                             {
                                 if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - bin.MassShift) <= v)
                                 {
