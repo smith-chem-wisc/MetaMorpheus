@@ -56,8 +56,6 @@ namespace MetaMorpheusGUI
             rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             RegOutput(ProteaseDictionary.Instance.Count + " proteases loaded from proteases.tsv");
-            AminoAcidMasses.LoadAminoAcidMasses();
-            RegOutput("Amino acid masses loaded from amino_acids.tsv");
 
             AllTasksEngine.newDbsHandler += AddNewDB;
             AllTasksEngine.newSpectrasHandler += AddNewSpectra;
