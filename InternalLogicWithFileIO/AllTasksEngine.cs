@@ -7,17 +7,46 @@ using System.Linq;
 
 namespace InternalLogicWithFileIO
 {
-    public class AllTasksEngine : MyTaskEngine
+    public class AllTasksEngine : MyEngine
     {
-        List<MyTaskEngine> taskList;
-        public AllTasksEngine(List<MyTaskEngine> taskList)
+        private List<MyTaskEngine> taskList;
+        private List<string> currentRawDataFilenameList;
+        private List<string> currentXmlDbFilenameList;
+
+        public static event EventHandler startingAllTasksEngineHandler;
+        public static event EventHandler finishedAllTasksEngineHandler;
+
+        public void StartingAllTasks()
+        {
+            startingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void FinishedAllTasks()
+        {
+            finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+        }
+
+        public AllTasksEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList)
         {
             this.taskList = taskList;
+            this.currentRawDataFilenameList = startingRawFilenameList;
+            this.currentXmlDbFilenameList = startingXmlDbFilenameList;
         }
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (taskList == null)
+                throw new EngineValidationException("taskList cannot be null");
+            if (taskList.Count == 0)
+                throw new EngineValidationException("taskList has to contain at least one element");
+            if (currentRawDataFilenameList == null)
+                throw new EngineValidationException("rawDataFilenameList cannot be null");
+            if (currentRawDataFilenameList.Count == 0)
+                throw new EngineValidationException("rawDataFilenameList has to contain at least one element");
+            if (currentXmlDbFilenameList == null)
+                throw new EngineValidationException("xmlDbFilenameList cannot be null");
+            if (currentXmlDbFilenameList.Count == 0)
+                throw new EngineValidationException("xmlDbFilenameList has to contain at least one element");
         }
 
         protected override MyResults RunSpecific()
@@ -26,9 +55,9 @@ namespace InternalLogicWithFileIO
             var startTimeForFilename = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             var MatchingChars =
-                from len in Enumerable.Range(0, rawDataAndResultslist.Min(s => s.Length)).Reverse()
-                let possibleMatch = rawDataAndResultslist.First().Substring(0, len)
-                where rawDataAndResultslist.All(f => f.StartsWith(possibleMatch))
+                from len in Enumerable.Range(0, currentRawDataFilenameList.Min(s => s.Length)).Reverse()
+                let possibleMatch = currentRawDataFilenameList.First().Substring(0, len)
+                where currentRawDataFilenameList.All(f => f.StartsWith(possibleMatch))
                 select possibleMatch;
 
             var longestDir = Path.GetDirectoryName(MatchingChars.First());
@@ -50,14 +79,21 @@ namespace InternalLogicWithFileIO
                 if (!Directory.Exists(output_folder))
                     Directory.CreateDirectory(output_folder);
                 ok.setOutputFolder(output_folder);
+                ok.xmlDbFilenameList = currentXmlDbFilenameList;
+                ok.rawDataFilenameList = currentRawDataFilenameList;
 
-                //allTasksParams.startingSingleTask(new SingleTaskEventArgs(ok));
                 MyTaskResults myTaskResults = (MyTaskResults)ok.Run();
+
                 if (myTaskResults.newDatabases != null)
+                {
+                    currentRawDataFilenameList = myTaskResults.newDatabases;
                     NewDBs(myTaskResults.newDatabases);
+                }
                 if (myTaskResults.newSpectra != null)
+                {
+                    currentRawDataFilenameList = myTaskResults.newSpectra;
                     NewSpectras(myTaskResults.newSpectra);
-                //allTasksParams.finishedSingleTask(new SingleTaskEventArgs(ok));
+                }
             }
             FinishedAllTasks();
             return new AllTasksResults(this);
@@ -69,16 +105,6 @@ namespace InternalLogicWithFileIO
         }
 
         private void NewDBs(List<string> newDatabases)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void FinishedAllTasks()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void StartingAllTasks()
         {
             throw new NotImplementedException();
         }

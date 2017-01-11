@@ -126,7 +126,7 @@
     <Compile Include="SingleEngineEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
     <Compile Include="Calibration\CalibrationEngine.cs" />
-    <Compile Include="ValidationException.cs" />
+    <Compile Include="EngineValidationException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

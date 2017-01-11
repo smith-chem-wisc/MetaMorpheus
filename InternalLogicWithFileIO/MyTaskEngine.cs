@@ -13,13 +13,34 @@ namespace InternalLogicWithFileIO
 {
     public abstract class MyTaskEngine : MyEngine
     {
-
-        protected List<string> xMLdblist;
-        protected List<string> rawDataAndResultslist;
+        public List<string> xmlDbFilenameList;
+        public List<string> rawDataFilenameList;
 
         public static event EventHandler<List<string>> newDbsHandler;
 
         public static event EventHandler<List<string>> newSpectrasHandler;
+
+        public static event EventHandler<SingleTaskEventArgs> startingSingleTaskHander;
+
+        public static event EventHandler<SingleTaskEventArgs> finishedSingleTaskHandler;
+
+        private void startingSingleTask()
+        {
+            startingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
+        }
+
+        private void finishedSingleTask()
+        {
+            finishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
+        }
+
+        public new MyResults Run()
+        {
+            startingSingleTask();
+            var heh = base.Run();
+            finishedSingleTask();
+            return heh;
+        }
 
         public MyTaskEnum taskType { get; internal set; }
         public bool IsMySelected { get; set; }
@@ -296,7 +317,7 @@ namespace InternalLogicWithFileIO
 
             string folderName = output_folder;
             StringBuilder indexFileSB = new StringBuilder();
-            foreach (var heh in xMLdblist)
+            foreach (var heh in xmlDbFilenameList)
                 indexFileSB.Append(Path.GetFileNameWithoutExtension(heh));
             if (doFDRanalysis)
                 indexFileSB.Append("-WithDecoys");

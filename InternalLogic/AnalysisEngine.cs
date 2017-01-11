@@ -339,7 +339,8 @@ namespace InternalLogic
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (newPsms == null)
+                throw new EngineValidationException("newPsms cannot be null");
         }
     }
 }

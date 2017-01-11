@@ -60,14 +60,14 @@ namespace MetaMorpheusGUI
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2016-10-20-09-17\04-29-13_B6_Frac1_9uL.mzid");
 
             // XML
-            //xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
+            xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-10-3-2016.xml");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml");
 
             // Calib FILES
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL-Calibrated.mzML");
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac1_9uL-Calibrated.mzML");
-            //rawDataAndResultslist.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
+            rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
             //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Jurkat\Calib-0.1.2\120426_Jurkat_highLC_Frac16-Calibrated.mzML");
 
             // TSV file
@@ -122,17 +122,21 @@ namespace MetaMorpheusGUI
 
             //maxModificationIsoformsTextBox.Text = 10000.ToString();
 
-            //po.outLabelStatusHandler += NewoutLabelStatus;
-            //po.outProgressHandler += NewoutProgressBar;
-            //po.outRichTextBoxHandler += NewoutRichTextBox;
             //po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
-            //po.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
-            //po.startingSingleTaskHander += Po_startingSingleTaskHander;
-            //po.finishedAllTasksHandler += NewSuccessfullyFinishedAllTasks;
-            //po.startingAllTasksHander += NewSuccessfullyStartingAllTasks;
             //po.newDbsHandler += AddNewDB;
             //po.newSpectrasHandler += AddNewSpectra;
+
+            AllTasksEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
+            AllTasksEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+
+            MyTaskEngine.startingSingleTaskHander += Po_startingSingleTaskHander;
+            MyTaskEngine.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
+
+            MyEngine.outProgressHandler += NewoutProgressBar;
+
+            MyEngine.outLabelStatusHandler += NewoutLabelStatus;
+            MyEngine.outRichTextBoxHandler += NewoutRichTextBox;
 
             UpdateTaskGuiStuff();
         }
@@ -684,9 +688,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            //po.rawDataAndResultslist = rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
-            //po.xMLdblist = xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList();
-            AllTasksEngine a = new AllTasksEngine(taskEngineObservableCollection.ToList());
+            AllTasksEngine a = new AllTasksEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();

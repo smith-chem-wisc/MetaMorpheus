@@ -7,7 +7,6 @@ namespace InternalLogicWithFileIO
 {
     public class MyGPTMDtask : MyTaskEngine
     {
-
         private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
         {
             if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))

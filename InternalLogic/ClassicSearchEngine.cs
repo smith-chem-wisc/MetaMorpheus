@@ -21,7 +21,7 @@ namespace InternalLogic
         public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
         public int spectraFileIndex { get; private set; }
 
-        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes) 
+        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;
@@ -182,7 +182,10 @@ namespace InternalLogic
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (myMsDataFile == null)
+                throw new EngineValidationException("myMsDataFile cannot be null");
+            if (proteinList == null)
+                throw new EngineValidationException("proteinList cannot be null");
         }
     }
 }

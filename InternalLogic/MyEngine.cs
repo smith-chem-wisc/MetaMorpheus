@@ -27,27 +27,27 @@ namespace InternalLogic
             uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(@"ptmlist.txt");
         }
 
-        public void status(string v)
+        protected void status(string v)
         {
             outLabelStatusHandler?.Invoke(this, v);
         }
 
-        public void startingSingleEngine()
+        private void startingSingleEngine()
         {
             startingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
         }
 
-        public void finishedSingleEngine()
+        private void finishedSingleEngine()
         {
             finishedSingleEngineHandler?.Invoke(this, new SingleEngineEventArgs(this));
         }
 
-        internal void ReportProgress(ProgressEventArgs v)
+        protected void ReportProgress(ProgressEventArgs v)
         {
             outProgressHandler?.Invoke(this, v);
         }
 
-        public void output(string v)
+        protected void output(string v)
         {
             outRichTextBoxHandler?.Invoke(this, v);
         }

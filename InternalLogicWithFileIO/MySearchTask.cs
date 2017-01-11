@@ -59,7 +59,7 @@ namespace InternalLogicWithFileIO
             List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             List<SearchMode> searchModesS = searchModes.Where(b => b.Use).Select(b => b.sm).ToList();
 
@@ -68,7 +68,7 @@ namespace InternalLogicWithFileIO
                 allPsms[j] = new List<ParentSpectrumMatch>();
 
             status("Loading proteins...");
-            var proteinList = xMLdblist.SelectMany(b => getProteins(searchDecoy, identifiedModsInXML, b)).ToList();
+            var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(searchDecoy, identifiedModsInXML, b)).ToList();
 
             List<CompactPeptide> peptideIndex = null;
             Dictionary<float, List<int>> fragmentIndexDict = null;
@@ -85,7 +85,7 @@ namespace InternalLogicWithFileIO
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             }
 
-            var currentRawFileList = rawDataAndResultslist;
+            var currentRawFileList = rawDataFilenameList;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -152,7 +152,15 @@ namespace InternalLogicWithFileIO
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            foreach (var huh in listOfModListsForSearch)
+            {
+                if (huh.Fixed && huh.Localize)
+                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
+                if (huh.Fixed && huh.Variable)
+                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
+                if (huh.Localize && huh.Variable)
+                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
+            }
         }
     }
 }

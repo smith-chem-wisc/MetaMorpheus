@@ -38,14 +38,21 @@ namespace InternalLogicWithFileIO
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (xmlDbFilenameList == null)
+                throw new EngineValidationException("xMLdblist cannot be null");
+            if (xmlDbFilenameList.Count==0)
+                throw new EngineValidationException("xMLdblist cannot be empty");
+            if (rawDataFilenameList == null)
+                throw new EngineValidationException("rawDataAndResultslist cannot be null");
+            if (rawDataFilenameList.Count == 0)
+                throw new EngineValidationException("rawDataAndResultslist cannot be empty");
         }
 
         protected override MyResults RunSpecific()
         {
             MyTaskResults myTaskResults = new MyTaskResults(this);
             myTaskResults.newSpectra = new List<string>();
-            var currentRawFileList = rawDataAndResultslist;
+            var currentRawFileList = rawDataFilenameList;
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
@@ -64,10 +71,10 @@ namespace InternalLogicWithFileIO
             List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(xMLdblist, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             status("Loading proteins...");
-            var proteinList = xMLdblist.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
+            var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
