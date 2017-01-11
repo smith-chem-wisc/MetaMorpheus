@@ -101,6 +101,7 @@ namespace InternalLogicTaskLayer
 
         protected override MyResults RunSpecific()
         {
+            outputFileName = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
 
             MyTaskResults myGPTMDresults = new MyTaskResults(this);
             myGPTMDresults.newDatabases = new List<string>();
@@ -131,7 +132,8 @@ namespace InternalLogicTaskLayer
 
             status("Loading proteins...");
             var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
-
+            AnalysisEngine analysisEngine;
+            AnalysisResults analysisResults = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -152,10 +154,18 @@ namespace InternalLogicTaskLayer
                 output(searchResults.ToString());
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
+
+                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
+                analysisResults = (AnalysisResults)analysisEngine.Run();
+                output(analysisResults.ToString());
             }
 
-            AnalysisEngine analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), true);
-            AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+            if (currentRawFileList.Count > 1)
+            {
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => Writing.WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => Writing.WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
+                analysisResults = (AnalysisResults)analysisEngine.Run();
+                output(analysisResults.ToString());
+            }
 
             Dictionary<string, HashSet<Tuple<int, string>>> Mods = new Dictionary<string, HashSet<Tuple<int, string>>>();
 
