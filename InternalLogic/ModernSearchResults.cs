@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class ModernSearchResults : MyResults
     {

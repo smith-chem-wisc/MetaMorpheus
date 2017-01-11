@@ -3,7 +3,7 @@ using MassSpectrometry;
 using Spectra;
 using System;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     internal class LocalMs2Scan : IComparable, IComparable<double>
     {

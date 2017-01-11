@@ -1,7 +1,7 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using System.Collections.Generic;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
     public class MyTaskResults : MyResults
     {

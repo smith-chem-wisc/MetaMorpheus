@@ -1,4 +1,4 @@
-﻿using InternalLogicWithFileIO;
+﻿using InternalLogicTaskLayer;
 using OldInternalLogic;
 using Spectra;
 using System;
@@ -22,11 +22,11 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices(modList);
 
-            TheTask = new MyCalibrateTask(modList);
+            TheTask = new CalibrationTask(modList);
             UpdateFieldsFromTask(TheTask);
         }
 
-        private void UpdateFieldsFromTask(MyCalibrateTask task)
+        private void UpdateFieldsFromTask(CalibrationTask task)
         {
             missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.protease;
@@ -72,7 +72,7 @@ namespace MetaMorpheusGUI
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 
-        public CalibrateTaskWindow(MyCalibrateTask myCalibrateTask, ObservableCollection<ModList> modList)
+        public CalibrateTaskWindow(CalibrationTask myCalibrateTask, ObservableCollection<ModList> modList)
         {
             InitializeComponent();
             PopulateChoices(modList);
@@ -81,7 +81,7 @@ namespace MetaMorpheusGUI
             UpdateFieldsFromTask(TheTask);
         }
 
-        internal MyCalibrateTask TheTask { get; private set; }
+        internal CalibrationTask TheTask { get; private set; }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {

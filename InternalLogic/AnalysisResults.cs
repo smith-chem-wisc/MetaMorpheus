@@ -1,9 +1,9 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class AnalysisResults : MyResults
     {

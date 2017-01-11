@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     [Serializable]
     public class EngineValidationException : Exception

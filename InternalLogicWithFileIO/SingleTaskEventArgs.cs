@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
     public class SingleTaskEventArgs : EventArgs
     {

@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class ClassicSearchResults : MyResults
     {

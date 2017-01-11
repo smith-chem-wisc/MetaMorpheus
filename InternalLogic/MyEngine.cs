@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public abstract class MyEngine
     {

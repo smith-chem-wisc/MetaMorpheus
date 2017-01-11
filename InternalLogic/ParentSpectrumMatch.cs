@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public abstract class ParentSpectrumMatch
     {

@@ -1,11 +1,11 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using MathNet.Numerics.Distributions;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
     public class Writing
     {

@@ -1,5 +1,5 @@
 ﻿using Chemistry;
-using InternalLogic;
+using InternalLogicEngineLayer;
 using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using Proteomics;
@@ -32,7 +32,6 @@ namespace InternalLogicCalibration
         public List<NewPsmWithFDR> identifications;
 
 
-        public bool calibrateSpectra = true;
         internal int randomSeed;
         public string paramString = "";
         public int minMS2 = 2;
@@ -94,10 +93,6 @@ namespace InternalLogicCalibration
                 combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
                 combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
             }
-
-            output("Post-processing");
-
-            //postProcessing(p);
 
             output("Finished running my software lock mass implementation");
 
@@ -371,11 +366,14 @@ namespace InternalLogicCalibration
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (identifications == null)
+                throw new EngineValidationException("identifications cannot be null");
+            if (identifications.Count == 0)
+                throw new EngineValidationException("Need to have at least one identification to calibrate on");
         }
         private const int numFragmentsNeeded = 10;
 
-        public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogic.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
+        public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
         {
             output("Extracting data points:");
             // The final training point list
@@ -394,7 +392,7 @@ namespace InternalLogicCalibration
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    ReportProgress(new InternalLogic.ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
+                    ReportProgress(new InternalLogicEngineLayer.ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
 
                 // Skip decoys, they are for sure not there!
                 if (identification.isDecoy)

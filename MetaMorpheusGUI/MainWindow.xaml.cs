@@ -1,5 +1,5 @@
-﻿using InternalLogic;
-using InternalLogicWithFileIO;
+﻿using InternalLogicEngineLayer;
+using InternalLogicTaskLayer;
 using OldInternalLogic;
 using Spectra;
 using System;
@@ -51,29 +51,13 @@ namespace MetaMorpheusGUI
 
             LoadSearchModesFromFile();
 
-            // RAW FILES
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw");
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac2_9p5uL.raw");
-
-            // MZID FILES
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2016-10-20-09-17\04-29-13_B6_Frac1_9uL.mzid");
-
-            // XML
             xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-10-3-2016.xml");
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml");
 
-            // Calib FILES
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL-Calibrated.mzML");
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac1_9uL-Calibrated.mzML");
             rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-            //addFile(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Jurkat\Calib-0.1.2\120426_Jurkat_highLC_Frac16-Calibrated.mzML");
 
             RegOutput(ProteaseDictionary.Instance.Count + " proteases loaded from proteases.tsv");
             AminoAcidMasses.LoadAminoAcidMasses();
             RegOutput("Amino acid masses loaded from amino_acids.tsv");
-
-            //po.SuccessfullyFinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
             //po.newDbsHandler += AddNewDB;
             //po.newSpectrasHandler += AddNewSpectra;
@@ -83,6 +67,7 @@ namespace MetaMorpheusGUI
 
             MyTaskEngine.startingSingleTaskHander += Po_startingSingleTaskHander;
             MyTaskEngine.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
+            MyTaskEngine.finishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
             MyEngine.outProgressHandler += NewoutProgressBar;
 
@@ -728,17 +713,17 @@ namespace MetaMorpheusGUI
             switch (ok.taskType)
             {
                 case MyTaskEnum.Search:
-                    var searchDialog = new SearchTaskWindow(ok as MySearchTask, modListObservableCollection, searchModeObservableCollection);
+                    var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection, searchModeObservableCollection);
                     searchDialog.ShowDialog();
                     break;
 
                 case MyTaskEnum.GPTMD:
-                    var gptmddialog = new GPTMDTaskWindow(ok as MyGPTMDtask, modListObservableCollection);
+                    var gptmddialog = new GPTMDTaskWindow(ok as GPTMDTask, modListObservableCollection);
                     gptmddialog.ShowDialog();
                     break;
 
                 case MyTaskEnum.Calibrate:
-                    var calibratedialog = new CalibrateTaskWindow(ok as MyCalibrateTask, modListObservableCollection);
+                    var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask, modListObservableCollection);
                     calibratedialog.ShowDialog();
                     break;
             }

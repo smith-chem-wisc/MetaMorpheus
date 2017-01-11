@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class IndexResults : MyResults
     {

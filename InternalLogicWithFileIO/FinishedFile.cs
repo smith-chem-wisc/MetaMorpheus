@@ -1,4 +1,4 @@
-﻿namespace InternalLogicWithFileIO
+﻿namespace InternalLogicTaskLayer
 {
     public class FinishedFile
     {

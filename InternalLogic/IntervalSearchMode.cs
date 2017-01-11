@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class IntervalSearchMode : SearchMode
     {

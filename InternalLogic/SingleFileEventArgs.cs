@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class SingleFileEventArgs : EventArgs
     {

@@ -1,4 +1,4 @@
-using InternalLogic;
+using InternalLogicEngineLayer;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -9,9 +9,9 @@ using System.IO;
 using System.Linq;
 using System;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
-    public class MySearchTask : MyTaskEngine
+    public class SearchTask : MyTaskEngine
     {
 
         public bool searchDecoy { get; set; }
@@ -20,7 +20,7 @@ namespace InternalLogicWithFileIO
 
         public bool doParsimony { get; set; }
 
-        public MySearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
+        public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
         {
             // Set default values here:
             classicSearch = true;
@@ -44,6 +44,7 @@ namespace InternalLogicWithFileIO
             foreach (var uu in inputSearchModes)
                 searchModes.Add(new SearchModeFoSearch(uu));
             searchModes[0].Use = true;
+            this.taskType = MyTaskEnum.Search;
         }
 
 

@@ -1,6 +1,6 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
     internal class AllTasksResults : MyResults
     {

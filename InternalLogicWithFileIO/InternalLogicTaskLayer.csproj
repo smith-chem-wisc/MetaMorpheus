@@ -7,8 +7,8 @@
     <ProjectGuid>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>InternalLogicWithFileIO</RootNamespace>
-    <AssemblyName>InternalLogicWithFileIO</AssemblyName>
+    <RootNamespace>InternalLogicTaskLayer</RootNamespace>
+    <AssemblyName>InternalLogicTaskLayer</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -89,9 +89,9 @@
     <Compile Include="AllTasksEngine.cs" />
     <Compile Include="AllTasksResults.cs" />
     <Compile Include="FinishedFile.cs" />
-    <Compile Include="MyCalibrateTask.cs" />
-    <Compile Include="MyGPTMDtask.cs" />
-    <Compile Include="MySearchTask.cs" />
+    <Compile Include="CalibrationTask.cs" />
+    <Compile Include="GPTMDTask.cs" />
+    <Compile Include="SearchTask.cs" />
     <Compile Include="MyTaskEngine.cs" />
     <Compile Include="MyTaskResults.cs" />
     <Compile Include="MyTasksEnum.cs" />
@@ -103,9 +103,9 @@
     <Compile Include="Writing.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\InternalLogic\InternalLogic.csproj">
+    <ProjectReference Include="..\InternalLogic\InternalLogicEngineLayer.csproj">
       <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
-      <Name>InternalLogic</Name>
+      <Name>InternalLogicEngineLayer</Name>
     </ProjectReference>
     <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>

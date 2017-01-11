@@ -1,4 +1,4 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using InternalLogicCalibration;
 using IO.MzML;
 using IO.Thermo;
@@ -11,13 +11,13 @@ using System.IO;
 using System.Linq;
 using System;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
-    public class MyCalibrateTask : MyTaskEngine
+    public class CalibrationTask : MyTaskEngine
     {
         public Tolerance precursorMassTolerance { get; set; }
 
-        public MyCalibrateTask(ObservableCollection<ModList> modList)
+        public CalibrationTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
             maxMissedCleavages = 2;
@@ -34,13 +34,14 @@ namespace InternalLogicWithFileIO
             listOfModListsForSearch[1].Variable = true;
             listOfModListsForSearch[2].Localize = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            this.taskType = MyTaskEnum.Calibrate;
         }
 
         public override void ValidateParams()
         {
             if (xmlDbFilenameList == null)
                 throw new EngineValidationException("xMLdblist cannot be null");
-            if (xmlDbFilenameList.Count==0)
+            if (xmlDbFilenameList.Count == 0)
                 throw new EngineValidationException("xMLdblist cannot be empty");
             if (rawDataFilenameList == null)
                 throw new EngineValidationException("rawDataAndResultslist cannot be null");
@@ -136,6 +137,14 @@ namespace InternalLogicWithFileIO
                 a.matchesToExclude = new HashSet<int>();
 
                 a.Run();
+
+                status("Creating _indexedmzMLConnection, and putting data in it");
+                var path = Path.Combine(Path.GetDirectoryName(origDataFile), Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
+                MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(a.myMsDataFile, path);
+
+                SucessfullyFinishedWritingFile(path);
+
+                myTaskResults.newSpectra.Add(path);
             }
             return myTaskResults;
         }

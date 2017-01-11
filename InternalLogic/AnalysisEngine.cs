@@ -1,4 +1,4 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using OldInternalLogic;
 using Proteomics;
 using System.Collections.Concurrent;
@@ -9,7 +9,7 @@ using System;
 using Spectra;
 using MassSpectrometry;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {

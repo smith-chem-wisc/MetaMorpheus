@@ -1,4 +1,4 @@
-﻿namespace InternalLogic
+﻿namespace InternalLogicEngineLayer
 {
     internal class OkBin
     {

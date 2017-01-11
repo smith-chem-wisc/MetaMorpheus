@@ -1,12 +1,16 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using OldInternalLogic;
 using System;
 using System.Collections.Generic;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
-    public class MyGPTMDtask : MyTaskEngine
+    public class GPTMDTask : MyTaskEngine
     {
+        public GPTMDTask()
+        {
+            this.taskType = MyTaskEnum.GPTMD; 
+        }
         private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
         {
             if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
@@ -60,7 +64,7 @@ namespace InternalLogicWithFileIO
                 }
             }
         }
-        
+
 
         protected override MyResults RunSpecific()
         {

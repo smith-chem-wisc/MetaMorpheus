@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public abstract class MyResults
     {

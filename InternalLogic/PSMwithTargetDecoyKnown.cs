@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     public class PSMwithTargetDecoyKnown
     {

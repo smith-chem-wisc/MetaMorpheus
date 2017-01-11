@@ -99,9 +99,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\InternalLogicWithFileIO\InternalLogicWithFileIO.csproj">
+    <ProjectReference Include="..\InternalLogicWithFileIO\InternalLogicTaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
-      <Name>InternalLogicWithFileIO</Name>
+      <Name>InternalLogicTaskLayer</Name>
     </ProjectReference>
     <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>

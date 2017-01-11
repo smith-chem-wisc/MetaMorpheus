@@ -1,5 +1,5 @@
-﻿using InternalLogic;
-using InternalLogicWithFileIO;
+﻿using InternalLogicEngineLayer;
+using InternalLogicTaskLayer;
 using OldInternalLogic;
 using Spectra;
 using System;
@@ -26,11 +26,11 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices(modList, searchModes);
 
-            TheTask = new MySearchTask(modList, searchModes);
+            TheTask = new SearchTask(modList, searchModes);
             UpdateFieldsFromTask(TheTask);
         }
 
-        public SearchTaskWindow(MySearchTask task, IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
+        public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
         {
             InitializeComponent();
             PopulateChoices(modList, searchModes);
@@ -62,7 +62,7 @@ namespace MetaMorpheusGUI
             allowedPrecursorMassDiffsDataGrid.DataContext = SearchModes;
         }
 
-        private void UpdateFieldsFromTask(MySearchTask task)
+        private void UpdateFieldsFromTask(SearchTask task)
         {
             classicSearchRadioButton.IsChecked = task.classicSearch;
             checkBoxParsimony.IsChecked = task.doParsimony;
@@ -95,7 +95,7 @@ namespace MetaMorpheusGUI
             allowedPrecursorMassDiffsDataGrid.Items.Refresh();
         }
 
-        internal MySearchTask TheTask { get; private set; }
+        internal SearchTask TheTask { get; private set; }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {

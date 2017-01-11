@@ -11,9 +11,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaMorpheusCommandLine", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{9D2C9BF1-3D9C-4D97-9F1B-F4F7167F533B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalLogicWithFileIO", "InternalLogicWithFileIO\InternalLogicWithFileIO.csproj", "{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalLogicTaskLayer", "InternalLogicWithFileIO\InternalLogicTaskLayer.csproj", "{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalLogic", "InternalLogic\InternalLogic.csproj", "{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InternalLogicEngineLayer", "InternalLogic\InternalLogicEngineLayer.csproj", "{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

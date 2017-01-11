@@ -1,4 +1,4 @@
-﻿using InternalLogic;
+﻿using InternalLogicEngineLayer;
 using OldInternalLogic;
 using Spectra;
 using System;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 
-namespace InternalLogicWithFileIO
+namespace InternalLogicTaskLayer
 {
     public abstract class MyTaskEngine : MyEngine
     {
@@ -24,6 +24,8 @@ namespace InternalLogicWithFileIO
 
         public static event EventHandler<SingleTaskEventArgs> finishedSingleTaskHandler;
 
+        public static event EventHandler<SingleFileEventArgs> finishedWritingFileHandler;
+
         private void startingSingleTask()
         {
             startingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
@@ -32,6 +34,11 @@ namespace InternalLogicWithFileIO
         private void finishedSingleTask()
         {
             finishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
+        }
+
+        protected void SucessfullyFinishedWritingFile(string path)
+        {
+            finishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
         }
 
         public new MyResults Run()

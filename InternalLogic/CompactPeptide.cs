@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace InternalLogic
+namespace InternalLogicEngineLayer
 {
     [Serializable]
     public class CompactPeptide
