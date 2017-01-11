@@ -16,6 +16,10 @@ namespace InternalLogicTaskLayer
         public static event EventHandler startingAllTasksEngineHandler;
         public static event EventHandler finishedAllTasksEngineHandler;
 
+        public static event EventHandler<List<string>> newDbsHandler;
+
+        public static event EventHandler<List<string>> newSpectrasHandler;
+
         public void StartingAllTasks()
         {
             startingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
@@ -24,6 +28,17 @@ namespace InternalLogicTaskLayer
         public void FinishedAllTasks()
         {
             finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void NewSpectras(List<string> newSpectra)
+        {
+            newSpectrasHandler?.Invoke(this, newSpectra);
+        }
+
+        private void NewDBs(List<string> newDatabases)
+        {
+            newDbsHandler?.Invoke(this, newDatabases);
+
         }
 
         public AllTasksEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList)
@@ -97,16 +112,6 @@ namespace InternalLogicTaskLayer
             }
             FinishedAllTasks();
             return new AllTasksResults(this);
-        }
-
-        private void NewSpectras(List<string> newSpectra)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void NewDBs(List<string> newDatabases)
-        {
-            throw new NotImplementedException();
         }
     }
 }

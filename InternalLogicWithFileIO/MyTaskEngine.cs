@@ -16,10 +16,6 @@ namespace InternalLogicTaskLayer
         public List<string> xmlDbFilenameList;
         public List<string> rawDataFilenameList;
 
-        public static event EventHandler<List<string>> newDbsHandler;
-
-        public static event EventHandler<List<string>> newSpectrasHandler;
-
         public static event EventHandler<SingleTaskEventArgs> startingSingleTaskHander;
 
         public static event EventHandler<SingleTaskEventArgs> finishedSingleTaskHandler;
