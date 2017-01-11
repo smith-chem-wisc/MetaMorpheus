@@ -91,6 +91,7 @@
     <Compile Include="FinishedFile.cs" />
     <Compile Include="CalibrationTask.cs" />
     <Compile Include="GPTMDTask.cs" />
+    <Compile Include="ModListForGPTMD.cs" />
     <Compile Include="SearchTask.cs" />
     <Compile Include="MyTaskEngine.cs" />
     <Compile Include="MyTaskResults.cs" />

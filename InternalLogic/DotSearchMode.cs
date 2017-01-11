@@ -1,18 +1,29 @@
 ﻿using Spectra;
 using System;
 using System.Collections.Generic;
+using OldInternalLogic;
+using System.Linq;
 
 namespace InternalLogicEngineLayer
 {
     public class DotSearchMode : SearchMode
     {
-        private double[] acceptableSortedMassShifts;
-        private Tolerance tol;
+        private List<double> acceptableSortedMassShifts;
+        Tolerance tol;
 
         public DotSearchMode(string FileNameAddition, double[] acceptableSortedMassShifts, Tolerance tol) : base(FileNameAddition)
         {
-            this.acceptableSortedMassShifts = acceptableSortedMassShifts;
+            this.acceptableSortedMassShifts = acceptableSortedMassShifts.ToList();
             this.tol = tol;
+        }
+
+        public DotSearchMode(string v, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance tolerance) : base(v)
+        {
+            List<double> ok = gptmdModifications.Select(b => b.MonoisotopicMassShift).ToList();
+            ok.AddRange(combos.Select(b => b.Item1 + b.Item2));
+            IEqualityComparer<double> f = new ffff(3);
+            acceptableSortedMassShifts = ok.Distinct(f).OrderBy(b => b).ToList();
+            tol = tolerance;
         }
 
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
@@ -24,7 +35,25 @@ namespace InternalLogicEngineLayer
         {
             foreach (double huh in acceptableSortedMassShifts)
             {
-                yield return new DoubleRange(peptideMonoisotopicMass - huh, tol);
+                yield return new DoubleRange(peptideMonoisotopicMass + huh, tol);
+            }
+        }
+
+        private class ffff : IEqualityComparer<double>
+        {
+            int i;
+            public ffff(int i)
+            {
+                this.i = i;
+            }
+            public bool Equals(double x, double y)
+            {
+                return Math.Round(x, i) == Math.Round(y, i);
+            }
+
+            public int GetHashCode(double obj)
+            {
+                return Math.Round(obj, i).GetHashCode();
             }
         }
     }

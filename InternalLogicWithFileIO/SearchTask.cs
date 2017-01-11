@@ -19,6 +19,9 @@ namespace InternalLogicTaskLayer
         public bool classicSearch { get; set; }
 
         public bool doParsimony { get; set; }
+        public List<SearchModeFoSearch> searchModes { get; set; }
+
+        public List<ModListForSearch> listOfModListsForSearch { get; set; }
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
         {

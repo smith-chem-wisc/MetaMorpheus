@@ -1,4 +1,5 @@
 ﻿using InternalLogicEngineLayer;
+using OldInternalLogic;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,15 +8,14 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisResults : MyResults
     {
+        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict { get; private set; }
+
         public List<NewPsmWithFDR>[] allResultingIdentifications { get; private set; }
 
-        public AnalysisResults(AnalysisEngine s) : base(s)
-        {
-        }
-
-        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] yeah) : this(s)
+        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] yeah, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict) : base(s)
         {
             this.allResultingIdentifications = yeah;
+            this.dict = dict;
         }
 
         public override string ToString()

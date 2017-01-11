@@ -17,6 +17,8 @@ namespace InternalLogicTaskLayer
     {
         public Tolerance precursorMassTolerance { get; set; }
 
+        public List<ModListForSearch> listOfModListsForSearch { get; set; }
+
         public CalibrationTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
@@ -59,12 +61,11 @@ namespace InternalLogicTaskLayer
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
 
-            SearchMode searchMode = new DotSearchMode("withinhalfAdaltonOfZero", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5));
+            SearchMode searchMode = new DotSearchMode("", new double[] { 0 }, precursorMassTolerance);
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModes.Count];
-            for (int j = 0; j < searchModes.Count; j++)
-                allPsms[j] = new List<ParentSpectrumMatch>();
+            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
+            allPsms[0] = new List<ParentSpectrumMatch>();
 
             status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();

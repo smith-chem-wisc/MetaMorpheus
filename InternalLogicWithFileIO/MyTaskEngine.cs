@@ -56,9 +56,6 @@ namespace InternalLogicTaskLayer
         public bool bIons { get; set; }
         public bool yIons { get; set; }
 
-        public List<ModListForSearch> listOfModListsForSearch { get; set; }
-        public List<SearchModeFoSearch> searchModes { get; set; }
-
         protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
             modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
