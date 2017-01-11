@@ -18,5 +18,10 @@ namespace InternalLogic
         {
             throw new NotImplementedException();
         }
+
+        internal override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -15,9 +15,6 @@ namespace InternalLogic
 
         public abstract bool Accepts(double scanPrecursorMass, double peptideMass);
 
-        internal IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
-        {
-            throw new NotImplementedException();
-        }
+        internal abstract IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
     }
 }

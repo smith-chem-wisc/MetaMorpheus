@@ -20,7 +20,7 @@ namespace InternalLogic
             throw new NotImplementedException();
         }
 
-        internal IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        internal override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             var thisDoubleRange = new DoubleRange(peptideMonoisotopicMass - acceptableSortedMassShifts[0], tol);
             double prevRangeMaximum = thisDoubleRange.Minimum;

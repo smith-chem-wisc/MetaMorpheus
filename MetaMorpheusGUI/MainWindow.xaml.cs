@@ -28,7 +28,7 @@ namespace MetaMorpheusGUI
         private static ObservableCollection<FinishedFile> finishedFileList = new ObservableCollection<FinishedFile>();
         private AllTasksParams po;
 
-        private static TaskListWrapper taskListWrapper;
+        private static ObservableCollection<MyTask> taskListWrapper = new ObservableCollection<MyTask>();
 
         public static string unimodLocation = @"unimod_tables.xml";
         public static string elementsLocation = @"elements.dat";
@@ -44,15 +44,11 @@ namespace MetaMorpheusGUI
             AllTasksParams.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             AllTasksParams.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
 
-            ObservableCollection<MyTask> taskList = new ObservableCollection<MyTask>();
-
             // modificationsDataGrid.DataContext = ModFileList;
             dataGridXMLs.DataContext = xMLdblist;
             dataGridDatafiles.DataContext = rawDataAndResultslist;
-            tasksDataGrid.DataContext = taskList;
+            tasksDataGrid.DataContext = taskListWrapper;
             outputFilesDataGrid.DataContext = finishedFileList;
-
-            taskListWrapper = new TaskListWrapper(taskList);
 
             ModFileList.Add(new ModList("f.txt"));
             ModFileList.Add(new ModList("v.txt"));
@@ -698,7 +694,7 @@ namespace MetaMorpheusGUI
         {
             po.rawDataAndResultslist = rawDataAndResultslist.Where(b => b.Use).Select(b => b.FileName).ToList();
             po.xMLdblist = xMLdblist.Where(b => b.Use).Select(b => b.FileName).ToList();
-            var t = new Thread(() => AllTasksClass.DoAllTasks(taskListWrapper.EnumerateTasks(), po));
+            var t = new Thread(() => AllTasksClass.DoAllTasks(taskListWrapper.ToList(), po));
             t.IsBackground = true;
             t.Start();
         }
@@ -775,7 +771,7 @@ namespace MetaMorpheusGUI
 
         private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
         {
-            taskListWrapper.RemoveLast();
+            taskListWrapper.RemoveAt(taskListWrapper.Count - 1);
             UpdateTaskGuiStuff();
         }
 
