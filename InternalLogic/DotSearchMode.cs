@@ -22,20 +22,10 @@ namespace InternalLogicEngineLayer
 
         internal override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            var thisDoubleRange = new DoubleRange(peptideMonoisotopicMass - acceptableSortedMassShifts[0], tol);
-            double prevRangeMaximum = thisDoubleRange.Minimum;
-            double prevRangeMinimum = thisDoubleRange.Maximum;
             foreach (double huh in acceptableSortedMassShifts)
             {
-                thisDoubleRange = new DoubleRange(peptideMonoisotopicMass - huh, tol);
-                if (thisDoubleRange.Minimum > prevRangeMaximum)
-                {
-                    yield return new DoubleRange(prevRangeMinimum, prevRangeMaximum);
-                    prevRangeMinimum = thisDoubleRange.Minimum;
-                }
-                prevRangeMaximum = thisDoubleRange.Maximum;
+                yield return new DoubleRange(peptideMonoisotopicMass - huh, tol);
             }
-            yield return new DoubleRange(prevRangeMinimum, prevRangeMaximum);
         }
     }
 }
