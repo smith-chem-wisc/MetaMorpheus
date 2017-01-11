@@ -5,10 +5,10 @@ namespace InternalLogicTaskLayer
 {
     public class ModListForGPTMD
     {
-        public bool Use { get; set; }
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
         public bool Localize { get; set; }
+        public bool GPTMD { get; set; }
 
         public string FileName
         {

@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using OldInternalLogic;
+using System.Collections.Generic;
 
-namespace OldInternalLogic
+namespace InternalLogicTaskLayer
 {
     public class ModListForSearch
     {

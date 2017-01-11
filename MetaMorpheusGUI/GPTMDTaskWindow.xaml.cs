@@ -47,8 +47,8 @@ namespace MetaMorpheusGUI
                     ModFileListInWindow[i].Variable = true;
                 if (task.listOfModListsForGPTMD[i].Localize)
                     ModFileListInWindow[i].Localize = true;
-                if (task.listOfModListsForGPTMD[i].Use)
-                    ModFileListInWindow[i].Use = true;
+                if (task.listOfModListsForGPTMD[i].GPTMD)
+                    ModFileListInWindow[i].GPTMD = true;
             }
             modificationsDataGrid.Items.Refresh();
         }

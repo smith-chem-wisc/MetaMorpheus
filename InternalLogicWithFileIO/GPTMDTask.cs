@@ -39,7 +39,7 @@ namespace InternalLogicTaskLayer
             listOfModListsForGPTMD[0].Fixed = true;
             listOfModListsForGPTMD[1].Variable = true;
             listOfModListsForGPTMD[2].Localize = true;
-            listOfModListsForGPTMD[3].Use = true;
+            listOfModListsForGPTMD[3].GPTMD = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             this.taskType = MyTaskEnum.GPTMD;
             tol = 0.003;
@@ -117,7 +117,7 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
             List<MorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
             List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
-            List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Use).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.GPTMD).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
             GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
@@ -294,7 +294,7 @@ namespace InternalLogicTaskLayer
         {
             if (listOfModListsForGPTMD == null)
                 throw new EngineValidationException("listOfModListsForGPTMD should not be null");
-            if (listOfModListsForGPTMD.Where(b => b.Use).Count() == 0)
+            if (listOfModListsForGPTMD.Where(b => b.GPTMD).Count() == 0)
                 throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
         }
     }
