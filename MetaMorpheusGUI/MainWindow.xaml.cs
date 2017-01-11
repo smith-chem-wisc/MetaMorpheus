@@ -59,8 +59,8 @@ namespace MetaMorpheusGUI
             AminoAcidMasses.LoadAminoAcidMasses();
             RegOutput("Amino acid masses loaded from amino_acids.tsv");
 
-            //po.newDbsHandler += AddNewDB;
-            //po.newSpectrasHandler += AddNewSpectra;
+            AllTasksEngine.newDbsHandler += AddNewDB;
+            AllTasksEngine.newSpectrasHandler += AddNewSpectra;
 
             AllTasksEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             AllTasksEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
