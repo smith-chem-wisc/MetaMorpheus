@@ -2,6 +2,7 @@
 using InternalLogicTaskLayer;
 using NUnit.Framework;
 using OldInternalLogic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -24,7 +25,7 @@ namespace Test
             List<MorpheusModification> temp2 = new List<MorpheusModification>();
             int[] temp3 = new int[0];
             Protease protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldInternalLogic.Terminus.C, CleavageSpecificity.Full, null, null, null);
-            HashSet<PeptideWithSetModifications> totalProteinList = new HashSet<PeptideWithSetModifications>();
+            HashSet<PeptideWithSetModifications> totalVirtualPeptideList = new HashSet<PeptideWithSetModifications>();
 
             Protein p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);
             Protein p2 = new Protein(sequence2, "2", null, temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false);
@@ -39,7 +40,7 @@ namespace Test
                 IEnumerable<PeptideWithSetModifications> peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
 
                 foreach (var peptide in peptides1)
-                    totalProteinList.Add(peptide);
+                    totalVirtualPeptideList.Add(peptide);
             }
 
             foreach (var protein in digestedList2)
@@ -47,7 +48,7 @@ namespace Test
                 IEnumerable<PeptideWithSetModifications> peptides2 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
 
                 foreach (var peptide in peptides2)
-                    totalProteinList.Add(peptide);
+                    totalVirtualPeptideList.Add(peptide);
             }
 
             foreach (var protein in digestedList3)
@@ -55,43 +56,42 @@ namespace Test
                 IEnumerable<PeptideWithSetModifications> peptides3 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
 
                 foreach (var peptide in peptides3)
-                    totalProteinList.Add(peptide);
+                    totalVirtualPeptideList.Add(peptide);
             }
 
-            // creates the initial dictionary of "peptide" and "protein" matches (protein must contain peptide sequence)
+            // creates the initial dictionary of "peptide" and "virtual peptide" matches
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-            CompactPeptide[] peptides = new CompactPeptide[totalProteinList.Count()];
-            HashSet<PeptideWithSetModifications>[] proteinSets = new HashSet<PeptideWithSetModifications>[totalProteinList.Count()];
+            CompactPeptide[] peptides = new CompactPeptide[totalVirtualPeptideList.Count()];
+            HashSet<PeptideWithSetModifications>[] virtualPeptideSets = new HashSet<PeptideWithSetModifications>[totalVirtualPeptideList.Count()];
 
             // creates peptide list
-            for (int i = 0; i < totalProteinList.Count(); i++)
+            for (int i = 0; i < totalVirtualPeptideList.Count(); i++)
             {
-                peptides[i] = new CompactPeptide(totalProteinList.ElementAt(i), temp2, temp2);
+                peptides[i] = new CompactPeptide(totalVirtualPeptideList.ElementAt(i), temp2, temp2);
             }
 
             // creates protein list
-            for (int i = 0; i < proteinSets.Length; i++)
+            for (int i = 0; i < virtualPeptideSets.Length; i++)
             {
-                proteinSets[i] = new HashSet<PeptideWithSetModifications>();
+                virtualPeptideSets[i] = new HashSet<PeptideWithSetModifications>();
 
-                foreach (var protein in totalProteinList)
+                foreach (var virtualPeptide in totalVirtualPeptideList)
                 {
                     string peptideBaseSequence = string.Join("", peptides[i].BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
-                    if (protein.BaseSequence.Contains(peptideBaseSequence))
+                    if (virtualPeptide.BaseSequence.Contains(peptideBaseSequence))
                     {
-                        proteinSets[i].Add(protein);
-                        //proteinSets[i].Add(protein);
+                        virtualPeptideSets[i].Add(virtualPeptide);
                     }
                 }
             }
 
-            // populates initial peptide-protein dictionary
+            // populates initial peptide-virtualpeptide dictionary
             for (int i = 0; i < peptides.Length; i++)
             {
                 if (!initialDictionary.ContainsKey(peptides[i]))
                 {
-                    initialDictionary.Add(peptides[i], proteinSets[i]);
+                    initialDictionary.Add(peptides[i], virtualPeptideSets[i]);
                 }
             }
 
@@ -104,53 +104,66 @@ namespace Test
             // apply the single pick version to parsimonious dictionary
             var singlePickTest = AnalysisEngine.GetSingleMatchDictionary(parsimonyTest);
 
-            List<PeptideWithSetModifications> parsimonyProteinList = new List<PeptideWithSetModifications>();
+            List<Protein> parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];
             int j = 0;
 
             foreach (var kvp in parsimonyTest)
             {
-                foreach (var protein in kvp.Value)
+                foreach (var virtualPeptide in kvp.Value)
                 {
-                    if (!parsimonyProteinList.Contains(protein))
+                    if (!parsimonyProteinList.Contains(virtualPeptide.protein))
                     {
-                        parsimonyProteinList.Add(protein);
-                        parsimonyBaseSequences[j] = protein.BaseSequence;
-                        j++;
+                        if (j < 3)
+                        {
+                            parsimonyProteinList.Add(virtualPeptide.protein);
+                            parsimonyBaseSequences[j] = virtualPeptide.protein.BaseSequence;
+                            j++;
+                        }
                     }
                 }
+            }
+
+            // prints initial dictionary
+            List<Protein> proteinList = new List<Protein>();
+
+            Console.WriteLine("----Initial Dictionary----");
+            foreach (var kvp in initialDictionary)
+            {
+                proteinList = new List<Protein>();
+                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
+                foreach (var peptide in kvp.Value)
+                {
+                    if (!proteinList.Contains(peptide.protein))
+                    {
+                        Console.Write(peptide.protein.BaseSequence + " ;; ");
+                        proteinList.Add(peptide.protein);
+                    }
+                }
+                Console.WriteLine();
+            }
+
+            // prints parsimonious dictionary
+            Console.WriteLine("----Parsimonious Dictionary----");
+            foreach (var kvp in parsimonyTest)
+            {
+                proteinList = new List<Protein>();
+                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
+                foreach (var peptide in kvp.Value)
+                {
+                    if (!proteinList.Contains(peptide.protein))
+                    {
+                        Console.Write(peptide.protein.BaseSequence + " ;; ");
+                        proteinList.Add(peptide.protein);
+                    }
+                }
+                Console.WriteLine();
             }
 
             Assert.That(parsimonyProteinList.Count == 3);
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
             Assert.That(parsimonyBaseSequences.Contains(sequence2));
             Assert.That(parsimonyBaseSequences.Contains(sequence3));
-
-            /*
-            // prints initial dictionary
-            Console.WriteLine("----Initial Dictionary----");
-            foreach (var kvp in initialDictionary)
-            {
-                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
-                foreach (var peptide in kvp.Value)
-                {
-                    Console.Write(peptide.BaseSequence + " ;; ");
-                }
-                Console.WriteLine();
-            }
-
-            // prints parsimony dictionary
-            Console.WriteLine("----Parsimonious Dictionary----");
-            foreach (var kvp in parsimonyTest)
-            {
-                Console.Write(string.Join("", kvp.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b))) + "  \t\t\t  ");
-                foreach (var peptide in kvp.Value)
-                {
-                    Console.Write(peptide.BaseSequence + " ;; ");
-                }
-                Console.WriteLine();
-            }
-            */
         }
     }
 }
