@@ -124,7 +124,7 @@ namespace Test
                 }
             }
 
-            /*
+            
 
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
@@ -141,8 +141,6 @@ namespace Test
                     {
                         Console.Write(peptide.protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.protein);
-
-                        Console.Write("\t\t\t" + kvp.Value.Count);
                     }
                 }
                 Console.WriteLine();
@@ -161,13 +159,11 @@ namespace Test
                     {
                         Console.Write(peptide.protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.protein);
-
-                        Console.Write("\t\t\t" + kvp.Value.Count);
                     }
                 }
                 Console.WriteLine();
             }
-            */
+            
 
             Assert.That(parsimonyProteinList.Count == 3);
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
