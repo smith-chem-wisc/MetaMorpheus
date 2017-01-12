@@ -49,22 +49,72 @@ namespace InternalLogicTaskLayer
 
         #region Public Properties
 
+        public MyTaskEnum taskType { get; internal set; }
         public bool bIons { get; set; }
         public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
         public bool IsMySelected { get; set; }
         public int maxMissedCleavages { get; set; }
         public int maxModificationIsoforms { get; set; }
-        public string output_folder { get; private set; }
+        public string output_folder { get; set; }
         public Tolerance productMassTolerance { get; set; }
         public Protease protease { get; set; }
-        public MyTaskEnum taskType { get; internal set; }
         public bool yIons { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
+        public new MyResults Run()
+        {
+            startingSingleTask();
+            var paramsFileName = Path.Combine(output_folder, "params.txt");
+            using (StreamWriter file = new StreamWriter(paramsFileName))
+                file.Write(ToString());
+            SucessfullyFinishedWritingFile(paramsFileName);
+            var heh = base.Run();
+            finishedSingleTask();
+            return heh;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(GetSpecificTaskInfo());
+            sb.AppendLine(taskType.ToString());
+            sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
+            sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
+            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior.ToString());
+            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages.ToString());
+            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms.ToString());
+            sb.AppendLine("output_folder: " + output_folder.ToString());
+            sb.AppendLine("productMassTolerance: " + productMassTolerance.ToString());
+            sb.AppendLine("protease: " + protease.ToString());
+            sb.AppendLine("bIons: " + bIons.ToString());
+            sb.AppendLine("yIons: " + yIons.ToString());
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        {
+            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
+            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
+            modsInXMLtoTrim = new HashSet<string>(modsInXML);
+            foreach (var knownMod in modsKnown)
+                if (modsInXML.Contains(knownMod.NameInXML))
+                {
+                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
+                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
+                    else
+                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
+                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
+                }
+        }
+
+        protected void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
         {
             #region Index file names
 
@@ -122,7 +172,7 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        public IEnumerable<Protein> getProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
+        protected IEnumerable<Protein> getProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
         {
             using (XmlReader xml = XmlReader.Create(FileName))
             {
@@ -357,42 +407,7 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        public new MyResults Run()
-        {
-            startingSingleTask();
-            var paramsFileName = Path.Combine(output_folder, "params.txt");
-            using (StreamWriter file = new StreamWriter(paramsFileName))
-                file.Write(ToString());
-            SucessfullyFinishedWritingFile(paramsFileName);
-            var heh = base.Run();
-            finishedSingleTask();
-            return heh;
-        }
-
-        public void setOutputFolder(string thisOutputPath)
-        {
-            this.output_folder = thisOutputPath;
-        }
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(GetSpecificTaskInfo());
-            sb.AppendLine(taskType.ToString());
-            sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
-            sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
-            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior.ToString());
-            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages.ToString());
-            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms.ToString());
-            sb.AppendLine("output_folder: " + output_folder.ToString());
-            sb.AppendLine("productMassTolerance: " + productMassTolerance.ToString());
-            sb.AppendLine("protease: " + protease.ToString());
-            sb.AppendLine("bIons: " + bIons.ToString());
-            sb.AppendLine("yIons: " + yIons.ToString());
-            return sb.ToString();
-        }
-
-        public void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
+        protected void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -404,7 +419,7 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        public void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
+        protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -438,13 +453,18 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        #endregion Public Methods
+        protected abstract string GetSpecificTaskInfo();
 
-        #region Internal Methods
+        protected void SucessfullyFinishedWritingFile(string path)
+        {
+            finishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
+        }
 
-        internal abstract string GetSpecificTaskInfo();
+        #endregion Protected Methods
 
-        internal Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
+        #region Private Methods
+
+        private Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -466,7 +486,7 @@ namespace InternalLogicTaskLayer
             return newPerson;
         }
 
-        internal List<CompactPeptide> readPeptideIndex(string peptideIndexFile)
+        private List<CompactPeptide> readPeptideIndex(string peptideIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -479,7 +499,7 @@ namespace InternalLogicTaskLayer
             return newPerson;
         }
 
-        internal void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
+        private void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -498,7 +518,7 @@ namespace InternalLogicTaskLayer
             //output("Time to write fragment index with netserializer: " + elapsedTime);
         }
 
-        internal void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
+        private void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -508,35 +528,6 @@ namespace InternalLogicTaskLayer
                 ser.Serialize(file, peptideIndex);
             }
         }
-
-        #endregion Internal Methods
-
-        #region Protected Methods
-
-        protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
-        {
-            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
-            modsInXMLtoTrim = new HashSet<string>(modsInXML);
-            foreach (var knownMod in modsKnown)
-                if (modsInXML.Contains(knownMod.NameInXML))
-                {
-                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
-                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
-                    else
-                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
-                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
-                }
-        }
-
-        protected void SucessfullyFinishedWritingFile(string path)
-        {
-            finishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
-        }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private void finishedSingleTask()
         {

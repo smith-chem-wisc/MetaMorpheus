@@ -55,26 +55,9 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Properties
 
-        #region Public Methods
+        #region Protected Methods
 
-        protected override void ValidateParams()
-        {
-            foreach (var huh in listOfModListsForSearch)
-            {
-                if (huh.Fixed && huh.Localize)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
-                if (huh.Fixed && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
-                if (huh.Localize && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
-            }
-        }
-
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal override string GetSpecificTaskInfo()
+        protected override string GetSpecificTaskInfo()
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("classicSearch: " + classicSearch);
@@ -88,9 +71,18 @@ namespace InternalLogicTaskLayer
             return sb.ToString();
         }
 
-        #endregion Internal Methods
-
-        #region Protected Methods
+        protected override void ValidateParams()
+        {
+            foreach (var huh in listOfModListsForSearch)
+            {
+                if (huh.Fixed && huh.Localize)
+                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
+                if (huh.Fixed && huh.Variable)
+                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
+                if (huh.Localize && huh.Variable)
+                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
+            }
+        }
 
         protected override MyResults RunSpecific()
         {

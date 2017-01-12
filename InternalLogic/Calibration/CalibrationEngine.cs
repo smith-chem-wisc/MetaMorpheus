@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace InternalLogicCalibration
 {
@@ -111,7 +110,7 @@ namespace InternalLogicCalibration
 
         #region Private Methods
 
-        private List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications)
+        private List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<NewPsmWithFDR> identifications)
         {
             status("Extracting data points:");
             // The final training point list

@@ -15,6 +15,8 @@ namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
+        #region Public Constructors
+
         public CalibrationTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
@@ -35,8 +37,16 @@ namespace InternalLogicTaskLayer
             this.taskType = MyTaskEnum.Calibrate;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public List<ModListForCalibrationTask> listOfModListsForCalibration { get; set; }
         public Tolerance precursorMassTolerance { get; set; }
+
+        #endregion Public Properties
+
+        #region Protected Methods
 
         protected override void ValidateParams()
         {
@@ -50,7 +60,7 @@ namespace InternalLogicTaskLayer
                 throw new EngineValidationException("rawDataAndResultslist cannot be empty");
         }
 
-        internal override string GetSpecificTaskInfo()
+        protected override string GetSpecificTaskInfo()
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
@@ -133,7 +143,7 @@ namespace InternalLogicTaskLayer
 
                 // TODO: fix the tolerance calculation below
                 var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassTolerance.Value * 2, identifications);
-                                
+
                 var result = (CalibrationResults)a.Run();
 
                 if (result == null)
@@ -149,5 +159,7 @@ namespace InternalLogicTaskLayer
             }
             return myTaskResults;
         }
+
+        #endregion Protected Methods
     }
 }
