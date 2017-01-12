@@ -19,19 +19,36 @@ namespace InternalLogicTaskLayer
         GPTMD,
         Calibrate
     }
+
     public abstract class MyTaskEngine : MyEngine
     {
+        #region Public Fields
+
         public List<string> rawDataFilenameList;
         public List<string> xmlDbFilenameList;
+
+        #endregion Public Fields
+
+        #region Public Constructors
+
         public MyTaskEngine() : base(1)
         {
         }
+
+        #endregion Public Constructors
+
+        #region Public Events
 
         public static event EventHandler<SingleTaskEventArgs> finishedSingleTaskHandler;
 
         public static event EventHandler<SingleFileEventArgs> finishedWritingFileHandler;
 
         public static event EventHandler<SingleTaskEventArgs> startingSingleTaskHander;
+
+        #endregion Public Events
+
+        #region Public Properties
+
         public bool bIons { get; set; }
         public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
         public bool IsMySelected { get; set; }
@@ -42,6 +59,10 @@ namespace InternalLogicTaskLayer
         public Protease protease { get; set; }
         public MyTaskEnum taskType { get; internal set; }
         public bool yIons { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
         {
@@ -371,8 +392,6 @@ namespace InternalLogicTaskLayer
             return sb.ToString();
         }
 
-        internal abstract string GetSpecificTaskInfo();
-
         public void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
@@ -418,6 +437,12 @@ namespace InternalLogicTaskLayer
             }
             SucessfullyFinishedWritingFile(writtenFile);
         }
+
+        #endregion Public Methods
+
+        #region Internal Methods
+
+        internal abstract string GetSpecificTaskInfo();
 
         internal Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
         {
@@ -484,6 +509,10 @@ namespace InternalLogicTaskLayer
             }
         }
 
+        #endregion Internal Methods
+
+        #region Protected Methods
+
         protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
             modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
@@ -505,6 +534,10 @@ namespace InternalLogicTaskLayer
             finishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
         }
 
+        #endregion Protected Methods
+
+        #region Private Methods
+
         private void finishedSingleTask()
         {
             finishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
@@ -521,5 +554,7 @@ namespace InternalLogicTaskLayer
         {
             startingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
         }
+
+        #endregion Private Methods
     }
 }

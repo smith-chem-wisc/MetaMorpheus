@@ -14,8 +14,14 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
+        #region Private Fields
+
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForCalibrationTask> ModFileListInWindow = new ObservableCollection<ModListForCalibrationTask>();
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public CalibrateTaskWindow(ObservableCollection<ModList> modList)
         {
@@ -25,6 +31,25 @@ namespace MetaMorpheusGUI
             TheTask = new CalibrationTask(modList);
             UpdateFieldsFromTask(TheTask);
         }
+
+        public CalibrateTaskWindow(CalibrationTask myCalibrateTask, ObservableCollection<ModList> modList)
+        {
+            InitializeComponent();
+            PopulateChoices(modList);
+
+            TheTask = myCalibrateTask;
+            UpdateFieldsFromTask(TheTask);
+        }
+
+        #endregion Public Constructors
+
+        #region Internal Properties
+
+        internal CalibrationTask TheTask { get; private set; }
+
+        #endregion Internal Properties
+
+        #region Private Methods
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
@@ -72,17 +97,6 @@ namespace MetaMorpheusGUI
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 
-        public CalibrateTaskWindow(CalibrationTask myCalibrateTask, ObservableCollection<ModList> modList)
-        {
-            InitializeComponent();
-            PopulateChoices(modList);
-
-            TheTask = myCalibrateTask;
-            UpdateFieldsFromTask(TheTask);
-        }
-
-        internal CalibrationTask TheTask { get; private set; }
-
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
@@ -104,5 +118,7 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
+
+        #endregion Private Methods
     }
 }

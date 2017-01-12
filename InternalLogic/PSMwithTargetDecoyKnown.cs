@@ -10,42 +10,13 @@ namespace InternalLogicEngineLayer
 {
     public class PSMwithTargetDecoyKnown
     {
+        #region Public Fields
+
         public ParentSpectrumMatch newPsm;
 
-        public bool isDecoy { get; private set; }
+        #endregion Public Fields
 
-        public double Score
-        {
-            get
-            {
-                return newPsm.Score;
-            }
-        }
-
-        public double scanPrecursorMass
-        {
-            get
-            {
-                return newPsm.scanPrecursorMass;
-            }
-        }
-
-        public List<double> LocalizedScores
-        {
-            get
-            {
-                return newPsm.LocalizedScores;
-            }
-        }
-
-        public double PeptideMonoisotopicMass { get; private set; }
-
-        public string FullSequence { get; private set; }
-
-        public string BaseSequence { get; private set; }
-        public int MissedCleavages { get; private set; }
-        public int numVariableMods { get; private set; }
-        public string SequenceWithChemicalFormulas { get; internal set; }
+        #region Public Constructors
 
         public PSMwithTargetDecoyKnown(ParentSpectrumMatch newPsm, PeptideWithSetModifications peptideWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
@@ -54,7 +25,7 @@ namespace InternalLogicEngineLayer
 
             var allProductTypes = new List<ProductType>() { ProductType.b, ProductType.y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
-            if (myMsDataFile!=null && newPsm.matchedIonsList == null)
+            if (myMsDataFile != null && newPsm.matchedIonsList == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
                 double selectedMZ;
@@ -99,6 +70,77 @@ namespace InternalLogicEngineLayer
             this.numVariableMods = peptideWithSetModifications.numVariableMods;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public bool isDecoy { get; private set; }
+
+        public double Score
+        {
+            get
+            {
+                return newPsm.Score;
+            }
+        }
+
+        public double scanPrecursorMass
+        {
+            get
+            {
+                return newPsm.scanPrecursorMass;
+            }
+        }
+
+        public List<double> LocalizedScores
+        {
+            get
+            {
+                return newPsm.LocalizedScores;
+            }
+        }
+
+        public double PeptideMonoisotopicMass { get; private set; }
+
+        public string FullSequence { get; private set; }
+
+        public string BaseSequence { get; private set; }
+        public int MissedCleavages { get; private set; }
+        public int numVariableMods { get; private set; }
+        public string SequenceWithChemicalFormulas { get; internal set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append(newPsm.ToString() + '\t');
+
+            sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
+
+            //sb.Append(peptideWithSetModifications.PreviousAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.NextAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(peptideWithSetModifications.PeptideDescription + '\t');
+            sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+
+            // sb.Append(peptideWithSetModifications.protein.FullDescription.ToString(CultureInfo.InvariantCulture) + '\t');
+
+            sb.Append((scanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
+
+        #region Internal Methods
+
         internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
@@ -142,28 +184,6 @@ namespace InternalLogicEngineLayer
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }
 
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append(newPsm.ToString() + '\t');
-
-            sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-
-            //sb.Append(peptideWithSetModifications.PreviousAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.NextAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.PeptideDescription + '\t');
-            sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-
-            // sb.Append(peptideWithSetModifications.protein.FullDescription.ToString(CultureInfo.InvariantCulture) + '\t');
-
-            sb.Append((scanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-
-            return sb.ToString();
-        }
+        #endregion Internal Methods
     }
 }

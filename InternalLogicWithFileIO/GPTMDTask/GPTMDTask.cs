@@ -43,6 +43,7 @@ namespace InternalLogicTaskLayer
         public string outputFileName { get; set; }
         public Tolerance precursorMassTolerance { get; set; }
         public double tol { get; set; }
+
         public override void ValidateParams()
         {
             if (listOfModListsForGPTMD == null)
@@ -89,7 +90,6 @@ namespace InternalLogicTaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
-
             SearchMode searchMode = new DotSearchMode("", gptmdModifications, combos, precursorMassTolerance);
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
@@ -132,8 +132,6 @@ namespace InternalLogicTaskLayer
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
-
-
 
             GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, analysisResults.dict, variableModifications, localizeableModifications, isotopeErrors, gptmdModifications, combos, tol);
             GPTMDResults gptmdResults = (GPTMDResults)gptmdEngine.Run();

@@ -5,14 +5,28 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyResults
     {
-        protected MyEngine s { get; private set; }
+        #region Public Constructors
 
         public MyResults(MyEngine s)
         {
             this.s = s;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public TimeSpan Time { get; internal set; }
+
+        #endregion Public Properties
+
+        #region Protected Properties
+
+        protected MyEngine s { get; private set; }
+
+        #endregion Protected Properties
+
+        #region Public Methods
 
         public override string ToString()
         {
@@ -36,6 +50,12 @@ namespace InternalLogicEngineLayer
             return sb.ToString();
         }
 
+        #endregion Public Methods
+
+        #region Protected Methods
+
         protected abstract string GetStringForOutput();
+
+        #endregion Protected Methods
     }
 }

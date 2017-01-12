@@ -5,10 +5,34 @@ namespace InternalLogicEngineLayer
 {
     public class NewPsmWithFDR
     {
+        #region Public Fields
+
+        public PSMwithTargetDecoyKnown thisPSM;
+
+        #endregion Public Fields
+
+        #region Private Fields
+
         private int cumulative_target;
         private int cumulative_decoy;
+
+        #endregion Private Fields
+
+        #region Internal Constructors
+
+        internal NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
+        {
+            this.thisPSM = thisPSM;
+            this.cumulative_target = cumulative_target;
+            this.cumulative_decoy = cumulative_decoy;
+            this.QValue = temp_q_value;
+        }
+
+        #endregion Internal Constructors
+
+        #region Public Properties
+
         public double QValue { get; set; }
-        public PSMwithTargetDecoyKnown thisPSM;
 
         public bool isDecoy
         {
@@ -18,13 +42,9 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        internal NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
-        {
-            this.thisPSM = thisPSM;
-            this.cumulative_target = cumulative_target;
-            this.cumulative_decoy = cumulative_decoy;
-            this.QValue = temp_q_value;
-        }
+        #endregion Public Properties
+
+        #region Public Methods
 
         public override string ToString()
         {
@@ -38,5 +58,7 @@ namespace InternalLogicEngineLayer
 
             return sb.ToString();
         }
+
+        #endregion Public Methods
     }
 }

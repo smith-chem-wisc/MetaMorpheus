@@ -6,6 +6,8 @@ namespace InternalLogicEngineLayer
     [Serializable]
     internal class EngineRunException : Exception
     {
+        #region Public Constructors
+
         public EngineRunException()
         {
         }
@@ -18,8 +20,14 @@ namespace InternalLogicEngineLayer
         {
         }
 
+        #endregion Public Constructors
+
+        #region Protected Constructors
+
         protected EngineRunException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+
+        #endregion Protected Constructors
     }
 }

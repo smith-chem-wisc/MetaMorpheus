@@ -9,6 +9,8 @@ namespace InternalLogicEngineLayer
 {
     internal class MyAnalysisClass
     {
+        #region Public Methods
+
         public static void IdentifyAAsInCommon(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.finalBins)
@@ -75,6 +77,10 @@ namespace InternalLogicEngineLayer
                 }
             }
         }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal static void IdentifyResidues(BinTreeStructure myTreeStructure)
         {
@@ -230,5 +236,7 @@ namespace InternalLogicEngineLayer
                 }
             }
         }
+
+        #endregion Internal Methods
     }
 }

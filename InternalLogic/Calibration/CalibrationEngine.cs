@@ -14,15 +14,13 @@ namespace InternalLogicCalibration
 {
     public class CalibrationEngine : MyEngine
     {
-        #region isotopologue parameters
+        #region Public Fields
 
         // THIS PARAMETER IS FRAGILE!!!
         // TUNED TO CORRESPOND TO SPECTROMETER OUTPUT
         // BETTER SPECTROMETERS WOULD HAVE BETTER (LOWER) RESOLUIONS
         // Parameter for isotopolouge distribution searching
         public double fineResolution = 0.1;
-
-        #endregion isotopologue parameters
 
         public List<NewPsmWithFDR> identifications;
         public HashSet<int> matchesToExclude;
@@ -34,9 +32,23 @@ namespace InternalLogicCalibration
         public DoubleRange mzRange;
         public string paramString = "";
         public double toleranceInMZforMS2Search;
+
+        #endregion Public Fields
+
+        #region Internal Fields
+
         internal int randomSeed;
         internal double toleranceInMZforMS1Search = 0.01;
+
+        #endregion Internal Fields
+
+        #region Private Fields
+
         private const int numFragmentsNeeded = 10;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search) : base(2)
         {
@@ -46,6 +58,11 @@ namespace InternalLogicCalibration
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
         }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
         public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
         {
             status("Extracting data points:");
@@ -174,6 +191,10 @@ namespace InternalLogicCalibration
             }
         }
 
+        #endregion Public Methods
+
+        #region Protected Methods
+
         protected override MyResults RunSpecific()
         {
             status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
@@ -221,6 +242,10 @@ namespace InternalLogicCalibration
 
             return new CalibrationResults(myMsDataFile, this);
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
 
         private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
         {
@@ -469,6 +494,7 @@ namespace InternalLogicCalibration
                 }
             }
         }
+
         private int GetOneBasedSpectrumIndexFromID(string spectrumID, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             var lastInt = Convert.ToInt32(Regex.Match(spectrumID, @"\d+$").Value);
@@ -852,5 +878,7 @@ namespace InternalLogicCalibration
             candidateFragmentsIdentified = numFragmentsIdentified;
             return myCandidatePoints;
         }
+
+        #endregion Private Methods
     }
 }

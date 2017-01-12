@@ -6,6 +6,35 @@ namespace OldInternalLogic
 {
     public class PeptideSpectrumMatch
     {
+        #region Public Fields
+
+        public static readonly string Header = "Filename\tSpectrum Number\tSpectrum ID\tSpectrum Title\tRetention Time (minutes)\tPrecursor m/z\tPrecursor Intensity\tPrecursor Charge\tPrecursor Mass (Da)\tExperimental Peaks\tTotal Intensity"
+            + "\tPeptide Sequence\tBase Peptide Sequence\tProtein Description\tPeptide Description\tStart Residue Number\tStop Residue Number\tMissed Cleavages"
+            + "\tTheoretical Mass (Da)\tPrecursor Mass Error (Da)\tPrecursor Mass Error (ppm)"
+            + "\tMatching Products\tTotal Products\tRatio of Matching Products\tMatching Intensity\tFraction of Intensity Matching\tMetaMorpheus Score\tIon Matches\tIon Counts\tExtended Scores\tImprovement\tImprovementResidue\tImprovementTerminus";
+
+        public Dictionary<ProductType, List<double>> MatchedIonsList = new Dictionary<ProductType, List<double>>();
+
+        //private List<ProductType> productTypes;
+        public List<double> LocalizedScores;
+
+        #endregion Public Fields
+
+        #region Public Constructors
+
+        public PeptideSpectrumMatch(bool isDecoy, double PrecursorMassErrorDa, List<double> LocalizedScores, double MetaMorpheusScore, PeptideWithSetModifications peptide)
+        {
+            this.isDecoy = isDecoy;
+            this.PrecursorMassErrorDa = PrecursorMassErrorDa;
+            this.MetaMorpheusScore = MetaMorpheusScore;
+            this.LocalizedScores = LocalizedScores;
+            this.Peptide = peptide;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public PeptideWithSetModifications Peptide { get; private set; }
 
         public double PrecursorMassErrorDa { get; private set; }
@@ -22,9 +51,6 @@ namespace OldInternalLogic
         public double MetaMorpheusScore { get; private set; }
 
         //private MassTolerance productMassTolerance;
-
-        public Dictionary<ProductType, List<double>> MatchedIonsList = new Dictionary<ProductType, List<double>>();
-
         public bool isDecoy { get; private set; }
 
         public string spectrumFilename { get; private set; }
@@ -33,6 +59,8 @@ namespace OldInternalLogic
         public double spectrumPrecursorMZ { get; private set; }
         public int SpectrumNumber { get; private set; }
         public int SpectrumIndexHere { get; internal set; }
+
+        #endregion Public Properties
 
         //private string SpectrumTitle;
         //private double RetentionTimeMinutes;
@@ -79,16 +107,6 @@ namespace OldInternalLogic
         //    //    MetaMorpheusScore = MatchingProducts + MatchingIntensityFraction;
         //    //}
         //}
-
-        public PeptideSpectrumMatch(bool isDecoy, double PrecursorMassErrorDa, List<double> LocalizedScores, double MetaMorpheusScore, PeptideWithSetModifications peptide)
-        {
-            this.isDecoy = isDecoy;
-            this.PrecursorMassErrorDa = PrecursorMassErrorDa;
-            this.MetaMorpheusScore = MetaMorpheusScore;
-            this.LocalizedScores = LocalizedScores;
-            this.Peptide = peptide;
-        }
-
         //private Tuple<int, double> ScoreMatch(double[] theoretical_product_mzs_for_this_peptide, int needToMatch, ProductType productTypeToDetailList, TandemMassSpectrum Spectrum)
         //{
         //    int MatchingProductsHere = 0;
@@ -142,6 +160,8 @@ namespace OldInternalLogic
         //    return new Tuple<int, double>(MatchingProductsHere, MatchingIntensityHere);
         //}
 
+        #region Public Methods
+
         // left is new, right is current best
         public static int DescendingMetaMorpheusScoreComparison(PeptideSpectrumMatch left, PeptideSpectrumMatch right)
         {
@@ -160,14 +180,6 @@ namespace OldInternalLogic
                 return comparison;
             return right.isDecoy.CompareTo(left.isDecoy);
         }
-
-        public static readonly string Header = "Filename\tSpectrum Number\tSpectrum ID\tSpectrum Title\tRetention Time (minutes)\tPrecursor m/z\tPrecursor Intensity\tPrecursor Charge\tPrecursor Mass (Da)\tExperimental Peaks\tTotal Intensity"
-            + "\tPeptide Sequence\tBase Peptide Sequence\tProtein Description\tPeptide Description\tStart Residue Number\tStop Residue Number\tMissed Cleavages"
-            + "\tTheoretical Mass (Da)\tPrecursor Mass Error (Da)\tPrecursor Mass Error (ppm)"
-            + "\tMatching Products\tTotal Products\tRatio of Matching Products\tMatching Intensity\tFraction of Intensity Matching\tMetaMorpheus Score\tIon Matches\tIon Counts\tExtended Scores\tImprovement\tImprovementResidue\tImprovementTerminus";
-
-        //private List<ProductType> productTypes;
-        public List<double> LocalizedScores;
 
         //private List<double> theoreticaklMzMatches;
 
@@ -224,6 +236,8 @@ namespace OldInternalLogic
 
             return sb.ToString();
         }
+
+        #endregion Public Methods
 
         //internal void ComputeIonMatchesAndCounts(TandemMassSpectrum Spectrum)
         //{

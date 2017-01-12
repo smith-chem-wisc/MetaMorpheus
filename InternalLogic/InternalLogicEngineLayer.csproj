@@ -89,13 +89,11 @@
     <Compile Include="Calibration\CalibrationFunctions\ByHandCalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\CalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\ConstantCalibrationFunction.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\CubicCalibrationFunctionMathNet.cs" />
     <Compile Include="Calibration\CalibrationFunctions\DataPoint.cs" />
     <Compile Include="Calibration\CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
     <Compile Include="Calibration\CalibrationFunctions\NiceTrainingPoint.cs" />
     <Compile Include="Calibration\CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\RandomForest.cs" />
     <Compile Include="Calibration\CalibrationFunctions\SeparateCalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\TrainingPoint.cs" />
     <Compile Include="Calibration\CalibrationFunctions\TransformFunction.cs" />

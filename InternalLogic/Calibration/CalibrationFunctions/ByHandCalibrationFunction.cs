@@ -5,12 +5,22 @@ namespace InternalLogicCalibration
 {
     internal class ByHandCalibrationFunction : CalibrationFunction
     {
+        #region Private Fields
+
         private Action<string> onOutput;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public ByHandCalibrationFunction(Action<string> onOutput)
         {
             this.onOutput = onOutput;
         }
+
+        #endregion Public Constructors
+
+        #region Public Methods
 
         public override double Predict(double[] t)
         {
@@ -21,5 +31,7 @@ namespace InternalLogicCalibration
         {
             onOutput("Sucessfully trained ByHandCalibrationFunction");
         }
+
+        #endregion Public Methods
     }
 }

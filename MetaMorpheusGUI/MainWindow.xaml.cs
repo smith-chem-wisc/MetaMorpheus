@@ -157,6 +157,7 @@ namespace MetaMorpheusGUI
                 dataGridXMLs.Items.Refresh();
             }
         }
+
         private void addFinishedFile(string filepath)
         {
             finishedFileObservableCollection.Add(new FinishedFile(filepath));
@@ -182,7 +183,6 @@ namespace MetaMorpheusGUI
         {
             rawDataObservableCollection.Clear();
         }
-
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
         {
@@ -342,6 +342,7 @@ namespace MetaMorpheusGUI
                         break;
                 }
         }
+
         private void NewoutLabelStatus(object sender, string s)
         {
             if (!Dispatcher.CheckAccess())
@@ -440,6 +441,5 @@ namespace MetaMorpheusGUI
                 addFinishedFile(v.writtenFile);
             }
         }
-
     }
 }

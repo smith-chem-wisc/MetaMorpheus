@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System;
 using System.Text;
 
 namespace InternalLogicTaskLayer
@@ -38,6 +37,7 @@ namespace InternalLogicTaskLayer
 
         public List<ModListForCalibrationTask> listOfModListsForCalibration { get; set; }
         public Tolerance precursorMassTolerance { get; set; }
+
         public override void ValidateParams()
         {
             if (xmlDbFilenameList == null)
@@ -111,7 +111,6 @@ namespace InternalLogicTaskLayer
                 AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-
 
                 var identifications = analysisResults.allResultingIdentifications[0];
 

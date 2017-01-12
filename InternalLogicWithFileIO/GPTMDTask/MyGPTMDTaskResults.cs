@@ -7,6 +7,7 @@ namespace InternalLogicTaskLayer
         public MyGPTMDTaskResults(MyTaskEngine s) : base(s)
         {
         }
+
         protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
