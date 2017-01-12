@@ -14,7 +14,7 @@ namespace InternalLogicCalibration
 {
     public class CalibrationEngine : MyEngine
     {
-        #region isotopologue parameters
+        #region Public Fields
 
         // THIS PARAMETER IS FRAGILE!!!
         // TUNED TO CORRESPOND TO SPECTROMETER OUTPUT
@@ -22,23 +22,33 @@ namespace InternalLogicCalibration
         // Parameter for isotopolouge distribution searching
         public double fineResolution = 0.1;
 
-        #endregion isotopologue parameters
-
-        public HashSet<int> MS2spectraToWatch;
-        public HashSet<int> MS1spectraToWatch;
-        public DoubleRange mzRange;
-
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
         public List<NewPsmWithFDR> identifications;
+        public HashSet<int> matchesToExclude;
+        public int minMS1 = 3;
+        public int minMS2 = 2;
+        public HashSet<int> MS1spectraToWatch;
+        public HashSet<int> MS2spectraToWatch;
+        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        public DoubleRange mzRange;
+        public string paramString = "";
+        public double toleranceInMZforMS2Search;
 
+        #endregion Public Fields
+
+        #region Internal Fields
 
         internal int randomSeed;
-        public string paramString = "";
-        public int minMS2 = 2;
-        public int minMS1 = 3;
-        public double toleranceInMZforMS2Search;
         internal double toleranceInMZforMS1Search = 0.01;
-        public HashSet<int> matchesToExclude;
+
+        #endregion Internal Fields
+
+        #region Private Fields
+
+        private const int numFragmentsNeeded = 10;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search) : base(2)
         {
@@ -48,6 +58,143 @@ namespace InternalLogicCalibration
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
         }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
+        {
+            status("Extracting data points:");
+            // The final training point list
+            List<LabeledDataPoint> trainingPointsToReturn = new List<LabeledDataPoint>();
+
+            // Set of peaks, identified by m/z and retention time. If a peak is in here, it means it has been a part of an accepted identification, and should be rejected
+            HashSet<Tuple<double, double>> peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
+
+            int numIdentifications = identifications.Count;
+            // Loop over identifications
+            for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
+            {
+                var identification = identifications[matchIndex];
+                if (identification.QValue > 0.01)
+                    break;
+
+                // Progress
+                if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
+                    ReportProgress(new InternalLogicEngineLayer.ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
+
+                // Skip decoys, they are for sure not there!
+                if (identification.isDecoy)
+                    continue;
+
+                // Skip exclusions! These are for testing
+                if (matchesToExclude.Contains(matchIndex))
+                    continue;
+
+                // Each identification has an MS2 spectrum attached to it.
+                int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
+
+                // Get the peptide, don't forget to add the modifications!!!!
+                var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
+                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
+
+                #region watch
+
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output("ms2spectrumIndex: " + ms2spectrumIndex);
+                //    output(" peptide: " + SequenceWithChemicalFormulas);
+                //}
+
+                #endregion watch
+
+                int numFragmentsIdentified = -1;
+                List<LabeledDataPoint> candidateTrainingPointsForPeptide = new List<LabeledDataPoint>();
+                Proteomics.Peptide coolPeptide = null;
+                try
+                {
+                    coolPeptide = new Peptide(SequenceWithChemicalFormulas);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified);
+
+                //SoftwareLockMassRunner.WriteDataToFiles(candidateTrainingPointsForPeptide, ms2spectrumIndex.ToString());
+
+                //RTBoutput(new OutputHandlerEventArgs(numFragmentsIdentified.ToString()));
+
+                // If MS2 has low evidence for peptide, skip and go to next one
+                if (numFragmentsIdentified < numFragmentsNeeded)
+                    continue;
+
+                // Calculate isotopic distribution of the full peptide
+
+                IsotopicDistribution dist = new IsotopicDistribution(coolPeptide.GetChemicalFormula(), fineResolution, 0.001);
+
+                double[] masses = new double[dist.Masses.Count];
+                double[] intensities = new double[dist.Intensities.Count];
+                for (int i = 0; i < dist.Masses.Count; i++)
+                {
+                    masses[i] = dist.Masses[i];
+                    intensities[i] = dist.Intensities[i];
+                }
+                Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
+
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output(" Isotopologue distribution: ");
+                //    output(" masses = " + string.Join(", ", masses) + "...");
+                //    output(" intensities = " + string.Join(", ", intensities) + "...");
+                //}
+
+                int lowestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
+
+                int highestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
+
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output(" ms1range: " + lowestMS1ind + " to " + highestMS1ind);
+                //}
+                trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
+            }
+            status("Number of training points: " + trainingPointsToReturn.Count());
+            return trainingPointsToReturn;
+        }
+
+        public override void ValidateParams()
+        {
+            if (identifications == null)
+                throw new EngineValidationException("identifications cannot be null");
+            if (identifications.Count == 0)
+                throw new EngineValidationException("Need to have at least one identification to calibrate on");
+        }
+
+        public void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
+        {
+            if (trainingPoints.Count() == 0)
+                return;
+            var fullFileName = Path.Combine(@"DataPoints", prefix + ".dat");
+            Directory.CreateDirectory(Path.GetDirectoryName(fullFileName));
+
+            using (StreamWriter file = new StreamWriter(fullFileName))
+            {
+                if (trainingPoints.First().inputs.Count() == 9)
+                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, relativeMZ, label");
+                else
+                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, label");
+                foreach (LabeledDataPoint d in trainingPoints)
+                    file.WriteLine(string.Join(",", d.inputs) + "," + d.output);
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
         protected override MyResults RunSpecific()
         {
             status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
@@ -70,16 +217,14 @@ namespace InternalLogicCalibration
                 var pointList1 = pointList.Where((b) => b.inputs[0] == 1).ToList();
                 if (pointList1.Count == 0)
                 {
-                    engineFailed("Not enough MS1 training points, identification quality is poor");
-                    return null;
+                    throw new EngineRunException("Not enough MS1 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
                 //output("pointList1.Count() = " + pointList1.Count());
                 var pointList2 = pointList.Where((b) => b.inputs[0] == 2).ToList();
                 if (pointList2.Count == 0)
                 {
-                    engineFailed("Not enough MS2 training points, identification quality is poor");
-                    return null;
+                    throw new EngineRunException("Not enough MS2 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
                 //output("pointList2.Count() = " + pointList2.Count());
@@ -97,6 +242,10 @@ namespace InternalLogicCalibration
 
             return new CalibrationResults(myMsDataFile, this);
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
 
         private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
         {
@@ -264,8 +413,7 @@ namespace InternalLogicCalibration
             }
             catch (ArgumentException e)
             {
-                engineFailed("Could not calibrate: " + e.Message);
-                return null;
+                throw new EngineRunException("Could not calibrate: " + e.Message);
             }
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
@@ -347,135 +495,6 @@ namespace InternalLogicCalibration
             }
         }
 
-        public void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
-        {
-            if (trainingPoints.Count() == 0)
-                return;
-            var fullFileName = Path.Combine(@"DataPoints", prefix + ".dat");
-            Directory.CreateDirectory(Path.GetDirectoryName(fullFileName));
-
-            using (StreamWriter file = new StreamWriter(fullFileName))
-            {
-                if (trainingPoints.First().inputs.Count() == 9)
-                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, relativeMZ, label");
-                else
-                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, label");
-                foreach (LabeledDataPoint d in trainingPoints)
-                    file.WriteLine(string.Join(",", d.inputs) + "," + d.output);
-            }
-        }
-
-        public override void ValidateParams()
-        {
-            if (identifications == null)
-                throw new EngineValidationException("identifications cannot be null");
-            if (identifications.Count == 0)
-                throw new EngineValidationException("Need to have at least one identification to calibrate on");
-        }
-        private const int numFragmentsNeeded = 10;
-
-        public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
-        {
-            status("Extracting data points:");
-            // The final training point list
-            List<LabeledDataPoint> trainingPointsToReturn = new List<LabeledDataPoint>();
-
-            // Set of peaks, identified by m/z and retention time. If a peak is in here, it means it has been a part of an accepted identification, and should be rejected
-            HashSet<Tuple<double, double>> peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
-
-            int numIdentifications = identifications.Count;
-            // Loop over identifications
-            for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
-            {
-                var identification = identifications[matchIndex];
-                if (identification.QValue > 0.01)
-                    break;
-
-                // Progress
-                if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    ReportProgress(new InternalLogicEngineLayer.ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
-
-                // Skip decoys, they are for sure not there!
-                if (identification.isDecoy)
-                    continue;
-
-                // Skip exclusions! These are for testing
-                if (matchesToExclude.Contains(matchIndex))
-                    continue;
-
-                // Each identification has an MS2 spectrum attached to it.
-                int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
-
-                // Get the peptide, don't forget to add the modifications!!!!
-                var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
-
-                #region watch
-
-                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                //{
-                //    output("ms2spectrumIndex: " + ms2spectrumIndex);
-                //    output(" peptide: " + SequenceWithChemicalFormulas);
-                //}
-
-                #endregion watch
-
-                int numFragmentsIdentified = -1;
-                List<LabeledDataPoint> candidateTrainingPointsForPeptide = new List<LabeledDataPoint>();
-                Proteomics.Peptide coolPeptide = null;
-                try
-                {
-                    coolPeptide = new Peptide(SequenceWithChemicalFormulas);
-                }
-                catch
-                {
-                    continue;
-                }
-
-                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified);
-
-                //SoftwareLockMassRunner.WriteDataToFiles(candidateTrainingPointsForPeptide, ms2spectrumIndex.ToString());
-
-                //RTBoutput(new OutputHandlerEventArgs(numFragmentsIdentified.ToString()));
-
-                // If MS2 has low evidence for peptide, skip and go to next one
-                if (numFragmentsIdentified < numFragmentsNeeded)
-                    continue;
-
-                // Calculate isotopic distribution of the full peptide
-
-                IsotopicDistribution dist = new IsotopicDistribution(coolPeptide.GetChemicalFormula(), fineResolution, 0.001);
-
-                double[] masses = new double[dist.Masses.Count];
-                double[] intensities = new double[dist.Intensities.Count];
-                for (int i = 0; i < dist.Masses.Count; i++)
-                {
-                    masses[i] = dist.Masses[i];
-                    intensities[i] = dist.Intensities[i];
-                }
-                Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
-
-                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                //{
-                //    output(" Isotopologue distribution: ");
-                //    output(" masses = " + string.Join(", ", masses) + "...");
-                //    output(" intensities = " + string.Join(", ", intensities) + "...");
-                //}
-
-                int lowestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
-
-                int highestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
-
-                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                //{
-                //    output(" ms1range: " + lowestMS1ind + " to " + highestMS1ind);
-                //}
-                trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
-            }
-            status("Number of training points: " + trainingPointsToReturn.Count());
-            return trainingPointsToReturn;
-        }
-
         private int GetOneBasedSpectrumIndexFromID(string spectrumID, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             var lastInt = Convert.ToInt32(Regex.Match(spectrumID, @"\d+$").Value);
@@ -492,6 +511,166 @@ namespace InternalLogicCalibration
                 oneBasedScanNumber++;
             } while (!spectrumID.Equals(myMsDataFile.GetOneBasedScan(oneBasedScanNumber).id));
             return oneBasedScanNumber;
+        }
+
+        private int SearchMS1Spectra(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
+        {
+            int goodIndex = -1;
+            List<int> scores = new List<int>();
+            var theIndex = -1;
+            if (direction == 1)
+                theIndex = ms2spectrumIndex;
+            else
+                theIndex = ms2spectrumIndex - 1;
+
+            bool addedAscan = true;
+
+            int highestKnownChargeForThisPeptide = peptideCharge;
+            while (theIndex >= 1 && theIndex <= myMsDataFile.NumSpectra && addedAscan == true)
+            {
+                int countForThisScan = 0;
+                if (myMsDataFile.GetOneBasedScan(theIndex).MsnOrder > 1)
+                {
+                    theIndex += direction;
+                    continue;
+                }
+                addedAscan = false;
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                //{
+                //    output(" Looking in MS1 spectrum " + theIndex + " because of MS2 spectrum " + ms2spectrumIndex);
+                //}
+                List<LabeledDataPoint> myCandidatePointsForThisMS1scan = new List<LabeledDataPoint>();
+                var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
+                double ms1RetentionTime = fullMS1scan.RetentionTime;
+                var scanWindowRange = fullMS1scan.ScanWindowRange;
+                var fullMS1spectrum = fullMS1scan.MassSpectrum;
+                if (fullMS1spectrum.Count == 0)
+                    break;
+
+                bool startingToAddCharges = false;
+                int chargeToLookAt = 1;
+                do
+                {
+                    //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                    //{
+                    //    output("  Looking at charge " + chargeToLookAt);
+                    //}
+                    if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
+                    {
+                        chargeToLookAt++;
+                        continue;
+                    }
+                    if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) < scanWindowRange.Minimum)
+                        break;
+                    List<TrainingPoint> trainingPointsToAverage = new List<TrainingPoint>();
+                    foreach (double a in originalMasses)
+                    {
+                        double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
+
+                        var npwr = fullMS1spectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS1Search, theMZ + toleranceInMZforMS1Search);
+                        if (npwr == 0)
+                        {
+                            //if (MS1spectraToWatch.Contains(theIndex))
+                            //    output("      Breaking because extracted.Count = " + npwr);
+                            break;
+                        }
+                        if (npwr > 1)
+                        {
+                            //if (MS1spectraToWatch.Contains(theIndex))
+                            //    output("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
+                            continue;
+                        }
+
+                        var closestPeak = fullMS1spectrum.GetClosestPeak(theMZ);
+                        var closestPeakMZ = closestPeak.MZ;
+
+                        //if (closestPeak.Intensity / fullMS1scan.TotalIonCurrent < 2e-4)
+                        //{
+                        //    if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //        RTBoutput("      Breaking because intensity fraction is " + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
+                        //    break;
+                        //}
+                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
+                        //{
+                        //    output("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
+                        //}
+
+                        var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
+                        if (!peaksAddedHashSet.Contains(theTuple))
+                        {
+                            peaksAddedHashSet.Add(theTuple);
+                            highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
+                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
+                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
+                            //{
+                            //    output("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
+                            //}
+                            trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 1, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
+                        }
+                        else
+                            break;
+                    }
+                    // If started adding and suddnely stopped, go to next one, no need to look at higher charges
+                    if (trainingPointsToAverage.Count == 0 && startingToAddCharges == true)
+                    {
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //{
+                        //    output("    Started adding and suddnely stopped, no need to look at higher charges");
+                        //}
+                        break;
+                    }
+                    if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
+                    {
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //{
+                        //    output("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
+                        //}
+                        break;
+                    }
+                    if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
+                    {
+                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
+                        //{
+                        //    output("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
+                        //}
+                    }
+                    else if (trainingPointsToAverage.Count < Math.Min(minMS1, originalIntensities.Count()))
+                    {
+                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
+                        //{
+                        //    output("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
+                        //}
+                    }
+                    else
+                    {
+                        addedAscan = true;
+                        startingToAddCharges = true;
+                        countForThisScan += 1;
+                        double[] inputs = new double[6] { 1, trainingPointsToAverage.Select(b => b.dp.mz).Average(), fullMS1scan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), fullMS1scan.TotalIonCurrent, fullMS1scan.InjectionTime };
+                        var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
+                        //if (a.output > 0)
+                        //    RTBoutput(theIndex + "," + ms2spectrumIndex);
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //{
+                        //    output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS1 SPECTRUM");
+                        //    output("    a.dmz " + a.inputs[1]);
+                        //    output("    a.drt " + a.inputs[2]);
+                        //    output("    a.l     " + a.output);
+                        //}
+                        myCandidatePointsForThisMS1scan.Add(a);
+                    }
+                    chargeToLookAt++;
+                } while (chargeToLookAt <= highestKnownChargeForThisPeptide + 1);
+
+                if (myCandidatePointsForThisMS1scan.Count > 0)
+                    goodIndex = theIndex;
+                //    SoftwareLockMassRunner.WriteDataToFiles(myCandidatePointsForThisMS1scan, theIndex.ToString());
+                myCandidatePoints.AddRange(myCandidatePointsForThisMS1scan);
+
+                scores.Add(countForThisScan);
+                theIndex += direction;
+            }
+            return goodIndex;
         }
 
         private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified)
@@ -700,165 +879,6 @@ namespace InternalLogicCalibration
             return myCandidatePoints;
         }
 
-        private int SearchMS1Spectra(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
-        {
-            int goodIndex = -1;
-            List<int> scores = new List<int>();
-            var theIndex = -1;
-            if (direction == 1)
-                theIndex = ms2spectrumIndex;
-            else
-                theIndex = ms2spectrumIndex - 1;
-
-            bool addedAscan = true;
-
-            int highestKnownChargeForThisPeptide = peptideCharge;
-            while (theIndex >= 1 && theIndex <= myMsDataFile.NumSpectra && addedAscan == true)
-            {
-                int countForThisScan = 0;
-                if (myMsDataFile.GetOneBasedScan(theIndex).MsnOrder > 1)
-                {
-                    theIndex += direction;
-                    continue;
-                }
-                addedAscan = false;
-                //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                //{
-                //    output(" Looking in MS1 spectrum " + theIndex + " because of MS2 spectrum " + ms2spectrumIndex);
-                //}
-                List<LabeledDataPoint> myCandidatePointsForThisMS1scan = new List<LabeledDataPoint>();
-                var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
-                double ms1RetentionTime = fullMS1scan.RetentionTime;
-                var scanWindowRange = fullMS1scan.ScanWindowRange;
-                var fullMS1spectrum = fullMS1scan.MassSpectrum;
-                if (fullMS1spectrum.Count == 0)
-                    break;
-
-                bool startingToAddCharges = false;
-                int chargeToLookAt = 1;
-                do
-                {
-                    //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                    //{
-                    //    output("  Looking at charge " + chargeToLookAt);
-                    //}
-                    if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
-                    {
-                        chargeToLookAt++;
-                        continue;
-                    }
-                    if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) < scanWindowRange.Minimum)
-                        break;
-                    List<TrainingPoint> trainingPointsToAverage = new List<TrainingPoint>();
-                    foreach (double a in originalMasses)
-                    {
-                        double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
-
-                        var npwr = fullMS1spectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS1Search, theMZ + toleranceInMZforMS1Search);
-                        if (npwr == 0)
-                        {
-                            //if (MS1spectraToWatch.Contains(theIndex))
-                            //    output("      Breaking because extracted.Count = " + npwr);
-                            break;
-                        }
-                        if (npwr > 1)
-                        {
-                            //if (MS1spectraToWatch.Contains(theIndex))
-                            //    output("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
-                            continue;
-                        }
-
-                        var closestPeak = fullMS1spectrum.GetClosestPeak(theMZ);
-                        var closestPeakMZ = closestPeak.MZ;
-
-                        //if (closestPeak.Intensity / fullMS1scan.TotalIonCurrent < 2e-4)
-                        //{
-                        //    if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //        RTBoutput("      Breaking because intensity fraction is " + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
-                        //    break;
-                        //}
-                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
-                        //{
-                        //    output("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
-                        //}
-
-                        var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
-                        if (!peaksAddedHashSet.Contains(theTuple))
-                        {
-                            peaksAddedHashSet.Add(theTuple);
-                            highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
-                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                            //{
-                            //    output("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
-                            //}
-                            trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 1, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
-                        }
-                        else
-                            break;
-                    }
-                    // If started adding and suddnely stopped, go to next one, no need to look at higher charges
-                    if (trainingPointsToAverage.Count == 0 && startingToAddCharges == true)
-                    {
-                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //{
-                        //    output("    Started adding and suddnely stopped, no need to look at higher charges");
-                        //}
-                        break;
-                    }
-                    if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
-                    {
-                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //{
-                        //    output("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
-                        //}
-                        break;
-                    }
-                    if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
-                    {
-                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                        //{
-                        //    output("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
-                        //}
-                    }
-                    else if (trainingPointsToAverage.Count < Math.Min(minMS1, originalIntensities.Count()))
-                    {
-                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                        //{
-                        //    output("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
-                        //}
-                    }
-                    else
-                    {
-                        addedAscan = true;
-                        startingToAddCharges = true;
-                        countForThisScan += 1;
-                        double[] inputs = new double[6] { 1, trainingPointsToAverage.Select(b => b.dp.mz).Average(), fullMS1scan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), fullMS1scan.TotalIonCurrent, fullMS1scan.InjectionTime };
-                        var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
-                        //if (a.output > 0)
-                        //    RTBoutput(theIndex + "," + ms2spectrumIndex);
-                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //{
-                        //    output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS1 SPECTRUM");
-                        //    output("    a.dmz " + a.inputs[1]);
-                        //    output("    a.drt " + a.inputs[2]);
-                        //    output("    a.l     " + a.output);
-                        //}
-                        myCandidatePointsForThisMS1scan.Add(a);
-                    }
-                    chargeToLookAt++;
-                } while (chargeToLookAt <= highestKnownChargeForThisPeptide + 1);
-
-                if (myCandidatePointsForThisMS1scan.Count > 0)
-                    goodIndex = theIndex;
-                //    SoftwareLockMassRunner.WriteDataToFiles(myCandidatePointsForThisMS1scan, theIndex.ToString());
-                myCandidatePoints.AddRange(myCandidatePointsForThisMS1scan);
-
-                scores.Add(countForThisScan);
-                theIndex += direction;
-            }
-            return goodIndex;
-        }
-
+        #endregion Private Methods
     }
 }

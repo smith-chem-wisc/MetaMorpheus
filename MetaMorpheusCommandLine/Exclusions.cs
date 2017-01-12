@@ -7,6 +7,8 @@ namespace MetaMorpheusCommandLine
 {
     public class Exclusions
     {
+        #region Public Methods
+
         public static double[] PopulateExcludeList()
         {
             // Do not exclude Lysine + Anything
@@ -58,5 +60,7 @@ namespace MetaMorpheusCommandLine
                     return false;
             return true;
         }
+
+        #endregion Public Methods
     }
 }

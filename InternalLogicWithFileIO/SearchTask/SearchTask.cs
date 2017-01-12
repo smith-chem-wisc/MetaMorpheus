@@ -4,23 +4,17 @@ using IO.Thermo;
 using MassSpectrometry;
 using OldInternalLogic;
 using Spectra;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace InternalLogicTaskLayer
 {
     public class SearchTask : MyTaskEngine
     {
-
-        public bool searchDecoy { get; set; }
-
-        public bool classicSearch { get; set; }
-
-        public bool doParsimony { get; set; }
-        public List<SearchModeFoSearch> searchModes { get; set; }
-
-        public List<ModListForSearchTask> listOfModListsForSearch { get; set; }
+        #region Public Constructors
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
         {
@@ -49,6 +43,54 @@ namespace InternalLogicTaskLayer
             this.taskType = MyTaskEnum.Search;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public bool classicSearch { get; set; }
+        public bool doParsimony { get; set; }
+        public List<ModListForSearchTask> listOfModListsForSearch { get; set; }
+        public bool searchDecoy { get; set; }
+        public List<SearchModeFoSearch> searchModes { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public override void ValidateParams()
+        {
+            foreach (var huh in listOfModListsForSearch)
+            {
+                if (huh.Fixed && huh.Localize)
+                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
+                if (huh.Fixed && huh.Variable)
+                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
+                if (huh.Localize && huh.Variable)
+                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Internal Methods
+
+        internal override string GetSpecificTaskInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("classicSearch: " + classicSearch);
+            sb.AppendLine("doParsimony: " + doParsimony);
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Fixed).Select(b => b.FileName)));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Variable).Select(b => b.FileName)));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Localize).Select(b => b.FileName)));
+            sb.AppendLine("searchDecoy: " + searchDecoy);
+            sb.AppendLine("searchModes: ");
+            sb.Append(string.Join(Environment.NewLine, searchModes.Where(b => b.Use).Select(b => b.sm)));
+            return sb.ToString();
+        }
+
+        #endregion Internal Methods
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -120,7 +162,6 @@ namespace InternalLogicTaskLayer
                     AnalysisEngine analysisEngine = new AnalysisEngine(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-
                 }
 
                 // run modern search
@@ -148,17 +189,6 @@ namespace InternalLogicTaskLayer
             return new MySearchTaskResults(this);
         }
 
-        public override void ValidateParams()
-        {
-            foreach (var huh in listOfModListsForSearch)
-            {
-                if (huh.Fixed && huh.Localize)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
-                if (huh.Fixed && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
-                if (huh.Localize && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
-            }
-        }
+        #endregion Protected Methods
     }
 }

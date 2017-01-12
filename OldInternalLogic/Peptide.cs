@@ -2,6 +2,26 @@ namespace OldInternalLogic
 {
     public abstract class Peptide
     {
+        #region Protected Fields
+
+        protected string baseSequence;
+        protected string baseLeucineSequence;
+
+        #endregion Protected Fields
+
+        #region Public Constructors
+
+        public Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
+        {
+            this.protein = protein;
+            this.OneBasedStartResidueInProtein = OneBasedStartResidueInProtein;
+            this.OneBasedEndResidueInProtein = OneBasedEndResidueInProtein;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public Protein protein { get; private set; }
         public int OneBasedStartResidueInProtein { get; private set; }
         public int OneBasedEndResidueInProtein { get; private set; }
@@ -13,21 +33,6 @@ namespace OldInternalLogic
             get
             {
                 return OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
-            }
-        }
-
-        public Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
-        {
-            this.protein = protein;
-            this.OneBasedStartResidueInProtein = OneBasedStartResidueInProtein;
-            this.OneBasedEndResidueInProtein = OneBasedEndResidueInProtein;
-        }
-
-        public char this[int zeroBasedIndex]
-        {
-            get
-            {
-                return protein.BaseSequence[zeroBasedIndex + OneBasedStartResidueInProtein - 1];
             }
         }
 
@@ -47,8 +52,6 @@ namespace OldInternalLogic
             }
         }
 
-        protected string baseSequence;
-
         public string BaseSequence
         {
             get
@@ -59,8 +62,6 @@ namespace OldInternalLogic
             }
         }
 
-        protected string baseLeucineSequence;
-
         public string BaseLeucineSequence
         {
             get
@@ -70,5 +71,19 @@ namespace OldInternalLogic
                 return baseLeucineSequence;
             }
         }
+
+        #endregion Public Properties
+
+        #region Public Indexers
+
+        public char this[int zeroBasedIndex]
+        {
+            get
+            {
+                return protein.BaseSequence[zeroBasedIndex + OneBasedStartResidueInProtein - 1];
+            }
+        }
+
+        #endregion Public Indexers
     }
 }

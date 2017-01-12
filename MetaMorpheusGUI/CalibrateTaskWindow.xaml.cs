@@ -14,8 +14,14 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
+        #region Private Fields
+
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForCalibrationTask> ModFileListInWindow = new ObservableCollection<ModListForCalibrationTask>();
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public CalibrateTaskWindow(ObservableCollection<ModList> modList)
         {
@@ -25,6 +31,25 @@ namespace MetaMorpheusGUI
             TheTask = new CalibrationTask(modList);
             UpdateFieldsFromTask(TheTask);
         }
+
+        public CalibrateTaskWindow(CalibrationTask myCalibrateTask, ObservableCollection<ModList> modList)
+        {
+            InitializeComponent();
+            PopulateChoices(modList);
+
+            TheTask = myCalibrateTask;
+            UpdateFieldsFromTask(TheTask);
+        }
+
+        #endregion Public Constructors
+
+        #region Internal Properties
+
+        internal CalibrationTask TheTask { get; private set; }
+
+        #endregion Internal Properties
+
+        #region Private Methods
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
@@ -41,11 +66,11 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.yIons;
             for (int i = 0; i < ModFileListInWindow.Count; i++)
             {
-                if (task.listOfModListsForSearch[i].Fixed)
+                if (task.listOfModListsForCalibration[i].Fixed)
                     ModFileListInWindow[i].Fixed = true;
-                if (task.listOfModListsForSearch[i].Variable)
+                if (task.listOfModListsForCalibration[i].Variable)
                     ModFileListInWindow[i].Variable = true;
-                if (task.listOfModListsForSearch[i].Localize)
+                if (task.listOfModListsForCalibration[i].Localize)
                     ModFileListInWindow[i].Localize = true;
             }
             modificationsDataGrid.Items.Refresh();
@@ -72,17 +97,6 @@ namespace MetaMorpheusGUI
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 
-        public CalibrateTaskWindow(CalibrationTask myCalibrateTask, ObservableCollection<ModList> modList)
-        {
-            InitializeComponent();
-            PopulateChoices(modList);
-
-            TheTask = myCalibrateTask;
-            UpdateFieldsFromTask(TheTask);
-        }
-
-        internal CalibrationTask TheTask { get; private set; }
-
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
@@ -98,11 +112,13 @@ namespace MetaMorpheusGUI
             TheTask.productMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.bIons = bCheckBox.IsChecked.Value;
             TheTask.yIons = yCheckBox.IsChecked.Value;
-            TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
+            TheTask.listOfModListsForCalibration = ModFileListInWindow.ToList();
             TheTask.precursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text);
             TheTask.precursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             DialogResult = true;
         }
+
+        #endregion Private Methods
     }
 }

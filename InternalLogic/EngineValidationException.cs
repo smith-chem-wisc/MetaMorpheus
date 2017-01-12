@@ -6,6 +6,8 @@ namespace InternalLogicEngineLayer
     [Serializable]
     public class EngineValidationException : Exception
     {
+        #region Public Constructors
+
         public EngineValidationException()
         {
         }
@@ -18,8 +20,14 @@ namespace InternalLogicEngineLayer
         {
         }
 
+        #endregion Public Constructors
+
+        #region Protected Constructors
+
         protected EngineValidationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+
+        #endregion Protected Constructors
     }
 }

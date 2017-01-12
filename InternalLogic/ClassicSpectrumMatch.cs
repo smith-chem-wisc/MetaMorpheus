@@ -6,8 +6,19 @@ namespace InternalLogicEngineLayer
 {
     public class ClassicSpectrumMatch : ParentSpectrumMatch
     {
-        private double[] hehe;
+        #region Public Fields
+
         public PeptideWithSetModifications ps;
+
+        #endregion Public Fields
+
+        #region Private Fields
+
+        private double[] hehe;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public ClassicSpectrumMatch(double ScoreFromSearch, PeptideWithSetModifications ps, double[] hehe, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
         {
@@ -26,12 +37,31 @@ namespace InternalLogicEngineLayer
             this.spectraFileIndex = spectraFileIndex;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public double scanPrecursorMZ { get; private set; }
         public double scanRT { get; private set; }
         public double scanPrecursorIntensity { get; private set; }
         public int scanExperimentalPeaks { get; private set; }
         public double TotalIonCurrent { get; private set; }
         public int spectraFileIndex { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        {
+            if (compactPeptide == null)
+                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications);
+            return compactPeptide;
+        }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal static bool FirstIsPreferable(ClassicSpectrumMatch psm, ClassicSpectrumMatch current_best_psm)
         {
@@ -48,6 +78,10 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
+        #endregion Internal Methods
+
+        #region Private Methods
+
         private static bool FirstIsPreferableWithoutScore(PeptideWithSetModifications first, PeptideWithSetModifications second, double pm)
         {
             if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
@@ -61,11 +95,6 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
-        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
-        {
-            if (compactPeptide == null)
-                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications);
-            return compactPeptide;
-        }
+        #endregion Private Methods
     }
 }
