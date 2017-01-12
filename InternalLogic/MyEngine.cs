@@ -7,9 +7,9 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyEngine
     {
-        protected static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
+        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
 
-        protected static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
+        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
 
         public static event EventHandler<SingleEngineEventArgs> startingSingleEngineHander;
 
@@ -20,12 +20,6 @@ namespace InternalLogicEngineLayer
         public static event EventHandler<ProgressEventArgs> outProgressHandler;
 
         public static event EventHandler<string> outRichTextBoxHandler;
-
-        static MyEngine()
-        {
-            unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(@"unimod_tables.xml");
-            uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(@"ptmlist.txt");
-        }
 
         protected void status(string v)
         {

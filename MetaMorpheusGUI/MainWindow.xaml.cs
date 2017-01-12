@@ -21,20 +21,24 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
-        private static ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
-        private static ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
-        private static ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
-        private static ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
-        private static ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
+        private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
+        private readonly ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
+        private readonly ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
+        private readonly ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
+        private readonly ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
+        private readonly ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
 
-        public static string elementsLocation = @"elements.dat";
+        public const string elementsLocation = @"elements.dat";
+        public const string unimodLocation = @"unimod_tables.xml";
+        public const string uniprotLocation = @"ptmlist.txt";
 
         public MainWindow()
         {
             InitializeComponent();
 
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
+            MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
+            MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
 
             // modificationsDataGrid.DataContext = ModFileList;
             dataGridXMLs.DataContext = xmlDBobservableCollection;

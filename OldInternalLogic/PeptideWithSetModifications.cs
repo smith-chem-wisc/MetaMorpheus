@@ -1,4 +1,5 @@
-﻿using Proteomics;
+﻿using Chemistry;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -135,7 +136,7 @@ namespace OldInternalLogic
         {
             PeptideFragmentMasses p = new PeptideFragmentMasses();
 
-            monoisotopicMass = Constants.WATER_MONOISOTOPIC_MASS;
+            monoisotopicMass = waterMonoisotopicMass;
 
             double mass_shift;
             p.cumulativeNTerminalMass = new double[Length];
@@ -268,6 +269,7 @@ namespace OldInternalLogic
 
         public Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss;
         private PeptideWithPossibleModifications modPep;
+        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         public int MissedCleavages
         {
