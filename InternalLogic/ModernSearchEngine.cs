@@ -52,91 +52,83 @@ namespace InternalLogicEngineLayer
             for (int i = 0; i < searchModes.Count; i++)
                 newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
 
+            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+
             //int numAllSpectra = 0;
             int numMS2spectra = 0;
             int[] numMS2spectraMatched = new int[searchModes.Count];
 
             var searchModesCount = searchModes.Count;
 
-            Parallel.ForEach(Partitioner.Create(0, totalSpectra), fff =>
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    var thisScan = spectraList[i];
-                    if (thisScan.MsnOrder == 2)
+                    var thisScan = listOfSortedms2Scans[i];
+
+                    var fullPeptideScores = CalculatePeptideScores(thisScan.theScan, peptideIndex, 400, keys, fragmentIndex, fragmentTolerance);
+
+                    CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
+                    double[] bestScores = new double[searchModesCount];
+                    for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
-                        double selectedMZ;
-                        int selectedCharge;
-                        thisScan.TryGetSelectedIonGuessMonoisotopicMZ(out selectedMZ);
-                        thisScan.TryGetSelectedIonGuessChargeStateGuess(out selectedCharge);
-                        var scanPrecursorMass = selectedMZ.ToMass(selectedCharge);
-
-                        var fullPeptideScores = CalculatePeptideScores(thisScan, peptideIndex, 400, keys, fragmentIndex, fragmentTolerance);
-
-                        CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
-                        double[] bestScores = new double[searchModesCount];
-                        for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
+                        var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
+                        CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
+                        for (int j = 0; j < searchModesCount; j++)
                         {
-                            var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                            for (int j = 0; j < searchModesCount; j++)
+                            // Check if makes sense to add due to peptidescore!
+                            var searchMode = searchModes[j];
+                            double currentBestScore = bestScores[j];
+                            if (currentBestScore > 1)
                             {
-                                // Check if makes sense to add due to peptidescore!
-                                var searchMode = searchModes[j];
-                                double currentBestScore = bestScores[j];
-                                if (currentBestScore > 1)
+                                // Existed! Need to compare with old match
+                                if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
-                                    // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                    // Score is same, need to see if accepts and if prefer the new one
+                                    if (searchMode.Accepts(thisScan.precursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScan.precursorMass))
                                     {
-                                        // Score is same, need to see if accepts and if prefer the new one
-                                        if (searchMode.Accepts(scanPrecursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], scanPrecursorMass))
-                                        {
-                                            bestPeptides[j] = candidatePeptide;
-                                            bestScores[j] = consideredScore;
-                                        }
-                                    }
-                                    else if (currentBestScore < consideredScore)
-                                    {
-                                        // Score is better, only make sure it is acceptable
-                                        if (searchMode.Accepts(scanPrecursorMass, candidatePeptide.MonoisotopicMass))
-                                        {
-                                            bestPeptides[j] = candidatePeptide;
-                                            bestScores[j] = consideredScore;
-                                        }
+                                        bestPeptides[j] = candidatePeptide;
+                                        bestScores[j] = consideredScore;
                                     }
                                 }
-                                else
+                                else if (currentBestScore < consideredScore)
                                 {
-                                    // Did not exist! Only make sure that it is acceptable
-                                    if (searchMode.Accepts(scanPrecursorMass, candidatePeptide.MonoisotopicMass))
+                                    // Score is better, only make sure it is acceptable
+                                    if (searchMode.Accepts(thisScan.precursorMass, candidatePeptide.MonoisotopicMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
                                     }
                                 }
                             }
-                        }
-
-                        var psms = new ModernSpectrumMatch[searchModesCount];
-
-                        for (int j = 0; j < searchModesCount; j++)
-                        {
-                            CompactPeptide theBestPeptide = bestPeptides[j];
-                            if (theBestPeptide != null)
+                            else
                             {
-                                double precursorIntensity;
-                                thisScan.TryGetSelectedIonGuessMonoisotopicIntensity(out precursorIntensity);
-                                newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(selectedMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, selectedCharge, thisScan.MassSpectrum.xArray.Length, thisScan.TotalIonCurrent, precursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
-                                //numMS2spectraMatched[j]++;
+                                // Did not exist! Only make sure that it is acceptable
+                                if (searchMode.Accepts(thisScan.precursorMass, candidatePeptide.MonoisotopicMass))
+                                {
+                                    bestPeptides[j] = candidatePeptide;
+                                    bestScores[j] = consideredScore;
+                                }
                             }
                         }
-                        //numMS2spectra++;
                     }
-                    //numAllSpectra++;
-                    //if (numAllSpectra % 100 == 0)
-                    //    po.rtboutout("Spectra: " + numAllSpectra + " / " + totalSpectra);
+
+                    var psms = new ModernSpectrumMatch[searchModesCount];
+
+                    for (int j = 0; j < searchModesCount; j++)
+                    {
+                        CompactPeptide theBestPeptide = bestPeptides[j];
+                        if (theBestPeptide != null)
+                        {
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
+                            //numMS2spectraMatched[j]++;
+                        }
+                    }
+                    //numMS2spectra++;
                 }
+                //numAllSpectra++;
+                //if (numAllSpectra % 100 == 0)
+                //    po.rtboutout("Spectra: " + numAllSpectra + " / " + totalSpectra);
             });
             return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, this);
         }

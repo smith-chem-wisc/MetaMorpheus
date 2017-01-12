@@ -29,7 +29,7 @@ namespace InternalLogicEngineLayer
             this.compactPeptide = theBestPeptide;
         }
 
-        internal override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
             return compactPeptide;
         }

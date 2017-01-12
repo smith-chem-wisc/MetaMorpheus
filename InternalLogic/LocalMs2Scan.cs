@@ -7,11 +7,11 @@ namespace InternalLogicEngineLayer
 {
     internal class LocalMs2Scan : IComparable, IComparable<double>
     {
-        public IMsDataScan<IMzSpectrum<MzPeak>> b { get; private set; }
+        public IMsDataScan<IMzSpectrum<MzPeak>> theScan { get; private set; }
 
         public LocalMs2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
         {
-            this.b = b;
+            this.theScan = b;
             double monoisotopicPrecursorMZ;
             b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZ);
             this.monoisotopicPrecursorMZ = monoisotopicPrecursorMZ;
