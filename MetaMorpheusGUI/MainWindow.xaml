@@ -127,7 +127,13 @@
                         <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
                     </StackPanel>
                     <ProgressBar x:Name="outProgressBar" Height="15" />
-                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" />
+                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" >
+                        <RichTextBox.Resources>
+                            <Style TargetType="{x:Type Paragraph}">
+                                <Setter Property="Margin" Value="0"/>
+                            </Style>
+                        </RichTextBox.Resources>
+                    </RichTextBox>
                 </StackPanel>
             </Border>
         </Grid>
