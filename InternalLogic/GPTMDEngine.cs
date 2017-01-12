@@ -31,7 +31,8 @@ namespace InternalLogicEngineLayer
 
         public override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (allResultingIdentifications == null)
+                throw new EngineValidationException("allResultingIdentifications cannot be null");
         }
 
         protected override MyResults RunSpecific()
