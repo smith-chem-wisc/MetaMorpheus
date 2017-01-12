@@ -87,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CalibrateTask\MyCalibrationTaskResults.cs" />
+    <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
     <Compile Include="GPTMDTask\MyGPTMDTaskResults.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
     <Compile Include="CalibrateTask\CalibrationTask.cs" />

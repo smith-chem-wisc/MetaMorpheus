@@ -36,7 +36,7 @@ namespace MetaMorpheusGUI
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
-            
+
             dataGridXMLs.DataContext = xmlDBobservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksDataGrid.DataContext = taskEngineObservableCollection;
@@ -120,7 +120,7 @@ namespace MetaMorpheusGUI
                 s.theTask.IsMySelected = true;
                 statusLabel.Content = "Running " + s.theTask.taskType + " task";
                 outProgressBar.IsIndeterminate = true;
-                
+
                 tasksDataGrid.Items.Refresh();
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
@@ -138,7 +138,7 @@ namespace MetaMorpheusGUI
                 s.theTask.IsMySelected = false;
                 statusLabel.Content = "Finished " + s.theTask.taskType + " task";
                 outProgressBar.Value = 100;
-                
+
                 tasksDataGrid.Items.Refresh();
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
@@ -169,7 +169,7 @@ namespace MetaMorpheusGUI
         {
             rawDataObservableCollection.Clear();
         }
-        
+
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
         {
@@ -363,7 +363,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                outRichTextBox.AppendText(tup + "\n");
+                outRichTextBox.AppendText(tup + Environment.NewLine);
                 outRichTextBox.ScrollToEnd();
             }
         }

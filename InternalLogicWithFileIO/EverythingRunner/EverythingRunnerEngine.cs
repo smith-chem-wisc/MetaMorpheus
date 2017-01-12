@@ -111,7 +111,7 @@ namespace InternalLogicTaskLayer
                 }
             }
             FinishedAllTasks();
-            return null;
+            return new EverythingRunnerResults(this);
         }
     }
 }
