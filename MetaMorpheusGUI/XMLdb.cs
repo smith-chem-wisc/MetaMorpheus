@@ -1,4 +1,4 @@
-﻿namespace InternalLogicTaskLayer
+﻿namespace MetaMorpheusGUI
 {
     public class XMLdb
     {

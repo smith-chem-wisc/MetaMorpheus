@@ -17,15 +17,15 @@ namespace MetaMorpheusCommandLine
             var unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             var uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
             
-            var xMLdblist = new ObservableCollection<XMLdb>();
-            if (args[0].Equals("mouse"))
-            {
-                xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
-            }
-            else
-            {
-                xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-12-15-2016.xml"));
-            }
+            //var xMLdblist = new ObservableCollection<XMLdb>();
+            //if (args[0].Equals("mouse"))
+            //{
+            //    xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
+            //}
+            //else
+            //{
+            //    xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-12-15-2016.xml"));
+            //}
 
             //xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-622-12-15-2016.xml"));
             //xMLdblist.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-P62263-12-16-2016.xml"));

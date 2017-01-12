@@ -16,7 +16,7 @@ namespace InternalLogicTaskLayer
     public class GPTMDTask : MyTaskEngine
     {
         public Tolerance precursorMassTolerance { get; set; }
-        public List<ModListForGPTMD> listOfModListsForGPTMD { get; set; }
+        public List<ModListForGPTMDTask> listOfModListsForGPTMD { get; set; }
 
         public double tol { get; set; }
 
@@ -33,9 +33,9 @@ namespace InternalLogicTaskLayer
             productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             bIons = true;
             yIons = true;
-            listOfModListsForGPTMD = new List<ModListForGPTMD>();
+            listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
             foreach (var uu in modList)
-                listOfModListsForGPTMD.Add(new ModListForGPTMD(uu));
+                listOfModListsForGPTMD.Add(new ModListForGPTMDTask(uu));
             listOfModListsForGPTMD[0].Fixed = true;
             listOfModListsForGPTMD[1].Variable = true;
             listOfModListsForGPTMD[2].Localize = true;
@@ -51,7 +51,7 @@ namespace InternalLogicTaskLayer
         {
             outputFileName = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
 
-            MyTaskResults myGPTMDresults = new MyTaskResults(this);
+            MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
             myGPTMDresults.newDatabases = new List<string>();
 
             var currentRawFileList = rawDataFilenameList;

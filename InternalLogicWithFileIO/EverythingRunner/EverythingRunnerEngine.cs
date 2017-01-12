@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace InternalLogicTaskLayer
 {
-    public class AllTasksEngine : MyEngine
+    public class EverythingRunnerEngine : MyEngine
     {
         private List<MyTaskEngine> taskList;
         private List<string> currentRawDataFilenameList;
@@ -41,7 +41,7 @@ namespace InternalLogicTaskLayer
 
         }
 
-        public AllTasksEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList)
+        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList)
         {
             this.taskList = taskList;
             this.currentRawDataFilenameList = startingRawFilenameList;
@@ -111,7 +111,7 @@ namespace InternalLogicTaskLayer
                 }
             }
             FinishedAllTasks();
-            return new AllTasksResults(this);
+            return null;
         }
     }
 }

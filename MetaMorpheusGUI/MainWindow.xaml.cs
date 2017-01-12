@@ -54,12 +54,12 @@ namespace MetaMorpheusGUI
             xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
 
             rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-            
-            AllTasksEngine.newDbsHandler += AddNewDB;
-            AllTasksEngine.newSpectrasHandler += AddNewSpectra;
 
-            AllTasksEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-            AllTasksEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.newDbsHandler += AddNewDB;
+            EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
+
+            EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
 
             MyTaskEngine.startingSingleTaskHander += Po_startingSingleTaskHander;
             MyTaskEngine.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
@@ -233,7 +233,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            AllTasksEngine a = new AllTasksEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();

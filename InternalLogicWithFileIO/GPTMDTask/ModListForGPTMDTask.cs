@@ -3,11 +3,12 @@ using System.Collections.Generic;
 
 namespace InternalLogicTaskLayer
 {
-    public class ModListForSearch
+    public class ModListForGPTMDTask
     {
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
         public bool Localize { get; set; }
+        public bool GPTMD { get; set; }
 
         public string FileName
         {
@@ -21,7 +22,7 @@ namespace InternalLogicTaskLayer
 
         private ModList uu;
 
-        public ModListForSearch(ModList uu)
+        public ModListForGPTMDTask(ModList uu)
         {
             this.uu = uu;
         }

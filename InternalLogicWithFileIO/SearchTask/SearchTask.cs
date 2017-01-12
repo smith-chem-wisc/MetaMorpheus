@@ -20,7 +20,7 @@ namespace InternalLogicTaskLayer
         public bool doParsimony { get; set; }
         public List<SearchModeFoSearch> searchModes { get; set; }
 
-        public List<ModListForSearch> listOfModListsForSearch { get; set; }
+        public List<ModListForSearchTask> listOfModListsForSearch { get; set; }
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
         {
@@ -35,9 +35,9 @@ namespace InternalLogicTaskLayer
             productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             bIons = true;
             yIons = true;
-            listOfModListsForSearch = new List<ModListForSearch>();
+            listOfModListsForSearch = new List<ModListForSearchTask>();
             foreach (var uu in modList)
-                listOfModListsForSearch.Add(new ModListForSearch(uu));
+                listOfModListsForSearch.Add(new ModListForSearchTask(uu));
             listOfModListsForSearch[0].Fixed = true;
             listOfModListsForSearch[1].Variable = true;
             listOfModListsForSearch[2].Localize = true;
@@ -150,7 +150,7 @@ namespace InternalLogicTaskLayer
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
                 output(analysisResults.ToString());
             }
-            return new MyTaskResults(this);
+            return new MySearchTaskResults(this);
         }
 
         public override void ValidateParams()

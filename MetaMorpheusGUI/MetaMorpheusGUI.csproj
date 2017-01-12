@@ -99,12 +99,15 @@
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FinishedFile.cs" />
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RawData.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="XMLdb.cs" />
     <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

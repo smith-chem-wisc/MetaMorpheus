@@ -13,6 +13,12 @@ using System.Xml;
 
 namespace InternalLogicTaskLayer
 {
+    public enum MyTaskEnum
+    {
+        Search,
+        GPTMD,
+        Calibrate
+    }
     public abstract class MyTaskEngine : MyEngine
     {
         public List<string> xmlDbFilenameList;
@@ -313,7 +319,7 @@ namespace InternalLogicTaskLayer
                 }
             }
         }
-        public void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearch> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
+        public void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
         {
             #region Index file names
 

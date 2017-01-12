@@ -16,7 +16,7 @@ namespace InternalLogicTaskLayer
     {
         public Tolerance precursorMassTolerance { get; set; }
 
-        public List<ModListForSearch> listOfModListsForSearch { get; set; }
+        public List<ModListForCalibrationTask> listOfModListsForSearch { get; set; }
 
         public CalibrationTask(ObservableCollection<ModList> modList)
         {
@@ -28,9 +28,9 @@ namespace InternalLogicTaskLayer
             productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             bIons = true;
             yIons = true;
-            listOfModListsForSearch = new List<ModListForSearch>();
+            listOfModListsForSearch = new List<ModListForCalibrationTask>();
             foreach (var uu in modList)
-                listOfModListsForSearch.Add(new ModListForSearch(uu));
+                listOfModListsForSearch.Add(new ModListForCalibrationTask(uu));
             listOfModListsForSearch[0].Fixed = true;
             listOfModListsForSearch[1].Variable = true;
             listOfModListsForSearch[2].Localize = true;
@@ -52,7 +52,7 @@ namespace InternalLogicTaskLayer
 
         protected override MyResults RunSpecific()
         {
-            MyTaskResults myTaskResults = new MyTaskResults(this);
+            MyTaskResults myTaskResults = new MyCalibrationTaskResults(this);
             myTaskResults.newSpectra = new List<string>();
             var currentRawFileList = rawDataFilenameList;
 
