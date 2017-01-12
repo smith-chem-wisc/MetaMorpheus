@@ -115,7 +115,7 @@ namespace InternalLogicEngineLayer
 
             int theoreticalIndex = 0;
             double nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[0];
-            double nextTheoreticalMZ = nextTheoreticalMass + 1.007276466879;
+            double nextTheoreticalMZ = nextTheoreticalMass + Constants.ProtonMass;
 
             double currentExperimentalMZ;
             for (int i = 0; i < num_experimental_peaks; i++)
