@@ -15,11 +15,11 @@ namespace InternalLogicEngineLayer
             this.modsAdded = modsAdded;
         }
 
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Modifications added = " + modsAdded);
-            sb.AppendLine("Proteins expanded = " + mods.Count);
+            sb.AppendLine("\t\tModifications added = " + modsAdded);
+            sb.Append("\t\tProteins expanded = " + mods.Count);
             return sb.ToString();
         }
     }

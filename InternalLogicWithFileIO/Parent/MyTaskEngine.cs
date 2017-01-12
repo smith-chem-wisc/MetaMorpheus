@@ -24,6 +24,10 @@ namespace InternalLogicTaskLayer
         public List<string> xmlDbFilenameList;
         public List<string> rawDataFilenameList;
 
+        public MyTaskEngine() : base(1)
+        {
+        }
+
         public static event EventHandler<SingleTaskEventArgs> startingSingleTaskHander;
 
         public static event EventHandler<SingleTaskEventArgs> finishedSingleTaskHandler;
@@ -355,24 +359,24 @@ namespace InternalLogicTaskLayer
 
             if (!File.Exists(peptideIndexFile) || !File.Exists(fragmentIndexFile))
             {
-                output("Generating indices...");
+                //output("Generating indices...");
 
                 IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
                 IndexResults indexResults = (IndexResults)indexEngine.Run();
                 peptideIndex = indexResults.peptideIndex;
                 fragmentIndexDict = indexResults.fragmentIndexDict;
 
-                output("Writing peptide index...");
+                //output("Writing peptide index...");
                 writePeptideIndex(peptideIndex, peptideIndexFile);
-                output("Writing fragment index...");
+                //output("Writing fragment index...");
                 writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                output("Done Writing fragment index");
+                //output("Done Writing fragment index");
             }
             else
             {
-                output("Reading peptide index...");
+                //output("Reading peptide index...");
                 peptideIndex = readPeptideIndex(peptideIndexFile);
-                output("Reading fragment index...");
+                //output("Reading fragment index...");
                 fragmentIndexDict = readFragmentIndexNetSerializer(fragmentIndexFile);
             }
         }
@@ -401,7 +405,7 @@ namespace InternalLogicTaskLayer
             string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
-            output("Time to read fragment index with netSerializer: " + elapsedTime);
+            //output("Time to read fragment index with netSerializer: " + elapsedTime);
 
             return newPerson;
         }
@@ -422,7 +426,7 @@ namespace InternalLogicTaskLayer
             string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
-            output("Time to write fragment index with netserializer: " + elapsedTime);
+            //output("Time to write fragment index with netserializer: " + elapsedTime);
         }
 
         internal void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)

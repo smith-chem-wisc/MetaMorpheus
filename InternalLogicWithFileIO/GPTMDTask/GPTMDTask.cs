@@ -93,26 +93,26 @@ namespace InternalLogicTaskLayer
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                output("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
 
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
 
-                output(searchResults.ToString());
+                //output(searchResults.ToString());
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
 
                 analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
-                output(analysisResults.ToString());
+                //output(analysisResults.ToString());
             }
 
             if (currentRawFileList.Count > 1)
             {
                 analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
-                output(analysisResults.ToString());
+                //output(analysisResults.ToString());
             }
 
 
@@ -120,7 +120,7 @@ namespace InternalLogicTaskLayer
             GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, analysisResults.dict, variableModifications, localizeableModifications, isotopeErrors, gptmdModifications, combos, tol);
             GPTMDResults gptmdResults = (GPTMDResults)gptmdEngine.Run();
 
-            output(gptmdResults.ToString());
+            //output(gptmdResults.ToString());
 
             WriteGPTMDdatabse(gptmdResults.mods, proteinList);
 

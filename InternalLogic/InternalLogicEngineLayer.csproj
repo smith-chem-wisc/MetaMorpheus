@@ -126,6 +126,7 @@
     <Compile Include="PSMwithTargetDecoyKnown.cs" />
     <Compile Include="SearchMode.cs" />
     <Compile Include="SingleEngineEventArgs.cs" />
+    <Compile Include="SingleEngineFinishedEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
     <Compile Include="Calibration\CalibrationEngine.cs" />
     <Compile Include="EngineValidationException.cs" />

@@ -66,11 +66,23 @@ namespace MetaMorpheusGUI
             MyTaskEngine.finishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
             MyEngine.outProgressHandler += NewoutProgressBar;
-
             MyEngine.outLabelStatusHandler += NewoutLabelStatus;
-            MyEngine.outRichTextBoxHandler += NewoutRichTextBox;
+            MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
+        }
+
+        private void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyEngine_finishedSingleEngineHandler(sender, e)));
+            }
+            else
+            {
+                outRichTextBox.AppendText(e.ToString() + Environment.NewLine);
+                outRichTextBox.ScrollToEnd();
+            }
         }
 
         private void LoadSearchModesFromFile()
@@ -354,20 +366,7 @@ namespace MetaMorpheusGUI
                 statusLabel.Content = s.v;
             }
         }
-
-        private void NewoutRichTextBox(object sender, string tup)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => NewoutRichTextBox(sender, tup)));
-            }
-            else
-            {
-                outRichTextBox.AppendText(tup + Environment.NewLine);
-                outRichTextBox.ScrollToEnd();
-            }
-        }
-
+        
         private void NewRefreshBetweenTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())

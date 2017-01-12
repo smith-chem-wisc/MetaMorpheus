@@ -21,7 +21,7 @@ namespace InternalLogicEngineLayer
         public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
         public int spectraFileIndex { get; private set; }
 
-        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes)
+        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;

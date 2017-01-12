@@ -40,7 +40,7 @@ namespace InternalLogicCalibration
         internal double toleranceInMZforMS1Search = 0.01;
         public HashSet<int> matchesToExclude;
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search)
+        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             MS1spectraToWatch = new HashSet<int>();
@@ -50,16 +50,15 @@ namespace InternalLogicCalibration
         }
         protected override MyResults RunSpecific()
         {
-            output("Welcome to my software lock mass implementation");
-            output("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
+            status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
 
             List<int> trainingPointCounts = new List<int>();
             List<LabeledDataPoint> pointList;
             for (int calibrationRound = 1; ; calibrationRound++)
             {
-                output("Calibration round " + calibrationRound);
+                status("Calibration round " + calibrationRound);
 
-                output("Getting Training Points");
+                status("Getting Training Points");
 
                 pointList = GetDataPoints(myMsDataFile, identifications, matchesToExclude);
 
@@ -71,22 +70,22 @@ namespace InternalLogicCalibration
                 var pointList1 = pointList.Where((b) => b.inputs[0] == 1).ToList();
                 if (pointList1.Count == 0)
                 {
-                    output("Not enough MS1 training points, identification quality is poor");
+                    engineFailed("Not enough MS1 training points, identification quality is poor");
                     return null;
                 }
                 WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
-                output("pointList1.Count() = " + pointList1.Count());
+                //output("pointList1.Count() = " + pointList1.Count());
                 var pointList2 = pointList.Where((b) => b.inputs[0] == 2).ToList();
                 if (pointList2.Count == 0)
                 {
-                    output("Not enough MS2 training points, identification quality is poor");
+                    engineFailed("Not enough MS2 training points, identification quality is poor");
                     return null;
                 }
                 WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
-                output("pointList2.Count() = " + pointList2.Count());
+                //output("pointList2.Count() = " + pointList2.Count());
 
                 CalibrationFunction identityPredictor = new IdentityCalibrationFunction();
-                output("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
+                //output("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
 
@@ -94,9 +93,9 @@ namespace InternalLogicCalibration
                 combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
             }
 
-            output("Finished running my software lock mass implementation");
+            //output("Finished running my software lock mass implementation");
 
-            return new CalibrationResults(this);
+            return new CalibrationResults(myMsDataFile, this);
         }
 
         private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
@@ -109,16 +108,16 @@ namespace InternalLogicCalibration
 
             var trainList1 = trainList.Where((b) => b.inputs[0] == 1).ToList();
             WriteDataToFiles(trainList1, "train1" + myMsDataFile.Name);
-            output("trainList1.Count() = " + trainList1.Count());
+            //output("trainList1.Count() = " + trainList1.Count());
             var trainList2 = trainList.Where((b) => b.inputs[0] == 2).ToList();
             WriteDataToFiles(trainList2, "train2" + myMsDataFile.Name);
-            output("trainList2.Count() = " + trainList2.Count());
+            //output("trainList2.Count() = " + trainList2.Count());
             var testList1 = testList.Where((b) => b.inputs[0] == 1).ToList();
             WriteDataToFiles(testList1, "test1" + myMsDataFile.Name);
-            output("testList1.Count() = " + testList1.Count());
+            // output("testList1.Count() = " + testList1.Count());
             var testList2 = testList.Where((b) => b.inputs[0] == 2).ToList();
             WriteDataToFiles(testList2, "test2" + myMsDataFile.Name);
-            output("testList2.Count() = " + testList2.Count());
+            //output("testList2.Count() = " + testList2.Count());
 
             CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
             CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
@@ -126,7 +125,7 @@ namespace InternalLogicCalibration
             double bestMS1MSE = bestMS1predictor.getMSE(testList1);
             double bestMS2MSE = bestMS2predictor.getMSE(testList2);
             double combinedMSE = combinedCalibration.getMSE(testList);
-            output("Uncalibrated MSE, " + bestMS1MSE + "," + bestMS2MSE + "," + combinedMSE);
+            //  output("Uncalibrated MSE, " + bestMS1MSE + "," + bestMS2MSE + "," + combinedMSE);
 
             CalibrationFunction ms1regressor = new ConstantCalibrationFunction();
             CalibrationFunction ms2regressor = new ConstantCalibrationFunction();
@@ -265,7 +264,8 @@ namespace InternalLogicCalibration
             }
             catch (ArgumentException e)
             {
-                output("Could not calibrate: " + e.Message);
+                engineFailed("Could not calibrate: " + e.Message);
+                return null;
             }
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
@@ -283,12 +283,12 @@ namespace InternalLogicCalibration
             {
                 if (a.MsnOrder == 2)
                 {
-                    if (MS2spectraToWatch.Contains(a.OneBasedScanNumber))
-                    {
-                        output("Calibrating scan number " + a.OneBasedScanNumber);
-                        output(" before calibration:");
-                        output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
-                    }
+                    //if (MS2spectraToWatch.Contains(a.OneBasedScanNumber))
+                    //{
+                    //    output("Calibrating scan number " + a.OneBasedScanNumber);
+                    //    output(" before calibration:");
+                    //    output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
+                    //}
 
                     int oneBasedScanNumber;
                     a.TryGetPrecursorOneBasedScanNumber(out oneBasedScanNumber);
@@ -318,30 +318,31 @@ namespace InternalLogicCalibration
                     Func<MzPeak, double> theFunc = x => x.MZ - bestCf.Predict(new double[9] { 2, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.MZ - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
                     a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
 
-                    if (MS2spectraToWatch.Contains(a.OneBasedScanNumber))
-                    {
-                        output(" after calibration:");
-                        output(" precursorMZ:" + precursorMZ);
-                        output(" monoisotopicMZ:" + monoisotopicMZ);
-                        output(" newSelectedMZ:" + newSelectedMZ);
-                        output(" newMonoisotopicMZ:" + newMonoisotopicMZ);
-                        output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
-                    }
+                    //if (MS2spectraToWatch.Contains(a.OneBasedScanNumber))
+                    //{
+                    //    output(" after calibration:");
+                    //    output(" precursorMZ:" + precursorMZ);
+                    //    output(" monoisotopicMZ:" + monoisotopicMZ);
+                    //    output(" newSelectedMZ:" + newSelectedMZ);
+                    //    output(" newMonoisotopicMZ:" + newMonoisotopicMZ);
+                    //    output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
+                    //}
                 }
                 else
                 {
-                    if (MS1spectraToWatch.Contains(a.OneBasedScanNumber))
-                    {
-                        output("Calibrating scan number " + a.OneBasedScanNumber);
-                        output(" before calibration:");
-                        output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
-                    }
+                    //if (MS1spectraToWatch.Contains(a.OneBasedScanNumber))
+                    //{
+                    //    output("Calibrating scan number " + a.OneBasedScanNumber);
+                    //    output(" before calibration:");
+                    //    output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
+                    //}
                     Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[6] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
-                    a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN); if (MS1spectraToWatch.Contains(a.OneBasedScanNumber))
-                    {
-                        output(" after calibration:");
-                        output(string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
-                    }
+                    a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN);
+                    //if (MS1spectraToWatch.Contains(a.OneBasedScanNumber))
+                    //{
+                    //    output(" after calibration:");
+                    //    output(string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
+                    //}
                 }
             }
         }
@@ -375,7 +376,7 @@ namespace InternalLogicCalibration
 
         public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
         {
-            output("Extracting data points:");
+            status("Extracting data points:");
             // The final training point list
             List<LabeledDataPoint> trainingPointsToReturn = new List<LabeledDataPoint>();
 
@@ -411,11 +412,11 @@ namespace InternalLogicCalibration
 
                 #region watch
 
-                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                {
-                    output("ms2spectrumIndex: " + ms2spectrumIndex);
-                    output(" peptide: " + SequenceWithChemicalFormulas);
-                }
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output("ms2spectrumIndex: " + ms2spectrumIndex);
+                //    output(" peptide: " + SequenceWithChemicalFormulas);
+                //}
 
                 #endregion watch
 
@@ -454,24 +455,24 @@ namespace InternalLogicCalibration
                 }
                 Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
-                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                {
-                    output(" Isotopologue distribution: ");
-                    output(" masses = " + string.Join(", ", masses) + "...");
-                    output(" intensities = " + string.Join(", ", intensities) + "...");
-                }
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output(" Isotopologue distribution: ");
+                //    output(" masses = " + string.Join(", ", masses) + "...");
+                //    output(" intensities = " + string.Join(", ", intensities) + "...");
+                //}
 
                 int lowestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
 
                 int highestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
 
-                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                {
-                    output(" ms1range: " + lowestMS1ind + " to " + highestMS1ind);
-                }
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output(" ms1range: " + lowestMS1ind + " to " + highestMS1ind);
+                //}
                 trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
             }
-            output("Number of training points: " + trainingPointsToReturn.Count());
+            status("Number of training points: " + trainingPointsToReturn.Count());
             return trainingPointsToReturn;
         }
 
@@ -515,10 +516,10 @@ namespace InternalLogicCalibration
 
             Fragment[] fragmentList = peptide.Fragment(FragmentTypes.b | FragmentTypes.y, true).ToArray();
 
-            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-            {
-                output(" Considering individual fragments:");
-            }
+            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+            //{
+            //    output(" Considering individual fragments:");
+            //}
 
             foreach (IHasChemicalFormula fragment in fragmentList)
             {
@@ -527,12 +528,12 @@ namespace InternalLogicCalibration
                 double[] masses = new double[0];
                 double[] intensities = new double[0];
                 // First look for monoisotopic masses, do not compute distribution spectrum!
-                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                {
-                    output("  Considering fragment " + (fragment as Fragment).Sequence + " with formula " + fragment.ThisChemicalFormula.Formula);
-                    //if ((fragment as Fragment).Modifications.Count() > 0)
-                    //RTBoutput("  Modifications: " + string.Join(", ", (fragment as Fragment).Modifications));
-                }
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                //{
+                //    output("  Considering fragment " + (fragment as Fragment).Sequence + " with formula " + fragment.ThisChemicalFormula.Formula);
+                //    //if ((fragment as Fragment).Modifications.Count() > 0)
+                //    //RTBoutput("  Modifications: " + string.Join(", ", (fragment as Fragment).Modifications));
+                //}
 
                 #region loop to determine if need to compute isotopologue distribution
 
@@ -548,11 +549,11 @@ namespace InternalLogicCalibration
                     {
                         if (!computedIsotopologues)
                         {
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("    Computing isotopologues because absolute error " + Math.Abs(closestPeakMZ - monoisotopicMZ) + " is smaller than tolerance " + toleranceInMZforMS2Search);
-                                output("    Charge was = " + chargeToLookAt + "  closestPeakMZ = " + closestPeakMZ + " while monoisotopicMZ = " + monoisotopicMZ);
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("    Computing isotopologues because absolute error " + Math.Abs(closestPeakMZ - monoisotopicMZ) + " is smaller than tolerance " + toleranceInMZforMS2Search);
+                            //    output("    Charge was = " + chargeToLookAt + "  closestPeakMZ = " + closestPeakMZ + " while monoisotopicMZ = " + monoisotopicMZ);
+                            //}
 
                             IsotopicDistribution dist = new IsotopicDistribution(fragment.ThisChemicalFormula, fineResolution, 0.001);
 
@@ -565,12 +566,12 @@ namespace InternalLogicCalibration
                             }
                             Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
                             computedIsotopologues = true;
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("    Isotopologue distribution: ");
-                                output("    masses = " + string.Join(", ", masses) + "...");
-                                output("    intensities = " + string.Join(", ", intensities) + "...");
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("    Isotopologue distribution: ");
+                            //    output("    masses = " + string.Join(", ", masses) + "...");
+                            //    output("    intensities = " + string.Join(", ", intensities) + "...");
+                            //}
 
                             break;
                         }
@@ -583,31 +584,31 @@ namespace InternalLogicCalibration
                 {
                     #region actually add training points
 
-                    if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                    {
-                        output("   Considering individual charges, to get training points:");
-                    }
+                    //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                    //{
+                    //    output("   Considering individual charges, to get training points:");
+                    //}
                     bool startingToAdd = false;
                     for (int chargeToLookAt = 1; chargeToLookAt <= peptideCharge; chargeToLookAt++)
                     {
-                        if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                        {
-                            output("    Considering charge " + chargeToLookAt);
-                        }
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                        //{
+                        //    output("    Considering charge " + chargeToLookAt);
+                        //}
                         if (masses.First().ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
                         {
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("    Out of range: too high");
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("    Out of range: too high");
+                            //}
                             continue;
                         }
                         if (masses.Last().ToMassToChargeRatio(chargeToLookAt) < scanWindowRange.Minimum)
                         {
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("    Out of range: too low");
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("    Out of range: too low");
+                            //}
                             break;
                         }
                         List<TrainingPoint> trainingPointsToAverage = new List<TrainingPoint>();
@@ -617,22 +618,22 @@ namespace InternalLogicCalibration
                             var npwr = ms2DataScan.MassSpectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS2Search, theMZ + toleranceInMZforMS2Search);
                             if (npwr == 0)
                             {
-                                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                                    output("     Breaking because extracted.Count = " + npwr);
+                                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                                //    output("     Breaking because extracted.Count = " + npwr);
                                 break;
                             }
                             if (npwr > 1)
                             {
-                                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                                    output("     Not looking for " + theMZ + " because extracted.Count = " + npwr);
+                                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                                //    output("     Not looking for " + theMZ + " because extracted.Count = " + npwr);
                                 continue;
                             }
                             var closestPeak = ms2DataScan.MassSpectrum.GetClosestPeak(theMZ);
                             var closestPeakMZ = closestPeak.MZ;
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("     Found       " + closestPeakMZ + "   Error is    " + (closestPeakMZ - theMZ));
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("     Found       " + closestPeakMZ + "   Error is    " + (closestPeakMZ - theMZ));
+                            //}
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
@@ -640,10 +641,10 @@ namespace InternalLogicCalibration
                             }
                             else
                             {
-                                if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                                {
-                                    output("     Not using because already added peak");
-                                }
+                                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                                //{
+                                //    output("     Not using because already added peak");
+                                //}
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -651,10 +652,10 @@ namespace InternalLogicCalibration
                             break;
                         if (trainingPointsToAverage.Count < Math.Min(minMS2, intensities.Count()))
                         {
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("    Not adding, since not enought isotopes were seen");
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("    Not adding, since not enought isotopes were seen");
+                            //}
                         }
                         else
                         {
@@ -673,13 +674,13 @@ namespace InternalLogicCalibration
                             double[] inputs = new double[9] { 2, addedMZ, ms2DataScan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), ms2DataScan.TotalIonCurrent, ms2DataScan.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, relativeMZ };
                             var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
 
-                            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            {
-                                output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS2 SPECTRUM");
-                                output("    a.dmz " + a.inputs[1]);
-                                output("    a.drt " + a.inputs[2]);
-                                output("    a.l     " + a.output);
-                            }
+                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+                            //{
+                            //    output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS2 SPECTRUM");
+                            //    output("    a.dmz " + a.inputs[1]);
+                            //    output("    a.drt " + a.inputs[2]);
+                            //    output("    a.l     " + a.output);
+                            //}
                             myCandidatePoints.Add(a);
                         }
                     }
@@ -689,12 +690,12 @@ namespace InternalLogicCalibration
             }
 
             //RTBoutput(new OutputHandlerEventArgs("ind = " + ms2spectrumIndex + " count = " + countForThisMS2 + " count2 = " + countForThisMS2a + " fragments = " + numFragmentsIdentified));
-            if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-            {
-                output(" countForThisMS2 = " + countForThisMS2);
-                output(" countForThisMS2a = " + countForThisMS2a);
-                output(" numFragmentsIdentified = " + numFragmentsIdentified);
-            }
+            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
+            //{
+            //    output(" countForThisMS2 = " + countForThisMS2);
+            //    output(" countForThisMS2a = " + countForThisMS2a);
+            //    output(" numFragmentsIdentified = " + numFragmentsIdentified);
+            //}
             candidateFragmentsIdentified = numFragmentsIdentified;
             return myCandidatePoints;
         }
@@ -721,10 +722,10 @@ namespace InternalLogicCalibration
                     continue;
                 }
                 addedAscan = false;
-                if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                {
-                    output(" Looking in MS1 spectrum " + theIndex + " because of MS2 spectrum " + ms2spectrumIndex);
-                }
+                //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                //{
+                //    output(" Looking in MS1 spectrum " + theIndex + " because of MS2 spectrum " + ms2spectrumIndex);
+                //}
                 List<LabeledDataPoint> myCandidatePointsForThisMS1scan = new List<LabeledDataPoint>();
                 var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
                 double ms1RetentionTime = fullMS1scan.RetentionTime;
@@ -737,10 +738,10 @@ namespace InternalLogicCalibration
                 int chargeToLookAt = 1;
                 do
                 {
-                    if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                    {
-                        output("  Looking at charge " + chargeToLookAt);
-                    }
+                    //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                    //{
+                    //    output("  Looking at charge " + chargeToLookAt);
+                    //}
                     if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
                     {
                         chargeToLookAt++;
@@ -756,14 +757,14 @@ namespace InternalLogicCalibration
                         var npwr = fullMS1spectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS1Search, theMZ + toleranceInMZforMS1Search);
                         if (npwr == 0)
                         {
-                            if (MS1spectraToWatch.Contains(theIndex))
-                                output("      Breaking because extracted.Count = " + npwr);
+                            //if (MS1spectraToWatch.Contains(theIndex))
+                            //    output("      Breaking because extracted.Count = " + npwr);
                             break;
                         }
                         if (npwr > 1)
                         {
-                            if (MS1spectraToWatch.Contains(theIndex))
-                                output("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
+                            //if (MS1spectraToWatch.Contains(theIndex))
+                            //    output("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
                             continue;
                         }
 
@@ -776,10 +777,10 @@ namespace InternalLogicCalibration
                         //        RTBoutput("      Breaking because intensity fraction is " + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
                         //    break;
                         //}
-                        if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
-                        {
-                            output("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
-                        }
+                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
+                        //{
+                        //    output("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
+                        //}
 
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
                         if (!peaksAddedHashSet.Contains(theTuple))
@@ -787,10 +788,10 @@ namespace InternalLogicCalibration
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
                             //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
-                            if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                            {
-                                output("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
-                            }
+                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
+                            //{
+                            //    output("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
+                            //}
                             trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 1, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
                         }
                         else
@@ -799,33 +800,33 @@ namespace InternalLogicCalibration
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                     if (trainingPointsToAverage.Count == 0 && startingToAddCharges == true)
                     {
-                        if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        {
-                            output("    Started adding and suddnely stopped, no need to look at higher charges");
-                        }
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //{
+                        //    output("    Started adding and suddnely stopped, no need to look at higher charges");
+                        //}
                         break;
                     }
                     if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
                     {
-                        if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        {
-                            output("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
-                        }
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //{
+                        //    output("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
+                        //}
                         break;
                     }
                     if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
                     {
-                        if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                        {
-                            output("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
-                        }
+                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
+                        //{
+                        //    output("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
+                        //}
                     }
                     else if (trainingPointsToAverage.Count < Math.Min(minMS1, originalIntensities.Count()))
                     {
-                        if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                        {
-                            output("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
-                        }
+                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
+                        //{
+                        //    output("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
+                        //}
                     }
                     else
                     {
@@ -836,13 +837,13 @@ namespace InternalLogicCalibration
                         var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
                         //if (a.output > 0)
                         //    RTBoutput(theIndex + "," + ms2spectrumIndex);
-                        if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        {
-                            output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS1 SPECTRUM");
-                            output("    a.dmz " + a.inputs[1]);
-                            output("    a.drt " + a.inputs[2]);
-                            output("    a.l     " + a.output);
-                        }
+                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
+                        //{
+                        //    output("    Adding aggregate of " + trainingPointsToAverage.Count + " points FROM MS1 SPECTRUM");
+                        //    output("    a.dmz " + a.inputs[1]);
+                        //    output("    a.drt " + a.inputs[2]);
+                        //    output("    a.l     " + a.output);
+                        //}
                         myCandidatePointsForThisMS1scan.Add(a);
                     }
                     chargeToLookAt++;
