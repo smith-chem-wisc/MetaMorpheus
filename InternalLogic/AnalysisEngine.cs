@@ -195,10 +195,49 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            // construct protein groups
-            /* NOT IMPLEMENTED YET */
+            /*
+             // print out parsimony dictionary
+            Console.WriteLine("************");
+            foreach(var kvp in parsimonyDict)
+            {
+                string[] peptides = new string[kvp.Value.Count];
+                for(int i = 0; i < kvp.Value.Count; i++)
+                    peptides[i] = (string.Join("", kvp.Value.ElementAt(i).BaseSequence.Select(b => char.ConvertFromUtf32(b))));
 
-            // constructs return dictionary
+                Console.Write(kvp.Key.BaseSequence + " :: ");
+                for (int i = 0; i < kvp.Value.Count; i++)
+                    Console.Write(peptides[i] + " ");
+
+                Console.WriteLine();
+            }
+            Console.WriteLine("************");
+            */
+
+            // build each protein group after parsimony and match it to its peptide
+            Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinGroupMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
+
+            foreach (var kvp in parsimonyDict)
+            {
+                foreach (var peptide in kvp.Value)
+                {
+                    if (!peptideProteinGroupMatch.ContainsKey(peptide))
+                    {
+                        HashSet<Protein> proteinGroup = new HashSet<Protein>();
+
+                        foreach (var kvp1 in parsimonyDict)
+                        {
+                            if (kvp1.Value.Contains(peptide))
+                            {
+                                proteinGroup.Add(kvp1.Key);
+                            }
+                        }
+
+                        peptideProteinGroupMatch.Add(peptide, proteinGroup);
+                    }
+                }
+            }
+
+            // constructs return dictionary (only use parsimony proteins for the new virtual peptide list)
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             foreach (var kvp in parsimonyDict)
@@ -209,19 +248,24 @@ namespace InternalLogicEngineLayer
                     {
                         HashSet<PeptideWithSetModifications> oldVirtualPeptides = new HashSet<PeptideWithSetModifications>();
                         HashSet<PeptideWithSetModifications> newVirtualPeptides = new HashSet<PeptideWithSetModifications>();
+                        HashSet<Protein> proteinGroup = new HashSet<Protein>();
 
-                        // find peptide key in original dictionary and get its virtual peptide matches
+                        // get the peptide's protein group after parsimony
+                        peptideProteinGroupMatch.TryGetValue(peptide, out proteinGroup);
+
+                        // find peptide's original (unparsimonious) virtual peptide matches
                         fullSequenceToProteinPeptideMatching.TryGetValue(peptide, out oldVirtualPeptides);
 
-                        // get the virtual peptides that belong to the post-parsimony protein choice only
+                        // get the virtual peptides that belong to the post-parsimony protein(s) only
                         foreach (var virtualPeptide in oldVirtualPeptides)
                         {
-                            if (virtualPeptide.protein == kvp.Key)
+                            if (proteinGroup.Contains(virtualPeptide.protein))
                             {
                                 newVirtualPeptides.Add(virtualPeptide);
                             }
                         }
 
+                        // make new dictionary using only virtual peptides from parsimonious protein list
                         answer.Add(peptide, newVirtualPeptides);
                     }
                 }
