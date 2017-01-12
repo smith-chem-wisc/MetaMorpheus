@@ -44,7 +44,7 @@ namespace InternalLogicTaskLayer
         public Tolerance precursorMassTolerance { get; set; }
         public double tol { get; set; }
 
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             if (listOfModListsForGPTMD == null)
                 throw new EngineValidationException("listOfModListsForGPTMD should not be null");

@@ -52,7 +52,7 @@ namespace InternalLogicTaskLayer
             finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
         }
 
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             if (taskList == null)
                 throw new EngineValidationException("taskList cannot be null");

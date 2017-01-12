@@ -38,7 +38,7 @@ namespace InternalLogicTaskLayer
         public List<ModListForCalibrationTask> listOfModListsForCalibration { get; set; }
         public Tolerance precursorMassTolerance { get; set; }
 
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             if (xmlDbFilenameList == null)
                 throw new EngineValidationException("xMLdblist cannot be null");
@@ -132,17 +132,8 @@ namespace InternalLogicTaskLayer
                 int randomSeed = 1;
 
                 // TODO: fix the tolerance calculation below
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassTolerance.Value * 2);
-
-                a.identifications = identifications;
-                a.mzRange = new DoubleRange(0, 0);
-
-                //a.MS1spectraToWatch.Add(22557);
-
-                //a.MS2spectraToWatch.Add(22564);
-
-                a.matchesToExclude = new HashSet<int>();
-
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassTolerance.Value * 2, identifications);
+                                
                 var result = (CalibrationResults)a.Run();
 
                 if (result == null)

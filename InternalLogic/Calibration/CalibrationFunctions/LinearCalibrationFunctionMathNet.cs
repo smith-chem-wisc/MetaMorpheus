@@ -17,12 +17,12 @@ namespace InternalLogicCalibration
             numFeatures = transformFunction.numOutputs;
         }
 
-        public override double Predict(double[] t)
+        internal override double Predict(double[] t)
         {
             return f(transformFunction.Transform(t));
         }
 
-        public override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             double[][] ok = new double[trainingList.Count()][];
             int k = 0;

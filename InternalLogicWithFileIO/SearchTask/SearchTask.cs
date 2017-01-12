@@ -57,7 +57,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Methods
 
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             foreach (var huh in listOfModListsForSearch)
             {
@@ -84,7 +84,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Localize).Select(b => b.FileName)));
             sb.AppendLine("searchDecoy: " + searchDecoy);
             sb.AppendLine("searchModes: ");
-            sb.Append(string.Join(Environment.NewLine, searchModes.Where(b => b.Use).Select(b => b.sm)));
+            sb.Append(string.Join(Environment.NewLine, searchModes.Where(b => b.Use).Select(b => "\t" + b.sm)));
             return sb.ToString();
         }
 

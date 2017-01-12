@@ -14,56 +14,104 @@ namespace InternalLogicCalibration
 {
     public class CalibrationEngine : MyEngine
     {
-        #region Public Fields
+        #region Private Fields
 
         // THIS PARAMETER IS FRAGILE!!!
         // TUNED TO CORRESPOND TO SPECTROMETER OUTPUT
         // BETTER SPECTROMETERS WOULD HAVE BETTER (LOWER) RESOLUIONS
         // Parameter for isotopolouge distribution searching
-        public double fineResolution = 0.1;
+        private const double fineResolution = 0.1;
 
-        public List<NewPsmWithFDR> identifications;
-        public HashSet<int> matchesToExclude;
-        public int minMS1 = 3;
-        public int minMS2 = 2;
-        public HashSet<int> MS1spectraToWatch;
-        public HashSet<int> MS2spectraToWatch;
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-        public DoubleRange mzRange;
-        public string paramString = "";
-        public double toleranceInMZforMS2Search;
-
-        #endregion Public Fields
-
-        #region Internal Fields
-
-        internal int randomSeed;
-        internal double toleranceInMZforMS1Search = 0.01;
-
-        #endregion Internal Fields
-
-        #region Private Fields
-
+        private const int minMS1 = 3;
+        private const int minMS2 = 2;
         private const int numFragmentsNeeded = 10;
+        private const double toleranceInMZforMS1Search = 0.01;
+        private int randomSeed;
+        private List<NewPsmWithFDR> identifications;
+        private HashSet<int> MS1spectraToWatch;
+        private HashSet<int> MS2spectraToWatch;
+        private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        private double toleranceInMZforMS2Search;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search) : base(2)
+        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFDR> identifications) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             MS1spectraToWatch = new HashSet<int>();
             MS2spectraToWatch = new HashSet<int>();
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
+            this.identifications = identifications;
         }
 
         #endregion Public Constructors
 
-        #region Public Methods
+        #region Protected Methods
 
-        public List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications, HashSet<int> matchesToExclude)
+        protected override void ValidateParams()
+        {
+            if (identifications == null)
+                throw new EngineValidationException("identifications cannot be null");
+            if (identifications.Count == 0)
+                throw new EngineValidationException("Need to have at least one identification to calibrate on");
+        }
+
+        protected override MyResults RunSpecific()
+        {
+            status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
+
+            List<int> trainingPointCounts = new List<int>();
+            List<LabeledDataPoint> pointList;
+            for (int calibrationRound = 1; ; calibrationRound++)
+            {
+                status("Calibration round " + calibrationRound);
+
+                status("Getting Training Points");
+
+                pointList = GetDataPoints(myMsDataFile, identifications);
+
+                if (calibrationRound >= 2 && pointList.Count <= trainingPointCounts[calibrationRound - 2])
+                    break;
+
+                trainingPointCounts.Add(pointList.Count);
+
+                var pointList1 = pointList.Where((b) => b.inputs[0] == 1).ToList();
+                if (pointList1.Count == 0)
+                {
+                    throw new EngineRunException("Not enough MS1 training points, identification quality is poor");
+                }
+                WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
+                //output("pointList1.Count() = " + pointList1.Count());
+                var pointList2 = pointList.Where((b) => b.inputs[0] == 2).ToList();
+                if (pointList2.Count == 0)
+                {
+                    throw new EngineRunException("Not enough MS2 training points, identification quality is poor");
+                }
+                WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
+                //output("pointList2.Count() = " + pointList2.Count());
+
+                CalibrationFunction identityPredictor = new IdentityCalibrationFunction();
+                //output("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
+
+                CalibrationFunction combinedCalibration = Calibrate(pointList);
+
+                combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
+                combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
+            }
+
+            //output("Finished running my software lock mass implementation");
+
+            return new CalibrationResults(myMsDataFile, this);
+        }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private List<LabeledDataPoint> GetDataPoints(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<InternalLogicEngineLayer.NewPsmWithFDR> identifications)
         {
             status("Extracting data points:");
             // The final training point list
@@ -82,14 +130,10 @@ namespace InternalLogicCalibration
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    ReportProgress(new InternalLogicEngineLayer.ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
+                    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
 
                 // Skip decoys, they are for sure not there!
                 if (identification.isDecoy)
-                    continue;
-
-                // Skip exclusions! These are for testing
-                if (matchesToExclude.Contains(matchIndex))
                     continue;
 
                 // Each identification has an MS2 spectrum attached to it.
@@ -99,15 +143,11 @@ namespace InternalLogicCalibration
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
                 int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
-                #region watch
-
                 //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
                 //{
                 //    output("ms2spectrumIndex: " + ms2spectrumIndex);
                 //    output(" peptide: " + SequenceWithChemicalFormulas);
                 //}
-
-                #endregion watch
 
                 int numFragmentsIdentified = -1;
                 List<LabeledDataPoint> candidateTrainingPointsForPeptide = new List<LabeledDataPoint>();
@@ -165,15 +205,7 @@ namespace InternalLogicCalibration
             return trainingPointsToReturn;
         }
 
-        public override void ValidateParams()
-        {
-            if (identifications == null)
-                throw new EngineValidationException("identifications cannot be null");
-            if (identifications.Count == 0)
-                throw new EngineValidationException("Need to have at least one identification to calibrate on");
-        }
-
-        public void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
+        private void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
         {
             if (trainingPoints.Count() == 0)
                 return;
@@ -190,62 +222,6 @@ namespace InternalLogicCalibration
                     file.WriteLine(string.Join(",", d.inputs) + "," + d.output);
             }
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
-
-        protected override MyResults RunSpecific()
-        {
-            status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
-
-            List<int> trainingPointCounts = new List<int>();
-            List<LabeledDataPoint> pointList;
-            for (int calibrationRound = 1; ; calibrationRound++)
-            {
-                status("Calibration round " + calibrationRound);
-
-                status("Getting Training Points");
-
-                pointList = GetDataPoints(myMsDataFile, identifications, matchesToExclude);
-
-                if (calibrationRound >= 2 && pointList.Count <= trainingPointCounts[calibrationRound - 2])
-                    break;
-
-                trainingPointCounts.Add(pointList.Count);
-
-                var pointList1 = pointList.Where((b) => b.inputs[0] == 1).ToList();
-                if (pointList1.Count == 0)
-                {
-                    throw new EngineRunException("Not enough MS1 training points, identification quality is poor");
-                }
-                WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
-                //output("pointList1.Count() = " + pointList1.Count());
-                var pointList2 = pointList.Where((b) => b.inputs[0] == 2).ToList();
-                if (pointList2.Count == 0)
-                {
-                    throw new EngineRunException("Not enough MS2 training points, identification quality is poor");
-                }
-                WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
-                //output("pointList2.Count() = " + pointList2.Count());
-
-                CalibrationFunction identityPredictor = new IdentityCalibrationFunction();
-                //output("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
-
-                CalibrationFunction combinedCalibration = Calibrate(pointList);
-
-                combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
-                combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
-            }
-
-            //output("Finished running my software lock mass implementation");
-
-            return new CalibrationResults(myMsDataFile, this);
-        }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
         {
@@ -495,24 +471,6 @@ namespace InternalLogicCalibration
             }
         }
 
-        private int GetOneBasedSpectrumIndexFromID(string spectrumID, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
-        {
-            var lastInt = Convert.ToInt32(Regex.Match(spectrumID, @"\d+$").Value);
-            if (lastInt > 0 && lastInt <= myMsDataFile.Count() && myMsDataFile.GetOneBasedScan(lastInt).id.Equals(spectrumID))
-                return lastInt;
-            if (lastInt - 1 > 0 && lastInt - 1 <= myMsDataFile.Count() && myMsDataFile.GetOneBasedScan(lastInt - 1).id.Equals(spectrumID))
-                return lastInt - 1;
-            if (lastInt + 1 > 0 && lastInt + 1 <= myMsDataFile.Count() && myMsDataFile.GetOneBasedScan(lastInt + 1).id.Equals(spectrumID))
-                return lastInt + 1;
-
-            int oneBasedScanNumber = 0;
-            do
-            {
-                oneBasedScanNumber++;
-            } while (!spectrumID.Equals(myMsDataFile.GetOneBasedScan(oneBasedScanNumber).id));
-            return oneBasedScanNumber;
-        }
-
         private int SearchMS1Spectra(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
         {
             int goodIndex = -1;
@@ -714,8 +672,6 @@ namespace InternalLogicCalibration
                 //    //RTBoutput("  Modifications: " + string.Join(", ", (fragment as Fragment).Modifications));
                 //}
 
-                #region loop to determine if need to compute isotopologue distribution
-
                 for (int chargeToLookAt = 1; chargeToLookAt <= peptideCharge; chargeToLookAt++)
                 {
                     var monoisotopicMZ = fragment.MonoisotopicMass.ToMassToChargeRatio(chargeToLookAt);
@@ -757,12 +713,8 @@ namespace InternalLogicCalibration
                     }
                 }
 
-                #endregion loop to determine if need to compute isotopologue distribution
-
                 if (computedIsotopologues)
                 {
-                    #region actually add training points
-
                     //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
                     //{
                     //    output("   Considering individual charges, to get training points:");
@@ -863,8 +815,6 @@ namespace InternalLogicCalibration
                             myCandidatePoints.Add(a);
                         }
                     }
-
-                    #endregion actually add training points
                 }
             }
 

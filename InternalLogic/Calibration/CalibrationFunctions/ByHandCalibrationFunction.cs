@@ -22,12 +22,12 @@ namespace InternalLogicCalibration
 
         #region Public Methods
 
-        public override double Predict(double[] t)
+        internal override double Predict(double[] t)
         {
             return -t[1] / 200000;
         }
 
-        public override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             onOutput("Sucessfully trained ByHandCalibrationFunction");
         }

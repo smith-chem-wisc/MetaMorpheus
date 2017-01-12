@@ -14,11 +14,11 @@ namespace InternalLogicCalibration
 
         #region Public Methods
 
-        public abstract void Train(IEnumerable<LabeledDataPoint> trainingList);
+        internal abstract void Train(IEnumerable<LabeledDataPoint> trainingList);
 
-        public abstract double Predict(double[] t);
+        internal abstract double Predict(double[] t);
 
-        public double getMSE(IEnumerable<LabeledDataPoint> pointList)
+        internal double getMSE(IEnumerable<LabeledDataPoint> pointList)
         {
             double mse = 0;
             int count = 0;
