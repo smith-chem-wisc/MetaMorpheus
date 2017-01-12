@@ -65,6 +65,7 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(SearchTask task)
         {
             classicSearchRadioButton.IsChecked = task.classicSearch;
+            modernSearchRadioButton.IsChecked = !task.classicSearch;
             checkBoxParsimony.IsChecked = task.doParsimony;
             checkBoxDecoy.IsChecked = task.searchDecoy;
             missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -105,6 +106,7 @@ namespace MetaMorpheusGUI
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
             TheTask.classicSearch = classicSearchRadioButton.IsChecked.Value;
+            TheTask.doParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.searchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.maxMissedCleavages = int.Parse(missedCleavagesTextBox.Text);
             TheTask.protease = (Protease)proteaseComboBox.SelectedItem;
