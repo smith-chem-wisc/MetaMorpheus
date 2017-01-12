@@ -11,7 +11,7 @@ namespace InternalLogicTaskLayer
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("MyCalibrationTaskResults:");
-            sb.AppendLine(base.ToString());
+            sb.Append(base.ToString());
             return sb.ToString();
         }
     }
