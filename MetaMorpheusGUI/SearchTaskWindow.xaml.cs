@@ -17,7 +17,7 @@ namespace MetaMorpheusGUI
     public partial class SearchTaskWindow : Window
     {
         // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForSearch> ModFileListInWindow = new ObservableCollection<ModListForSearch>();
+        private ObservableCollection<ModListForSearchTask> ModFileListInWindow = new ObservableCollection<ModListForSearchTask>();
 
         private ObservableCollection<SearchModeFoSearch> SearchModes = new ObservableCollection<SearchModeFoSearch>();
 
@@ -53,7 +53,7 @@ namespace MetaMorpheusGUI
 
             // Always create new ModFileList
             foreach (var uu in modList)
-                ModFileListInWindow.Add(new ModListForSearch(uu));
+                ModFileListInWindow.Add(new ModListForSearchTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
 
             // Always create new ModFileList

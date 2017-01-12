@@ -15,7 +15,7 @@ namespace MetaMorpheusGUI
     public partial class GPTMDTaskWindow : Window
     {
         // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForGPTMD> ModFileListInWindow = new ObservableCollection<ModListForGPTMD>();
+        private ObservableCollection<ModListForGPTMDTask> ModFileListInWindow = new ObservableCollection<ModListForGPTMDTask>();
 
         public GPTMDTaskWindow(ObservableCollection<ModList> modList)
         {
@@ -70,7 +70,7 @@ namespace MetaMorpheusGUI
 
             // Always create new ModFileList
             foreach (var uu in modList)
-                ModFileListInWindow.Add(new ModListForGPTMD(uu));
+                ModFileListInWindow.Add(new ModListForGPTMDTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 

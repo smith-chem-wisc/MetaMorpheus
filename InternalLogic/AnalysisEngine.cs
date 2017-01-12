@@ -1,13 +1,11 @@
-﻿using InternalLogicEngineLayer;
+﻿using MassSpectrometry;
 using OldInternalLogic;
-using Proteomics;
+using Spectra;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System;
-using Spectra;
-using MassSpectrometry;
 
 namespace InternalLogicEngineLayer
 {
@@ -27,7 +25,7 @@ namespace InternalLogicEngineLayer
         public Action<List<NewPsmWithFDR>, string> action2 { get; private set; }
         public bool doParsimony { get; internal set; }
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, bool doParsimony)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, bool doParsimony):base(2)
         {
             this.doParsimony = doParsimony;
             this.newPsms = newPsms;
@@ -80,7 +78,7 @@ namespace InternalLogicEngineLayer
                 if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
                 {
                     status("Running histogram analysis...");
-                    var hm = MyAnalysis(limitedpsms_with_fdr, unimodDeserialized, uniprotDeseralized);
+                    var hm = MyAnalysis(limitedpsms_with_fdr);
                     action1(hm, searchModes[j].FileNameAddition);
                 }
 
@@ -97,7 +95,7 @@ namespace InternalLogicEngineLayer
             return new AnalysisResults(this, yeah, compactPeptideToProteinPeptideMatching);
         }
 
-        private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
+        private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr)
         {
             BinTreeStructure myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, 0.003);

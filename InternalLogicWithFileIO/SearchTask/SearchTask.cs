@@ -20,7 +20,7 @@ namespace InternalLogicTaskLayer
         public bool doParsimony { get; set; }
         public List<SearchModeFoSearch> searchModes { get; set; }
 
-        public List<ModListForSearch> listOfModListsForSearch { get; set; }
+        public List<ModListForSearchTask> listOfModListsForSearch { get; set; }
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
         {
@@ -35,9 +35,9 @@ namespace InternalLogicTaskLayer
             productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             bIons = true;
             yIons = true;
-            listOfModListsForSearch = new List<ModListForSearch>();
+            listOfModListsForSearch = new List<ModListForSearchTask>();
             foreach (var uu in modList)
-                listOfModListsForSearch.Add(new ModListForSearch(uu));
+                listOfModListsForSearch.Add(new ModListForSearchTask(uu));
             listOfModListsForSearch[0].Fixed = true;
             listOfModListsForSearch[1].Variable = true;
             listOfModListsForSearch[2].Localize = true;
@@ -100,7 +100,7 @@ namespace InternalLogicTaskLayer
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                output("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchEngine classicSearchEngine = null;
                 ClassicSearchResults classicSearchResults = null;
@@ -114,7 +114,6 @@ namespace InternalLogicTaskLayer
                     classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModesS);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
-                    output(classicSearchResults.ToString());
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.outerPsms[i]);
 
@@ -122,7 +121,6 @@ namespace InternalLogicTaskLayer
 
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                    output(analysisResults.ToString());
                 }
 
                 // run modern search
@@ -131,15 +129,13 @@ namespace InternalLogicTaskLayer
                     modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
-                    output(modernSearchResults.ToString());
+                    //output(modernSearchResults.ToString());
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 
                     AnalysisEngine analysisEngine = new AnalysisEngine(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-
-                    output(analysisResults.ToString());
                 }
             }
 
@@ -148,9 +144,8 @@ namespace InternalLogicTaskLayer
                 AnalysisEngine analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), doParsimony);
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-                output(analysisResults.ToString());
             }
-            return new MyTaskResults(this);
+            return new MySearchTaskResults(this);
         }
 
         public override void ValidateParams()

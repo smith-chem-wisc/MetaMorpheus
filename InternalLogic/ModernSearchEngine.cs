@@ -25,7 +25,7 @@ namespace InternalLogicEngineLayer
         public int spectraFileIndex { get; private set; }
         public List<MorpheusModification> variableModifications { get; private set; }
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;
@@ -43,7 +43,7 @@ namespace InternalLogicEngineLayer
 
         protected override MyResults RunSpecific()
         {
-            output("In modern search method!");
+            //output("In modern search method!");
 
             var spectraList = myMsDataFile.ToList();
             var totalSpectra = myMsDataFile.NumSpectra;
@@ -138,7 +138,7 @@ namespace InternalLogicEngineLayer
             float[] peptideScores = new float[peptides.Count];
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
-                var experimentalPeakInDaltons = experimentalPeak.MZ - 1.007276466879;
+                var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(fragmentMassesAscending, (float)experimentalPeakInDaltons);
                 if (ipos < 0)

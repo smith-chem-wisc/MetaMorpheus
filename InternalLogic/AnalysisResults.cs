@@ -1,5 +1,5 @@
-﻿using InternalLogicEngineLayer;
-using OldInternalLogic;
+﻿using OldInternalLogic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,19 +12,16 @@ namespace InternalLogicEngineLayer
 
         public List<NewPsmWithFDR>[] allResultingIdentifications { get; private set; }
 
-        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] yeah, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict) : base(s)
+        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict) : base(s)
         {
-            this.allResultingIdentifications = yeah;
+            this.allResultingIdentifications = allResultingIdentifications;
             this.dict = dict;
         }
 
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(base.ToString());
-            sb.AppendLine();
-            sb.Append("All PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Where(c => c.QValue <= 0.01).Count())));
-
+            sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Where(c => c.QValue <= 0.01).Count())));
             return sb.ToString();
         }
     }

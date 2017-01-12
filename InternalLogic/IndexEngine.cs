@@ -15,7 +15,7 @@ namespace InternalLogicEngineLayer
         public Protease protease { get; private set; }
         public List<MorpheusModification> variableModifications { get; private set; }
 
-        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease)
+        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -98,8 +98,8 @@ namespace InternalLogicEngineLayer
                         }
                     }
                     numProteins++;
-                    if (numProteins % 100 == 0)
-                        output("Proteins: " + numProteins + " / " + totalProteins);
+                    //if (numProteins % 100 == 0)
+                    //    output("Proteins: " + numProteins + " / " + totalProteins);
                 }
                 lock (myFragmentDictionary)
                 {
@@ -117,7 +117,7 @@ namespace InternalLogicEngineLayer
                 }
             });
 
-            output("finished generating peptide index");
+            //output("finished generating peptide index");
 
             return new IndexResults(myDictionary, myFragmentDictionary, this);
         }
