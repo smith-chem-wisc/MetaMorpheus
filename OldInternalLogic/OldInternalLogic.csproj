@@ -102,7 +102,6 @@
     <Compile Include="PeptideSpectrumMatch.cs" />
     <Compile Include="PeptideWithSetModificationsHeavy.cs" />
     <Compile Include="PeptideWithSetModifications.cs" />
-    <Compile Include="ProductCaps.cs" />
     <Compile Include="ProductType.cs" />
     <Compile Include="ProductTypes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -118,9 +117,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="product_caps.tsv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="proteases.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

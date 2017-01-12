@@ -105,6 +105,8 @@
     <Compile Include="ClassicSpectrumMatch.cs" />
     <Compile Include="CompactPeptide.cs" />
     <Compile Include="DotSearchMode.cs" />
+    <Compile Include="GPTMDEngine.cs" />
+    <Compile Include="GPTMDResults.cs" />
     <Compile Include="IndexEngine.cs" />
     <Compile Include="IndexResults.cs" />
     <Compile Include="IntervalSearchMode.cs" />

@@ -284,7 +284,6 @@ namespace OldInternalLogic
         public double[] FastSortedProductMasses(List<ProductType> productTypes)
         {
             PeptideFragmentMasses p = computeFragmentMasses();
-            var PRODUCT_CAPS = ProductCaps.Instance;
             double[] products1 = null;
             double[] products2 = null;
             if (productTypes.Contains(ProductType.b))
@@ -307,7 +306,7 @@ namespace OldInternalLogic
                             case ProductType.adot:
                                 throw new NotImplementedException();
                             case ProductType.b:
-                                products1[i1] = p.cumulativeNTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
+                                products1[i1] = p.cumulativeNTerminalMass[r];
                                 i1++;
                                 break;
 
@@ -317,7 +316,7 @@ namespace OldInternalLogic
                             case ProductType.x:
                                 throw new NotImplementedException();
                             case ProductType.y:
-                                products2[i2] = p.cumulativeCTerminalMass[r] + PRODUCT_CAPS[product_type, MassType.Monoisotopic];
+                                products2[i2] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
                                 i2++;
                                 break;
 
