@@ -15,7 +15,7 @@ namespace MetaMorpheusGUI
     public partial class CalibrateTaskWindow : Window
     {
         // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForSearch> ModFileListInWindow = new ObservableCollection<ModListForSearch>();
+        private ObservableCollection<ModListForCalibrationTask> ModFileListInWindow = new ObservableCollection<ModListForCalibrationTask>();
 
         public CalibrateTaskWindow(ObservableCollection<ModList> modList)
         {
@@ -68,7 +68,7 @@ namespace MetaMorpheusGUI
 
             // Always create new ModFileList
             foreach (var uu in modList)
-                ModFileListInWindow.Add(new ModListForSearch(uu));
+                ModFileListInWindow.Add(new ModListForCalibrationTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 

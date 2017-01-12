@@ -19,17 +19,12 @@ namespace InternalLogicEngineLayer
             this.newPsms = newPsms;
         }
 
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             var sp = (ModernSearchEngine)s;
             StringBuilder sb = new StringBuilder();
-            sb.Append("ModernSearchResults: ");
-            sb.Append(base.ToString());
-            sb.AppendLine();
-            sb.Append("Total ms2 spectra seen: " + numMS2spectra);
-            sb.AppendLine();
-
-            sb.Append(string.Join(Environment.NewLine, sp.searchModes.Zip(numMS2spectraMatched, (a, b) => a.FileNameAddition + " : " + b)));
+            sb.AppendLine("\t\tTotal ms2 spectra seen: " + numMS2spectra);
+            sb.Append("\t\t"+string.Join(Environment.NewLine, sp.searchModes.Zip(numMS2spectraMatched, (a, b) => a.FileNameAddition + " : " + b)));
 
             return sb.ToString();
         }

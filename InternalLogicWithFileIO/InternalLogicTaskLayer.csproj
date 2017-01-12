@@ -86,25 +86,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AllTasksEngine.cs" />
-    <Compile Include="AllTasksResults.cs" />
-    <Compile Include="FinishedFile.cs" />
-    <Compile Include="CalibrationTask.cs" />
-    <Compile Include="GPTMDTask.cs" />
-    <Compile Include="ModListForGPTMD.cs" />
-    <Compile Include="ModListForSearch.cs" />
-    <Compile Include="PTMlist.cs" />
-    <Compile Include="RawDataAndResults.cs" />
-    <Compile Include="SearchTask.cs" />
-    <Compile Include="MyTaskEngine.cs" />
-    <Compile Include="MyTaskResults.cs" />
-    <Compile Include="MyTasksEnum.cs" />
+    <Compile Include="CalibrateTask\MyCalibrationTaskResults.cs" />
+    <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
+    <Compile Include="GPTMDTask\MyGPTMDTaskResults.cs" />
+    <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
+    <Compile Include="CalibrateTask\CalibrationTask.cs" />
+    <Compile Include="GPTMDTask\GPTMDTask.cs" />
+    <Compile Include="GPTMDTask\ModListForGPTMDTask.cs" />
+    <Compile Include="CalibrateTask\ModListForCalibrationTask.cs" />
+    <Compile Include="SearchTask\ModListForSearchTask.cs" />
+    <Compile Include="ModList.cs" />
+    <Compile Include="SearchTask\MySearchTaskResults.cs" />
+    <Compile Include="SearchTask\SearchTask.cs" />
+    <Compile Include="Parent\MyTaskEngine.cs" />
+    <Compile Include="Parent\MyTaskResults.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="SearchModeForDisplay.cs" />
-    <Compile Include="SingleTaskEventArgs.cs" />
-    <Compile Include="XMLdb.cs" />
+    <Compile Include="SearchTask\SearchModeFoSearch.cs" />
+    <Compile Include="Parent\SingleTaskEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InternalLogic\InternalLogicEngineLayer.csproj">

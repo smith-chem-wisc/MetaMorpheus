@@ -36,7 +36,7 @@ namespace MetaMorpheusGUI
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
-            
+
             dataGridXMLs.DataContext = xmlDBobservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksDataGrid.DataContext = taskEngineObservableCollection;
@@ -54,23 +54,35 @@ namespace MetaMorpheusGUI
             xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
 
             rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-            
-            AllTasksEngine.newDbsHandler += AddNewDB;
-            AllTasksEngine.newSpectrasHandler += AddNewSpectra;
 
-            AllTasksEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-            AllTasksEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.newDbsHandler += AddNewDB;
+            EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
+
+            EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
 
             MyTaskEngine.startingSingleTaskHander += Po_startingSingleTaskHander;
             MyTaskEngine.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             MyTaskEngine.finishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
             MyEngine.outProgressHandler += NewoutProgressBar;
-
             MyEngine.outLabelStatusHandler += NewoutLabelStatus;
-            MyEngine.outRichTextBoxHandler += NewoutRichTextBox;
+            MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
+        }
+
+        private void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyEngine_finishedSingleEngineHandler(sender, e)));
+            }
+            else
+            {
+                outRichTextBox.AppendText(e.ToString() + Environment.NewLine);
+                outRichTextBox.ScrollToEnd();
+            }
         }
 
         private void LoadSearchModesFromFile()
@@ -120,7 +132,7 @@ namespace MetaMorpheusGUI
                 s.theTask.IsMySelected = true;
                 statusLabel.Content = "Running " + s.theTask.taskType + " task";
                 outProgressBar.IsIndeterminate = true;
-                
+
                 tasksDataGrid.Items.Refresh();
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
@@ -138,7 +150,7 @@ namespace MetaMorpheusGUI
                 s.theTask.IsMySelected = false;
                 statusLabel.Content = "Finished " + s.theTask.taskType + " task";
                 outProgressBar.Value = 100;
-                
+
                 tasksDataGrid.Items.Refresh();
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
@@ -169,7 +181,7 @@ namespace MetaMorpheusGUI
         {
             rawDataObservableCollection.Clear();
         }
-        
+
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
         {
@@ -233,7 +245,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            AllTasksEngine a = new AllTasksEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
@@ -354,20 +366,7 @@ namespace MetaMorpheusGUI
                 statusLabel.Content = s.v;
             }
         }
-
-        private void NewoutRichTextBox(object sender, string tup)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => NewoutRichTextBox(sender, tup)));
-            }
-            else
-            {
-                outRichTextBox.AppendText(tup + "\n");
-                outRichTextBox.ScrollToEnd();
-            }
-        }
-
+        
         private void NewRefreshBetweenTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
