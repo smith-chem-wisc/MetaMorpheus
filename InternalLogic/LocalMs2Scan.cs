@@ -7,9 +7,9 @@ namespace InternalLogicEngineLayer
 {
     internal class LocalMs2Scan : IComparable, IComparable<double>
     {
-        #region Public Constructors
+        #region Internal Constructors
 
-        public LocalMs2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
+        internal LocalMs2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
         {
             this.theScan = b;
             double monoisotopicPrecursorMZ;
@@ -35,21 +35,21 @@ namespace InternalLogicEngineLayer
             TotalIonCurrent = b.TotalIonCurrent;
         }
 
-        #endregion Public Constructors
+        #endregion Internal Constructors
 
-        #region Public Properties
+        #region Internal Properties
 
-        public IMsDataScan<IMzSpectrum<MzPeak>> theScan { get; private set; }
-        public double precursorMass { get; private set; }
-        public double monoisotopicPrecursorMZ { get; internal set; }
-        public int OneBasedScanNumber { get; internal set; }
-        public double RetentionTime { get; internal set; }
-        public int monoisotopicPrecursorCharge { get; internal set; }
-        public int NumPeaks { get; internal set; }
-        public double monoisotopicPrecursorIntensity { get; internal set; }
-        public double TotalIonCurrent { get; internal set; }
+        internal IMsDataScan<IMzSpectrum<MzPeak>> theScan { get; private set; }
+        internal double precursorMass { get; private set; }
+        internal double monoisotopicPrecursorMZ { get; private set; }
+        internal int OneBasedScanNumber { get; private set; }
+        internal double RetentionTime { get; private set; }
+        internal int monoisotopicPrecursorCharge { get; private set; }
+        internal int NumPeaks { get; private set; }
+        internal double monoisotopicPrecursorIntensity { get; private set; }
+        internal double TotalIonCurrent { get; private set; }
 
-        #endregion Public Properties
+        #endregion Internal Properties
 
         #region Public Methods
 
