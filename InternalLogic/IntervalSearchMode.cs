@@ -35,7 +35,7 @@ namespace InternalLogicEngineLayer
 
         internal override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            throw new NotImplementedException();
+            return intervals.Select(b => new DoubleRange(peptideMonoisotopicMass + b.Minimum, peptideMonoisotopicMass + b.Maximum));
         }
 
         internal override string SearchModeString()

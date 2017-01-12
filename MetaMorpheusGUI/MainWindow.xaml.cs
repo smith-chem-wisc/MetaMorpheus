@@ -18,6 +18,16 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Public Fields
+
+        public const string elementsLocation = @"elements.dat";
+        public const string unimodLocation = @"unimod_tables.xml";
+        public const string uniprotLocation = @"ptmlist.txt";
+
+        #endregion Public Fields
+
+        #region Private Fields
+
         private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
         private readonly ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
         private readonly ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
@@ -25,9 +35,9 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
         private readonly ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
 
-        public const string elementsLocation = @"elements.dat";
-        public const string unimodLocation = @"unimod_tables.xml";
-        public const string uniprotLocation = @"ptmlist.txt";
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public MainWindow()
         {
@@ -51,10 +61,12 @@ namespace MetaMorpheusGUI
 
             LoadSearchModesFromFile();
 
-            xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-            rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL.raw"));
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL.raw"));
+
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
@@ -73,6 +85,10 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
         }
 
+        #endregion Public Constructors
+
+        #region Private Methods
+
         private void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
@@ -88,7 +104,7 @@ namespace MetaMorpheusGUI
 
         private void LoadSearchModesFromFile()
         {
-            //searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
             searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
             searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
         }
@@ -442,5 +458,7 @@ namespace MetaMorpheusGUI
                 addFinishedFile(v.writtenFile);
             }
         }
+
+        #endregion Private Methods
     }
 }
