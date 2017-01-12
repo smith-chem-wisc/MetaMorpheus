@@ -7,11 +7,10 @@ namespace InternalLogicTaskLayer
         public MyCalibrationTaskResults(MyTaskEngine s) : base(s)
         {
         }
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("MyCalibrationTaskResults:");
-            sb.Append(base.ToString());
+            sb.Append("MyCalibrationTaskResults:");
             return sb.ToString();
         }
     }

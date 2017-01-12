@@ -7,11 +7,10 @@ namespace InternalLogicTaskLayer
         public MyGPTMDTaskResults(MyTaskEngine s) : base(s)
         {
         }
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("MyGPTMDTaskResults:");
-            sb.Append(base.ToString());
+            sb.Append("MyGPTMDTaskResults:");
             return sb.ToString();
         }
     }

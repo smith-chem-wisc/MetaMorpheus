@@ -67,7 +67,6 @@ namespace MetaMorpheusGUI
 
             MyEngine.outProgressHandler += NewoutProgressBar;
             MyEngine.outLabelStatusHandler += NewoutLabelStatus;
-            MyEngine.outRichTextBoxHandler += NewoutRichTextBox;
             MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
@@ -367,20 +366,7 @@ namespace MetaMorpheusGUI
                 statusLabel.Content = s.v;
             }
         }
-
-        private void NewoutRichTextBox(object sender, string tup)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => NewoutRichTextBox(sender, tup)));
-            }
-            else
-            {
-                outRichTextBox.AppendText(tup + Environment.NewLine);
-                outRichTextBox.ScrollToEnd();
-            }
-        }
-
+        
         private void NewRefreshBetweenTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())

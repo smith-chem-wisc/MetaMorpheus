@@ -17,8 +17,21 @@ namespace InternalLogicEngineLayer
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("Time to run: " + Time);
+            if (s.Level <= 1)
+            {
+                sb.AppendLine(GetType().ToString() + ":");
+                sb.AppendLine(GetStringForOutput());
+                sb.AppendLine("\tTime to run: " + Time);
+            }
+            else
+            {
+                sb.AppendLine("\t" + GetType().ToString() + ":");
+                sb.AppendLine(GetStringForOutput());
+                sb.Append("\t\tTime to run: " + Time);
+            }
             return sb.ToString();
         }
+
+        protected abstract string GetStringForOutput();
     }
 }

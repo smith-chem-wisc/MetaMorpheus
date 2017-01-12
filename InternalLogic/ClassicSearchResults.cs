@@ -11,11 +11,10 @@ namespace InternalLogicEngineLayer
             this.outerPsms = outerPsms;
         }
 
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("ClassicSearchResults:");
-            sb.Append(base.ToString());
+            sb.Append("Some search result");
             return sb.ToString();
         }
     }

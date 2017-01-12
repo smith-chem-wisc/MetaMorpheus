@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace InternalLogicEngineLayer
 {
@@ -12,5 +13,10 @@ namespace InternalLogicEngineLayer
 
         public Dictionary<float, List<int>> fragmentIndexDict { get; private set; }
         public List<CompactPeptide> peptideIndex { get; private set; }
+
+        protected override string GetStringForOutput()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

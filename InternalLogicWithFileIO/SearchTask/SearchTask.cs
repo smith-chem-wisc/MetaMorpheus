@@ -100,7 +100,7 @@ namespace InternalLogicTaskLayer
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                output("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchEngine classicSearchEngine = null;
                 ClassicSearchResults classicSearchResults = null;
@@ -129,7 +129,7 @@ namespace InternalLogicTaskLayer
                     modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
-                    output(modernSearchResults.ToString());
+                    //output(modernSearchResults.ToString());
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 

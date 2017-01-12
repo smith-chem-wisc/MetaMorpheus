@@ -41,7 +41,7 @@ namespace InternalLogicTaskLayer
 
         }
 
-        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList)
+        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList) : base(0)
         {
             this.taskList = taskList;
             this.currentRawDataFilenameList = startingRawFilenameList;
@@ -98,6 +98,9 @@ namespace InternalLogicTaskLayer
                 ok.rawDataFilenameList = currentRawDataFilenameList;
 
                 MyTaskResults myTaskResults = (MyTaskResults)ok.Run();
+
+                if (myTaskResults == null)
+                    return null;
 
                 if (myTaskResults.newDatabases != null)
                 {

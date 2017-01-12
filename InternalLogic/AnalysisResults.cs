@@ -1,4 +1,5 @@
 ﻿using OldInternalLogic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,12 +18,10 @@ namespace InternalLogicEngineLayer
             this.dict = dict;
         }
 
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("AnalysisResults:");
-            sb.AppendLine(base.ToString());
-            sb.Append("All PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Where(c => c.QValue <= 0.01).Count())));
+            sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Where(c => c.QValue <= 0.01).Count())));
             return sb.ToString();
         }
     }

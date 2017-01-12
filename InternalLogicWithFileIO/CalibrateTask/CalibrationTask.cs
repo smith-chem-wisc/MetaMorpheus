@@ -88,7 +88,7 @@ namespace InternalLogicTaskLayer
                     myMsDataFile = new ThermoRawFile(origDataFile, 400);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                output("Finished opening spectra file " + Path.GetFileName(origDataFile));
+                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
 
@@ -134,11 +134,14 @@ namespace InternalLogicTaskLayer
 
                 a.matchesToExclude = new HashSet<int>();
 
-                a.Run();
+                var result = (CalibrationResults)a.Run();
+
+                if (result == null)
+                    return null;
 
                 status("Creating _indexedmzMLConnection, and putting data in it");
                 var path = Path.Combine(Path.GetDirectoryName(origDataFile), Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
-                MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(a.myMsDataFile, path);
+                MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.myMsDataFile, path);
 
                 SucessfullyFinishedWritingFile(path);
 

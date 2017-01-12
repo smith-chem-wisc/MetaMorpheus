@@ -8,11 +8,10 @@ namespace InternalLogicTaskLayer
         public MySearchTaskResults(MyTaskEngine s) : base(s)
         {
         }
-        public override string ToString()
+        protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("MySearchTaskResults:");
-            sb.Append(base.ToString());
+            sb.Append("MySearchTaskResults:");
             return sb.ToString();
         }
     }

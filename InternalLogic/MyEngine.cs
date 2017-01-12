@@ -11,6 +11,8 @@ namespace InternalLogicEngineLayer
 
         public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
 
+        internal readonly int Level;
+
         public static event EventHandler<SingleEngineEventArgs> startingSingleEngineHander;
 
         public static event EventHandler<SingleEngineFinishedEventArgs> finishedSingleEngineHandler;
@@ -19,7 +21,10 @@ namespace InternalLogicEngineLayer
 
         public static event EventHandler<ProgressEventArgs> outProgressHandler;
 
-        public static event EventHandler<string> outRichTextBoxHandler;
+        protected MyEngine(int Level)
+        {
+            this.Level = Level;
+        }
 
         protected void status(string v)
         {
@@ -36,9 +41,14 @@ namespace InternalLogicEngineLayer
             outProgressHandler?.Invoke(this, v);
         }
 
-        protected void output(string v)
+        private void finishedSingleEngine(MyResults myResults)
         {
-            outRichTextBoxHandler?.Invoke(this, v);
+            finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
+        }
+
+        protected void engineFailed(string message)
+        {
+
         }
 
         public MyResults Run()
@@ -48,15 +58,12 @@ namespace InternalLogicEngineLayer
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             var myResults = RunSpecific();
+            if (myResults == null)
+                return null;
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
             finishedSingleEngine(myResults);
             return myResults;
-        }
-
-        private void finishedSingleEngine(MyResults myResults)
-        {
-            finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
 
         public abstract void ValidateParams();

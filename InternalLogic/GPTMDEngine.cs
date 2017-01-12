@@ -17,7 +17,7 @@ namespace InternalLogicEngineLayer
         private List<MorpheusModification> variableModifications;
 
 
-        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol)
+        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
             this.dict = dict;
             this.allResultingIdentifications = allResultingIdentifications;

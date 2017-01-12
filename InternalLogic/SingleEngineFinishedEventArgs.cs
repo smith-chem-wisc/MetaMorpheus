@@ -1,6 +1,8 @@
-﻿namespace InternalLogicEngineLayer
+﻿using System;
+
+namespace InternalLogicEngineLayer
 {
-    public class SingleEngineFinishedEventArgs
+    public class SingleEngineFinishedEventArgs : EventArgs
     {
         private MyResults myResults;
 
