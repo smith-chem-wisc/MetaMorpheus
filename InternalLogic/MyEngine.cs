@@ -13,7 +13,7 @@ namespace InternalLogicEngineLayer
 
         public static event EventHandler<SingleEngineEventArgs> startingSingleEngineHander;
 
-        public static event EventHandler<SingleEngineEventArgs> finishedSingleEngineHandler;
+        public static event EventHandler<SingleEngineFinishedEventArgs> finishedSingleEngineHandler;
 
         public static event EventHandler<string> outLabelStatusHandler;
 
@@ -29,11 +29,6 @@ namespace InternalLogicEngineLayer
         private void startingSingleEngine()
         {
             startingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
-        }
-
-        private void finishedSingleEngine()
-        {
-            finishedSingleEngineHandler?.Invoke(this, new SingleEngineEventArgs(this));
         }
 
         protected void ReportProgress(ProgressEventArgs v)
@@ -55,8 +50,13 @@ namespace InternalLogicEngineLayer
             var myResults = RunSpecific();
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
-            finishedSingleEngine();
+            finishedSingleEngine(myResults);
             return myResults;
+        }
+
+        private void finishedSingleEngine(MyResults myResults)
+        {
+            finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
 
         public abstract void ValidateParams();

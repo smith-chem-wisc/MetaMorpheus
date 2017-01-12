@@ -122,7 +122,6 @@ namespace InternalLogicTaskLayer
 
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                    output(analysisResults.ToString());
                 }
 
                 // run modern search
@@ -138,8 +137,6 @@ namespace InternalLogicTaskLayer
                     AnalysisEngine analysisEngine = new AnalysisEngine(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
                     AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-
-                    output(analysisResults.ToString());
                 }
             }
 
@@ -148,7 +145,6 @@ namespace InternalLogicTaskLayer
                 AnalysisEngine analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), doParsimony);
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
-                output(analysisResults.ToString());
             }
             return new MySearchTaskResults(this);
         }

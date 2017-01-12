@@ -13,11 +13,9 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            var sp = (ClassicSearchEngine)s;
             StringBuilder sb = new StringBuilder();
-            sb.Append("ClassicSearchResults: ");
+            sb.AppendLine("ClassicSearchResults:");
             sb.Append(base.ToString());
-
             return sb.ToString();
         }
     }

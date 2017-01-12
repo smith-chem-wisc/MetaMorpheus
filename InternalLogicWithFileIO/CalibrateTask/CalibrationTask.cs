@@ -93,7 +93,6 @@ namespace InternalLogicTaskLayer
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
 
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
-                output(searchResults.ToString());
 
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
@@ -103,7 +102,6 @@ namespace InternalLogicTaskLayer
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
-                output(analysisResults.ToString());
 
                 var identifications = analysisResults.allResultingIdentifications[0];
 
