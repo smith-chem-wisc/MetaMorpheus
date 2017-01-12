@@ -88,6 +88,7 @@ namespace MetaMorpheusGUI
         private void LoadSearchModesFromFile()
         {
             searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
             searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
         }
 
@@ -322,23 +323,24 @@ namespace MetaMorpheusGUI
         {
             var a = sender as DataGrid;
             var ok = (MyTaskEngine)a.SelectedItem;
-            switch (ok.taskType)
-            {
-                case MyTaskEnum.Search:
-                    var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection, searchModeObservableCollection);
-                    searchDialog.ShowDialog();
-                    break;
+            if (ok != null)
+                switch (ok.taskType)
+                {
+                    case MyTaskEnum.Search:
+                        var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection, searchModeObservableCollection);
+                        searchDialog.ShowDialog();
+                        break;
 
-                case MyTaskEnum.GPTMD:
-                    var gptmddialog = new GPTMDTaskWindow(ok as GPTMDTask, modListObservableCollection);
-                    gptmddialog.ShowDialog();
-                    break;
+                    case MyTaskEnum.GPTMD:
+                        var gptmddialog = new GPTMDTaskWindow(ok as GPTMDTask, modListObservableCollection);
+                        gptmddialog.ShowDialog();
+                        break;
 
-                case MyTaskEnum.Calibrate:
-                    var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask, modListObservableCollection);
-                    calibratedialog.ShowDialog();
-                    break;
-            }
+                    case MyTaskEnum.Calibrate:
+                        var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask, modListObservableCollection);
+                        calibratedialog.ShowDialog();
+                        break;
+                }
         }
         private void NewoutLabelStatus(object sender, string s)
         {
@@ -366,7 +368,7 @@ namespace MetaMorpheusGUI
                 statusLabel.Content = s.v;
             }
         }
-        
+
         private void NewRefreshBetweenTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())

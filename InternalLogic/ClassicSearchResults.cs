@@ -14,7 +14,7 @@ namespace InternalLogicEngineLayer
         protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("Some search result");
+            sb.Append("\t\tSome search result");
             return sb.ToString();
         }
     }

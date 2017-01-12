@@ -46,11 +46,6 @@ namespace InternalLogicEngineLayer
             finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
 
-        protected void engineFailed(string message)
-        {
-
-        }
-
         public MyResults Run()
         {
             startingSingleEngine();
@@ -58,8 +53,6 @@ namespace InternalLogicEngineLayer
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             var myResults = RunSpecific();
-            if (myResults == null)
-                return null;
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
             finishedSingleEngine(myResults);

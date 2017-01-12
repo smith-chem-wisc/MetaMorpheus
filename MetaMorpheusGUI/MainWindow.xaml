@@ -73,7 +73,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Label x:Name="labelTasks" Content="Tasks" HorizontalAlignment="Center" />
                         </StackPanel>
-                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick">
+                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick" IsReadOnly="True">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">

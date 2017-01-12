@@ -100,6 +100,7 @@
     <Compile Include="Calibration\CalibrationFunctions\TrainingPoint.cs" />
     <Compile Include="Calibration\CalibrationFunctions\TransformFunction.cs" />
     <Compile Include="Calibration\CalibrationResults.cs" />
+    <Compile Include="EngineRunException.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearchResults.cs" />
     <Compile Include="ClassicSpectrumMatch.cs" />

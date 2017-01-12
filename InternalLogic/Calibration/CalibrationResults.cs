@@ -1,7 +1,7 @@
-﻿using System;
-using InternalLogicEngineLayer;
+﻿using InternalLogicEngineLayer;
 using MassSpectrometry;
 using Spectra;
+using System.Text;
 
 namespace InternalLogicCalibration
 {
@@ -16,7 +16,9 @@ namespace InternalLogicCalibration
 
         protected override string GetStringForOutput()
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+            sb.Append("\t\tSome calibration results...");
+            return sb.ToString();
         }
     }
 }

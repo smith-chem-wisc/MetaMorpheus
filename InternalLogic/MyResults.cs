@@ -19,13 +19,13 @@ namespace InternalLogicEngineLayer
             StringBuilder sb = new StringBuilder();
             if (s.Level <= 1)
             {
-                sb.AppendLine(GetType().ToString() + ":");
+                sb.AppendLine(GetType().Name.ToString() + ":");
                 sb.AppendLine(GetStringForOutput());
                 sb.AppendLine("\tTime to run: " + Time);
             }
             else
             {
-                sb.AppendLine("\t" + GetType().ToString() + ":");
+                sb.AppendLine("\t" + GetType().Name.ToString() + ":");
                 sb.AppendLine(GetStringForOutput());
                 sb.Append("\t\tTime to run: " + Time);
             }
