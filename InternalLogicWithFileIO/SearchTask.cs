@@ -24,7 +24,7 @@ namespace InternalLogicTaskLayer
         {
             // Set default values here:
             classicSearch = true;
-            doParsimony = true;
+            doParsimony = false;
             searchDecoy = true;
             maxMissedCleavages = 2;
             protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
