@@ -2,13 +2,21 @@
 {
     public class XMLdb
     {
-        public bool Use { get; set; }
-        public string FileName { get; private set; }
+        #region Public Constructors
 
         public XMLdb(string FileName)
         {
             Use = true;
             this.FileName = FileName;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public bool Use { get; set; }
+        public string FileName { get; private set; }
+
+        #endregion Public Properties
     }
 }

@@ -7,11 +7,30 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyEngine
     {
+        #region Public Fields
+
         public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
 
         public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
 
+        #endregion Public Fields
+
+        #region Internal Fields
+
         internal readonly int Level;
+
+        #endregion Internal Fields
+
+        #region Protected Constructors
+
+        protected MyEngine(int Level)
+        {
+            this.Level = Level;
+        }
+
+        #endregion Protected Constructors
+
+        #region Public Events
 
         public static event EventHandler<SingleEngineEventArgs> startingSingleEngineHander;
 
@@ -21,35 +40,9 @@ namespace InternalLogicEngineLayer
 
         public static event EventHandler<ProgressEventArgs> outProgressHandler;
 
-        protected MyEngine(int Level)
-        {
-            this.Level = Level;
-        }
+        #endregion Public Events
 
-        protected void status(string v)
-        {
-            outLabelStatusHandler?.Invoke(this, v);
-        }
-
-        private void startingSingleEngine()
-        {
-            startingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
-        }
-
-        protected void ReportProgress(ProgressEventArgs v)
-        {
-            outProgressHandler?.Invoke(this, v);
-        }
-
-        private void finishedSingleEngine(MyResults myResults)
-        {
-            finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
-        }
-
-        protected void engineFailed(string message)
-        {
-
-        }
+        #region Public Methods
 
         public MyResults Run()
         {
@@ -58,8 +51,6 @@ namespace InternalLogicEngineLayer
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             var myResults = RunSpecific();
-            if (myResults == null)
-                return null;
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
             finishedSingleEngine(myResults);
@@ -67,6 +58,37 @@ namespace InternalLogicEngineLayer
         }
 
         public abstract void ValidateParams();
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected void status(string v)
+        {
+            outLabelStatusHandler?.Invoke(this, v);
+        }
+
+        protected void ReportProgress(ProgressEventArgs v)
+        {
+            outProgressHandler?.Invoke(this, v);
+        }
+
         protected abstract MyResults RunSpecific();
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private void startingSingleEngine()
+        {
+            startingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
+        }
+
+        private void finishedSingleEngine(MyResults myResults)
+        {
+            finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
+        }
+
+        #endregion Private Methods
     }
 }

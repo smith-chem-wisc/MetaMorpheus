@@ -9,16 +9,38 @@ namespace InternalLogicTaskLayer
 {
     public class EverythingRunnerEngine : MyEngine
     {
+        #region Private Fields
+
         private List<MyTaskEngine> taskList;
         private List<string> currentRawDataFilenameList;
         private List<string> currentXmlDbFilenameList;
 
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList) : base(0)
+        {
+            this.taskList = taskList;
+            this.currentRawDataFilenameList = startingRawFilenameList;
+            this.currentXmlDbFilenameList = startingXmlDbFilenameList;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Events
+
         public static event EventHandler startingAllTasksEngineHandler;
+
         public static event EventHandler finishedAllTasksEngineHandler;
 
         public static event EventHandler<List<string>> newDbsHandler;
 
         public static event EventHandler<List<string>> newSpectrasHandler;
+
+        #endregion Public Events
+
+        #region Public Methods
 
         public void StartingAllTasks()
         {
@@ -28,24 +50,6 @@ namespace InternalLogicTaskLayer
         public void FinishedAllTasks()
         {
             finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
-        }
-
-        private void NewSpectras(List<string> newSpectra)
-        {
-            newSpectrasHandler?.Invoke(this, newSpectra);
-        }
-
-        private void NewDBs(List<string> newDatabases)
-        {
-            newDbsHandler?.Invoke(this, newDatabases);
-
-        }
-
-        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList) : base(0)
-        {
-            this.taskList = taskList;
-            this.currentRawDataFilenameList = startingRawFilenameList;
-            this.currentXmlDbFilenameList = startingXmlDbFilenameList;
         }
 
         public override void ValidateParams()
@@ -63,6 +67,10 @@ namespace InternalLogicTaskLayer
             if (currentXmlDbFilenameList.Count == 0)
                 throw new EngineValidationException("xmlDbFilenameList has to contain at least one element");
         }
+
+        #endregion Public Methods
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -116,5 +124,21 @@ namespace InternalLogicTaskLayer
             FinishedAllTasks();
             return new EverythingRunnerResults(this);
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private void NewSpectras(List<string> newSpectra)
+        {
+            newSpectrasHandler?.Invoke(this, newSpectra);
+        }
+
+        private void NewDBs(List<string> newDatabases)
+        {
+            newDbsHandler?.Invoke(this, newDatabases);
+        }
+
+        #endregion Private Methods
     }
 }

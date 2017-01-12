@@ -6,8 +6,19 @@ namespace InternalLogicEngineLayer
 {
     public class BinTreeStructure
     {
-        public List<Bin> finalBins { get; private set; }
+        #region Private Fields
+
         private double dc;
+
+        #endregion Private Fields
+
+        #region Public Properties
+
+        public List<Bin> finalBins { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public void GenerateBins(IEnumerable<NewPsmWithFDR> targetAndDecoyMatches, double dc)
         {
@@ -82,6 +93,20 @@ namespace InternalLogicEngineLayer
             finalBins = forFinalBins.Select(b => new Bin(b.Value.Average())).ToList();
         }
 
+        public void AddToBins(List<NewPsmWithFDR> enumerable)
+        {
+            for (int i = 0; i < enumerable.Count; i++)
+            {
+                foreach (Bin bin in finalBins)
+                    if (Math.Abs(enumerable[i].thisPSM.scanPrecursorMass - enumerable[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
+                        bin.Add(enumerable[i]);
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
         private double getSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
         {
             int currentDown = i - 1;
@@ -113,14 +138,6 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        public void AddToBins(List<NewPsmWithFDR> enumerable)
-        {
-            for (int i = 0; i < enumerable.Count; i++)
-            {
-                foreach (Bin bin in finalBins)
-                    if (Math.Abs(enumerable[i].thisPSM.scanPrecursorMass - enumerable[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
-                        bin.Add(enumerable[i]);
-            }
-        }
+        #endregion Private Methods
     }
 }

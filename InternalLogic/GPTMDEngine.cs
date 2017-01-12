@@ -7,6 +7,8 @@ namespace InternalLogicEngineLayer
 {
     public class GPTMDEngine : MyEngine
     {
+        #region Private Fields
+
         private List<NewPsmWithFDR>[] allResultingIdentifications;
         private IEnumerable<Tuple<double, double>> combos;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict;
@@ -16,6 +18,9 @@ namespace InternalLogicEngineLayer
         private double tol;
         private List<MorpheusModification> variableModifications;
 
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
@@ -29,11 +34,19 @@ namespace InternalLogicEngineLayer
             this.tol = tol;
         }
 
+        #endregion Public Constructors
+
+        #region Public Methods
+
         public override void ValidateParams()
         {
             if (allResultingIdentifications == null)
                 throw new EngineValidationException("allResultingIdentifications cannot be null");
         }
+
+        #endregion Public Methods
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -71,6 +84,11 @@ namespace InternalLogicEngineLayer
             }
             return new GPTMDResults(this, Mods, modsAdded);
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
         private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
         {
             if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
@@ -124,5 +142,7 @@ namespace InternalLogicEngineLayer
                 }
             }
         }
+
+        #endregion Private Methods
     }
 }

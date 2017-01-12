@@ -6,7 +6,13 @@ namespace OldInternalLogic
 {
     public class PeptideWithPossibleModifications : Peptide
     {
-        public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
+        #region Public Fields
+
+        public Dictionary<int, List<MorpheusModification>> twoBasedFixedModificationss = new Dictionary<int, List<MorpheusModification>>();
+
+        #endregion Public Fields
+
+        #region Public Constructors
 
         public PeptideWithPossibleModifications(int OneBasedStartResidueNumberInProtein, int OneBasedEndResidueNumberInProtein, Protein ParentProtein, int missedCleavages, string PeptideDescription)
             : base(ParentProtein, OneBasedStartResidueNumberInProtein, OneBasedEndResidueNumberInProtein)
@@ -15,6 +21,21 @@ namespace OldInternalLogic
             this.missedCleavages = missedCleavages;
             this.PeptideDescription = PeptideDescription;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
+        public int missedCleavages { get; private set; }
+
+        public Dictionary<int, List<MorpheusModification>> FixedModifications { get; private set; }
+
+        public Dictionary<int, MorpheusModification> VariableModifications { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public void SetFixedModifications(IEnumerable<MorpheusModification> allKnownFixedModifications)
         {
@@ -80,92 +101,6 @@ namespace OldInternalLogic
                     }
                 }
             }
-        }
-
-        public Dictionary<int, List<MorpheusModification>> twoBasedFixedModificationss = new Dictionary<int, List<MorpheusModification>>();
-        public int missedCleavages { get; private set; }
-
-        protected IEnumerable<Dictionary<int, MorpheusModification>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsList> possibleVariableModifications, int max_mods_for_peptide)
-        {
-            if (possibleVariableModifications.Count == 0)
-            {
-                yield return null;
-            }
-            else
-            {
-                Dictionary<int, UniqueModificationsList> possible_variable_modifications = new Dictionary<int, UniqueModificationsList>(possibleVariableModifications);
-
-                int[] base_variable_modification_pattern = new int[Length + 4];
-                var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
-                for (int variable_modifications = 0; variable_modifications <= Math.Min(totalAvailableMods, max_mods_for_peptide); variable_modifications++)
-                {
-                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(new List<KeyValuePair<int, UniqueModificationsList>>(possible_variable_modifications), possible_variable_modifications.Count - variable_modifications, base_variable_modification_pattern, 0))
-                    {
-                        yield return GetNewVariableModificationPattern(variable_modification_pattern, possible_variable_modifications);
-                    }
-                }
-            }
-        }
-
-        private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, UniqueModificationsList>> possibleVariableModifications, int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
-        {
-            if (index < possibleVariableModifications.Count - 1)
-            {
-                if (unmodifiedResiduesDesired > 0)
-                {
-                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
-                    foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired - 1, variableModificationPattern, index + 1))
-                    {
-                        yield return new_variable_modification_pattern;
-                    }
-                }
-                if (unmodifiedResiduesDesired < possibleVariableModifications.Count - index)
-                {
-                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
-                    {
-                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
-                        foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired, variableModificationPattern, index + 1))
-                        {
-                            yield return new_variable_modification_pattern;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (unmodifiedResiduesDesired > 0)
-                {
-                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
-                    yield return variableModificationPattern;
-                }
-                else
-                {
-                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
-                    {
-                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
-                        yield return variableModificationPattern;
-                    }
-                }
-            }
-        }
-
-        public Dictionary<int, List<MorpheusModification>> FixedModifications { get; private set; }
-
-        public Dictionary<int, MorpheusModification> VariableModifications { get; private set; }
-
-        private static Dictionary<int, MorpheusModification> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsList>> possibleVariableModifications)
-        {
-            Dictionary<int, MorpheusModification> modification_pattern = new Dictionary<int, MorpheusModification>();
-
-            foreach (KeyValuePair<int, UniqueModificationsList> kvp in possibleVariableModifications)
-            {
-                if (variableModificationArray[kvp.Key] > 0)
-                {
-                    modification_pattern.Add(kvp.Key, kvp.Value[variableModificationArray[kvp.Key] - 1]);
-                }
-            }
-
-            return modification_pattern;
         }
 
         public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int max_mods_for_peptide, List<MorpheusModification> localizeableModifications)
@@ -294,5 +229,94 @@ namespace OldInternalLogic
                     yield break;
             }
         }
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected IEnumerable<Dictionary<int, MorpheusModification>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsList> possibleVariableModifications, int max_mods_for_peptide)
+        {
+            if (possibleVariableModifications.Count == 0)
+            {
+                yield return null;
+            }
+            else
+            {
+                Dictionary<int, UniqueModificationsList> possible_variable_modifications = new Dictionary<int, UniqueModificationsList>(possibleVariableModifications);
+
+                int[] base_variable_modification_pattern = new int[Length + 4];
+                var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
+                for (int variable_modifications = 0; variable_modifications <= Math.Min(totalAvailableMods, max_mods_for_peptide); variable_modifications++)
+                {
+                    foreach (int[] variable_modification_pattern in GetVariableModificationPatterns(new List<KeyValuePair<int, UniqueModificationsList>>(possible_variable_modifications), possible_variable_modifications.Count - variable_modifications, base_variable_modification_pattern, 0))
+                    {
+                        yield return GetNewVariableModificationPattern(variable_modification_pattern, possible_variable_modifications);
+                    }
+                }
+            }
+        }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, UniqueModificationsList>> possibleVariableModifications, int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
+        {
+            if (index < possibleVariableModifications.Count - 1)
+            {
+                if (unmodifiedResiduesDesired > 0)
+                {
+                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
+                    foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired - 1, variableModificationPattern, index + 1))
+                    {
+                        yield return new_variable_modification_pattern;
+                    }
+                }
+                if (unmodifiedResiduesDesired < possibleVariableModifications.Count - index)
+                {
+                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
+                    {
+                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
+                        foreach (int[] new_variable_modification_pattern in GetVariableModificationPatterns(possibleVariableModifications, unmodifiedResiduesDesired, variableModificationPattern, index + 1))
+                        {
+                            yield return new_variable_modification_pattern;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (unmodifiedResiduesDesired > 0)
+                {
+                    variableModificationPattern[possibleVariableModifications[index].Key] = 0;
+                    yield return variableModificationPattern;
+                }
+                else
+                {
+                    for (int i = 1; i <= possibleVariableModifications[index].Value.Count; i++)
+                    {
+                        variableModificationPattern[possibleVariableModifications[index].Key] = i;
+                        yield return variableModificationPattern;
+                    }
+                }
+            }
+        }
+
+        private static Dictionary<int, MorpheusModification> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsList>> possibleVariableModifications)
+        {
+            Dictionary<int, MorpheusModification> modification_pattern = new Dictionary<int, MorpheusModification>();
+
+            foreach (KeyValuePair<int, UniqueModificationsList> kvp in possibleVariableModifications)
+            {
+                if (variableModificationArray[kvp.Key] > 0)
+                {
+                    modification_pattern.Add(kvp.Key, kvp.Value[variableModificationArray[kvp.Key] - 1]);
+                }
+            }
+
+            return modification_pattern;
+        }
+
+        #endregion Private Methods
     }
 }

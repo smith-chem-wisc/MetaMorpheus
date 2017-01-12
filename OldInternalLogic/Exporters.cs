@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-
-namespace OldInternalLogic
+﻿namespace OldInternalLogic
 {
     public static class Exporters
     {
@@ -516,6 +513,8 @@ namespace OldInternalLogic
         //    }
         //}
 
+        #region Private Methods
+
         private static void ConvertModificationIndex(PeptideWithSetModifications peptide, int modificationIndex, out int location, out int residueIndex)
         {
             if (modificationIndex <= 1)
@@ -534,5 +533,7 @@ namespace OldInternalLogic
                 residueIndex = modificationIndex - 2;
             }
         }
+
+        #endregion Private Methods
     }
 }

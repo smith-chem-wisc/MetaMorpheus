@@ -8,5 +8,4 @@
         SemiC,
         Full
     }
-    
 }

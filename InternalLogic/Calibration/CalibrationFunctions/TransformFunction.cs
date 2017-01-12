@@ -4,14 +4,20 @@ namespace InternalLogicCalibration
 {
     public class TransformFunction
     {
+        #region Internal Fields
+
         internal int numOutputs;
-        private Func<double[], double[]> tf;
         internal string name;
 
-        internal double[] Transform(double[] t)
-        {
-            return tf(t);
-        }
+        #endregion Internal Fields
+
+        #region Private Fields
+
+        private Func<double[], double[]> tf;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public TransformFunction(Func<double[], double[]> tf, int numOutputs, string name)
         {
@@ -19,5 +25,16 @@ namespace InternalLogicCalibration
             this.numOutputs = numOutputs;
             this.name = name;
         }
+
+        #endregion Public Constructors
+
+        #region Internal Methods
+
+        internal double[] Transform(double[] t)
+        {
+            return tf(t);
+        }
+
+        #endregion Internal Methods
     }
 }

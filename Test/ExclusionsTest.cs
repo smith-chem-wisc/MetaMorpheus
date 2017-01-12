@@ -6,6 +6,8 @@ namespace Test
     [TestFixture]
     public class ExclusionsTest
     {
+        #region Public Methods
+
         [Test]
         public void TestExclusions()
         {
@@ -41,5 +43,7 @@ namespace Test
             // Lysine combo - do not exclude
             Assert.IsTrue(Exclusions.DoNotExclude(128.09496 + 99.06841, tolExclude, exclude));
         }
+
+        #endregion Public Methods
     }
 }

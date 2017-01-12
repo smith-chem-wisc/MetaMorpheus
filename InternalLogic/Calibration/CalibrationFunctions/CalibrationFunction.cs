@@ -6,7 +6,13 @@ namespace InternalLogicCalibration
 {
     public abstract class CalibrationFunction
     {
+        #region Internal Fields
+
         internal string name;
+
+        #endregion Internal Fields
+
+        #region Public Methods
 
         public abstract void Train(IEnumerable<LabeledDataPoint> trainingList);
 
@@ -24,6 +30,10 @@ namespace InternalLogicCalibration
             return count == 0 ? 0 : mse / count;
         }
 
+        #endregion Public Methods
+
+        #region Internal Methods
+
         internal void writePredictedLables(List<LabeledDataPoint> trainList1, string v)
         {
             var fullFileName = Path.Combine(@"PredictedLabels", v + "newLabels" + ".dat");
@@ -35,5 +45,7 @@ namespace InternalLogicCalibration
                     file.WriteLine(Predict(d.inputs));
             }
         }
+
+        #endregion Internal Methods
     }
 }

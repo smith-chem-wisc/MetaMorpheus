@@ -4,26 +4,7 @@ namespace OldInternalLogic
 {
     public class MorpheusModification
     {
-        public string Description
-        {
-            get
-            {
-                return Database + (labile ? ":labile" : "") + ":" + NameInXML;
-            }
-        }
-
-        public bool labile { get; private set; }
-        public ModificationType Type { get; private set; }
-        public char AminoAcid { get; private set; }
-        public double MonoisotopicMassShift { get; private set; }
-        public bool DefaultFixed { get; private set; }
-        public bool DefaultVariable { get; private set; }
-        public string Database { get; private set; }
-        public string DatabaseName { get; private set; }
-        public string NameInXML { get; private set; }
-        public char PrevAminoAcid { get; private set; }
-        public double AlternativeMassShift { get; private set; }
-        public ChemicalFormula cf { get; private set; }
+        #region Public Constructors
 
         public MorpheusModification(string NameInXML, ModificationType type, char aminoAcid, double monoisotopicMassShift,
             string database, string databaseName, char prevAA, double AlternativeMassShift, bool labile, ChemicalFormula cf)
@@ -45,9 +26,40 @@ namespace OldInternalLogic
             this.NameInXML = NameInXML;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public string Description
+        {
+            get
+            {
+                return Database + (labile ? ":labile" : "") + ":" + NameInXML;
+            }
+        }
+
+        public bool labile { get; private set; }
+        public ModificationType Type { get; private set; }
+        public char AminoAcid { get; private set; }
+        public double MonoisotopicMassShift { get; private set; }
+        public bool DefaultFixed { get; private set; }
+        public bool DefaultVariable { get; private set; }
+        public string Database { get; private set; }
+        public string DatabaseName { get; private set; }
+        public string NameInXML { get; private set; }
+        public char PrevAminoAcid { get; private set; }
+        public double AlternativeMassShift { get; private set; }
+        public ChemicalFormula cf { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
         public override string ToString()
         {
             return Description;
         }
+
+        #endregion Public Methods
     }
 }

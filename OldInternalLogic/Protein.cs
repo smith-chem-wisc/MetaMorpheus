@@ -5,14 +5,13 @@ namespace OldInternalLogic
 {
     public class Protein
     {
-        public int[] oneBasedBeginPositions { get; private set; }
-        public int[] oneBasedEndPositions { get; private set; }
-        public string[] bigPeptideTypes { get; private set; }
-        public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
-        public string Accession { get; private set; }
-        public string BaseSequence { get; private set; }
-        public string dataset_abbreviation { get; private set; }
-        public bool isDecoy { get; private set; }
+        #region Private Fields
+
+        private string fullDescription;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public Protein(string baseSequence, string accession, string dataset_abbreviation, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy)
         {
@@ -29,13 +28,18 @@ namespace OldInternalLogic
             this.isDecoy = isDecoy;
         }
 
-        public char this[int zeroBasedIndex]
-        {
-            get
-            {
-                return BaseSequence[zeroBasedIndex];
-            }
-        }
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public int[] oneBasedBeginPositions { get; private set; }
+        public int[] oneBasedEndPositions { get; private set; }
+        public string[] bigPeptideTypes { get; private set; }
+        public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
+        public string Accession { get; private set; }
+        public string BaseSequence { get; private set; }
+        public string dataset_abbreviation { get; private set; }
+        public bool isDecoy { get; private set; }
 
         public int Length
         {
@@ -44,8 +48,6 @@ namespace OldInternalLogic
                 return BaseSequence.Length;
             }
         }
-
-        private string fullDescription;
 
         public string FullDescription
         {
@@ -60,8 +62,26 @@ namespace OldInternalLogic
         }
 
         public string name { get; private set; }
+
         public string fullName { get; private set; }
+
         public int offset { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Indexers
+
+        public char this[int zeroBasedIndex]
+        {
+            get
+            {
+                return BaseSequence[zeroBasedIndex];
+            }
+        }
+
+        #endregion Public Indexers
+
+        #region Public Methods
 
         public IEnumerable<PeptideWithPossibleModifications> Digest(Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior)
         {
@@ -202,5 +222,7 @@ namespace OldInternalLogic
         {
             return Accession.GetHashCode();
         }
+
+        #endregion Public Methods
     }
 }

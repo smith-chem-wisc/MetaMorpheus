@@ -8,14 +8,29 @@ namespace InternalLogicEngineLayer
 {
     public abstract class ParentSpectrumMatch
     {
+        #region Internal Fields
+
         internal Dictionary<ProductType, double[]> matchedIonsList;
         internal int scanNumber;
         internal int scanPrecursorCharge;
         internal double scanPrecursorMass;
 
-        public List<double> LocalizedScores { get; internal set; }
+        #endregion Internal Fields
+
+        #region Protected Fields
+
         protected CompactPeptide compactPeptide;
+
+        #endregion Protected Fields
+
+        #region Public Properties
+
+        public List<double> LocalizedScores { get; internal set; }
         public double Score { get; protected set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications);
 
@@ -53,5 +68,7 @@ namespace InternalLogicEngineLayer
 
             return sb.ToString();
         }
+
+        #endregion Public Methods
     }
 }

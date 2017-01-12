@@ -73,7 +73,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Label x:Name="labelTasks" Content="Tasks" HorizontalAlignment="Center" />
                         </StackPanel>
-                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick">
+                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick" IsReadOnly="True">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
@@ -127,10 +127,10 @@
                         <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
                     </StackPanel>
                     <ProgressBar x:Name="outProgressBar" Height="15" />
-                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True" >
+                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
-                                <Setter Property="Margin" Value="0"/>
+                                <Setter Property="Margin" Value="0" />
                             </Style>
                         </RichTextBox.Resources>
                     </RichTextBox>

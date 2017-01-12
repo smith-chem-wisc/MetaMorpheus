@@ -7,7 +7,7 @@ namespace InternalLogicEngineLayer
 {
     internal class LocalMs2Scan : IComparable, IComparable<double>
     {
-        public IMsDataScan<IMzSpectrum<MzPeak>> theScan { get; private set; }
+        #region Public Constructors
 
         public LocalMs2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
         {
@@ -35,6 +35,11 @@ namespace InternalLogicEngineLayer
             TotalIonCurrent = b.TotalIonCurrent;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public IMsDataScan<IMzSpectrum<MzPeak>> theScan { get; private set; }
         public double precursorMass { get; private set; }
         public double monoisotopicPrecursorMZ { get; internal set; }
         public int OneBasedScanNumber { get; internal set; }
@@ -43,6 +48,10 @@ namespace InternalLogicEngineLayer
         public int NumPeaks { get; internal set; }
         public double monoisotopicPrecursorIntensity { get; internal set; }
         public double TotalIonCurrent { get; internal set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public int CompareTo(double other)
         {
@@ -56,5 +65,7 @@ namespace InternalLogicEngineLayer
                 return precursorMass.CompareTo(other.precursorMass);
             return precursorMass.CompareTo((double)obj);
         }
+
+        #endregion Public Methods
     }
 }

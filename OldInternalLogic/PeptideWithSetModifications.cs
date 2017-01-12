@@ -8,14 +8,38 @@ namespace OldInternalLogic
 {
     public class PeptideWithSetModifications : Peptide
     {
+        #region Public Fields
+
+        public Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss;
+
+        #endregion Public Fields
+
+        #region Private Fields
+
+        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+
+        private double monoisotopicMass = double.NaN;
+
+        private string extendedSequence;
+
+        private string sequence;
+
+        private PeptideWithPossibleModifications modPep;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
         public PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss)
-            : base(modPep.protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+                                                            : base(modPep.protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.twoBasedVariableAndLocalizeableModificationss = twoBasedVariableAndLocalizeableModificationss;
         }
 
-        private double monoisotopicMass = double.NaN;
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public double MonoisotopicMass
         {
@@ -30,8 +54,6 @@ namespace OldInternalLogic
                 monoisotopicMass = value;
             }
         }
-
-        private string extendedSequence;
 
         public virtual string ExtendedSequence
         {
@@ -50,8 +72,6 @@ namespace OldInternalLogic
                 return extendedSequence;
             }
         }
-
-        private string sequence;
 
         public virtual string Sequence
         {
@@ -116,6 +136,103 @@ namespace OldInternalLogic
                 return sequence;
             }
         }
+
+        public int numVariableMods
+        {
+            get
+            {
+                return twoBasedVariableAndLocalizeableModificationss.Count;
+            }
+        }
+
+        public int MissedCleavages
+        {
+            get { return modPep.missedCleavages; }
+        }
+
+        public override string PeptideDescription
+        {
+            get { return modPep.PeptideDescription; }
+        }
+
+        public IEnumerable<KeyValuePair<int, MorpheusModification>> Modifications
+        {
+            get
+            {
+                foreach (var ye in twoBasedVariableAndLocalizeableModificationss)
+                    yield return ye;
+                foreach (var aass in modPep.twoBasedFixedModificationss)
+                {
+                    int key = aass.Key;
+                    foreach (var fff in aass.Value)
+                        yield return new KeyValuePair<int, MorpheusModification>(key, fff);
+                }
+            }
+        }
+
+        public string SequenceWithChemicalFormulas
+        {
+            get
+            {
+                StringBuilder sbsequence = new StringBuilder();
+                List<MorpheusModification> value = null;
+                // fixed modifications on protein N-terminus
+                if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
+                    foreach (var fixed_modification in value)
+                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
+                // variable modification on protein N-terminus
+                MorpheusModification prot_n_term_variable_mod;
+                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_variable_mod))
+                    sbsequence.Append('[' + prot_n_term_variable_mod.cf.Formula + ']');
+
+                // fixed modifications on peptide N-terminus
+                if (modPep.twoBasedFixedModificationss.TryGetValue(1, out value))
+                    foreach (var fixed_modification in value)
+                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
+
+                // variable modification on peptide N-terminus
+                MorpheusModification pep_n_term_variable_mod;
+                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
+                    sbsequence.Append('[' + pep_n_term_variable_mod.cf.Formula + ']');
+
+                for (int r = 0; r < Length; r++)
+                {
+                    sbsequence.Append(this[r]);
+                    // fixed modifications on this residue
+                    if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out value))
+                        foreach (var fixed_modification in value)
+                            sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
+                    // variable modification on this residue
+                    MorpheusModification residue_variable_mod;
+                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
+                        sbsequence.Append('[' + residue_variable_mod.cf.Formula + ']');
+                }
+
+                // fixed modifications on peptide C-terminus
+                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out value))
+                    foreach (var fixed_modification in value)
+                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
+
+                // variable modification on peptide C-terminus
+                MorpheusModification pep_c_term_variable_mod;
+                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                    sbsequence.Append('[' + pep_c_term_variable_mod.cf.Formula + ']');
+
+                // fixed modifications on protein C-terminus
+                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out value))
+                    foreach (var fixed_modification in value)
+                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
+                // variable modification on protein C-terminus
+                MorpheusModification prot_c_term_variable_mod;
+                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
+                    sbsequence.Append('[' + prot_c_term_variable_mod.cf.Formula + ']');
+                return sbsequence.ToString();
+            }
+        }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public PeptideWithSetModifications Localize(int j, double v)
         {
@@ -259,28 +376,6 @@ namespace OldInternalLogic
             return p;
         }
 
-        public int numVariableMods
-        {
-            get
-            {
-                return twoBasedVariableAndLocalizeableModificationss.Count;
-            }
-        }
-
-        public Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss;
-        private PeptideWithPossibleModifications modPep;
-        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-
-        public int MissedCleavages
-        {
-            get { return modPep.missedCleavages; }
-        }
-
-        public override string PeptideDescription
-        {
-            get { return modPep.PeptideDescription; }
-        }
-
         public double[] FastSortedProductMasses(List<ProductType> productTypes)
         {
             PeptideFragmentMasses p = computeFragmentMasses();
@@ -347,81 +442,6 @@ namespace OldInternalLogic
             return products;
         }
 
-        public IEnumerable<KeyValuePair<int, MorpheusModification>> Modifications
-        {
-            get
-            {
-                foreach (var ye in twoBasedVariableAndLocalizeableModificationss)
-                    yield return ye;
-                foreach (var aass in modPep.twoBasedFixedModificationss)
-                {
-                    int key = aass.Key;
-                    foreach (var fff in aass.Value)
-                        yield return new KeyValuePair<int, MorpheusModification>(key, fff);
-                }
-            }
-        }
-
-        public string SequenceWithChemicalFormulas
-        {
-            get
-            {
-                StringBuilder sbsequence = new StringBuilder();
-                List<MorpheusModification> value = null;
-                // fixed modifications on protein N-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
-                // variable modification on protein N-terminus
-                MorpheusModification prot_n_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_variable_mod))
-                    sbsequence.Append('[' + prot_n_term_variable_mod.cf.Formula + ']');
-
-                // fixed modifications on peptide N-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(1, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
-
-                // variable modification on peptide N-terminus
-                MorpheusModification pep_n_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
-                    sbsequence.Append('[' + pep_n_term_variable_mod.cf.Formula + ']');
-
-                for (int r = 0; r < Length; r++)
-                {
-                    sbsequence.Append(this[r]);
-                    // fixed modifications on this residue
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out value))
-                        foreach (var fixed_modification in value)
-                            sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
-                    // variable modification on this residue
-                    MorpheusModification residue_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
-                        sbsequence.Append('[' + residue_variable_mod.cf.Formula + ']');
-                }
-
-                // fixed modifications on peptide C-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
-
-                // variable modification on peptide C-terminus
-                MorpheusModification pep_c_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
-                    sbsequence.Append('[' + pep_c_term_variable_mod.cf.Formula + ']');
-
-                // fixed modifications on protein C-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.cf.Formula + ']');
-                // variable modification on protein C-terminus
-                MorpheusModification prot_c_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
-                    sbsequence.Append('[' + prot_c_term_variable_mod.cf.Formula + ']');
-                return sbsequence.ToString();
-            }
-        }
-
         public override bool Equals(object obj)
         {
             PeptideWithSetModifications q = obj as PeptideWithSetModifications;
@@ -432,5 +452,7 @@ namespace OldInternalLogic
         {
             return ExtendedSequence.GetHashCode();
         }
+
+        #endregion Public Methods
     }
 }

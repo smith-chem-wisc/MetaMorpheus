@@ -1,8 +1,6 @@
 ﻿using InternalLogicEngineLayer;
-using InternalLogicTaskLayer;
 using NUnit.Framework;
 using OldInternalLogic;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,6 +9,8 @@ namespace Test
     [TestFixture]
     public class AnalysisEngineTest
     {
+        #region Public Methods
+
         [Test]
         public void TestParsimony()
         {
@@ -170,5 +170,7 @@ namespace Test
             Assert.That(parsimonyBaseSequences.Contains(sequence2));
             Assert.That(parsimonyBaseSequences.Contains(sequence3));
         }
+
+        #endregion Public Methods
     }
 }

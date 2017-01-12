@@ -7,7 +7,26 @@ namespace InternalLogicTaskLayer
 {
     public class ModList
     {
+        #region Private Fields
+
         private List<MorpheusModification> mods;
+
+        private string FullFileName;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public ModList(string fileName)
+        {
+            this.FullFileName = Path.GetFullPath(fileName);
+            mods = ProteomeDatabaseReader.ReadModFile(FullFileName).ToList();
+            Description = File.ReadLines(FullFileName).First();
+        }
+
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public string FileName
         {
@@ -24,18 +43,15 @@ namespace InternalLogicTaskLayer
 
         public string Description { get; private set; }
 
-        public ModList(string fileName)
-        {
-            this.FullFileName = Path.GetFullPath(fileName);
-            mods = ProteomeDatabaseReader.ReadModFile(FullFileName).ToList();
-            Description = File.ReadLines(FullFileName).First();
-        }
+        #endregion Public Properties
+
+        #region Public Methods
 
         public List<MorpheusModification> getMods()
         {
             return mods;
         }
 
-        private string FullFileName;
+        #endregion Public Methods
     }
 }
