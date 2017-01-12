@@ -129,6 +129,7 @@ namespace Test
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
 
+            /*
             Console.WriteLine("----Initial Dictionary----");
             Console.WriteLine("PEPTIDE\t\t\tPROTEIN\t\t\tPeptideWithSetModifications");
             foreach (var kvp in initialDictionary)
@@ -163,7 +164,7 @@ namespace Test
                 }
                 Console.WriteLine();
             }
-            
+            */
 
             Assert.That(parsimonyProteinList.Count == 3);
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
