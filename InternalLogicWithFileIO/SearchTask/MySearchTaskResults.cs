@@ -2,9 +2,9 @@
 
 namespace InternalLogicTaskLayer
 {
-    internal class MySearchTaskResults : MyResults
+    internal class MySearchTaskResults : MyTaskResults
     {
-        public MySearchTaskResults(MyEngine s) : base(s)
+        public MySearchTaskResults(MyTaskEngine s) : base(s)
         {
         }
     }
