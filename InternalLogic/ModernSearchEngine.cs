@@ -12,18 +12,7 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchEngine : MyEngine
     {
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<int>[] fragmentIndex { get; private set; }
-        public double fragmentTolerance { get; private set; }
-        public float[] keys { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
-        public List<CompactPeptide> peptideIndex { get; private set; }
-        public Protease protease { get; private set; }
-        public List<Protein> proteinList { get; private set; }
-        public List<SearchMode> searchModes { get; private set; }
-        public int spectraFileIndex { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
+        #region Public Constructors
 
         public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
         {
@@ -40,6 +29,36 @@ namespace InternalLogicEngineLayer
             this.protease = protease;
             this.searchModes = searchModes;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public List<MorpheusModification> fixedModifications { get; private set; }
+        public List<int>[] fragmentIndex { get; private set; }
+        public double fragmentTolerance { get; private set; }
+        public float[] keys { get; private set; }
+        public List<MorpheusModification> localizeableModifications { get; private set; }
+        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
+        public List<CompactPeptide> peptideIndex { get; private set; }
+        public Protease protease { get; private set; }
+        public List<Protein> proteinList { get; private set; }
+        public List<SearchMode> searchModes { get; private set; }
+        public int spectraFileIndex { get; private set; }
+        public List<MorpheusModification> variableModifications { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -133,6 +152,10 @@ namespace InternalLogicEngineLayer
             return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, this);
         }
 
+        #endregion Protected Methods
+
+        #region Private Methods
+
         private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
         {
             float[] peptideScores = new float[peptides.Count];
@@ -210,9 +233,6 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
-        public override void ValidateParams()
-        {
-            throw new NotImplementedException();
-        }
+        #endregion Private Methods
     }
 }

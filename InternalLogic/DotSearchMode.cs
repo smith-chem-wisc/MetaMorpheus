@@ -8,8 +8,14 @@ namespace InternalLogicEngineLayer
 {
     public class DotSearchMode : SearchMode
     {
+        #region Private Fields
+
         private List<double> acceptableSortedMassShifts;
-        Tolerance tol;
+        private Tolerance tol;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public DotSearchMode(string FileNameAddition, double[] acceptableSortedMassShifts, Tolerance tol) : base(FileNameAddition)
         {
@@ -27,10 +33,18 @@ namespace InternalLogicEngineLayer
             tol = tolerance;
         }
 
+        #endregion Public Constructors
+
+        #region Public Methods
+
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
             throw new NotImplementedException();
         }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
@@ -40,13 +54,34 @@ namespace InternalLogicEngineLayer
             }
         }
 
+        internal override string SearchModeString()
+        {
+            return "Tolerance of " + tol.ToString() + " around mass diffs: " + string.Join(",", acceptableSortedMassShifts);
+        }
+
+        #endregion Internal Methods
+
+        #region Private Classes
+
         private class ffff : IEqualityComparer<double>
         {
-            int i;
+            #region Private Fields
+
+            private int i;
+
+            #endregion Private Fields
+
+            #region Public Constructors
+
             public ffff(int i)
             {
                 this.i = i;
             }
+
+            #endregion Public Constructors
+
+            #region Public Methods
+
             public bool Equals(double x, double y)
             {
                 return Math.Round(x, i) == Math.Round(y, i);
@@ -56,6 +91,10 @@ namespace InternalLogicEngineLayer
             {
                 return Math.Round(obj, i).GetHashCode();
             }
+
+            #endregion Public Methods
         }
+
+        #endregion Private Classes
     }
 }

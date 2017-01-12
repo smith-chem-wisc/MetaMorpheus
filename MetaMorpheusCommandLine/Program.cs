@@ -1,5 +1,4 @@
 ﻿using InternalLogicTaskLayer;
-using OldInternalLogic;
 using System.Collections.ObjectModel;
 
 namespace MetaMorpheusCommandLine
@@ -16,7 +15,7 @@ namespace MetaMorpheusCommandLine
 
             var unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             var uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
-            
+
             //var xMLdblist = new ObservableCollection<XMLdb>();
             //if (args[0].Equals("mouse"))
             //{

@@ -1,11 +1,11 @@
 ﻿using InternalLogicTaskLayer;
 using OldInternalLogic;
-using System.Collections.ObjectModel;
-using System.Windows;
-using System;
 using Spectra;
+using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Windows;
 
 namespace MetaMorpheusGUI
 {
@@ -14,8 +14,14 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GPTMDTaskWindow : Window
     {
+        #region Private Fields
+
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForGPTMDTask> ModFileListInWindow = new ObservableCollection<ModListForGPTMDTask>();
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public GPTMDTaskWindow(ObservableCollection<ModList> modList)
         {
@@ -25,6 +31,21 @@ namespace MetaMorpheusGUI
             TheTask = new GPTMDTask(modList);
             UpdateFieldsFromTask(TheTask);
         }
+
+        public GPTMDTaskWindow(GPTMDTask myGPTMDtask, ObservableCollection<ModList> modFileList)
+        {
+            InitializeComponent();
+        }
+
+        #endregion Public Constructors
+
+        #region Internal Properties
+
+        internal GPTMDTask TheTask { get; private set; }
+
+        #endregion Internal Properties
+
+        #region Private Methods
 
         private void UpdateFieldsFromTask(GPTMDTask task)
         {
@@ -74,13 +95,6 @@ namespace MetaMorpheusGUI
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 
-        public GPTMDTaskWindow(GPTMDTask myGPTMDtask, ObservableCollection<ModList> modFileList)
-        {
-            InitializeComponent();
-        }
-
-        internal GPTMDTask TheTask { get; private set; }
-
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
@@ -102,5 +116,7 @@ namespace MetaMorpheusGUI
 
             DialogResult = true;
         }
+
+        #endregion Private Methods
     }
 }

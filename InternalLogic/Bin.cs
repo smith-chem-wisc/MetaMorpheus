@@ -6,22 +6,35 @@ namespace InternalLogicEngineLayer
 {
     public class Bin
     {
+        #region Public Fields
+
         public string UnimodId = "-";
         public string psimodID = "-";
         public string uniprotID = "-";
         public string UnimodFormulas = "-";
         public string AA = "-";
         public string combos = "-";
-        public double MassShift { get; private set; }
         public Dictionary<char, int> residueCount;
         public int NlocCount;
         public int ClocCount;
+        public Dictionary<string, Tuple<string, string, NewPsmWithFDR>> uniquePSMs;
+        public Dictionary<string, int> modsInCommon;
+
+        #endregion Public Fields
+
+        #region Public Constructors
 
         public Bin(double MassShift)
         {
             this.MassShift = MassShift;
             uniquePSMs = new Dictionary<string, Tuple<string, string, NewPsmWithFDR>>();
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public double MassShift { get; private set; }
 
         public int Count
         {
@@ -58,7 +71,18 @@ namespace InternalLogicEngineLayer
         public string mine { get; internal set; }
         public Dictionary<char, int> AAsInCommon { get; internal set; }
 
-        public Dictionary<string, Tuple<string, string, NewPsmWithFDR>> uniquePSMs;
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public double ComputeZ(double v)
+        {
+            return Math.Sqrt(Count) * ((double)CountDecoy / Count - v) / (v * (1 - v));
+        }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal void Add(NewPsmWithFDR ok)
         {
@@ -72,11 +96,6 @@ namespace InternalLogicEngineLayer
                 uniquePSMs.Add(ok.thisPSM.FullSequence, new Tuple<string, string, NewPsmWithFDR>(ok.thisPSM.BaseSequence, ok.thisPSM.FullSequence, ok));
         }
 
-        public Dictionary<string, int> modsInCommon;
-
-        public double ComputeZ(double v)
-        {
-            return Math.Sqrt(Count) * ((double)CountDecoy / Count - v) / (v * (1 - v));
-        }
+        #endregion Internal Methods
     }
 }

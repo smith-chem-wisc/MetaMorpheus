@@ -2,8 +2,7 @@
 {
     public class RawData
     {
-        public bool Use { get; set; }
-        public string FileName { get; private set; }
+        #region Public Constructors
 
         public RawData(string FileName)
         {
@@ -12,10 +11,23 @@
                 Use = true;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public bool Use { get; set; }
+        public string FileName { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
         public void AddFilePath(string FileName)
         {
             this.FileName = FileName;
             Use = true;
         }
+
+        #endregion Public Methods
     }
 }

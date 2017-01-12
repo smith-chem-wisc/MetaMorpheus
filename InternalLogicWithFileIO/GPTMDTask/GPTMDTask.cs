@@ -9,20 +9,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
 
 namespace InternalLogicTaskLayer
 {
     public class GPTMDTask : MyTaskEngine
     {
-        public Tolerance precursorMassTolerance { get; set; }
-        public List<ModListForGPTMDTask> listOfModListsForGPTMD { get; set; }
-
-        public double tol { get; set; }
-
-        public bool isotopeErrors { get; set; }
-        public string outputFileName { get; set; }
-
         public GPTMDTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
@@ -45,7 +38,33 @@ namespace InternalLogicTaskLayer
             tol = 0.003;
         }
 
+        public bool isotopeErrors { get; set; }
+        public List<ModListForGPTMDTask> listOfModListsForGPTMD { get; set; }
+        public string outputFileName { get; set; }
+        public Tolerance precursorMassTolerance { get; set; }
+        public double tol { get; set; }
 
+        public override void ValidateParams()
+        {
+            if (listOfModListsForGPTMD == null)
+                throw new EngineValidationException("listOfModListsForGPTMD should not be null");
+            if (listOfModListsForGPTMD.Where(b => b.GPTMD).Count() == 0)
+                throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
+        }
+
+        internal override string GetSpecificTaskInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("isotopeErrors: " + isotopeErrors.ToString());
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Fixed).Select(b => b.FileName)));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
+            sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.GPTMD).Select(b => b.FileName)));
+            sb.AppendLine("outputFileName: " + outputFileName);
+            sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
+            sb.Append("tol: " + tol);
+            return sb.ToString();
+        }
 
         protected override MyResults RunSpecific()
         {
@@ -70,7 +89,6 @@ namespace InternalLogicTaskLayer
             GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
-
 
             SearchMode searchMode = new DotSearchMode("", gptmdModifications, combos, precursorMassTolerance);
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
@@ -115,8 +133,6 @@ namespace InternalLogicTaskLayer
                 //output(analysisResults.ToString());
             }
 
-
-
             GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, analysisResults.dict, variableModifications, localizeableModifications, isotopeErrors, gptmdModifications, combos, tol);
             GPTMDResults gptmdResults = (GPTMDResults)gptmdEngine.Run();
 
@@ -126,6 +142,11 @@ namespace InternalLogicTaskLayer
 
             myGPTMDresults.newDatabases.Add(outputFileName);
             return myGPTMDresults;
+        }
+
+        private IEnumerable<Tuple<double, double>> LoadCombos()
+        {
+            yield return new Tuple<double, double>(15.994915, 15.994915);
         }
 
         private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList)
@@ -208,19 +229,6 @@ namespace InternalLogicTaskLayer
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
             }
-        }
-
-        private IEnumerable<Tuple<double, double>> LoadCombos()
-        {
-            yield return new Tuple<double, double>(15.994915, 15.994915);
-        }
-
-        public override void ValidateParams()
-        {
-            if (listOfModListsForGPTMD == null)
-                throw new EngineValidationException("listOfModListsForGPTMD should not be null");
-            if (listOfModListsForGPTMD.Where(b => b.GPTMD).Count() == 0)
-                throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
         }
     }
 }

@@ -9,11 +9,7 @@ namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<Protein> proteinList { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public Protease protease { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
+        #region Public Constructors
 
         public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease) : base(2)
         {
@@ -24,6 +20,28 @@ namespace InternalLogicEngineLayer
             this.protease = protease;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public List<MorpheusModification> fixedModifications { get; private set; }
+        public List<Protein> proteinList { get; private set; }
+        public List<MorpheusModification> localizeableModifications { get; private set; }
+        public Protease protease { get; private set; }
+        public List<MorpheusModification> variableModifications { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public override void ValidateParams()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -122,9 +140,6 @@ namespace InternalLogicEngineLayer
             return new IndexResults(myDictionary, myFragmentDictionary, this);
         }
 
-        public override void ValidateParams()
-        {
-            throw new NotImplementedException();
-        }
+        #endregion Protected Methods
     }
 }

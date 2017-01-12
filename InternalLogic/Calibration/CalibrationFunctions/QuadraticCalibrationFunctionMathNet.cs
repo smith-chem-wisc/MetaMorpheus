@@ -7,10 +7,16 @@ namespace InternalLogicCalibration
 {
     public class QuadraticCalibrationFunctionMathNet : CalibrationFunction
     {
+        #region Private Fields
+
         private Func<double[], double> f;
         private int numFeatures;
         private int numFeaturesExpanded;
         private TransformFunction transform;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public QuadraticCalibrationFunctionMathNet(TransformFunction transform)
         {
@@ -19,26 +25,13 @@ namespace InternalLogicCalibration
             numFeaturesExpanded = numFeatures + numFeatures * (numFeatures + 1) / 2;
         }
 
+        #endregion Public Constructors
+
+        #region Public Methods
+
         public override double Predict(double[] t)
         {
             return f(ExpandFeatures(transform.Transform(t)));
-        }
-
-        private double[] ExpandFeatures(double[] input)
-        {
-            double[] outputExpanded = new double[numFeaturesExpanded];
-            for (int i = 0; i < numFeatures; i++)
-                outputExpanded[i] = input[i];
-            int index = numFeatures;
-            for (int i = 0; i < numFeatures; i++)
-            {
-                for (int j = i; j < numFeatures; j++)
-                {
-                    outputExpanded[index] = input[i] * input[j];
-                    index++;
-                }
-            }
-            return outputExpanded;
         }
 
         public override void Train(IEnumerable<LabeledDataPoint> trainingList)
@@ -62,5 +55,28 @@ namespace InternalLogicCalibration
             f = Fit.LinearMultiDimFunc(ok, ok2, ye);
             //onOutput("Finished fitting a quadratic"));
         }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
+        private double[] ExpandFeatures(double[] input)
+        {
+            double[] outputExpanded = new double[numFeaturesExpanded];
+            for (int i = 0; i < numFeatures; i++)
+                outputExpanded[i] = input[i];
+            int index = numFeatures;
+            for (int i = 0; i < numFeatures; i++)
+            {
+                for (int j = i; j < numFeatures; j++)
+                {
+                    outputExpanded[index] = input[i] * input[j];
+                    index++;
+                }
+            }
+            return outputExpanded;
+        }
+
+        #endregion Private Methods
     }
 }
