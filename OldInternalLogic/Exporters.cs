@@ -5,24 +5,24 @@ namespace OldInternalLogic
 {
     public static class Exporters
     {
-        public static void WriteToTabDelimitedTextFile<T>(IEnumerable<T> items, string filepath)
-        {
-            using (StreamWriter output = new StreamWriter(filepath))
-            {
-                if (typeof(T) == typeof(PeptideSpectrumMatch))
-                {
-                    output.WriteLine(PeptideSpectrumMatch.Header);
-                }
-                else if (typeof(T) == typeof(IdentificationWithFalseDiscoveryRate<PeptideSpectrumMatch>))
-                {
-                    output.WriteLine(PeptideSpectrumMatch.Header + IdentificationWithFalseDiscoveryRate<PeptideSpectrumMatch>.Header);
-                }
-                foreach (T item in items)
-                {
-                    output.WriteLine(item.ToString());
-                }
-            }
-        }
+        //public static void WriteToTabDelimitedTextFile<T>(IEnumerable<T> items, string filepath)
+        //{
+        //    using (StreamWriter output = new StreamWriter(filepath))
+        //    {
+        //        if (typeof(T) == typeof(PeptideSpectrumMatch))
+        //        {
+        //            output.WriteLine(PeptideSpectrumMatch.Header);
+        //        }
+        //        else if (typeof(T) == typeof(IdentificationWithFalseDiscoveryRate<PeptideSpectrumMatch>))
+        //        {
+        //            output.WriteLine(PeptideSpectrumMatch.Header + IdentificationWithFalseDiscoveryRate<PeptideSpectrumMatch>.Header);
+        //        }
+        //        foreach (T item in items)
+        //        {
+        //            output.WriteLine(item.ToString());
+        //        }
+        //    }
+        //}
 
         //public static void WriteMZIdentMLFile(string outputFilepath,
         //    IEnumerable<TandemMassSpectra> datas,

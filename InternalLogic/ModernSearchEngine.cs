@@ -138,7 +138,7 @@ namespace InternalLogicEngineLayer
             float[] peptideScores = new float[peptides.Count];
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
-                var experimentalPeakInDaltons = experimentalPeak.MZ - 1.007276466879;
+                var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(fragmentMassesAscending, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
