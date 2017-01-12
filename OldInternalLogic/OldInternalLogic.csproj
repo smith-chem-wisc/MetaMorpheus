@@ -91,19 +91,14 @@
     <Compile Include="CleavageSpecificity.cs" />
     <Compile Include="DatabaseSearcher.cs" />
     <Compile Include="Exporters.cs" />
-    <Compile Include="FalseDiscoveryRate.cs" />
-    <Compile Include="IdentificationWithFalseDiscoveryRate.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
-    <Compile Include="MassType.cs" />
     <Compile Include="MorpheusModification.cs" />
     <Compile Include="ModificationType.cs" />
     <Compile Include="PeptideFragmentMasses.cs" />
     <Compile Include="PeptideWithPossibleModifications.cs" />
     <Compile Include="PeptideSpectrumMatch.cs" />
-    <Compile Include="PeptideWithSetModificationsHeavy.cs" />
     <Compile Include="PeptideWithSetModifications.cs" />
     <Compile Include="ProductType.cs" />
-    <Compile Include="ProductTypes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
