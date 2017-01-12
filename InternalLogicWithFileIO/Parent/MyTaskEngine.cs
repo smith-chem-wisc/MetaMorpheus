@@ -32,23 +32,15 @@ namespace InternalLogicTaskLayer
         public static event EventHandler<SingleFileEventArgs> finishedWritingFileHandler;
 
         public static event EventHandler<SingleTaskEventArgs> startingSingleTaskHander;
-        public MyTaskEnum taskType { get; internal set; }
         public bool bIons { get; set; }
-
         public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
-
         public bool IsMySelected { get; set; }
-
         public int maxMissedCleavages { get; set; }
-
         public int maxModificationIsoforms { get; set; }
-
         public string output_folder { get; private set; }
-
         public Tolerance productMassTolerance { get; set; }
-
         public Protease protease { get; set; }
-
+        public MyTaskEnum taskType { get; internal set; }
         public bool yIons { get; set; }
 
         public void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
@@ -364,6 +356,7 @@ namespace InternalLogicTaskLayer
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
+            sb.AppendLine(GetSpecificTaskInfo());
             sb.AppendLine(taskType.ToString());
             sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
             sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
@@ -377,6 +370,8 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("yIons: " + yIons.ToString());
             return sb.ToString();
         }
+
+        internal abstract string GetSpecificTaskInfo();
 
         public void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
         {

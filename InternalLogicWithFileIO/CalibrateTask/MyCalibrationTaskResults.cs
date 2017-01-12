@@ -10,7 +10,6 @@ namespace InternalLogicTaskLayer
         protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("MyCalibrationTaskResults:");
             return sb.ToString();
         }
     }

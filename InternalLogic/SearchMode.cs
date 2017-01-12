@@ -14,7 +14,13 @@ namespace InternalLogicEngineLayer
         public string FileNameAddition { get; internal set; }
 
         public abstract bool Accepts(double scanPrecursorMass, double peptideMass);
-
         internal abstract IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
+
+        public override string ToString()
+        {
+            return FileNameAddition + " " + SearchModeString();
+        }
+
+        internal abstract string SearchModeString();
     }
 }

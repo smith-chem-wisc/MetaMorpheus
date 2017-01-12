@@ -40,6 +40,11 @@ namespace InternalLogicEngineLayer
             }
         }
 
+        internal override string SearchModeString()
+        {
+            return "Tolerance of " + tol.ToString() + " around mass diffs: " + string.Join(",", acceptableSortedMassShifts);
+        }
+
         private class ffff : IEqualityComparer<double>
         {
             int i;

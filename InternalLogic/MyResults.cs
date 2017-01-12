@@ -20,13 +20,17 @@ namespace InternalLogicEngineLayer
             if (s.Level <= 1)
             {
                 sb.AppendLine(GetType().Name.ToString() + ":");
-                sb.AppendLine(GetStringForOutput());
+                var ok = GetStringForOutput();
+                if (!string.IsNullOrEmpty(ok))
+                    sb.AppendLine(ok);
                 sb.AppendLine("\tTime to run: " + Time);
             }
             else
             {
                 sb.AppendLine("\t" + GetType().Name.ToString() + ":");
-                sb.AppendLine(GetStringForOutput());
+                var ok = GetStringForOutput();
+                if (!string.IsNullOrEmpty(ok))
+                    sb.AppendLine(ok);
                 sb.Append("\t\tTime to run: " + Time);
             }
             return sb.ToString();

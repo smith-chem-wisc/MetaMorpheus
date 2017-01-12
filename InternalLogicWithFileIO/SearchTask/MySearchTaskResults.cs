@@ -11,7 +11,6 @@ namespace InternalLogicTaskLayer
         protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("MySearchTaskResults:");
             return sb.ToString();
         }
     }

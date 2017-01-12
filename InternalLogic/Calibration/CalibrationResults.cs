@@ -17,7 +17,6 @@ namespace InternalLogicCalibration
         protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("\t\tSome calibration results...");
             return sb.ToString();
         }
     }

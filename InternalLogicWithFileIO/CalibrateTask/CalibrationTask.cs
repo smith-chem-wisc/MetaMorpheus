@@ -9,15 +9,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System;
+using System.Text;
 
 namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
-        public Tolerance precursorMassTolerance { get; set; }
-
-        public List<ModListForCalibrationTask> listOfModListsForSearch { get; set; }
-
         public CalibrationTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
@@ -28,16 +26,18 @@ namespace InternalLogicTaskLayer
             productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             bIons = true;
             yIons = true;
-            listOfModListsForSearch = new List<ModListForCalibrationTask>();
+            listOfModListsForCalibration = new List<ModListForCalibrationTask>();
             foreach (var uu in modList)
-                listOfModListsForSearch.Add(new ModListForCalibrationTask(uu));
-            listOfModListsForSearch[0].Fixed = true;
-            listOfModListsForSearch[1].Variable = true;
-            listOfModListsForSearch[2].Localize = true;
+                listOfModListsForCalibration.Add(new ModListForCalibrationTask(uu));
+            listOfModListsForCalibration[0].Fixed = true;
+            listOfModListsForCalibration[1].Variable = true;
+            listOfModListsForCalibration[2].Localize = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             this.taskType = MyTaskEnum.Calibrate;
         }
 
+        public List<ModListForCalibrationTask> listOfModListsForCalibration { get; set; }
+        public Tolerance precursorMassTolerance { get; set; }
         public override void ValidateParams()
         {
             if (xmlDbFilenameList == null)
@@ -48,6 +48,16 @@ namespace InternalLogicTaskLayer
                 throw new EngineValidationException("rawDataAndResultslist cannot be null");
             if (rawDataFilenameList.Count == 0)
                 throw new EngineValidationException("rawDataAndResultslist cannot be empty");
+        }
+
+        internal override string GetSpecificTaskInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
+            sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
+            return sb.ToString();
         }
 
         protected override MyResults RunSpecific()
@@ -67,9 +77,9 @@ namespace InternalLogicTaskLayer
             allPsms[0] = new List<ParentSpectrumMatch>();
 
             status("Loading modifications...");
-            List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
-            List<MorpheusModification> fixedModifications = listOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
-            List<MorpheusModification> localizeableModifications = listOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> variableModifications = listOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> fixedModifications = listOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> localizeableModifications = listOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
             GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);

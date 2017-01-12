@@ -23,5 +23,10 @@ namespace InternalLogicEngineLayer
         {
             throw new NotImplementedException();
         }
+
+        internal override string SearchModeString()
+        {
+            return "Intervals allowed: " + string.Join(",", intervals);
+        }
     }
 }
