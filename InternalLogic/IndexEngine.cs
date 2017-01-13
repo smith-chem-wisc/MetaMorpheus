@@ -3,23 +3,23 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
-        #region Private Fields
 
-        private readonly List<MorpheusModification> fixedModifications;
+        #region Private Fields
 
         private readonly List<Protein> proteinList;
 
-        private readonly List<MorpheusModification> localizeableModifications;
-
         private readonly Protease protease;
 
+        private readonly List<MorpheusModification> fixedModifications;
         private readonly List<MorpheusModification> variableModifications;
+        private readonly List<MorpheusModification> localizeableModifications;
 
         #endregion Private Fields
 
@@ -35,6 +35,21 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Constructors
+
+        #region Public Methods
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Number of proteins: " + proteinList.Count);
+            sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
+            sb.AppendLine("Number of variable mods: " + variableModifications.Count);
+            sb.AppendLine("Number of localizeable mods: " + localizeableModifications.Count);
+            sb.Append("protease: " + protease);
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
 
         #region Protected Methods
 
@@ -152,5 +167,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Protected Methods
+
     }
 }

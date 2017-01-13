@@ -183,14 +183,16 @@ namespace InternalLogicTaskLayer
 
         private void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
         {
-            string pathToFolderWithIndices = GetFolderWithIndices(xmlDbFilenameList);
+            IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
+            string pathToFolderWithIndices = GetFolderWithIndices(xmlDbFilenameList, indexEngine);
 
             if (pathToFolderWithIndices == null)
             {
                 status("Generating indices...");
                 var output_folderForIndices = GetOutputFolderForIndices(xmlDbFilenameList);
+                status("Writing params...");
+                writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
 
-                IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
                 IndexResults indexResults = (IndexResults)indexEngine.Run();
                 peptideIndex = indexResults.peptideIndex;
                 fragmentIndexDict = indexResults.fragmentIndexDict;
@@ -199,8 +201,6 @@ namespace InternalLogicTaskLayer
                 writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"));
                 status("Writing fragment index...");
                 writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"));
-                status("Writing log...");
-                writeIndexEngineLog(indexEngine, Path.Combine(output_folderForIndices, "index.log"));
             }
             else
             {
@@ -213,10 +213,13 @@ namespace InternalLogicTaskLayer
 
         private string GetOutputFolderForIndices(List<string> xmlDbFilenameList)
         {
-            return Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), Path.GetFileNameWithoutExtension(xmlDbFilenameList.First()));
+            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), Path.GetFileNameWithoutExtension(xmlDbFilenameList.First()));
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+            return folder;
         }
 
-        private void writeIndexEngineLog(IndexEngine indexEngine, string fileName)
+        private void writeIndexEngineParams(IndexEngine indexEngine, string fileName)
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {
@@ -225,15 +228,27 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(fileName);
         }
 
-        private string GetFolderWithIndices(List<string> xmlDbFilenameList)
+        private string GetFolderWithIndices(List<string> xmlDbFilenameList, IndexEngine indexEngine)
         {
             foreach (var ok in xmlDbFilenameList)
             {
                 var he = Path.Combine(Path.GetDirectoryName(ok), Path.GetFileNameWithoutExtension(ok));
-                if (Directory.Exists(he))
+                if (Directory.Exists(he) &&
+                    File.Exists(Path.Combine(he, "indexEngine.params")) &&
+                    File.Exists(Path.Combine(he, "peptideIndex.ind")) &&
+                    File.Exists(Path.Combine(he, "fragmentIndex.ind")) &&
+                    SameSettings(Path.Combine(he, "indexEngine.params"), indexEngine))
                     return he;
             }
             return null;
+        }
+
+        private bool SameSettings(string pathToOldParamsFile, IndexEngine indexEngine)
+        {
+            using (StreamReader reader = new StreamReader(pathToOldParamsFile))
+                if (reader.ReadToEnd().Equals(indexEngine.ToString()))
+                    return true;
+            return false;
         }
 
         private Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
