@@ -9,6 +9,7 @@ namespace InternalLogicTaskLayer
 {
     public class EverythingRunnerEngine : MyEngine
     {
+
         #region Private Fields
 
         private List<MyTaskEngine> taskList;
@@ -98,7 +99,7 @@ namespace InternalLogicTaskLayer
 
                 if (myTaskResults.newDatabases != null)
                 {
-                    currentRawDataFilenameList = myTaskResults.newDatabases;
+                    currentXmlDbFilenameList = myTaskResults.newDatabases;
                     NewDBs(myTaskResults.newDatabases);
                 }
                 if (myTaskResults.newSpectra != null)
@@ -136,5 +137,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }
