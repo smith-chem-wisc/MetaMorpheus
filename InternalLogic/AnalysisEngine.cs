@@ -210,7 +210,7 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            // build each protein group after parsimony and match it to its peptide
+            // build each protein list after parsimony and match it to its peptide
             Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinGroupMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
 
             foreach (var kvp in parsimonyDict)
@@ -323,14 +323,15 @@ namespace InternalLogicEngineLayer
 
                 action2(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
+                List<ProteinGroup> proteinGroupsList = null;
+
                 if (doParsimony)
                 {
-                    status("Getting protein parsimony dictionary...");
+                    status("Applying protein parsimony...");
                     compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
-
-                    // to do protein FDR, need peptides and their virtual peptide matches (for protein group analysis) with scores
-                    //Dictionary<Protein, List<NewPsmWithFDR>> aggregateProteinList = new Dictionary<Protein, List<NewPsmWithFDR>();
-                    //aggregateProteinList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+                    
+                    status("Building protein groups and doing FDR...");
+                    proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
                 }
                 yeah[j] = orderedPsmsWithFDR;
             }
@@ -397,10 +398,23 @@ namespace InternalLogicEngineLayer
 
         private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> PSMs, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
+            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
+
+            List<Protein> proteinList = new List<Protein>();
+            List<NewPsmWithFDR> psmList = new List<NewPsmWithFDR>();
+
+            // build protein groups
+            
+                // build protein list (find all proteins associated with list of peptides)
+
+                // build psm list
 
 
+                // build protein group from proteinList and psmList
+                proteinGroups.Add(new ProteinGroup(proteinList, psmList, variableModifications, localizeableModifications));
+            
 
-            return new List<ProteinGroup>();
+            return proteinGroups;
         }
 
 

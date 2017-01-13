@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace InternalLogicEngineLayer
 {
-    class ProteinGroup
+    public class ProteinGroup
     {
         public List<Protein> proteins { get; private set; }
         public List<NewPsmWithFDR> psmList { get; private set; }
         public List<CompactPeptide> peptideList { get; private set; }
         public readonly bool isDecoy;
-        private double summedMetaMorpheusScore;
+        private double proteinGroupScore = 1;
         private double summedIntensity = 0;
         private double summedUniquePeptideIntensity = 0;
 
@@ -22,18 +22,41 @@ namespace InternalLogicEngineLayer
         {
             this.proteins = proteins;
             this.psmList = psmList;
-            this.isDecoy = proteins.First().isDecoy;
 
+            // if any of the proteins in the protein group are decoys, the protein group is a decoy
+            foreach (var protein in proteins)
+            {
+                if (protein.isDecoy)
+                    this.isDecoy = true;
+            }
+
+            // build list of peptides associated with the protein group
+            // all peptides in the group are associated with all proteins in the group
             foreach(var psm in psmList)
             {
                 peptideList.Add(psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications));
-                summedMetaMorpheusScore += psm.thisPSM.Score;
+            }
+
+            // find the best scoring psm for each protein in the protein group and multiply them to get the protein group score
+            foreach(var protein in proteins)
+            {
+                double bestScoringPsmScore = 0;
+
+                foreach(var psm in psmList)
+                {
+                    if (psm.thisPSM.Score > bestScoringPsmScore)
+                    {
+                        bestScoringPsmScore = psm.thisPSM.Score;
+                    }
+                }
+
+                proteinGroupScore *= bestScoringPsmScore;
             }
         }
 
         public double getScore()
         {
-            return summedMetaMorpheusScore;
+            return proteinGroupScore;
         }
 
         public override string ToString()
@@ -76,7 +99,7 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // summed metamorpheus score
-            sb.Append(summedMetaMorpheusScore);
+            sb.Append(proteinGroupScore);
             sb.Append("\t");
 
             // decoy
