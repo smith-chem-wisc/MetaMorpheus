@@ -28,7 +28,6 @@ namespace InternalLogicTaskLayer
 
         private readonly double tol;
         private bool isotopeErrors;
-        private string outputFileName;
 
         #endregion Private Fields
 
@@ -68,7 +67,6 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
             sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.GPTMD).Select(b => b.FileName)));
-            sb.AppendLine("outputFileName: " + outputFileName);
             sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
             sb.Append("tol: " + tol);
             return sb.ToString();
@@ -84,7 +82,7 @@ namespace InternalLogicTaskLayer
 
         protected override MyResults RunSpecific()
         {
-            outputFileName = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
+            string outputXMLdbFullName = Path.Combine(output_folder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
 
             MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
             myGPTMDresults.newDatabases = new List<string>();
@@ -154,9 +152,10 @@ namespace InternalLogicTaskLayer
 
             //output(gptmdResults.ToString());
 
-            WriteGPTMDdatabse(gptmdResults.mods, proteinList);
+            WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
 
-            myGPTMDresults.newDatabases.Add(outputFileName);
+            myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
+
             return myGPTMDresults;
         }
 
@@ -169,7 +168,7 @@ namespace InternalLogicTaskLayer
             yield return new Tuple<double, double>(15.994915, 15.994915);
         }
 
-        private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList)
+        private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
         {
             XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
             {
@@ -249,6 +248,7 @@ namespace InternalLogicTaskLayer
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
             }
+            SucessfullyFinishedWritingFile(outputFileName);
         }
 
         #endregion Private Methods
