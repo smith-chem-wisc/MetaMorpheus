@@ -156,11 +156,12 @@ namespace InternalLogicEngineLayer
 
         #region Private Methods
 
-        private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
+        private static double[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
         {
-            float[] peptideScores = new float[peptides.Count];
+            double[] peptideScores = new double[peptides.Count];
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
+                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(fragmentMassesAscending, (float)experimentalPeakInDaltons);
@@ -179,7 +180,7 @@ namespace InternalLogicEngineLayer
                         if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentTolerance)
                         {// po.out("    ********************************");
                             foreach (var heh in fragmentIndex[downIpos])
-                                peptideScores[heh] += (float)(1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent);
+                                peptideScores[heh] += theAdd;
                         }
                         else
                             break;
@@ -198,7 +199,7 @@ namespace InternalLogicEngineLayer
                         {
                             //po.out("    ********************************");
                             foreach (var heh in fragmentIndex[upIpos])
-                                peptideScores[heh] += (float)(1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent);
+                                peptideScores[heh] += theAdd;
                         }
                         else
                             break;
