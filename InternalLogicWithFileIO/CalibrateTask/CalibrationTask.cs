@@ -146,9 +146,6 @@ namespace InternalLogicTaskLayer
 
                 var result = (CalibrationResults)a.Run();
 
-                if (result == null)
-                    return null;
-
                 status("Creating _indexedmzMLConnection, and putting data in it");
                 var path = Path.Combine(Path.GetDirectoryName(output_folder), Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
                 MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.myMsDataFile, path);
