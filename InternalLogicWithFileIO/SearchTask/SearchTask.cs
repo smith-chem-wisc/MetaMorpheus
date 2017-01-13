@@ -6,6 +6,7 @@ using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -184,12 +185,12 @@ namespace InternalLogicTaskLayer
         private void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
         {
             IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
-            string pathToFolderWithIndices = GetFolderWithIndices(xmlDbFilenameList, indexEngine);
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(xmlDbFilenameList, indexEngine);
 
             if (pathToFolderWithIndices == null)
             {
                 status("Generating indices...");
-                var output_folderForIndices = GetOutputFolderForIndices(xmlDbFilenameList);
+                var output_folderForIndices = GenerateOutputFolderForIndices(xmlDbFilenameList);
                 status("Writing params...");
                 writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
 
@@ -211,9 +212,9 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        private string GetOutputFolderForIndices(List<string> xmlDbFilenameList)
+        private string GenerateOutputFolderForIndices(List<string> xmlDbFilenameList)
         {
-            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), Path.GetFileNameWithoutExtension(xmlDbFilenameList.First()));
+            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             return folder;
@@ -228,17 +229,24 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(fileName);
         }
 
-        private string GetFolderWithIndices(List<string> xmlDbFilenameList, IndexEngine indexEngine)
+        private string GetExistingFolderWithIndices(List<string> xmlDbFilenameList, IndexEngine indexEngine)
         {
+            // In every database location...
             foreach (var ok in xmlDbFilenameList)
             {
-                var he = Path.Combine(Path.GetDirectoryName(ok), Path.GetFileNameWithoutExtension(ok));
-                if (Directory.Exists(he) &&
-                    File.Exists(Path.Combine(he, "indexEngine.params")) &&
-                    File.Exists(Path.Combine(he, "peptideIndex.ind")) &&
-                    File.Exists(Path.Combine(he, "fragmentIndex.ind")) &&
-                    SameSettings(Path.Combine(he, "indexEngine.params"), indexEngine))
-                    return he;
+                var baseDir = Path.GetDirectoryName(ok);
+                DirectoryInfo directory = new DirectoryInfo(baseDir);
+                DirectoryInfo[] directories = directory.GetDirectories();
+
+                // Look at every subdirectory...
+                foreach (DirectoryInfo possibleFolder in directories)
+                {
+                    if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
+                        File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
+                        File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
+                        SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
+                        return possibleFolder.FullName;
+                }
             }
             return null;
         }

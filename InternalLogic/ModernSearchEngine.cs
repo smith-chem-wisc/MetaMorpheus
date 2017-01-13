@@ -12,6 +12,7 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchEngine : MyEngine
     {
+
         #region Public Constructors
 
         public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
@@ -49,16 +50,13 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
-        #region Public Methods
+        #region Protected Methods
 
         protected override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (fragmentIndex == null)
+                throw new EngineValidationException("fragmentIndex cannot be null");
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -234,5 +232,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }
