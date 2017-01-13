@@ -13,6 +13,34 @@ namespace InternalLogicEngineLayer
     public class ModernSearchEngine : MyEngine
     {
 
+        #region Private Fields
+
+        private readonly List<MorpheusModification> fixedModifications;
+
+        private readonly List<int>[] fragmentIndex;
+
+        private readonly double fragmentTolerance;
+
+        private readonly float[] keys;
+
+        private readonly List<MorpheusModification> localizeableModifications;
+
+        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+
+        private readonly List<CompactPeptide> peptideIndex;
+
+        private readonly Protease protease;
+
+        private readonly List<Protein> proteinList;
+
+        private readonly List<SearchMode> searchModes;
+
+        private readonly int spectraFileIndex;
+
+        private readonly List<MorpheusModification> variableModifications;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
@@ -32,23 +60,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<int>[] fragmentIndex { get; private set; }
-        public double fragmentTolerance { get; private set; }
-        public float[] keys { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
-        public List<CompactPeptide> peptideIndex { get; private set; }
-        public Protease protease { get; private set; }
-        public List<Protein> proteinList { get; private set; }
-        public List<SearchMode> searchModes { get; private set; }
-        public int spectraFileIndex { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
-
-        #endregion Public Properties
 
         #region Protected Methods
 
