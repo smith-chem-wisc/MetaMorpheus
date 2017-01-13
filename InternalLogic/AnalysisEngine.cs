@@ -91,6 +91,9 @@ namespace InternalLogicEngineLayer
 
         public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
+            /* TODO: KeyedCollection instead of dictionary? Faster lookup */
+
+
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<Protein, HashSet<CompactPeptide>> newDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
 
@@ -326,8 +329,8 @@ namespace InternalLogicEngineLayer
                     compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
 
                     // to do protein FDR, need peptides and their virtual peptide matches (for protein group analysis) with scores
-                    Dictionary<Protein, List<NewPsmWithFDR>> aggregateProteinList = new Dictionary<Protein, List<NewPsmWithFDR>();
-                    aggregateProteinList = DoProteinFDRAnalysis(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+                    //Dictionary<Protein, List<NewPsmWithFDR>> aggregateProteinList = new Dictionary<Protein, List<NewPsmWithFDR>();
+                    //aggregateProteinList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
                 }
                 yeah[j] = orderedPsmsWithFDR;
             }
@@ -392,24 +395,12 @@ namespace InternalLogicEngineLayer
             return ids;
         }
 
-        private Dictionary<Protein, List<NewPsmWithFDR>> DoProteinFDRAnalysis(List<NewPsmWithFDR> PSMs, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> PSMs, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
-            Dictionary<CompactPeptide, List<Protein>> peptideToProteinGroupMatches = new Dictionary<CompactPeptide, List<Protein>>();
-
-            // for each psm, get the virtualpeptides by looking up the compactpeptide, and get the score for stuff
-            foreach (var psm in PSMs)
-            {
-                //CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                //HashSet<PeptideWithSetModifications> virtualPeptides = new HashSet<PeptideWithSetModifications>();
-
-                //compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out virtualPeptides);
 
 
-                //peptideToProteinGroupMatches.Add(peptide, virtualPeptides)
-            }
 
-
-            return new Dictionary<Protein, List < NewPsmWithFDR >>();
+            return new List<ProteinGroup>();
         }
 
 
