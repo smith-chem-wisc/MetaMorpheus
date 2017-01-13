@@ -91,6 +91,9 @@ namespace InternalLogicEngineLayer
 
         public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
+            /* TODO: KeyedCollection instead of dictionary? Faster lookup */
+
+
             // makes dictionary with proteins as keys and list of associated peptides as the value (swaps input parameter dictionary keys/values)
             Dictionary<Protein, HashSet<CompactPeptide>> newDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
 
@@ -206,24 +209,6 @@ namespace InternalLogicEngineLayer
                     }
                 }
             }
-
-            /*
-             // print out parsimony dictionary
-            Console.WriteLine("************");
-            foreach(var kvp in parsimonyDict)
-            {
-                string[] peptides = new string[kvp.Value.Count];
-                for(int i = 0; i < kvp.Value.Count; i++)
-                    peptides[i] = (string.Join("", kvp.Value.ElementAt(i).BaseSequence.Select(b => char.ConvertFromUtf32(b))));
-
-                Console.Write(kvp.Key.BaseSequence + " :: ");
-                for (int i = 0; i < kvp.Value.Count; i++)
-                    Console.Write(peptides[i] + " ");
-
-                Console.WriteLine();
-            }
-            Console.WriteLine("************");
-            */
 
             // build each protein group after parsimony and match it to its peptide
             Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinGroupMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
@@ -342,6 +327,10 @@ namespace InternalLogicEngineLayer
                 {
                     status("Getting protein parsimony dictionary...");
                     compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
+
+                    // to do protein FDR, need peptides and their virtual peptide matches (for protein group analysis) with scores
+                    //Dictionary<Protein, List<NewPsmWithFDR>> aggregateProteinList = new Dictionary<Protein, List<NewPsmWithFDR>();
+                    //aggregateProteinList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
                 }
                 yeah[j] = orderedPsmsWithFDR;
             }
@@ -405,6 +394,16 @@ namespace InternalLogicEngineLayer
 
             return ids;
         }
+
+        private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> PSMs, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        {
+
+
+
+            return new List<ProteinGroup>();
+        }
+
+
 
         private void AddObservedPeptidesToDictionary()
         {

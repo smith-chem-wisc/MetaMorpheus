@@ -361,6 +361,36 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
+        protected void WriteToTabDelimitedTextFileWithDecoys(Dictionary<Protein, List<NewPsmWithFDR>> items, string output_folder, string fileName)
+        {
+            var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
+
+            // get string representation of protein group dictionary
+            List<string> stringList = getProteinGroupDictionaryString(items);
+
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Protein Description\tProtein Sequence\tProtein Length\tNumber of Proteins in Group\tNumber of Peptide-Spectrum Matches\tNumber of Unique Peptides\tSummed Peptide-Spectrum Match Precursor Intensity\tSummed Unique Peptide Precursor Intensity\tSummed Morpheus Score\tDecoy?\tCumulative Target\tCumulative Decoy\tQ-Value (%)");
+                for (int i = 0; i < stringList.Count; i++)
+                    output.WriteLine(stringList[i]);
+            }
+            SucessfullyFinishedWritingFile(writtenFile);
+        }
+
+        protected List<string> getProteinGroupDictionaryString(Dictionary<Protein, List<NewPsmWithFDR>> items)
+        {
+            List<string> stringList = new List<string>();
+
+            foreach (var kvp in items)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(kvp.Key.FullDescription + '\t');
+                stringList.Add(sb.ToString());
+            }
+
+            return stringList;
+        }
+
         protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
