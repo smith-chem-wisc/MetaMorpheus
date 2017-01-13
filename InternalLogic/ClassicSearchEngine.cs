@@ -11,15 +11,29 @@ namespace InternalLogicEngineLayer
 {
     public class ClassicSearchEngine : MyEngine
     {
-        internal List<SearchMode> searchModes;
-        public List<Protein> proteinList { get; private set; }
-        public Protease protease { get; private set; }
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
-        public Tolerance productMassTolerance { get; private set; }
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
-        public int spectraFileIndex { get; private set; }
+        #region Private Fields
+
+        private readonly List<SearchMode> searchModes;
+
+        private readonly List<Protein> proteinList;
+
+        private readonly Protease protease;
+
+        private readonly List<MorpheusModification> fixedModifications;
+
+        private readonly List<MorpheusModification> localizeableModifications;
+
+        private readonly List<MorpheusModification> variableModifications;
+
+        private readonly Tolerance productMassTolerance;
+
+        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+
+        private readonly int spectraFileIndex;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
         {
@@ -34,9 +48,23 @@ namespace InternalLogicEngineLayer
             this.searchModes = searchModes;
         }
 
+        #endregion Public Constructors
+
+        #region Protected Methods
+
+        protected override void ValidateParams()
+        {
+            if (myMsDataFile == null)
+                throw new EngineValidationException("myMsDataFile cannot be null");
+            if (proteinList == null)
+                throw new EngineValidationException("proteinList cannot be null");
+        }
+
         protected override MyResults RunSpecific()
         {
             status("In classic search engine!");
+
+            var searchResults = new ClassicSearchResults(this);
 
             int totalProteins = proteinList.Count;
 
@@ -44,6 +72,8 @@ namespace InternalLogicEngineLayer
             HashSet<string> level4_observed = new HashSet<string>();
 
             var lp = new List<ProductType>() { ProductType.b, ProductType.y };
+
+            status("Getting ms2 scans...");
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
@@ -55,7 +85,7 @@ namespace InternalLogicEngineLayer
             int proteinsSeen = 0;
             int old_progress = 0;
 
-            status("Starting classic search loop");
+            status("Starting classic search loop...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var psms = new ClassicSpectrumMatch[searchModes.Count][];
@@ -105,10 +135,8 @@ namespace InternalLogicEngineLayer
                                 }
                             }
 
-                            //var ps = new CompactPeptide(yyy, variableModifications, localizeableModifications);
                             var sortedProductMasses = yyy.FastSortedProductMasses(lp);
                             double[] matchedIonsArray = new double[sortedProductMasses.Length];
-                            //ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
 
                             for (int aede = 0; aede < searchModes.Count; aede++)
                             {
@@ -147,8 +175,13 @@ namespace InternalLogicEngineLayer
                     }
                 }
             });
-            return new ClassicSearchResults(this, outerPsms);
+            searchResults.outerPsms = outerPsms;
+            return searchResults;
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
 
         private IEnumerable<LocalMs2Scan> GetAcceptableScans(LocalMs2Scan[] listOfSortedms2Scans, double peptideMonoisotopicMass, SearchMode searchMode)
         {
@@ -180,12 +213,6 @@ namespace InternalLogicEngineLayer
             return index;
         }
 
-        public override void ValidateParams()
-        {
-            if (myMsDataFile == null)
-                throw new EngineValidationException("myMsDataFile cannot be null");
-            if (proteinList == null)
-                throw new EngineValidationException("proteinList cannot be null");
-        }
+        #endregion Private Methods
     }
 }

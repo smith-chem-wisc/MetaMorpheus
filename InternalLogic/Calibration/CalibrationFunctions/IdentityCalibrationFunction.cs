@@ -14,12 +14,12 @@ namespace InternalLogicCalibration
 
         #region Public Methods
 
-        public override double Predict(double[] inputs)
+        internal override double Predict(double[] inputs)
         {
             return 0;
         }
 
-        public override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
         }
 

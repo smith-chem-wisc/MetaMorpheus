@@ -6,16 +6,15 @@ namespace InternalLogicEngineLayer
     {
         #region Internal Constructors
 
-        internal ClassicSearchResults(ClassicSearchEngine searchParams, ClassicSpectrumMatch[][] outerPsms) : base(searchParams)
+        internal ClassicSearchResults(ClassicSearchEngine searchParams) : base(searchParams)
         {
-            this.outerPsms = outerPsms;
         }
 
         #endregion Internal Constructors
 
         #region Public Properties
 
-        public ClassicSpectrumMatch[][] outerPsms { get; private set; }
+        public ClassicSpectrumMatch[][] outerPsms { get; set; }
 
         #endregion Public Properties
 

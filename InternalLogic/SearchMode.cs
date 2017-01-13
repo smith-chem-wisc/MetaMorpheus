@@ -26,7 +26,7 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            return FileNameAddition + " " + SearchModeString();
+            return FileNameAddition + ": " + SearchModeString();
         }
 
         #endregion Public Methods

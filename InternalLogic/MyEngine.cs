@@ -57,7 +57,7 @@ namespace InternalLogicEngineLayer
             return myResults;
         }
 
-        public abstract void ValidateParams();
+        protected abstract void ValidateParams();
 
         #endregion Public Methods
 

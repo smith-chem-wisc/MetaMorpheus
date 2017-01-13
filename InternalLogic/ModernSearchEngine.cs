@@ -51,7 +51,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             throw new NotImplementedException();
         }
