@@ -12,6 +12,7 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchEngine : MyEngine
     {
+
         #region Public Constructors
 
         public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
@@ -49,16 +50,13 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
-        #region Public Methods
+        #region Protected Methods
 
         protected override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (fragmentIndex == null)
+                throw new EngineValidationException("fragmentIndex cannot be null");
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -73,12 +71,10 @@ namespace InternalLogicEngineLayer
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-            //int numAllSpectra = 0;
-            int numMS2spectra = 0;
-            int[] numMS2spectraMatched = new int[searchModes.Count];
-
             var searchModesCount = searchModes.Count;
-
+            var outputObject = new object();
+            int scansSeen = 0;
+            int old_progress = 0;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
@@ -132,24 +128,28 @@ namespace InternalLogicEngineLayer
                         }
                     }
 
-                    var psms = new ModernSpectrumMatch[searchModesCount];
-
                     for (int j = 0; j < searchModesCount; j++)
                     {
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
-                            //numMS2spectraMatched[j]++;
+                            var cool = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = cool;
                         }
                     }
-                    //numMS2spectra++;
                 }
-                //numAllSpectra++;
-                //if (numAllSpectra % 100 == 0)
-                //    po.rtboutout("Spectra: " + numAllSpectra + " / " + totalSpectra);
+                lock (outputObject)
+                {
+                    scansSeen += fff.Item2 - fff.Item1;
+                    int new_progress = (int)((double)scansSeen / (listOfSortedms2Scans.Length) * 100);
+                    if (new_progress > old_progress)
+                    {
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));
+                        old_progress = new_progress;
+                    }
+                }
             });
-            return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, this);
+            return new ModernSearchResults(newPsms, this);
         }
 
         #endregion Protected Methods
@@ -234,5 +234,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

@@ -7,6 +7,7 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyEngine
     {
+
         #region Public Fields
 
         public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
@@ -46,6 +47,7 @@ namespace InternalLogicEngineLayer
 
         public MyResults Run()
         {
+            status("Starting " + this.GetType().Name);
             startingSingleEngine();
             ValidateParams();
             Stopwatch stopWatch = new Stopwatch();
@@ -57,11 +59,11 @@ namespace InternalLogicEngineLayer
             return myResults;
         }
 
-        protected abstract void ValidateParams();
-
         #endregion Public Methods
 
         #region Protected Methods
+
+        protected abstract void ValidateParams();
 
         protected void status(string v)
         {
@@ -90,5 +92,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

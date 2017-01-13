@@ -1,8 +1,5 @@
 ﻿using InternalLogicEngineLayer;
 using NUnit.Framework;
-using OldInternalLogic;
-using System.Collections.Generic;
-using System.Linq;
 using System;
 using System.Text;
 
@@ -11,6 +8,9 @@ namespace Test
     [TestFixture]
     public class MyEngineTest
     {
+
+        #region Public Methods
+
         [Test]
         public void TestMyEngine()
         {
@@ -24,14 +24,29 @@ namespace Test
             Console.WriteLine(myResults.ToString());
         }
 
+        #endregion Public Methods
+
+        #region Private Classes
+
         private class TestEngine : MyEngine
         {
+
+            #region Private Fields
+
             private object param1;
+
+            #endregion Private Fields
+
+            #region Public Constructors
 
             public TestEngine(int level, object param1) : base(level)
             {
                 this.param1 = param1;
             }
+
+            #endregion Public Constructors
+
+            #region Protected Methods
 
             protected override MyResults RunSpecific()
             {
@@ -44,11 +59,22 @@ namespace Test
                     throw new EngineValidationException("param1 cannot be null");
             }
 
+            #endregion Protected Methods
+
+            #region Private Classes
+
             private class TestResults : MyResults
             {
+
+                #region Public Constructors
+
                 public TestResults(MyEngine e) : base(e)
                 {
                 }
+
+                #endregion Public Constructors
+
+                #region Protected Methods
 
                 protected override string GetStringForOutput()
                 {
@@ -56,7 +82,16 @@ namespace Test
                     sb.Append("String for the TestResults results class");
                     return sb.ToString();
                 }
+
+                #endregion Protected Methods
+
             }
+
+            #endregion Private Classes
+
         }
+
+        #endregion Private Classes
+
     }
 }

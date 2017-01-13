@@ -5,6 +5,7 @@ namespace InternalLogicEngineLayer
 {
     public abstract class SearchMode
     {
+
         #region Public Constructors
 
         public SearchMode(string fileNameAddition)
@@ -29,14 +30,11 @@ namespace InternalLogicEngineLayer
             return FileNameAddition + ": " + SearchModeString();
         }
 
+        public abstract IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
+
+        public abstract string SearchModeString();
+
         #endregion Public Methods
 
-        #region Internal Methods
-
-        internal abstract IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
-
-        internal abstract string SearchModeString();
-
-        #endregion Internal Methods
     }
 }
