@@ -92,7 +92,9 @@
     <Compile Include="MyEngineTest.cs" />
     <Compile Include="AnalysisEngineTest.cs" />
     <Compile Include="ExclusionsTest.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SonarQubeExclude>true</SonarQubeExclude>
+    </Compile>
     <Compile Include="SetUpTests.cs" />
   </ItemGroup>
   <ItemGroup>
