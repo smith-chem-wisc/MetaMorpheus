@@ -9,6 +9,20 @@ namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
+        #region Private Fields
+
+        private readonly List<MorpheusModification> fixedModifications;
+
+        private readonly List<Protein> proteinList;
+
+        private readonly List<MorpheusModification> localizeableModifications;
+
+        private readonly Protease protease;
+
+        private readonly List<MorpheusModification> variableModifications;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease) : base(2)
@@ -22,36 +36,31 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Constructors
 
-        #region Public Properties
-
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<Protein> proteinList { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public Protease protease { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
+        #region Protected Methods
 
         protected override void ValidateParams()
         {
-            throw new NotImplementedException();
+            if (fixedModifications == null)
+                throw new EngineValidationException("fixedModifications cannot be null");
+            if (proteinList == null)
+                throw new EngineValidationException("proteinList cannot be null");
+            if (localizeableModifications == null)
+                throw new EngineValidationException("localizeableModifications cannot be null");
+            if (protease == null)
+                throw new EngineValidationException("protease cannot be null");
+            if (variableModifications == null)
+                throw new EngineValidationException("variableModifications cannot be null");
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
-            int numProteins = 0;
             int totalProteins = proteinList.Count;
             HashSet<string> level3_observed = new HashSet<string>();
             HashSet<string> level4_observed = new HashSet<string>();
-
+            int proteinsSeen = 0;
+            int old_progress = 0;
             var lp = new List<ProductType>() { ProductType.b, ProductType.y };
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
@@ -115,9 +124,6 @@ namespace InternalLogicEngineLayer
                             ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
                         }
                     }
-                    numProteins++;
-                    //if (numProteins % 100 == 0)
-                    //    output("Proteins: " + numProteins + " / " + totalProteins);
                 }
                 lock (myFragmentDictionary)
                 {
@@ -132,10 +138,15 @@ namespace InternalLogicEngineLayer
                                 myFragmentDictionary.Add(huhu.Key, new List<int>() { hhhh });
                         }
                     }
+                    proteinsSeen += fff.Item2 - fff.Item1;
+                    int new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
+                    if (new_progress > old_progress)
+                    {
+                        ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop"));
+                        old_progress = new_progress;
+                    }
                 }
             });
-
-            //output("finished generating peptide index");
 
             return new IndexResults(myDictionary, myFragmentDictionary, this);
         }
