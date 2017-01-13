@@ -46,10 +46,20 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
+        public static string GetTabSeparatedHeader()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(PSMwithTargetDecoyKnown.GetTabSeparatedHeader() + '\t');
+            sb.Append("Decoy" + '\t');
+            sb.Append("cumulative_target" + '\t');
+            sb.Append("cumulative_decoy" + '\t');
+            sb.Append("QValue");
+            return sb.ToString();
+        }
+
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-
             sb.Append(thisPSM.ToString() + '\t');
             sb.Append(isDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulative_target.ToString(CultureInfo.InvariantCulture) + '\t');

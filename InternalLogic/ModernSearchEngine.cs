@@ -13,6 +13,34 @@ namespace InternalLogicEngineLayer
     public class ModernSearchEngine : MyEngine
     {
 
+        #region Private Fields
+
+        private readonly List<MorpheusModification> fixedModifications;
+
+        private readonly List<int>[] fragmentIndex;
+
+        private readonly double fragmentTolerance;
+
+        private readonly float[] keys;
+
+        private readonly List<MorpheusModification> localizeableModifications;
+
+        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+
+        private readonly List<CompactPeptide> peptideIndex;
+
+        private readonly Protease protease;
+
+        private readonly List<Protein> proteinList;
+
+        private readonly List<SearchMode> searchModes;
+
+        private readonly int spectraFileIndex;
+
+        private readonly List<MorpheusModification> variableModifications;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
@@ -32,23 +60,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<int>[] fragmentIndex { get; private set; }
-        public double fragmentTolerance { get; private set; }
-        public float[] keys { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
-        public List<CompactPeptide> peptideIndex { get; private set; }
-        public Protease protease { get; private set; }
-        public List<Protein> proteinList { get; private set; }
-        public List<SearchMode> searchModes { get; private set; }
-        public int spectraFileIndex { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
-
-        #endregion Public Properties
 
         #region Protected Methods
 
@@ -70,12 +81,12 @@ namespace InternalLogicEngineLayer
                 newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
-
+            var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
-            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), fff =>
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -138,10 +149,12 @@ namespace InternalLogicEngineLayer
                         }
                     }
                 }
+                status("In modern loop debug message...");
                 lock (outputObject)
                 {
                     scansSeen += fff.Item2 - fff.Item1;
-                    int new_progress = (int)((double)scansSeen / (listOfSortedms2Scans.Length) * 100);
+                    int new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
+                    status("In modern loop debug message..." + scansSeen + " " + new_progress);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));
@@ -156,11 +169,12 @@ namespace InternalLogicEngineLayer
 
         #region Private Methods
 
-        private static float[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
+        private static double[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
         {
-            float[] peptideScores = new float[peptides.Count];
+            double[] peptideScores = new double[peptides.Count];
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
+                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(fragmentMassesAscending, (float)experimentalPeakInDaltons);
@@ -179,7 +193,7 @@ namespace InternalLogicEngineLayer
                         if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentTolerance)
                         {// po.out("    ********************************");
                             foreach (var heh in fragmentIndex[downIpos])
-                                peptideScores[heh] += (float)(1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent);
+                                peptideScores[heh] += theAdd;
                         }
                         else
                             break;
@@ -198,7 +212,7 @@ namespace InternalLogicEngineLayer
                         {
                             //po.out("    ********************************");
                             foreach (var heh in fragmentIndex[upIpos])
-                                peptideScores[heh] += (float)(1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent);
+                                peptideScores[heh] += theAdd;
                         }
                         else
                             break;

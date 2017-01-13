@@ -7,6 +7,7 @@ namespace InternalLogicEngineLayer
 {
     public class GPTMDEngine : MyEngine
     {
+
         #region Private Fields
 
         private List<NewPsmWithFDR>[] allResultingIdentifications;
@@ -36,17 +37,13 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Constructors
 
-        #region Public Methods
+        #region Protected Methods
 
         protected override void ValidateParams()
         {
             if (allResultingIdentifications == null)
                 throw new EngineValidationException("allResultingIdentifications cannot be null");
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -55,11 +52,14 @@ namespace InternalLogicEngineLayer
             int modsAdded = 0;
             foreach (var ye in allResultingIdentifications[0].Where(b => b.QValue <= 0.01 && !b.isDecoy))
             {
-                var baseSequence = ye.thisPSM.BaseSequence;
-                double massDiff = ye.thisPSM.scanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
-                foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tol))
+                var theDict = dict[ye.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications)];
+                // Only add to non-ambiguous peptides
+                if (theDict.Count == 1)
                 {
-                    foreach (var peptide in dict[ye.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications)])
+                    var peptide = theDict.First();
+                    var baseSequence = ye.thisPSM.BaseSequence;
+                    double massDiff = ye.thisPSM.scanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
+                    foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tol))
                     {
                         int proteinLength = peptide.protein.Length;
                         var proteinAcession = peptide.protein.Accession;
@@ -144,5 +144,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

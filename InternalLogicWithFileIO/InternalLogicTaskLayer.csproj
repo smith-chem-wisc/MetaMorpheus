@@ -87,6 +87,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CalibrationTask\MyCalibrationTaskResults.cs" />
+    <Compile Include="CalibrationTask\SingleAbsoluteAroundZeroSearchMode.cs" />
+    <Compile Include="CalibrationTask\SinglePpmAroundZeroSearchMode.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
     <Compile Include="GPTMDTask\MyGPTMDTaskResults.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
