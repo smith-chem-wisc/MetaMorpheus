@@ -8,32 +8,51 @@ using System.Threading.Tasks;
 
 namespace InternalLogicEngineLayer
 {
-    class ProteinGroup
+    public class ProteinGroup
     {
-        public List<Protein> proteins { get; private set; }
+        public HashSet<Protein> proteins { get; private set; }
         public List<NewPsmWithFDR> psmList { get; private set; }
         public List<CompactPeptide> peptideList { get; private set; }
+        public List<CompactPeptide> uniquePeptideList { get; private set; }
         public readonly bool isDecoy;
-        private double summedMetaMorpheusScore;
-        private double summedIntensity = 0;
-        private double summedUniquePeptideIntensity = 0;
+        private double proteinGroupScore;
+        private double summedIntensity;
+        private double summedUniquePeptideIntensity;
 
-        public ProteinGroup(List<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
             this.proteins = proteins;
             this.psmList = psmList;
-            this.isDecoy = proteins.First().isDecoy;
 
+            // if any of the proteins in the protein group are decoys, the protein group is a decoy
+            foreach (var protein in proteins)
+            {
+                if (protein.isDecoy)
+                    this.isDecoy = true;
+            }
+
+            // build list of compact peptides associated with the protein group
+            // all peptides in the group are associated with all proteins in the group
+            // if encountering duplicate peptides, only use the best-scoring one
             foreach(var psm in psmList)
             {
-                peptideList.Add(psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications));
-                summedMetaMorpheusScore += psm.thisPSM.Score;
+                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                peptideList.Add(peptide);
             }
+
+            // calculate the protein group score
+            proteinGroupScore = 0;
+
+            // calculate summed psm intensity
+            summedIntensity = 0;
+
+            // calculate intensity of only unique peptides
+            summedUniquePeptideIntensity = 0;
         }
 
         public double getScore()
         {
-            return summedMetaMorpheusScore;
+            return proteinGroupScore;
         }
 
         public override string ToString()
@@ -76,10 +95,10 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // summed metamorpheus score
-            sb.Append(summedMetaMorpheusScore);
+            sb.Append(proteinGroupScore);
             sb.Append("\t");
 
-            // decoy
+            // isdecoy
             sb.Append(isDecoy);
             sb.Append("\t");
 
