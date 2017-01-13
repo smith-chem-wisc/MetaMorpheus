@@ -72,5 +72,23 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Methods
 
+        #region Internal Methods
+
+        internal static string GetTabSeparatedHeader()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("scanNumber" + '\t');
+            sb.Append("scanPrecursorCharge" + '\t');
+            sb.Append("scanPrecursorMass" + '\t');
+            sb.Append("matched ions" + '\t');
+            sb.Append("matched ion counts" + '\t');
+            sb.Append("localized scores" + '\t');
+            sb.Append("improvement" + '\t');
+            sb.Append("terminal localization");
+            return sb.ToString();
+        }
+
+        #endregion Internal Methods
+
     }
 }

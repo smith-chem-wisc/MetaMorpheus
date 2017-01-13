@@ -81,12 +81,12 @@ namespace InternalLogicEngineLayer
                 newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
-
+            var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
-            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), fff =>
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -149,10 +149,12 @@ namespace InternalLogicEngineLayer
                         }
                     }
                 }
+                status("In modern loop debug message...");
                 lock (outputObject)
                 {
                     scansSeen += fff.Item2 - fff.Item1;
-                    int new_progress = (int)((double)scansSeen / (listOfSortedms2Scans.Length) * 100);
+                    int new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
+                    status("In modern loop debug message..." + scansSeen + " " + new_progress);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));

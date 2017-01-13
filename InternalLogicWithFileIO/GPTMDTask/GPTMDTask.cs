@@ -102,7 +102,7 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.GPTMD).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
@@ -137,14 +137,14 @@ namespace InternalLogicTaskLayer
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
+                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), false);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
 
             if (currentRawFileList.Count > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, "aggregate" + s), false);
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), false);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
