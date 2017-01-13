@@ -71,12 +71,10 @@ namespace InternalLogicEngineLayer
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-            //int numAllSpectra = 0;
-            int numMS2spectra = 0;
-            int[] numMS2spectraMatched = new int[searchModes.Count];
-
             var searchModesCount = searchModes.Count;
-
+            var outputObject = new object();
+            int scansSeen = 0;
+            int old_progress = 0;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2Scans.Length), fff =>
             {
                 for (int i = fff.Item1; i < fff.Item2; i++)
@@ -138,16 +136,21 @@ namespace InternalLogicEngineLayer
                         if (theBestPeptide != null)
                         {
                             newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
-                            //numMS2spectraMatched[j]++;
                         }
                     }
-                    //numMS2spectra++;
                 }
-                //numAllSpectra++;
-                //if (numAllSpectra % 100 == 0)
-                //    po.rtboutout("Spectra: " + numAllSpectra + " / " + totalSpectra);
+                lock (outputObject)
+                {
+                    scansSeen += fff.Item2 - fff.Item1;
+                    int new_progress = (int)((double)scansSeen / (listOfSortedms2Scans.Length) * 100);
+                    if (new_progress > old_progress)
+                    {
+                        ReportProgress(new ProgressEventArgs(new_progress, "In moderns search loop"));
+                        old_progress = new_progress;
+                    }
+                }
             });
-            return new ModernSearchResults(newPsms, numMS2spectra, numMS2spectraMatched, this);
+            return new ModernSearchResults(newPsms, this);
         }
 
         #endregion Protected Methods

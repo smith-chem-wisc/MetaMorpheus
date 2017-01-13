@@ -7,6 +7,7 @@ namespace InternalLogicEngineLayer
 {
     public class IntervalSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private List<DoubleRange> intervals;
@@ -29,20 +30,17 @@ namespace InternalLogicEngineLayer
             throw new NotImplementedException();
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             return intervals.Select(b => new DoubleRange(peptideMonoisotopicMass + b.Minimum, peptideMonoisotopicMass + b.Maximum));
         }
 
-        internal override string SearchModeString()
+        public override string SearchModeString()
         {
             return "Intervals allowed: " + string.Join(",", intervals);
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
+
     }
 }
