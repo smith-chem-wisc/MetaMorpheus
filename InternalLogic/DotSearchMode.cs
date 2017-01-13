@@ -8,6 +8,7 @@ namespace InternalLogicEngineLayer
 {
     public class DotSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private List<double> acceptableSortedMassShifts;
@@ -39,7 +40,12 @@ namespace InternalLogicEngineLayer
 
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            throw new NotImplementedException();
+            foreach (double huh in acceptableSortedMassShifts)
+            {
+                if (tol.Within(scanPrecursorMass - peptideMass, huh))
+                    return true;
+            }
+            return false;
         }
 
         #endregion Public Methods
@@ -65,6 +71,7 @@ namespace InternalLogicEngineLayer
 
         private class ffff : IEqualityComparer<double>
         {
+
             #region Private Fields
 
             private int i;
@@ -93,8 +100,10 @@ namespace InternalLogicEngineLayer
             }
 
             #endregion Public Methods
+
         }
 
         #endregion Private Classes
+
     }
 }
