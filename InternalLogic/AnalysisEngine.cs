@@ -11,6 +11,36 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {
+        #region Private Fields
+
+        private ParentSpectrumMatch[][] newPsms;
+
+        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+
+        private List<Protein> proteinList;
+
+        private List<MorpheusModification> variableModifications;
+
+        private List<MorpheusModification> fixedModifications;
+
+        private List<MorpheusModification> localizeableModifications;
+
+        private Protease protease;
+
+        private List<SearchMode> searchModes;
+
+        private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+
+        private Tolerance fragmentTolerance;
+
+        private Action<BinTreeStructure, string> action1;
+
+        private Action<List<NewPsmWithFDR>, string> action2;
+
+        private bool doParsimony;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, bool doParsimony) : base(2)
@@ -31,24 +61,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public ParentSpectrumMatch[][] newPsms { get; private set; }
-        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching { get; private set; }
-        public List<Protein> proteinList { get; private set; }
-        public List<MorpheusModification> variableModifications { get; private set; }
-        public List<MorpheusModification> fixedModifications { get; private set; }
-        public List<MorpheusModification> localizeableModifications { get; private set; }
-        public Protease protease { get; private set; }
-        public List<SearchMode> searchModes { get; private set; }
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
-        public Tolerance fragmentTolerance { get; private set; }
-        public Action<BinTreeStructure, string> action1 { get; private set; }
-        public Action<List<NewPsmWithFDR>, string> action2 { get; private set; }
-        public bool doParsimony { get; internal set; }
-
-        #endregion Public Properties
 
         #region Public Methods
 
@@ -274,15 +286,15 @@ namespace InternalLogicEngineLayer
             return answer;
         }
 
-        public override void ValidateParams()
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected override void ValidateParams()
         {
             if (newPsms == null)
                 throw new EngineValidationException("newPsms cannot be null");
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {

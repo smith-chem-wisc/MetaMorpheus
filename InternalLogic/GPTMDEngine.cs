@@ -38,7 +38,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             if (allResultingIdentifications == null)
                 throw new EngineValidationException("allResultingIdentifications cannot be null");

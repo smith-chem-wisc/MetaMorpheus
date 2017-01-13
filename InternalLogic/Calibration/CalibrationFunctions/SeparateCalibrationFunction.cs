@@ -14,7 +14,7 @@ namespace InternalLogicCalibration
             this.calibrationFunction2 = calibrationFunction2;
         }
 
-        public override double Predict(double[] inputs)
+        internal override double Predict(double[] inputs)
         {
             if (inputs[0] == 1)
                 return calibrationFunction1.Predict(inputs);
@@ -22,7 +22,7 @@ namespace InternalLogicCalibration
                 return calibrationFunction2.Predict(inputs);
         }
 
-        public override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             throw new NotImplementedException();
         }

@@ -12,12 +12,12 @@ namespace InternalLogicCalibration
         {
         }
 
-        public override double Predict(double[] inputs)
+        internal override double Predict(double[] inputs)
         {
             return a;
         }
 
-        public override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             a = trainingList.Select(b => b.output).Median();
         }
