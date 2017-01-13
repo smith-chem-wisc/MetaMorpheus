@@ -15,6 +15,8 @@ namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
+        #region Public Constructors
+
         public CalibrationTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
@@ -35,10 +37,18 @@ namespace InternalLogicTaskLayer
             this.taskType = MyTaskEnum.Calibrate;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public List<ModListForCalibrationTask> listOfModListsForCalibration { get; set; }
         public Tolerance precursorMassTolerance { get; set; }
 
-        public override void ValidateParams()
+        #endregion Public Properties
+
+        #region Protected Methods
+
+        protected override void ValidateParams()
         {
             if (xmlDbFilenameList == null)
                 throw new EngineValidationException("xMLdblist cannot be null");
@@ -50,7 +60,7 @@ namespace InternalLogicTaskLayer
                 throw new EngineValidationException("rawDataAndResultslist cannot be empty");
         }
 
-        internal override string GetSpecificTaskInfo()
+        protected override string GetSpecificTaskInfo()
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
@@ -132,16 +142,7 @@ namespace InternalLogicTaskLayer
                 int randomSeed = 1;
 
                 // TODO: fix the tolerance calculation below
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassTolerance.Value * 2);
-
-                a.identifications = identifications;
-                a.mzRange = new DoubleRange(0, 0);
-
-                //a.MS1spectraToWatch.Add(22557);
-
-                //a.MS2spectraToWatch.Add(22564);
-
-                a.matchesToExclude = new HashSet<int>();
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassTolerance.Value * 2, identifications);
 
                 var result = (CalibrationResults)a.Run();
 
@@ -149,7 +150,7 @@ namespace InternalLogicTaskLayer
                     return null;
 
                 status("Creating _indexedmzMLConnection, and putting data in it");
-                var path = Path.Combine(Path.GetDirectoryName(origDataFile), Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
+                var path = Path.Combine(Path.GetDirectoryName(output_folder), Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
                 MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.myMsDataFile, path);
 
                 SucessfullyFinishedWritingFile(path);
@@ -158,5 +159,7 @@ namespace InternalLogicTaskLayer
             }
             return myTaskResults;
         }
+
+        #endregion Protected Methods
     }
 }

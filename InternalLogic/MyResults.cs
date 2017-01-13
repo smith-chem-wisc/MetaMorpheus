@@ -16,7 +16,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public TimeSpan Time { get; internal set; }
+        internal TimeSpan Time;
 
         #endregion Public Properties
 

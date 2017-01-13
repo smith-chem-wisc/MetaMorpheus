@@ -4,7 +4,6 @@ using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -22,6 +21,7 @@ namespace InternalLogicTaskLayer
 
     public abstract class MyTaskEngine : MyEngine
     {
+
         #region Public Fields
 
         public List<string> rawDataFilenameList;
@@ -49,80 +49,72 @@ namespace InternalLogicTaskLayer
 
         #region Public Properties
 
+        public MyTaskEnum taskType { get; internal set; }
         public bool bIons { get; set; }
         public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
         public bool IsMySelected { get; set; }
         public int maxMissedCleavages { get; set; }
         public int maxModificationIsoforms { get; set; }
-        public string output_folder { get; private set; }
+        public string output_folder { get; set; }
         public Tolerance productMassTolerance { get; set; }
         public Protease protease { get; set; }
-        public MyTaskEnum taskType { get; internal set; }
         public bool yIons { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
+        public new MyResults Run()
         {
-            #region Index file names
-
-            string folderName = output_folder;
-            StringBuilder indexFileSB = new StringBuilder();
-            foreach (var heh in xmlDbFilenameList)
-                indexFileSB.Append(Path.GetFileNameWithoutExtension(heh));
-            if (doFDRanalysis)
-                indexFileSB.Append("-WithDecoys");
-            if (collectionOfModLists.Where(b => b.Fixed).Count() > 0)
-            {
-                indexFileSB.Append("-fixed");
-                foreach (var heh in collectionOfModLists.Where(b => b.Fixed))
-                    indexFileSB.Append("-" + Path.GetFileNameWithoutExtension(heh.FileName));
-            }
-            if (collectionOfModLists.Where(b => b.Fixed).Count() > 0)
-            {
-                indexFileSB.Append("-variable");
-                foreach (var heh in collectionOfModLists.Where(b => b.Variable))
-                    indexFileSB.Append("-" + Path.GetFileNameWithoutExtension(heh.FileName));
-            }
-            if (collectionOfModLists.Where(b => b.Localize).Count() > 0)
-            {
-                indexFileSB.Append("-localize");
-                foreach (var heh in collectionOfModLists.Where(b => b.Localize))
-                    indexFileSB.Append("-" + Path.GetFileNameWithoutExtension(heh.FileName));
-            }
-
-            string peptideIndexFile = Path.Combine(folderName, indexFileSB.ToString() + "-peptideIndex.ind");
-            string fragmentIndexFile = Path.Combine(folderName, indexFileSB.ToString() + "-fragmentIndex.ind");
-
-            #endregion Index file names
-
-            if (!File.Exists(peptideIndexFile) || !File.Exists(fragmentIndexFile))
-            {
-                //output("Generating indices...");
-
-                IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
-                IndexResults indexResults = (IndexResults)indexEngine.Run();
-                peptideIndex = indexResults.peptideIndex;
-                fragmentIndexDict = indexResults.fragmentIndexDict;
-
-                //output("Writing peptide index...");
-                writePeptideIndex(peptideIndex, peptideIndexFile);
-                //output("Writing fragment index...");
-                writeFragmentIndexNetSerializer(fragmentIndexDict, fragmentIndexFile);
-                //output("Done Writing fragment index");
-            }
-            else
-            {
-                //output("Reading peptide index...");
-                peptideIndex = readPeptideIndex(peptideIndexFile);
-                //output("Reading fragment index...");
-                fragmentIndexDict = readFragmentIndexNetSerializer(fragmentIndexFile);
-            }
+            startingSingleTask();
+            var paramsFileName = Path.Combine(output_folder, "params.txt");
+            using (StreamWriter file = new StreamWriter(paramsFileName))
+                file.Write(ToString());
+            SucessfullyFinishedWritingFile(paramsFileName);
+            var heh = base.Run();
+            finishedSingleTask();
+            return heh;
         }
 
-        public IEnumerable<Protein> getProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(GetSpecificTaskInfo());
+            sb.AppendLine(taskType.ToString());
+            sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
+            sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
+            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior.ToString());
+            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages.ToString());
+            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms.ToString());
+            sb.AppendLine("output_folder: " + output_folder.ToString());
+            sb.AppendLine("productMassTolerance: " + productMassTolerance.ToString());
+            sb.AppendLine("protease: " + protease.ToString());
+            sb.AppendLine("bIons: " + bIons.ToString());
+            sb.AppendLine("yIons: " + yIons.ToString());
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        {
+            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
+            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
+            modsInXMLtoTrim = new HashSet<string>(modsInXML);
+            foreach (var knownMod in modsKnown)
+                if (modsInXML.Contains(knownMod.NameInXML))
+                {
+                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
+                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
+                    else
+                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
+                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
+                }
+        }
+
+        protected IEnumerable<Protein> getProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
         {
             using (XmlReader xml = XmlReader.Create(FileName))
             {
@@ -357,42 +349,7 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        public new MyResults Run()
-        {
-            startingSingleTask();
-            var paramsFileName = Path.Combine(output_folder, "params.txt");
-            using (StreamWriter file = new StreamWriter(paramsFileName))
-                file.Write(ToString());
-            SucessfullyFinishedWritingFile(paramsFileName);
-            var heh = base.Run();
-            finishedSingleTask();
-            return heh;
-        }
-
-        public void setOutputFolder(string thisOutputPath)
-        {
-            this.output_folder = thisOutputPath;
-        }
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine(GetSpecificTaskInfo());
-            sb.AppendLine(taskType.ToString());
-            sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
-            sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
-            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior.ToString());
-            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages.ToString());
-            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms.ToString());
-            sb.AppendLine("output_folder: " + output_folder.ToString());
-            sb.AppendLine("productMassTolerance: " + productMassTolerance.ToString());
-            sb.AppendLine("protease: " + protease.ToString());
-            sb.AppendLine("bIons: " + bIons.ToString());
-            sb.AppendLine("yIons: " + yIons.ToString());
-            return sb.ToString();
-        }
-
-        public void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
+        protected void WriteToTabDelimitedTextFileWithDecoys(List<NewPsmWithFDR> items, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -404,7 +361,7 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        public void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
+        protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -438,96 +395,7 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal abstract string GetSpecificTaskInfo();
-
-        internal Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
-        {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            Dictionary<float, List<int>> newPerson;
-            using (var file = File.OpenRead(fragmentIndexFile))
-                newPerson = (Dictionary<float, List<int>>)ser.Deserialize(file);
-
-            stopWatch.Stop();
-            TimeSpan ts = stopWatch.Elapsed;
-            string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                ts.Hours, ts.Minutes, ts.Seconds,
-                ts.Milliseconds / 10);
-            //output("Time to read fragment index with netSerializer: " + elapsedTime);
-
-            return newPerson;
-        }
-
-        internal List<CompactPeptide> readPeptideIndex(string peptideIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-            List<CompactPeptide> newPerson;
-            using (var file = File.OpenRead(peptideIndexFile))
-            {
-                newPerson = (List<CompactPeptide>)ser.Deserialize(file);
-            }
-
-            return newPerson;
-        }
-
-        internal void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
-        {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(fragmentIndexFile))
-                ser.Serialize(file, fragmentIndex);
-
-            stopWatch.Stop();
-            TimeSpan ts = stopWatch.Elapsed;
-            string elapsedTime = string.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                ts.Hours, ts.Minutes, ts.Seconds,
-                ts.Milliseconds / 10);
-            //output("Time to write fragment index with netserializer: " + elapsedTime);
-        }
-
-        internal void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            using (var file = File.Create(peptideIndexFile))
-            {
-                ser.Serialize(file, peptideIndex);
-            }
-        }
-
-        #endregion Internal Methods
-
-        #region Protected Methods
-
-        protected static void GenerateModsFromStrings(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
-        {
-            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
-            modsInXMLtoTrim = new HashSet<string>(modsInXML);
-            foreach (var knownMod in modsKnown)
-                if (modsInXML.Contains(knownMod.NameInXML))
-                {
-                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
-                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
-                    else
-                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
-                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
-                }
-        }
+        protected abstract string GetSpecificTaskInfo();
 
         protected void SucessfullyFinishedWritingFile(string path)
         {
@@ -543,18 +411,12 @@ namespace InternalLogicTaskLayer
             finishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
         }
 
-        private IEnumerable<Type> GetSubclassesAndItself(Type type)
-        {
-            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
-                yield return ok;
-            yield return type;
-        }
-
         private void startingSingleTask()
         {
             startingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
         }
 
         #endregion Private Methods
+
     }
 }

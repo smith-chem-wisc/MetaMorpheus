@@ -29,12 +29,12 @@ namespace InternalLogicCalibration
 
         #region Public Methods
 
-        public override double Predict(double[] t)
+        internal override double Predict(double[] t)
         {
             return f(ExpandFeatures(transform.Transform(t)));
         }
 
-        public override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             double[][] ok = new double[trainingList.Count()][];
             int k = 0;

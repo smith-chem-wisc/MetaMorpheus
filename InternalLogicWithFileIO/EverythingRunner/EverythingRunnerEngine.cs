@@ -40,19 +40,9 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Events
 
-        #region Public Methods
+        #region Protected Methods
 
-        public void StartingAllTasks()
-        {
-            startingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
-        }
-
-        public void FinishedAllTasks()
-        {
-            finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
-        }
-
-        public override void ValidateParams()
+        protected override void ValidateParams()
         {
             if (taskList == null)
                 throw new EngineValidationException("taskList cannot be null");
@@ -67,10 +57,6 @@ namespace InternalLogicTaskLayer
             if (currentXmlDbFilenameList.Count == 0)
                 throw new EngineValidationException("xmlDbFilenameList has to contain at least one element");
         }
-
-        #endregion Public Methods
-
-        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -101,7 +87,7 @@ namespace InternalLogicTaskLayer
 
                 if (!Directory.Exists(output_folder))
                     Directory.CreateDirectory(output_folder);
-                ok.setOutputFolder(output_folder);
+                ok.output_folder = output_folder;
                 ok.xmlDbFilenameList = currentXmlDbFilenameList;
                 ok.rawDataFilenameList = currentRawDataFilenameList;
 
@@ -128,6 +114,16 @@ namespace InternalLogicTaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private void StartingAllTasks()
+        {
+            startingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void FinishedAllTasks()
+        {
+            finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+        }
 
         private void NewSpectras(List<string> newSpectra)
         {
