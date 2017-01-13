@@ -128,14 +128,13 @@ namespace InternalLogicEngineLayer
                         }
                     }
 
-                    var psms = new ModernSpectrumMatch[searchModesCount];
-
                     for (int j = 0; j < searchModesCount; j++)
                     {
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
+                            var cool = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = cool;
                         }
                     }
                 }
@@ -145,7 +144,7 @@ namespace InternalLogicEngineLayer
                     int new_progress = (int)((double)scansSeen / (listOfSortedms2Scans.Length) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In moderns search loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));
                         old_progress = new_progress;
                     }
                 }

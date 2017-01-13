@@ -8,6 +8,7 @@ namespace InternalLogicEngineLayer
 {
     public abstract class ParentSpectrumMatch
     {
+
         #region Internal Fields
 
         internal Dictionary<ProductType, double[]> matchedIonsList;
@@ -70,5 +71,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

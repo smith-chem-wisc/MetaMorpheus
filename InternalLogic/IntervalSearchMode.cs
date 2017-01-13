@@ -1,5 +1,4 @@
 ﻿using Spectra;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -27,7 +26,12 @@ namespace InternalLogicEngineLayer
 
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            throw new NotImplementedException();
+            foreach (var huh in intervals)
+            {
+                if (huh.Contains(scanPrecursorMass - peptideMass))
+                    return true;
+            }
+            return false;
         }
 
         public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
