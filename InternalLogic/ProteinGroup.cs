@@ -10,15 +10,16 @@ namespace InternalLogicEngineLayer
 {
     public class ProteinGroup
     {
-        public List<Protein> proteins { get; private set; }
+        public HashSet<Protein> proteins { get; private set; }
         public List<NewPsmWithFDR> psmList { get; private set; }
         public List<CompactPeptide> peptideList { get; private set; }
+        public List<CompactPeptide> uniquePeptideList { get; private set; }
         public readonly bool isDecoy;
-        private double proteinGroupScore = 1;
-        private double summedIntensity = 0;
-        private double summedUniquePeptideIntensity = 0;
+        private double proteinGroupScore;
+        private double summedIntensity;
+        private double summedUniquePeptideIntensity;
 
-        public ProteinGroup(List<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
             this.proteins = proteins;
             this.psmList = psmList;
@@ -30,28 +31,23 @@ namespace InternalLogicEngineLayer
                     this.isDecoy = true;
             }
 
-            // build list of peptides associated with the protein group
+            // build list of compact peptides associated with the protein group
             // all peptides in the group are associated with all proteins in the group
+            // if encountering duplicate peptides, only use the best-scoring one
             foreach(var psm in psmList)
             {
-                peptideList.Add(psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications));
+                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                peptideList.Add(peptide);
             }
 
-            // find the best scoring psm for each protein in the protein group and multiply them to get the protein group score
-            foreach(var protein in proteins)
-            {
-                double bestScoringPsmScore = 0;
+            // calculate the protein group score
+            proteinGroupScore = 0;
 
-                foreach(var psm in psmList)
-                {
-                    if (psm.thisPSM.Score > bestScoringPsmScore)
-                    {
-                        bestScoringPsmScore = psm.thisPSM.Score;
-                    }
-                }
+            // calculate summed psm intensity
+            summedIntensity = 0;
 
-                proteinGroupScore *= bestScoringPsmScore;
-            }
+            // calculate intensity of only unique peptides
+            summedUniquePeptideIntensity = 0;
         }
 
         public double getScore()
@@ -102,7 +98,7 @@ namespace InternalLogicEngineLayer
             sb.Append(proteinGroupScore);
             sb.Append("\t");
 
-            // decoy
+            // isdecoy
             sb.Append(isDecoy);
             sb.Append("\t");
 
