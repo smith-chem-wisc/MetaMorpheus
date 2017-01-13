@@ -15,6 +15,7 @@ namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
+
         #region Public Constructors
 
         public CalibrationTask(ObservableCollection<ModList> modList)
@@ -79,8 +80,11 @@ namespace InternalLogicTaskLayer
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
-
-            SearchMode searchMode = new DotSearchMode("", new double[] { 0 }, precursorMassTolerance);
+            SearchMode searchMode;
+            if (precursorMassTolerance.Unit == ToleranceUnit.PPM)
+                searchMode = new SinglePpmAroundZeroSearchMode("", precursorMassTolerance.Value);
+            else
+                searchMode = new SingleAbsoluteAroundZeroSearchMode("", precursorMassTolerance.Value);
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
@@ -92,7 +96,7 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> localizeableModifications = listOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            GenerateModsFromStrings(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             status("Loading proteins...");
             var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
@@ -118,7 +122,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WriteToTabDelimitedTextFileWithDecoys(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
+                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
 
                 AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -158,5 +162,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Protected Methods
+
     }
 }
