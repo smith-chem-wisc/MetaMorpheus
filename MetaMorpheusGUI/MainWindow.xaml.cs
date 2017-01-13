@@ -18,6 +18,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+
         #region Public Fields
 
         public const string elementsLocation = @"elements.dat";
@@ -459,6 +460,12 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void ClearXML_Click(object sender, RoutedEventArgs e)
+        {
+            xmlDBobservableCollection.Clear();
+        }
+
         #endregion Private Methods
+
     }
 }
