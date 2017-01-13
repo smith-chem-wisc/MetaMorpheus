@@ -122,7 +122,7 @@
     <Compile Include="ParentSpectrumMatch.cs" />
     <Compile Include="ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
-      <SonarQubeExclude>true </SonarQubeExclude>
+      <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="ProteinGroup.cs" />
     <Compile Include="PSMwithTargetDecoyKnown.cs" />
