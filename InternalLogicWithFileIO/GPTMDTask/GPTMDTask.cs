@@ -16,6 +16,7 @@ namespace InternalLogicTaskLayer
 {
     public class GPTMDTask : MyTaskEngine
     {
+
         #region Public Fields
 
         public List<ModListForGPTMDTask> listOfModListsForGPTMD;
@@ -105,7 +106,7 @@ namespace InternalLogicTaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications, combos, precursorMassTolerance);
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).OrderBy(b => b), precursorMassTolerance);
             List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
@@ -251,5 +252,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

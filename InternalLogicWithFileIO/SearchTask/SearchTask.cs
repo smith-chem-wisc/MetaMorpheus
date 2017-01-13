@@ -6,6 +6,7 @@ using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -183,14 +184,16 @@ namespace InternalLogicTaskLayer
 
         private void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
         {
-            string pathToFolderWithIndices = GetFolderWithIndices(xmlDbFilenameList);
+            IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(xmlDbFilenameList, indexEngine);
 
             if (pathToFolderWithIndices == null)
             {
                 status("Generating indices...");
-                var output_folderForIndices = GetOutputFolderForIndices(xmlDbFilenameList);
+                var output_folderForIndices = GenerateOutputFolderForIndices(xmlDbFilenameList);
+                status("Writing params...");
+                writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
 
-                IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
                 IndexResults indexResults = (IndexResults)indexEngine.Run();
                 peptideIndex = indexResults.peptideIndex;
                 fragmentIndexDict = indexResults.fragmentIndexDict;
@@ -199,8 +202,6 @@ namespace InternalLogicTaskLayer
                 writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"));
                 status("Writing fragment index...");
                 writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"));
-                status("Writing log...");
-                writeIndexEngineLog(indexEngine, Path.Combine(output_folderForIndices, "index.log"));
             }
             else
             {
@@ -211,12 +212,15 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        private string GetOutputFolderForIndices(List<string> xmlDbFilenameList)
+        private string GenerateOutputFolderForIndices(List<string> xmlDbFilenameList)
         {
-            return Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), Path.GetFileNameWithoutExtension(xmlDbFilenameList.First()));
+            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+            return folder;
         }
 
-        private void writeIndexEngineLog(IndexEngine indexEngine, string fileName)
+        private void writeIndexEngineParams(IndexEngine indexEngine, string fileName)
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {
@@ -225,15 +229,34 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(fileName);
         }
 
-        private string GetFolderWithIndices(List<string> xmlDbFilenameList)
+        private string GetExistingFolderWithIndices(List<string> xmlDbFilenameList, IndexEngine indexEngine)
         {
+            // In every database location...
             foreach (var ok in xmlDbFilenameList)
             {
-                var he = Path.Combine(Path.GetDirectoryName(ok), Path.GetFileNameWithoutExtension(ok));
-                if (Directory.Exists(he))
-                    return he;
+                var baseDir = Path.GetDirectoryName(ok);
+                DirectoryInfo directory = new DirectoryInfo(baseDir);
+                DirectoryInfo[] directories = directory.GetDirectories();
+
+                // Look at every subdirectory...
+                foreach (DirectoryInfo possibleFolder in directories)
+                {
+                    if (File.Exists(Path.Combine(possibleFolder.FullName, "indexEngine.params")) &&
+                        File.Exists(Path.Combine(possibleFolder.FullName, "peptideIndex.ind")) &&
+                        File.Exists(Path.Combine(possibleFolder.FullName, "fragmentIndex.ind")) &&
+                        SameSettings(Path.Combine(possibleFolder.FullName, "indexEngine.params"), indexEngine))
+                        return possibleFolder.FullName;
+                }
             }
             return null;
+        }
+
+        private bool SameSettings(string pathToOldParamsFile, IndexEngine indexEngine)
+        {
+            using (StreamReader reader = new StreamReader(pathToOldParamsFile))
+                if (reader.ReadToEnd().Equals(indexEngine.ToString()))
+                    return true;
+            return false;
         }
 
         private Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)

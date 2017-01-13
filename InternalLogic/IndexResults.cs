@@ -5,6 +5,7 @@ namespace InternalLogicEngineLayer
 {
     public class IndexResults : MyResults
     {
+
         #region Public Constructors
 
         public IndexResults(List<CompactPeptide> myDictionary, Dictionary<float, List<int>> myFragmentDictionary, IndexEngine indexParams) : base(indexParams)
@@ -27,11 +28,12 @@ namespace InternalLogicEngineLayer
         protected override string GetStringForOutput()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("fragmentIndexDict.Count: " + fragmentIndexDict.Count);
-            sb.Append("peptideIndex.Count: " + peptideIndex.Count);
+            sb.AppendLine("\t\tfragmentIndexDict.Count: " + fragmentIndexDict.Count);
+            sb.Append("\t\tpeptideIndex.Count: " + peptideIndex.Count);
             return sb.ToString();
         }
 
         #endregion Protected Methods
+
     }
 }
