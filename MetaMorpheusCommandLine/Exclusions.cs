@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace MetaMorpheusCommandLine
 {
-    public class Exclusions
+    public static class Exclusions
     {
         #region Public Methods
 
@@ -16,20 +16,20 @@ namespace MetaMorpheusCommandLine
 
             // Exclude -76.134779 and -48.128629 - these are real reversed phosphorylations
 
-            HashSet<double> exclude = new HashSet<double>();
+            var exclude = new HashSet<double>();
 
             exclude.Add(-76.134779);
             exclude.Add(-48.128629);
 
-            HashSet<Residue> doNotExcludeEvenCombos = new HashSet<Residue>() { Residue.GetResidue('K') };
+            var doNotExcludeEvenCombos = new HashSet<Residue> { Residue.GetResidue('K') };
 
-            HashSet<Residue> doNotExclude = new HashSet<Residue>() {
+            var doNotExclude = new HashSet<Residue> {
                 Residue.GetResidue('K'),
                 Residue.GetResidue('R'),
                 Residue.GetResidue('G'),
                 Residue.GetResidue('N'),
                 Residue.GetResidue('A'),
-                Residue.GetResidue('M'),
+                Residue.GetResidue('M')
             };
 
             for (char c = 'A'; c <= 'Z'; c++)
