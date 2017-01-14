@@ -1,0 +1,21 @@
+language: csharp
+solution: mzCal.sln
+install:
+- nuget restore MetaMorpheus.sln
+- nuget install NUnit.Console -OutputDirectory testrunner
+script:
+- echo $TRAVIS_TAG 
+- cat MetaMorpheusCommandLine/Properties/AssemblyInfo.cs
+- if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' MetaMorpheusCommandLine/Properties/AssemblyInfo.cs ; fi
+- cat MetaMorpheusCommandLine/Properties/AssemblyInfo.cs
+- xbuild /p:Configuration=TestAndReleaseTravis MetaMorpheus.sln
+- mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
+- tar -zcvf MonoCommandLine.tar.gz -C MetaMorpheusCommandLine/bin/Release .
+deploy:
+  provider: releases
+  api_key:
+    secure: fArGpVuUFcIDhGg7vRHfCNyecIh0je9fm6//nnMrWZT9GcD2199V3pMPjUAreXwsPfMH448Yu860k6DNzIkacVIHyPEtTXv4DxpcHaTcKAsdOGwVhCzWypdt2KYyap/viT0ZHaz1LbnM3VR+B9sK/f7j0DFL6FtRn2AC5+u+fYTLVeQlhFDQfYCNunVpiAXwIle4T0L8Voa8jZYWgIjlxj6fbStu0ReQd9Q3K4wpYPTSb0u71Ww8Xtpps4RMEiWlEhyfB3AwakcCSpC6KkGlvaXibndGH0CKI+4tIxCbKWphkA+b16Hgh1RMVBegzUoQrNyJHJcOlb9jZdEuYkQF/b625Un86fUVUDHXGG70ybjdNjB6NpIZc64IWLwGYFhkBoJREy0gTkRl9xS8Gpz1F+IoT/s34bYEwRKs686aGvjcKd4hYgGvo1V5ld2wFu7w6ydiLQFMzaa0/fcUdT9UXX2jeD9SB8tVz7p3Mn7lI/FJO2bz9sHVryeVJL2Fae6JuuLYHfHftUsz7G6es7bE2zWyUCXKZE75kpbXFCwNg3uMyjH/kkBIpVN7oL7rfHvdtOUIXHq+9vmQbZw2TssdOJ7QJkMC9eH50CHMgbDSp98Q87+qfV2wHjneNgiMaAYNZ4gJJqNe0tiprtemmPr364CQJS4du7eg0FWnso1qohs=
+  file: MonoCommandLine.tar.gz
+  on:
+    tags: true 
+  skip_cleanup: true
