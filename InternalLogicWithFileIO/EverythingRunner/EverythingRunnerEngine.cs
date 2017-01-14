@@ -94,9 +94,6 @@ namespace InternalLogicTaskLayer
 
                 MyTaskResults myTaskResults = (MyTaskResults)ok.Run();
 
-                if (myTaskResults == null)
-                    return null;
-
                 if (myTaskResults.newDatabases != null)
                 {
                     currentXmlDbFilenameList = myTaskResults.newDatabases;
