@@ -43,9 +43,9 @@ namespace MetaMorpheusGUI
             
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             if (version.Equals("1.0.0.0"))
-                this.Tile = "MetaMorpheus: Not a release version";
+                this.Title = "MetaMorpheus: Not a release version";
             else
-                this.Tile = "MetaMorpheus: version " + version;
+                this.Title = "MetaMorpheus: version " + version;
                 
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
