@@ -1,97 +1,95 @@
 ﻿using InternalLogicEngineLayer;
 using NUnit.Framework;
-using System;
 using System.Text;
 
 namespace Test
 {
-    [TestFixture]
-    public class MyEngineTest
-    {
+	[TestFixture]
+	public class MyEngineTest
+	{
 
-        #region Public Methods
+		#region Public Methods
 
-        [Test]
-        public void TestMyEngine()
-        {
-            MyEngine level0engine = new TestEngine(0, null);
-            Assert.That(() => level0engine.Run(),
-            Throws.TypeOf<EngineValidationException>()
-                .With.Property("Message").EqualTo("param1 cannot be null"));
+		[Test]
+		public void TestMyEngine()
+		{
+			MyEngine level0engine = new TestEngine(0, null);
+			Assert.That(() => level0engine.Run(),
+			Throws.TypeOf<EngineValidationException>()
+				.With.Property("Message").EqualTo("param1 cannot be null"));
 
-            level0engine = new TestEngine(0, new object());
-            var myResults = level0engine.Run();
-            Console.WriteLine(myResults.ToString());
-        }
+			level0engine = new TestEngine(0, new object());
+			var myResults = level0engine.Run();
+		}
 
-        #endregion Public Methods
+		#endregion Public Methods
 
-        #region Private Classes
+		#region Private Classes
 
-        private class TestEngine : MyEngine
-        {
+		class TestEngine : MyEngine
+		{
 
-            #region Private Fields
+			#region Private Fields
 
-            private object param1;
+			object param1;
 
-            #endregion Private Fields
+			#endregion Private Fields
 
-            #region Public Constructors
+			#region Public Constructors
 
-            public TestEngine(int level, object param1) : base(level)
-            {
-                this.param1 = param1;
-            }
+			public TestEngine(int level, object param1) : base(level)
+			{
+				this.param1 = param1;
+			}
 
-            #endregion Public Constructors
+			#endregion Public Constructors
 
-            #region Protected Methods
+			#region Protected Methods
 
-            protected override MyResults RunSpecific()
-            {
-                return new TestResults(this);
-            }
+			protected override MyResults RunSpecific()
+			{
+				return new TestResults(this);
+			}
 
-            protected override void ValidateParams()
-            {
-                if (this.param1 == null)
-                    throw new EngineValidationException("param1 cannot be null");
-            }
+			protected override void ValidateParams()
+			{
+				if (param1 == null)
+					throw new EngineValidationException("param1 cannot be null");
+			}
 
-            #endregion Protected Methods
+			#endregion Protected Methods
 
-            #region Private Classes
+			#region Private Classes
 
-            private class TestResults : MyResults
-            {
+			class TestResults : MyResults
+			{
 
-                #region Public Constructors
+				#region Public Constructors
 
-                public TestResults(MyEngine e) : base(e)
-                {
-                }
+				public TestResults(MyEngine e) : base(e)
+				{
+				}
 
-                #endregion Public Constructors
+				#endregion Public Constructors
 
-                #region Protected Methods
+				#region Protected Methods
 
-                protected override string GetStringForOutput()
-                {
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append("String for the TestResults results class");
-                    return sb.ToString();
-                }
+				protected override string GetStringForOutput()
+				{
+					var sb = new StringBuilder();
+					sb.Append("String for the TestResults results class");
+					return sb.ToString();
+				}
 
-                #endregion Protected Methods
+				#endregion Protected Methods
 
-            }
+			}
 
-            #endregion Private Classes
+			#endregion Private Classes
 
-        }
+		}
 
-        #endregion Private Classes
+		#endregion Private Classes
 
-    }
+	}
 }
