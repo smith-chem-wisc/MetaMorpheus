@@ -20,7 +20,7 @@ namespace InternalLogicEngineLayer
 
         #region Internal Constructors
 
-        internal NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
+        public NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
         {
             this.thisPSM = thisPSM;
             this.cumulative_target = cumulative_target;
