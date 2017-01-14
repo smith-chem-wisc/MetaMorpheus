@@ -13,6 +13,7 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {
+
         #region Private Fields
 
         private readonly ParentSpectrumMatch[][] newPsms;
@@ -331,12 +332,8 @@ namespace InternalLogicEngineLayer
                 status("Getting protein parsimony dictionary...");
                 var parsimoniousDictionary = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
 
-                        //status("Building protein groups and doing FDR...");
-                        //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
-                    }
-
-                    yeah[j] = orderedPsmsWithFDR;
-                }
+                //status("Building protein groups and doing FDR...");
+                //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
             }
 
             return new AnalysisResults(this, yeah);
@@ -630,19 +627,19 @@ namespace InternalLogicEngineLayer
 
             HashSet<Protein> proteinGroupProteinList = new HashSet<Protein>();
             List<NewPsmWithFDR> proteinGroupPsmList = new List<NewPsmWithFDR>();
-            
+
             // build protein list (get proteins associated with psm using the parsimony dictionary)
-            foreach(var psm in psmList)
+            foreach (var psm in psmList)
             {
                 proteinGroupProteinList = new HashSet<Protein>();
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                
+
                 HashSet<PeptideWithSetModifications> virtualPeptides = new HashSet<PeptideWithSetModifications>();
                 compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out virtualPeptides);
 
-                foreach(var virtualPeptide in virtualPeptides)
+                foreach (var virtualPeptide in virtualPeptides)
                 {
-                    if(!proteinGroupProteinList.Contains(virtualPeptide.protein))
+                    if (!proteinGroupProteinList.Contains(virtualPeptide.protein))
                     {
                         proteinGroupProteinList.Add(virtualPeptide.protein);
                     }
@@ -652,9 +649,9 @@ namespace InternalLogicEngineLayer
             }
 
             // build psm list
-            foreach(var kvp in dictionary2)
+            foreach (var kvp in dictionary2)
             {
-                foreach(var protein in kvp.Value)
+                foreach (var protein in kvp.Value)
                 {
                     if (!dictionary1.ContainsKey(protein))
                     {
@@ -752,5 +749,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }
