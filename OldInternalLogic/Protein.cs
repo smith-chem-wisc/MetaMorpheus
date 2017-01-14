@@ -118,7 +118,6 @@ namespace OldInternalLogic
 						}
 
 						// Also digest using the chain peptide start/end indices
-
 						for (int chainPeptideIndex = 0; chainPeptideIndex < oneBasedBeginPositions.Length; chainPeptideIndex++)
 						{
 							if (oneBasedBeginPositions[chainPeptideIndex] != 1 || oneBasedEndPositions[chainPeptideIndex] != Length)
