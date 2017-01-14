@@ -45,11 +45,11 @@ namespace Test
 		{
 			public TestDataFile()
 			{
-				var mz1 = new double { 50, 60, 70, 80, 90, 100 };
-				var intensities1 = new double { 1, 1, 1, 1, 1, 1 };
+				var mz1 = new double []{ 50, 60, 70, 80, 90, 100 };
+				var intensities1 = new double []{ 1, 1, 1, 1, 1, 1 };
 
-				var mz2 = new double { 50, 60, 70, 147.076418656749, 200, 300 };
-				var intensities2 = new double{ 1, 1, 1, 1, 1, 1 };
+				var mz2 = new double []{ 50, 60, 70, 147.076418656749, 200, 300 };
+				var intensities2 = new double[]{ 1, 1, 1, 1, 1, 1 };
 
 				var MassSpectrum1 = new DefaultMzSpectrum(mz1, intensities1, false);
 				var MassSpectrum2 = new DefaultMzSpectrum(mz2, intensities2, false);
