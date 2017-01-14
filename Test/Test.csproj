@@ -91,6 +91,7 @@
     <Compile Include="SetUpTests.cs" />
     <Compile Include="GPTMDengineTest.cs" />
     <Compile Include="IndexEngineTest.cs" />
+    <Compile Include="ClassicSearchEngineTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
