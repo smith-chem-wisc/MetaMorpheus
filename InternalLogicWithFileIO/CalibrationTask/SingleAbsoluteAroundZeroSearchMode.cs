@@ -10,7 +10,6 @@ namespace InternalLogicTaskLayer
 
 		#region Private Fields
 
-		string v;
 		readonly double value;
 
 		#endregion Private Fields
@@ -19,7 +18,6 @@ namespace InternalLogicTaskLayer
 
 		public SingleAbsoluteAroundZeroSearchMode(string v, double value) : base(v)
 		{
-			this.v = v;
 			this.value = value;
 		}
 
