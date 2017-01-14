@@ -47,6 +47,7 @@ namespace InternalLogicTaskLayer
             this.taskType = MyTaskEnum.GPTMD;
             tol = 0.003;
             isotopeErrors = false;
+			maxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
@@ -121,18 +122,15 @@ namespace InternalLogicTaskLayer
                 status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, 400);
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, 400);
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
                 ClassicSearchEngine searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
 
                 ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
-
-                //output(searchResults.ToString());
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
 
