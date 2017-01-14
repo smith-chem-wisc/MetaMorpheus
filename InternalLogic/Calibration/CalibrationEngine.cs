@@ -37,8 +37,6 @@ namespace InternalLogicCalibration
         public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFDR> identifications) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
-            MS1spectraToWatch = new HashSet<int>();
-            MS2spectraToWatch = new HashSet<int>();
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
             this.identifications = identifications;
