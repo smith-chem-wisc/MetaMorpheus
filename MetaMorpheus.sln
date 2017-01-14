@@ -27,7 +27,7 @@ Global
 		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.TestAndRelease|Any CPU.ActiveCfg = Release|Any CPU
 		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.TestAndRelease|Any CPU.Build.0 = Release|Any CPU
 		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.TestAndReleaseTravis|Any CPU.ActiveCfg = Release|Any CPU
-		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.TestAndReleaseTravis|Any CPU.Build.0 = Release|Any CPU		
+		{D2178D2E-7CBD-48A3-835D-8B13872202FF}.TestAndReleaseTravis|Any CPU.Build.0 = Release|Any CPU
 		{57B2A726-CCA9-432E-B74A-2EFA962D1A74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{57B2A726-CCA9-432E-B74A-2EFA962D1A74}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57B2A726-CCA9-432E-B74A-2EFA962D1A74}.TestAndRelease|Any CPU.ActiveCfg = Release|Any CPU
