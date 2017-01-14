@@ -127,7 +127,7 @@ namespace InternalLogicTaskLayer
 				status("Opening spectra file...");
 				myMsDataFile.Open();
 
-				var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
+				var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
 
 				var searchResults = (ClassicSearchResults)searchEngine.Run();
 

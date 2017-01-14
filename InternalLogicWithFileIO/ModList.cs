@@ -9,9 +9,9 @@ namespace InternalLogicTaskLayer
     {
         #region Private Fields
 
-        private List<MorpheusModification> mods;
+         readonly List<MorpheusModification> mods;
 
-        private string FullFileName;
+         string FullFileName;
 
         #endregion Private Fields
 
@@ -19,7 +19,7 @@ namespace InternalLogicTaskLayer
 
         public ModList(string fileName)
         {
-            this.FullFileName = Path.GetFullPath(fileName);
+            FullFileName = Path.GetFullPath(fileName);
             mods = ProteomeDatabaseReader.ReadModFile(FullFileName).ToList();
             Description = File.ReadLines(FullFileName).First();
         }

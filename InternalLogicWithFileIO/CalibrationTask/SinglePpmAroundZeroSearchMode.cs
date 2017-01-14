@@ -10,7 +10,7 @@ namespace InternalLogicTaskLayer
 
 		#region Private Fields
 
-		private double ppmTolerance;
+		 readonly double ppmTolerance;
 
 		#endregion Private Fields
 

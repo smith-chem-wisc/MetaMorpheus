@@ -11,7 +11,7 @@ namespace OldInternalLogic
 
         #region Public Constructors
 
-        public Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
+        protected Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
         {
             this.protein = protein;
             this.OneBasedStartResidueInProtein = OneBasedStartResidueInProtein;

@@ -12,7 +12,7 @@ namespace Test
         public void TestExclusions()
         {
             double tolExclude = 0.0075;
-            double[] exclude = new double[5] { 1, 2, 3, 4, 5 };
+            var exclude = new double[] { 1, 2, 3, 4, 5 };
 
             Assert.IsTrue(Exclusions.DoNotExclude(0, tolExclude, exclude));
             Assert.IsFalse(Exclusions.DoNotExclude(1, tolExclude, exclude));

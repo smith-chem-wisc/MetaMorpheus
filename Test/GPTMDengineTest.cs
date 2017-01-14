@@ -1,7 +1,6 @@
 ﻿using InternalLogicEngineLayer;
 using NUnit.Framework;
 using System;
-using System.Text;
 using System.Collections.Generic;
 using OldInternalLogic;
 using MassSpectrometry;
@@ -18,7 +17,7 @@ namespace Test
 		{
 
 			List<NewPsmWithFDR> allResultingIdentifications = null;
-			List<MorpheusModification> gptmdModifications = new List<MorpheusModification>() { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N', 42, null, null, '\0', double.NaN, false, null) };
+			var gptmdModifications = new List<MorpheusModification> { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N', 42, null, null, '\0', double.NaN, false, null) };
 			IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
 			double tol = 0.1;
 			bool isotopeErrors = false;
@@ -35,10 +34,10 @@ namespace Test
 
 
 			ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 42);
-			Protein parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false);
-			PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(1,5, parentProtein,0,"ugh");
+			var parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false);
+			var modPep = new PeptideWithPossibleModifications(1,5, parentProtein,0,"ugh");
 			var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
-			HashSet<PeptideWithSetModifications> peptidesWithSetModifications = new HashSet<PeptideWithSetModifications>(){new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss)};
+			var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications>{new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss)};
 			Tolerance fragmentTolerance = null;
 			IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
 			var thisPSM = new PSMwithTargetDecoyKnown(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile);

@@ -1,37 +1,36 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace InternalLogicCalibration
 {
-    internal class ByHandCalibrationFunction : CalibrationFunction
-    {
-        #region Private Fields
+	class ByHandCalibrationFunction : CalibrationFunction
+	{
+		#region Private Fields
 
-        private Action<string> onOutput;
+		readonly Action<string> onOutput;
 
-        #endregion Private Fields
+		#endregion Private Fields
 
-        #region Public Constructors
+		#region Public Constructors
 
-        public ByHandCalibrationFunction(Action<string> onOutput)
-        {
-            this.onOutput = onOutput;
-        }
+		public ByHandCalibrationFunction(Action<string> onOutput)
+		{
+			this.onOutput = onOutput;
+		}
 
-        #endregion Public Constructors
+		#endregion Public Constructors
 
-        #region Public Methods
+		#region Public Methods
 
-        internal override double Predict(double[] t)
-        {
-            return -t[1] / 200000;
-        }
+		internal override double Predict(double[] t)
+		{
+			return -t[1] / 200000;
+		}
 
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
-        {
-            onOutput("Sucessfully trained ByHandCalibrationFunction");
-        }
+		internal void Train()
+		{
+			onOutput("Sucessfully trained ByHandCalibrationFunction");
+		}
 
-        #endregion Public Methods
-    }
+		#endregion Public Methods
+	}
 }

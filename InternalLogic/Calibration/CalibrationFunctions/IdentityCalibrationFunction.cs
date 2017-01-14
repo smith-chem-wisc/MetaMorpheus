@@ -1,28 +1,14 @@
-﻿using System.Collections.Generic;
-
-namespace InternalLogicCalibration
+﻿namespace InternalLogicCalibration
 {
-    public class IdentityCalibrationFunction : CalibrationFunction
-    {
-        #region Public Constructors
+	public class IdentityCalibrationFunction : CalibrationFunction
+	{
+		#region Public Methods
 
-        public IdentityCalibrationFunction()
-        {
-        }
+		internal override double Predict(double[] t)
+		{
+			return 0;
+		}
 
-        #endregion Public Constructors
-
-        #region Public Methods
-
-        internal override double Predict(double[] inputs)
-        {
-            return 0;
-        }
-
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
-        {
-        }
-
-        #endregion Public Methods
-    }
+		#endregion Public Methods
+	}
 }
