@@ -145,7 +145,7 @@ namespace InternalLogicTaskLayer
                 //output(analysisResults.ToString());
             }
 
-            GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
+            GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications[0], isotopeErrors, gptmdModifications, combos, tol);
             GPTMDResults gptmdResults = (GPTMDResults)gptmdEngine.Run();
 
             //output(gptmdResults.ToString());

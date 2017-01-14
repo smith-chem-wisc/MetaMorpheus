@@ -10,7 +10,7 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private readonly List<NewPsmWithFDR>[] allResultingIdentifications;
+        private readonly List<NewPsmWithFDR> allResultingIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<MorpheusModification> gptmdModifications;
         private readonly bool isotopeErrors;
@@ -20,7 +20,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications,  bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
+        public GPTMDEngine(List<NewPsmWithFDR> allResultingIdentifications,  bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.isotopeErrors = isotopeErrors;
@@ -44,7 +44,7 @@ namespace InternalLogicEngineLayer
             Dictionary<string, HashSet<Tuple<int, string>>> Mods = new Dictionary<string, HashSet<Tuple<int, string>>>();
 
             int modsAdded = 0;
-            foreach (var ye in allResultingIdentifications[0].Where(b => b.QValue <= 0.01 && !b.isDecoy))
+            foreach (var ye in allResultingIdentifications.Where(b => b.QValue <= 0.01 && !b.isDecoy))
             {
                 var theDict = ye.thisPSM.peptidesWithSetModifications;
                 // Only add to non-ambiguous peptides

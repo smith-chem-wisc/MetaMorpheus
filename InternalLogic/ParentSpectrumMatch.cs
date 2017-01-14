@@ -14,7 +14,7 @@ namespace InternalLogicEngineLayer
         internal Dictionary<ProductType, double[]> matchedIonsList;
         internal int scanNumber;
         internal int scanPrecursorCharge;
-        internal double scanPrecursorMass;
+        public double scanPrecursorMass;
 
         #endregion Internal Fields
 

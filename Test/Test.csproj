@@ -97,6 +97,7 @@
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="SetUpTests.cs" />
+    <Compile Include="GPTMDengineTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
