@@ -19,7 +19,7 @@ namespace Test
 				.With.Property("Message").EqualTo("param1 cannot be null"));
 
 			level0engine = new TestEngine(0, new object());
-			var myResults = level0engine.Run();
+			level0engine.Run();
 		}
 
 		#endregion Public Methods

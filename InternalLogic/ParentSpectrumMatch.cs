@@ -37,7 +37,7 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             //sb.Append(spectraFileIndex.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
@@ -76,7 +76,7 @@ namespace InternalLogicEngineLayer
 
         internal static string GetTabSeparatedHeader()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("scanNumber" + '\t');
             sb.Append("scanPrecursorCharge" + '\t');
             sb.Append("scanPrecursorMass" + '\t');
