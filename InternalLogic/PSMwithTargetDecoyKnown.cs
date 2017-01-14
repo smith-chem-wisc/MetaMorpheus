@@ -18,12 +18,6 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Fields
 
-        #region Private Fields
-
-        private HashSet<PeptideWithSetModifications> peptidesWithSetModifications;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public PSMwithTargetDecoyKnown(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
@@ -83,6 +77,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
+        public HashSet<PeptideWithSetModifications> peptidesWithSetModifications { get; private set; }
         public bool isDecoy { get; private set; }
 
         public double Score

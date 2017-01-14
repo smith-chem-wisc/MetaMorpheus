@@ -1,5 +1,4 @@
-﻿using OldInternalLogic;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -7,19 +6,17 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisResults : MyResults
     {
+
         #region Public Constructors
 
-        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict) : base(s)
+        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] allResultingIdentifications) : base(s)
         {
             this.allResultingIdentifications = allResultingIdentifications;
-            this.dict = dict;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
-
-        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict { get; private set; }
 
         public List<NewPsmWithFDR>[] allResultingIdentifications { get; private set; }
 
@@ -35,5 +32,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Protected Methods
+
     }
 }

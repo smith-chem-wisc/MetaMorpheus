@@ -10,22 +10,20 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private List<NewPsmWithFDR>[] allResultingIdentifications;
-        private IEnumerable<Tuple<double, double>> combos;
-        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict;
-        private List<MorpheusModification> gptmdModifications;
-        private bool isotopeErrors;
-        private List<MorpheusModification> localizeableModifications;
-        private double tol;
-        private List<MorpheusModification> variableModifications;
+        private readonly List<NewPsmWithFDR>[] allResultingIdentifications;
+        private readonly IEnumerable<Tuple<double, double>> combos;
+        private readonly List<MorpheusModification> gptmdModifications;
+        private readonly bool isotopeErrors;
+        private readonly List<MorpheusModification> localizeableModifications;
+        private readonly double tol;
+        private readonly List<MorpheusModification> variableModifications;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
+        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
-            this.dict = dict;
             this.allResultingIdentifications = allResultingIdentifications;
             this.variableModifications = variableModifications;
             this.localizeableModifications = localizeableModifications;
@@ -52,7 +50,7 @@ namespace InternalLogicEngineLayer
             int modsAdded = 0;
             foreach (var ye in allResultingIdentifications[0].Where(b => b.QValue <= 0.01 && !b.isDecoy))
             {
-                var theDict = dict[ye.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications)];
+                var theDict = ye.thisPSM.peptidesWithSetModifications;
                 // Only add to non-ambiguous peptides
                 if (theDict.Count == 1)
                 {

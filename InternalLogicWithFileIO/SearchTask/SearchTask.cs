@@ -57,6 +57,17 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Properties
 
+        #region Public Methods
+
+        public static IEnumerable<Type> GetSubclassesAndItself(Type type)
+        {
+            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
+                yield return ok;
+            yield return type;
+        }
+
+        #endregion Public Methods
+
         #region Protected Methods
 
         protected override string GetSpecificTaskInfo()
@@ -117,9 +128,39 @@ namespace InternalLogicTaskLayer
             if (!classicSearch)
             {
                 status("Getting fragment dictionary...");
+                IndexEngine indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease);
+                string pathToFolderWithIndices = GetExistingFolderWithIndices(xmlDbFilenameList, indexEngine);
 
-                GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, output_folder);
+                if (pathToFolderWithIndices == null)
+                {
+                    status("Generating indices...");
+                    var output_folderForIndices = GenerateOutputFolderForIndices(xmlDbFilenameList);
+                    status("Writing params...");
+                    writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
 
+                    IndexResults indexResults = (IndexResults)indexEngine.Run();
+                    peptideIndex = indexResults.peptideIndex;
+                    fragmentIndexDict = indexResults.fragmentIndexDict;
+
+                    status("Writing peptide index...");
+                    writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"));
+                    status("Writing fragment index...");
+                    writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"));
+                }
+                else
+                {
+                    status("Reading peptide index...");
+                    var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                    var ser = new NetSerializer.Serializer(messageTypes);
+                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                        peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+
+                    status("Reading fragment index...");
+                    messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                    ser = new NetSerializer.Serializer(messageTypes);
+                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                        fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                }
                 keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             }
@@ -157,7 +198,7 @@ namespace InternalLogicTaskLayer
                 }
                 else
                 {
-                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS);
+                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModesS);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
@@ -181,36 +222,6 @@ namespace InternalLogicTaskLayer
         #endregion Protected Methods
 
         #region Private Methods
-
-        private void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
-        {
-            IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(xmlDbFilenameList, indexEngine);
-
-            if (pathToFolderWithIndices == null)
-            {
-                status("Generating indices...");
-                var output_folderForIndices = GenerateOutputFolderForIndices(xmlDbFilenameList);
-                status("Writing params...");
-                writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
-
-                IndexResults indexResults = (IndexResults)indexEngine.Run();
-                peptideIndex = indexResults.peptideIndex;
-                fragmentIndexDict = indexResults.fragmentIndexDict;
-
-                status("Writing peptide index...");
-                writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"));
-                status("Writing fragment index...");
-                writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"));
-            }
-            else
-            {
-                status("Reading peptide index...");
-                peptideIndex = readPeptideIndex(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind"));
-                status("Reading fragment index...");
-                fragmentIndexDict = readFragmentIndexNetSerializer(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind"));
-            }
-        }
 
         private string GenerateOutputFolderForIndices(List<string> xmlDbFilenameList)
         {
@@ -257,38 +268,6 @@ namespace InternalLogicTaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
-        }
-
-        private Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            Dictionary<float, List<int>> newPerson;
-            using (var file = File.OpenRead(fragmentIndexFile))
-                newPerson = (Dictionary<float, List<int>>)ser.Deserialize(file);
-
-            return newPerson;
-        }
-
-        private List<CompactPeptide> readPeptideIndex(string peptideIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-            List<CompactPeptide> newPerson;
-            using (var file = File.OpenRead(peptideIndexFile))
-            {
-                newPerson = (List<CompactPeptide>)ser.Deserialize(file);
-            }
-
-            return newPerson;
-        }
-
-        private IEnumerable<Type> GetSubclassesAndItself(Type type)
-        {
-            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
-                yield return ok;
-            yield return type;
         }
 
         private void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)

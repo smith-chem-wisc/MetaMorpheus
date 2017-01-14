@@ -113,7 +113,6 @@
     <Compile Include="ModernSearchEngine.cs" />
     <Compile Include="ModernSearchResults.cs" />
     <Compile Include="ModernSpectrumMatch.cs" />
-    <Compile Include="MyAnalysisClass.cs" />
     <Compile Include="MyEngine.cs" />
     <Compile Include="MyInfo.cs" />
     <Compile Include="MyResults.cs" />
