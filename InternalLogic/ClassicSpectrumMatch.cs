@@ -12,18 +12,11 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Fields
 
-        #region Private Fields
-
-        private double[] hehe;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
-        public ClassicSpectrumMatch(double ScoreFromSearch, PeptideWithSetModifications ps, double[] hehe, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
+        public ClassicSpectrumMatch(double ScoreFromSearch, PeptideWithSetModifications ps, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
         {
             this.ps = ps;
-            this.hehe = hehe;
             this.Score = ScoreFromSearch;
             this.scanPrecursorMass = precursorMass;
 

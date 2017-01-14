@@ -127,11 +127,8 @@ namespace InternalLogicTaskLayer
                 string accession = null;
                 string name = null;
                 string full_name = null;
-                bool fragment = false;
                 string organism = null;
                 string gene_name = null;
-                string protein_existence = null;
-                string sequence_version = null;
                 string sequence = null;
                 string feature_type = null;
                 string feature_description = null;

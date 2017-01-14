@@ -14,19 +14,15 @@ namespace InternalLogicEngineLayer
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<MorpheusModification> gptmdModifications;
         private readonly bool isotopeErrors;
-        private readonly List<MorpheusModification> localizeableModifications;
         private readonly double tol;
-        private readonly List<MorpheusModification> variableModifications;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
+        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications,  bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
             this.allResultingIdentifications = allResultingIdentifications;
-            this.variableModifications = variableModifications;
-            this.localizeableModifications = localizeableModifications;
             this.isotopeErrors = isotopeErrors;
             this.gptmdModifications = gptmdModifications;
             this.combos = combos;

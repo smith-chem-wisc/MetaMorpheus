@@ -290,6 +290,15 @@ namespace InternalLogicEngineLayer
             status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
 
+            if (doParsimony)
+			{
+				status("Getting protein parsimony dictionary...");
+				ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
+
+				//status("Building protein groups and doing FDR...");
+				//proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+			}
+
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
@@ -326,14 +335,6 @@ namespace InternalLogicEngineLayer
 
                     yeah[j] = orderedPsmsWithFDR;
                 }
-            }
-            if (doParsimony)
-            {
-                status("Getting protein parsimony dictionary...");
-                var parsimoniousDictionary = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
-
-                //status("Building protein groups and doing FDR...");
-                //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
             }
 
             return new AnalysisResults(this, yeah);

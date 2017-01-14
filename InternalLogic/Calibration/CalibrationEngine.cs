@@ -27,8 +27,6 @@ namespace InternalLogicCalibration
         private const double toleranceInMZforMS1Search = 0.01;
         private int randomSeed;
         private List<NewPsmWithFDR> identifications;
-        private HashSet<int> MS1spectraToWatch;
-        private HashSet<int> MS2spectraToWatch;
         private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
         private double toleranceInMZforMS2Search;
 
@@ -83,25 +81,18 @@ namespace InternalLogicCalibration
                     throw new EngineRunException("Not enough MS1 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
-                //output("pointList1.Count() = " + pointList1.Count());
                 var pointList2 = pointList.Where((b) => b.inputs[0] == 2).ToList();
                 if (pointList2.Count == 0)
                 {
                     throw new EngineRunException("Not enough MS2 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
-                //output("pointList2.Count() = " + pointList2.Count());
-
-                CalibrationFunction identityPredictor = new IdentityCalibrationFunction();
-                //output("Uncalibrated MSE, " + identityPredictor.getMSE(pointList1) + "," + identityPredictor.getMSE(pointList2) + "," + identityPredictor.getMSE(pointList));
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
 
                 combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
                 combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
             }
-
-            //output("Finished running my software lock mass implementation");
 
             return new CalibrationResults(myMsDataFile, this);
         }
@@ -190,9 +181,9 @@ namespace InternalLogicCalibration
                 //    output(" intensities = " + string.Join(", ", intensities) + "...");
                 //}
 
-                int lowestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
+                SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
 
-                int highestMS1ind = SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
+                SearchMS1Spectra(myMsDataFile, masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
 
                 //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
                 //{
@@ -248,8 +239,6 @@ namespace InternalLogicCalibration
             CalibrationFunction combinedCalibration = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
             double bestMS1MSE = bestMS1predictor.getMSE(testList1);
             double bestMS2MSE = bestMS2predictor.getMSE(testList2);
-            double combinedMSE = combinedCalibration.getMSE(testList);
-            //  output("Uncalibrated MSE, " + bestMS1MSE + "," + bestMS2MSE + "," + combinedMSE);
 
             CalibrationFunction ms1regressor = new ConstantCalibrationFunction();
             CalibrationFunction ms2regressor = new ConstantCalibrationFunction();
@@ -262,8 +251,6 @@ namespace InternalLogicCalibration
             combinedCalibration.writePredictedLables(testList2, "testList2Constant" + myMsDataFile.Name);
             double MS1mse = ms1regressor.getMSE(testList1);
             double MS2mse = ms2regressor.getMSE(testList2);
-            combinedMSE = combinedCalibration.getMSE(testList);
-            //OnOutput("Constant calibration MSE, " + MS1mse + "," + MS2mse + "," + combinedMSE));
             if (MS1mse < bestMS1MSE)
             {
                 bestMS1MSE = MS1mse;
