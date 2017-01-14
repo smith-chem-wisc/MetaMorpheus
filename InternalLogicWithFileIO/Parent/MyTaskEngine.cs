@@ -59,7 +59,7 @@ namespace InternalLogicTaskLayer
         public Tolerance productMassTolerance { get; set; }
         public Protease protease { get; set; }
         public bool yIons { get; set; }
-		public int maxNumPeaks { get; set;}
+		public int maxNumPeaksPerScan { get; set;}
 
         #endregion Public Properties
 
