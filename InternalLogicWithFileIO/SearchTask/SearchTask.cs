@@ -186,7 +186,7 @@ namespace InternalLogicTaskLayer
 
 				if (classicSearch)
 				{
-					classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModesS);
+					classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModesS);
 
 					classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
 					for (int i = 0; i < searchModesS.Count; i++)

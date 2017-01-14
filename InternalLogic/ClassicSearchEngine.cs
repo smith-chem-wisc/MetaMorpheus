@@ -21,8 +21,6 @@ namespace InternalLogicEngineLayer
 
 		readonly List<MorpheusModification> fixedModifications;
 
-		readonly List<MorpheusModification> localizeableModifications;
-
 		readonly List<MorpheusModification> variableModifications;
 
 		readonly Tolerance productMassTolerance;
@@ -35,13 +33,12 @@ namespace InternalLogicEngineLayer
 
 		#region Public Constructors
 
-		public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
+		public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
 		{
 			this.myMsDataFile = myMsDataFile;
 			this.spectraFileIndex = spectraFileIndex;
 			this.variableModifications = variableModifications;
 			this.fixedModifications = fixedModifications;
-			this.localizeableModifications = localizeableModifications;
 			this.proteinList = proteinList;
 			this.productMassTolerance = productMassTolerance;
 			this.protease = protease;
