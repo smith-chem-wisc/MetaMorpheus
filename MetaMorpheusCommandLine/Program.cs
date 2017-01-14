@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace MetaMorpheusCommandLine
 {
@@ -25,6 +26,12 @@ namespace MetaMorpheusCommandLine
 
         private static void Main(string[] args)
         {
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (version.Equals("1.0.0.0"))
+                Console.WriteLine("Not a release version");
+            else
+                Console.WriteLine(version);
+            
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
@@ -37,8 +44,6 @@ namespace MetaMorpheusCommandLine
             MyTaskEngine.finishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
             MyTaskEngine.finishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
             MyTaskEngine.startingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
-
-            RunModernSearchEngine();
         }
 
         private static void RunModernSearchEngine()
