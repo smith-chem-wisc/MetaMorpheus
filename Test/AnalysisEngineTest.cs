@@ -171,6 +171,12 @@ namespace Test
             Assert.That(parsimonyBaseSequences.Contains(sequence3));
         }
 
+        [Test]
+        public void TestProteinGrouping()
+        {
+            Assert.That(true);
+        }
+
         #endregion Public Methods
     }
 }

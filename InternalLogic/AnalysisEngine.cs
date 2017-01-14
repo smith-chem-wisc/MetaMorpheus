@@ -13,7 +13,6 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {
-
         #region Private Fields
 
         private readonly ParentSpectrumMatch[][] newPsms;
@@ -212,7 +211,7 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            // build each protein group after parsimony and match it to its peptide
+            // build each protein list after parsimony and match it to its peptide
             Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinGroupMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
 
             foreach (var kvp in parsimonyDict)
@@ -332,9 +331,12 @@ namespace InternalLogicEngineLayer
                 status("Getting protein parsimony dictionary...");
                 var parsimoniousDictionary = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
 
-                // to do protein FDR, need peptides and their virtual peptide matches (for protein group analysis) with scores
-                //Dictionary<Protein, List<NewPsmWithFDR>> aggregateProteinList = new Dictionary<Protein, List<NewPsmWithFDR>();
-                //aggregateProteinList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+                        //status("Building protein groups and doing FDR...");
+                        //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+                    }
+
+                    yeah[j] = orderedPsmsWithFDR;
+                }
             }
 
             return new AnalysisResults(this, yeah);
@@ -619,9 +621,62 @@ namespace InternalLogicEngineLayer
             return ids;
         }
 
-        private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> PSMs, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> psmList, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
         {
-            return new List<ProteinGroup>();
+            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
+
+            Dictionary<Protein, List<NewPsmWithFDR>> dictionary1 = new Dictionary<Protein, List<NewPsmWithFDR>>();
+            Dictionary<NewPsmWithFDR, HashSet<Protein>> dictionary2 = new Dictionary<NewPsmWithFDR, HashSet<Protein>>();
+
+            HashSet<Protein> proteinGroupProteinList = new HashSet<Protein>();
+            List<NewPsmWithFDR> proteinGroupPsmList = new List<NewPsmWithFDR>();
+            
+            // build protein list (get proteins associated with psm using the parsimony dictionary)
+            foreach(var psm in psmList)
+            {
+                proteinGroupProteinList = new HashSet<Protein>();
+                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                
+                HashSet<PeptideWithSetModifications> virtualPeptides = new HashSet<PeptideWithSetModifications>();
+                compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out virtualPeptides);
+
+                foreach(var virtualPeptide in virtualPeptides)
+                {
+                    if(!proteinGroupProteinList.Contains(virtualPeptide.protein))
+                    {
+                        proteinGroupProteinList.Add(virtualPeptide.protein);
+                    }
+                }
+
+                dictionary2.Add(psm, proteinGroupProteinList);
+            }
+
+            // build psm list
+            foreach(var kvp in dictionary2)
+            {
+                foreach(var protein in kvp.Value)
+                {
+                    if (!dictionary1.ContainsKey(protein))
+                    {
+                        proteinGroupPsmList = new List<NewPsmWithFDR>();
+
+                        foreach (var kvp1 in dictionary2)
+                        {
+                            // if the kvp's have the same protein groups, add the newly found psm
+                            if (kvp1.Value.SetEquals(kvp.Value))
+                            {
+                                proteinGroupPsmList.Add(kvp1.Key);
+                                dictionary1.Add(protein, proteinGroupPsmList);
+                            }
+                        }
+
+                        // build protein group from the dictionaries
+                        proteinGroups.Add(new ProteinGroup(kvp.Value, proteinGroupPsmList, variableModifications, localizeableModifications));
+                    }
+                }
+            }
+
+            return proteinGroups;
         }
 
         private void AddObservedPeptidesToDictionary()
@@ -697,6 +752,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
-
     }
 }
