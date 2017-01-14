@@ -27,7 +27,7 @@ namespace InternalLogicEngineLayer
 		protected override string GetStringForOutput()
 		{
 			var sb = new StringBuilder();
-			sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Where(c => c.QValue <= 0.01).Count())));
+			sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
 			return sb.ToString();
 		}
 
