@@ -29,7 +29,7 @@ namespace InternalLogicTaskLayer
 
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            throw new NotImplementedException();
+			return Math.Abs(scanPrecursorMass - peptideMass) < value;
         }
 
         public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
@@ -39,7 +39,7 @@ namespace InternalLogicTaskLayer
 
         public override string SearchModeString()
         {
-            throw new NotImplementedException();
+			return "SingleAbsoluteAroundZeroSearchMode" + value;
         }
 
         #endregion Public Methods

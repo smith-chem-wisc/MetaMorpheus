@@ -101,9 +101,6 @@ namespace Test
             // apply parsimony to initial dictionary
             var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary);
 
-            // apply the single pick version to parsimonious dictionary
-            var singlePickTest = AnalysisEngine.GetSingleMatchDictionary(parsimonyTest);
-
             List<Protein> parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];
             int j = 0;

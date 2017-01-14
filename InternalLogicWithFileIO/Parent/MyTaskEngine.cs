@@ -187,10 +187,6 @@ namespace InternalLogicTaskLayer
                                     }
                                     break;
 
-                                case "proteinExistence":
-                                    protein_existence = xml.GetAttribute("type");
-                                    break;
-
                                 case "feature":
                                     feature_type = xml.GetAttribute("type");
                                     feature_description = xml.GetAttribute("description");
@@ -221,8 +217,6 @@ namespace InternalLogicTaskLayer
                                     break;
 
                                 case "sequence":
-                                    fragment = xml.GetAttribute("fragment") != null;
-                                    sequence_version = xml.GetAttribute("version");
                                     sequence = xml.ReadElementString().Replace("\n", null);
                                     break;
                             }
@@ -327,11 +321,8 @@ namespace InternalLogicTaskLayer
                                     accession = null;
                                     name = null;
                                     full_name = null;
-                                    fragment = false;
                                     organism = null;
                                     gene_name = null;
-                                    protein_existence = null;
-                                    sequence_version = null;
                                     sequence = null;
                                     feature_type = null;
                                     feature_description = null;
