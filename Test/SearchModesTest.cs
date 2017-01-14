@@ -51,22 +51,22 @@ namespace Test
             DotSearchMode dsm2 = new DotSearchMode("test2", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.PPM, 5));
 
             Assert.IsTrue(dsm2.Accepts(1000, 1000));
-            Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1000000 / 2)));
-            Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1000000 * 2)));
-            Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1000000 / 2)));
-            Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1000000 * 2)));
+            Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1e6 / 1.0000000001)));
+            Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1e6 * 1.0000000001)));
+            Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1e6 / 1.0000000001)));
+            Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1e6 * 1.0000000001)));
 
             Assert.IsTrue(dsm2.Accepts(1, 1));
-            Assert.IsTrue(dsm2.Accepts(1, 1 * (1 + 5.0 / 1000000 / 2)));
-            Assert.IsFalse(dsm2.Accepts(1, 1 * (1 + 5.0 / 1000000 * 2)));
-            Assert.IsTrue(dsm2.Accepts(1, 1 * (1 - 5.0 / 1000000 / 2)));
-            Assert.IsFalse(dsm2.Accepts(1, 1 * (1 - 5.0 / 1000000 * 2)));
+            Assert.IsTrue(dsm2.Accepts(1, 1 * (1 + 5.0 / 1e6 / 1.0000000001)));
+            Assert.IsFalse(dsm2.Accepts(1, 1 * (1 + 5.0 / 1e6 * 1.0000000001)));
+            Assert.IsTrue(dsm2.Accepts(1, 1 * (1 - 5.0 / 1e6 / 1.0000000001)));
+            Assert.IsFalse(dsm2.Accepts(1, 1 * (1 - 5.0 / 1e6 * 1.0000000001)));
 
             Assert.IsTrue(dsm2.Accepts(1000000, 1000000));
-            Assert.IsTrue(dsm2.Accepts(1000000, 1000000 * (1 + 5.0 / 1000000 / 2)));
-            Assert.IsFalse(dsm2.Accepts(1000000, 1000000 * (1 + 5.0 / 1000000 * 2)));
-            Assert.IsTrue(dsm2.Accepts(1000000, 1000000 * (1 - 5.0 / 1000000 / 2)));
-            Assert.IsFalse(dsm2.Accepts(1000000, 1000000 * (1 - 5.0 / 1000000 * 2)));
+            Assert.IsTrue(dsm2.Accepts(1000000, 1000000 * (1 + 5.0 / 1e6 /1.0000000001)));
+            Assert.IsFalse(dsm2.Accepts(1000000, 1000000 * (1 + 5.0 / 1e6 * 1.0000000001)));
+            Assert.IsTrue(dsm2.Accepts(1000000, 1000000 * (1 - 5.0 / 1e6 / 1.0000000001)));
+            Assert.IsFalse(dsm2.Accepts(1000000, 1000000 * (1 - 5.0 / 1e6 * 1.0000000001)));
 
             var theList2 = dsm2.GetAllowedPrecursorMassIntervals(100).ToList();
 
