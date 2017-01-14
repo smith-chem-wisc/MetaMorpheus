@@ -716,7 +716,7 @@ namespace InternalLogicEngineLayer
 
                         peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             HashSet<PeptideWithSetModifications> v;
