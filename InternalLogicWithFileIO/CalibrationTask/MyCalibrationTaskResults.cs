@@ -2,16 +2,16 @@
 
 namespace InternalLogicTaskLayer
 {
-    internal class MyCalibrationTaskResults : MyTaskResults
-    {
-        public MyCalibrationTaskResults(MyTaskEngine s) : base(s)
-        {
-        }
+	class MyCalibrationTaskResults : MyTaskResults
+	{
+		public MyCalibrationTaskResults(MyTaskEngine s) : base(s)
+		{
+		}
 
-        protected override string GetStringForOutput()
-        {
-            StringBuilder sb = new StringBuilder();
-            return sb.ToString();
-        }
-    }
+		protected override string GetStringForOutput()
+		{
+			var sb = new StringBuilder();
+			return sb.ToString();
+		}
+	}
 }

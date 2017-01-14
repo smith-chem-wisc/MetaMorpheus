@@ -8,7 +8,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public SearchMode(string fileNameAddition)
+        protected SearchMode(string fileNameAddition)
         {
             FileNameAddition = fileNameAddition;
         }
