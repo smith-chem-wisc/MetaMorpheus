@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Reflection;
 
 namespace MetaMorpheusGUI
 {
@@ -39,7 +40,13 @@ namespace MetaMorpheusGUI
         public MainWindow()
         {
             InitializeComponent();
-
+            
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (version.Equals("1.0.0.0"))
+                this.Tile = "MetaMorpheus: Not a release version";
+            else
+                this.Tile = "MetaMorpheus: version " + version;
+                
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
