@@ -103,6 +103,10 @@
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
       <Name>InternalLogicTaskLayer</Name>
     </ProjectReference>
+    <ProjectReference Include="..\InternalLogic\InternalLogicEngineLayer.csproj">
+      <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
+      <Name>InternalLogicEngineLayer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
       <Project>{d2178d2e-7cbd-48a3-835d-8b13872202ff}</Project>
       <Name>OldInternalLogic</Name>

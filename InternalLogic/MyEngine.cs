@@ -47,7 +47,6 @@ namespace InternalLogicEngineLayer
 
         public MyResults Run()
         {
-            status("Starting " + this.GetType().Name);
             startingSingleEngine();
             ValidateParams();
             Stopwatch stopWatch = new Stopwatch();

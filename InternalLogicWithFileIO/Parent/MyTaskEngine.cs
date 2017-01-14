@@ -81,8 +81,10 @@ namespace InternalLogicTaskLayer
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(GetSpecificTaskInfo());
             sb.AppendLine(taskType.ToString());
-            sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
-            sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
+            sb.AppendLine("Spectra files:");
+            sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
+            sb.AppendLine("XML files:");
+            sb.AppendLine(string.Join(Environment.NewLine, xmlDbFilenameList.Select(b => '\t' + b)));
             sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior.ToString());
             sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages.ToString());
             sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms.ToString());
@@ -90,7 +92,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("productMassTolerance: " + productMassTolerance.ToString());
             sb.AppendLine("protease: " + protease.ToString());
             sb.AppendLine("bIons: " + bIons.ToString());
-            sb.AppendLine("yIons: " + yIons.ToString());
+            sb.Append("yIons: " + yIons.ToString());
             return sb.ToString();
         }
 

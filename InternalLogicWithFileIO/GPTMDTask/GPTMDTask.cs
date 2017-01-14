@@ -24,13 +24,6 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Fields
 
-        #region Private Fields
-
-        private readonly double tol;
-        private bool isotopeErrors;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public GPTMDTask(ObservableCollection<ModList> modList)
@@ -53,9 +46,17 @@ namespace InternalLogicTaskLayer
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             this.taskType = MyTaskEnum.GPTMD;
             tol = 0.003;
+            isotopeErrors = false;
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public double tol { get; set; }
+        public bool isotopeErrors { get; set; }
+
+        #endregion Public Properties
 
         #region Protected Methods
 
@@ -147,7 +148,7 @@ namespace InternalLogicTaskLayer
                 //output(analysisResults.ToString());
             }
 
-            GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, analysisResults.dict, variableModifications, localizeableModifications, isotopeErrors, gptmdModifications, combos, tol);
+            GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, variableModifications, localizeableModifications, isotopeErrors, gptmdModifications, combos, tol);
             GPTMDResults gptmdResults = (GPTMDResults)gptmdEngine.Run();
 
             //output(gptmdResults.ToString());
