@@ -43,7 +43,7 @@ namespace InternalLogicEngineLayer
             this.fixedModifications = fixedModifications;
             this.localizeableModifications = localizeableModifications;
             this.proteinList = proteinList;
-			productMassTolerance = productMassTolerance;
+			this.productMassTolerance = productMassTolerance;
             this.protease = protease;
             this.searchModes = searchModes;
         }
