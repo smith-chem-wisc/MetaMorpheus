@@ -14,11 +14,11 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ClassicSpectrumMatch(double ScoreFromSearch, PeptideWithSetModifications ps, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
+        public ClassicSpectrumMatch(double Score, PeptideWithSetModifications ps, double scanPrecursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
         {
             this.ps = ps;
-            this.Score = ScoreFromSearch;
-            this.scanPrecursorMass = precursorMass;
+			this.Score = Score;
+            this.scanPrecursorMass = scanPrecursorMass;
 
             this.scanPrecursorMZ = scanPrecursorMZ;
             this.scanNumber = scanNumber;
