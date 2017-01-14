@@ -43,6 +43,7 @@ namespace InternalLogicTaskLayer
                 searchModes.Add(new SearchModeFoSearch(uu));
             searchModes[0].Use = true;
             this.taskType = MyTaskEnum.Search;
+			maxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
@@ -101,8 +102,7 @@ namespace InternalLogicTaskLayer
         {
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
-
+            
             status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
             List<MorpheusModification> fixedModifications = listOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
@@ -172,9 +172,9 @@ namespace InternalLogicTaskLayer
                 status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, 400);
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, 400);
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
 
@@ -194,7 +194,7 @@ namespace InternalLogicTaskLayer
 
                     AnalysisEngine analysisEngine = new AnalysisEngine(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
-                    AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                    analysisEngine.Run();
                 }
                 else
                 {
@@ -206,7 +206,7 @@ namespace InternalLogicTaskLayer
 
                     AnalysisEngine analysisEngine = new AnalysisEngine(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
-                    AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                    analysisEngine.Run();
                 }
             }
 
@@ -214,7 +214,7 @@ namespace InternalLogicTaskLayer
             {
                 AnalysisEngine analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), doParsimony);
 
-                AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                analysisEngine.Run();
             }
             return new MySearchTaskResults(this);
         }

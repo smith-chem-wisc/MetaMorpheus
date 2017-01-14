@@ -31,11 +31,6 @@ namespace InternalLogicEngineLayer
             if (myMsDataFile != null && newPsm.matchedIonsList == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
-                double selectedMZ;
-                int selectedCharge;
-                theScan.TryGetSelectedIonGuessMonoisotopicMZ(out selectedMZ);
-                theScan.TryGetSelectedIonGuessChargeStateGuess(out selectedCharge);
-                var scanPrecursorMass = selectedMZ.ToMass(selectedCharge);
 
                 Dictionary<ProductType, double[]> MatchedIonDict = new Dictionary<ProductType, double[]>();
                 foreach (var huh in allProductTypes)
@@ -173,7 +168,6 @@ namespace InternalLogicEngineLayer
             int MatchingProductsHere = 0;
             double MatchingIntensityHere = 0;
 
-            int theoreticalLeft = TotalProductsHere;
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.xArray;
             double[] experimental_intensities = thisScan.MassSpectrum.yArray;

@@ -57,7 +57,6 @@ namespace InternalLogicEngineLayer
         {
             //output("In modern search method!");
 
-            var spectraList = myMsDataFile.ToList();
             var totalSpectra = myMsDataFile.NumSpectra;
 
             List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchModes.Count];

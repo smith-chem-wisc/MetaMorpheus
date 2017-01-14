@@ -5,44 +5,42 @@ using System.Collections.Generic;
 
 namespace InternalLogicTaskLayer
 {
-    internal class SingleAbsoluteAroundZeroSearchMode : SearchMode
-    {
+	class SingleAbsoluteAroundZeroSearchMode : SearchMode
+	{
 
-        #region Private Fields
+		#region Private Fields
 
-        private string v;
-        private double value;
+		readonly double value;
 
-        #endregion Private Fields
+		#endregion Private Fields
 
-        #region Public Constructors
+		#region Public Constructors
 
-        public SingleAbsoluteAroundZeroSearchMode(string v, double value) : base(v)
-        {
-            this.v = v;
-            this.value = value;
-        }
+		public SingleAbsoluteAroundZeroSearchMode(string v, double value) : base(v)
+		{
+			this.value = value;
+		}
 
-        #endregion Public Constructors
+		#endregion Public Constructors
 
-        #region Public Methods
+		#region Public Methods
 
-        public override bool Accepts(double scanPrecursorMass, double peptideMass)
-        {
-            throw new NotImplementedException();
-        }
+		public override bool Accepts(double scanPrecursorMass, double peptideMass)
+		{
+			return Math.Abs(scanPrecursorMass - peptideMass) < value;
+		}
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
-        {
-            throw new NotImplementedException();
-        }
+		public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+		{
+			yield return new DoubleRange(-value, value);
+		}
 
-        public override string SearchModeString()
-        {
-            throw new NotImplementedException();
-        }
+		public override string SearchModeString()
+		{
+			return "SingleAbsoluteAroundZeroSearchMode" + value;
+		}
 
-        #endregion Public Methods
+		#endregion Public Methods
 
-    }
+	}
 }

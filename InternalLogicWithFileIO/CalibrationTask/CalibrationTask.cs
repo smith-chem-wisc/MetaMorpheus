@@ -36,6 +36,7 @@ namespace InternalLogicTaskLayer
             listOfModListsForCalibration[2].Localize = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             this.taskType = MyTaskEnum.Calibrate;
+			maxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
@@ -79,7 +80,6 @@ namespace InternalLogicTaskLayer
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
             SearchMode searchMode;
             if (precursorMassTolerance.Unit == ToleranceUnit.PPM)
                 searchMode = new SinglePpmAroundZeroSearchMode("", precursorMassTolerance.Value);
@@ -107,9 +107,9 @@ namespace InternalLogicTaskLayer
                 status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, 400);
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, 400);
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
                 //output("Finished opening spectra file " + Path.GetFileName(origDataFile));

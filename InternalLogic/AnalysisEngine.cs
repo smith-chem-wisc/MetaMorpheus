@@ -290,6 +290,15 @@ namespace InternalLogicEngineLayer
             status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
 
+            if (doParsimony)
+			{
+				status("Getting protein parsimony dictionary...");
+				ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
+
+				//status("Building protein groups and doing FDR...");
+				//proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+			}
+
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
@@ -326,14 +335,6 @@ namespace InternalLogicEngineLayer
 
                     yeah[j] = orderedPsmsWithFDR;
                 }
-            }
-            if (doParsimony)
-            {
-                status("Getting protein parsimony dictionary...");
-                var parsimoniousDictionary = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
-
-                //status("Building protein groups and doing FDR...");
-                //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
             }
 
             return new AnalysisResults(this, yeah);
@@ -439,7 +440,7 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        private static void IdentifyUnimodBins(BinTreeStructure myTreeStructure, double v, UsefulProteomicsDatabases.Generated.unimod unimodDeserialized)
+        private static void IdentifyUnimodBins(BinTreeStructure myTreeStructure, double v)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {
@@ -458,7 +459,7 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        private static void IdentifyUniprotBins(BinTreeStructure myTreeStructure, double v, Dictionary<int, ChemicalFormulaModification> uniprotDeseralized)
+        private static void IdentifyUniprotBins(BinTreeStructure myTreeStructure, double v)
         {
             foreach (var bin in myTreeStructure.finalBins)
             {
@@ -571,8 +572,8 @@ namespace InternalLogicEngineLayer
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, 0.003);
             myTreeStructure.AddToBins(limitedpsms_with_fdr);
 
-            IdentifyUnimodBins(myTreeStructure, 0.003, unimodDeserialized);
-            IdentifyUniprotBins(myTreeStructure, 0.003, uniprotDeseralized);
+            IdentifyUnimodBins(myTreeStructure, 0.003);
+            IdentifyUniprotBins(myTreeStructure, 0.003);
             IdentifyAA(myTreeStructure, 0.003);
 
             IdentifyCombos(myTreeStructure, 0.003);
@@ -618,7 +619,7 @@ namespace InternalLogicEngineLayer
             return ids;
         }
 
-        private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> psmList, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching)
+        private List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> psmList)
         {
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
 

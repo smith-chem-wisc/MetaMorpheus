@@ -37,11 +37,11 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMass)
+        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             foreach (double huh in acceptableSortedMassShifts)
             {
-                yield return new DoubleRange(peptideMass + huh, tol);
+                yield return new DoubleRange(peptideMonoisotopicMass + huh, tol);
             }
         }
 
