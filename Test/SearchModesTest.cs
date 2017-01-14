@@ -53,6 +53,7 @@ namespace Test
             Assert.IsTrue(dsm2.Accepts(1000, 1000));
             Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1e6 / 1.0000000001)));
             Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1e6 * 1.0000000001)));
+			Assert.IsTrue(dsm2.Accepts(1000* (1 - 5.0 / 1e6 / 1.0000000001), 1000 ));
             Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1e6 / 1.0000000001)));
             Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1e6 * 1.0000000001)));
 
