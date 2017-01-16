@@ -115,7 +115,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false);
+                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, origDataFileName + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, origDataFileName + s), null, false);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
