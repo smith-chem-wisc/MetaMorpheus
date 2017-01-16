@@ -4,7 +4,6 @@ namespace InternalLogicEngineLayer
 {
     public class SingleEngineEventArgs : EventArgs
     {
-
         #region Public Constructors
 
         public SingleEngineEventArgs(MyEngine myEngine)
@@ -19,6 +18,5 @@ namespace InternalLogicEngineLayer
         public MyEngine myEngine { get; private set; }
 
         #endregion Public Properties
-
     }
 }

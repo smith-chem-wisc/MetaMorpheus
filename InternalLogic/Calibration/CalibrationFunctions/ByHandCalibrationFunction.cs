@@ -2,35 +2,35 @@
 
 namespace InternalLogicCalibration
 {
-	class ByHandCalibrationFunction : CalibrationFunction
-	{
-		#region Private Fields
+    internal class ByHandCalibrationFunction : CalibrationFunction
+    {
+        #region Private Fields
 
-		readonly Action<string> onOutput;
+        private readonly Action<string> onOutput;
 
-		#endregion Private Fields
+        #endregion Private Fields
 
-		#region Public Constructors
+        #region Public Constructors
 
-		public ByHandCalibrationFunction(Action<string> onOutput)
-		{
-			this.onOutput = onOutput;
-		}
+        public ByHandCalibrationFunction(Action<string> onOutput)
+        {
+            this.onOutput = onOutput;
+        }
 
-		#endregion Public Constructors
+        #endregion Public Constructors
 
-		#region Public Methods
+        #region Internal Methods
 
-		internal override double Predict(double[] t)
-		{
-			return -t[1] / 200000;
-		}
+        internal override double Predict(double[] t)
+        {
+            return -t[1] / 200000;
+        }
 
-		internal void Train()
-		{
-			onOutput("Sucessfully trained ByHandCalibrationFunction");
-		}
+        internal void Train()
+        {
+            onOutput("Sucessfully trained ByHandCalibrationFunction");
+        }
 
-		#endregion Public Methods
-	}
+        #endregion Internal Methods
+    }
 }

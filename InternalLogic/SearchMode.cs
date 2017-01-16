@@ -5,15 +5,14 @@ namespace InternalLogicEngineLayer
 {
     public abstract class SearchMode
     {
-
-        #region Public Constructors
+        #region Protected Constructors
 
         protected SearchMode(string fileNameAddition)
         {
             FileNameAddition = fileNameAddition;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Properties
 
@@ -35,6 +34,5 @@ namespace InternalLogicEngineLayer
         public abstract string SearchModeString();
 
         #endregion Public Methods
-
     }
 }

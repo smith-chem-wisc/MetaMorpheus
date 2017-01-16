@@ -10,22 +10,21 @@ namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
+        #region Private Fields
 
-		#region Private Fields
+        private readonly List<Protein> proteinList;
 
-		readonly List<Protein> proteinList;
+        private readonly Protease protease;
 
-		readonly Protease protease;
+        private readonly List<MorpheusModification> fixedModifications;
+        private readonly List<MorpheusModification> variableModifications;
+        private readonly List<MorpheusModification> localizeableModifications;
 
-		readonly List<MorpheusModification> fixedModifications;
-		readonly List<MorpheusModification> variableModifications;
-		readonly List<MorpheusModification> localizeableModifications;
+        #endregion Private Fields
 
-		#endregion Private Fields
+        #region Public Constructors
 
-		#region Public Constructors
-
-		public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease) : base(2)
+        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -167,6 +166,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }

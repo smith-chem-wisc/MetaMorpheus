@@ -121,7 +121,6 @@ namespace Test
                 }
             }
 
-
             /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();

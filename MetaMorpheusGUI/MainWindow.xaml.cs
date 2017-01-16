@@ -6,11 +6,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Reflection;
 
 namespace MetaMorpheusGUI
 {
@@ -19,7 +19,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-
         #region Private Fields
 
         private const string elementsLocation = @"elements.dat";
@@ -40,13 +39,13 @@ namespace MetaMorpheusGUI
         public MainWindow()
         {
             InitializeComponent();
-            
+
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             if (version.Equals("1.0.0.0"))
                 this.Title = "MetaMorpheus: Not a release version";
             else
                 this.Title = "MetaMorpheus: version " + version;
-                
+
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
             MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
@@ -472,6 +471,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 }

@@ -14,242 +14,239 @@ using System.Xml;
 
 namespace InternalLogicTaskLayer
 {
-	public class GPTMDTask : MyTaskEngine
-	{
+    public class GPTMDTask : MyTaskEngine
+    {
+        #region Public Fields
 
-		#region Public Fields
+        public List<ModListForGPTMDTask> listOfModListsForGPTMD;
+        public Tolerance precursorMassTolerance;
 
-		public List<ModListForGPTMDTask> listOfModListsForGPTMD;
-		public Tolerance precursorMassTolerance;
+        #endregion Public Fields
 
-		#endregion Public Fields
+        #region Public Constructors
 
-		#region Public Constructors
+        public GPTMDTask(ObservableCollection<ModList> modList)
+        {
+            // Set default values here:
+            maxMissedCleavages = 2;
+            protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
+            maxModificationIsoforms = 4096;
+            initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            bIons = true;
+            yIons = true;
+            listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
+            foreach (var uu in modList)
+                listOfModListsForGPTMD.Add(new ModListForGPTMDTask(uu));
+            listOfModListsForGPTMD[0].Fixed = true;
+            listOfModListsForGPTMD[1].Variable = true;
+            listOfModListsForGPTMD[2].Localize = true;
+            listOfModListsForGPTMD[3].GPTMD = true;
+            precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            taskType = MyTaskEnum.GPTMD;
+            tol = 0.003;
+            isotopeErrors = false;
+            maxNumPeaksPerScan = 400;
+        }
 
-		public GPTMDTask(ObservableCollection<ModList> modList)
-		{
-			// Set default values here:
-			maxMissedCleavages = 2;
-			protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
-			maxModificationIsoforms = 4096;
-			initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-			productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-			bIons = true;
-			yIons = true;
-			listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
-			foreach (var uu in modList)
-				listOfModListsForGPTMD.Add(new ModListForGPTMDTask(uu));
-			listOfModListsForGPTMD[0].Fixed = true;
-			listOfModListsForGPTMD[1].Variable = true;
-			listOfModListsForGPTMD[2].Localize = true;
-			listOfModListsForGPTMD[3].GPTMD = true;
-			precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
-			taskType = MyTaskEnum.GPTMD;
-			tol = 0.003;
-			isotopeErrors = false;
-			maxNumPeaksPerScan = 400;
-		}
+        #endregion Public Constructors
 
-		#endregion Public Constructors
+        #region Public Properties
 
-		#region Public Properties
+        public double tol { get; set; }
+        public bool isotopeErrors { get; set; }
 
-		public double tol { get; set; }
-		public bool isotopeErrors { get; set; }
+        #endregion Public Properties
 
-		#endregion Public Properties
+        #region Protected Methods
 
-		#region Protected Methods
+        protected override string GetSpecificTaskInfo()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("isotopeErrors: " + isotopeErrors);
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Fixed).Select(b => b.FileName)));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
+            sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.GPTMD).Select(b => b.FileName)));
+            sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
+            sb.Append("tol: " + tol);
+            return sb.ToString();
+        }
 
-		protected override string GetSpecificTaskInfo()
-		{
-			var sb = new StringBuilder();
-			sb.AppendLine("isotopeErrors: " + isotopeErrors);
-			sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Fixed).Select(b => b.FileName)));
-			sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
-			sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
-			sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.GPTMD).Select(b => b.FileName)));
-			sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
-			sb.Append("tol: " + tol);
-			return sb.ToString();
-		}
+        protected override void ValidateParams()
+        {
+            if (listOfModListsForGPTMD == null)
+                throw new EngineValidationException("listOfModListsForGPTMD should not be null");
+            if (listOfModListsForGPTMD.Count(b => b.GPTMD) == 0)
+                throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
+        }
 
-		protected override void ValidateParams()
-		{
-			if (listOfModListsForGPTMD == null)
-				throw new EngineValidationException("listOfModListsForGPTMD should not be null");
-			if (listOfModListsForGPTMD.Count(b => b.GPTMD) == 0)
-				throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
-		}
+        protected override MyResults RunSpecific()
+        {
+            string outputXMLdbFullName = Path.Combine(output_folder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
 
-		protected override MyResults RunSpecific()
-		{
-			string outputXMLdbFullName = Path.Combine(output_folder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
+            MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
+            myGPTMDresults.newDatabases = new List<string>();
 
-			MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
-			myGPTMDresults.newDatabases = new List<string>();
+            var currentRawFileList = rawDataFilenameList;
 
-			var currentRawFileList = rawDataFilenameList;
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-			var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            status("Loading modifications...");
+            List<MorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
+            List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.GPTMD).SelectMany(b => b.getMods()).ToList();
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            HashSet<string> unidentifiedModStrings;
+            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
+            IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
-			status("Loading modifications...");
-			List<MorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
-			List<MorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.getMods()).ToList();
-			List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.getMods()).ToList();
-			List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.GPTMD).SelectMany(b => b.getMods()).ToList();
-			Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
-			HashSet<string> unidentifiedModStrings;
-			MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).OrderBy(b => b), precursorMassTolerance);
+            var searchModes = new List<SearchMode> { searchMode };
 
-			IEnumerable<Tuple<double, double>> combos = LoadCombos();
+            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
+            allPsms[0] = new List<ParentSpectrumMatch>();
 
-			SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).OrderBy(b => b), precursorMassTolerance);
-			var searchModes = new List<SearchMode> { searchMode };
+            status("Loading proteins...");
+            var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
+            AnalysisEngine analysisEngine;
+            AnalysisResults analysisResults = null;
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            {
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                status("Loading spectra file...");
+                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+                if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
+                else
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
+                status("Opening spectra file...");
+                myMsDataFile.Open();
 
-			List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
-			allPsms[0] = new List<ParentSpectrumMatch>();
+                var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
 
-			status("Loading proteins...");
-			var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
-			AnalysisEngine analysisEngine;
-			AnalysisResults analysisResults = null;
-			for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
-			{
-				var origDataFile = currentRawFileList[spectraFileIndex];
-				status("Loading spectra file...");
-				IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-				if (Path.GetExtension(origDataFile).Equals(".mzML"))
-					myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
-				else
-					myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
-				status("Opening spectra file...");
-				myMsDataFile.Open();
+                var searchResults = (ClassicSearchResults)searchEngine.Run();
 
-				var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+                allPsms[0].AddRange(searchResults.outerPsms[0]);
 
-				var searchResults = (ClassicSearchResults)searchEngine.Run();
+                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), false);
+                analysisResults = (AnalysisResults)analysisEngine.Run();
+                //output(analysisResults.ToString());
+            }
 
-				allPsms[0].AddRange(searchResults.outerPsms[0]);
+            if (currentRawFileList.Count > 1)
+            {
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), false);
+                analysisResults = (AnalysisResults)analysisEngine.Run();
+                //output(analysisResults.ToString());
+            }
 
-				analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), false);
-				analysisResults = (AnalysisResults)analysisEngine.Run();
-				//output(analysisResults.ToString());
-			}
+            var gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications[0], isotopeErrors, gptmdModifications, combos, tol);
+            var gptmdResults = (GPTMDResults)gptmdEngine.Run();
 
-			if (currentRawFileList.Count > 1)
-			{
-				analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), false);
-				analysisResults = (AnalysisResults)analysisEngine.Run();
-				//output(analysisResults.ToString());
-			}
+            //output(gptmdResults.ToString());
 
-			var gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications[0], isotopeErrors, gptmdModifications, combos, tol);
-			var gptmdResults = (GPTMDResults)gptmdEngine.Run();
+            WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
 
-			//output(gptmdResults.ToString());
+            myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
 
-			WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
+            return myGPTMDresults;
+        }
 
-			myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
+        #endregion Protected Methods
 
-			return myGPTMDresults;
-		}
+        #region Private Methods
 
-		#endregion Protected Methods
+        private IEnumerable<Tuple<double, double>> LoadCombos()
+        {
+            yield return new Tuple<double, double>(15.994915, 15.994915);
+        }
 
-		#region Private Methods
+        private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
+        {
+            var xmlWriterSettings = new XmlWriterSettings
+            {
+                Indent = true,
+                IndentChars = "  "
+            };
 
-		IEnumerable<Tuple<double, double>> LoadCombos()
-		{
-			yield return new Tuple<double, double>(15.994915, 15.994915);
-		}
+            status("Writing XML...");
+            using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("uniprot");
 
-		void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
-		{
-			var xmlWriterSettings = new XmlWriterSettings
-			{
-				Indent = true,
-				IndentChars = "  "
-			};
+                foreach (Protein protein in proteinList)
+                {
+                    writer.WriteStartElement("entry");
+                    writer.WriteAttributeString("dataset", protein.dataset_abbreviation);
+                    writer.WriteStartElement("accession");
+                    writer.WriteString(protein.Accession);
+                    writer.WriteEndElement();
+                    writer.WriteStartElement("name");
+                    writer.WriteString(protein.name);
+                    writer.WriteEndElement();
 
-			status("Writing XML...");
-			using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
-			{
-				writer.WriteStartDocument();
-				writer.WriteStartElement("uniprot");
+                    writer.WriteStartElement("protein");
+                    writer.WriteStartElement("recommendedName");
+                    writer.WriteStartElement("fullName");
+                    writer.WriteString(protein.fullName);
+                    writer.WriteEndElement();
+                    writer.WriteEndElement();
+                    writer.WriteEndElement();
 
-				foreach (Protein protein in proteinList)
-				{
-					writer.WriteStartElement("entry");
-					writer.WriteAttributeString("dataset", protein.dataset_abbreviation);
-					writer.WriteStartElement("accession");
-					writer.WriteString(protein.Accession);
-					writer.WriteEndElement();
-					writer.WriteStartElement("name");
-					writer.WriteString(protein.name);
-					writer.WriteEndElement();
+                    for (int i = 0; i < protein.bigPeptideTypes.Count(); i++)
+                    {
+                        writer.WriteStartElement("feature");
+                        writer.WriteAttributeString("type", protein.bigPeptideTypes[i]);
+                        writer.WriteStartElement("location");
+                        writer.WriteStartElement("begin");
+                        writer.WriteAttributeString("position", protein.oneBasedBeginPositions[i].ToString());
+                        writer.WriteEndElement();
+                        writer.WriteStartElement("end");
+                        writer.WriteAttributeString("position", protein.oneBasedEndPositions[i].ToString());
+                        writer.WriteEndElement();
+                        writer.WriteEndElement();
+                        writer.WriteEndElement();
+                    }
 
-					writer.WriteStartElement("protein");
-					writer.WriteStartElement("recommendedName");
-					writer.WriteStartElement("fullName");
-					writer.WriteString(protein.fullName);
-					writer.WriteEndElement();
-					writer.WriteEndElement();
-					writer.WriteEndElement();
+                    IEnumerable<Tuple<int, string>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
+                        b => b.Value.Select(c => new Tuple<int, string>(b.Key, c.NameInXML)
+                        ));
+                    IEnumerable<Tuple<int, string>> FinalSortedMods;
+                    if (Mods.ContainsKey(protein.Accession))
+                        FinalSortedMods = SortedMods.Union(Mods[protein.Accession]).OrderBy(b => b.Item1);
+                    else
+                        FinalSortedMods = SortedMods.OrderBy(b => b.Item1);
+                    foreach (var ye in FinalSortedMods)
+                    {
+                        writer.WriteStartElement("feature");
+                        writer.WriteAttributeString("type", "modified residue");
+                        writer.WriteAttributeString("description", ye.Item2);
+                        writer.WriteStartElement("location");
+                        writer.WriteStartElement("position");
+                        writer.WriteAttributeString("position", ye.Item1.ToString());
+                        writer.WriteEndElement();
+                        writer.WriteEndElement();
+                        writer.WriteEndElement();
+                    }
 
-					for (int i = 0; i < protein.bigPeptideTypes.Count(); i++)
-					{
-						writer.WriteStartElement("feature");
-						writer.WriteAttributeString("type", protein.bigPeptideTypes[i]);
-						writer.WriteStartElement("location");
-						writer.WriteStartElement("begin");
-						writer.WriteAttributeString("position", protein.oneBasedBeginPositions[i].ToString());
-						writer.WriteEndElement();
-						writer.WriteStartElement("end");
-						writer.WriteAttributeString("position", protein.oneBasedEndPositions[i].ToString());
-						writer.WriteEndElement();
-						writer.WriteEndElement();
-						writer.WriteEndElement();
-					}
+                    writer.WriteStartElement("sequence");
+                    writer.WriteAttributeString("length", protein.Length.ToString());
+                    writer.WriteString(protein.BaseSequence);
+                    writer.WriteEndElement();
 
-					IEnumerable<Tuple<int, string>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
-						b => b.Value.Select(c => new Tuple<int, string>(b.Key, c.NameInXML)
-						));
-					IEnumerable<Tuple<int, string>> FinalSortedMods;
-					if (Mods.ContainsKey(protein.Accession))
-						FinalSortedMods = SortedMods.Union(Mods[protein.Accession]).OrderBy(b => b.Item1);
-					else
-						FinalSortedMods = SortedMods.OrderBy(b => b.Item1);
-					foreach (var ye in FinalSortedMods)
-					{
-						writer.WriteStartElement("feature");
-						writer.WriteAttributeString("type", "modified residue");
-						writer.WriteAttributeString("description", ye.Item2);
-						writer.WriteStartElement("location");
-						writer.WriteStartElement("position");
-						writer.WriteAttributeString("position", ye.Item1.ToString());
-						writer.WriteEndElement();
-						writer.WriteEndElement();
-						writer.WriteEndElement();
-					}
+                    writer.WriteEndElement();
+                }
 
-					writer.WriteStartElement("sequence");
-					writer.WriteAttributeString("length", protein.Length.ToString());
-					writer.WriteString(protein.BaseSequence);
-					writer.WriteEndElement();
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
+            SucessfullyFinishedWritingFile(outputFileName);
+        }
 
-					writer.WriteEndElement();
-				}
-
-				writer.WriteEndElement();
-				writer.WriteEndDocument();
-			}
-			SucessfullyFinishedWritingFile(outputFileName);
-		}
-
-		#endregion Private Methods
-
-	}
+        #endregion Private Methods
+    }
 }
