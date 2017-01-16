@@ -3,16 +3,16 @@ using System.Text;
 
 namespace InternalLogicTaskLayer
 {
-	class EverythingRunnerResults : MyResults
-	{
-		public EverythingRunnerResults(MyEngine s) : base(s)
-		{
-		}
+    internal class EverythingRunnerResults : MyResults
+    {
+        public EverythingRunnerResults(MyEngine s) : base(s)
+        {
+        }
 
-		protected override string GetStringForOutput()
-		{
-			var sb = new StringBuilder();
-			return sb.ToString();
-		}
-	}
+        protected override string GetStringForOutput()
+        {
+            var sb = new StringBuilder();
+            return sb.ToString();
+        }
+    }
 }

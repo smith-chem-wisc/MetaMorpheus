@@ -8,7 +8,7 @@ namespace InternalLogicTaskLayer
 
         public SearchModeFoSearch(SearchMode uu)
         {
-			sm = uu;
+            sm = uu;
         }
 
         #endregion Public Constructors

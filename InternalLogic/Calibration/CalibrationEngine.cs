@@ -19,16 +19,16 @@ namespace InternalLogicCalibration
         // TUNED TO CORRESPOND TO SPECTROMETER OUTPUT
         // BETTER SPECTROMETERS WOULD HAVE BETTER (LOWER) RESOLUIONS
         // Parameter for isotopolouge distribution searching
-         const double fineResolution = 0.1;
+        private const double fineResolution = 0.1;
 
-         const int minMS1 = 3;
-         const int minMS2 = 2;
-         const int numFragmentsNeeded = 10;
-         const double toleranceInMZforMS1Search = 0.01;
-         int randomSeed;
-         List<NewPsmWithFDR> identifications;
-         IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-         readonly double toleranceInMZforMS2Search;
+        private const int minMS1 = 3;
+        private const int minMS2 = 2;
+        private const int numFragmentsNeeded = 10;
+        private const double toleranceInMZforMS1Search = 0.01;
+        private readonly double toleranceInMZforMS2Search;
+        private int randomSeed;
+        private List<NewPsmWithFDR> identifications;
+        private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
 
         #endregion Private Fields
 
@@ -73,13 +73,13 @@ namespace InternalLogicCalibration
 
                 trainingPointCounts.Add(pointList.Count);
 
-                var pointList1 = pointList.Where((b) => b.inputs[0] <0).ToList();
+                var pointList1 = pointList.Where((b) => b.inputs[0] < 0).ToList();
                 if (pointList1.Count == 0)
                 {
                     throw new EngineRunException("Not enough MS1 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
-                var pointList2 = pointList.Where((b) => b.inputs[0] >0).ToList();
+                var pointList2 = pointList.Where((b) => b.inputs[0] > 0).ToList();
                 if (pointList2.Count == 0)
                 {
                     throw new EngineRunException("Not enough MS2 training points, identification quality is poor");
@@ -99,7 +99,7 @@ namespace InternalLogicCalibration
 
         #region Private Methods
 
-         List<LabeledDataPoint> GetDataPoints()
+        private List<LabeledDataPoint> GetDataPoints()
         {
             status("Extracting data points:");
             // The final training point list
@@ -193,7 +193,7 @@ namespace InternalLogicCalibration
             return trainingPointsToReturn;
         }
 
-         void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
+        private void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
         {
             if (trainingPoints.Count() == 0)
                 return;
@@ -211,7 +211,7 @@ namespace InternalLogicCalibration
             }
         }
 
-         CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
+        private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
         {
             var rnd = new Random(randomSeed);
             var shuffledTrainingPoints = trainingPoints.OrderBy(item => rnd.Next()).ToArray();
@@ -219,16 +219,16 @@ namespace InternalLogicCalibration
             var trainList = shuffledTrainingPoints.Take(trainingPoints.Count * 3 / 4).ToList();
             var testList = shuffledTrainingPoints.Skip(trainingPoints.Count * 3 / 4).ToList();
 
-            var trainList1 = trainList.Where((b) => b.inputs[0]<0 ).ToList();
+            var trainList1 = trainList.Where((b) => b.inputs[0] < 0).ToList();
             WriteDataToFiles(trainList1, "train1" + myMsDataFile.Name);
             //output("trainList1.Count() = " + trainList1.Count());
-            var trainList2 = trainList.Where((b) => b.inputs[0] >0).ToList();
+            var trainList2 = trainList.Where((b) => b.inputs[0] > 0).ToList();
             WriteDataToFiles(trainList2, "train2" + myMsDataFile.Name);
             //output("trainList2.Count() = " + trainList2.Count());
-            var testList1 = testList.Where((b) => b.inputs[0] <0).ToList();
+            var testList1 = testList.Where((b) => b.inputs[0] < 0).ToList();
             WriteDataToFiles(testList1, "test1" + myMsDataFile.Name);
             // output("testList1.Count() = " + testList1.Count());
-            var testList2 = testList.Where((b) => b.inputs[0] >0).ToList();
+            var testList2 = testList.Where((b) => b.inputs[0] > 0).ToList();
             WriteDataToFiles(testList2, "test2" + myMsDataFile.Name);
             //output("testList2.Count() = " + testList2.Count());
 
@@ -238,29 +238,29 @@ namespace InternalLogicCalibration
             double bestMS1MSE = bestMS1predictor.getMSE(testList1);
             double bestMS2MSE = bestMS2predictor.getMSE(testList2);
 
-			{
-				var ms1regressor = new ConstantCalibrationFunction();
-				var ms2regressor = new ConstantCalibrationFunction();
-				ms1regressor.Train(trainList1);
-				ms2regressor.Train(trainList2);
-				combinedCalibration = new SeparateCalibrationFunction(ms1regressor, ms2regressor);
-				combinedCalibration.writePredictedLables(trainList1, "trainList1Constant" + myMsDataFile.Name);
-				combinedCalibration.writePredictedLables(trainList2, "trainList2Constant" + myMsDataFile.Name);
-				combinedCalibration.writePredictedLables(testList1, "testList1Constant" + myMsDataFile.Name);
-				combinedCalibration.writePredictedLables(testList2, "testList2Constant" + myMsDataFile.Name);
-				double MS1mse = ms1regressor.getMSE(testList1);
-				double MS2mse = ms2regressor.getMSE(testList2);
-				if (MS1mse < bestMS1MSE)
-				{
-					bestMS1MSE = MS1mse;
-					bestMS1predictor = ms1regressor;
-				}
-				if (MS2mse < bestMS2MSE)
-				{
-					bestMS2MSE = MS2mse;
-					bestMS2predictor = ms2regressor;
-				}
-			}
+            {
+                var ms1regressor = new ConstantCalibrationFunction();
+                var ms2regressor = new ConstantCalibrationFunction();
+                ms1regressor.Train(trainList1);
+                ms2regressor.Train(trainList2);
+                combinedCalibration = new SeparateCalibrationFunction(ms1regressor, ms2regressor);
+                combinedCalibration.writePredictedLables(trainList1, "trainList1Constant" + myMsDataFile.Name);
+                combinedCalibration.writePredictedLables(trainList2, "trainList2Constant" + myMsDataFile.Name);
+                combinedCalibration.writePredictedLables(testList1, "testList1Constant" + myMsDataFile.Name);
+                combinedCalibration.writePredictedLables(testList2, "testList2Constant" + myMsDataFile.Name);
+                double MS1mse = ms1regressor.getMSE(testList1);
+                double MS2mse = ms2regressor.getMSE(testList2);
+                if (MS1mse < bestMS1MSE)
+                {
+                    bestMS1MSE = MS1mse;
+                    bestMS1predictor = ms1regressor;
+                }
+                if (MS2mse < bestMS2MSE)
+                {
+                    bestMS2MSE = MS2mse;
+                    bestMS2predictor = ms2regressor;
+                }
+            }
             //ms1regressor = new ByHandCalibrationFunction(OnOutput, trainList1);
             //ms2regressor = new ByHandCalibrationFunction(OnOutput, trainList2);
             //combinedCalibration = new SeparateCalibrationFunction(ms1regressor, ms2regressor);
@@ -386,7 +386,7 @@ namespace InternalLogicCalibration
             return bestCf;
         }
 
-         void CalibrateSpectra(CalibrationFunction bestCf)
+        private void CalibrateSpectra(CalibrationFunction bestCf)
         {
             foreach (var a in myMsDataFile)
             {
@@ -456,7 +456,7 @@ namespace InternalLogicCalibration
             }
         }
 
-         int SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
+        private int SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
         {
             int goodIndex = -1;
             var scores = new List<int>();
@@ -616,7 +616,7 @@ namespace InternalLogicCalibration
             return goodIndex;
         }
 
-         List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified)
+        private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified)
         {
             var myCandidatePoints = new List<LabeledDataPoint>();
 

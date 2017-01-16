@@ -6,89 +6,87 @@ using System.Text;
 
 namespace InternalLogicEngineLayer
 {
-	public abstract class ParentSpectrumMatch
-	{
+    public abstract class ParentSpectrumMatch
+    {
+        #region Internal Fields
 
-		#region Internal Fields
+        internal Dictionary<ProductType, double[]> matchedIonsList;
+        public int scanNumber;
+        internal int scanPrecursorCharge;
+        public double scanPrecursorMass;
 
-		internal Dictionary<ProductType, double[]> matchedIonsList;
-		public int scanNumber;
-		internal int scanPrecursorCharge;
-		public double scanPrecursorMass;
+        #endregion Internal Fields
 
-		#endregion Internal Fields
+        #region Protected Fields
 
-		#region Protected Fields
+        protected CompactPeptide compactPeptide;
 
-		protected CompactPeptide compactPeptide;
+        #endregion Protected Fields
 
-		#endregion Protected Fields
+        #region Public Properties
 
-		#region Public Properties
+        public List<double> LocalizedScores { get; internal set; }
+        public double Score { get; protected set; }
 
-		public List<double> LocalizedScores { get; internal set; }
-		public double Score { get; protected set; }
+        #endregion Public Properties
 
-		#endregion Public Properties
+        #region Public Methods
 
-		#region Public Methods
+        public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications);
 
-		public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications);
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
 
-		public override string ToString()
-		{
-			var sb = new StringBuilder();
+            //sb.Append(spectraFileIndex.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(scanRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            // sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            // sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            //sb.Append(ScoreFromSearch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
 
-			//sb.Append(spectraFileIndex.ToString(CultureInfo.InvariantCulture) + '\t');
-			sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-			//sb.Append(scanRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			//sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			// sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			//sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			// sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-			//sb.Append(ScoreFromSearch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append("[");
+            foreach (var kvp in matchedIonsList)
+                sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+            sb.Append("]" + '\t');
 
-			sb.Append("[");
-			foreach (var kvp in matchedIonsList)
-				sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-			sb.Append("]" + '\t');
+            sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Count(c => c > 0))) + '\t');
 
-			sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Count(c => c > 0))) + '\t');
+            sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 
-			sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
+            sb.Append((LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
+                sb.Append("N");
+            else if (LocalizedScores.IndexOf(LocalizedScores.Max()) == LocalizedScores.Count - 1)
+                sb.Append("C");
+            else
+                sb.Append("");
 
-			sb.Append((LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
-			if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
-				sb.Append("N");
-			else if (LocalizedScores.IndexOf(LocalizedScores.Max()) == LocalizedScores.Count - 1)
-				sb.Append("C");
-			else
-				sb.Append("");
+            return sb.ToString();
+        }
 
-			return sb.ToString();
-		}
+        #endregion Public Methods
 
-		#endregion Public Methods
+        #region Internal Methods
 
-		#region Internal Methods
+        internal static string GetTabSeparatedHeader()
+        {
+            var sb = new StringBuilder();
+            sb.Append("scanNumber" + '\t');
+            sb.Append("scanPrecursorCharge" + '\t');
+            sb.Append("scanPrecursorMass" + '\t');
+            sb.Append("matched ions" + '\t');
+            sb.Append("matched ion counts" + '\t');
+            sb.Append("localized scores" + '\t');
+            sb.Append("improvement" + '\t');
+            sb.Append("terminal localization");
+            return sb.ToString();
+        }
 
-		internal static string GetTabSeparatedHeader()
-		{
-			var sb = new StringBuilder();
-			sb.Append("scanNumber" + '\t');
-			sb.Append("scanPrecursorCharge" + '\t');
-			sb.Append("scanPrecursorMass" + '\t');
-			sb.Append("matched ions" + '\t');
-			sb.Append("matched ion counts" + '\t');
-			sb.Append("localized scores" + '\t');
-			sb.Append("improvement" + '\t');
-			sb.Append("terminal localization");
-			return sb.ToString();
-		}
-
-		#endregion Internal Methods
-
-	}
+        #endregion Internal Methods
+    }
 }

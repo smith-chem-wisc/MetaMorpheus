@@ -9,9 +9,9 @@ namespace InternalLogicTaskLayer
     {
         #region Private Fields
 
-         readonly List<MorpheusModification> mods;
+        private readonly List<MorpheusModification> mods;
 
-         string FullFileName;
+        private string FullFileName;
 
         #endregion Private Fields
 

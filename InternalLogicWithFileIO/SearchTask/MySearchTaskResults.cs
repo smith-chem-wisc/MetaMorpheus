@@ -2,16 +2,16 @@
 
 namespace InternalLogicTaskLayer
 {
-	class MySearchTaskResults : MyTaskResults
-	{
-		public MySearchTaskResults(MyTaskEngine s) : base(s)
-		{
-		}
+    internal class MySearchTaskResults : MyTaskResults
+    {
+        public MySearchTaskResults(MyTaskEngine s) : base(s)
+        {
+        }
 
-		protected override string GetStringForOutput()
-		{
-			var sb = new StringBuilder();
-			return sb.ToString();
-		}
-	}
+        protected override string GetStringForOutput()
+        {
+            var sb = new StringBuilder();
+            return sb.ToString();
+        }
+    }
 }

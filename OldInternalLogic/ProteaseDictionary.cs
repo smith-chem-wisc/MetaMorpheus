@@ -6,9 +6,9 @@ namespace OldInternalLogic
 {
     public class ProteaseDictionary : Dictionary<string, Protease>
     {
-        static readonly ProteaseDictionary instance = new ProteaseDictionary();
+        private static readonly ProteaseDictionary instance = new ProteaseDictionary();
 
-        ProteaseDictionary()
+        private ProteaseDictionary()
         {
             using (StreamReader proteases = new StreamReader(Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), "proteases.tsv")))
             {

@@ -7,9 +7,9 @@ namespace InternalLogicCalibration
 {
     public class LinearCalibrationFunctionMathNet : CalibrationFunction
     {
-        Func<double[], double> f;
-        readonly int numFeatures;
-         readonly TransformFunction transformFunction;
+        private Func<double[], double> f;
+        private readonly int numFeatures;
+        private readonly TransformFunction transformFunction;
 
         public LinearCalibrationFunctionMathNet(TransformFunction transformFunction)
         {

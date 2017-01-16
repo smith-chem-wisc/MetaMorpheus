@@ -9,10 +9,10 @@ namespace InternalLogicCalibration
     {
         #region Private Fields
 
-         Func<double[], double> f;
-         readonly int numFeatures;
-         readonly int numFeaturesExpanded;
-         TransformFunction transform;
+        private Func<double[], double> f;
+        private readonly int numFeatures;
+        private readonly int numFeaturesExpanded;
+        private TransformFunction transform;
 
         #endregion Private Fields
 
@@ -60,7 +60,7 @@ namespace InternalLogicCalibration
 
         #region Private Methods
 
-         double[] ExpandFeatures(double[] input)
+        private double[] ExpandFeatures(double[] input)
         {
             double[] outputExpanded = new double[numFeaturesExpanded];
             for (int i = 0; i < numFeatures; i++)

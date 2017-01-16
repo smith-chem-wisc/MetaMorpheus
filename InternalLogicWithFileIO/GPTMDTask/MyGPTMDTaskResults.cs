@@ -2,16 +2,16 @@
 
 namespace InternalLogicTaskLayer
 {
-	class MyGPTMDTaskResults : MyTaskResults
-	{
-		public MyGPTMDTaskResults(MyTaskEngine s) : base(s)
-		{
-		}
+    internal class MyGPTMDTaskResults : MyTaskResults
+    {
+        public MyGPTMDTaskResults(MyTaskEngine s) : base(s)
+        {
+        }
 
-		protected override string GetStringForOutput()
-		{
-			var sb = new StringBuilder();
-			return sb.ToString();
-		}
-	}
+        protected override string GetStringForOutput()
+        {
+            var sb = new StringBuilder();
+            return sb.ToString();
+        }
+    }
 }

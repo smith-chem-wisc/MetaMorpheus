@@ -6,15 +6,15 @@ namespace InternalLogicEngineLayer
 {
     public class BinTreeStructure
     {
-		#region Private Fields
+        #region Private Fields
 
-		double dc;
+        private double dc;
 
-		#endregion Private Fields
+        #endregion Private Fields
 
-		#region Public Properties
+        #region Public Properties
 
-		public List<Bin> finalBins { get; private set; }
+        public List<Bin> finalBins { get; private set; }
 
         #endregion Public Properties
 
@@ -103,41 +103,41 @@ namespace InternalLogicEngineLayer
             }
         }
 
-		#endregion Public Methods
+        #endregion Public Methods
 
-		#region Private Methods
+        #region Private Methods
 
-		double getSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
-		{
-			int currentDown = i - 1;
-			int currentUp = i + 1;
-			int lookingAtP;
-			double distDown, distUp;
-			while (true)
-			{
-				distDown = currentDown == -1 ? double.MaxValue : thisMassShift - listOfMassShifts[currentDown];
-				distUp = currentUp == listOfMassShifts.Count ? double.MaxValue : listOfMassShifts[currentUp] - thisMassShift;
-				if (distDown < distUp)
-				{
-					lookingAtP = p[currentDown];
-					if (lookingAtP > thisP)
-					{
-						return distDown;
-					}
-					currentDown--;
-				}
-				else
-				{
-					lookingAtP = p[currentUp];
-					if (lookingAtP > thisP)
-					{
-						return distUp;
-					}
-					currentUp++;
-				}
-			}
-		}
+        private double getSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
+        {
+            int currentDown = i - 1;
+            int currentUp = i + 1;
+            int lookingAtP;
+            double distDown, distUp;
+            while (true)
+            {
+                distDown = currentDown == -1 ? double.MaxValue : thisMassShift - listOfMassShifts[currentDown];
+                distUp = currentUp == listOfMassShifts.Count ? double.MaxValue : listOfMassShifts[currentUp] - thisMassShift;
+                if (distDown < distUp)
+                {
+                    lookingAtP = p[currentDown];
+                    if (lookingAtP > thisP)
+                    {
+                        return distDown;
+                    }
+                    currentDown--;
+                }
+                else
+                {
+                    lookingAtP = p[currentUp];
+                    if (lookingAtP > thisP)
+                    {
+                        return distUp;
+                    }
+                    currentUp++;
+                }
+            }
+        }
 
-		#endregion Private Methods
-	}
+        #endregion Private Methods
+    }
 }

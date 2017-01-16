@@ -9,7 +9,7 @@ namespace OldInternalLogic
 
         #endregion Protected Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
         protected Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
         {
@@ -18,7 +18,7 @@ namespace OldInternalLogic
             this.OneBasedEndResidueInProtein = OneBasedEndResidueInProtein;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Properties
 
