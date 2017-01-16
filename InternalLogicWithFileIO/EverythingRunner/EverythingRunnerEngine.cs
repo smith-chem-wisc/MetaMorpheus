@@ -46,7 +46,7 @@ namespace InternalLogicTaskLayer
         protected override MyResults RunSpecific()
         {
             StartingAllTasks();
-            var startTimeForFilename = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             var MatchingChars =
                 from len in Enumerable.Range(0, currentRawDataFilenameList.Min(s => s.Length)).Reverse()
@@ -62,11 +62,11 @@ namespace InternalLogicTaskLayer
                 string output_folder = null;
                 if (taskList.Count == 1)
                 {
-                    output_folder = Path.Combine(longestDir, startTimeForFilename);
+                    output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
                 }
                 else
                 {
-                    output_folder = Path.Combine(longestDir, startTimeForFilename);
+                    output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
                     output_folder = Path.Combine(output_folder, "Task" + (i + 1) + ok.taskType);
                 }
 
