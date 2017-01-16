@@ -1,9 +1,11 @@
 ﻿using MassSpectrometry;
 using OldInternalLogic;
+using Proteomics;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,31 +15,31 @@ namespace InternalLogicEngineLayer
     {
         #region Private Fields
 
-        private ParentSpectrumMatch[][] newPsms;
+        private readonly ParentSpectrumMatch[][] newPsms;
 
-        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
-        private List<Protein> proteinList;
+        private readonly List<Protein> proteinList;
 
-        private List<MorpheusModification> variableModifications;
+        private readonly List<MorpheusModification> variableModifications;
 
-        private List<MorpheusModification> fixedModifications;
+        private readonly List<MorpheusModification> fixedModifications;
 
-        private List<MorpheusModification> localizeableModifications;
+        private readonly List<MorpheusModification> localizeableModifications;
 
-        private Protease protease;
+        private readonly Protease protease;
 
-        private List<SearchMode> searchModes;
+        private readonly List<SearchMode> searchModes;
 
-        private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
 
-        private Tolerance fragmentTolerance;
+        private readonly Tolerance fragmentTolerance;
 
-        private Action<BinTreeStructure, string> action1;
+        private readonly Action<BinTreeStructure, string> action1;
 
-        private Action<List<NewPsmWithFDR>, string> action2;
+        private readonly Action<List<NewPsmWithFDR>, string> action2;
 
-        private bool doParsimony;
+        private readonly bool doParsimony;
 
         #endregion Private Fields
 
@@ -67,7 +69,7 @@ namespace InternalLogicEngineLayer
         public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
         {
             // Right now very stupid, add the first decoy one, and if no decoy, add the first one
-            Dictionary<CompactPeptide, PeptideWithSetModifications> outDict = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
+            var outDict = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
                 var k = kvp.Key;
@@ -296,6 +298,15 @@ namespace InternalLogicEngineLayer
             status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
 
+            if (doParsimony)
+            {
+                status("Getting protein parsimony dictionary...");
+                ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
+
+                //status("Building protein groups and doing FDR...");
+                //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+            }
+
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
@@ -318,9 +329,10 @@ namespace InternalLogicEngineLayer
 
                     var orderedPsmsWithPeptides = psmsWithTargetDecoyKnown.Where(b => b != null).OrderByDescending(b => b.Score);
 
+                    status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
                     var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
-                    if (limitedpsms_with_fdr.Where(b => !b.isDecoy).Count() > 0)
+                    if (limitedpsms_with_fdr.Count(b => !b.isDecoy) > 0)
                     {
                         status("Running histogram analysis...");
                         var hm = MyAnalysis(limitedpsms_with_fdr);
@@ -329,55 +341,265 @@ namespace InternalLogicEngineLayer
 
                     action2(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
-                    List<ProteinGroup> proteinGroupsList = null;
-
-                    if (doParsimony)
-                    {
-                        status("Applying protein parsimony...");
-                        compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching);
-
-                        //status("Building protein groups and doing FDR...");
-                        //proteinGroupsList = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
-                    }
-
                     yeah[j] = orderedPsmsWithFDR;
                 }
             }
 
-
-            return new AnalysisResults(this, yeah, compactPeptideToProteinPeptideMatching);
+            return new AnalysisResults(this, yeah);
         }
 
         #endregion Protected Methods
 
         #region Private Methods
 
+        private static void IdentifyAAsInCommon(BinTreeStructure myTreeStructure)
+        {
+            foreach (Bin bin in myTreeStructure.finalBins)
+            {
+                bin.AAsInCommon = new Dictionary<char, int>();
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.isDecoy))
+                {
+                    var chars = new HashSet<char>();
+                    for (int i = 0; i < hehe.Item1.Count(); i++)
+                    {
+                        chars.Add(hehe.Item1[i]);
+                    }
+                    foreach (var ch in chars)
+                    {
+                        if (bin.AAsInCommon.ContainsKey(ch))
+                        {
+                            bin.AAsInCommon[ch]++;
+                        }
+                        else
+                            bin.AAsInCommon.Add(ch, 1);
+                    }
+                }
+            }
+        }
+
+        private static void IdentifyMods(BinTreeStructure myTreeStructure)
+        {
+            foreach (Bin bin in myTreeStructure.finalBins)
+            {
+                bin.modsInCommon = new Dictionary<string, int>();
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.isDecoy))
+                {
+                    int inModLevel = 0;
+                    string currentMod = "";
+                    for (int i = 0; i < hehe.Item2.Count(); i++)
+                    {
+                        char ye = hehe.Item2[i];
+                        if (ye.Equals('('))
+                        {
+                            inModLevel++;
+                            if (inModLevel == 1)
+                            {
+                                continue;
+                            }
+                        }
+                        else if (ye.Equals(')'))
+                        {
+                            inModLevel--;
+                            if (inModLevel == 0)
+                            {
+                                if (bin.modsInCommon.ContainsKey(currentMod))
+                                    bin.modsInCommon[currentMod]++;
+                                else
+                                    bin.modsInCommon.Add(currentMod, 1);
+                                currentMod = "";
+                            }
+                            continue;
+                        }
+                        if (inModLevel > 0)
+                        {
+                            currentMod += ye;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void IdentifyResidues(BinTreeStructure myTreeStructure)
+        {
+            foreach (Bin bin in myTreeStructure.finalBins)
+            {
+                bin.residueCount = new Dictionary<char, int>();
+                foreach (var hehe in bin.uniquePSMs.Values)
+                {
+                    double bestScore = hehe.Item3.thisPSM.LocalizedScores.Max();
+                    if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.isDecoy)
+                    {
+                        for (int i = 0; i < hehe.Item1.Count(); i++)
+                        {
+                            if (bestScore - hehe.Item3.thisPSM.LocalizedScores[i] < 0.5)
+                            {
+                                if (bin.residueCount.ContainsKey(hehe.Item1[i]))
+                                    bin.residueCount[hehe.Item1[i]]++;
+                                else
+                                    bin.residueCount.Add(hehe.Item1[i], 1);
+                            }
+                        }
+                        if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores[0] < 0.5)
+                            bin.NlocCount++;
+                        if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores.Last() < 0.5)
+                            bin.ClocCount++;
+                    }
+                }
+            }
+        }
+
+        private static void IdentifyUnimodBins(BinTreeStructure myTreeStructure, double v)
+        {
+            foreach (var bin in myTreeStructure.finalBins)
+            {
+                var ok = new HashSet<string>();
+                var okformula = new HashSet<string>();
+                foreach (var hm in unimodDeserialized.modifications)
+                {
+                    if (Math.Abs(hm.mono_mass - bin.MassShift) <= v)
+                    {
+                        ok.Add(hm.full_name);
+                        okformula.Add(hm.composition);
+                    }
+                }
+                bin.UnimodId = string.Join(" or ", ok);
+                bin.UnimodFormulas = string.Join(" or ", okformula);
+            }
+        }
+
+        private static void IdentifyUniprotBins(BinTreeStructure myTreeStructure, double v)
+        {
+            foreach (var bin in myTreeStructure.finalBins)
+            {
+                var ok = new HashSet<string>();
+                foreach (var hm in uniprotDeseralized)
+                {
+                    if (Math.Abs(hm.Value.MonoisotopicMass - bin.MassShift) <= v)
+                    {
+                        ok.Add(hm.Value.NameAndSites);
+                    }
+                }
+                bin.uniprotID = string.Join(" or ", ok);
+            }
+        }
+
+        private static void IdentifyCombos(BinTreeStructure myTreeStructure, double v)
+        {
+            double totalTargetCount = myTreeStructure.finalBins.Select(b => b.CountTarget).Sum();
+            var ok = new HashSet<Tuple<double, double, double>>();
+            foreach (var bin in myTreeStructure.finalBins.Where(b => Math.Abs(b.MassShift) > v))
+                foreach (var bin2 in myTreeStructure.finalBins.Where(b => Math.Abs(b.MassShift) > v))
+                    if (bin.CountTarget * bin2.CountTarget >= totalTargetCount * 3)
+                        ok.Add(new Tuple<double, double, double>(bin.MassShift, bin2.MassShift, Math.Min(bin.CountTarget, bin2.CountTarget)));
+
+            foreach (var bin in myTreeStructure.finalBins)
+            {
+                var okk = new HashSet<string>();
+                foreach (var hm in ok)
+                {
+                    if (Math.Abs(hm.Item1 + hm.Item2 - bin.MassShift) <= v && bin.CountTarget < hm.Item3)
+                    {
+                        okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
+                    }
+                }
+                bin.combos = string.Join(" or ", okk);
+            }
+        }
+
+        private static void IdentifyAA(BinTreeStructure myTreeStructure, double v)
+        {
+            foreach (var bin in myTreeStructure.finalBins)
+            {
+                var ok = new HashSet<string>();
+                for (char c = 'A'; c <= 'Z'; c++)
+                {
+                    Residue residue;
+                    if (Residue.TryGetResidue(c, out residue))
+                    {
+                        if (Math.Abs(residue.MonoisotopicMass - bin.MassShift) <= v)
+                        {
+                            ok.Add("Add " + residue.Name);
+                        }
+                        if (Math.Abs(residue.MonoisotopicMass + bin.MassShift) <= v)
+                        {
+                            ok.Add("Remove " + residue.Name);
+                        }
+                        for (char cc = 'A'; cc <= 'Z'; cc++)
+                        {
+                            Residue residueCC;
+                            if (Residue.TryGetResidue(cc, out residueCC))
+                            {
+                                if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - bin.MassShift) <= v)
+                                {
+                                    ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
+                                }
+                                if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + bin.MassShift) <= v)
+                                {
+                                    ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
+                                }
+                            }
+                        }
+                    }
+                }
+                bin.AA = string.Join(" or ", ok);
+            }
+        }
+
+        private static void IdentifyMine(BinTreeStructure myTreeStructure, double v)
+        {
+            var myInfos = new List<MyInfo>();
+            myInfos.Add(new MyInfo(0, "Exact match!"));
+            myInfos.Add(new MyInfo(-48.128629, "Phosphorylation-Lysine: Probably reverse is the correct match"));
+            myInfos.Add(new MyInfo(-76.134779, "Phosphorylation-Arginine: Probably reverse is the correct match"));
+            myInfos.Add(new MyInfo(1.003, "1 MM"));
+            myInfos.Add(new MyInfo(2.005, "2 MM"));
+            myInfos.Add(new MyInfo(3.008, "3 MM"));
+            myInfos.Add(new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"));
+            myInfos.Add(new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."));
+            myInfos.Add(new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"));
+            myInfos.Add(new MyInfo(-79.966331, "neg Phosphorylation. Probably real thing does not have it, but somehow matched! Might want to exclude."));
+            myInfos.Add(new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"));
+            myInfos.Add(new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"));
+            myInfos.Add(new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"));
+            foreach (Bin bin in myTreeStructure.finalBins)
+            {
+                bin.mine = "";
+                foreach (MyInfo myInfo in myInfos)
+                {
+                    if (Math.Abs(myInfo.MassShift - bin.MassShift) <= v)
+                    {
+                        bin.mine = myInfo.infostring;
+                    }
+                }
+            }
+        }
+
         private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr)
         {
-            BinTreeStructure myTreeStructure = new BinTreeStructure();
+            var myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, 0.003);
             myTreeStructure.AddToBins(limitedpsms_with_fdr);
 
-            MyAnalysisClass.IdentifyUnimodBins(myTreeStructure, 0.003, unimodDeserialized);
-            MyAnalysisClass.IdentifyUniprotBins(myTreeStructure, 0.003, uniprotDeseralized);
-            MyAnalysisClass.IdentifyAA(myTreeStructure, 0.003);
+            IdentifyUnimodBins(myTreeStructure, 0.003);
+            IdentifyUniprotBins(myTreeStructure, 0.003);
+            IdentifyAA(myTreeStructure, 0.003);
 
-            MyAnalysisClass.IdentifyCombos(myTreeStructure, 0.003);
+            IdentifyCombos(myTreeStructure, 0.003);
 
-            MyAnalysisClass.IdentifyResidues(myTreeStructure);
+            IdentifyResidues(myTreeStructure);
 
-            MyAnalysisClass.IdentifyMods(myTreeStructure);
+            IdentifyMods(myTreeStructure);
 
-            MyAnalysisClass.IdentifyAAsInCommon(myTreeStructure);
+            IdentifyAAsInCommon(myTreeStructure);
 
-            MyAnalysisClass.IdentifyMine(myTreeStructure, 0.003);
+            IdentifyMine(myTreeStructure, 0.003);
 
             return myTreeStructure;
         }
 
         private static List<NewPsmWithFDR> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithTargetDecoyKnown> items)
         {
-            List<NewPsmWithFDR> ids = new List<NewPsmWithFDR>();
+            var ids = new List<NewPsmWithFDR>();
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
@@ -484,6 +706,9 @@ namespace InternalLogicEngineLayer
 
             status("Adding possible sources to peptide dictionary...");
 
+            int proteinsSeen = 0;
+            int old_progress = 0;
+
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
@@ -499,7 +724,7 @@ namespace InternalLogicEngineLayer
 
                         peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             HashSet<PeptideWithSetModifications> v;
@@ -520,6 +745,13 @@ namespace InternalLogicEngineLayer
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                         }
+                    }
+                    proteinsSeen += fff.Item2 - fff.Item1;
+                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
+                    if (new_progress > old_progress)
+                    {
+                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop"));
+                        old_progress = new_progress;
                     }
                 }
             });
