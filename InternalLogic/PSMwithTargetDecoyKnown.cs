@@ -11,6 +11,7 @@ namespace InternalLogicEngineLayer
 {
     public class PSMwithTargetDecoyKnown
     {
+
         #region Public Fields
 
         public ParentSpectrumMatch newPsm;
@@ -62,7 +63,6 @@ namespace InternalLogicEngineLayer
             PeptideMonoisotopicMass = peptidesWithSetModifications.First().MonoisotopicMass;
             FullSequence = peptidesWithSetModifications.First().Sequence;
             BaseSequence = peptidesWithSetModifications.First().BaseSequence;
-            SequenceWithChemicalFormulas = peptidesWithSetModifications.First().SequenceWithChemicalFormulas;
             MissedCleavages = peptidesWithSetModifications.First().MissedCleavages;
             numVariableMods = peptidesWithSetModifications.First().numVariableMods;
         }
@@ -108,7 +108,13 @@ namespace InternalLogicEngineLayer
 
         public int numVariableMods { get; private set; }
 
-        public string SequenceWithChemicalFormulas { get; internal set; }
+        public string SequenceWithChemicalFormulas
+        {
+            get
+            {
+                return peptidesWithSetModifications.First().SequenceWithChemicalFormulas;
+            }
+        }
 
         #endregion Public Properties
 
@@ -202,5 +208,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Internal Methods
+
     }
 }

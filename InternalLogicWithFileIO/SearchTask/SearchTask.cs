@@ -85,19 +85,6 @@ namespace InternalLogicTaskLayer
             return sb.ToString();
         }
 
-        protected override void ValidateParams()
-        {
-            foreach (var huh in listOfModListsForSearch)
-            {
-                if (huh.Fixed && huh.Localize)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
-                if (huh.Fixed && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
-                if (huh.Localize && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
-            }
-        }
-
         protected override MyResults RunSpecific()
         {
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();

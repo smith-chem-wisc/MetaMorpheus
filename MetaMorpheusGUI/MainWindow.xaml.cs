@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,10 +20,6 @@ namespace MetaMorpheusGUI
     {
 
         #region Private Fields
-
-        private const string elementsLocation = @"elements.dat";
-        private const string unimodLocation = @"unimod_tables.xml";
-        private const string uniprotLocation = @"ptmlist.txt";
 
         private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
         private readonly ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
@@ -41,15 +36,10 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            if (version.Equals("1.0.0.0"))
+            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
                 this.Title = "MetaMorpheus: Not a release version";
             else
-                this.Title = "MetaMorpheus: version " + version;
-
-            UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-            MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-            MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+                this.Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = xmlDBobservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;

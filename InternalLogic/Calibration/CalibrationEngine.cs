@@ -13,6 +13,7 @@ namespace InternalLogicCalibration
 {
     public class CalibrationEngine : MyEngine
     {
+
         #region Private Fields
 
         // THIS PARAMETER IS FRAGILE!!!
@@ -46,14 +47,6 @@ namespace InternalLogicCalibration
 
         #region Protected Methods
 
-        protected override void ValidateParams()
-        {
-            if (identifications == null)
-                throw new EngineValidationException("identifications cannot be null");
-            if (identifications.Count == 0)
-                throw new EngineValidationException("Need to have at least one identification to calibrate on");
-        }
-
         protected override MyResults RunSpecific()
         {
             status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
@@ -76,17 +69,20 @@ namespace InternalLogicCalibration
                 var pointList1 = pointList.Where((b) => b.inputs[0] < 0).ToList();
                 if (pointList1.Count == 0)
                 {
-                    throw new EngineRunException("Not enough MS1 training points, identification quality is poor");
+                    return new MyErroredResults(this, "Not enough MS1 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
                 var pointList2 = pointList.Where((b) => b.inputs[0] > 0).ToList();
                 if (pointList2.Count == 0)
                 {
-                    throw new EngineRunException("Not enough MS2 training points, identification quality is poor");
+                    return new MyErroredResults(this, "Not enough MS2 training points, identification quality is poor");
                 }
                 WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
+
+                if (combinedCalibration == null)
+                    return new MyErroredResults(this, "Could not calibrate");
 
                 combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
                 combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
@@ -374,7 +370,7 @@ namespace InternalLogicCalibration
             }
             catch (ArgumentException e)
             {
-                throw new EngineRunException("Could not calibrate: " + e.Message);
+                return null;
             }
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
@@ -808,5 +804,6 @@ namespace InternalLogicCalibration
         }
 
         #endregion Private Methods
+
     }
 }

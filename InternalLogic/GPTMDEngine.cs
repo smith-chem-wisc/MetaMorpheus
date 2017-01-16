@@ -7,6 +7,7 @@ namespace InternalLogicEngineLayer
 {
     public class GPTMDEngine : MyEngine
     {
+
         #region Private Fields
 
         private readonly List<NewPsmWithFDR> allResultingIdentifications;
@@ -31,12 +32,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Constructors
 
         #region Protected Methods
-
-        protected override void ValidateParams()
-        {
-            if (allResultingIdentifications == null)
-                throw new EngineValidationException("allResultingIdentifications cannot be null");
-        }
 
         protected override MyResults RunSpecific()
         {
@@ -137,5 +132,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

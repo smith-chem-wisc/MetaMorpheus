@@ -51,14 +51,6 @@ namespace InternalLogicEngineLayer
 
         #region Protected Methods
 
-        protected override void ValidateParams()
-        {
-            if (myMsDataFile == null)
-                throw new EngineValidationException("myMsDataFile cannot be null");
-            if (proteinList == null)
-                throw new EngineValidationException("proteinList cannot be null");
-        }
-
         protected override MyResults RunSpecific()
         {
             status("In classic search engine!");

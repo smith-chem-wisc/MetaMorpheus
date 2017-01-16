@@ -7,12 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 namespace MetaMorpheusCommandLine
 {
     internal class Program
     {
+
         #region Private Fields
 
         private const string elementsLocation = @"elements.dat";
@@ -26,21 +26,16 @@ namespace MetaMorpheusCommandLine
 
         private static void Main(string[] args)
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            if (version.Equals("1.0.0.0"))
+            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
                 Console.WriteLine("Not a release version");
             else
-                Console.WriteLine(version);
+                Console.WriteLine(MyEngine.MetaMorpheusVersion);
 
             if (args == null || args.Length == 0)
             {
                 Console.WriteLine("Usage:");
                 return;
             }
-
-            UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-            MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-            MyEngine.uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
 
             MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
             MyEngine.outLabelStatusHandler += MyEngine_outLabelStatusHandler;
@@ -144,5 +139,6 @@ namespace MetaMorpheusCommandLine
         }
 
         #endregion Private Methods
+
     }
 }

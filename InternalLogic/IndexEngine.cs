@@ -10,6 +10,7 @@ namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
+
         #region Private Fields
 
         private readonly List<Protein> proteinList;
@@ -51,20 +52,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Methods
 
         #region Protected Methods
-
-        protected override void ValidateParams()
-        {
-            if (fixedModifications == null)
-                throw new EngineValidationException("fixedModifications cannot be null");
-            if (proteinList == null)
-                throw new EngineValidationException("proteinList cannot be null");
-            if (localizeableModifications == null)
-                throw new EngineValidationException("localizeableModifications cannot be null");
-            if (protease == null)
-                throw new EngineValidationException("protease cannot be null");
-            if (variableModifications == null)
-                throw new EngineValidationException("variableModifications cannot be null");
-        }
 
         protected override MyResults RunSpecific()
         {
@@ -166,5 +153,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Protected Methods
+
     }
 }

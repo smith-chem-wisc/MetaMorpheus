@@ -51,18 +51,6 @@ namespace InternalLogicTaskLayer
 
         #region Protected Methods
 
-        protected override void ValidateParams()
-        {
-            if (xmlDbFilenameList == null)
-                throw new EngineValidationException("xMLdblist cannot be null");
-            if (xmlDbFilenameList.Count == 0)
-                throw new EngineValidationException("xMLdblist cannot be empty");
-            if (rawDataFilenameList == null)
-                throw new EngineValidationException("rawDataAndResultslist cannot be null");
-            if (rawDataFilenameList.Count == 0)
-                throw new EngineValidationException("rawDataAndResultslist cannot be empty");
-        }
-
         protected override string GetSpecificTaskInfo()
         {
             var sb = new StringBuilder();
