@@ -7,15 +7,22 @@ namespace InternalLogicEngineLayer
 {
     public class ProteinGroup
     {
-        public HashSet<Protein> proteins { get; private set; }
-        public List<NewPsmWithFDR> psmList { get; private set; }
-        public List<CompactPeptide> peptideList { get; private set; }
-        public List<CompactPeptide> uniquePeptideList { get; private set; }
+
+        #region Public Fields
+
         public readonly bool isDecoy;
         public readonly double proteinGroupScore;
+
+        #endregion Public Fields
+
+        #region Private Fields
+
         private readonly double summedIntensity;
         private readonly double summedUniquePeptideIntensity;
-        public double QValue { get; set; }
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
@@ -41,8 +48,8 @@ namespace InternalLogicEngineLayer
             // construct list of unique peptides
             foreach (var peptide in peptideList)
             {
-                if (peptide.isUnique)
-                    uniquePeptideList.Add(peptide);
+                // if (peptide.isUnique)
+                //    uniquePeptideList.Add(peptide);
             }
 
             // calculate the protein group score
@@ -57,6 +64,20 @@ namespace InternalLogicEngineLayer
             // q value
             QValue = 0;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public HashSet<Protein> proteins { get; private set; }
+        public List<NewPsmWithFDR> psmList { get; private set; }
+        public List<CompactPeptide> peptideList { get; private set; }
+        public List<CompactPeptide> uniquePeptideList { get; private set; }
+        public double QValue { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public static string GetTabSeparatedHeader()
         {
@@ -126,5 +147,8 @@ namespace InternalLogicEngineLayer
 
             return sb.ToString();
         }
+
+        #endregion Public Methods
+
     }
 }

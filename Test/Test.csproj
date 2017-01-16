@@ -81,9 +81,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnalysisEngineTest.cs" />
     <Compile Include="ExclusionsTest.cs" />
     <Compile Include="MyEngineTest.cs" />
-    <Compile Include="AnalysisEngineTest.cs" />
+    <Compile Include="RobTest.cs" />
     <Compile Include="CalibrationEngineTest.cs" />
     <Compile Include="SearchModesTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

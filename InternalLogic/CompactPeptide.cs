@@ -8,6 +8,9 @@ namespace InternalLogicEngineLayer
     [Serializable]
     public class CompactPeptide
     {
+
+        #region Public Fields
+
         public readonly byte[] BaseSequence;
         public readonly ushort varMod1Type;
         public readonly byte varMod1Loc;
@@ -16,7 +19,10 @@ namespace InternalLogicEngineLayer
         public readonly ushort varMod3Type;
         public readonly byte varMod3Loc;
         public float MonoisotopicMass;
-        public bool isUnique = false;
+
+        #endregion Public Fields
+
+        #region Public Constructors
 
         public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
@@ -63,6 +69,10 @@ namespace InternalLogicEngineLayer
             BaseSequence = yyy.BaseSequence.Select(b => (byte)b).ToArray();
         }
 
+        #endregion Public Constructors
+
+        #region Public Methods
+
         public override bool Equals(object obj)
         {
             var cp = obj as CompactPeptide;
@@ -87,5 +97,8 @@ namespace InternalLogicEngineLayer
                 return result;
             }
         }
+
+        #endregion Public Methods
+
     }
 }

@@ -107,17 +107,16 @@ namespace InternalLogicEngineLayer
             {
                 List<Protein> proteinList = new List<Protein>();
 
-                foreach(var peptide in kvp.Value)
+                foreach (var peptide in kvp.Value)
                 {
-                    if(!proteinList.Contains(peptide.protein))
+                    if (!proteinList.Contains(peptide.protein))
                     {
                         proteinList.Add(peptide.protein);
                     }
                 }
-
-                if(proteinList.Count == 1)
+                if (proteinList.Count == 1)
                 {
-                    kvp.Key.isUnique = true;
+                    //kvp.Key.isUnique = true;
                 }
             }
 
