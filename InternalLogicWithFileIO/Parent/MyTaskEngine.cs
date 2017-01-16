@@ -76,6 +76,7 @@ namespace InternalLogicTaskLayer
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
                 file.Write(heh.ToString());
+            SucessfullyFinishedWritingFile(resultsFileName);
             finishedSingleTask();
             return heh;
         }

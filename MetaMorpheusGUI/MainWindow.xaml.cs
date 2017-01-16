@@ -98,8 +98,6 @@ namespace MetaMorpheusGUI
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-30-13_CAST_Frac8_9p5uL-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-30-13_CAST_Frac9_9p5uL-Calibrated.mzML"));
 
-
-
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
@@ -114,6 +112,7 @@ namespace MetaMorpheusGUI
 
             MyEngine.outProgressHandler += NewoutProgressBar;
             MyEngine.outLabelStatusHandler += NewoutLabelStatus;
+            MyEngine.startingSingleEngineHander += MyEngine_startingSingleEngineHander;
             MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
@@ -122,6 +121,19 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyEngine_startingSingleEngineHander(sender, e)));
+            }
+            else
+            {
+                statusLabel.Content = "Running " + e.myEngine.GetType().Name + " engine...";
+                outProgressBar.IsIndeterminate = true;
+            }
+        }
 
         private void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
