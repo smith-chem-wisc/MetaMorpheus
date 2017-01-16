@@ -10,8 +10,8 @@ namespace InternalLogicCalibration
         #region Private Fields
 
         private Func<double[], double> f;
-        private int numFeatures;
-        private int numFeaturesExpanded;
+        private readonly int numFeatures;
+        private readonly int numFeaturesExpanded;
         private TransformFunction transform;
 
         #endregion Private Fields
@@ -34,7 +34,7 @@ namespace InternalLogicCalibration
             return f(ExpandFeatures(transform.Transform(t)));
         }
 
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             double[][] ok = new double[trainingList.Count()][];
             int k = 0;

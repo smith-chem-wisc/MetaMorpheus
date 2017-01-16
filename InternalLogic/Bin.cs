@@ -48,7 +48,7 @@ namespace InternalLogicEngineLayer
         {
             get
             {
-                return uniquePSMs.Values.Where(b => b.Item3.isDecoy).Count();
+                return uniquePSMs.Values.Count(b => b.Item3.isDecoy);
             }
         }
 
@@ -64,7 +64,7 @@ namespace InternalLogicEngineLayer
         {
             get
             {
-                return uniquePSMs.Values.Where(b => !b.Item3.isDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.Score + 1).Count();
+                return uniquePSMs.Values.Count(b => !b.Item3.isDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.Score + 1);
             }
         }
 

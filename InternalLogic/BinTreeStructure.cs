@@ -60,11 +60,11 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            List<OkBin> listokbin = new List<OkBin>();
+            var listokbin = new List<OkBin>();
             for (int i = 0; i < sigma.Count(); i++)
                 listokbin.Add(new OkBin(listOfMassShifts[i], sigma[i], p[i]));
 
-            HashSet<double> prelimBins = new HashSet<double>();
+            var prelimBins = new HashSet<double>();
             foreach (OkBin okbin in listokbin.OrderByDescending(b => b.p))
             {
                 if (okbin.sigma < dc || okbin.p < 8)
@@ -82,7 +82,7 @@ namespace InternalLogicEngineLayer
                     prelimBins.Add(okbin.massShift);
             }
 
-            Dictionary<double, List<double>> forFinalBins = new Dictionary<double, List<double>>();
+            var forFinalBins = new Dictionary<double, List<double>>();
             foreach (double ok in prelimBins)
                 forFinalBins.Add(ok, new List<double>());
             foreach (double a in listOfMassShifts)

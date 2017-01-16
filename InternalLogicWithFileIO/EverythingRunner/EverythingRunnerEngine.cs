@@ -22,8 +22,8 @@ namespace InternalLogicTaskLayer
         public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList) : base(0)
         {
             this.taskList = taskList;
-            this.currentRawDataFilenameList = startingRawFilenameList;
-            this.currentXmlDbFilenameList = startingXmlDbFilenameList;
+            currentRawDataFilenameList = startingRawFilenameList;
+            currentXmlDbFilenameList = startingXmlDbFilenameList;
         }
 
         #endregion Public Constructors
@@ -66,7 +66,7 @@ namespace InternalLogicTaskLayer
             var MatchingChars =
                 from len in Enumerable.Range(0, currentRawDataFilenameList.Min(s => s.Length)).Reverse()
                 let possibleMatch = currentRawDataFilenameList.First().Substring(0, len)
-                where currentRawDataFilenameList.All(f => f.StartsWith(possibleMatch))
+                where currentRawDataFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.InvariantCulture))
                 select possibleMatch;
 
             var longestDir = Path.GetDirectoryName(MatchingChars.First());
@@ -91,14 +91,11 @@ namespace InternalLogicTaskLayer
                 ok.xmlDbFilenameList = currentXmlDbFilenameList;
                 ok.rawDataFilenameList = currentRawDataFilenameList;
 
-                MyTaskResults myTaskResults = (MyTaskResults)ok.Run();
-
-                if (myTaskResults == null)
-                    return null;
+                var myTaskResults = (MyTaskResults)ok.Run();
 
                 if (myTaskResults.newDatabases != null)
                 {
-                    currentRawDataFilenameList = myTaskResults.newDatabases;
+                    currentXmlDbFilenameList = myTaskResults.newDatabases;
                     NewDBs(myTaskResults.newDatabases);
                 }
                 if (myTaskResults.newSpectra != null)

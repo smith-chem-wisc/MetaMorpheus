@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,16 +19,11 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-
-        #region Public Fields
-
-        public const string elementsLocation = @"elements.dat";
-        public const string unimodLocation = @"unimod_tables.xml";
-        public const string uniprotLocation = @"ptmlist.txt";
-
-        #endregion Public Fields
-
         #region Private Fields
+
+        private const string elementsLocation = @"elements.dat";
+        private const string unimodLocation = @"unimod_tables.xml";
+        private const string uniprotLocation = @"ptmlist.txt";
 
         private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
         private readonly ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
@@ -43,6 +39,12 @@ namespace MetaMorpheusGUI
         public MainWindow()
         {
             InitializeComponent();
+
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (version.Equals("1.0.0.0"))
+                this.Title = "MetaMorpheus: Not a release version";
+            else
+                this.Title = "MetaMorpheus: version " + version;
 
             UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
             MyEngine.unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
@@ -208,7 +210,7 @@ namespace MetaMorpheusGUI
         {
             // Create the OpenFIleDialog object
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
-            openPicker.Filter = "XML Files|*.xml";
+            openPicker.Filter = "XML Files|*.xml,*.xml.gz";
             openPicker.FilterIndex = 1;
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
@@ -247,6 +249,7 @@ namespace MetaMorpheusGUI
                         break;
 
                     case ".xml":
+                    case ".xml.gz":
                         xmlDBobservableCollection.Add(new XMLdb(file));
                         break;
                 }
@@ -468,6 +471,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 }

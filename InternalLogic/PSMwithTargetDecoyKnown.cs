@@ -11,42 +11,30 @@ namespace InternalLogicEngineLayer
 {
     public class PSMwithTargetDecoyKnown
     {
-
         #region Public Fields
 
         public ParentSpectrumMatch newPsm;
 
         #endregion Public Fields
 
-        #region Private Fields
-
-        private HashSet<PeptideWithSetModifications> peptidesWithSetModifications;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public PSMwithTargetDecoyKnown(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
-            this.isDecoy = peptidesWithSetModifications.Where(b => b.protein.isDecoy).Count() > 0;
+            isDecoy = peptidesWithSetModifications.Count(b => b.protein.isDecoy) > 0;
             this.peptidesWithSetModifications = peptidesWithSetModifications;
 
-            var allProductTypes = new List<ProductType>() { ProductType.b, ProductType.y };
+            var allProductTypes = new List<ProductType> { ProductType.b, ProductType.y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
             if (myMsDataFile != null && newPsm.matchedIonsList == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
-                double selectedMZ;
-                int selectedCharge;
-                theScan.TryGetSelectedIonGuessMonoisotopicMZ(out selectedMZ);
-                theScan.TryGetSelectedIonGuessChargeStateGuess(out selectedCharge);
-                var scanPrecursorMass = selectedMZ.ToMass(selectedCharge);
 
-                Dictionary<ProductType, double[]> MatchedIonDict = new Dictionary<ProductType, double[]>();
+                var MatchedIonDict = new Dictionary<ProductType, double[]>();
                 foreach (var huh in allProductTypes)
                 {
-                    var df = peptidesWithSetModifications.First().FastSortedProductMasses(new List<ProductType>() { huh });
+                    var df = peptidesWithSetModifications.First().FastSortedProductMasses(new List<ProductType> { huh });
                     double[] matchedIonList = new double[df.Length];
                     MatchIons(theScan, fragmentTolerance, df, matchedIonList);
                     MatchedIonDict.Add(huh, matchedIonList);
@@ -58,7 +46,7 @@ namespace InternalLogicEngineLayer
             if (myMsDataFile != null && newPsm.LocalizedScores == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
-                List<double> localizedScores = new List<double>();
+                var localizedScores = new List<double>();
                 for (int indexToLocalize = 0; indexToLocalize < peptidesWithSetModifications.First().Length; indexToLocalize++)
                 {
                     PeptideWithSetModifications localizedPeptide = peptidesWithSetModifications.First().Localize(indexToLocalize, scanPrecursorMass - peptidesWithSetModifications.First().MonoisotopicMass);
@@ -71,18 +59,19 @@ namespace InternalLogicEngineLayer
                 newPsm.LocalizedScores = localizedScores;
             }
 
-            this.PeptideMonoisotopicMass = peptidesWithSetModifications.First().MonoisotopicMass;
-            this.FullSequence = peptidesWithSetModifications.First().Sequence;
-            this.BaseSequence = peptidesWithSetModifications.First().BaseSequence;
-            this.SequenceWithChemicalFormulas = peptidesWithSetModifications.First().SequenceWithChemicalFormulas;
-            this.MissedCleavages = peptidesWithSetModifications.First().MissedCleavages;
-            this.numVariableMods = peptidesWithSetModifications.First().numVariableMods;
+            PeptideMonoisotopicMass = peptidesWithSetModifications.First().MonoisotopicMass;
+            FullSequence = peptidesWithSetModifications.First().Sequence;
+            BaseSequence = peptidesWithSetModifications.First().BaseSequence;
+            SequenceWithChemicalFormulas = peptidesWithSetModifications.First().SequenceWithChemicalFormulas;
+            MissedCleavages = peptidesWithSetModifications.First().MissedCleavages;
+            numVariableMods = peptidesWithSetModifications.First().numVariableMods;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
+        public HashSet<PeptideWithSetModifications> peptidesWithSetModifications { get; private set; }
         public bool isDecoy { get; private set; }
 
         public double Score
@@ -127,7 +116,7 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             sb.Append(newPsm.ToString() + '\t');
             if (peptidesWithSetModifications.Count == 1)
@@ -159,7 +148,7 @@ namespace InternalLogicEngineLayer
 
         internal static string GetTabSeparatedHeader()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
             sb.Append("Protein" + '\t');
             sb.Append("FullSequence" + '\t');
@@ -178,7 +167,6 @@ namespace InternalLogicEngineLayer
             int MatchingProductsHere = 0;
             double MatchingIntensityHere = 0;
 
-            int theoreticalLeft = TotalProductsHere;
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.xArray;
             double[] experimental_intensities = thisScan.MassSpectrum.yArray;
@@ -208,12 +196,11 @@ namespace InternalLogicEngineLayer
                 if (theoreticalIndex == TotalProductsHere)
                     break;
                 nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[theoreticalIndex];
-                nextTheoreticalMZ = nextTheoreticalMass + 1.007276466879;
+                nextTheoreticalMZ = nextTheoreticalMass + Constants.ProtonMass;
             }
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }
 
         #endregion Internal Methods
-
     }
 }

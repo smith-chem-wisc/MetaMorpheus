@@ -8,8 +8,8 @@ namespace OldInternalLogic
 {
     public static class ProteomeDatabaseReader
     {
-        private static Dictionary<string, ModificationType> modificationTypeCodes;
-        private static Dictionary<string, char> aminoAcidCodes;
+        private static readonly Dictionary<string, ModificationType> modificationTypeCodes;
+        private static readonly Dictionary<string, char> aminoAcidCodes;
 
         static ProteomeDatabaseReader()
         {
@@ -46,7 +46,7 @@ namespace OldInternalLogic
 
         public static HashSet<string> ReadXMLmodifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
         {
-            HashSet<string> modifications_in_database = new HashSet<string>();
+            var modifications_in_database = new HashSet<string>();
             foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
                 using (XmlReader xml = XmlReader.Create(uniProtXmlProteomeDatabaseFilepath))
                     while (xml.ReadToFollowing("feature"))

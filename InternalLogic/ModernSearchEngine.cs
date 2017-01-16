@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -12,50 +11,34 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchEngine : MyEngine
     {
-
         #region Private Fields
-
-        private readonly List<MorpheusModification> fixedModifications;
 
         private readonly List<int>[] fragmentIndex;
 
-        private readonly double fragmentTolerance;
+        private readonly double fragmentToleranceInDaltons;
 
         private readonly float[] keys;
-
-        private readonly List<MorpheusModification> localizeableModifications;
 
         private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
 
         private readonly List<CompactPeptide> peptideIndex;
 
-        private readonly Protease protease;
-
-        private readonly List<Protein> proteinList;
-
         private readonly List<SearchMode> searchModes;
 
         private readonly int spectraFileIndex;
-
-        private readonly List<MorpheusModification> variableModifications;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, double fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
-            this.variableModifications = variableModifications;
-            this.fixedModifications = fixedModifications;
-            this.localizeableModifications = localizeableModifications;
-            this.proteinList = proteinList;
-            this.fragmentTolerance = fragmentTolerance;
-            this.protease = protease;
+            this.fragmentToleranceInDaltons = fragmentToleranceInDaltons;
             this.searchModes = searchModes;
         }
 
@@ -73,7 +56,6 @@ namespace InternalLogicEngineLayer
         {
             //output("In modern search method!");
 
-            var spectraList = myMsDataFile.ToList();
             var totalSpectra = myMsDataFile.NumSpectra;
 
             List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchModes.Count];
@@ -86,16 +68,22 @@ namespace InternalLogicEngineLayer
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
+            var peptideIndexCount = peptideIndex.Count;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
+                CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
+                double[] bestScores = new double[searchModesCount];
+                double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var thisScan = listOfSortedms2Scans[i];
+                    var thisScanprecursorMass = thisScan.precursorMass;
+                    Array.Clear(fullPeptideScores, 0, peptideIndexCount);
+                    CalculatePeptideScores(thisScan.theScan, fullPeptideScores);
 
-                    var fullPeptideScores = CalculatePeptideScores(thisScan.theScan, peptideIndex, 400, keys, fragmentIndex, fragmentTolerance);
+                    Array.Clear(bestPeptides, 0, searchModesCount);
+                    Array.Clear(bestScores, 0, searchModesCount);
 
-                    CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
-                    double[] bestScores = new double[searchModesCount];
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
                         var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
@@ -111,7 +99,7 @@ namespace InternalLogicEngineLayer
                                 if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
-                                    if (searchMode.Accepts(thisScan.precursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScan.precursorMass))
+                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
@@ -120,25 +108,21 @@ namespace InternalLogicEngineLayer
                                 else if (currentBestScore < consideredScore)
                                 {
                                     // Score is better, only make sure it is acceptable
-                                    if (searchMode.Accepts(thisScan.precursorMass, candidatePeptide.MonoisotopicMass))
+                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
                                     }
                                 }
                             }
-                            else
+                            // Did not exist! Only make sure that it is acceptable
+                            else if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
                             {
-                                // Did not exist! Only make sure that it is acceptable
-                                if (searchMode.Accepts(thisScan.precursorMass, candidatePeptide.MonoisotopicMass))
-                                {
-                                    bestPeptides[j] = candidatePeptide;
-                                    bestScores[j] = consideredScore;
-                                }
+                                bestPeptides[j] = candidatePeptide;
+                                bestScores[j] = consideredScore;
                             }
                         }
                     }
-
                     for (int j = 0; j < searchModesCount; j++)
                     {
                         CompactPeptide theBestPeptide = bestPeptides[j];
@@ -149,12 +133,10 @@ namespace InternalLogicEngineLayer
                         }
                     }
                 }
-                status("In modern loop debug message...");
                 lock (outputObject)
                 {
                     scansSeen += fff.Item2 - fff.Item1;
-                    int new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
-                    status("In modern loop debug message..." + scansSeen + " " + new_progress);
+                    var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));
@@ -168,60 +150,6 @@ namespace InternalLogicEngineLayer
         #endregion Protected Methods
 
         #region Private Methods
-
-        private static double[] CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, List<CompactPeptide> peptides, int maxPeaks, float[] fragmentMassesAscending, List<int>[] fragmentIndex, double fragmentTolerance)
-        {
-            double[] peptideScores = new double[peptides.Count];
-            foreach (var experimentalPeak in spectrum.MassSpectrum)
-            {
-                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
-                float closestPeak = float.NaN;
-                var ipos = Array.BinarySearch(fragmentMassesAscending, (float)experimentalPeakInDaltons);
-                if (ipos < 0)
-                    ipos = ~ipos;
-
-                //po.out(" ipos " + ipos);
-                if (ipos > 0)
-                {
-                    var downIpos = ipos - 1;
-                    // Try down
-                    while (downIpos >= 0)
-                    {
-                        closestPeak = fragmentMassesAscending[downIpos];
-                        // po.out("  closestPeak "+ closestPeak);
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentTolerance)
-                        {// po.out("    ********************************");
-                            foreach (var heh in fragmentIndex[downIpos])
-                                peptideScores[heh] += theAdd;
-                        }
-                        else
-                            break;
-                        downIpos--;
-                    }
-                }
-                if (ipos < fragmentMassesAscending.Length)
-                {
-                    var upIpos = ipos;
-                    // Try here and up
-                    while (upIpos < fragmentMassesAscending.Length)
-                    {
-                        closestPeak = fragmentMassesAscending[upIpos];
-                        //po.out("  closestPeak " + closestPeak);
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentTolerance)
-                        {
-                            //po.out("    ********************************");
-                            foreach (var heh in fragmentIndex[upIpos])
-                                peptideScores[heh] += theAdd;
-                        }
-                        else
-                            break;
-                        upIpos++;
-                    }
-                }
-            }
-            return peptideScores;
-        }
 
         // Want this to return false more!! So less computation is done. So second is preferable more often.
         private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
@@ -247,7 +175,58 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
-        #endregion Private Methods
+        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, double[] peptideScores)
+        {
+            foreach (var experimentalPeak in spectrum.MassSpectrum)
+            {
+                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
+                float closestPeak = float.NaN;
+                var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
+                if (ipos < 0)
+                    ipos = ~ipos;
 
+                //po.out(" ipos " + ipos);
+                if (ipos > 0)
+                {
+                    var downIpos = ipos - 1;
+                    // Try down
+                    while (downIpos >= 0)
+                    {
+                        closestPeak = keys[downIpos];
+                        // po.out("  closestPeak "+ closestPeak);
+                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        {// po.out("    ********************************");
+                            foreach (var heh in fragmentIndex[downIpos])
+                                peptideScores[heh] += theAdd;
+                        }
+                        else
+                            break;
+                        downIpos--;
+                    }
+                }
+                if (ipos < keys.Length)
+                {
+                    var upIpos = ipos;
+                    // Try here and up
+                    while (upIpos < keys.Length)
+                    {
+                        closestPeak = keys[upIpos];
+                        //po.out("  closestPeak " + closestPeak);
+                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        {
+                            //po.out("    ********************************");
+                            foreach (var heh in fragmentIndex[upIpos])
+                                peptideScores[heh] += theAdd;
+                        }
+                        else
+                            break;
+                        upIpos++;
+                    }
+                }
+            }
+        }
+
+        #endregion Private Methods
     }
 }

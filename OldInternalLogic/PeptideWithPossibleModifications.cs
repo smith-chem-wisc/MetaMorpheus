@@ -52,7 +52,7 @@ namespace OldInternalLogic
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
                                 val.Add(mod);
                             else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification>() { mod });
+                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
                         }
                     }
                     else if (i == 1)
@@ -63,7 +63,7 @@ namespace OldInternalLogic
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
                                 val.Add(mod);
                             else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification>() { mod });
+                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
                         }
                     }
                     else if (i >= 2 && i <= Length + 1)
@@ -74,7 +74,7 @@ namespace OldInternalLogic
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
                                 val.Add(mod);
                             else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification>() { mod });
+                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
                         }
                     }
                     else if (i == Length + 2)
@@ -85,7 +85,7 @@ namespace OldInternalLogic
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
                                 val.Add(mod);
                             else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification>() { mod });
+                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
                         }
                     }
                     else if (i == Length + 3 && OneBasedEndResidueInProtein == protein.Length)
@@ -96,27 +96,27 @@ namespace OldInternalLogic
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
                                 val.Add(mod);
                             else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification>() { mod });
+                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
                         }
                     }
                 }
             }
         }
 
-        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int max_mods_for_peptide, List<MorpheusModification> localizeableModifications)
+        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int max_mods_for_peptide)
         {
-            Dictionary<int, UniqueModificationsList> two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsList>(Length + 4);
+            var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsList>(Length + 4);
 
-            UniqueModificationsList prot_n_term_variable_mods = new UniqueModificationsList();
+            var prot_n_term_variable_mods = new UniqueModificationsList();
             two_based_possible_variable_and_localizeable_modifications.Add(0, prot_n_term_variable_mods);
 
-            UniqueModificationsList pep_n_term_variable_mods = new UniqueModificationsList();
+            var pep_n_term_variable_mods = new UniqueModificationsList();
             two_based_possible_variable_and_localizeable_modifications.Add(1, pep_n_term_variable_mods);
 
-            UniqueModificationsList pep_c_term_variable_mods = new UniqueModificationsList();
+            var pep_c_term_variable_mods = new UniqueModificationsList();
             two_based_possible_variable_and_localizeable_modifications.Add(Length + 2, pep_c_term_variable_mods);
 
-            UniqueModificationsList prot_c_term_variable_mods = new UniqueModificationsList();
+            var prot_c_term_variable_mods = new UniqueModificationsList();
             two_based_possible_variable_and_localizeable_modifications.Add(Length + 3, prot_c_term_variable_mods);
 
             foreach (MorpheusModification variable_modification in variableModifications)
@@ -242,7 +242,7 @@ namespace OldInternalLogic
             }
             else
             {
-                Dictionary<int, UniqueModificationsList> possible_variable_modifications = new Dictionary<int, UniqueModificationsList>(possibleVariableModifications);
+                var possible_variable_modifications = new Dictionary<int, UniqueModificationsList>(possibleVariableModifications);
 
                 int[] base_variable_modification_pattern = new int[Length + 4];
                 var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
@@ -304,7 +304,7 @@ namespace OldInternalLogic
 
         private static Dictionary<int, MorpheusModification> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsList>> possibleVariableModifications)
         {
-            Dictionary<int, MorpheusModification> modification_pattern = new Dictionary<int, MorpheusModification>();
+            var modification_pattern = new Dictionary<int, MorpheusModification>();
 
             foreach (KeyValuePair<int, UniqueModificationsList> kvp in possibleVariableModifications)
             {

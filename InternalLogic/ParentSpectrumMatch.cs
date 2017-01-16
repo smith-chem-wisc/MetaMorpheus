@@ -8,13 +8,12 @@ namespace InternalLogicEngineLayer
 {
     public abstract class ParentSpectrumMatch
     {
-
         #region Internal Fields
 
         internal Dictionary<ProductType, double[]> matchedIonsList;
-        internal int scanNumber;
+        public int scanNumber;
         internal int scanPrecursorCharge;
-        internal double scanPrecursorMass;
+        public double scanPrecursorMass;
 
         #endregion Internal Fields
 
@@ -37,7 +36,7 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             //sb.Append(spectraFileIndex.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
@@ -55,7 +54,7 @@ namespace InternalLogicEngineLayer
                 sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
             sb.Append("]" + '\t');
 
-            sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Where(c => c > 0).Count())) + '\t');
+            sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Count(c => c > 0))) + '\t');
 
             sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 
@@ -76,7 +75,7 @@ namespace InternalLogicEngineLayer
 
         internal static string GetTabSeparatedHeader()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append("scanNumber" + '\t');
             sb.Append("scanPrecursorCharge" + '\t');
             sb.Append("scanPrecursorMass" + '\t');
@@ -89,6 +88,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Internal Methods
-
     }
 }

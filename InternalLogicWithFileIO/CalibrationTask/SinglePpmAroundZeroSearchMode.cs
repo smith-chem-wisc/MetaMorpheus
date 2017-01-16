@@ -7,10 +7,9 @@ namespace InternalLogicTaskLayer
 {
     public class SinglePpmAroundZeroSearchMode : SearchMode
     {
-
         #region Private Fields
 
-        private double ppmTolerance;
+        private readonly double ppmTolerance;
 
         #endregion Private Fields
 
@@ -38,10 +37,9 @@ namespace InternalLogicTaskLayer
 
         public override string SearchModeString()
         {
-            return "SinglePpmAroundZeroSearchMode" + ppmTolerance.ToString();
+            return "SinglePpmAroundZeroSearchMode" + ppmTolerance;
         }
 
         #endregion Public Methods
-
     }
 }

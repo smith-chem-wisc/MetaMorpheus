@@ -61,7 +61,7 @@ namespace OldInternalLogic
             {
                 if (extendedSequence == null)
                 {
-                    StringBuilder exSeq = new StringBuilder();
+                    var exSeq = new StringBuilder();
                     exSeq.Append(PreviousAminoAcid);
                     exSeq.Append(".");
                     exSeq.Append(Sequence);
@@ -79,7 +79,7 @@ namespace OldInternalLogic
             {
                 if (sequence == null)
                 {
-                    StringBuilder sbsequence = new StringBuilder();
+                    var sbsequence = new StringBuilder();
                     List<MorpheusModification> value = null;
                     // fixed modifications on protein N-terminus
                     if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
@@ -174,7 +174,7 @@ namespace OldInternalLogic
         {
             get
             {
-                StringBuilder sbsequence = new StringBuilder();
+                var sbsequence = new StringBuilder();
                 List<MorpheusModification> value = null;
                 // fixed modifications on protein N-terminus
                 if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
@@ -236,7 +236,7 @@ namespace OldInternalLogic
 
         public PeptideWithSetModifications Localize(int j, double v)
         {
-            Dictionary<int, MorpheusModification> vvv = new Dictionary<int, MorpheusModification>(twoBasedVariableAndLocalizeableModificationss);
+            var vvv = new Dictionary<int, MorpheusModification>(twoBasedVariableAndLocalizeableModificationss);
             MorpheusModification existingMod;
             double massInMs2OfExistingMod = 0;
             if (vvv.TryGetValue(j + 2, out existingMod))
@@ -251,7 +251,7 @@ namespace OldInternalLogic
 
         public PeptideFragmentMasses computeFragmentMasses()
         {
-            PeptideFragmentMasses p = new PeptideFragmentMasses();
+            var p = new PeptideFragmentMasses();
 
             monoisotopicMass = waterMonoisotopicMass;
 
@@ -444,7 +444,7 @@ namespace OldInternalLogic
 
         public override bool Equals(object obj)
         {
-            PeptideWithSetModifications q = obj as PeptideWithSetModifications;
+            var q = obj as PeptideWithSetModifications;
             return q != null && q.Sequence.Equals(Sequence) && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein && q.protein.Equals(protein);
         }
 

@@ -6,11 +6,10 @@ namespace InternalLogicEngineLayer
 {
     public class DotSearchMode : SearchMode
     {
-
         #region Private Fields
 
-        private List<double> acceptableSortedMassShifts;
-        private Tolerance tol;
+        private readonly List<double> acceptableSortedMassShifts;
+        private readonly Tolerance tol;
 
         #endregion Private Fields
 
@@ -37,20 +36,19 @@ namespace InternalLogicEngineLayer
             return false;
         }
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMass)
+        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             foreach (double huh in acceptableSortedMassShifts)
             {
-                yield return new DoubleRange(peptideMass + huh, tol);
+                yield return new DoubleRange(peptideMonoisotopicMass + huh, tol);
             }
         }
 
         public override string SearchModeString()
         {
-            return "Tolerance of " + tol.ToString() + " around mass diffs: " + string.Join(",", acceptableSortedMassShifts);
+            return "Tolerance of " + tol + " around mass diffs: " + string.Join(",", acceptableSortedMassShifts);
         }
 
         #endregion Public Methods
-
     }
 }

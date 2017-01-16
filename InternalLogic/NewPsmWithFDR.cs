@@ -13,22 +13,22 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private int cumulative_target;
-        private int cumulative_decoy;
+        private readonly int cumulative_target;
+        private readonly int cumulative_decoy;
 
         #endregion Private Fields
 
-        #region Internal Constructors
+        #region Public Constructors
 
-        internal NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
+        public NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
         {
             this.thisPSM = thisPSM;
             this.cumulative_target = cumulative_target;
             this.cumulative_decoy = cumulative_decoy;
-            this.QValue = temp_q_value;
+            QValue = temp_q_value;
         }
 
-        #endregion Internal Constructors
+        #endregion Public Constructors
 
         #region Public Properties
 
@@ -48,7 +48,7 @@ namespace InternalLogicEngineLayer
 
         public static string GetTabSeparatedHeader()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append(PSMwithTargetDecoyKnown.GetTabSeparatedHeader() + '\t');
             sb.Append("Decoy" + '\t');
             sb.Append("cumulative_target" + '\t');
@@ -59,7 +59,7 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.Append(thisPSM.ToString() + '\t');
             sb.Append(isDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulative_target.ToString(CultureInfo.InvariantCulture) + '\t');

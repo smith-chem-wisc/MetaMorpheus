@@ -21,7 +21,6 @@ namespace InternalLogicTaskLayer
 
     public abstract class MyTaskEngine : MyEngine
     {
-
         #region Public Fields
 
         public List<string> rawDataFilenameList;
@@ -29,13 +28,13 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
-        public MyTaskEngine() : base(1)
+        protected MyTaskEngine() : base(1)
         {
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Events
 
@@ -59,6 +58,7 @@ namespace InternalLogicTaskLayer
         public Tolerance productMassTolerance { get; set; }
         public Protease protease { get; set; }
         public bool yIons { get; set; }
+        public int maxNumPeaksPerScan { get; set; }
 
         #endregion Public Properties
 
@@ -78,19 +78,21 @@ namespace InternalLogicTaskLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine(GetSpecificTaskInfo());
             sb.AppendLine(taskType.ToString());
-            sb.AppendLine("Spectra files: " + string.Join(",", rawDataFilenameList));
-            sb.AppendLine("XML files: " + string.Join(",", xmlDbFilenameList));
-            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior.ToString());
-            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages.ToString());
-            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms.ToString());
-            sb.AppendLine("output_folder: " + output_folder.ToString());
-            sb.AppendLine("productMassTolerance: " + productMassTolerance.ToString());
-            sb.AppendLine("protease: " + protease.ToString());
-            sb.AppendLine("bIons: " + bIons.ToString());
-            sb.AppendLine("yIons: " + yIons.ToString());
+            sb.AppendLine("Spectra files:");
+            sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
+            sb.AppendLine("XML files:");
+            sb.AppendLine(string.Join(Environment.NewLine, xmlDbFilenameList.Select(b => '\t' + b)));
+            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
+            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages);
+            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms);
+            sb.AppendLine("output_folder: " + output_folder);
+            sb.AppendLine("productMassTolerance: " + productMassTolerance);
+            sb.AppendLine("protease: " + protease);
+            sb.AppendLine("bIons: " + bIons);
+            sb.Append("yIons: " + yIons);
             return sb.ToString();
         }
 
@@ -109,7 +111,7 @@ namespace InternalLogicTaskLayer
                     if (modsToLocalize.ContainsKey(knownMod.NameInXML))
                         modsToLocalize[knownMod.NameInXML].Add(knownMod);
                     else
-                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification>() { knownMod });
+                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification> { knownMod });
                     modsInXMLtoTrim.Remove(knownMod.NameInXML);
                 }
         }
@@ -124,21 +126,18 @@ namespace InternalLogicTaskLayer
                 string accession = null;
                 string name = null;
                 string full_name = null;
-                bool fragment = false;
                 string organism = null;
                 string gene_name = null;
-                string protein_existence = null;
-                string sequence_version = null;
                 string sequence = null;
                 string feature_type = null;
                 string feature_description = null;
                 int oneBasedfeature_position = -1;
                 int oneBasedbeginPosition = -1;
                 int oneBasedendPosition = -1;
-                List<int> oneBasedBeginPositions = new List<int>();
-                List<int> oneBasedEndPositions = new List<int>();
-                List<string> peptideTypes = new List<string>();
-                Dictionary<int, List<MorpheusModification>> oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
+                var oneBasedBeginPositions = new List<int>();
+                var oneBasedEndPositions = new List<int>();
+                var peptideTypes = new List<string>();
+                var oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
                 int offset = 0;
                 while (xml.Read())
                 {
@@ -187,10 +186,6 @@ namespace InternalLogicTaskLayer
                                     }
                                     break;
 
-                                case "proteinExistence":
-                                    protein_existence = xml.GetAttribute("type");
-                                    break;
-
                                 case "feature":
                                     feature_type = xml.GetAttribute("type");
                                     feature_description = xml.GetAttribute("description");
@@ -201,28 +196,14 @@ namespace InternalLogicTaskLayer
                                     break;
 
                                 case "begin":
-                                    try
-                                    {
-                                        oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
-                                    }
-                                    catch
-                                    {
-                                    }
+                                    oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
                                     break;
 
                                 case "end":
-                                    try
-                                    {
-                                        oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
-                                    }
-                                    catch
-                                    {
-                                    }
+                                    oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
                                     break;
 
                                 case "sequence":
-                                    fragment = xml.GetAttribute("fragment") != null;
-                                    sequence_version = xml.GetAttribute("version");
                                     sequence = xml.ReadElementString().Replace("\n", null);
                                     break;
                             }
@@ -267,7 +248,7 @@ namespace InternalLogicTaskLayer
 
                                     if (accession != null && sequence != null)
                                     {
-                                        Protein protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
+                                        var protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
 
                                         yield return protein;
 
@@ -276,7 +257,7 @@ namespace InternalLogicTaskLayer
                                         {
                                             char[] sequence_array = sequence.ToCharArray();
                                             Dictionary<int, List<MorpheusModification>> decoy_modifications = null;
-                                            if (sequence.StartsWith("M"))
+                                            if (sequence.StartsWith("M", StringComparison.InvariantCulture))
                                             {
                                                 // Do not include the initiator methionine in reversal!!!
                                                 Array.Reverse(sequence_array, 1, sequence.Length - 1);
@@ -308,7 +289,7 @@ namespace InternalLogicTaskLayer
                                                     }
                                                 }
                                             }
-                                            string reversed_sequence = new string(sequence_array);
+                                            var reversed_sequence = new string(sequence_array);
                                             int[] decoybeginPositions = new int[oneBasedBeginPositions.Count];
                                             int[] decoyendPositions = new int[oneBasedEndPositions.Count];
                                             string[] decoyBigPeptideTypes = new string[oneBasedEndPositions.Count];
@@ -318,7 +299,7 @@ namespace InternalLogicTaskLayer
                                                 decoyendPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedBeginPositions[i] + 1;
                                                 decoyBigPeptideTypes[oneBasedBeginPositions.Count - i - 1] = peptideTypes[i];
                                             }
-                                            Protein decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, dataset_abbreviation, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true);
+                                            var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, dataset_abbreviation, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true);
                                             yield return decoy_protein;
                                             offset += protein.Length;
                                         }
@@ -327,11 +308,8 @@ namespace InternalLogicTaskLayer
                                     accession = null;
                                     name = null;
                                     full_name = null;
-                                    fragment = false;
                                     organism = null;
                                     gene_name = null;
-                                    protein_existence = null;
-                                    sequence_version = null;
                                     sequence = null;
                                     feature_type = null;
                                     feature_description = null;
@@ -356,7 +334,7 @@ namespace InternalLogicTaskLayer
             {
                 output.WriteLine(NewPsmWithFDR.GetTabSeparatedHeader());
                 for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i].ToString());
+                    output.WriteLine(items[i]);
             }
             SucessfullyFinishedWritingFile(writtenFile);
         }
@@ -364,12 +342,12 @@ namespace InternalLogicTaskLayer
         protected void WriteToTabDelimitedTextFileWithDecoys(List<ProteinGroup> items, string output_folder, string fileName)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
-            
+
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Protein Description\tProtein Sequence\tProtein Length\tNumber of Proteins in Group\tNumber of Peptide-Spectrum Matches\tNumber of Unique Peptides\tSummed Peptide-Spectrum Match Precursor Intensity\tSummed Unique Peptide Precursor Intensity\tSummed Morpheus Score\tDecoy?\tCumulative Target\tCumulative Decoy\tQ-Value (%)");
                 for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i].ToString());
+                    output.WriteLine(items[i]);
             }
             SucessfullyFinishedWritingFile(writtenFile);
         }
@@ -430,6 +408,5 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

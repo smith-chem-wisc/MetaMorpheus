@@ -8,8 +8,8 @@ namespace InternalLogicCalibration
     public class LinearCalibrationFunctionMathNet : CalibrationFunction
     {
         private Func<double[], double> f;
-        private int numFeatures;
-        private TransformFunction transformFunction;
+        private readonly int numFeatures;
+        private readonly TransformFunction transformFunction;
 
         public LinearCalibrationFunctionMathNet(TransformFunction transformFunction)
         {
@@ -22,7 +22,7 @@ namespace InternalLogicCalibration
             return f(transformFunction.Transform(t));
         }
 
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             double[][] ok = new double[trainingList.Count()][];
             int k = 0;

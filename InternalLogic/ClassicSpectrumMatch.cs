@@ -12,28 +12,21 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Fields
 
-        #region Private Fields
-
-        private double[] hehe;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
-        public ClassicSpectrumMatch(double ScoreFromSearch, PeptideWithSetModifications ps, double[] hehe, double precursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex)
+        public ClassicSpectrumMatch(double Score, PeptideWithSetModifications ps, double scanPrecursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaks, double TotalIonCurrent, double scanPrecursorIntensity, int spectraFileIndex)
         {
             this.ps = ps;
-            this.hehe = hehe;
-            this.Score = ScoreFromSearch;
-            this.scanPrecursorMass = precursorMass;
+            this.Score = Score;
+            this.scanPrecursorMass = scanPrecursorMass;
 
             this.scanPrecursorMZ = scanPrecursorMZ;
             this.scanNumber = scanNumber;
             this.scanPrecursorCharge = scanPrecursorCharge;
             this.scanRT = scanRT;
-            this.scanPrecursorIntensity = precursorIntensity;
-            this.scanExperimentalPeaks = scanExperimentalPeaksCount;
-            this.TotalIonCurrent = totalIonCurrent;
+            this.scanPrecursorIntensity = scanPrecursorIntensity;
+            this.scanExperimentalPeaks = scanExperimentalPeaks;
+            this.TotalIonCurrent = TotalIonCurrent;
             this.spectraFileIndex = spectraFileIndex;
         }
 
@@ -71,7 +64,7 @@ namespace InternalLogicEngineLayer
                 // Score is same, need to see if accepts and if prefer the new one
                 return FirstIsPreferableWithoutScore(psm.ps, current_best_psm.ps, psm.scanPrecursorMass);
             }
-            else if (psm.Score > current_best_psm.Score)
+            if (psm.Score > current_best_psm.Score)
             {
                 return true;
             }

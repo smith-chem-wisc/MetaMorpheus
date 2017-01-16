@@ -19,17 +19,17 @@ namespace Test
             string sequence2 = "DKCK";
             string sequence3 = "AAAAK";
 
-            IEnumerable<string> sequencesInducingCleavage = new List<string>() { "K", "R" };
-            IEnumerable<string> sequencesPreventingCleavage = new List<string>() { "KP", "RP" };
-            Dictionary<int, List<MorpheusModification>> temp1 = new Dictionary<int, List<MorpheusModification>>();
-            List<MorpheusModification> temp2 = new List<MorpheusModification>();
+            IEnumerable<string> sequencesInducingCleavage = new List<string> { "K", "R" };
+            IEnumerable<string> sequencesPreventingCleavage = new List<string> { "KP", "RP" };
+            var temp1 = new Dictionary<int, List<MorpheusModification>>();
+            var temp2 = new List<MorpheusModification>();
             int[] temp3 = new int[0];
-            Protease protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldInternalLogic.Terminus.C, CleavageSpecificity.Full, null, null, null);
-            HashSet<PeptideWithSetModifications> totalVirtualPeptideList = new HashSet<PeptideWithSetModifications>();
+            var protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, Terminus.C, CleavageSpecificity.Full, null, null, null);
+            var totalVirtualPeptideList = new HashSet<PeptideWithSetModifications>();
 
-            Protein p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);
-            Protein p2 = new Protein(sequence2, "2", null, temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false);
-            Protein p3 = new Protein(sequence3, "3", null, temp1, temp3, temp3, null, "Test3", "TestFullName3", 0, false);
+            var p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);
+            var p2 = new Protein(sequence2, "2", null, temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false);
+            var p3 = new Protein(sequence3, "3", null, temp1, temp3, temp3, null, "Test3", "TestFullName3", 0, false);
 
             IEnumerable<PeptideWithPossibleModifications> digestedList1 = p1.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
             IEnumerable<PeptideWithPossibleModifications> digestedList2 = p2.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
@@ -37,7 +37,7 @@ namespace Test
 
             foreach (var protein in digestedList1)
             {
-                IEnumerable<PeptideWithSetModifications> peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
+                IEnumerable<PeptideWithSetModifications> peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3);
 
                 foreach (var peptide in peptides1)
                     totalVirtualPeptideList.Add(peptide);
@@ -45,7 +45,7 @@ namespace Test
 
             foreach (var protein in digestedList2)
             {
-                IEnumerable<PeptideWithSetModifications> peptides2 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
+                IEnumerable<PeptideWithSetModifications> peptides2 = protein.GetPeptideWithSetModifications(temp2, 4098, 3);
 
                 foreach (var peptide in peptides2)
                     totalVirtualPeptideList.Add(peptide);
@@ -53,14 +53,14 @@ namespace Test
 
             foreach (var protein in digestedList3)
             {
-                IEnumerable<PeptideWithSetModifications> peptides3 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, temp2);
+                IEnumerable<PeptideWithSetModifications> peptides3 = protein.GetPeptideWithSetModifications(temp2, 4098, 3);
 
                 foreach (var peptide in peptides3)
                     totalVirtualPeptideList.Add(peptide);
             }
 
             // creates the initial dictionary of "peptide" and "virtual peptide" matches
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            var initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[totalVirtualPeptideList.Count()];
             HashSet<PeptideWithSetModifications>[] virtualPeptideSets = new HashSet<PeptideWithSetModifications>[totalVirtualPeptideList.Count()];
 
@@ -101,10 +101,7 @@ namespace Test
             // apply parsimony to initial dictionary
             var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary);
 
-            // apply the single pick version to parsimonious dictionary
-            var singlePickTest = AnalysisEngine.GetSingleMatchDictionary(parsimonyTest);
-
-            List<Protein> parsimonyProteinList = new List<Protein>();
+            var parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];
             int j = 0;
 
@@ -123,7 +120,6 @@ namespace Test
                     }
                 }
             }
-
 
             /*
             // prints initial dictionary

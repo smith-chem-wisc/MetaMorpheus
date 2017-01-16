@@ -15,12 +15,12 @@ namespace OldInternalLogic
 
         public Protein(string baseSequence, string accession, string dataset_abbreviation, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy)
         {
-            this.BaseSequence = baseSequence;
-            this.Accession = accession;
+            BaseSequence = baseSequence;
+            Accession = accession;
             this.dataset_abbreviation = dataset_abbreviation;
-            this.OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications;
-            this.oneBasedBeginPositions = beginPositions;
-            this.oneBasedEndPositions = endPositions;
+            OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications;
+            oneBasedBeginPositions = beginPositions;
+            oneBasedEndPositions = endPositions;
             this.bigPeptideTypes = bigPeptideTypes;
             this.name = name;
             this.fullName = fullName;
@@ -118,7 +118,6 @@ namespace OldInternalLogic
                         }
 
                         // Also digest using the chain peptide start/end indices
-
                         for (int chainPeptideIndex = 0; chainPeptideIndex < oneBasedBeginPositions.Length; chainPeptideIndex++)
                         {
                             if (oneBasedBeginPositions[chainPeptideIndex] != 1 || oneBasedEndPositions[chainPeptideIndex] != Length)
@@ -131,7 +130,7 @@ namespace OldInternalLogic
                                 //p.po.RTBoutput(" Starting index: " + protein.oneBasedBeginPositions[chainPeptideIndex]);
                                 //p.po.RTBoutput(" Ending index: " + oneBasedIndicesToCleaveAfter[i + missed_cleavages ]);
                                 if (i + missed_cleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + missed_cleavages] <= oneBasedEndPositions[chainPeptideIndex])
-                                    yield return new PeptideWithPossibleModifications(oneBasedBeginPositions[chainPeptideIndex], oneBasedIndicesToCleaveAfter[i + missed_cleavages], this, missed_cleavages, this.bigPeptideTypes[chainPeptideIndex] + " start");
+                                    yield return new PeptideWithPossibleModifications(oneBasedBeginPositions[chainPeptideIndex], oneBasedIndicesToCleaveAfter[i + missed_cleavages], this, missed_cleavages, bigPeptideTypes[chainPeptideIndex] + " start");
 
                                 while (oneBasedIndicesToCleaveAfter[i] < oneBasedEndPositions[chainPeptideIndex])
                                     i++;
@@ -140,7 +139,7 @@ namespace OldInternalLogic
                                 //p.po.RTBoutput(" Starting index: " + (oneBasedIndicesToCleaveAfter[i - missed_cleavages-1]+1));
                                 //p.po.RTBoutput(" Ending index: " + protein.oneBasedEndPositions[chainPeptideIndex]);
                                 if (i - missed_cleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 >= oneBasedBeginPositions[chainPeptideIndex])
-                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, oneBasedEndPositions[chainPeptideIndex], this, missed_cleavages, this.bigPeptideTypes[chainPeptideIndex] + " end");
+                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, oneBasedEndPositions[chainPeptideIndex], this, missed_cleavages, bigPeptideTypes[chainPeptideIndex] + " end");
                             }
                         }
                     }
@@ -214,7 +213,7 @@ namespace OldInternalLogic
 
         public override bool Equals(object obj)
         {
-            Protein q = obj as Protein;
+            var q = obj as Protein;
             return q != null && q.Accession.Equals(Accession);
         }
 

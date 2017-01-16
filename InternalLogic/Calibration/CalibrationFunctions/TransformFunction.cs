@@ -13,7 +13,7 @@ namespace InternalLogicCalibration
 
         #region Private Fields
 
-        private Func<double[], double[]> tf;
+        private readonly Func<double[], double[]> tf;
 
         #endregion Private Fields
 
