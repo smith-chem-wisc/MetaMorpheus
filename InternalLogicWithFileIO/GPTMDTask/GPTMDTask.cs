@@ -74,14 +74,6 @@ namespace InternalLogicTaskLayer
             return sb.ToString();
         }
 
-        protected override void ValidateParams()
-        {
-            if (listOfModListsForGPTMD == null)
-                throw new EngineValidationException("listOfModListsForGPTMD should not be null");
-            if (listOfModListsForGPTMD.Count(b => b.GPTMD) == 0)
-                throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
-        }
-
         protected override MyResults RunSpecific()
         {
             string outputXMLdbFullName = Path.Combine(output_folder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");

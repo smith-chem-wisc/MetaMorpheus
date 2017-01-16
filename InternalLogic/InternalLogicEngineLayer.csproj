@@ -90,7 +90,7 @@
     <Compile Include="Calibration\CalibrationFunctions\TrainingPoint.cs" />
     <Compile Include="Calibration\CalibrationFunctions\TransformFunction.cs" />
     <Compile Include="Calibration\CalibrationResults.cs" />
-    <Compile Include="EngineRunException.cs" />
+    <Compile Include="Calibration\MyErroredResults.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearchResults.cs" />
     <Compile Include="ClassicSpectrumMatch.cs" />
@@ -122,7 +122,6 @@
     <Compile Include="SingleEngineFinishedEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
     <Compile Include="Calibration\CalibrationEngine.cs" />
-    <Compile Include="EngineValidationException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

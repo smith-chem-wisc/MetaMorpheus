@@ -9,6 +9,7 @@ namespace InternalLogicTaskLayer
 {
     public class EverythingRunnerEngine : MyEngine
     {
+
         #region Private Fields
 
         private List<MyTaskEngine> taskList;
@@ -41,22 +42,6 @@ namespace InternalLogicTaskLayer
         #endregion Public Events
 
         #region Protected Methods
-
-        protected override void ValidateParams()
-        {
-            if (taskList == null)
-                throw new EngineValidationException("taskList cannot be null");
-            if (taskList.Count == 0)
-                throw new EngineValidationException("taskList has to contain at least one element");
-            if (currentRawDataFilenameList == null)
-                throw new EngineValidationException("rawDataFilenameList cannot be null");
-            if (currentRawDataFilenameList.Count == 0)
-                throw new EngineValidationException("rawDataFilenameList has to contain at least one element");
-            if (currentXmlDbFilenameList == null)
-                throw new EngineValidationException("xmlDbFilenameList cannot be null");
-            if (currentXmlDbFilenameList.Count == 0)
-                throw new EngineValidationException("xmlDbFilenameList has to contain at least one element");
-        }
 
         protected override MyResults RunSpecific()
         {
@@ -133,5 +118,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }
