@@ -15,6 +15,9 @@ namespace Test
     [TestFixture]
     public class ClassicSearchEngineTest
     {
+
+        #region Public Methods
+
         [Test]
         public void TestClassicSearchEngine()
         {
@@ -26,7 +29,10 @@ namespace Test
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), Terminus.C, CleavageSpecificity.Full, null, null, null);
-            var engine = new ClassicSearchEngine(myMsDataFile, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+
+            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
@@ -74,8 +80,21 @@ namespace Test
             Assert.AreEqual("QQQ", searchResults.newPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
         }
 
+        #endregion Public Methods
+
+        #region Private Classes
+
         private class TestDataFile : IMsDataFile<DefaultMzSpectrum>
         {
+
+            #region Private Fields
+
+            private readonly List<TestScan> Scans;
+
+            #endregion Private Fields
+
+            #region Public Constructors
+
             public TestDataFile()
             {
                 var mz1 = new double[] { 50, 60, 70, 80, 90, 100 };
@@ -89,6 +108,10 @@ namespace Test
 
                 Scans = new List<TestScan> { new TestScan(1, 1, MassSpectrum1), new TestScan(2, 2, MassSpectrum2, 402.18629720155.ToMassToChargeRatio(2), 2, 1) };
             }
+
+            #endregion Public Constructors
+
+            #region Public Properties
 
             public string FilePath
             {
@@ -114,12 +137,14 @@ namespace Test
                 }
             }
 
+            #endregion Public Properties
+
+            #region Public Methods
+
             public void Close()
             {
                 throw new NotImplementedException();
             }
-
-            private readonly List<TestScan> Scans;
 
             public IEnumerator<IMsDataScan<IMzSpectrum<MzPeak>>> GetEnumerator()
             {
@@ -155,11 +180,25 @@ namespace Test
             {
                 return Scans.GetEnumerator();
             }
+
+            #endregion Public Methods
+
         }
 
         private class TestScan : IMsDataScan<DefaultMzSpectrum>
         {
+
+            #region Private Fields
+
             private double selectedIonGuessMonoisotopicIntensity;
+
+            private int selectedIonGuessChargeStateGuess;
+
+            private double selectedIonGuessMonoisotopicMZ;
+
+            #endregion Private Fields
+
+            #region Public Constructors
 
             public TestScan(int OneBasedScanNumber, double RetentionTime, DefaultMzSpectrum MassSpectrum, double selectedIonGuessMonoisotopicMZ, int selectedIonGuessChargeStateGuess, double selectedIonGuessMonoisotopicIntensity)
             {
@@ -180,6 +219,10 @@ namespace Test
                 this.RetentionTime = RetentionTime;
                 this.MassSpectrum = MassSpectrum;
             }
+
+            #endregion Public Constructors
+
+            #region Public Properties
 
             public string id
             {
@@ -253,6 +296,10 @@ namespace Test
                 }
             }
 
+            #endregion Public Properties
+
+            #region Public Methods
+
             public void tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double newPrecursorMZ, double selectedIonGuessMonoisotopicMZ)
             {
                 throw new NotImplementedException();
@@ -288,8 +335,6 @@ namespace Test
                 throw new NotImplementedException();
             }
 
-            private int selectedIonGuessChargeStateGuess;
-
             public bool TryGetSelectedIonGuessChargeStateGuess(out int SelectedIonGuessChargeStateGuess)
             {
                 if (MsnOrder == 2)
@@ -317,8 +362,6 @@ namespace Test
                 return false;
             }
 
-            private double selectedIonGuessMonoisotopicMZ;
-
             public bool TryGetSelectedIonGuessMonoisotopicMZ(out double SelectedIonGuessMonoisotopicMZ)
             {
                 if (MsnOrder == 2)
@@ -334,6 +377,12 @@ namespace Test
             {
                 throw new NotImplementedException();
             }
+
+            #endregion Public Methods
+
         }
+
+        #endregion Private Classes
+
     }
 }

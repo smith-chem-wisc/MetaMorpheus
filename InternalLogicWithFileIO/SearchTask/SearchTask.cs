@@ -15,6 +15,7 @@ namespace InternalLogicTaskLayer
 {
     public class SearchTask : MyTaskEngine
     {
+
         #region Public Constructors
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
@@ -184,7 +185,9 @@ namespace InternalLogicTaskLayer
 
                 if (classicSearch)
                 {
-                    classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModesS);
+                    var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+
+                    classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModesS);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
@@ -292,5 +295,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

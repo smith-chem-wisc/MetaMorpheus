@@ -196,11 +196,25 @@ namespace InternalLogicTaskLayer
                                     break;
 
                                 case "begin":
-                                    oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
+                                    try
+                                    {
+                                        oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
+                                    }
+                                    catch (ArgumentNullException)
+                                    {
+
+                                    }
                                     break;
 
                                 case "end":
-                                    oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
+                                    try
+                                    {
+                                        oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
+                                    }
+                                    catch (ArgumentNullException)
+                                    {
+
+                                    }
                                     break;
 
                                 case "sequence":
