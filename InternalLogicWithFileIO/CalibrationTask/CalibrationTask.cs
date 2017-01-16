@@ -69,7 +69,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
-            sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
+            sb.Append("precursorMassTolerance: " + precursorMassTolerance);
             return sb.ToString();
         }
 
@@ -156,7 +156,7 @@ namespace InternalLogicTaskLayer
                 var result = (CalibrationResults)a.Run();
 
                 status("Creating _indexedmzMLConnection, putting data in it, and writing!");
-                var path = Path.Combine(Path.GetDirectoryName(output_folder), Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
+                var path = Path.Combine(output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                 MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.myMsDataFile, path);
 
                 SucessfullyFinishedWritingFile(path);
