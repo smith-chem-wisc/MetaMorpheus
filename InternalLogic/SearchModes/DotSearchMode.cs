@@ -6,6 +6,7 @@ namespace InternalLogicEngineLayer
 {
     public class DotSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private readonly List<double> acceptableSortedMassShifts;
@@ -50,5 +51,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

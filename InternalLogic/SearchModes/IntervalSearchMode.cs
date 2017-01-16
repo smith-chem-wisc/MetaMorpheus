@@ -6,6 +6,7 @@ namespace InternalLogicEngineLayer
 {
     public class IntervalSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private readonly List<DoubleRange> intervals;
@@ -44,5 +45,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

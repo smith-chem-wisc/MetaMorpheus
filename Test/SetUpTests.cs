@@ -1,5 +1,4 @@
 ﻿// Copyright 2016 Stefan Solntsev
-using InternalLogicEngineLayer;
 using NUnit.Framework;
 using System.IO;
 using UsefulProteomicsDatabases;
