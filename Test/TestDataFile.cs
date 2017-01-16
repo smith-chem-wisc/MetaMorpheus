@@ -28,14 +28,10 @@ namespace Test
             var MassSpectrum1 = new DefaultMzSpectrum(mz1, intensities1, false);
 
             Scans = new List<TestScan> { new TestScan(1, 1, MassSpectrum1, 1) };
-
-            for (int oneBasedScanNumber = 2; oneBasedScanNumber <= 11; oneBasedScanNumber++)
-            {
-                var mz2 = new double[] { 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 };
-                var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
-                var MassSpectrum2 = new DefaultMzSpectrum(mz2, intensities2, false);
-                Scans.Add(new TestScan(oneBasedScanNumber, oneBasedScanNumber, MassSpectrum2, 402.18629720155.ToMassToChargeRatio(2), 2, 1, 402.18629720155.ToMassToChargeRatio(2), oneBasedScanNumber, 1));
-            }
+            var mz2 = new double[] { 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 };
+            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum2 = new DefaultMzSpectrum(mz2, intensities2, false);
+            Scans.Add(new TestScan(2, 2, MassSpectrum2, 402.18629720155.ToMassToChargeRatio(2), 2, 1, 402.18629720155.ToMassToChargeRatio(2), 2, 1));
         }
 
         public TestDataFile(PeptideWithSetModifications pepWithSetMods)
