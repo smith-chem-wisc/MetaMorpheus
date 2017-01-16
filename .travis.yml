@@ -7,6 +7,7 @@ script:
 - echo $TRAVIS_TAG 
 - cat MetaMorpheusCommandLine/Properties/AssemblyInfo.cs
 - if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' MetaMorpheusCommandLine/Properties/AssemblyInfo.cs ; fi
+- if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' InternalLogic/Properties/AssemblyInfo.cs ; fi
 - cat MetaMorpheusCommandLine/Properties/AssemblyInfo.cs
 - xbuild /p:Configuration=TestAndReleaseTravis MetaMorpheus.sln
 - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
