@@ -16,6 +16,7 @@ namespace InternalLogicEngineLayer
         public readonly ushort varMod3Type;
         public readonly byte varMod3Loc;
         public float MonoisotopicMass;
+        public bool isUnique = false;
 
         public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
