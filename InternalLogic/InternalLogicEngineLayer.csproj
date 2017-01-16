@@ -90,17 +90,17 @@
     <Compile Include="Calibration\CalibrationFunctions\TrainingPoint.cs" />
     <Compile Include="Calibration\CalibrationFunctions\TransformFunction.cs" />
     <Compile Include="Calibration\CalibrationResults.cs" />
-    <Compile Include="EngineRunException.cs" />
+    <Compile Include="Calibration\MyErroredResults.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearchResults.cs" />
     <Compile Include="ClassicSpectrumMatch.cs" />
     <Compile Include="CompactPeptide.cs" />
-    <Compile Include="DotSearchMode.cs" />
+    <Compile Include="SearchModes\DotSearchMode.cs" />
     <Compile Include="GPTMDEngine.cs" />
     <Compile Include="GPTMDResults.cs" />
     <Compile Include="IndexEngine.cs" />
     <Compile Include="IndexResults.cs" />
-    <Compile Include="IntervalSearchMode.cs" />
+    <Compile Include="SearchModes\IntervalSearchMode.cs" />
     <Compile Include="LocalMs2Scan.cs" />
     <Compile Include="ModernSearchEngine.cs" />
     <Compile Include="ModernSearchResults.cs" />
@@ -117,12 +117,13 @@
     </Compile>
     <Compile Include="ProteinGroup.cs" />
     <Compile Include="PSMwithTargetDecoyKnown.cs" />
-    <Compile Include="SearchMode.cs" />
+    <Compile Include="SearchModes\SearchMode.cs" />
+    <Compile Include="SearchModes\SingleAbsoluteAroundZeroSearchMode.cs" />
+    <Compile Include="SearchModes\SinglePpmAroundZeroSearchMode.cs" />
     <Compile Include="SingleEngineEventArgs.cs" />
     <Compile Include="SingleEngineFinishedEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
     <Compile Include="Calibration\CalibrationEngine.cs" />
-    <Compile Include="EngineValidationException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

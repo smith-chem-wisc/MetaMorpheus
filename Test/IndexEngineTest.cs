@@ -9,6 +9,9 @@ namespace Test
     [TestFixture]
     public class IndexEngineTest
     {
+
+        #region Public Methods
+
         [Test]
         public void TestIndexEngine()
         {
@@ -31,5 +34,8 @@ namespace Test
             Assert.Contains("MNNNKQQQ", listOfPeptides);
             Assert.Contains("NNNKQQQ", listOfPeptides);
         }
+
+        #endregion Public Methods
+
     }
 }

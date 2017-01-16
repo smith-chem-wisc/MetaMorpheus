@@ -7,15 +7,13 @@ namespace Test
     [TestFixture]
     public class MyEngineTest
     {
+
         #region Public Methods
 
         [Test]
         public void TestMyEngine()
         {
             MyEngine level0engine = new TestEngine(0, null);
-            Assert.That(() => level0engine.Run(),
-            Throws.TypeOf<EngineValidationException>()
-                .With.Property("Message").EqualTo("param1 cannot be null"));
 
             level0engine = new TestEngine(0, new object());
             level0engine.Run();
@@ -27,6 +25,7 @@ namespace Test
 
         private class TestEngine : MyEngine
         {
+
             #region Private Fields
 
             private object param1;
@@ -49,18 +48,13 @@ namespace Test
                 return new TestResults(this);
             }
 
-            protected override void ValidateParams()
-            {
-                if (param1 == null)
-                    throw new EngineValidationException("param1 cannot be null");
-            }
-
             #endregion Protected Methods
 
             #region Private Classes
 
             private class TestResults : MyResults
             {
+
                 #region Public Constructors
 
                 public TestResults(MyEngine e) : base(e)
@@ -79,11 +73,14 @@ namespace Test
                 }
 
                 #endregion Protected Methods
+
             }
 
             #endregion Private Classes
+
         }
 
         #endregion Private Classes
+
     }
 }

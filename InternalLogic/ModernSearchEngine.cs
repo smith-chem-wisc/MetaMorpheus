@@ -11,6 +11,7 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchEngine : MyEngine
     {
+
         #region Private Fields
 
         private readonly List<int>[] fragmentIndex;
@@ -45,12 +46,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Constructors
 
         #region Protected Methods
-
-        protected override void ValidateParams()
-        {
-            if (fragmentIndex == null)
-                throw new EngineValidationException("fragmentIndex cannot be null");
-        }
 
         protected override MyResults RunSpecific()
         {
@@ -228,5 +223,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

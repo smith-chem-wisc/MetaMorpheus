@@ -13,6 +13,7 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {
+
         #region Private Fields
 
         private readonly ParentSpectrumMatch[][] newPsms;
@@ -364,12 +365,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Methods
 
         #region Protected Methods
-
-        protected override void ValidateParams()
-        {
-            if (newPsms == null)
-                throw new EngineValidationException("newPsms cannot be null");
-        }
 
         protected override MyResults RunSpecific()
         {
@@ -785,5 +780,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

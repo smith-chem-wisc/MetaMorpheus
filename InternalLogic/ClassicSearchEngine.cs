@@ -1,5 +1,4 @@
-﻿using MassSpectrometry;
-using OldInternalLogic;
+﻿using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -11,6 +10,7 @@ namespace InternalLogicEngineLayer
 {
     public class ClassicSearchEngine : MyEngine
     {
+
         #region Private Fields
 
         private readonly List<SearchMode> searchModes;
@@ -25,17 +25,19 @@ namespace InternalLogicEngineLayer
 
         private readonly Tolerance productMassTolerance;
 
-        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        private readonly LocalMs2Scan[] myMsDataFile;
 
         private readonly int spectraFileIndex;
+        private readonly int myMsDataFileNumSpectra;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
+        public ClassicSearchEngine(LocalMs2Scan[] myMsDataFile, int myMsDataFileNumSpectra, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
+            this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
             this.spectraFileIndex = spectraFileIndex;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
@@ -48,14 +50,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Constructors
 
         #region Protected Methods
-
-        protected override void ValidateParams()
-        {
-            if (myMsDataFile == null)
-                throw new EngineValidationException("myMsDataFile cannot be null");
-            if (proteinList == null)
-                throw new EngineValidationException("proteinList cannot be null");
-        }
 
         protected override MyResults RunSpecific()
         {
@@ -72,11 +66,9 @@ namespace InternalLogicEngineLayer
 
             status("Getting ms2 scans...");
 
-            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
-
             var outerPsms = new ClassicSpectrumMatch[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFile.NumSpectra];
+                outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFileNumSpectra];
 
             var lockObject = new object();
             int proteinsSeen = 0;
@@ -87,7 +79,7 @@ namespace InternalLogicEngineLayer
             {
                 var psms = new ClassicSpectrumMatch[searchModes.Count][];
                 for (int aede = 0; aede < searchModes.Count; aede++)
-                    psms[aede] = new ClassicSpectrumMatch[myMsDataFile.NumSpectra];
+                    psms[aede] = new ClassicSpectrumMatch[myMsDataFileNumSpectra];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -138,7 +130,7 @@ namespace InternalLogicEngineLayer
                             for (int aede = 0; aede < searchModes.Count; aede++)
                             {
                                 var searchMode = searchModes[aede];
-                                foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchMode).ToList())
+                                foreach (LocalMs2Scan scan in GetAcceptableScans(myMsDataFile, yyy.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var score = PSMwithTargetDecoyKnown.MatchIons(scan.theScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
                                     var psm = new ClassicSpectrumMatch(score, yyy, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, spectraFileIndex);
@@ -211,5 +203,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

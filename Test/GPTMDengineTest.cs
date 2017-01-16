@@ -11,6 +11,9 @@ namespace Test
     [TestFixture]
     public class GPTMDengineTest
     {
+
+        #region Public Methods
+
         [Test]
         public void TestGPTMDengine()
         {
@@ -19,13 +22,9 @@ namespace Test
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             double tol = 0.1;
             bool isotopeErrors = false;
-            var engine = new GPTMDEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
-            Assert.That(() => engine.Run(),
-            Throws.TypeOf<EngineValidationException>()
-                .With.Property("Message").EqualTo("allResultingIdentifications cannot be null"));
 
             allResultingIdentifications = new List<NewPsmWithFDR>();
-            engine = new GPTMDEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
+            var engine = new GPTMDEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
             var res = (GPTMDResults)engine.Run();
             Assert.AreEqual(0, res.mods.Count);
 
@@ -46,17 +45,34 @@ namespace Test
             Assert.AreEqual(5, res.mods["accession"].Count);
         }
 
+        #endregion Public Methods
+
+        #region Private Classes
+
         private class TestParentSpectrumMatch : ParentSpectrumMatch
         {
-            public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
-            {
-                throw new NotImplementedException();
-            }
+
+            #region Public Constructors
 
             public TestParentSpectrumMatch(double scanPrecursorMass)
             {
                 this.scanPrecursorMass = scanPrecursorMass;
             }
+
+            #endregion Public Constructors
+
+            #region Public Methods
+
+            public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+            {
+                throw new NotImplementedException();
+            }
+
+            #endregion Public Methods
+
         }
+
+        #endregion Private Classes
+
     }
 }

@@ -15,6 +15,7 @@ namespace InternalLogicTaskLayer
 {
     public class SearchTask : MyTaskEngine
     {
+
         #region Public Constructors
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
@@ -82,19 +83,6 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("searchModes: ");
             sb.Append(string.Join(Environment.NewLine, searchModes.Where(b => b.Use).Select(b => "\t" + b.sm)));
             return sb.ToString();
-        }
-
-        protected override void ValidateParams()
-        {
-            foreach (var huh in listOfModListsForSearch)
-            {
-                if (huh.Fixed && huh.Localize)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and localize");
-                if (huh.Fixed && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both fixed and variable");
-                if (huh.Localize && huh.Variable)
-                    throw new EngineValidationException("Not allowed to set same modifications to both localize and variable");
-            }
         }
 
         protected override MyResults RunSpecific()
@@ -184,7 +172,9 @@ namespace InternalLogicTaskLayer
 
                 if (classicSearch)
                 {
-                    classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModesS);
+                    var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+
+                    classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModesS);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
@@ -299,5 +289,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

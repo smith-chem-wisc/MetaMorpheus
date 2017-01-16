@@ -21,6 +21,7 @@ namespace InternalLogicTaskLayer
 
     public abstract class MyTaskEngine : MyEngine
     {
+
         #region Public Fields
 
         public List<string> rawDataFilenameList;
@@ -72,6 +73,9 @@ namespace InternalLogicTaskLayer
                 file.Write(ToString());
             SucessfullyFinishedWritingFile(paramsFileName);
             var heh = base.Run();
+            var resultsFileName = Path.Combine(output_folder, "results.txt");
+            using (StreamWriter file = new StreamWriter(resultsFileName))
+                file.Write(heh.ToString());
             finishedSingleTask();
             return heh;
         }
@@ -79,6 +83,7 @@ namespace InternalLogicTaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.AppendLine("MetaMorpheus Version: " + MetaMorpheusVersion);
             sb.AppendLine(GetSpecificTaskInfo());
             sb.AppendLine(taskType.ToString());
             sb.AppendLine("Spectra files:");
@@ -196,11 +201,23 @@ namespace InternalLogicTaskLayer
                                     break;
 
                                 case "begin":
-                                    oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
+                                    try
+                                    {
+                                        oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
+                                    }
+                                    catch (ArgumentNullException)
+                                    {
+                                    }
                                     break;
 
                                 case "end":
-                                    oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
+                                    try
+                                    {
+                                        oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
+                                    }
+                                    catch (ArgumentNullException)
+                                    {
+                                    }
                                     break;
 
                                 case "sequence":
@@ -412,5 +429,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

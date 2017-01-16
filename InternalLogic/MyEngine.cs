@@ -2,15 +2,18 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
+using System.Reflection;
 
 namespace InternalLogicEngineLayer
 {
     public abstract class MyEngine
     {
+
         #region Public Fields
 
+        public static readonly string MetaMorpheusVersion;
         public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
-
         public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
 
         #endregion Public Fields
@@ -20,6 +23,33 @@ namespace InternalLogicEngineLayer
         internal readonly int Level;
 
         #endregion Internal Fields
+
+        #region Private Fields
+
+        private const string elementsLocation = @"elements.dat";
+        private const string unimodLocation = @"unimod_tables.xml";
+        private const string uniprotLocation = @"ptmlist.txt";
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        static MyEngine()
+        {
+            try
+            {
+                UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
+                unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
+                uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+            }
+            catch (WebException)
+            {
+            }
+
+            MetaMorpheusVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        }
+
+        #endregion Public Constructors
 
         #region Protected Constructors
 
@@ -47,7 +77,6 @@ namespace InternalLogicEngineLayer
         public MyResults Run()
         {
             startingSingleEngine();
-            ValidateParams();
             var stopWatch = new Stopwatch();
             stopWatch.Start();
             var myResults = RunSpecific();
@@ -60,8 +89,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Methods
 
         #region Protected Methods
-
-        protected abstract void ValidateParams();
 
         protected void status(string v)
         {
@@ -90,5 +117,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

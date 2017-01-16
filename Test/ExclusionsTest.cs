@@ -6,6 +6,7 @@ namespace Test
     [TestFixture]
     public class ExclusionsTest
     {
+
         #region Public Methods
 
         [Test]
@@ -45,5 +46,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }

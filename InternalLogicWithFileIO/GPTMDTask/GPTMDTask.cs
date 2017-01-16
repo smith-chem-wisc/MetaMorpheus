@@ -16,6 +16,7 @@ namespace InternalLogicTaskLayer
 {
     public class GPTMDTask : MyTaskEngine
     {
+
         #region Public Fields
 
         public List<ModListForGPTMDTask> listOfModListsForGPTMD;
@@ -73,14 +74,6 @@ namespace InternalLogicTaskLayer
             return sb.ToString();
         }
 
-        protected override void ValidateParams()
-        {
-            if (listOfModListsForGPTMD == null)
-                throw new EngineValidationException("listOfModListsForGPTMD should not be null");
-            if (listOfModListsForGPTMD.Count(b => b.GPTMD) == 0)
-                throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
-        }
-
         protected override MyResults RunSpecific()
         {
             string outputXMLdbFullName = Path.Combine(output_folder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
@@ -125,7 +118,9 @@ namespace InternalLogicTaskLayer
                 status("Opening spectra file...");
                 myMsDataFile.Open();
 
-                var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+                var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -248,5 +243,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

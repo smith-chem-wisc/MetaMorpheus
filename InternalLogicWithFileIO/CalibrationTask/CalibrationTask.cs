@@ -10,11 +10,13 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
+
         #region Public Constructors
 
         public CalibrationTask(ObservableCollection<ModList> modList)
@@ -49,25 +51,13 @@ namespace InternalLogicTaskLayer
 
         #region Protected Methods
 
-        protected override void ValidateParams()
-        {
-            if (xmlDbFilenameList == null)
-                throw new EngineValidationException("xMLdblist cannot be null");
-            if (xmlDbFilenameList.Count == 0)
-                throw new EngineValidationException("xMLdblist cannot be empty");
-            if (rawDataFilenameList == null)
-                throw new EngineValidationException("rawDataAndResultslist cannot be null");
-            if (rawDataFilenameList.Count == 0)
-                throw new EngineValidationException("rawDataAndResultslist cannot be empty");
-        }
-
         protected override string GetSpecificTaskInfo()
         {
             var sb = new StringBuilder();
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
-            sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
+            sb.Append("precursorMassTolerance: " + precursorMassTolerance);
             return sb.ToString();
         }
 
@@ -100,19 +90,24 @@ namespace InternalLogicTaskLayer
             status("Loading proteins...");
             var proteinList = xmlDbFilenameList.SelectMany(b => getProteins(true, identifiedModsInXML, b)).ToList();
 
-            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
             {
-                var origDataFile = currentRawFileList[spectraFileIndex];
-                status("Loading spectra file...");
+                var origDataFileName = currentRawFileList[spectraFileIndex];
+                LocalMs2Scan[] listOfSortedms2Scans;
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-                if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
-                else
-                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
-                status("Opening spectra file...");
-                myMsDataFile.Open();
+                lock (myTaskResults)
+                {
+                    status("Loading spectra file " + origDataFileName + "...");
+                    if (Path.GetExtension(origDataFileName).Equals(".mzML"))
+                        myMsDataFile = new Mzml(origDataFileName, maxNumPeaksPerScan);
+                    else
+                        myMsDataFile = new ThermoRawFile(origDataFileName, maxNumPeaksPerScan);
+                    status("Opening spectra file " + origDataFileName + "...");
+                    myMsDataFile.Open();
+                    listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+                }
 
-                var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -131,14 +126,14 @@ namespace InternalLogicTaskLayer
 
                 //Now can calibrate!!!
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFileForCalibration;
-                if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                if (Path.GetExtension(origDataFileName).Equals(".mzML"))
                 {
-                    myMsDataFileForCalibration = new Mzml(origDataFile);
+                    myMsDataFileForCalibration = new Mzml(origDataFileName);
                     myMsDataFileForCalibration.Open();
                 }
                 else
                 {
-                    myMsDataFileForCalibration = new ThermoRawFile(origDataFile);
+                    myMsDataFileForCalibration = new ThermoRawFile(origDataFileName);
                     myMsDataFileForCalibration.Open();
                 }
                 int randomSeed = 1;
@@ -148,17 +143,22 @@ namespace InternalLogicTaskLayer
 
                 var result = (CalibrationResults)a.Run();
 
-                status("Creating _indexedmzMLConnection, and putting data in it");
-                var path = Path.Combine(Path.GetDirectoryName(output_folder), Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
+                status("Creating _indexedmzMLConnection, putting data in it, and writing!");
+                var path = Path.Combine(output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                 MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.myMsDataFile, path);
 
                 SucessfullyFinishedWritingFile(path);
 
-                myTaskResults.newSpectra.Add(path);
+                lock (myTaskResults)
+                {
+                    myTaskResults.newSpectra.Add(path);
+                }
             }
+            );
             return myTaskResults;
         }
 
         #endregion Protected Methods
+
     }
 }
