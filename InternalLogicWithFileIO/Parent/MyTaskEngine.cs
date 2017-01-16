@@ -356,17 +356,21 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        protected void WriteToTabDelimitedTextFileWithDecoys(List<ProteinGroup> items, string output_folder, string fileName)
+        protected void WriteProteinGroupsToTSV(List<ProteinGroup> items, string output_folder, string fileName)
         {
-            var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
-
-            using (StreamWriter output = new StreamWriter(writtenFile))
+            if (items != null)
             {
-                output.WriteLine("Protein Description\tProtein Sequence\tProtein Length\tNumber of Proteins in Group\tNumber of Peptide-Spectrum Matches\tNumber of Unique Peptides\tSummed Peptide-Spectrum Match Precursor Intensity\tSummed Unique Peptide Precursor Intensity\tSummed Morpheus Score\tDecoy?\tCumulative Target\tCumulative Decoy\tQ-Value (%)");
-                for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i]);
+                var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
+
+                using (StreamWriter output = new StreamWriter(writtenFile))
+                {
+                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader());
+                    for (int i = 0; i < items.Count; i++)
+                        output.WriteLine(items[i]);
+                }
+
+                SucessfullyFinishedWritingFile(writtenFile);
             }
-            SucessfullyFinishedWritingFile(writtenFile);
         }
 
         protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)

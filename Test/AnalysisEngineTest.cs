@@ -96,7 +96,7 @@ namespace Test
             }
 
             var p = new ParentSpectrumMatch[0][];
-            var analysisEngine = new AnalysisEngine(p, null, null, null, null, null, null, null, null, null, null, null, true);
+            var analysisEngine = new AnalysisEngine(p, null, null, null, null, null, null, null, null, null, null, null, null, true);
 
             // apply parsimony to initial dictionary
             var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary);
@@ -165,12 +165,6 @@ namespace Test
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
             Assert.That(parsimonyBaseSequences.Contains(sequence2));
             Assert.That(parsimonyBaseSequences.Contains(sequence3));
-        }
-
-        [Test]
-        public void TestProteinGrouping()
-        {
-            Assert.That(true);
         }
 
         #endregion Public Methods
