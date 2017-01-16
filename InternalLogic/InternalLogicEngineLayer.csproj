@@ -78,7 +78,6 @@
     <Compile Include="AnalysisResults.cs" />
     <Compile Include="Bin.cs" />
     <Compile Include="BinTreeStructure.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\ByHandCalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\CalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\ConstantCalibrationFunction.cs" />
     <Compile Include="Calibration\CalibrationFunctions\DataPoint.cs" />

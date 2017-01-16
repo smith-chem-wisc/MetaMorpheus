@@ -1,7 +1,6 @@
 ﻿using InternalLogicEngineLayer;
 using MathNet.Numerics.Distributions;
 using OldInternalLogic;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -56,7 +55,6 @@ namespace InternalLogicTaskLayer
         public int maxMissedCleavages { get; set; }
         public int maxModificationIsoforms { get; set; }
         public string output_folder { get; set; }
-        public Tolerance productMassTolerance { get; set; }
         public Protease protease { get; set; }
         public bool yIons { get; set; }
         public int maxNumPeaksPerScan { get; set; }
@@ -98,7 +96,6 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages);
             sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms);
             sb.AppendLine("output_folder: " + output_folder);
-            sb.AppendLine("productMassTolerance: " + productMassTolerance);
             sb.AppendLine("protease: " + protease);
             sb.AppendLine("bIons: " + bIons);
             sb.Append("yIons: " + yIons);

@@ -16,6 +16,11 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
+        private const double binTol = 0.003;
+        private const double comboThresholdMultiplier = 3;
+        private const int maximumMissedCleavages = 2;
+        private const int maxModIsoforms = 4096;
+        private const int max_mods_for_peptide = 3;
         private readonly ParentSpectrumMatch[][] newPsms;
 
         private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
@@ -568,7 +573,7 @@ namespace InternalLogicEngineLayer
             var ok = new HashSet<Tuple<double, double, double>>();
             foreach (var bin in myTreeStructure.finalBins.Where(b => Math.Abs(b.MassShift) > v))
                 foreach (var bin2 in myTreeStructure.finalBins.Where(b => Math.Abs(b.MassShift) > v))
-                    if (bin.CountTarget * bin2.CountTarget >= totalTargetCount * 3)
+                    if (bin.CountTarget * bin2.CountTarget >= totalTargetCount * comboThresholdMultiplier)
                         ok.Add(new Tuple<double, double, double>(bin.MassShift, bin2.MassShift, Math.Min(bin.CountTarget, bin2.CountTarget)));
 
             foreach (var bin in myTreeStructure.finalBins)
@@ -656,14 +661,14 @@ namespace InternalLogicEngineLayer
         private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr)
         {
             var myTreeStructure = new BinTreeStructure();
-            myTreeStructure.GenerateBins(limitedpsms_with_fdr, 0.003);
+            myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);
             myTreeStructure.AddToBins(limitedpsms_with_fdr);
 
-            IdentifyUnimodBins(myTreeStructure, 0.003);
-            IdentifyUniprotBins(myTreeStructure, 0.003);
-            IdentifyAA(myTreeStructure, 0.003);
+            IdentifyUnimodBins(myTreeStructure, binTol);
+            IdentifyUniprotBins(myTreeStructure, binTol);
+            IdentifyAA(myTreeStructure, binTol);
 
-            IdentifyCombos(myTreeStructure, 0.003);
+            IdentifyCombos(myTreeStructure, binTol);
 
             IdentifyResidues(myTreeStructure);
 
@@ -671,7 +676,7 @@ namespace InternalLogicEngineLayer
 
             IdentifyAAsInCommon(myTreeStructure);
 
-            IdentifyMine(myTreeStructure, 0.003);
+            IdentifyMine(myTreeStructure, binTol);
 
             return myTreeStructure;
         }
@@ -737,15 +742,15 @@ namespace InternalLogicEngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length == 1 || peptide.Length > 252)
+                        if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2) // 2 is for indexing terminal modifications
                             continue;
 
                         peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             HashSet<PeptideWithSetModifications> v;

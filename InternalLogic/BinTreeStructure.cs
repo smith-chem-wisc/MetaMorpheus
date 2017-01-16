@@ -6,8 +6,10 @@ namespace InternalLogicEngineLayer
 {
     public class BinTreeStructure
     {
+
         #region Private Fields
 
+        private const int minNumberInBin = 8;
         private double dc;
 
         #endregion Private Fields
@@ -67,7 +69,7 @@ namespace InternalLogicEngineLayer
             var prelimBins = new HashSet<double>();
             foreach (OkBin okbin in listokbin.OrderByDescending(b => b.p))
             {
-                if (okbin.sigma < dc || okbin.p < 8)
+                if (okbin.sigma < dc || okbin.p < minNumberInBin)
                     continue;
                 bool add = true;
                 foreach (double a in prelimBins)
@@ -139,5 +141,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }
