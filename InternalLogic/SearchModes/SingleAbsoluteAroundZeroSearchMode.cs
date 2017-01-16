@@ -1,12 +1,12 @@
-﻿using InternalLogicEngineLayer;
-using Spectra;
+﻿using Spectra;
 using System;
 using System.Collections.Generic;
 
-namespace InternalLogicTaskLayer
+namespace InternalLogicEngineLayer
 {
-    internal class SingleAbsoluteAroundZeroSearchMode : SearchMode
+    public class SingleAbsoluteAroundZeroSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private readonly double value;
@@ -40,5 +40,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Public Methods
+
     }
 }

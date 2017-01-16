@@ -1,12 +1,12 @@
-﻿using InternalLogicEngineLayer;
-using Spectra;
+﻿using Spectra;
 using System;
 using System.Collections.Generic;
 
-namespace InternalLogicTaskLayer
+namespace InternalLogicEngineLayer
 {
     public class SinglePpmAroundZeroSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private readonly double ppmTolerance;
@@ -41,5 +41,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Public Methods
+
     }
 }
