@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace InternalLogicCalibration
 {
@@ -7,7 +6,7 @@ namespace InternalLogicCalibration
     {
         #region Private Fields
 
-        private Action<string> onOutput;
+        private readonly Action<string> onOutput;
 
         #endregion Private Fields
 
@@ -20,18 +19,18 @@ namespace InternalLogicCalibration
 
         #endregion Public Constructors
 
-        #region Public Methods
+        #region Internal Methods
 
         internal override double Predict(double[] t)
         {
             return -t[1] / 200000;
         }
 
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal void Train()
         {
             onOutput("Sucessfully trained ByHandCalibrationFunction");
         }
 
-        #endregion Public Methods
+        #endregion Internal Methods
     }
 }

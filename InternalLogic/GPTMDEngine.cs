@@ -7,28 +7,21 @@ namespace InternalLogicEngineLayer
 {
     public class GPTMDEngine : MyEngine
     {
-
         #region Private Fields
 
-        private List<NewPsmWithFDR>[] allResultingIdentifications;
-        private IEnumerable<Tuple<double, double>> combos;
-        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict;
-        private List<MorpheusModification> gptmdModifications;
-        private bool isotopeErrors;
-        private List<MorpheusModification> localizeableModifications;
-        private double tol;
-        private List<MorpheusModification> variableModifications;
+        private readonly List<NewPsmWithFDR> allResultingIdentifications;
+        private readonly IEnumerable<Tuple<double, double>> combos;
+        private readonly List<MorpheusModification> gptmdModifications;
+        private readonly bool isotopeErrors;
+        private readonly double tol;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GPTMDEngine(List<NewPsmWithFDR>[] allResultingIdentifications, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> dict, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
+        public GPTMDEngine(List<NewPsmWithFDR> allResultingIdentifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
-            this.dict = dict;
             this.allResultingIdentifications = allResultingIdentifications;
-            this.variableModifications = variableModifications;
-            this.localizeableModifications = localizeableModifications;
             this.isotopeErrors = isotopeErrors;
             this.gptmdModifications = gptmdModifications;
             this.combos = combos;
@@ -47,12 +40,12 @@ namespace InternalLogicEngineLayer
 
         protected override MyResults RunSpecific()
         {
-            Dictionary<string, HashSet<Tuple<int, string>>> Mods = new Dictionary<string, HashSet<Tuple<int, string>>>();
+            var Mods = new Dictionary<string, HashSet<Tuple<int, string>>>();
 
             int modsAdded = 0;
-            foreach (var ye in allResultingIdentifications[0].Where(b => b.QValue <= 0.01 && !b.isDecoy))
+            foreach (var ye in allResultingIdentifications.Where(b => b.QValue <= 0.01 && !b.isDecoy))
             {
-                var theDict = dict[ye.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications)];
+                var theDict = ye.thisPSM.peptidesWithSetModifications;
                 // Only add to non-ambiguous peptides
                 if (theDict.Count == 1)
                 {
@@ -144,6 +137,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

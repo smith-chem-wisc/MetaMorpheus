@@ -12,9 +12,7 @@ namespace InternalLogicCalibration
 
         #endregion Internal Fields
 
-        #region Public Methods
-
-        internal abstract void Train(IEnumerable<LabeledDataPoint> trainingList);
+        #region Internal Methods
 
         internal abstract double Predict(double[] t);
 
@@ -29,10 +27,6 @@ namespace InternalLogicCalibration
             }
             return count == 0 ? 0 : mse / count;
         }
-
-        #endregion Public Methods
-
-        #region Internal Methods
 
         internal void writePredictedLables(List<LabeledDataPoint> trainList1, string v)
         {

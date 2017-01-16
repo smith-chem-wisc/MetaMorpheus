@@ -8,16 +8,12 @@ namespace InternalLogicCalibration
     {
         public double a;
 
-        public ConstantCalibrationFunction()
-        {
-        }
-
-        internal override double Predict(double[] inputs)
+        internal override double Predict(double[] t)
         {
             return a;
         }
 
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal void Train(IEnumerable<LabeledDataPoint> trainingList)
         {
             a = trainingList.Select(b => b.output).Median();
         }

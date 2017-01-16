@@ -9,16 +9,16 @@ namespace OldInternalLogic
 
         #endregion Protected Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
-        public Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
+        protected Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
         {
             this.protein = protein;
             this.OneBasedStartResidueInProtein = OneBasedStartResidueInProtein;
             this.OneBasedEndResidueInProtein = OneBasedEndResidueInProtein;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Properties
 

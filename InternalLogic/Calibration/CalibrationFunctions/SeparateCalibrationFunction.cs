@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace InternalLogicCalibration
+﻿namespace InternalLogicCalibration
 {
     internal class SeparateCalibrationFunction : CalibrationFunction
     {
-        private CalibrationFunction calibrationFunction1;
-        private CalibrationFunction calibrationFunction2;
+        private readonly CalibrationFunction calibrationFunction1;
+        private readonly CalibrationFunction calibrationFunction2;
 
         public SeparateCalibrationFunction(CalibrationFunction calibrationFunction1, CalibrationFunction calibrationFunction2)
         {
@@ -14,17 +11,11 @@ namespace InternalLogicCalibration
             this.calibrationFunction2 = calibrationFunction2;
         }
 
-        internal override double Predict(double[] inputs)
+        internal override double Predict(double[] t)
         {
-            if (inputs[0] == 1)
-                return calibrationFunction1.Predict(inputs);
-            else
-                return calibrationFunction2.Predict(inputs);
-        }
-
-        internal override void Train(IEnumerable<LabeledDataPoint> trainingList)
-        {
-            throw new NotImplementedException();
+            if (t[0] < 0)
+                return calibrationFunction1.Predict(t);
+            return calibrationFunction2.Predict(t);
         }
     }
 }

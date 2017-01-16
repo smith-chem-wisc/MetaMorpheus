@@ -16,21 +16,12 @@ namespace InternalLogicTaskLayer
 {
     public class GPTMDTask : MyTaskEngine
     {
-
         #region Public Fields
 
         public List<ModListForGPTMDTask> listOfModListsForGPTMD;
         public Tolerance precursorMassTolerance;
 
         #endregion Public Fields
-
-        #region Private Fields
-
-        private readonly double tol;
-        private bool isotopeErrors;
-        private string outputFileName;
-
-        #endregion Private Fields
 
         #region Public Constructors
 
@@ -52,23 +43,31 @@ namespace InternalLogicTaskLayer
             listOfModListsForGPTMD[2].Localize = true;
             listOfModListsForGPTMD[3].GPTMD = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
-            this.taskType = MyTaskEnum.GPTMD;
+            taskType = MyTaskEnum.GPTMD;
             tol = 0.003;
+            isotopeErrors = false;
+            maxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public double tol { get; set; }
+        public bool isotopeErrors { get; set; }
+
+        #endregion Public Properties
 
         #region Protected Methods
 
         protected override string GetSpecificTaskInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("isotopeErrors: " + isotopeErrors.ToString());
+            var sb = new StringBuilder();
+            sb.AppendLine("isotopeErrors: " + isotopeErrors);
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Fixed).Select(b => b.FileName)));
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
             sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.GPTMD).Select(b => b.FileName)));
-            sb.AppendLine("outputFileName: " + outputFileName);
             sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
             sb.Append("tol: " + tol);
             return sb.ToString();
@@ -78,22 +77,20 @@ namespace InternalLogicTaskLayer
         {
             if (listOfModListsForGPTMD == null)
                 throw new EngineValidationException("listOfModListsForGPTMD should not be null");
-            if (listOfModListsForGPTMD.Where(b => b.GPTMD).Count() == 0)
+            if (listOfModListsForGPTMD.Count(b => b.GPTMD) == 0)
                 throw new EngineValidationException("Need to marks some modification files for use in GPTMD");
         }
 
         protected override MyResults RunSpecific()
         {
-            outputFileName = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
+            string outputXMLdbFullName = Path.Combine(output_folder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
 
             MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
             myGPTMDresults.newDatabases = new List<string>();
 
             var currentRawFileList = rawDataFilenameList;
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
-            Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
@@ -107,7 +104,7 @@ namespace InternalLogicTaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
             SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).OrderBy(b => b), precursorMassTolerance);
-            List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
+            var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
             allPsms[0] = new List<ParentSpectrumMatch>();
@@ -122,18 +119,15 @@ namespace InternalLogicTaskLayer
                 status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, 400);
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, 400);
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-                ClassicSearchEngine searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
 
-                ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
-
-                //output(searchResults.ToString());
+                var searchResults = (ClassicSearchResults)searchEngine.Run();
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
 
@@ -149,14 +143,15 @@ namespace InternalLogicTaskLayer
                 //output(analysisResults.ToString());
             }
 
-            GPTMDEngine gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications, analysisResults.dict, variableModifications, localizeableModifications, isotopeErrors, gptmdModifications, combos, tol);
-            GPTMDResults gptmdResults = (GPTMDResults)gptmdEngine.Run();
+            var gptmdEngine = new GPTMDEngine(analysisResults.allResultingIdentifications[0], isotopeErrors, gptmdModifications, combos, tol);
+            var gptmdResults = (GPTMDResults)gptmdEngine.Run();
 
             //output(gptmdResults.ToString());
 
-            WriteGPTMDdatabse(gptmdResults.mods, proteinList);
+            WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
 
-            myGPTMDresults.newDatabases.Add(outputFileName);
+            myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
+
             return myGPTMDresults;
         }
 
@@ -169,9 +164,9 @@ namespace InternalLogicTaskLayer
             yield return new Tuple<double, double>(15.994915, 15.994915);
         }
 
-        private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList)
+        private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
         {
-            XmlWriterSettings xmlWriterSettings = new XmlWriterSettings()
+            var xmlWriterSettings = new XmlWriterSettings
             {
                 Indent = true,
                 IndentChars = "  "
@@ -249,9 +244,9 @@ namespace InternalLogicTaskLayer
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
             }
+            SucessfullyFinishedWritingFile(outputFileName);
         }
 
         #endregion Private Methods
-
     }
 }

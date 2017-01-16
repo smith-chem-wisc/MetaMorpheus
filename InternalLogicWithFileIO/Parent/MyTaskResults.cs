@@ -14,7 +14,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Constructors
 
-        public MyTaskResults(MyTaskEngine s) : base(s)
+        protected MyTaskResults(MyTaskEngine s) : base(s)
         {
         }
 

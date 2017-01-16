@@ -7,19 +7,18 @@ namespace InternalLogicEngineLayer
 {
     internal class LocalMs2Scan : IComparable, IComparable<double>
     {
-
         #region Internal Constructors
 
         internal LocalMs2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
         {
-            this.theScan = b;
-            double monoisotopicPrecursorMZ;
-            b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZ);
-            this.monoisotopicPrecursorMZ = monoisotopicPrecursorMZ;
+            theScan = b;
+            double monoisotopicPrecursorMZhere;
+            b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZhere);
+            monoisotopicPrecursorMZ = monoisotopicPrecursorMZhere;
 
-            int monoisotopicPrecursorCharge;
-            b.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorCharge);
-            this.monoisotopicPrecursorCharge = monoisotopicPrecursorCharge;
+            int monoisotopicPrecursorChargehere;
+            b.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorChargehere);
+            monoisotopicPrecursorCharge = monoisotopicPrecursorChargehere;
 
             precursorMass = monoisotopicPrecursorMZ.ToMass(monoisotopicPrecursorCharge);
 
@@ -29,9 +28,9 @@ namespace InternalLogicEngineLayer
 
             NumPeaks = b.MassSpectrum.Count;
 
-            double monoisotopicPrecursorIntensity;
-            b.TryGetSelectedIonGuessMonoisotopicIntensity(out monoisotopicPrecursorIntensity);
-            this.monoisotopicPrecursorIntensity = monoisotopicPrecursorIntensity;
+            double monoisotopicPrecursorIntensityhere;
+            b.TryGetSelectedIonGuessMonoisotopicIntensity(out monoisotopicPrecursorIntensityhere);
+            monoisotopicPrecursorIntensity = monoisotopicPrecursorIntensityhere;
 
             TotalIonCurrent = b.TotalIonCurrent;
         }
@@ -68,6 +67,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

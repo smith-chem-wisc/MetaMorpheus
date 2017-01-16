@@ -22,13 +22,13 @@ namespace OldInternalLogic
 
         #region Public Constructors
 
-        public PeptideSpectrumMatch(bool isDecoy, double PrecursorMassErrorDa, List<double> LocalizedScores, double MetaMorpheusScore, PeptideWithSetModifications peptide)
+        public PeptideSpectrumMatch(bool isDecoy, double PrecursorMassErrorDa, List<double> LocalizedScores, double MetaMorpheusScore, PeptideWithSetModifications Peptide)
         {
             this.isDecoy = isDecoy;
             this.PrecursorMassErrorDa = PrecursorMassErrorDa;
             this.MetaMorpheusScore = MetaMorpheusScore;
             this.LocalizedScores = LocalizedScores;
-            this.Peptide = peptide;
+            this.Peptide = Peptide;
         }
 
         #endregion Public Constructors
@@ -185,7 +185,7 @@ namespace OldInternalLogic
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             //sb.Append(spectrumFilename.ToString(CultureInfo.InvariantCulture) + '\t');
             //sb.Append(SpectrumNumber.ToString(CultureInfo.InvariantCulture) + '\t');

@@ -1,10 +1,7 @@
-﻿using System;
+﻿using OldInternalLogic;
 using System.Collections.Generic;
-using OldInternalLogic;
-using InternalLogicEngineLayer;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace InternalLogicEngineLayer
 {
@@ -15,9 +12,9 @@ namespace InternalLogicEngineLayer
         public List<CompactPeptide> peptideList { get; private set; }
         public List<CompactPeptide> uniquePeptideList { get; private set; }
         public readonly bool isDecoy;
-        private double proteinGroupScore;
-        private double summedIntensity;
-        private double summedUniquePeptideIntensity;
+        private readonly double proteinGroupScore;
+        private readonly double summedIntensity;
+        private readonly double summedUniquePeptideIntensity;
 
         public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
@@ -28,13 +25,13 @@ namespace InternalLogicEngineLayer
             foreach (var protein in proteins)
             {
                 if (protein.isDecoy)
-                    this.isDecoy = true;
+                    isDecoy = true;
             }
 
             // build list of compact peptides associated with the protein group
             // all peptides in the group are associated with all proteins in the group
             // if encountering duplicate peptides, only use the best-scoring one
-            foreach(var psm in psmList)
+            foreach (var psm in psmList)
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                 peptideList.Add(peptide);
@@ -57,10 +54,10 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             // number of proteins in protein group
-            foreach(Protein protein in proteins)
+            foreach (Protein protein in proteins)
                 sb.Append("" + protein.FullDescription + " ;; ");
             sb.Append("\t");
 

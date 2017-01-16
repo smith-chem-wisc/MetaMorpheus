@@ -4,7 +4,7 @@ namespace InternalLogicEngineLayer
 {
     public class SingleEngineFinishedEventArgs : EventArgs
     {
-        private MyResults myResults;
+        private readonly MyResults myResults;
 
         public SingleEngineFinishedEventArgs(MyResults myResults)
         {

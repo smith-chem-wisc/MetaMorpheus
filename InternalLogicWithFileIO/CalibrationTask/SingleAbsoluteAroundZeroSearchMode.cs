@@ -7,11 +7,9 @@ namespace InternalLogicTaskLayer
 {
     internal class SingleAbsoluteAroundZeroSearchMode : SearchMode
     {
-
         #region Private Fields
 
-        private string v;
-        private double value;
+        private readonly double value;
 
         #endregion Private Fields
 
@@ -19,7 +17,6 @@ namespace InternalLogicTaskLayer
 
         public SingleAbsoluteAroundZeroSearchMode(string v, double value) : base(v)
         {
-            this.v = v;
             this.value = value;
         }
 
@@ -29,20 +26,19 @@ namespace InternalLogicTaskLayer
 
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            throw new NotImplementedException();
+            return Math.Abs(scanPrecursorMass - peptideMass) < value;
         }
 
         public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            throw new NotImplementedException();
+            yield return new DoubleRange(-value, value);
         }
 
         public override string SearchModeString()
         {
-            throw new NotImplementedException();
+            return "SingleAbsoluteAroundZeroSearchMode" + value;
         }
 
         #endregion Public Methods
-
     }
 }

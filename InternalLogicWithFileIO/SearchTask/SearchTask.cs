@@ -15,7 +15,6 @@ namespace InternalLogicTaskLayer
 {
     public class SearchTask : MyTaskEngine
     {
-
         #region Public Constructors
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
@@ -42,7 +41,8 @@ namespace InternalLogicTaskLayer
             foreach (var uu in inputSearchModes)
                 searchModes.Add(new SearchModeFoSearch(uu));
             searchModes[0].Use = true;
-            this.taskType = MyTaskEnum.Search;
+            taskType = MyTaskEnum.Search;
+            maxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
@@ -57,11 +57,22 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Properties
 
+        #region Public Methods
+
+        public static IEnumerable<Type> GetSubclassesAndItself(Type type)
+        {
+            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
+                yield return ok;
+            yield return type;
+        }
+
+        #endregion Public Methods
+
         #region Protected Methods
 
         protected override string GetSpecificTaskInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("classicSearch: " + classicSearch);
             sb.AppendLine("doParsimony: " + doParsimony);
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Fixed).Select(b => b.FileName)));
@@ -88,9 +99,7 @@ namespace InternalLogicTaskLayer
 
         protected override MyResults RunSpecific()
         {
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
-            Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             status("Loading modifications...");
             List<MorpheusModification> variableModifications = listOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.getMods()).ToList();
@@ -117,9 +126,39 @@ namespace InternalLogicTaskLayer
             if (!classicSearch)
             {
                 status("Getting fragment dictionary...");
+                var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease);
+                string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine);
 
-                GetPeptideAndFragmentIndices(out peptideIndex, out fragmentIndexDict, listOfModListsForSearch, searchDecoy, variableModifications, fixedModifications, localizeableModifications, proteinList, protease, output_folder);
+                if (pathToFolderWithIndices == null)
+                {
+                    status("Generating indices...");
+                    var output_folderForIndices = GenerateOutputFolderForIndices();
+                    status("Writing params...");
+                    writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
 
+                    var indexResults = (IndexResults)indexEngine.Run();
+                    peptideIndex = indexResults.peptideIndex;
+                    fragmentIndexDict = indexResults.fragmentIndexDict;
+
+                    status("Writing peptide index...");
+                    writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"));
+                    status("Writing fragment index...");
+                    writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"));
+                }
+                else
+                {
+                    status("Reading peptide index...");
+                    var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                    var ser = new NetSerializer.Serializer(messageTypes);
+                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                        peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+
+                    status("Reading fragment index...");
+                    messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                    ser = new NetSerializer.Serializer(messageTypes);
+                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                        fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                }
                 keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             }
@@ -131,9 +170,9 @@ namespace InternalLogicTaskLayer
                 status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, 400);
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, 400);
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
 
@@ -145,35 +184,35 @@ namespace InternalLogicTaskLayer
 
                 if (classicSearch)
                 {
-                    classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModesS);
+                    classicSearchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModesS);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.outerPsms[i]);
 
-                    AnalysisEngine analysisEngine = new AnalysisEngine(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
+                    var analysisEngine = new AnalysisEngine(classicSearchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
-                    AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                    analysisEngine.Run();
                 }
                 else
                 {
-                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance.Value, protease, searchModesS);
+                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModesS);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.newPsms[i]);
 
-                    AnalysisEngine analysisEngine = new AnalysisEngine(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
+                    var analysisEngine = new AnalysisEngine(modernSearchResults.newPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), doParsimony);
 
-                    AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                    analysisEngine.Run();
                 }
             }
 
             if (currentRawFileList.Count > 1)
             {
-                AnalysisEngine analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), doParsimony);
+                var analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModesS, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), doParsimony);
 
-                AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                analysisEngine.Run();
             }
             return new MySearchTaskResults(this);
         }
@@ -182,37 +221,7 @@ namespace InternalLogicTaskLayer
 
         #region Private Methods
 
-        private void GetPeptideAndFragmentIndices(out List<CompactPeptide> peptideIndex, out Dictionary<float, List<int>> fragmentIndexDict, List<ModListForSearchTask> collectionOfModLists, bool doFDRanalysis, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> hm, Protease protease, string output_folder)
-        {
-            IndexEngine indexEngine = new IndexEngine(hm, variableModifications, fixedModifications, localizeableModifications, protease);
-            string pathToFolderWithIndices = GetExistingFolderWithIndices(xmlDbFilenameList, indexEngine);
-
-            if (pathToFolderWithIndices == null)
-            {
-                status("Generating indices...");
-                var output_folderForIndices = GenerateOutputFolderForIndices(xmlDbFilenameList);
-                status("Writing params...");
-                writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
-
-                IndexResults indexResults = (IndexResults)indexEngine.Run();
-                peptideIndex = indexResults.peptideIndex;
-                fragmentIndexDict = indexResults.fragmentIndexDict;
-
-                status("Writing peptide index...");
-                writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"));
-                status("Writing fragment index...");
-                writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"));
-            }
-            else
-            {
-                status("Reading peptide index...");
-                peptideIndex = readPeptideIndex(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind"));
-                status("Reading fragment index...");
-                fragmentIndexDict = readFragmentIndexNetSerializer(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind"));
-            }
-        }
-
-        private string GenerateOutputFolderForIndices(List<string> xmlDbFilenameList)
+        private string GenerateOutputFolderForIndices()
         {
             var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             if (!Directory.Exists(folder))
@@ -224,18 +233,18 @@ namespace InternalLogicTaskLayer
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {
-                output.Write(indexEngine.ToString());
+                output.Write(indexEngine);
             }
             SucessfullyFinishedWritingFile(fileName);
         }
 
-        private string GetExistingFolderWithIndices(List<string> xmlDbFilenameList, IndexEngine indexEngine)
+        private string GetExistingFolderWithIndices(IndexEngine indexEngine)
         {
             // In every database location...
             foreach (var ok in xmlDbFilenameList)
             {
                 var baseDir = Path.GetDirectoryName(ok);
-                DirectoryInfo directory = new DirectoryInfo(baseDir);
+                var directory = new DirectoryInfo(baseDir);
                 DirectoryInfo[] directories = directory.GetDirectories();
 
                 // Look at every subdirectory...
@@ -257,38 +266,6 @@ namespace InternalLogicTaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
-        }
-
-        private Dictionary<float, List<int>> readFragmentIndexNetSerializer(string fragmentIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-
-            Dictionary<float, List<int>> newPerson;
-            using (var file = File.OpenRead(fragmentIndexFile))
-                newPerson = (Dictionary<float, List<int>>)ser.Deserialize(file);
-
-            return newPerson;
-        }
-
-        private List<CompactPeptide> readPeptideIndex(string peptideIndexFile)
-        {
-            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-            List<CompactPeptide> newPerson;
-            using (var file = File.OpenRead(peptideIndexFile))
-            {
-                newPerson = (List<CompactPeptide>)ser.Deserialize(file);
-            }
-
-            return newPerson;
-        }
-
-        private IEnumerable<Type> GetSubclassesAndItself(Type type)
-        {
-            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
-                yield return ok;
-            yield return type;
         }
 
         private void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
@@ -315,6 +292,5 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

@@ -7,7 +7,7 @@ namespace InternalLogicEngineLayer
     {
         #region Public Constructors
 
-        public MyResults(MyEngine s)
+        protected MyResults(MyEngine s)
         {
             this.s = s;
         }
@@ -30,10 +30,10 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             if (s.Level <= 1)
             {
-                sb.AppendLine(GetType().Name.ToString() + ":");
+                sb.AppendLine(GetType().Name + ":");
                 var ok = GetStringForOutput();
                 if (!string.IsNullOrEmpty(ok))
                     sb.AppendLine(ok);
@@ -41,7 +41,7 @@ namespace InternalLogicEngineLayer
             }
             else
             {
-                sb.AppendLine("\t" + GetType().Name.ToString() + ":");
+                sb.AppendLine("\t" + GetType().Name + ":");
                 var ok = GetStringForOutput();
                 if (!string.IsNullOrEmpty(ok))
                     sb.AppendLine(ok);

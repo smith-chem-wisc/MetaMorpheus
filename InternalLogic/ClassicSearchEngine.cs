@@ -21,8 +21,6 @@ namespace InternalLogicEngineLayer
 
         private readonly List<MorpheusModification> fixedModifications;
 
-        private readonly List<MorpheusModification> localizeableModifications;
-
         private readonly List<MorpheusModification> variableModifications;
 
         private readonly Tolerance productMassTolerance;
@@ -35,15 +33,14 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, List<Protein> proteinList, Tolerance fragmentTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
+        public ClassicSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             this.spectraFileIndex = spectraFileIndex;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            this.localizeableModifications = localizeableModifications;
             this.proteinList = proteinList;
-            this.productMassTolerance = fragmentTolerance;
+            this.productMassTolerance = productMassTolerance;
             this.protease = protease;
             this.searchModes = searchModes;
         }
@@ -68,10 +65,10 @@ namespace InternalLogicEngineLayer
 
             int totalProteins = proteinList.Count;
 
-            HashSet<string> level3_observed = new HashSet<string>();
-            HashSet<string> level4_observed = new HashSet<string>();
+            var level3_observed = new HashSet<string>();
+            var level4_observed = new HashSet<string>();
 
-            var lp = new List<ProductType>() { ProductType.b, ProductType.y };
+            var lp = new List<ProductType> { ProductType.b, ProductType.y };
 
             status("Getting ms2 scans...");
 
@@ -81,7 +78,7 @@ namespace InternalLogicEngineLayer
             for (int aede = 0; aede < searchModes.Count; aede++)
                 outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFile.NumSpectra];
 
-            object lockObject = new object();
+            var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
 
@@ -117,7 +114,7 @@ namespace InternalLogicEngineLayer
 
                         peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
@@ -144,7 +141,7 @@ namespace InternalLogicEngineLayer
                                 foreach (LocalMs2Scan scan in GetAcceptableScans(listOfSortedms2Scans, yyy.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var score = PSMwithTargetDecoyKnown.MatchIons(scan.theScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    ClassicSpectrumMatch psm = new ClassicSpectrumMatch(score, yyy, matchedIonsArray, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, spectraFileIndex);
+                                    var psm = new ClassicSpectrumMatch(score, yyy, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, spectraFileIndex);
                                     if (psm.Score > 1)
                                     {
                                         ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
@@ -167,7 +164,7 @@ namespace InternalLogicEngineLayer
                                 if (outerPsms[aede][i] == null || ClassicSpectrumMatch.FirstIsPreferable(psms[aede][i], outerPsms[aede][i]))
                                     outerPsms[aede][i] = psms[aede][i];
                     proteinsSeen += fff.Item2 - fff.Item1;
-                    int new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
+                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In classic search loop"));

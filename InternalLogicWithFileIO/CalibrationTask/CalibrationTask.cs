@@ -15,7 +15,6 @@ namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
-
         #region Public Constructors
 
         public CalibrationTask(ObservableCollection<ModList> modList)
@@ -35,7 +34,8 @@ namespace InternalLogicTaskLayer
             listOfModListsForCalibration[1].Variable = true;
             listOfModListsForCalibration[2].Localize = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
-            this.taskType = MyTaskEnum.Calibrate;
+            taskType = MyTaskEnum.Calibrate;
+            maxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
@@ -63,7 +63,7 @@ namespace InternalLogicTaskLayer
 
         protected override string GetSpecificTaskInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
@@ -77,15 +77,14 @@ namespace InternalLogicTaskLayer
             myTaskResults.newSpectra = new List<string>();
             var currentRawFileList = rawDataFilenameList;
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            Dictionary<CompactPeptide, PeptideWithSetModifications> fullSequenceToProteinSingleMatch = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
             SearchMode searchMode;
             if (precursorMassTolerance.Unit == ToleranceUnit.PPM)
                 searchMode = new SinglePpmAroundZeroSearchMode("", precursorMassTolerance.Value);
             else
                 searchMode = new SingleAbsoluteAroundZeroSearchMode("", precursorMassTolerance.Value);
-            List<SearchMode> searchModes = new List<SearchMode>() { searchMode };
+            var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
             allPsms[0] = new List<ParentSpectrumMatch>();
@@ -107,24 +106,23 @@ namespace InternalLogicTaskLayer
                 status("Loading spectra file...");
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, 400);
+                    myMsDataFile = new Mzml(origDataFile, maxNumPeaksPerScan);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, 400);
+                    myMsDataFile = new ThermoRawFile(origDataFile, maxNumPeaksPerScan);
                 status("Opening spectra file...");
                 myMsDataFile.Open();
-                //output("Finished opening spectra file " + Path.GetFileName(origDataFile));
 
-                ClassicSearchEngine searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, localizeableModifications, proteinList, productMassTolerance, protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(myMsDataFile, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
 
-                ClassicSearchResults searchResults = (ClassicSearchResults)searchEngine.Run();
+                var searchResults = (ClassicSearchResults)searchEngine.Run();
 
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                AnalysisEngine analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
+                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFile) + s), false);
 
-                AnalysisResults analysisResults = (AnalysisResults)analysisEngine.Run();
+                var analysisResults = (AnalysisResults)analysisEngine.Run();
 
                 var identifications = analysisResults.allResultingIdentifications[0];
 
@@ -162,6 +160,5 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Protected Methods
-
     }
 }

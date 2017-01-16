@@ -34,7 +34,7 @@ namespace OldInternalLogic
 
         public List<int> GetDigestionSiteIndices(string sequence)
         {
-            List<int> indices = new List<int>();
+            var indices = new List<int>();
 
             for (int i = 0; i < sequence.Length - 1; i++)
             {

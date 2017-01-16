@@ -4,10 +4,10 @@
     {
         internal string infostring;
 
-        public MyInfo(double v1, string v2)
+        public MyInfo(double MassShift, string infostring)
         {
-            this.MassShift = v1;
-            this.infostring = v2;
+            this.MassShift = MassShift;
+            this.infostring = infostring;
         }
 
         public double MassShift { get; internal set; }

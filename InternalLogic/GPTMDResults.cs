@@ -8,7 +8,7 @@ namespace InternalLogicEngineLayer
     {
         #region Private Fields
 
-        private int modsAdded;
+        private readonly int modsAdded;
 
         #endregion Private Fields
 
@@ -32,7 +32,7 @@ namespace InternalLogicEngineLayer
 
         protected override string GetStringForOutput()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("\t\tModifications added = " + modsAdded);
             sb.Append("\t\tProteins expanded = " + mods.Count);
             return sb.ToString();

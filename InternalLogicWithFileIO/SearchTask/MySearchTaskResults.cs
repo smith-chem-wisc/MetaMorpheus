@@ -10,7 +10,7 @@ namespace InternalLogicTaskLayer
 
         protected override string GetStringForOutput()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             return sb.ToString();
         }
     }

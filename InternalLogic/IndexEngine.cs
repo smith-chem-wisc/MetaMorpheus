@@ -10,7 +10,6 @@ namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
-
         #region Private Fields
 
         private readonly List<Protein> proteinList;
@@ -40,7 +39,7 @@ namespace InternalLogicEngineLayer
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
@@ -72,14 +71,14 @@ namespace InternalLogicEngineLayer
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
             int totalProteins = proteinList.Count;
-            HashSet<string> level3_observed = new HashSet<string>();
-            HashSet<string> level4_observed = new HashSet<string>();
+            var level3_observed = new HashSet<string>();
+            var level4_observed = new HashSet<string>();
             int proteinsSeen = 0;
             int old_progress = 0;
-            var lp = new List<ProductType>() { ProductType.b, ProductType.y };
+            var lp = new List<ProductType> { ProductType.b, ProductType.y };
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                Dictionary<float, List<int>> myInnerDictionary = new Dictionary<float, List<int>>(100000);
+                var myInnerDictionary = new Dictionary<float, List<int>>(100000);
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -103,7 +102,7 @@ namespace InternalLogicEngineLayer
 
                         peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3, localizeableModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
@@ -129,12 +128,12 @@ namespace InternalLogicEngineLayer
 
                             foreach (var huhu in yyy.FastSortedProductMasses(lp))
                             {
-                                float rounded = (float)Math.Round(huhu, 3);
+                                var rounded = (float)Math.Round(huhu, 3);
                                 List<int> value;
                                 if (myInnerDictionary.TryGetValue(rounded, out value))
                                     value.Add(index);
                                 else
-                                    myInnerDictionary.Add(rounded, new List<int>() { index });
+                                    myInnerDictionary.Add(rounded, new List<int> { index });
                             }
                             ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
                         }
@@ -150,11 +149,11 @@ namespace InternalLogicEngineLayer
                             if (myFragmentDictionary.TryGetValue(huhu.Key, out value))
                                 value.Add(hhhh);
                             else
-                                myFragmentDictionary.Add(huhu.Key, new List<int>() { hhhh });
+                                myFragmentDictionary.Add(huhu.Key, new List<int> { hhhh });
                         }
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;
-                    int new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
+                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
                         ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop"));
@@ -167,6 +166,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }

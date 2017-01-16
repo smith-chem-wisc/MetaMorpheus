@@ -6,7 +6,6 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSpectrumMatch : ParentSpectrumMatch
     {
-
         #region Public Constructors
 
         public ModernSpectrumMatch(double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
@@ -15,13 +14,13 @@ namespace InternalLogicEngineLayer
             this.scanNumber = scanNumber;
             this.scanPrecursorCharge = scanPrecursorCharge;
             this.scanRT = scanRT;
-            this.scanPrecursorMass = scanPrecursorMZ.ToMass(scanPrecursorCharge);
-            this.scanPrecursorIntensity = precursorIntensity;
-            this.scanExperimentalPeaks = scanExperimentalPeaksCount;
-            this.TotalIonCurrent = totalIonCurrent;
-            this.Score = score;
+            scanPrecursorMass = scanPrecursorMZ.ToMass(scanPrecursorCharge);
+            scanPrecursorIntensity = precursorIntensity;
+            scanExperimentalPeaks = scanExperimentalPeaksCount;
+            TotalIonCurrent = totalIonCurrent;
+            Score = score;
             this.spectraFileIndex = spectraFileIndex;
-            this.compactPeptide = theBestPeptide;
+            compactPeptide = theBestPeptide;
         }
 
         #endregion Public Constructors
@@ -46,6 +45,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

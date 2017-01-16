@@ -7,7 +7,7 @@ namespace InternalLogicTaskLayer
     {
         #region Private Fields
 
-        private ModList uu;
+        private readonly ModList uu;
 
         #endregion Private Fields
 

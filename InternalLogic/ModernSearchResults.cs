@@ -5,7 +5,6 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchResults : MyResults
     {
-
         #region Public Constructors
 
         public ModernSearchResults(List<ModernSpectrumMatch>[] newPsms, ModernSearchEngine s) : base(s)
@@ -25,11 +24,10 @@ namespace InternalLogicEngineLayer
 
         protected override string GetStringForOutput()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             return sb.ToString();
         }
 
         #endregion Protected Methods
-
     }
 }
