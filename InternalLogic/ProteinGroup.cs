@@ -12,9 +12,10 @@ namespace InternalLogicEngineLayer
         public List<CompactPeptide> peptideList { get; private set; }
         public List<CompactPeptide> uniquePeptideList { get; private set; }
         public readonly bool isDecoy;
-        private readonly double proteinGroupScore;
+        public readonly double proteinGroupScore;
         private readonly double summedIntensity;
         private readonly double summedUniquePeptideIntensity;
+        public double QValue { get; set; }
 
         public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
@@ -37,6 +38,13 @@ namespace InternalLogicEngineLayer
                 peptideList.Add(peptide);
             }
 
+            // construct list of unique peptides
+            foreach (var peptide in peptideList)
+            {
+                if (peptide.isUnique)
+                    uniquePeptideList.Add(peptide);
+            }
+
             // calculate the protein group score
             proteinGroupScore = 0;
 
@@ -45,11 +53,28 @@ namespace InternalLogicEngineLayer
 
             // calculate intensity of only unique peptides
             summedUniquePeptideIntensity = 0;
+
+            // q value
+            QValue = 0;
         }
 
-        public double getScore()
+        public static string GetTabSeparatedHeader()
         {
-            return proteinGroupScore;
+            var sb = new StringBuilder();
+            sb.Append("Protein Description" + '\t');
+            sb.Append("Protein Sequence" + '\t');
+            sb.Append("Protein Length" + '\t');
+            sb.Append("Number of Proteins in Group" + '\t');
+            sb.Append("Number of Peptide-Spectrum Matches" + '\t');
+            sb.Append("Number of Unique Peptides" + '\t');
+            sb.Append("Summed Peptide-Spectrum Match Precursor Intensity" + '\t');
+            sb.Append("Summed Unique Peptide Precursor Intensity" + '\t');
+            sb.Append("Summed Morpheus Score" + '\t');
+            sb.Append("Decoy?" + '\t');
+            sb.Append("Cumulative Target" + '\t');
+            sb.Append("Cumulative Decoy" + '\t');
+            sb.Append("Q-Value (%)");
+            return sb.ToString();
         }
 
         public override string ToString()
