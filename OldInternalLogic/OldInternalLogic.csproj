@@ -81,8 +81,6 @@
   <ItemGroup>
     <Compile Include="Peptide.cs" />
     <Compile Include="CleavageSpecificity.cs" />
-    <Compile Include="DatabaseSearcher.cs" />
-    <Compile Include="Exporters.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
     <Compile Include="MorpheusModification.cs" />
     <Compile Include="ModificationType.cs" />
