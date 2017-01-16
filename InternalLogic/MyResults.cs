@@ -5,20 +5,21 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyResults
     {
-        #region Public Constructors
+
+        #region Internal Fields
+
+        internal TimeSpan Time;
+
+        #endregion Internal Fields
+
+        #region Protected Constructors
 
         protected MyResults(MyEngine s)
         {
             this.s = s;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
-        internal TimeSpan Time;
-
-        #endregion Public Properties
+        #endregion Protected Constructors
 
         #region Protected Properties
 
@@ -31,6 +32,10 @@ namespace InternalLogicEngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
+            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
+                sb.AppendLine("MetaMorpheus: Not a release version");
+            else
+                sb.AppendLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
             if (s.Level <= 1)
             {
                 sb.AppendLine(GetType().Name + ":");
@@ -57,5 +62,6 @@ namespace InternalLogicEngineLayer
         protected abstract string GetStringForOutput();
 
         #endregion Protected Methods
+
     }
 }

@@ -76,6 +76,7 @@ namespace InternalLogicTaskLayer
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
                 file.Write(heh.ToString());
+            SucessfullyFinishedWritingFile(resultsFileName);
             finishedSingleTask();
             return heh;
         }
@@ -83,7 +84,10 @@ namespace InternalLogicTaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("MetaMorpheus Version: " + MetaMorpheusVersion);
+            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
+                sb.AppendLine("MetaMorpheus: Not a release version");
+            else
+                sb.AppendLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
             sb.AppendLine(GetSpecificTaskInfo());
             sb.AppendLine(taskType.ToString());
             sb.AppendLine("Spectra files:");

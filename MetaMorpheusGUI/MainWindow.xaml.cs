@@ -78,7 +78,7 @@ namespace MetaMorpheusGUI
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac7_6uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac8_9p5uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac9_9p5uL.raw"));
-            
+
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-29-13_B6_Frac1_9uL-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-29-13_B6_Frac2_9p5uL-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-29-13_B6_Frac3_9p5uL-Calibrated.mzML"));
@@ -98,8 +98,6 @@ namespace MetaMorpheusGUI
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-30-13_CAST_Frac8_9p5uL-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-16-11-14-40\04-30-13_CAST_Frac9_9p5uL-Calibrated.mzML"));
 
-
-
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
@@ -114,6 +112,7 @@ namespace MetaMorpheusGUI
 
             MyEngine.outProgressHandler += NewoutProgressBar;
             MyEngine.outLabelStatusHandler += NewoutLabelStatus;
+            MyEngine.startingSingleEngineHander += MyEngine_startingSingleEngineHander;
             MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
@@ -122,6 +121,19 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyEngine_startingSingleEngineHander(sender, e)));
+            }
+            else
+            {
+                statusLabel.Content = "Running " + e.myEngine.GetType().Name + " engine...";
+                outProgressBar.IsIndeterminate = true;
+            }
+        }
 
         private void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
@@ -142,6 +154,7 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
             searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
             searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
+            searchModeObservableCollection.Add(new OpenSearchMode("Open search"));
         }
 
         private void AddNewDB(object sender, List<string> e)
