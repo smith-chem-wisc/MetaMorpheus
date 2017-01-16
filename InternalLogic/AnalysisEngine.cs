@@ -420,10 +420,11 @@ namespace InternalLogicEngineLayer
                     {
                         status("Building protein groups and doing FDR...");
                         proteinGroups = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+
+                        action3(proteinGroups, searchModes[j].FileNameAddition);
                     }
 
                     action2(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
-                    action3(proteinGroups, searchModes[j].FileNameAddition);
 
                     yeah[j] = orderedPsmsWithFDR;
                 }
