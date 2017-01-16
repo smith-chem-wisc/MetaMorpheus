@@ -6,6 +6,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -14,6 +16,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GPTMDTaskWindow : Window
     {
+
         #region Private Fields
 
         // Always create a new one, even if updating an existing task
@@ -46,6 +49,16 @@ namespace MetaMorpheusGUI
         #endregion Internal Properties
 
         #region Private Methods
+
+        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var ye = sender as DataGridCell;
+            var hm = ye.Content as TextBlock;
+            if (hm != null && !hm.Text.Equals(""))
+            {
+                System.Diagnostics.Process.Start(hm.Text);
+            }
+        }
 
         private void UpdateFieldsFromTask(GPTMDTask task)
         {
@@ -118,5 +131,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 }

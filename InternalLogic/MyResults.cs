@@ -32,10 +32,6 @@ namespace InternalLogicEngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
-                sb.AppendLine("MetaMorpheus: Not a release version");
-            else
-                sb.AppendLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
             if (s.Level <= 1)
             {
                 sb.AppendLine(GetType().Name + ":");
