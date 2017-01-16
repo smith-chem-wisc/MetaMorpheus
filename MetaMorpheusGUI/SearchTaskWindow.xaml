@@ -68,7 +68,13 @@
                 </StackPanel>
             </StackPanel>
         </Grid>
-        <DataGrid x:Name="modificationsDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
+        <DataGrid x:Name="modificationsDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" >
+            <DataGrid.Resources>
+                <Style TargetType="DataGridCell">
+                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                </Style>
+            </DataGrid.Resources>
+        </DataGrid>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="saveButton_Click" />

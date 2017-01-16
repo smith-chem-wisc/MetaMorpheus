@@ -8,6 +8,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -16,10 +18,17 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
+
+        #region Private Fields
+
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForSearchTask> ModFileListInWindow = new ObservableCollection<ModListForSearchTask>();
 
         private ObservableCollection<SearchModeFoSearch> SearchModes = new ObservableCollection<SearchModeFoSearch>();
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public SearchTaskWindow(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
         {
@@ -37,6 +46,26 @@ namespace MetaMorpheusGUI
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
+        }
+
+        #endregion Public Constructors
+
+        #region Internal Properties
+
+        internal SearchTask TheTask { get; private set; }
+
+        #endregion Internal Properties
+
+        #region Private Methods
+
+        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var ye = sender as DataGridCell;
+            var hm = ye.Content as TextBlock;
+            if (hm != null && !hm.Text.Equals(""))
+            {
+                System.Diagnostics.Process.Start(hm.Text);
+            }
         }
 
         private void PopulateChoices(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
@@ -95,8 +124,6 @@ namespace MetaMorpheusGUI
             }
             allowedPrecursorMassDiffsDataGrid.Items.Refresh();
         }
-
-        internal SearchTask TheTask { get; private set; }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
         {
@@ -159,5 +186,8 @@ namespace MetaMorpheusGUI
                 MessageBoxResult result = MessageBox.Show(ee.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
+
+        #endregion Private Methods
+
     }
 }

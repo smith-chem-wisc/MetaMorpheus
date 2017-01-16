@@ -6,6 +6,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace MetaMorpheusGUI
 {
@@ -113,6 +115,16 @@ namespace MetaMorpheusGUI
             TheTask.precursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             DialogResult = true;
+        }
+
+        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var ye = sender as DataGridCell;
+            var hm = ye.Content as TextBlock;
+            if (hm != null && !hm.Text.Equals(""))
+            {
+                System.Diagnostics.Process.Start(hm.Text);
+            }
         }
 
         #endregion Private Methods

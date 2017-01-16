@@ -126,6 +126,9 @@
     <Compile Include="Calibration\CalibrationEngine.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Databases\elements.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +136,14 @@
       <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
       <Name>OldInternalLogic</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Databases\ptmlist.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Databases\unimod_tables.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

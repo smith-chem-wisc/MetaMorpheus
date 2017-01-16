@@ -48,7 +48,7 @@ namespace MetaMorpheusGUI
 
             modListObservableCollection.Add(new ModList("f.txt"));
             modListObservableCollection.Add(new ModList("v.txt"));
-            modListObservableCollection.Add(new ModList("p.txt"));
+            modListObservableCollection.Add(new ModList("ptmlist.txt"));
             modListObservableCollection.Add(new ModList("m.txt"));
             modListObservableCollection.Add(new ModList("r.txt"));
             modListObservableCollection.Add(new ModList("s.txt"));
@@ -79,7 +79,6 @@ namespace MetaMorpheusGUI
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac8_9p5uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac9_9p5uL.raw"));
 
-          
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
