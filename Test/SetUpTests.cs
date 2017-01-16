@@ -8,6 +8,7 @@ namespace Test
     [SetUpFixture]
     public class MySetUpClass
     {
+
         #region Public Methods
 
         [OneTimeSetUp]
@@ -18,5 +19,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }
