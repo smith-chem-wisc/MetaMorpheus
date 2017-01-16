@@ -48,7 +48,7 @@ namespace Test
 				var mz1 = new double []{ 50, 60, 70, 80, 90, 100 };
 				var intensities1 = new double []{ 1, 1, 1, 1, 1, 1 };
 
-				var mz2 = new double []{ 50, 60, 70, 147.076418656749, 200, 300 };
+				var mz2 = new double []{ 50, 60, 70, 147.0764, 257.1244, 275.1350 };
 				var intensities2 = new double[]{ 1, 1, 1, 1, 1, 1 };
 
 				var MassSpectrum1 = new DefaultMzSpectrum(mz1, intensities1, false);
@@ -94,7 +94,7 @@ namespace Test
 
 			public IMsDataScan<IMzSpectrum<MzPeak>> GetOneBasedScan(int oneBasedScanNumber)
 			{
-				throw new NotImplementedException();
+				return Scans[oneBasedScanNumber - 1];
 			}
 
 			public void LoadAllScansInMemory()
