@@ -209,7 +209,7 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            // build each protein list after parsimony and match it to its peptide
+            // build protein group after parsimony and match it to its peptide
             Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinGroupMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
 
             foreach (var kvp in parsimonyDict)
@@ -232,6 +232,15 @@ namespace InternalLogicEngineLayer
                     }
                 }
             }
+
+            // add indistinguishable proteins to the protein group
+            // if (proteinCount1 == proteinCount2)
+            //      if(1.
+
+            // find unique peptides in protein group
+            // if (protein count > 1)
+            //      unique = false
+
 
             // constructs return dictionary (only use parsimony proteins for the new virtual peptide list)
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
