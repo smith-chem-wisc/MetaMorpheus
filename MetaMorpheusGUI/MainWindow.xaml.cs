@@ -210,7 +210,7 @@ namespace MetaMorpheusGUI
         {
             // Create the OpenFIleDialog object
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
-            openPicker.Filter = "XML Files|*.xml,*.xml.gz";
+            openPicker.Filter = "XML Files|*.xml;*.xml.gz";
             openPicker.FilterIndex = 1;
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
