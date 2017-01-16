@@ -13,6 +13,10 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
+        private const int maximumMissedCleavages = 2;
+        private const int maximumVariableModificationIsoforms = 4096;
+        private const int max_mods_for_peptide = 3;
+        private const int decimalDigitsForFragmentMassRounding = 3;
         private readonly List<Protein> proteinList;
 
         private readonly Protease protease;
@@ -69,10 +73,10 @@ namespace InternalLogicEngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length == 1 || peptide.Length > 252)
+                        if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
                             continue;
 
                         if (peptide.OneBasedPossibleLocalizedModifications.Count == 0)
@@ -89,7 +93,7 @@ namespace InternalLogicEngineLayer
 
                         peptide.SetFixedModifications(fixedModifications);
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, 4098, 3).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
@@ -115,7 +119,7 @@ namespace InternalLogicEngineLayer
 
                             foreach (var huhu in yyy.FastSortedProductMasses(lp))
                             {
-                                var rounded = (float)Math.Round(huhu, 3);
+                                var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
                                 List<int> value;
                                 if (myInnerDictionary.TryGetValue(rounded, out value))
                                     value.Add(index);

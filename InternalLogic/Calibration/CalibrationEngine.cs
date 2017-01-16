@@ -26,6 +26,7 @@ namespace InternalLogicCalibration
         private const int minMS2 = 2;
         private const int numFragmentsNeededForEveryIdentification = 10;
         private const double toleranceInMZforMS1Search = 0.01;
+        private const double fracForTraining = 0.75;
         private readonly double toleranceInMZforMS2Search;
         private int randomSeed;
         private List<NewPsmWithFDR> identifications;
@@ -189,31 +190,13 @@ namespace InternalLogicCalibration
             return trainingPointsToReturn;
         }
 
-        private void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
-        {
-            if (trainingPoints.Count() == 0)
-                return;
-            var fullFileName = Path.Combine(@"DataPoints", prefix + ".dat");
-            Directory.CreateDirectory(Path.GetDirectoryName(fullFileName));
-
-            using (StreamWriter file = new StreamWriter(fullFileName))
-            {
-                if (trainingPoints.First().inputs.Count() == 9)
-                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, relativeMZ, label");
-                else
-                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, label");
-                foreach (LabeledDataPoint d in trainingPoints)
-                    file.WriteLine(string.Join(",", d.inputs) + "," + d.output);
-            }
-        }
-
         private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
         {
             var rnd = new Random(randomSeed);
             var shuffledTrainingPoints = trainingPoints.OrderBy(item => rnd.Next()).ToArray();
 
-            var trainList = shuffledTrainingPoints.Take(trainingPoints.Count * 3 / 4).ToList();
-            var testList = shuffledTrainingPoints.Skip(trainingPoints.Count * 3 / 4).ToList();
+            var trainList = shuffledTrainingPoints.Take((int)(trainingPoints.Count * fracForTraining)).ToList();
+            var testList = shuffledTrainingPoints.Skip((int)(trainingPoints.Count * fracForTraining)).ToList();
 
             var trainList1 = trainList.Where((b) => b.inputs[0] < 0).ToList();
             //WriteDataToFiles(trainList1, "train1" + myMsDataFile.Name);
@@ -402,7 +385,7 @@ namespace InternalLogicCalibration
                     a.TryGetSelectedIonGuessMZ(out precursorMZ);
                     double precursorIntensity;
                     a.TryGetSelectedIonGuessIntensity(out precursorIntensity);
-                    double newSelectedMZ = precursorMZ - bestCf.Predict(new double[] { 1, precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
+                    double newSelectedMZ = precursorMZ - bestCf.Predict(new double[] { -1, precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
                     double monoisotopicMZ;
                     a.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicMZ);
@@ -412,14 +395,14 @@ namespace InternalLogicCalibration
                     if (double.IsNaN(monoisotopicIntensity))
                         monoisotopicIntensity = precursorScan.MassSpectrum.GetClosestPeak(monoisotopicMZ).Intensity;
 
-                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Predict(new double[] { 1, monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
+                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Predict(new double[] { -1, monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
                     int SelectedIonGuessChargeStateGuess;
                     a.TryGetSelectedIonGuessChargeStateGuess(out SelectedIonGuessChargeStateGuess);
                     double IsolationMZ;
                     a.TryGetIsolationMZ(out IsolationMZ);
 
-                    Func<MzPeak, double> theFunc = x => x.MZ - bestCf.Predict(new double[] { 2, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.MZ - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
+                    Func<MzPeak, double> theFunc = x => x.MZ - bestCf.Predict(new double[] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.MZ - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
                     a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
 
                     //if (MS2spectraToWatch.Contains(a.OneBasedScanNumber))
@@ -440,7 +423,7 @@ namespace InternalLogicCalibration
                     //    output(" before calibration:");
                     //    output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
                     //}
-                    Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
+                    Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[] { -1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
                     a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN);
                     //if (MS1spectraToWatch.Contains(a.OneBasedScanNumber))
                     //{

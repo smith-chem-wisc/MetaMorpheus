@@ -54,6 +54,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Properties
 
+        public Tolerance productMassTolerance { get; set; }
         public double tol { get; set; }
         public bool isotopeErrors { get; set; }
 
@@ -70,6 +71,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
             sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.GPTMD).Select(b => b.FileName)));
             sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
+            sb.AppendLine("productMassTolerance: " + productMassTolerance);
             sb.Append("tol: " + tol);
             return sb.ToString();
         }
