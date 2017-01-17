@@ -15,7 +15,6 @@ namespace Test
         #region Private Fields
 
         private readonly List<TestScan> Scans;
-        private PeptideWithSetModifications pepWithSetMods;
 
         #endregion Private Fields
 
@@ -36,7 +35,6 @@ namespace Test
 
         public TestDataFile(PeptideWithSetModifications pepWithSetMods)
         {
-            this.pepWithSetMods = pepWithSetMods;
             var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), 1046.4637599291714.ToMassToChargeRatio(2), 1047.4642172266576.ToMassToChargeRatio(2) };
             var intensities1 = new double[] { 1, 1, 1 };
             var MassSpectrum1 = new DefaultMzSpectrum(mz1, intensities1, false);

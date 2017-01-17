@@ -27,7 +27,9 @@ namespace Test
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+            int maximumMissedCleavages = 2;
+            int maximumVariableModificationIsoforms = 4096;
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms);
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
@@ -55,7 +57,9 @@ namespace Test
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+            int maximumMissedCleavages = 2;
+            int maximumVariableModificationIsoforms = 4096;
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms);
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode

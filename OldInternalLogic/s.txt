@@ -2,2148 +2,2148 @@ Amino acid substitutions
 ID   Tryptophan to Glycine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -129.05784923004
 //
 ID   Tryptophan to Alanine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -115.04219916558
 //
 ID   Tyrosine to Glycine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -106.04186481295
 //
 ID   Arginine to Glycine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -99.07964730336
 //
 ID   Tryptophan to Serine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -99.04728454601
 //
 ID   Tyrosine to Alanine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -92.02621474849
 //
 ID   Phenylalanine to Glycine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -90.04695019338
 //
 ID   Tryptophan to Proline
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -89.02654910112
 //
 ID   Tryptophan to Valine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -87.01089903666
 //
 ID   Arginine to Alanine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -85.0639972389
 //
 ID   Tryptophan to Threonine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -85.03163448155
 //
 ID   Tryptophan to Cysteine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -83.07012799118
 //
 ID   Histidine to Glycine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -80.03744813778
 //
 ID   Phenylalanine to Alanine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -76.03130012892
 //
 ID   Tyrosine to Serine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -76.03130012892
 //
 ID   Methionine to Glycine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -74.01902136778
 //
 ID   Tryptophan to Xle
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -72.9952489722
 //
 ID   Tryptophan to Asparagine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -72.03638550935
 //
 ID   Glutamic Acid to Glycine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -72.02112936806
 //
 ID   Lysine to Glycine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -71.0734992945
 //
 ID   Tryptophan to Aspartic Acid
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -71.05236992644
 //
 ID   Glutamine to Glycine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -71.03711378515
 //
 ID   Arginine to Serine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -69.06908261933
 //
 ID   Histidine to Alanine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -66.02179807332
 //
 ID   Tyrosine to Proline
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -66.01056468403
 //
 ID   Tyrosine to Valine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -63.99491461957
 //
 ID   Tyrosine to Threonine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -62.01565006446
 //
 ID   Tyrosine to Cysteine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -60.05414357409
 //
 ID   Phenylalanine to Serine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -60.03638550935
 //
 ID   Methionine to Alanine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -60.00337130332
 //
 ID   Arginine to Proline
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -59.04834717444
 //
 ID   Tryptophan to Glutamine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -58.02073544489
 //
 ID   Aspartic Acid to Glycine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -58.0054793036
 //
 ID   Glutamic Acid to Alanine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -58.0054793036
 //
 ID   Tryptophan to Lysine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -57.98434993554
 //
 ID   Lysine to Alanine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -57.05784923004
 //
 ID   Tryptophan to Glutamic Acid
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -57.03671986198
 //
 ID   Arginine to Valine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -57.03269710998
 //
 ID   Asparagine to Glycine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -57.02146372069
 //
 ID   Glutamine to Alanine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -57.02146372069
 //
 ID   Isoleucine to Glycine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -56.06260025784
 //
 ID   Leucine to Glycine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -56.06260025784
 //
 ID   Arginine to Threonine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -55.05343255487
 //
 ID   Tryptophan to Methionine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -55.03882786226
 //
 ID   Arginine to Cysteine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -53.0919260645
 //
 ID   Histidine to Serine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -50.02688345375
 //
 ID   Phenylalanine to Proline
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -50.01565006446
 //
 ID   Tyrosine to Xle
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -49.97926455511
 //
 ID   Tyrosine to Asparagine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -49.02040109226
 //
 ID   Tryptophan to Histidine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -49.02040109226
 //
 ID   Tyrosine to Aspartic Acid
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -48.03638550935
 //
 ID   Phenylalanine to Valine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -48
 //
 ID   Phenylalanine to Threonine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -46.02073544489
 //
 ID   Cysteine to Glycine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   -45.98772123886
 //
 ID   Phenylalanine to Cysteine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -44.05922895452
 //
 ID   Threonine to Glycine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   -44.02621474849
 //
 ID   Methionine to Serine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -44.00845668375
 //
 ID   Aspartic Acid to Alanine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -43.98982923914
 //
 ID   Arginine to Xle
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -43.01704704552
 //
 ID   Asparagine to Alanine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -43.00581365623
 //
 ID   Arginine to Asparagine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -42.05818358267
 //
 ID   Valine to Glycine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   -42.04695019338
 //
 ID   Isoleucine to Alanine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -42.04695019338
 //
 ID   Leucine to Alanine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -42.04695019338
 //
 ID   Glutamic Acid to Serine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -42.01056468403
 //
 ID   Arginine to Aspartic Acid
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -41.07416799976
 //
 ID   Lysine to Serine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -41.06293461047
 //
 ID   Glutamine to Serine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -41.02654910112
 //
 ID   Proline to Glycine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   -40.03130012892
 //
 ID   Histidine to Proline
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -40.00614800886
 //
 ID   Tryptophan to Phenylalanine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -39.01089903666
 //
 ID   Histidine to Valine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -37.9904979444
 //
 ID   Histidine to Threonine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -36.01123338929
 //
 ID   Tyrosine to Glutamine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -35.0047510278
 //
 ID   Tyrosine to Lysine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -34.96836551845
 //
 ID   Histidine to Cysteine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -34.04972689892
 //
 ID   Tyrosine to Glutamic Acid
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -34.02073544489
 //
 ID   Methionine to Proline
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -33.98772123886
 //
 ID   Phenylalanine to Xle
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -33.98434993554
 //
 ID   Phenylalanine to Asparagine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -33.02548647269
 //
 ID   Phenylalanine to Aspartic Acid
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -32.04147088978
 //
 ID   Tyrosine to Methionine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -32.02284344517
 //
 ID   Glutamic Acid to Proline
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -31.98982923914
 //
 ID   Cysteine to Alanine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   -31.9720711744
 //
 ID   Methionine to Valine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -31.9720711744
 //
 ID   Lysine to Proline
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -31.04219916558
 //
 ID   Glutamine to Proline
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -31.00581365623
 //
 ID   Serine to Glycine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   -30.01056468403
 //
 ID   Threonine to Alanine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   -30.01056468403
 //
 ID   Methionine to Threonine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -29.99280661929
 //
 ID   Tryptophan to Arginine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -29.97820192668
 //
 ID   Glutamic Acid to Valine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -29.97417917468
 //
 ID   Lysine to Valine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -29.02654910112
 //
 ID   Glutamine to Valine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -28.99016359177
 //
 ID   Arginine to Glutamine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -28.04253351821
 //
 ID   Valine to Alanine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   -28.03130012892
 //
 ID   Methionine to Cysteine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -28.03130012892
 //
 ID   Arginine to Lysine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -28.00614800886
 //
 ID   Aspartic Acid to Serine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -27.99491461957
 //
 ID   Glutamic Acid to Threonine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -27.99491461957
 //
 ID   Arginine to Glutamic Acid
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -27.0585179353
 //
 ID   Lysine to Threonine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -27.04728454601
 //
 ID   Asparagine to Serine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -27.01089903666
 //
 ID   Glutamine to Threonine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -27.01089903666
 //
 ID   Isoleucine to Serine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -26.05203557381
 //
 ID   Leucine to Serine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -26.05203557381
 //
 ID   Glutamic Acid to Cysteine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -26.0334081292
 //
 ID   Proline to Alanine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   -26.01565006446
 //
 ID   Tyrosine to Histidine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -26.00441667517
 //
 ID   Lysine to Cysteine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -25.08577805564
 //
 ID   Arginine to Methionine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -25.06062593558
 //
 ID   Glutamine to Cysteine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -25.04939254629
 //
 ID   Histidine to Xle
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -23.97484787994
 //
 ID   Histidine to Asparagine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -23.01598441709
 //
 ID   Tryptophan to Tyrosine
 FT   MOD_RES
 TG   Tryptophan
-PP   Anywhere
+PP   Anywhere.
 MM   -23.01598441709
 //
 ID   Histidine to Aspartic Acid
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -22.03196883418
 //
 ID   Arginine to Histidine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -19.04219916558
 //
 ID   Phenylalanine to Glutamine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -19.00983640823
 //
 ID   Phenylalanine to Lysine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -18.97345089888
 //
 ID   Phenylalanine to Glutamic Acid
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -18.02582082532
 //
 ID   Aspartic Acid to Proline
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -17.97417917468
 //
 ID   Methionine to Xle
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -17.95642110994
 //
 ID   Methionine to Asparagine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -16.99755764709
 //
 ID   Asparagine to Proline
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -16.99016359177
 //
 ID   Isoleucine to Proline
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -16.03130012892
 //
 ID   Leucine to Proline
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -16.03130012892
 //
 ID   Phenylalanine to Methionine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -16.0279288256
 //
 ID   Methionine to Aspartic Acid
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -16.01354206418
 //
 ID   Serine to Alanine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   -15.99491461957
 //
 ID   Tyrosine to Phenylalanine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -15.99491461957
 //
 ID   Cysteine to Serine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   -15.97715655483
 //
 ID   Glutamic Acid to Xle
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -15.95852911022
 //
 ID   Aspartic Acid to Valine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -15.95852911022
 //
 ID   Lysine to Xle
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -15.01089903666
 //
 ID   Glutamic Acid to Asparagine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -14.99966564737
 //
 ID   Glutamine to Xle
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.97451352731
 //
 ID   Asparagine to Valine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.97451352731
 //
 ID   Lysine to Asparagine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.05203557381
 //
 ID   Alanine to Glycine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.01565006446
 //
 ID   Threonine to Serine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.01565006446
 //
 ID   Glutamine to Asparagine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.01565006446
 //
 ID   Glutamic Acid to Aspartic Acid
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -14.01565006446
 //
 ID   Isoleucine to Valine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.01565006446
 //
 ID   Leucine to Valine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -14.01565006446
 //
 ID   Aspartic Acid to Threonine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -13.97926455511
 //
 ID   Lysine to Aspartic Acid
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -13.0680199909
 //
 ID   Glutamine to Aspartic Acid
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   -13.03163448155
 //
 ID   Asparagine to Threonine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -12.9952489722
 //
 ID   Valine to Serine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   -12.03638550935
 //
 ID   Isoleucine to Threonine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -12.03638550935
 //
 ID   Leucine to Threonine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -12.03638550935
 //
 ID   Aspartic Acid to Cysteine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -12.01775806474
 //
 ID   Asparagine to Cysteine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -11.03374248183
 //
 ID   Isoleucine to Cysteine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   -10.07487901898
 //
 ID   Leucine to Cysteine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   -10.07487901898
 //
 ID   Proline to Serine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   -10.02073544489
 //
 ID   Phenylalanine to Histidine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   -10.0095020556
 //
 ID   Arginine to Phenylalanine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   -9.03269710997998
 //
 ID   Histidine to Glutamine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -9.00033435263001
 //
 ID   Histidine to Lysine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -8.96394884328001
 //
 ID   Histidine to Glutamic Acid
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -8.01631876971999
 //
 ID   Tyrosine to Arginine
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   -6.96221750959
 //
 ID   Histidine to Methionine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   -6.01842676999999
 //
 ID   Cysteine to Proline
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   -5.95642110994
 //
 ID   Threonine to Proline
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   -3.99491461957
 //
 ID   Cysteine to Valine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   -3.94077104547999
 //
 ID   Methionine to Glutamine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -2.98190758263002
 //
 ID   Methionine to Lysine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -2.94552207328002
 //
 ID   Valine to Proline
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   -2.01565006446
 //
 ID   Methionine to Glutamic Acid
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   -1.99789199972
 //
 ID   Threonine to Valine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   -1.97926455510999
 //
 ID   Cysteine to Threonine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   -1.96150649037
 //
 ID   Aspartic Acid to Xle
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -1.94287904576001
 //
 ID   Aspartic Acid to Asparagine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -0.984015582910018
 //
 ID   Glutamic Acid to Glutamine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -0.984015582910018
 //
 ID   Asparagine to Xle
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   -0.95886346284999
 //
 ID   Glutamic Acid to Lysine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   -0.94763007356002
 //
 ID   Lysine to Glutamine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   -0.0363855093499978
 //
 ID   Glutamine to Lysine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   0.0363855093499978
 //
 ID   Lysine to Glutamic Acid
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   0.94763007356002
 //
 ID   Isoleucine to Asparagine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   0.95886346284999
 //
 ID   Leucine to Asparagine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   0.95886346284999
 //
 ID   Isoleucine to Aspartic Acid
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   1.94287904576001
 //
 ID   Leucine to Aspartic Acid
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   1.94287904576001
 //
 ID   Threonine to Cysteine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   1.96150649037
 //
 ID   Valine to Threonine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   1.97926455510999
 //
 ID   Glutamic Acid to Methionine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   1.99789199972
 //
 ID   Proline to Valine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   2.01565006446
 //
 ID   Lysine to Methionine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   2.94552207328002
 //
 ID   Glutamine to Methionine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   2.98190758263002
 //
 ID   Valine to Cysteine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   3.94077104547999
 //
 ID   Proline to Threonine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   3.99491461957
 //
 ID   Proline to Cysteine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   5.95642110994
 //
 ID   Methionine to Histidine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   6.01842676999999
 //
 ID   Arginine to Tyrosine
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   6.96221750959
 //
 ID   Glutamic Acid to Histidine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   8.01631876971999
 //
 ID   Lysine to Histidine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   8.96394884328001
 //
 ID   Glutamine to Histidine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   9.00033435263001
 //
 ID   Phenylalanine to Arginine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   9.03269710997998
 //
 ID   Histidine to Phenylalanine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   10.0095020556
 //
 ID   Serine to Proline
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   10.02073544489
 //
 ID   Cysteine to Xle
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   10.07487901898
 //
 ID   Cysteine to Asparagine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   11.03374248183
 //
 ID   Cysteine to Aspartic Acid
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   12.01775806474
 //
 ID   Threonine to Xle
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   12.03638550935
 //
 ID   Serine to Valine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   12.03638550935
 //
 ID   Threonine to Asparagine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   12.9952489722
 //
 ID   Aspartic Acid to Glutamine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   13.03163448155
 //
 ID   Aspartic Acid to Lysine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   13.0680199909
 //
 ID   Threonine to Aspartic Acid
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   13.97926455511
 //
 ID   Valine to Xle
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   14.01565006446
 //
 ID   Glycine to Alanine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   14.01565006446
 //
 ID   Serine to Threonine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   14.01565006446
 //
 ID   Asparagine to Glutamine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   14.01565006446
 //
 ID   Aspartic Acid to Glutamic Acid
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   14.01565006446
 //
 ID   Asparagine to Lysine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   14.05203557381
 //
 ID   Valine to Asparagine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   14.97451352731
 //
 ID   Isoleucine to Glutamine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   14.97451352731
 //
 ID   Leucine to Glutamine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   14.97451352731
 //
 ID   Asparagine to Glutamic Acid
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   14.99966564737
 //
 ID   Isoleucine to Lysine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   15.01089903666
 //
 ID   Leucine to Lysine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   15.01089903666
 //
 ID   Valine to Aspartic Acid
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   15.95852911022
 //
 ID   Isoleucine to Glutamic Acid
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   15.95852911022
 //
 ID   Leucine to Glutamic Acid
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   15.95852911022
 //
 ID   Serine to Cysteine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   15.97715655483
 //
 ID   Phenylalanine to Tyrosine
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   15.99491461957
 //
 ID   Alanine to Serine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   15.99491461957
 //
 ID   Aspartic Acid to Methionine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   16.01354206418
 //
 ID   Methionine to Phenylalanine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   16.0279288256
 //
 ID   Proline to Xle
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   16.03130012892
 //
 ID   Proline to Asparagine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   16.99016359177
 //
 ID   Asparagine to Methionine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   16.99755764709
 //
 ID   Isoleucine to Methionine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   17.95642110994
 //
 ID   Leucine to Methionine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   17.95642110994
 //
 ID   Proline to Aspartic Acid
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   17.97417917468
 //
 ID   Glutamic Acid to Phenylalanine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   18.02582082532
 //
 ID   Lysine to Phenylalanine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   18.97345089888
 //
 ID   Glutamine to Phenylalanine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   19.00983640823
 //
 ID   Histidine to Arginine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   19.04219916558
 //
 ID   Aspartic Acid to Histidine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   22.03196883418
 //
 ID   Asparagine to Histidine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   23.01598441709
 //
 ID   Tyrosine to Tryptophan
 FT   MOD_RES
 TG   Tyrosine
-PP   Anywhere
+PP   Anywhere.
 MM   23.01598441709
 //
 ID   Isoleucine to Histidine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   23.97484787994
 //
 ID   Leucine to Histidine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   23.97484787994
 //
 ID   Cysteine to Glutamine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   25.04939254629
 //
 ID   Methionine to Arginine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   25.06062593558
 //
 ID   Cysteine to Lysine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   25.08577805564
 //
 ID   Histidine to Tyrosine
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   26.00441667517
 //
 ID   Alanine to Proline
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   26.01565006446
 //
 ID   Cysteine to Glutamic Acid
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   26.0334081292
 //
 ID   Serine to Xle
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   26.05203557381
 //
 ID   Serine to Asparagine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   27.01089903666
 //
 ID   Threonine to Glutamine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   27.01089903666
 //
 ID   Threonine to Lysine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   27.04728454601
 //
 ID   Glutamic Acid to Arginine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   27.0585179353
 //
 ID   Serine to Aspartic Acid
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   27.99491461957
 //
 ID   Threonine to Glutamic Acid
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   27.99491461957
 //
 ID   Lysine to Arginine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   28.00614800886
 //
 ID   Alanine to Valine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   28.03130012892
 //
 ID   Cysteine to Methionine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   28.03130012892
 //
 ID   Glutamine to Arginine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   28.04253351821
 //
 ID   Valine to Glutamine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   28.99016359177
 //
 ID   Valine to Lysine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   29.02654910112
 //
 ID   Valine to Glutamic Acid
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   29.97417917468
 //
 ID   Arginine to Tryptophan
 FT   MOD_RES
 TG   Arginine
-PP   Anywhere
+PP   Anywhere.
 MM   29.97820192668
 //
 ID   Threonine to Methionine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   29.99280661929
 //
 ID   Glycine to Serine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   30.01056468403
 //
 ID   Alanine to Threonine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   30.01056468403
 //
 ID   Proline to Glutamine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   31.00581365623
 //
 ID   Proline to Lysine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   31.04219916558
 //
 ID   Alanine to Cysteine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   31.9720711744
 //
 ID   Valine to Methionine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   31.9720711744
 //
 ID   Proline to Glutamic Acid
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   31.98982923914
 //
 ID   Methionine to Tyrosine
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   32.02284344517
 //
 ID   Aspartic Acid to Phenylalanine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   32.04147088978
 //
 ID   Asparagine to Phenylalanine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   33.02548647269
 //
 ID   Isoleucine to Phenylalanine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   33.98434993554
 //
 ID   Leucine to Phenylalanine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   33.98434993554
 //
 ID   Proline to Methionine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   33.98772123886
 //
 ID   Glutamic Acid to Tyrosine
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   34.02073544489
 //
 ID   Cysteine to Histidine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   34.04972689892
 //
 ID   Lysine to Tyrosine
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   34.96836551845
 //
 ID   Glutamine to Tyrosine
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   35.0047510278
 //
 ID   Threonine to Histidine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   36.01123338929
 //
 ID   Valine to Histidine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   37.9904979444
 //
 ID   Phenylalanine to Tryptophan
 FT   MOD_RES
 TG   Phenylalanine
-PP   Anywhere
+PP   Anywhere.
 MM   39.01089903666
 //
 ID   Proline to Histidine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   40.00614800886
 //
 ID   Glycine to Proline
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   40.03130012892
 //
 ID   Serine to Glutamine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   41.02654910112
 //
 ID   Serine to Lysine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   41.06293461047
 //
 ID   Aspartic Acid to Arginine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   41.07416799976
 //
 ID   Serine to Glutamic Acid
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   42.01056468403
 //
 ID   Alanine to Xle
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   42.04695019338
 //
 ID   Glycine to Valine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   42.04695019338
 //
 ID   Asparagine to Arginine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   42.05818358267
 //
 ID   Alanine to Asparagine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   43.00581365623
 //
 ID   Isoleucine to Arginine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   43.01704704552
 //
 ID   Leucine to Arginine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   43.01704704552
 //
 ID   Alanine to Aspartic Acid
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   43.98982923914
 //
 ID   Serine to Methionine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   44.00845668375
 //
 ID   Glycine to Threonine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   44.02621474849
 //
 ID   Cysteine to Phenylalanine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   44.05922895452
 //
 ID   Glycine to Cysteine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   45.98772123886
 //
 ID   Threonine to Phenylalanine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   46.02073544489
 //
 ID   Valine to Phenylalanine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   48
 //
 ID   Aspartic Acid to Tyrosine
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   48.03638550935
 //
 ID   Asparagine to Tyrosine
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   49.02040109226
 //
 ID   Histidine to Tryptophan
 FT   MOD_RES
 TG   Histidine
-PP   Anywhere
+PP   Anywhere.
 MM   49.02040109226
 //
 ID   Isoleucine to Tyrosine
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   49.97926455511
 //
 ID   Leucine to Tyrosine
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   49.97926455511
 //
 ID   Proline to Phenylalanine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   50.01565006446
 //
 ID   Serine to Histidine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   50.02688345375
 //
 ID   Cysteine to Arginine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   53.0919260645
 //
 ID   Methionine to Tryptophan
 FT   MOD_RES
 TG   Methionine
-PP   Anywhere
+PP   Anywhere.
 MM   55.03882786226
 //
 ID   Threonine to Arginine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   55.05343255487
 //
 ID   Glycine to Xle
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   56.06260025784
 //
 ID   Glycine to Asparagine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   57.02146372069
 //
 ID   Alanine to Glutamine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   57.02146372069
 //
 ID   Valine to Arginine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   57.03269710998
 //
 ID   Glutamic Acid to Tryptophan
 FT   MOD_RES
 TG   Glutamic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   57.03671986198
 //
 ID   Alanine to Lysine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   57.05784923004
 //
 ID   Lysine to Tryptophan
 FT   MOD_RES
 TG   Lysine
-PP   Anywhere
+PP   Anywhere.
 MM   57.98434993554
 //
 ID   Glycine to Aspartic Acid
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   58.0054793036
 //
 ID   Alanine to Glutamic Acid
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   58.0054793036
 //
 ID   Glutamine to Tryptophan
 FT   MOD_RES
 TG   Glutamine
-PP   Anywhere
+PP   Anywhere.
 MM   58.02073544489
 //
 ID   Proline to Arginine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   59.04834717444
 //
 ID   Alanine to Methionine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   60.00337130332
 //
 ID   Serine to Phenylalanine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   60.03638550935
 //
 ID   Cysteine to Tyrosine
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   60.05414357409
 //
 ID   Threonine to Tyrosine
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   62.01565006446
 //
 ID   Valine to Tyrosine
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   63.99491461957
 //
 ID   Proline to Tyrosine
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   66.01056468403
 //
 ID   Alanine to Histidine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   66.02179807332
 //
 ID   Serine to Arginine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   69.06908261933
 //
 ID   Glycine to Glutamine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   71.03711378515
 //
 ID   Aspartic Acid to Tryptophan
 FT   MOD_RES
 TG   Aspartic Acid
-PP   Anywhere
+PP   Anywhere.
 MM   71.05236992644
 //
 ID   Glycine to Lysine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   71.0734992945
 //
 ID   Glycine to Glutamic Acid
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   72.02112936806
 //
 ID   Asparagine to Tryptophan
 FT   MOD_RES
 TG   Asparagine
-PP   Anywhere
+PP   Anywhere.
 MM   72.03638550935
 //
 ID   Isoleucine to Tryptophan
 FT   MOD_RES
 TG   Isoleucine
-PP   Anywhere
+PP   Anywhere.
 MM   72.9952489722
 //
 ID   Leucine to Tryptophan
 FT   MOD_RES
 TG   Leucine
-PP   Anywhere
+PP   Anywhere.
 MM   72.9952489722
 //
 ID   Glycine to Methionine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   74.01902136778
 //
 ID   Serine to Tyrosine
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   76.03130012892
 //
 ID   Alanine to Phenylalanine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   76.03130012892
 //
 ID   Glycine to Histidine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   80.03744813778
 //
 ID   Cysteine to Tryptophan
 FT   MOD_RES
 TG   Cysteine
-PP   Anywhere
+PP   Anywhere.
 MM   83.07012799118
 //
 ID   Threonine to Tryptophan
 FT   MOD_RES
 TG   Threonine
-PP   Anywhere
+PP   Anywhere.
 MM   85.03163448155
 //
 ID   Alanine to Arginine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   85.0639972389
 //
 ID   Valine to Tryptophan
 FT   MOD_RES
 TG   Valine
-PP   Anywhere
+PP   Anywhere.
 MM   87.01089903666
 //
 ID   Proline to Tryptophan
 FT   MOD_RES
 TG   Proline
-PP   Anywhere
+PP   Anywhere.
 MM   89.02654910112
 //
 ID   Glycine to Phenylalanine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   90.04695019338
 //
 ID   Alanine to Tyrosine
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   92.02621474849
 //
 ID   Serine to Tryptophan
 FT   MOD_RES
 TG   Serine
-PP   Anywhere
+PP   Anywhere.
 MM   99.04728454601
 //
 ID   Glycine to Arginine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   99.07964730336
 //
 ID   Glycine to Tyrosine
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   106.04186481295
 //
 ID   Alanine to Tryptophan
 FT   MOD_RES
 TG   Alanine
-PP   Anywhere
+PP   Anywhere.
 MM   115.04219916558
 //
 ID   Glycine to Tryptophan
 FT   MOD_RES
 TG   Glycine
-PP   Anywhere
+PP   Anywhere.
 MM   129.05784923004
 //
