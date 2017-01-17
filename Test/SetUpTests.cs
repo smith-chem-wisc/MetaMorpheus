@@ -8,7 +8,6 @@ namespace Test
     [SetUpFixture]
     public class MySetUpClass
     {
-
         #region Private Fields
 
         private const string elementsLocation = @"elements.dat";
@@ -28,6 +27,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

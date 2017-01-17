@@ -11,7 +11,6 @@ namespace Test
 {
     internal class TestDataFile : IMsDataFile<DefaultMzSpectrum>
     {
-
         #region Private Fields
 
         private readonly List<TestScan> Scans;
@@ -129,6 +128,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

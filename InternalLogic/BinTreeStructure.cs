@@ -6,7 +6,6 @@ namespace InternalLogicEngineLayer
 {
     public class BinTreeStructure
     {
-
         #region Private Fields
 
         private const int minNumberInBin = 8;
@@ -141,6 +140,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

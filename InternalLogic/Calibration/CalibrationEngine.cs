@@ -13,7 +13,6 @@ namespace InternalLogicCalibration
 {
     public class CalibrationEngine : MyEngine
     {
-
         #region Private Fields
 
         // THIS PARAMETER IS FRAGILE!!!
@@ -746,6 +745,5 @@ namespace InternalLogicCalibration
         }
 
         #endregion Private Methods
-
     }
 }

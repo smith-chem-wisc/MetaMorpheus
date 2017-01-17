@@ -5,7 +5,6 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyResults
     {
-
         #region Internal Fields
 
         internal TimeSpan Time;
@@ -58,6 +57,5 @@ namespace InternalLogicEngineLayer
         protected abstract string GetStringForOutput();
 
         #endregion Protected Methods
-
     }
 }

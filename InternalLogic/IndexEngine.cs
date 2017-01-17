@@ -10,7 +10,6 @@ namespace InternalLogicEngineLayer
 {
     public class IndexEngine : MyEngine
     {
-
         #region Private Fields
 
         private const int maximumMissedCleavages = 2;
@@ -157,6 +156,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }

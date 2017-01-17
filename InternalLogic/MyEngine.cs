@@ -9,7 +9,6 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyEngine
     {
-
         #region Public Fields
 
         public static readonly string MetaMorpheusVersion;
@@ -117,6 +116,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

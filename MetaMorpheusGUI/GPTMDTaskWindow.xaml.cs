@@ -16,7 +16,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GPTMDTaskWindow : Window
     {
-
         #region Private Fields
 
         // Always create a new one, even if updating an existing task
@@ -131,6 +130,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 }

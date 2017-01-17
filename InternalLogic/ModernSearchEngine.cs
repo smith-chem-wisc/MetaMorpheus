@@ -11,7 +11,6 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSearchEngine : MyEngine
     {
-
         #region Private Fields
 
         private readonly List<int>[] fragmentIndex;
@@ -221,6 +220,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

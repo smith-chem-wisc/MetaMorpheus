@@ -8,7 +8,6 @@ namespace InternalLogicEngineLayer
     [Serializable]
     public class CompactPeptide
     {
-
         #region Public Fields
 
         public readonly byte[] BaseSequence;
@@ -99,6 +98,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

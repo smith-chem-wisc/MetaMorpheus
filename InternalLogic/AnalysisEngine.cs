@@ -13,7 +13,6 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {
-
         #region Private Fields
 
         private const double binTol = 0.003;
@@ -785,6 +784,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

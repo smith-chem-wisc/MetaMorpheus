@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public class AnalysisEngineTests
     {
-
         #region Public Methods
 
         [Test]
@@ -52,6 +51,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

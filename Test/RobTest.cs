@@ -9,7 +9,6 @@ namespace Test
     [TestFixture]
     public class RobTest
     {
-
         #region Public Methods
 
         [Test]
@@ -169,6 +168,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

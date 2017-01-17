@@ -6,7 +6,6 @@ namespace InternalLogicEngineLayer
 {
     public class SingleAbsoluteAroundZeroSearchMode : SearchMode
     {
-
         #region Private Fields
 
         private readonly double value;
@@ -40,6 +39,5 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

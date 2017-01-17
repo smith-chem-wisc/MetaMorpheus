@@ -9,7 +9,6 @@ namespace InternalLogicTaskLayer
 {
     public class EverythingRunnerEngine : MyEngine
     {
-
         #region Private Fields
 
         private List<MyTaskEngine> taskList;
@@ -118,6 +117,5 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
-
     }
 }
