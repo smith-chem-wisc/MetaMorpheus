@@ -24,8 +24,9 @@ namespace OldInternalLogic
             modificationTypeCodes = new Dictionary<string, ModificationType>();
             modificationTypeCodes.Add("N-terminal.", ModificationType.ProteinNTerminus);
             modificationTypeCodes.Add("C-terminal.", ModificationType.ProteinCTerminus);
-            modificationTypeCodes.Add("Peptide N-terminal", ModificationType.PeptideNTerminus);
-            modificationTypeCodes.Add("Peptide C-terminal", ModificationType.PeptideCTerminus);
+            modificationTypeCodes.Add("Peptide N-terminal.", ModificationType.PeptideNTerminus);
+            modificationTypeCodes.Add("Peptide C-terminal.", ModificationType.PeptideCTerminus);
+            modificationTypeCodes.Add("Anywhere.", ModificationType.AminoAcidResidue);
 
             aminoAcidCodes = new Dictionary<string, char>();
             aminoAcidCodes.Add("Alanine", 'A');

@@ -145,7 +145,7 @@ namespace InternalLogicTaskLayer
 
             //output(gptmdResults.ToString());
 
-            WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
+            WriteGPTMDdatabse(gptmdResults.mods, proteinList.Where(b => !b.isDecoy).ToList(), outputXMLdbFullName);
 
             myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
 
