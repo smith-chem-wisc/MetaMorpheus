@@ -6,7 +6,13 @@ namespace OldInternalLogic
 {
     public class ProteaseDictionary : Dictionary<string, Protease>
     {
+        #region Private Fields
+
         private static readonly ProteaseDictionary instance = new ProteaseDictionary();
+
+        #endregion Private Fields
+
+        #region Private Constructors
 
         private ProteaseDictionary()
         {
@@ -33,14 +39,24 @@ namespace OldInternalLogic
             }
         }
 
+        #endregion Private Constructors
+
+        #region Public Properties
+
         public static ProteaseDictionary Instance
         {
             get { return instance; }
         }
 
+        #endregion Public Properties
+
+        #region Public Methods
+
         public void Add(Protease protease)
         {
             Add(protease.Name, protease);
         }
+
+        #endregion Public Methods
     }
 }
