@@ -24,7 +24,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
             this.proteins = proteins;
             this.psmList = psmList;

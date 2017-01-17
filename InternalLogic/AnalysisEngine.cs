@@ -429,7 +429,7 @@ namespace InternalLogicEngineLayer
                     if (doParsimony)
                     {
                         status("Building protein groups and doing FDR...");
-                        proteinGroups = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching);
+                        proteinGroups = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching, uniquePeptides);
 
                         action3(proteinGroups, searchModes[j].FileNameAddition);
                     }
