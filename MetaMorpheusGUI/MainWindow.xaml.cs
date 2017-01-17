@@ -137,7 +137,7 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
             searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
             searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
-            searchModeObservableCollection.Add(new OpenSearchMode("Open search"));
+            searchModeObservableCollection.Add(new OpenSearchMode("Open"));
         }
 
         private void AddNewDB(object sender, List<string> e)

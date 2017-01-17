@@ -116,7 +116,7 @@ namespace InternalLogicTaskLayer
             if (!classicSearch)
             {
                 status("Getting fragment dictionary...");
-                var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior);
+                var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, maxMissedCleavages, maxModificationIsoforms);
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine);
 
                 if (pathToFolderWithIndices == null)
