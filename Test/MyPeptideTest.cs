@@ -15,9 +15,6 @@ namespace Test
         public void TestGoodPeptide()
         {
             var prot = new Protein("MNNNKQQQQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false);
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain).ToList();
