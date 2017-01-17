@@ -22,8 +22,8 @@ namespace InternalLogicCalibration
         // Parameter for isotopolouge distribution searching
         private const double fineResolution = 0.1;
 
-        private const int minMS1 = 3;
-        private const int minMS2 = 2;
+        private const int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
+        private const int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
         private const int numFragmentsNeededForEveryIdentification = 10;
         private const double toleranceInMZforMS1Search = 0.01;
         private const double fracForTraining = 0.75;
@@ -519,7 +519,7 @@ namespace InternalLogicCalibration
                     if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
                     {
                     }
-                    else if (trainingPointsToAverage.Count < Math.Min(minMS1, originalIntensities.Count()))
+                    else if (trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
                     {
                     }
                     else
@@ -697,7 +697,7 @@ namespace InternalLogicCalibration
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                         if (trainingPointsToAverage.Count == 0 && startingToAdd == true)
                             break;
-                        if (trainingPointsToAverage.Count < Math.Min(minMS2, intensities.Count()))
+                        if (trainingPointsToAverage.Count < Math.Min(minMS2isotopicPeaksNeededForConfirmedIdentification, intensities.Count()))
                         {
                             //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
                             //{
