@@ -48,7 +48,7 @@ namespace InternalLogicEngineLayer
                 peptideList.Add(peptide);
 
                 // calculate the protein group score
-                if(allUniquePeptides.Contains(peptide))
+                if (allUniquePeptides.Contains(peptide))
                 {
                     uniquePeptideList.Add(peptide);
                     proteinGroupScore += psm.thisPSM.Score;

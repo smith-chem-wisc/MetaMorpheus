@@ -37,6 +37,8 @@ namespace MetaMorpheusGUI
 
             TheTask = new SearchTask(modList, searchModes);
             UpdateFieldsFromTask(TheTask);
+
+            this.saveButton.Content = "Add the Search Task";
         }
 
         public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)

@@ -22,8 +22,8 @@ namespace InternalLogicCalibration
         // Parameter for isotopolouge distribution searching
         private const double fineResolution = 0.1;
 
-        private const int minMS1 = 3;
-        private const int minMS2 = 2;
+        private const int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
+        private const int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
         private const int numFragmentsNeededForEveryIdentification = 10;
         private const double toleranceInMZforMS1Search = 0.01;
         private const double fracForTraining = 0.75;
@@ -213,7 +213,6 @@ namespace InternalLogicCalibration
 
             CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
             CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
-            CalibrationFunction combinedCalibration = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
             double bestMS1MSE = bestMS1predictor.getMSE(testList1);
             double bestMS2MSE = bestMS2predictor.getMSE(testList2);
 
@@ -222,7 +221,6 @@ namespace InternalLogicCalibration
                 var ms2regressor = new ConstantCalibrationFunction();
                 ms1regressor.Train(trainList1);
                 ms2regressor.Train(trainList2);
-                combinedCalibration = new SeparateCalibrationFunction(ms1regressor, ms2regressor);
                 //combinedCalibration.writePredictedLables(trainList1, "trainList1Constant" + myMsDataFile.Name);
                 //combinedCalibration.writePredictedLables(trainList2, "trainList2Constant" + myMsDataFile.Name);
                 //combinedCalibration.writePredictedLables(testList1, "testList1Constant" + myMsDataFile.Name);
@@ -351,7 +349,7 @@ namespace InternalLogicCalibration
                     }
                 }
             }
-            catch (ArgumentException e)
+            catch (ArgumentException)
             {
             }
 
@@ -519,7 +517,7 @@ namespace InternalLogicCalibration
                     if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
                     {
                     }
-                    else if (trainingPointsToAverage.Count < Math.Min(minMS1, originalIntensities.Count()))
+                    else if (trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
                     {
                     }
                     else
@@ -697,7 +695,7 @@ namespace InternalLogicCalibration
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                         if (trainingPointsToAverage.Count == 0 && startingToAdd == true)
                             break;
-                        if (trainingPointsToAverage.Count < Math.Min(minMS2, intensities.Count()))
+                        if (trainingPointsToAverage.Count < Math.Min(minMS2isotopicPeaksNeededForConfirmedIdentification, intensities.Count()))
                         {
                             //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
                             //{

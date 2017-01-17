@@ -40,7 +40,7 @@ namespace Test
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), Terminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             Action<List<ProteinGroup>, string> action3 = null;
@@ -48,7 +48,7 @@ namespace Test
             bool doParsimony = false;
             AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony);
 
-            var res = (AnalysisResults)engine.Run();
+            engine.Run();
         }
 
         #endregion Public Methods
