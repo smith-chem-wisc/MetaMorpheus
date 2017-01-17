@@ -126,23 +126,19 @@ namespace InternalLogicEngineLayer
 
             sb.Append(newPsm.ToString() + '\t');
             if (peptidesWithSetModifications.Count == 1)
+            {
                 sb.Append(peptidesWithSetModifications.First().protein.FullDescription + "\t");
+                sb.Append(peptidesWithSetModifications.First().PeptideDescription + '\t');
+            }
             else
+            {
                 sb.Append(string.Join(",", peptidesWithSetModifications.Select(b => b.protein.Accession)) + "\t");
-
+                sb.Append("ambiguous");
+            }
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-
-            //sb.Append(peptideWithSetModifications.PreviousAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.NextAminoAcid.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(peptideWithSetModifications.PeptideDescription + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-
-            //sb.Append(peptideWithSetModifications.protein.FullDescription.ToString(CultureInfo.InvariantCulture) + '\t');
-
             sb.Append((scanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture));
 
             return sb.ToString();
@@ -157,6 +153,7 @@ namespace InternalLogicEngineLayer
             var sb = new StringBuilder();
             sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
             sb.Append("Protein" + '\t');
+            sb.Append("Peptide Description" + '\t');
             sb.Append("FullSequence" + '\t');
             sb.Append("numVariableMods" + '\t');
             sb.Append("MissedCleavages" + '\t');

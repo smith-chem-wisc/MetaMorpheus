@@ -44,16 +44,11 @@ namespace InternalLogicEngineLayer
         {
             var sb = new StringBuilder();
 
-            //sb.Append(spectraFileIndex.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(scanRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            // sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            // sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            //sb.Append(ScoreFromSearch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+
+            sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
             foreach (var kvp in matchedIonsList)
@@ -85,6 +80,7 @@ namespace InternalLogicEngineLayer
             sb.Append("scanNumber" + '\t');
             sb.Append("scanPrecursorCharge" + '\t');
             sb.Append("scanPrecursorMass" + '\t');
+            sb.Append("Score" + '\t');
             sb.Append("matched ions" + '\t');
             sb.Append("matched ion counts" + '\t');
             sb.Append("localized scores" + '\t');
