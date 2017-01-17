@@ -310,12 +310,12 @@ namespace InternalLogicEngineLayer
 
         public List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> psmList, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, HashSet<CompactPeptide> allUniquePeptides)
         {
-            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
+            var proteinGroups = new List<ProteinGroup>();
 
-            Dictionary<NewPsmWithFDR, HashSet<Protein>> psmProteinListMatching = new Dictionary<NewPsmWithFDR, HashSet<Protein>>();
+            var psmProteinListMatching = new Dictionary<NewPsmWithFDR, HashSet<Protein>>();
 
-            HashSet<Protein> proteinGroupProteinSet = new HashSet<Protein>();
-            List<NewPsmWithFDR> proteinGroupPsmList = new List<NewPsmWithFDR>();
+            var proteinGroupProteinSet = new HashSet<Protein>();
+            var proteinGroupPsmList = new List<NewPsmWithFDR>();
 
             // build protein list (get proteins associated with psm using the parsimony dictionary)
             foreach (var psm in psmList)
@@ -362,8 +362,46 @@ namespace InternalLogicEngineLayer
                         }
                     }
 
+                    // have found all PSMs but some of them are duplicate peptides - pick only the highest-scoring psm per peptide
+                    List<NewPsmWithFDR> newProteinGroupPsmList = new List<NewPsmWithFDR>();
+                    Dictionary<string, List<NewPsmWithFDR>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFDR>>();
+                    foreach(var psm in proteinGroupPsmList)
+                    {
+                        CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                        string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+                        List<NewPsmWithFDR> tempPsmList = new List<NewPsmWithFDR>();
+
+                        if(peptideSequenceToPsmMatching.ContainsKey(peptideBaseSequence))
+                        {
+                            peptideSequenceToPsmMatching.TryGetValue(peptideBaseSequence, out tempPsmList);
+                            tempPsmList.Add(psm);
+                        }
+                        else
+                        {
+                            tempPsmList.Add(psm);
+                            peptideSequenceToPsmMatching.Add(peptideBaseSequence, tempPsmList);
+                        }
+                    }
+
+                    // pick the best-scoring psm per peptide
+                    foreach(var kvp1 in peptideSequenceToPsmMatching)
+                    {
+                        double bestScoreSoFar = 0;
+                        NewPsmWithFDR bestPsm = null;
+
+                        foreach(var psm in kvp1.Value)
+                        {
+                            if(psm.thisPSM.Score > bestScoreSoFar)
+                            {
+                                bestPsm = psm;
+                            }
+                        }
+
+                        newProteinGroupPsmList.Add(bestPsm);
+                    }
+
                     // build new protein group
-                    ProteinGroup proteinGroup = new ProteinGroup(kvp.Value, proteinGroupPsmList, allUniquePeptides, variableModifications, localizeableModifications);
+                    ProteinGroup proteinGroup = new ProteinGroup(kvp.Value, newProteinGroupPsmList, allUniquePeptides, variableModifications, localizeableModifications);
                     proteinGroups.Add(proteinGroup);
                 }
             }
