@@ -36,7 +36,12 @@ namespace Test
 
             int randomSeed = 0;
 
-            var calibrationEngine = new CalibrationEngine(myMsDataFile, randomSeed, toleranceInMZforMS2Search, identifications);
+            int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
+            int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
+            int numFragmentsNeededForEveryIdentification = 10;
+            double toleranceInMZforMS1Search = 0.01;
+
+            var calibrationEngine = new CalibrationEngine(myMsDataFile, randomSeed, toleranceInMZforMS2Search, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, toleranceInMZforMS1Search);
 
             var res = calibrationEngine.Run();
             Assert.IsTrue(res is CalibrationResults);
