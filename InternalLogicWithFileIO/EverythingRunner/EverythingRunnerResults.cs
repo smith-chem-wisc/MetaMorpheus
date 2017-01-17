@@ -5,6 +5,7 @@ namespace InternalLogicTaskLayer
 {
     internal class EverythingRunnerResults : MyResults
     {
+
         #region Public Constructors
 
         public EverythingRunnerResults(MyEngine s) : base(s)
@@ -22,5 +23,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Protected Methods
+
     }
 }

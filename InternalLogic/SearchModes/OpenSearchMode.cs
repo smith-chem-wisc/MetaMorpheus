@@ -5,6 +5,7 @@ namespace InternalLogicEngineLayer
 {
     public class OpenSearchMode : SearchMode
     {
+
         #region Public Constructors
 
         public OpenSearchMode(string s) : base(s)
@@ -31,5 +32,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }
