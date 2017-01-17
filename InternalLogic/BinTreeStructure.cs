@@ -10,7 +10,6 @@ namespace InternalLogicEngineLayer
         #region Private Fields
 
         private const int minNumberInBin = 2;
-        private double dc;
 
         #endregion Private Fields
 
@@ -24,7 +23,6 @@ namespace InternalLogicEngineLayer
 
         public void GenerateBins(List<NewPsmWithFDR> targetAndDecoyMatches, double dc)
         {
-            this.dc = dc;
             List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.scanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
