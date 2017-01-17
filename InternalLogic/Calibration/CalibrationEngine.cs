@@ -213,7 +213,6 @@ namespace InternalLogicCalibration
 
             CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
             CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
-            CalibrationFunction combinedCalibration = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
             double bestMS1MSE = bestMS1predictor.getMSE(testList1);
             double bestMS2MSE = bestMS2predictor.getMSE(testList2);
 
@@ -222,7 +221,6 @@ namespace InternalLogicCalibration
                 var ms2regressor = new ConstantCalibrationFunction();
                 ms1regressor.Train(trainList1);
                 ms2regressor.Train(trainList2);
-                combinedCalibration = new SeparateCalibrationFunction(ms1regressor, ms2regressor);
                 //combinedCalibration.writePredictedLables(trainList1, "trainList1Constant" + myMsDataFile.Name);
                 //combinedCalibration.writePredictedLables(trainList2, "trainList2Constant" + myMsDataFile.Name);
                 //combinedCalibration.writePredictedLables(testList1, "testList1Constant" + myMsDataFile.Name);
@@ -351,7 +349,7 @@ namespace InternalLogicCalibration
                     }
                 }
             }
-            catch (ArgumentException e)
+            catch (ArgumentException)
             {
             }
 
