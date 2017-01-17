@@ -9,7 +9,7 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const int minNumberInBin = 8;
+        private const int minNumberInBin = 2;
         private double dc;
 
         #endregion Private Fields
@@ -22,7 +22,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public void GenerateBins(IEnumerable<NewPsmWithFDR> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<NewPsmWithFDR> targetAndDecoyMatches, double dc)
         {
             this.dc = dc;
             List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.scanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
@@ -93,16 +93,15 @@ namespace InternalLogicEngineLayer
                         forFinalBins[b].Add(a);
 
             finalBins = forFinalBins.Select(b => new Bin(b.Value.Average())).ToList();
-        }
 
-        public void AddToBins(List<NewPsmWithFDR> enumerable)
-        {
-            for (int i = 0; i < enumerable.Count; i++)
+            for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in finalBins)
-                    if (Math.Abs(enumerable[i].thisPSM.scanPrecursorMass - enumerable[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
-                        bin.Add(enumerable[i]);
+                    if (Math.Abs(targetAndDecoyMatches[i].thisPSM.scanPrecursorMass - targetAndDecoyMatches[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
+                        bin.Add(targetAndDecoyMatches[i]);
             }
+
+            finalBins = finalBins.Where(b => b.Count > 1).ToList();
         }
 
         #endregion Public Methods

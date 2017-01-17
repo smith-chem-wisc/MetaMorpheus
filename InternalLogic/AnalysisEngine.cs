@@ -663,7 +663,6 @@ namespace InternalLogicEngineLayer
         {
             var myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);
-            myTreeStructure.AddToBins(limitedpsms_with_fdr);
 
             IdentifyUnimodBins(myTreeStructure, binTol);
             IdentifyUniprotBins(myTreeStructure, binTol);
