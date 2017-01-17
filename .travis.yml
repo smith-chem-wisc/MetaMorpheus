@@ -21,3 +21,5 @@ deploy:
   on:
     tags: true 
   skip_cleanup: true
+notifications:
+  email: false

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Xml;
@@ -132,222 +133,228 @@ namespace InternalLogicTaskLayer
 
         protected IEnumerable<Protein> getProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
         {
-            using (XmlReader xml = XmlReader.Create(FileName))
+            using (var stream = new FileStream(FileName, FileMode.Open))
             {
-                string[] nodes = new string[6];
-
-                string dataset = null;
-                string accession = null;
-                string name = null;
-                string full_name = null;
-                string organism = null;
-                string gene_name = null;
-                string sequence = null;
-                string feature_type = null;
-                string feature_description = null;
-                int oneBasedfeature_position = -1;
-                int oneBasedbeginPosition = -1;
-                int oneBasedendPosition = -1;
-                var oneBasedBeginPositions = new List<int>();
-                var oneBasedEndPositions = new List<int>();
-                var peptideTypes = new List<string>();
-                var oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
-                int offset = 0;
-                while (xml.Read())
+                Stream uniprotXmlFileStream = stream;
+                if (FileName.EndsWith(".gz"))
+                    uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
+                using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
                 {
-                    switch (xml.NodeType)
+                    string[] nodes = new string[6];
+
+                    string dataset = null;
+                    string accession = null;
+                    string name = null;
+                    string full_name = null;
+                    string organism = null;
+                    string gene_name = null;
+                    string sequence = null;
+                    string feature_type = null;
+                    string feature_description = null;
+                    int oneBasedfeature_position = -1;
+                    int oneBasedbeginPosition = -1;
+                    int oneBasedendPosition = -1;
+                    var oneBasedBeginPositions = new List<int>();
+                    var oneBasedEndPositions = new List<int>();
+                    var peptideTypes = new List<string>();
+                    var oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
+                    int offset = 0;
+                    while (xml.Read())
                     {
-                        case XmlNodeType.Element:
-                            nodes[xml.Depth] = xml.Name;
-                            switch (xml.Name)
-                            {
-                                case "entry":
-                                    dataset = xml.GetAttribute("dataset");
-                                    break;
+                        switch (xml.NodeType)
+                        {
+                            case XmlNodeType.Element:
+                                nodes[xml.Depth] = xml.Name;
+                                switch (xml.Name)
+                                {
+                                    case "entry":
+                                        dataset = xml.GetAttribute("dataset");
+                                        break;
 
-                                case "accession":
-                                    if (accession == null)
-                                    {
-                                        accession = xml.ReadElementString();
-                                    }
-                                    break;
-
-                                case "name":
-                                    if (xml.Depth == 2)
-                                    {
-                                        name = xml.ReadElementString();
-                                    }
-                                    else if (nodes[2] == "gene")
-                                    {
-                                        if (gene_name == null)
+                                    case "accession":
+                                        if (accession == null)
                                         {
-                                            gene_name = xml.ReadElementString();
+                                            accession = xml.ReadElementString();
                                         }
-                                    }
-                                    else if (nodes[2] == "organism")
-                                    {
-                                        if (organism == null)
+                                        break;
+
+                                    case "name":
+                                        if (xml.Depth == 2)
                                         {
-                                            organism = xml.ReadElementString();
+                                            name = xml.ReadElementString();
                                         }
-                                    }
-                                    break;
-
-                                case "fullName":
-                                    if (full_name == null)
-                                    {
-                                        full_name = xml.ReadElementString();
-                                    }
-                                    break;
-
-                                case "feature":
-                                    feature_type = xml.GetAttribute("type");
-                                    feature_description = xml.GetAttribute("description");
-                                    break;
-
-                                case "position":
-                                    oneBasedfeature_position = int.Parse(xml.GetAttribute("position"));
-                                    break;
-
-                                case "begin":
-                                    try
-                                    {
-                                        oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
-                                    }
-                                    catch (ArgumentNullException)
-                                    {
-                                    }
-                                    break;
-
-                                case "end":
-                                    try
-                                    {
-                                        oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
-                                    }
-                                    catch (ArgumentNullException)
-                                    {
-                                    }
-                                    break;
-
-                                case "sequence":
-                                    sequence = xml.ReadElementString().Replace("\n", null);
-                                    break;
-                            }
-                            break;
-
-                        case XmlNodeType.EndElement:
-                            switch (xml.Name)
-                            {
-                                case "feature":
-                                    if (feature_type == "modified residue" && allModifications != null && !feature_description.Contains("variant") && allModifications.ContainsKey(feature_description))
-                                    {
-                                        List<MorpheusModification> residue_modifications;
-                                        if (!oneBasedModifications.TryGetValue(oneBasedfeature_position, out residue_modifications))
+                                        else if (nodes[2] == "gene")
                                         {
-                                            residue_modifications = new List<MorpheusModification>();
-                                            oneBasedModifications.Add(oneBasedfeature_position, residue_modifications);
-                                        }
-                                        int semicolon_index = feature_description.IndexOf(';');
-                                        if (semicolon_index >= 0)
-                                        {
-                                            feature_description = feature_description.Substring(0, semicolon_index);
-                                        }
-                                        residue_modifications.AddRange(allModifications[feature_description]);
-                                    }
-                                    else if ((feature_type == "peptide" || feature_type == "propeptide" || feature_type == "chain") && oneBasedbeginPosition >= 0 && oneBasedendPosition >= 0)
-                                    {
-                                        oneBasedBeginPositions.Add(oneBasedbeginPosition);
-                                        oneBasedEndPositions.Add(oneBasedendPosition);
-                                        peptideTypes.Add(feature_type);
-                                    }
-                                    oneBasedbeginPosition = -1;
-                                    oneBasedendPosition = -1;
-
-                                    break;
-
-                                case "entry":
-                                    string dataset_abbreviation;
-                                    if (dataset != null && dataset.Equals("Swiss-Prot", StringComparison.InvariantCultureIgnoreCase))
-                                        dataset_abbreviation = "sp";
-                                    else
-                                        dataset_abbreviation = "uk";
-
-                                    if (accession != null && sequence != null)
-                                    {
-                                        var protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
-
-                                        yield return protein;
-
-                                        offset += protein.Length;
-                                        if (onTheFlyDecoys)
-                                        {
-                                            char[] sequence_array = sequence.ToCharArray();
-                                            Dictionary<int, List<MorpheusModification>> decoy_modifications = null;
-                                            if (sequence.StartsWith("M", StringComparison.InvariantCulture))
+                                            if (gene_name == null)
                                             {
-                                                // Do not include the initiator methionine in reversal!!!
-                                                Array.Reverse(sequence_array, 1, sequence.Length - 1);
-                                                if (oneBasedModifications != null)
-                                                {
-                                                    decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
-                                                    foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
-                                                    {
-                                                        if (kvp.Key == 1)
-                                                        {
-                                                            decoy_modifications.Add(1, kvp.Value);
-                                                        }
-                                                        else if (kvp.Key > 1)
-                                                        {
-                                                            decoy_modifications.Add(sequence.Length - kvp.Key + 2, kvp.Value);
-                                                        }
-                                                    }
-                                                }
+                                                gene_name = xml.ReadElementString();
                                             }
-                                            else
+                                        }
+                                        else if (nodes[2] == "organism")
+                                        {
+                                            if (organism == null)
                                             {
-                                                Array.Reverse(sequence_array);
-                                                if (oneBasedModifications != null)
-                                                {
-                                                    decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
-                                                    foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
-                                                    {
-                                                        decoy_modifications.Add(sequence.Length - kvp.Key + 1, kvp.Value);
-                                                    }
-                                                }
+                                                organism = xml.ReadElementString();
                                             }
-                                            var reversed_sequence = new string(sequence_array);
-                                            int[] decoybeginPositions = new int[oneBasedBeginPositions.Count];
-                                            int[] decoyendPositions = new int[oneBasedEndPositions.Count];
-                                            string[] decoyBigPeptideTypes = new string[oneBasedEndPositions.Count];
-                                            for (int i = 0; i < decoybeginPositions.Length; i++)
+                                        }
+                                        break;
+
+                                    case "fullName":
+                                        if (full_name == null)
+                                        {
+                                            full_name = xml.ReadElementString();
+                                        }
+                                        break;
+
+                                    case "feature":
+                                        feature_type = xml.GetAttribute("type");
+                                        feature_description = xml.GetAttribute("description");
+                                        break;
+
+                                    case "position":
+                                        oneBasedfeature_position = int.Parse(xml.GetAttribute("position"));
+                                        break;
+
+                                    case "begin":
+                                        try
+                                        {
+                                            oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
+                                        }
+                                        catch (ArgumentNullException)
+                                        {
+                                        }
+                                        break;
+
+                                    case "end":
+                                        try
+                                        {
+                                            oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
+                                        }
+                                        catch (ArgumentNullException)
+                                        {
+                                        }
+                                        break;
+
+                                    case "sequence":
+                                        sequence = xml.ReadElementString().Replace("\n", null);
+                                        break;
+                                }
+                                break;
+
+                            case XmlNodeType.EndElement:
+                                switch (xml.Name)
+                                {
+                                    case "feature":
+                                        if (feature_type == "modified residue" && allModifications != null && !feature_description.Contains("variant") && allModifications.ContainsKey(feature_description))
+                                        {
+                                            List<MorpheusModification> residue_modifications;
+                                            if (!oneBasedModifications.TryGetValue(oneBasedfeature_position, out residue_modifications))
                                             {
-                                                decoybeginPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedEndPositions[i] + 1;
-                                                decoyendPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedBeginPositions[i] + 1;
-                                                decoyBigPeptideTypes[oneBasedBeginPositions.Count - i - 1] = peptideTypes[i];
+                                                residue_modifications = new List<MorpheusModification>();
+                                                oneBasedModifications.Add(oneBasedfeature_position, residue_modifications);
                                             }
-                                            var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, dataset_abbreviation, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true);
-                                            yield return decoy_protein;
+                                            int semicolon_index = feature_description.IndexOf(';');
+                                            if (semicolon_index >= 0)
+                                            {
+                                                feature_description = feature_description.Substring(0, semicolon_index);
+                                            }
+                                            residue_modifications.AddRange(allModifications[feature_description]);
+                                        }
+                                        else if ((feature_type == "peptide" || feature_type == "propeptide" || feature_type == "chain") && oneBasedbeginPosition >= 0 && oneBasedendPosition >= 0)
+                                        {
+                                            oneBasedBeginPositions.Add(oneBasedbeginPosition);
+                                            oneBasedEndPositions.Add(oneBasedendPosition);
+                                            peptideTypes.Add(feature_type);
+                                        }
+                                        oneBasedbeginPosition = -1;
+                                        oneBasedendPosition = -1;
+
+                                        break;
+
+                                    case "entry":
+                                        string dataset_abbreviation;
+                                        if (dataset != null && dataset.Equals("Swiss-Prot", StringComparison.InvariantCultureIgnoreCase))
+                                            dataset_abbreviation = "sp";
+                                        else
+                                            dataset_abbreviation = "uk";
+
+                                        if (accession != null && sequence != null)
+                                        {
+                                            var protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
+
+                                            yield return protein;
+
                                             offset += protein.Length;
+                                            if (onTheFlyDecoys)
+                                            {
+                                                char[] sequence_array = sequence.ToCharArray();
+                                                Dictionary<int, List<MorpheusModification>> decoy_modifications = null;
+                                                if (sequence.StartsWith("M", StringComparison.InvariantCulture))
+                                                {
+                                                    // Do not include the initiator methionine in reversal!!!
+                                                    Array.Reverse(sequence_array, 1, sequence.Length - 1);
+                                                    if (oneBasedModifications != null)
+                                                    {
+                                                        decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
+                                                        foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
+                                                        {
+                                                            if (kvp.Key == 1)
+                                                            {
+                                                                decoy_modifications.Add(1, kvp.Value);
+                                                            }
+                                                            else if (kvp.Key > 1)
+                                                            {
+                                                                decoy_modifications.Add(sequence.Length - kvp.Key + 2, kvp.Value);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Array.Reverse(sequence_array);
+                                                    if (oneBasedModifications != null)
+                                                    {
+                                                        decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
+                                                        foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
+                                                        {
+                                                            decoy_modifications.Add(sequence.Length - kvp.Key + 1, kvp.Value);
+                                                        }
+                                                    }
+                                                }
+                                                var reversed_sequence = new string(sequence_array);
+                                                int[] decoybeginPositions = new int[oneBasedBeginPositions.Count];
+                                                int[] decoyendPositions = new int[oneBasedEndPositions.Count];
+                                                string[] decoyBigPeptideTypes = new string[oneBasedEndPositions.Count];
+                                                for (int i = 0; i < decoybeginPositions.Length; i++)
+                                                {
+                                                    decoybeginPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedEndPositions[i] + 1;
+                                                    decoyendPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedBeginPositions[i] + 1;
+                                                    decoyBigPeptideTypes[oneBasedBeginPositions.Count - i - 1] = peptideTypes[i];
+                                                }
+                                                var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, dataset_abbreviation, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true);
+                                                yield return decoy_protein;
+                                                offset += protein.Length;
+                                            }
                                         }
-                                    }
-                                    dataset = null;
-                                    accession = null;
-                                    name = null;
-                                    full_name = null;
-                                    organism = null;
-                                    gene_name = null;
-                                    sequence = null;
-                                    feature_type = null;
-                                    feature_description = null;
-                                    oneBasedfeature_position = -1;
-                                    oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
+                                        dataset = null;
+                                        accession = null;
+                                        name = null;
+                                        full_name = null;
+                                        organism = null;
+                                        gene_name = null;
+                                        sequence = null;
+                                        feature_type = null;
+                                        feature_description = null;
+                                        oneBasedfeature_position = -1;
+                                        oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
 
-                                    oneBasedBeginPositions = new List<int>();
-                                    oneBasedEndPositions = new List<int>();
-                                    peptideTypes = new List<string>();
-                                    break;
-                            }
-                            break;
+                                        oneBasedBeginPositions = new List<int>();
+                                        oneBasedEndPositions = new List<int>();
+                                        peptideTypes = new List<string>();
+                                        break;
+                                }
+                                break;
+                        }
                     }
                 }
             }

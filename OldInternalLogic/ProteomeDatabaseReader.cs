@@ -2,14 +2,22 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Xml;
 
 namespace OldInternalLogic
 {
     public static class ProteomeDatabaseReader
     {
+
+        #region Private Fields
+
         private static readonly Dictionary<string, ModificationType> modificationTypeCodes;
         private static readonly Dictionary<string, char> aminoAcidCodes;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         static ProteomeDatabaseReader()
         {
@@ -44,23 +52,33 @@ namespace OldInternalLogic
             aminoAcidCodes.Add("Valine", 'V');
         }
 
+        #endregion Public Constructors
+
+        #region Public Methods
+
         public static HashSet<string> ReadXMLmodifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
         {
             var modifications_in_database = new HashSet<string>();
             foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
-                using (XmlReader xml = XmlReader.Create(uniProtXmlProteomeDatabaseFilepath))
-                    while (xml.ReadToFollowing("feature"))
-                        if (xml.GetAttribute("type") == "modified residue")
-                        {
-                            string description = xml.GetAttribute("description");
-                            if (!description.Contains("variant"))
+                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
+                {
+                    Stream uniprotXmlFileStream = stream;
+                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz"))
+                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
+                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
+                        while (xml.ReadToFollowing("feature"))
+                            if (xml.GetAttribute("type") == "modified residue")
                             {
-                                int semicolon_index = description.IndexOf(';');
-                                if (semicolon_index >= 0)
-                                    description = description.Substring(0, semicolon_index);
-                                modifications_in_database.Add(description);
+                                string description = xml.GetAttribute("description");
+                                if (!description.Contains("variant"))
+                                {
+                                    int semicolon_index = description.IndexOf(';');
+                                    if (semicolon_index >= 0)
+                                        description = description.Substring(0, semicolon_index);
+                                    modifications_in_database.Add(description);
+                                }
                             }
-                        }
+                }
             return modifications_in_database;
         }
 
@@ -150,5 +168,8 @@ namespace OldInternalLogic
                 }
             }
         }
+
+        #endregion Public Methods
+
     }
 }

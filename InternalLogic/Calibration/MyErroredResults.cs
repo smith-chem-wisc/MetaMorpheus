@@ -1,5 +1,4 @@
 ﻿using InternalLogicEngineLayer;
-using System;
 
 namespace InternalLogicCalibration
 {
@@ -25,7 +24,7 @@ namespace InternalLogicCalibration
 
         protected override string GetStringForOutput()
         {
-            throw new NotImplementedException();
+            return v;
         }
 
         #endregion Protected Methods

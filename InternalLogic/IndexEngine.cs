@@ -24,18 +24,20 @@ namespace InternalLogicEngineLayer
         private readonly List<MorpheusModification> fixedModifications;
         private readonly List<MorpheusModification> variableModifications;
         private readonly List<MorpheusModification> localizeableModifications;
+        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease) : base(2)
+        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.localizeableModifications = localizeableModifications;
             this.protease = protease;
+            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
         }
 
         #endregion Public Constructors
@@ -73,7 +75,7 @@ namespace InternalLogicEngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
@@ -119,14 +121,17 @@ namespace InternalLogicEngineLayer
 
                             foreach (var huhu in yyy.FastSortedProductMasses(lp))
                             {
-                                var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
-                                List<int> value;
-                                if (myInnerDictionary.TryGetValue(rounded, out value))
-                                    value.Add(index);
-                                else
-                                    myInnerDictionary.Add(rounded, new List<int> { index });
+                                if (!double.IsNaN(huhu))
+                                {
+                                    var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
+                                    List<int> value;
+                                    if (myInnerDictionary.TryGetValue(rounded, out value))
+                                        value.Add(index);
+                                    else
+                                        myInnerDictionary.Add(rounded, new List<int> { index });
+                                }
+                                ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
                             }
-                            ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
                         }
                     }
                 }
