@@ -21,7 +21,7 @@ namespace Test
             var localizeableModifications = new List<MorpheusModification>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease);
+            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable);
             var results = (IndexResults)engine.Run();
 
             Assert.AreEqual(5, results.peptideIndex.Count);
@@ -33,6 +33,24 @@ namespace Test
             Assert.Contains("QQQ", listOfPeptides);
             Assert.Contains("MNNNKQQQ", listOfPeptides);
             Assert.Contains("NNNKQQQ", listOfPeptides);
+        }
+
+        [Test]
+        public void TestIndexEngineWithWeirdSeq()
+        {
+            var proteinList = new List<Protein> { new Protein("MQXQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
+            var variableModifications = new List<MorpheusModification>();
+            var fixedModifications = new List<MorpheusModification>();
+            var localizeableModifications = new List<MorpheusModification>();
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+
+            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain);
+            var results = (IndexResults)engine.Run();
+
+            Assert.AreEqual(1, results.peptideIndex.Count);
+
+            Assert.IsNaN(results.peptideIndex[0].MonoisotopicMass);
+            Assert.AreEqual(2, results.fragmentIndexDict.Count);
         }
 
         #endregion Public Methods

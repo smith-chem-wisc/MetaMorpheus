@@ -54,7 +54,8 @@ namespace Test
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease);
+            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior);
             var indexResults = (IndexResults)indexEngine.Run();
             var peptideIndex = indexResults.peptideIndex;
             var fragmentIndexDict = indexResults.fragmentIndexDict;
