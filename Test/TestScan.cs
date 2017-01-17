@@ -16,7 +16,6 @@ namespace Test
         private int selectedIonGuessChargeStateGuess;
 
         private double selectedIonGuessMonoisotopicMZ;
-        private double selectedIonGuessMZ;
 
         #endregion Private Fields
 
@@ -123,7 +122,6 @@ namespace Test
         public void tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double selectedIonGuessMonoisotopicMZ)
         {
             MassSpectrum.replaceXbyApplyingFunction(convertorForSpectrum);
-            this.selectedIonGuessMZ = selectedIonGuessMZ;
             this.selectedIonGuessMonoisotopicMZ = selectedIonGuessMonoisotopicMZ;
         }
 

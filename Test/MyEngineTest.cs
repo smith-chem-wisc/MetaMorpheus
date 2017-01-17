@@ -26,17 +26,10 @@ namespace Test
         private class TestEngine : MyEngine
         {
 
-            #region Private Fields
-
-            private object param1;
-
-            #endregion Private Fields
-
             #region Public Constructors
 
             public TestEngine(int level, object param1) : base(level)
             {
-                this.param1 = param1;
             }
 
             #endregion Public Constructors
