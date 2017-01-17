@@ -13,9 +13,9 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const int maximumMissedCleavages = 2;
-        private const int maximumVariableModificationIsoforms = 4096;
         private const int max_mods_for_peptide = 3;
+        private readonly int maximumMissedCleavages;
+        private readonly int maximumVariableModificationIsoforms;
         private readonly List<SearchMode> searchModes;
 
         private readonly List<Protein> proteinList;
@@ -37,7 +37,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMs2Scan[] myMsDataFile, int myMsDataFileNumSpectra, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes) : base(2)
+        public ClassicSearchEngine(LocalMs2Scan[] myMsDataFile, int myMsDataFileNumSpectra, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
@@ -46,8 +46,10 @@ namespace InternalLogicEngineLayer
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
             this.productMassTolerance = productMassTolerance;
-            this.protease = protease;
+            this.maximumMissedCleavages = maximumMissedCleavages;
+            this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.searchModes = searchModes;
+            this.protease = protease;
         }
 
         #endregion Public Constructors

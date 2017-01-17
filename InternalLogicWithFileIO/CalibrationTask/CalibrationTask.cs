@@ -110,7 +110,7 @@ namespace InternalLogicTaskLayer
                     listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
                 }
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, productMassToleranceInDaltons), protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, productMassToleranceInDaltons), protease, searchModes, maxMissedCleavages, maxModificationIsoforms);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -118,7 +118,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, productMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false);
+                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, productMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, maxMissedCleavages, maxModificationIsoforms);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -141,8 +141,13 @@ namespace InternalLogicTaskLayer
                 }
                 int randomSeed = 1;
 
+                int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
+                int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
+                int numFragmentsNeededForEveryIdentification = 10;
+                double toleranceInMZforMS1Search = 0.01;
+
                 // TODO: fix the tolerance calculation below
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassToleranceInDaltons * 2, identifications);
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, toleranceInMZforMS1Search);
 
                 var result = (CalibrationResults)a.Run();
 

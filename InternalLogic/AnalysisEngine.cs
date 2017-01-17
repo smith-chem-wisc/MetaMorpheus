@@ -18,11 +18,10 @@ namespace InternalLogicEngineLayer
 
         private const double binTol = 0.003;
         private const double comboThresholdMultiplier = 3;
-        private const int maximumMissedCleavages = 2;
-        private const int maxModIsoforms = 4096;
         private const int max_mods_for_peptide = 3;
+        private readonly int maximumMissedCleavages;
+        private readonly int maxModIsoforms;
         private readonly ParentSpectrumMatch[][] newPsms;
-
         private readonly List<Protein> proteinList;
         private readonly List<MorpheusModification> variableModifications;
         private readonly List<MorpheusModification> fixedModifications;
@@ -41,7 +40,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony) : base(2)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms) : base(2)
         {
             this.doParsimony = doParsimony;
             this.newPsms = newPsms;
@@ -57,6 +56,8 @@ namespace InternalLogicEngineLayer
             this.action1 = action1;
             this.action2 = action2;
             this.action3 = action3;
+            this.maximumMissedCleavages = maximumMissedCleavages;
+            this.maxModIsoforms = maxModIsoforms;
         }
 
         #endregion Public Constructors
@@ -701,7 +702,6 @@ namespace InternalLogicEngineLayer
         {
             var myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);
-            myTreeStructure.AddToBins(limitedpsms_with_fdr);
 
             IdentifyUnimodBins(myTreeStructure, binTol);
             IdentifyUniprotBins(myTreeStructure, binTol);

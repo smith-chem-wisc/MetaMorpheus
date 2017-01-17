@@ -16,17 +16,13 @@ namespace InternalLogicCalibration
 
         #region Private Fields
 
-        // THIS PARAMETER IS FRAGILE!!!
-        // TUNED TO CORRESPOND TO SPECTROMETER OUTPUT
-        // BETTER SPECTROMETERS WOULD HAVE BETTER (LOWER) RESOLUIONS
-        // Parameter for isotopolouge distribution searching
-        private const double fineResolution = 0.1;
-
-        private const int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
-        private const int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
-        private const int numFragmentsNeededForEveryIdentification = 10;
-        private const double toleranceInMZforMS1Search = 0.01;
+        private const double fineResolutionForIsotopeDistCalculation = 0.1;
         private const double fracForTraining = 0.75;
+
+        private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
+        private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
+        private readonly int numFragmentsNeededForEveryIdentification;
+        private readonly double toleranceInMZforMS1Search;
         private readonly double toleranceInMZforMS2Search;
         private int randomSeed;
         private List<NewPsmWithFDR> identifications;
@@ -36,12 +32,16 @@ namespace InternalLogicCalibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFDR> identifications) : base(2)
+        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFDR> identifications, int minMS1isotopicPeaksNeededForConfirmedIdentification, int minMS2isotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, double toleranceInMZforMS1Search) : base(2)
         {
             this.myMsDataFile = myMsDataFile;
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
             this.identifications = identifications;
+            this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
+            this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
+            this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
+            this.toleranceInMZforMS1Search = toleranceInMZforMS1Search;
         }
 
         #endregion Public Constructors
@@ -158,7 +158,7 @@ namespace InternalLogicCalibration
 
                 // Calculate isotopic distribution of the full peptide
 
-                var dist = new IsotopicDistribution(coolPeptide.GetChemicalFormula(), fineResolution, 0.001);
+                var dist = new IsotopicDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
 
                 double[] masses = new double[dist.Masses.Count];
                 double[] intensities = new double[dist.Intensities.Count];
@@ -611,7 +611,7 @@ namespace InternalLogicCalibration
                             //    output("    Charge was = " + chargeToLookAt + "  closestPeakMZ = " + closestPeakMZ + " while monoisotopicMZ = " + monoisotopicMZ);
                             //}
 
-                            var dist = new IsotopicDistribution(fragment.ThisChemicalFormula, fineResolution, 0.001);
+                            var dist = new IsotopicDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
 
                             masses = new double[dist.Masses.Count];
                             intensities = new double[dist.Intensities.Count];

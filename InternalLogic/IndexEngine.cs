@@ -13,10 +13,10 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const int maximumMissedCleavages = 2;
-        private const int maximumVariableModificationIsoforms = 4096;
         private const int max_mods_for_peptide = 3;
         private const int decimalDigitsForFragmentMassRounding = 3;
+        private readonly int maximumMissedCleavages;
+        private readonly int maximumVariableModificationIsoforms;
         private readonly List<Protein> proteinList;
 
         private readonly Protease protease;
@@ -30,7 +30,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior) : base(2)
+        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -38,6 +38,8 @@ namespace InternalLogicEngineLayer
             this.localizeableModifications = localizeableModifications;
             this.protease = protease;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
+            this.maximumMissedCleavages = maximumMissedCleavages;
+            this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
         }
 
         #endregion Public Constructors

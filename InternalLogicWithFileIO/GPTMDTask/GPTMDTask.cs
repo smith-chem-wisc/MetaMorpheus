@@ -98,7 +98,8 @@ namespace InternalLogicTaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).OrderBy(b => b), precursorMassTolerance);
+            // Do not remove the zero!!! It's needed here
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), precursorMassTolerance);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
@@ -122,20 +123,20 @@ namespace InternalLogicTaskLayer
 
                 var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maxMissedCleavages, maxModificationIsoforms);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
                 allPsms[0].AddRange(searchResults.outerPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), null, false);
+                analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), null, false, maxMissedCleavages, maxModificationIsoforms);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
 
             if (currentRawFileList.Count > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), null, false);
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, null, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, "aggregate"), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, "aggregate" + s), null, false, maxMissedCleavages, maxModificationIsoforms);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
@@ -145,7 +146,7 @@ namespace InternalLogicTaskLayer
 
             //output(gptmdResults.ToString());
 
-            WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
+            WriteGPTMDdatabse(gptmdResults.mods, proteinList.Where(b => !b.isDecoy).ToList(), outputXMLdbFullName);
 
             myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
 
