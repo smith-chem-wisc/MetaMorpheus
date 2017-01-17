@@ -97,11 +97,44 @@ namespace InternalLogicEngineLayer
             // TODO**: add proteins with unique peptides first, makes algo faster, use parsimony on remainder
             // TODO**: how to handle multiple CompactPeptide objects that have the same basesequence (should be treated as 1 unaccounted-for
             //         peptide, not 10 for example)
+            // TODO**: if a peptide is shared between target and decoy proteins, remove its association with the target proteins, leave 
+            //         only the decoy proteins
 
-            uniquePeptides = new HashSet<CompactPeptide>();
+            foreach(var kvp in fullSequenceToProteinPeptideMatching)
+            {
+                bool psmContainsDecoyProtein = false;
+
+                foreach(var peptide in kvp.Value)
+                {
+                    if(peptide.protein.isDecoy)
+                    {
+                        psmContainsDecoyProtein = true;
+                    }
+                }
+
+                // if psm contains decoy protein, remove all target proteins associated with the psm
+                if(psmContainsDecoyProtein)
+                {
+                    HashSet<PeptideWithSetModifications> peptidesToRemove = new HashSet<PeptideWithSetModifications>();
+
+                    foreach (var peptide in kvp.Value)
+                    {
+                        if(!peptide.protein.isDecoy)
+                        {
+                            peptidesToRemove.Add(peptide);
+                        }
+                    }
+
+                    foreach(var peptide in peptidesToRemove)
+                    {
+                        kvp.Value.Remove(peptide);
+                    }
+                }
+            }
 
             // finds unique peptides first (not really used for parsimony but used later for protein groups)
             // unique peptide is a peptide that can belong to only one protein
+            uniquePeptides = new HashSet<CompactPeptide>();
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
                 List<Protein> proteinList = new List<Protein>();
