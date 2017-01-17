@@ -17,8 +17,8 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private readonly double summedIntensity;
-        private readonly double summedUniquePeptideIntensity;
+        //private readonly double summedIntensity;
+        //private readonly double summedUniquePeptideIntensity;
 
         #endregion Private Fields
 
@@ -40,8 +40,6 @@ namespace InternalLogicEngineLayer
             }
 
             // build list of compact peptides associated with the protein group
-            // all peptides in the group are associated with all proteins in the group
-            // if encountering duplicate peptides, only use the best-scoring one
             foreach (var psm in psmList)
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
@@ -56,10 +54,10 @@ namespace InternalLogicEngineLayer
             }
 
             // calculate summed psm intensity
-            summedIntensity = 0;
+            //summedIntensity = 0;
 
             // calculate intensity of only unique peptides
-            summedUniquePeptideIntensity = 0;
+            //summedUniquePeptideIntensity = 0;
 
             // q value
             QValue = 0;
@@ -84,6 +82,7 @@ namespace InternalLogicEngineLayer
             var sb = new StringBuilder();
 
             sb.Append("Proteins in group" + '\t');
+            sb.Append("Number of proteins in group" + '\t');
             sb.Append("Unique peptides" + '\t');
             sb.Append("Shared peptides" + '\t');
             sb.Append("Number of unique peptides" + '\t');
@@ -122,8 +121,12 @@ namespace InternalLogicEngineLayer
                 sb.Append("" + protein.name + " ;; ");
             sb.Append("\t");
 
+            // number of proteins in group
+            sb.Append("" + proteins.Count());
+            sb.Append("\t");
+
             // list of unique peptides
-            foreach(CompactPeptide peptide in uniquePeptideList)
+            foreach (CompactPeptide peptide in uniquePeptideList)
             {
                 string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 

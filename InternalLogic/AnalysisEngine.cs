@@ -94,6 +94,8 @@ namespace InternalLogicEngineLayer
             // TODO**: how to handle indistinguishable proteins?
             // TODO**: rewrite parsimony function using protein group objects (more efficient)
             // TODO**: add proteins with unique peptides first, makes algo faster, use parsimony on remainder
+            // TODO**: how to handle multiple CompactPeptide objects that have the same basesequence (should be treated as 1 unaccounted-for
+            //         peptide, not 10 for example)
 
             uniquePeptides = new HashSet<CompactPeptide>();
 
