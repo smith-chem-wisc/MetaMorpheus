@@ -48,7 +48,7 @@ namespace Test
             bool doParsimony = false;
             AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony);
 
-            var res = (AnalysisResults)engine.Run();
+            engine.Run();
         }
 
         #endregion Public Methods
