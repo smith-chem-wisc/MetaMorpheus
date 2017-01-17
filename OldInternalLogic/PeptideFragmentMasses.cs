@@ -2,9 +2,6 @@
 {
     public class PeptideFragmentMasses
     {
-        #region Internal Fields
-
-        #region Internal Fields
 
         #region Internal Fields
 
@@ -13,8 +10,5 @@
 
         #endregion Internal Fields
 
-        #endregion Internal Fields
-
-        #endregion Internal Fields
     }
 }
