@@ -33,6 +33,8 @@ namespace MetaMorpheusGUI
 
             TheTask = new CalibrationTask(modList);
             UpdateFieldsFromTask(TheTask);
+
+            this.saveButton.Content = "Add the Calibration Task";
         }
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask, ObservableCollection<ModList> modList)

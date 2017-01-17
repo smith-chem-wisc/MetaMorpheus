@@ -33,11 +33,17 @@ namespace MetaMorpheusGUI
 
             TheTask = new GPTMDTask(modList);
             UpdateFieldsFromTask(TheTask);
+
+            this.saveButton.Content = "Add the GPTMD Task";
         }
 
         public GPTMDTaskWindow(GPTMDTask myGPTMDtask, ObservableCollection<ModList> modFileList)
         {
             InitializeComponent();
+            PopulateChoices(modFileList);
+
+            TheTask = myGPTMDtask;
+            UpdateFieldsFromTask(TheTask);
         }
 
         #endregion Public Constructors
