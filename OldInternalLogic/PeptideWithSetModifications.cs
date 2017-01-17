@@ -8,6 +8,7 @@ namespace OldInternalLogic
 {
     public class PeptideWithSetModifications : Peptide
     {
+
         #region Public Fields
 
         public Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss;
@@ -249,7 +250,88 @@ namespace OldInternalLogic
             return hm;
         }
 
-        public PeptideFragmentMasses computeFragmentMasses()
+        public double[] FastSortedProductMasses(List<ProductType> productTypes)
+        {
+            PeptideFragmentMasses p = computeFragmentMasses();
+            double[] products1 = null;
+            double[] products2 = null;
+            if (productTypes.Contains(ProductType.b))
+                products1 = new double[Length - 2];
+            if (productTypes.Contains(ProductType.y))
+                products2 = new double[Length - 1];
+
+            int i1 = 0;
+            int i2 = 0;
+            for (int r = 1; r < Length; r++)
+            {
+                foreach (ProductType product_type in productTypes)
+                {
+                    if (!(product_type == ProductType.c && r < Length && this[r] == 'P') &&
+                       !(product_type == ProductType.zdot && Length - r < Length && this[Length - r] == 'P') &&
+                       !(product_type == ProductType.b && r == 1))
+                    {
+                        switch (product_type)
+                        {
+                            case ProductType.adot:
+                                throw new NotImplementedException();
+                            case ProductType.b:
+                                products1[i1] = p.cumulativeNTerminalMass[r];
+                                i1++;
+                                break;
+
+                            case ProductType.c:
+                                throw new NotImplementedException();
+
+                            case ProductType.x:
+                                throw new NotImplementedException();
+                            case ProductType.y:
+                                products2[i2] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
+                                i2++;
+                                break;
+
+                            case ProductType.zdot:
+                                throw new NotImplementedException();
+                        }
+                    }
+                }
+            }
+            i1 = 0;
+            i2 = 0;
+            int len = (productTypes.Contains(ProductType.b) ? Length - 2 : 0) +
+                      (productTypes.Contains(ProductType.y) ? Length - 1 : 0);
+            double[] products = new double[len];
+            for (int i = 0; i < len; i++)
+            {
+                if (products1 != null && (products2 == null || (i1 != products1.Length && (i2 == products2.Length || products1[i1] <= products2[i2]))))
+                {
+                    products[i] = products1[i1];
+                    i1++;
+                }
+                else
+                {
+                    products[i] = products2[i2];
+                    i2++;
+                }
+            }
+            return products;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var q = obj as PeptideWithSetModifications;
+            return q != null && q.Sequence.Equals(Sequence) && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein && q.protein.Equals(protein);
+        }
+
+        public override int GetHashCode()
+        {
+            return ExtendedSequence.GetHashCode();
+        }
+
+        #endregion Public Methods
+
+        #region Private Methods
+
+        private PeptideFragmentMasses computeFragmentMasses()
         {
             var p = new PeptideFragmentMasses();
 
@@ -376,83 +458,7 @@ namespace OldInternalLogic
             return p;
         }
 
-        public double[] FastSortedProductMasses(List<ProductType> productTypes)
-        {
-            PeptideFragmentMasses p = computeFragmentMasses();
-            double[] products1 = null;
-            double[] products2 = null;
-            if (productTypes.Contains(ProductType.b))
-                products1 = new double[Length - 2];
-            if (productTypes.Contains(ProductType.y))
-                products2 = new double[Length - 1];
+        #endregion Private Methods
 
-            int i1 = 0;
-            int i2 = 0;
-            for (int r = 1; r < Length; r++)
-            {
-                foreach (ProductType product_type in productTypes)
-                {
-                    if (!(product_type == ProductType.c && r < Length && this[r] == 'P') &&
-                       !(product_type == ProductType.zdot && Length - r < Length && this[Length - r] == 'P') &&
-                       !(product_type == ProductType.b && r == 1))
-                    {
-                        switch (product_type)
-                        {
-                            case ProductType.adot:
-                                throw new NotImplementedException();
-                            case ProductType.b:
-                                products1[i1] = p.cumulativeNTerminalMass[r];
-                                i1++;
-                                break;
-
-                            case ProductType.c:
-                                throw new NotImplementedException();
-
-                            case ProductType.x:
-                                throw new NotImplementedException();
-                            case ProductType.y:
-                                products2[i2] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
-                                i2++;
-                                break;
-
-                            case ProductType.zdot:
-                                throw new NotImplementedException();
-                        }
-                    }
-                }
-            }
-            i1 = 0;
-            i2 = 0;
-            int len = (productTypes.Contains(ProductType.b) ? Length - 2 : 0) +
-                      (productTypes.Contains(ProductType.y) ? Length - 1 : 0);
-            double[] products = new double[len];
-            for (int i = 0; i < len; i++)
-            {
-                if (products1 != null && (products2 == null || (i1 != products1.Length && (i2 == products2.Length || products1[i1] <= products2[i2]))))
-                {
-                    products[i] = products1[i1];
-                    i1++;
-                }
-                else
-                {
-                    products[i] = products2[i2];
-                    i2++;
-                }
-            }
-            return products;
-        }
-
-        public override bool Equals(object obj)
-        {
-            var q = obj as PeptideWithSetModifications;
-            return q != null && q.Sequence.Equals(Sequence) && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein && q.protein.Equals(protein);
-        }
-
-        public override int GetHashCode()
-        {
-            return ExtendedSequence.GetHashCode();
-        }
-
-        #endregion Public Methods
     }
 }

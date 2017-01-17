@@ -25,7 +25,7 @@ namespace Test
             var temp1 = new Dictionary<int, List<MorpheusModification>>();
             var temp2 = new List<MorpheusModification>();
             int[] temp3 = new int[0];
-            var protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, Terminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
             var totalVirtualPeptideList = new HashSet<PeptideWithSetModifications>();
 
             var p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);

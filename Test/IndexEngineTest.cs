@@ -19,7 +19,7 @@ namespace Test
             var variableModifications = new List<MorpheusModification>();
             var fixedModifications = new List<MorpheusModification>();
             var localizeableModifications = new List<MorpheusModification>();
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), Terminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease);
             var results = (IndexResults)engine.Run();
