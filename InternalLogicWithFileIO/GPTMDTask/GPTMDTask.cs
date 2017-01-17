@@ -122,7 +122,7 @@ namespace InternalLogicTaskLayer
 
                 var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maxMissedCleavages, maxModificationIsoforms);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -145,7 +145,7 @@ namespace InternalLogicTaskLayer
 
             //output(gptmdResults.ToString());
 
-            WriteGPTMDdatabse(gptmdResults.mods, proteinList, outputXMLdbFullName);
+            WriteGPTMDdatabse(gptmdResults.mods, proteinList.Where(b => !b.isDecoy).ToList(), outputXMLdbFullName);
 
             myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
 
