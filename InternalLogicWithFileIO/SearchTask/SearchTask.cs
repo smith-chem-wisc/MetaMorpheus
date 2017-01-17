@@ -15,6 +15,7 @@ namespace InternalLogicTaskLayer
 {
     public class SearchTask : MyTaskEngine
     {
+
         #region Public Constructors
 
         public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
@@ -290,5 +291,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

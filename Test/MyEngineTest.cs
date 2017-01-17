@@ -7,6 +7,7 @@ namespace Test
     [TestFixture]
     public class MyEngineTest
     {
+
         #region Public Methods
 
         [Test]
@@ -24,6 +25,7 @@ namespace Test
 
         private class TestEngine : MyEngine
         {
+
             #region Private Fields
 
             private object param1;
@@ -52,6 +54,7 @@ namespace Test
 
             private class TestResults : MyResults
             {
+
                 #region Public Constructors
 
                 public TestResults(MyEngine e) : base(e)
@@ -70,11 +73,14 @@ namespace Test
                 }
 
                 #endregion Protected Methods
+
             }
 
             #endregion Private Classes
+
         }
 
         #endregion Private Classes
+
     }
 }

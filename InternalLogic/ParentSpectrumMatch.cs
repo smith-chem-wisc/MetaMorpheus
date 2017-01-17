@@ -8,6 +8,7 @@ namespace InternalLogicEngineLayer
 {
     public abstract class ParentSpectrumMatch
     {
+
         #region Public Fields
 
         public int scanNumber;
@@ -93,5 +94,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Internal Methods
+
     }
 }

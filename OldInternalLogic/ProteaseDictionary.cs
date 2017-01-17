@@ -6,6 +6,7 @@ namespace OldInternalLogic
 {
     public class ProteaseDictionary : Dictionary<string, Protease>
     {
+
         #region Private Fields
 
         private static readonly ProteaseDictionary instance = new ProteaseDictionary();
@@ -58,5 +59,6 @@ namespace OldInternalLogic
         }
 
         #endregion Public Methods
+
     }
 }

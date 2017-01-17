@@ -11,6 +11,7 @@ namespace InternalLogicEngineLayer
 {
     public class PSMwithTargetDecoyKnown
     {
+
         #region Public Fields
 
         public ParentSpectrumMatch newPsm;
@@ -207,5 +208,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Internal Methods
+
     }
 }

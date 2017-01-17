@@ -4,6 +4,7 @@ namespace InternalLogicTaskLayer
 {
     internal class MyCalibrationTaskResults : MyTaskResults
     {
+
         #region Public Constructors
 
         public MyCalibrationTaskResults(MyTaskEngine s) : base(s)
@@ -21,5 +22,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Protected Methods
+
     }
 }

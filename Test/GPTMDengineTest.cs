@@ -11,6 +11,7 @@ namespace Test
     [TestFixture]
     public class GPTMDengineTest
     {
+
         #region Public Methods
 
         [Test]
@@ -50,6 +51,7 @@ namespace Test
 
         private class TestParentSpectrumMatch : ParentSpectrumMatch
         {
+
             #region Public Constructors
 
             public TestParentSpectrumMatch(double scanPrecursorMass)
@@ -67,8 +69,10 @@ namespace Test
             }
 
             #endregion Public Methods
+
         }
 
         #endregion Private Classes
+
     }
 }

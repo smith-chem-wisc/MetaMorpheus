@@ -11,6 +11,7 @@ namespace Test
     [TestFixture]
     public class CalibrationEngineTests
     {
+
         #region Public Methods
 
         [Test]
@@ -42,5 +43,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }

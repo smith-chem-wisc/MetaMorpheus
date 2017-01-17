@@ -20,6 +20,7 @@ namespace InternalLogicTaskLayer
 
     public abstract class MyTaskEngine : MyEngine
     {
+
         #region Public Fields
 
         public List<string> rawDataFilenameList;
@@ -437,5 +438,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }
