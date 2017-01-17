@@ -23,10 +23,13 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
             this.proteins = proteins;
             this.psmList = psmList;
+            peptideList = new List<CompactPeptide>();
+            uniquePeptideList = new List<CompactPeptide>();
+            proteinGroupScore = 0;
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
@@ -42,17 +45,14 @@ namespace InternalLogicEngineLayer
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                 peptideList.Add(peptide);
-            }
 
-            // construct list of unique peptides
-            foreach (var peptide in peptideList)
-            {
-                // if (peptide.isUnique)
-                //    uniquePeptideList.Add(peptide);
+                // calculate the protein group score
+                if(allUniquePeptides.Contains(peptide))
+                {
+                    uniquePeptideList.Add(peptide);
+                    proteinGroupScore += psm.thisPSM.Score;
+                }
             }
-
-            // calculate the protein group score
-            proteinGroupScore = 0;
 
             // calculate summed psm intensity
             summedIntensity = 0;
@@ -101,7 +101,7 @@ namespace InternalLogicEngineLayer
         {
             var sb = new StringBuilder();
 
-            // number of proteins in protein group
+            // proteins in protein group
             foreach (Protein protein in proteins)
                 sb.Append("" + protein.FullDescription + " ;; ");
             sb.Append("\t");
@@ -113,7 +113,7 @@ namespace InternalLogicEngineLayer
 
             // length of each protein
             foreach (Protein protein in proteins)
-                sb.Append("" + protein.FullDescription.Length + " ;; ");
+                sb.Append("" + protein.BaseSequence.Length + " ;; ");
             sb.Append("\t");
 
             // number of proteins in group
@@ -125,7 +125,7 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + psmList.Distinct().Count());
+            sb.Append("" + uniquePeptideList.Count());
             sb.Append("\t");
 
             // summed psm precursor intensity

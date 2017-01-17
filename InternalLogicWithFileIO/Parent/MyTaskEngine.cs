@@ -368,7 +368,7 @@ namespace InternalLogicTaskLayer
         {
             if (items != null)
             {
-                var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
+                var writtenFile = Path.Combine(output_folder, fileName + ".prottsv");
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {

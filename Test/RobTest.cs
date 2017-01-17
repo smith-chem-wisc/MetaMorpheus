@@ -98,8 +98,10 @@ namespace Test
             var p = new ParentSpectrumMatch[0][];
             var analysisEngine = new AnalysisEngine(p, null, null, null, null, null, null, null, null, null, null, null, null, true);
 
+            HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
+
             // apply parsimony to initial dictionary
-            var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary);
+            var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary, out pep);
 
             var parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];
