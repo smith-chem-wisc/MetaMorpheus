@@ -46,7 +46,7 @@ namespace Test
             Action<List<ProteinGroup>, string> action3 = null;
             Action<List<NewPsmWithFDR>, string> action2 = null;
             bool doParsimony = false;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096);
 
             engine.Run();
         }
