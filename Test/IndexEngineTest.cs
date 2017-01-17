@@ -21,7 +21,7 @@ namespace Test
             var localizeableModifications = new List<MorpheusModification>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable);
+            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096);
             var results = (IndexResults)engine.Run();
 
             Assert.AreEqual(5, results.peptideIndex.Count);
@@ -44,7 +44,7 @@ namespace Test
             var localizeableModifications = new List<MorpheusModification>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain);
+            var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096);
             var results = (IndexResults)engine.Run();
 
             Assert.AreEqual(1, results.peptideIndex.Count);

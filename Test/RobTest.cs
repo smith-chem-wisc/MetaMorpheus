@@ -97,7 +97,7 @@ namespace Test
             }
 
             var p = new ParentSpectrumMatch[0][];
-            var analysisEngine = new AnalysisEngine(p, null, null, null, null, null, null, null, null, null, null, null, null, true);
+            var analysisEngine = new AnalysisEngine(p, null, null, null, null, null, null, null, null, null, null, null, null, true, 2, 4096);
 
             HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
 
