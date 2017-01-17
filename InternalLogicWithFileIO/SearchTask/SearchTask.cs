@@ -50,6 +50,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Properties
 
+        public Tolerance productMassTolerance { get; set; }
         public bool classicSearch { get; set; }
         public bool doParsimony { get; set; }
         public List<ModListForSearchTask> listOfModListsForSearch { get; set; }
@@ -80,6 +81,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForSearch.Where(b => b.Localize).Select(b => b.FileName)));
             sb.AppendLine("searchDecoy: " + searchDecoy);
+            sb.AppendLine("productMassTolerance: " + productMassTolerance);
             sb.AppendLine("searchModes: ");
             sb.Append(string.Join(Environment.NewLine, searchModes.Where(b => b.Use).Select(b => "\t" + b.sm)));
             return sb.ToString();

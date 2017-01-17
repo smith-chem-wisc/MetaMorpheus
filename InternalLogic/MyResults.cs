@@ -5,20 +5,21 @@ namespace InternalLogicEngineLayer
 {
     public abstract class MyResults
     {
-        #region Public Constructors
+
+        #region Internal Fields
+
+        internal TimeSpan Time;
+
+        #endregion Internal Fields
+
+        #region Protected Constructors
 
         protected MyResults(MyEngine s)
         {
             this.s = s;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
-        internal TimeSpan Time;
-
-        #endregion Public Properties
+        #endregion Protected Constructors
 
         #region Protected Properties
 
@@ -57,5 +58,6 @@ namespace InternalLogicEngineLayer
         protected abstract string GetStringForOutput();
 
         #endregion Protected Methods
+
     }
 }

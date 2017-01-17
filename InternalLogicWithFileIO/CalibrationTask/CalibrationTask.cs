@@ -26,7 +26,7 @@ namespace InternalLogicTaskLayer
             protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
             maxModificationIsoforms = 4096;
             initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            productMassToleranceInDaltons = 0.01;
             bIons = true;
             yIons = true;
             listOfModListsForCalibration = new List<ModListForCalibrationTask>();
@@ -47,6 +47,8 @@ namespace InternalLogicTaskLayer
         public List<ModListForCalibrationTask> listOfModListsForCalibration { get; set; }
         public Tolerance precursorMassTolerance { get; set; }
 
+        public double productMassToleranceInDaltons { get; set; }
+
         #endregion Public Properties
 
         #region Protected Methods
@@ -57,6 +59,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
             sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
             sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
+            sb.AppendLine("productMassToleranceInDaltons: " + productMassToleranceInDaltons);
             sb.Append("precursorMassTolerance: " + precursorMassTolerance);
             return sb.ToString();
         }
@@ -107,7 +110,7 @@ namespace InternalLogicTaskLayer
                     listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
                 }
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, spectraFileIndex, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, productMassToleranceInDaltons), protease, searchModes);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -115,7 +118,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.outerPsms[i]);
 
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, productMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, origDataFileName + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, origDataFileName + s), null, false);
+                var analysisEngine = new AnalysisEngine(searchResults.outerPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, productMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFDR> h, string s) => WritePSMsToTSV(h, output_folder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -139,7 +142,7 @@ namespace InternalLogicTaskLayer
                 int randomSeed = 1;
 
                 // TODO: fix the tolerance calculation below
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassTolerance.Value * 2, identifications);
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, productMassToleranceInDaltons * 2, identifications);
 
                 var result = (CalibrationResults)a.Run();
 

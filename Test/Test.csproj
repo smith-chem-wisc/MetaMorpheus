@@ -81,9 +81,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnalysisEngineTest.cs" />
     <Compile Include="ExclusionsTest.cs" />
     <Compile Include="MyEngineTest.cs" />
-    <Compile Include="AnalysisEngineTest.cs" />
+    <Compile Include="RobTest.cs" />
+    <Compile Include="CalibrationEngineTest.cs" />
     <Compile Include="SearchModesTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
@@ -91,7 +93,10 @@
     <Compile Include="SetUpTests.cs" />
     <Compile Include="GPTMDengineTest.cs" />
     <Compile Include="IndexEngineTest.cs" />
-    <Compile Include="ClassicSearchEngineTest.cs" />
+    <Compile Include="SearchEngineTests.cs" />
+    <Compile Include="TestDataFile.cs" />
+    <Compile Include="TestParentSpectrumMatch.cs" />
+    <Compile Include="TestScan.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

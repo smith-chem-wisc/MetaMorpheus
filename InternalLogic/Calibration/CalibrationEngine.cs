@@ -24,8 +24,9 @@ namespace InternalLogicCalibration
 
         private const int minMS1 = 3;
         private const int minMS2 = 2;
-        private const int numFragmentsNeeded = 10;
+        private const int numFragmentsNeededForEveryIdentification = 10;
         private const double toleranceInMZforMS1Search = 0.01;
+        private const double fracForTraining = 0.75;
         private readonly double toleranceInMZforMS2Search;
         private int randomSeed;
         private List<NewPsmWithFDR> identifications;
@@ -71,21 +72,21 @@ namespace InternalLogicCalibration
                 {
                     return new MyErroredResults(this, "Not enough MS1 training points, identification quality is poor");
                 }
-                WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
+                //WriteDataToFiles(pointList1, "pointList1" + myMsDataFile.Name + calibrationRound);
                 var pointList2 = pointList.Where((b) => b.inputs[0] > 0).ToList();
                 if (pointList2.Count == 0)
                 {
                     return new MyErroredResults(this, "Not enough MS2 training points, identification quality is poor");
                 }
-                WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
+                //WriteDataToFiles(pointList2, "pointList2" + myMsDataFile.Name + calibrationRound);
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
 
                 if (combinedCalibration == null)
                     return new MyErroredResults(this, "Could not calibrate");
 
-                combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
-                combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
+                //combinedCalibration.writePredictedLables(pointList1, "pointList1predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
+                //combinedCalibration.writePredictedLables(pointList2, "pointList2predictedLabels" + myMsDataFile.Name + "CalibrationRound" + calibrationRound);
             }
 
             return new CalibrationResults(myMsDataFile, this);
@@ -152,7 +153,7 @@ namespace InternalLogicCalibration
                 //RTBoutput(new OutputHandlerEventArgs(numFragmentsIdentified.ToString()));
 
                 // If MS2 has low evidence for peptide, skip and go to next one
-                if (numFragmentsIdentified < numFragmentsNeeded)
+                if (numFragmentsIdentified < numFragmentsNeededForEveryIdentification)
                     continue;
 
                 // Calculate isotopic distribution of the full peptide
@@ -189,43 +190,25 @@ namespace InternalLogicCalibration
             return trainingPointsToReturn;
         }
 
-        private void WriteDataToFiles(IEnumerable<LabeledDataPoint> trainingPoints, string prefix)
-        {
-            if (trainingPoints.Count() == 0)
-                return;
-            var fullFileName = Path.Combine(@"DataPoints", prefix + ".dat");
-            Directory.CreateDirectory(Path.GetDirectoryName(fullFileName));
-
-            using (StreamWriter file = new StreamWriter(fullFileName))
-            {
-                if (trainingPoints.First().inputs.Count() == 9)
-                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, relativeMZ, label");
-                else
-                    file.WriteLine("MS, MZ, RetentionTime, Intensity,TotalIonCurrent, InjectionTime, label");
-                foreach (LabeledDataPoint d in trainingPoints)
-                    file.WriteLine(string.Join(",", d.inputs) + "," + d.output);
-            }
-        }
-
         private CalibrationFunction Calibrate(List<LabeledDataPoint> trainingPoints)
         {
             var rnd = new Random(randomSeed);
             var shuffledTrainingPoints = trainingPoints.OrderBy(item => rnd.Next()).ToArray();
 
-            var trainList = shuffledTrainingPoints.Take(trainingPoints.Count * 3 / 4).ToList();
-            var testList = shuffledTrainingPoints.Skip(trainingPoints.Count * 3 / 4).ToList();
+            var trainList = shuffledTrainingPoints.Take((int)(trainingPoints.Count * fracForTraining)).ToList();
+            var testList = shuffledTrainingPoints.Skip((int)(trainingPoints.Count * fracForTraining)).ToList();
 
             var trainList1 = trainList.Where((b) => b.inputs[0] < 0).ToList();
-            WriteDataToFiles(trainList1, "train1" + myMsDataFile.Name);
+            //WriteDataToFiles(trainList1, "train1" + myMsDataFile.Name);
             //output("trainList1.Count() = " + trainList1.Count());
             var trainList2 = trainList.Where((b) => b.inputs[0] > 0).ToList();
-            WriteDataToFiles(trainList2, "train2" + myMsDataFile.Name);
+            //WriteDataToFiles(trainList2, "train2" + myMsDataFile.Name);
             //output("trainList2.Count() = " + trainList2.Count());
             var testList1 = testList.Where((b) => b.inputs[0] < 0).ToList();
-            WriteDataToFiles(testList1, "test1" + myMsDataFile.Name);
+            //WriteDataToFiles(testList1, "test1" + myMsDataFile.Name);
             // output("testList1.Count() = " + testList1.Count());
             var testList2 = testList.Where((b) => b.inputs[0] > 0).ToList();
-            WriteDataToFiles(testList2, "test2" + myMsDataFile.Name);
+            //WriteDataToFiles(testList2, "test2" + myMsDataFile.Name);
             //output("testList2.Count() = " + testList2.Count());
 
             CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
@@ -240,10 +223,10 @@ namespace InternalLogicCalibration
                 ms1regressor.Train(trainList1);
                 ms2regressor.Train(trainList2);
                 combinedCalibration = new SeparateCalibrationFunction(ms1regressor, ms2regressor);
-                combinedCalibration.writePredictedLables(trainList1, "trainList1Constant" + myMsDataFile.Name);
-                combinedCalibration.writePredictedLables(trainList2, "trainList2Constant" + myMsDataFile.Name);
-                combinedCalibration.writePredictedLables(testList1, "testList1Constant" + myMsDataFile.Name);
-                combinedCalibration.writePredictedLables(testList2, "testList2Constant" + myMsDataFile.Name);
+                //combinedCalibration.writePredictedLables(trainList1, "trainList1Constant" + myMsDataFile.Name);
+                //combinedCalibration.writePredictedLables(trainList2, "trainList2Constant" + myMsDataFile.Name);
+                //combinedCalibration.writePredictedLables(testList1, "testList1Constant" + myMsDataFile.Name);
+                // combinedCalibration.writePredictedLables(testList2, "testList2Constant" + myMsDataFile.Name);
                 double MS1mse = ms1regressor.getMSE(testList1);
                 double MS2mse = ms2regressor.getMSE(testList2);
                 if (MS1mse < bestMS1MSE)
@@ -332,15 +315,15 @@ namespace InternalLogicCalibration
                     {
                         bestMS1MSE = MS1mse;
                         bestMS1predictor = ms1regressorLinear;
-                        ms1regressorLinear.writePredictedLables(trainList1, "train1" + ms1regressorLinear.name + transform.name + myMsDataFile.Name);
-                        ms1regressorLinear.writePredictedLables(testList1, "test1" + ms1regressorLinear.name + transform.name + myMsDataFile.Name);
+                        //ms1regressorLinear.writePredictedLables(trainList1, "train1" + ms1regressorLinear.name + transform.name + myMsDataFile.Name);
+                        //ms1regressorLinear.writePredictedLables(testList1, "test1" + ms1regressorLinear.name + transform.name + myMsDataFile.Name);
                     }
                     if (MS2mse < bestMS2MSE)
                     {
                         bestMS2MSE = MS2mse;
                         bestMS2predictor = ms2regressorLinear;
-                        ms2regressorLinear.writePredictedLables(trainList2, "train2" + ms2regressorLinear.name + transform.name + myMsDataFile.Name);
-                        ms2regressorLinear.writePredictedLables(testList2, "test2" + ms2regressorLinear.name + transform.name + myMsDataFile.Name);
+                        //ms2regressorLinear.writePredictedLables(trainList2, "train2" + ms2regressorLinear.name + transform.name + myMsDataFile.Name);
+                        //ms2regressorLinear.writePredictedLables(testList2, "test2" + ms2regressorLinear.name + transform.name + myMsDataFile.Name);
                     }
                 }
                 foreach (var transform in transforms)
@@ -356,21 +339,20 @@ namespace InternalLogicCalibration
                     {
                         bestMS1MSE = MS1mse;
                         bestMS1predictor = ms1regressorQuadratic;
-                        ms1regressorQuadratic.writePredictedLables(trainList1, "train1" + ms1regressorQuadratic.name + transform.name + myMsDataFile.Name);
-                        ms1regressorQuadratic.writePredictedLables(testList1, "test1" + ms1regressorQuadratic.name + transform.name + myMsDataFile.Name);
+                        //ms1regressorQuadratic.writePredictedLables(trainList1, "train1" + ms1regressorQuadratic.name + transform.name + myMsDataFile.Name);
+                        //ms1regressorQuadratic.writePredictedLables(testList1, "test1" + ms1regressorQuadratic.name + transform.name + myMsDataFile.Name);
                     }
                     if (MS2mse < bestMS2MSE)
                     {
                         bestMS2MSE = MS2mse;
                         bestMS2predictor = ms2regressorQuadratic;
-                        ms2regressorQuadratic.writePredictedLables(trainList2, "train2" + ms2regressorQuadratic.name + transform.name + myMsDataFile.Name);
-                        ms2regressorQuadratic.writePredictedLables(testList2, "test2" + ms2regressorQuadratic.name + transform.name + myMsDataFile.Name);
+                        //ms2regressorQuadratic.writePredictedLables(trainList2, "train2" + ms2regressorQuadratic.name + transform.name + myMsDataFile.Name);
+                        //ms2regressorQuadratic.writePredictedLables(testList2, "test2" + ms2regressorQuadratic.name + transform.name + myMsDataFile.Name);
                     }
                 }
             }
             catch (ArgumentException e)
             {
-                return null;
             }
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
@@ -403,7 +385,7 @@ namespace InternalLogicCalibration
                     a.TryGetSelectedIonGuessMZ(out precursorMZ);
                     double precursorIntensity;
                     a.TryGetSelectedIonGuessIntensity(out precursorIntensity);
-                    double newSelectedMZ = precursorMZ - bestCf.Predict(new double[] { 1, precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
+                    double newSelectedMZ = precursorMZ - bestCf.Predict(new double[] { -1, precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
                     double monoisotopicMZ;
                     a.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicMZ);
@@ -413,14 +395,14 @@ namespace InternalLogicCalibration
                     if (double.IsNaN(monoisotopicIntensity))
                         monoisotopicIntensity = precursorScan.MassSpectrum.GetClosestPeak(monoisotopicMZ).Intensity;
 
-                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Predict(new double[] { 1, monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
+                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Predict(new double[] { -1, monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
                     int SelectedIonGuessChargeStateGuess;
                     a.TryGetSelectedIonGuessChargeStateGuess(out SelectedIonGuessChargeStateGuess);
                     double IsolationMZ;
                     a.TryGetIsolationMZ(out IsolationMZ);
 
-                    Func<MzPeak, double> theFunc = x => x.MZ - bestCf.Predict(new double[] { 2, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.MZ - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
+                    Func<MzPeak, double> theFunc = x => x.MZ - bestCf.Predict(new double[] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.MZ - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
                     a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
 
                     //if (MS2spectraToWatch.Contains(a.OneBasedScanNumber))
@@ -441,7 +423,7 @@ namespace InternalLogicCalibration
                     //    output(" before calibration:");
                     //    output(" " + string.Join(",", a.MassSpectrum.newSpectrumExtract(mzRange).xArray));
                     //}
-                    Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
+                    Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[] { -1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
                     a.tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN);
                     //if (MS1spectraToWatch.Contains(a.OneBasedScanNumber))
                     //{
@@ -490,10 +472,6 @@ namespace InternalLogicCalibration
                 int chargeToLookAt = 1;
                 do
                 {
-                    //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                    //{
-                    //    output("  Looking at charge " + chargeToLookAt);
-                    //}
                     if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
                     {
                         chargeToLookAt++;
@@ -509,41 +487,21 @@ namespace InternalLogicCalibration
                         var npwr = fullMS1spectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS1Search, theMZ + toleranceInMZforMS1Search);
                         if (npwr == 0)
                         {
-                            //if (MS1spectraToWatch.Contains(theIndex))
-                            //    output("      Breaking because extracted.Count = " + npwr);
                             break;
                         }
                         if (npwr > 1)
                         {
-                            //if (MS1spectraToWatch.Contains(theIndex))
-                            //    output("      Not looking for " + theMZ + " because extracted.Count = " + npwr);
                             continue;
                         }
 
                         var closestPeak = fullMS1spectrum.GetClosestPeak(theMZ);
                         var closestPeakMZ = closestPeak.MZ;
 
-                        //if (closestPeak.Intensity / fullMS1scan.TotalIonCurrent < 2e-4)
-                        //{
-                        //    if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //        RTBoutput("      Breaking because intensity fraction is " + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
-                        //    break;
-                        //}
-                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
-                        //{
-                        //    output("      Looking for " + theMZ + " found " + closestPeakMZ + " error is " + (closestPeakMZ - theMZ));
-                        //}
-
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
                         if (!peaksAddedHashSet.Contains(theTuple))
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)) && mzRange.Contains(theMZ))
-                            //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                            //{
-                            //    output("      Found " + closestPeakMZ + ", was looking for " + theMZ + ", e=" + (closestPeakMZ - theMZ) + ", if=" + closestPeak.Intensity / fullMS1scan.TotalIonCurrent);
-                            //}
                             trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 1, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
                         }
                         else
@@ -552,33 +510,17 @@ namespace InternalLogicCalibration
                     // If started adding and suddnely stopped, go to next one, no need to look at higher charges
                     if (trainingPointsToAverage.Count == 0 && startingToAddCharges == true)
                     {
-                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //{
-                        //    output("    Started adding and suddnely stopped, no need to look at higher charges");
-                        //}
                         break;
                     }
                     if ((trainingPointsToAverage.Count == 0 || (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)) && (peptideCharge <= chargeToLookAt))
                     {
-                        //if (MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex))
-                        //{
-                        //    output("    Did not find (or found without isotopes) charge " + chargeToLookAt + ", no need to look at higher charges");
-                        //}
                         break;
                     }
                     if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
                     {
-                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                        //{
-                        //    output("    Not adding, since originalIntensities[0] is " + originalIntensities[0] + " which is too low");
-                        //}
                     }
                     else if (trainingPointsToAverage.Count < Math.Min(minMS1, originalIntensities.Count()))
                     {
-                        //if ((MS2spectraToWatch.Contains(ms2spectrumIndex) || MS1spectraToWatch.Contains(theIndex)))
-                        //{
-                        //    output("    Not adding, since count " + trainingPointsToAverage.Count + " is too low");
-                        //}
                     }
                     else
                     {

@@ -14,10 +14,10 @@ namespace OldInternalLogic
         static ProteomeDatabaseReader()
         {
             modificationTypeCodes = new Dictionary<string, ModificationType>();
-            modificationTypeCodes.Add("Protein N-terminal", ModificationType.ProteinNTerminus);
-            modificationTypeCodes.Add("Protein C-terminal", ModificationType.ProteinCTerminus);
-            modificationTypeCodes.Add("Any N-terminal", ModificationType.PeptideNTerminus);
-            modificationTypeCodes.Add("Any C-terminal", ModificationType.PeptideCTerminus);
+            modificationTypeCodes.Add("N-terminal.", ModificationType.ProteinNTerminus);
+            modificationTypeCodes.Add("C-terminal.", ModificationType.ProteinCTerminus);
+            modificationTypeCodes.Add("Peptide N-terminal", ModificationType.PeptideNTerminus);
+            modificationTypeCodes.Add("Peptide C-terminal", ModificationType.PeptideCTerminus);
 
             aminoAcidCodes = new Dictionary<string, char>();
             aminoAcidCodes.Add("Alanine", 'A');

@@ -1,7 +1,6 @@
 ﻿using InternalLogicEngineLayer;
 using MathNet.Numerics.Distributions;
 using OldInternalLogic;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -56,7 +55,6 @@ namespace InternalLogicTaskLayer
         public int maxMissedCleavages { get; set; }
         public int maxModificationIsoforms { get; set; }
         public string output_folder { get; set; }
-        public Tolerance productMassTolerance { get; set; }
         public Protease protease { get; set; }
         public bool yIons { get; set; }
         public int maxNumPeaksPerScan { get; set; }
@@ -70,12 +68,25 @@ namespace InternalLogicTaskLayer
             startingSingleTask();
             var paramsFileName = Path.Combine(output_folder, "params.txt");
             using (StreamWriter file = new StreamWriter(paramsFileName))
+            {
+                if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
+                    file.WriteLine("MetaMorpheus: Not a release version");
+                else
+                    file.WriteLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
                 file.Write(ToString());
+            }
             SucessfullyFinishedWritingFile(paramsFileName);
             var heh = base.Run();
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
+            {
+                if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
+                    file.WriteLine("MetaMorpheus: Not a release version");
+                else
+                    file.WriteLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
                 file.Write(heh.ToString());
+            }
+            SucessfullyFinishedWritingFile(resultsFileName);
             finishedSingleTask();
             return heh;
         }
@@ -83,7 +94,6 @@ namespace InternalLogicTaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("MetaMorpheus Version: " + MetaMorpheusVersion);
             sb.AppendLine(GetSpecificTaskInfo());
             sb.AppendLine(taskType.ToString());
             sb.AppendLine("Spectra files:");
@@ -94,7 +104,6 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages);
             sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms);
             sb.AppendLine("output_folder: " + output_folder);
-            sb.AppendLine("productMassTolerance: " + productMassTolerance);
             sb.AppendLine("protease: " + protease);
             sb.AppendLine("bIons: " + bIons);
             sb.Append("yIons: " + yIons);
