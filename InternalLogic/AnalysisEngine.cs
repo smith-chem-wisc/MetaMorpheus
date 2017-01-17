@@ -22,7 +22,6 @@ namespace InternalLogicEngineLayer
         private readonly int maximumMissedCleavages;
         private readonly int maxModIsoforms;
         private readonly ParentSpectrumMatch[][] newPsms;
-
         private readonly List<Protein> proteinList;
         private readonly List<MorpheusModification> variableModifications;
         private readonly List<MorpheusModification> fixedModifications;
@@ -663,7 +662,6 @@ namespace InternalLogicEngineLayer
         {
             var myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);
-            myTreeStructure.AddToBins(limitedpsms_with_fdr);
 
             IdentifyUnimodBins(myTreeStructure, binTol);
             IdentifyUniprotBins(myTreeStructure, binTol);

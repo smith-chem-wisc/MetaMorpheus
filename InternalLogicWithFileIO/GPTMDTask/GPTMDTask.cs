@@ -98,7 +98,8 @@ namespace InternalLogicTaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos();
 
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).OrderBy(b => b), precursorMassTolerance);
+            // Do not remove the zero!!! It's needed here
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), precursorMassTolerance);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
