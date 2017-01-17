@@ -5,6 +5,7 @@ namespace InternalLogicCalibration
 {
     internal class MyErroredResults : MyResults
     {
+
         #region Private Fields
 
         private string v;
@@ -28,5 +29,6 @@ namespace InternalLogicCalibration
         }
 
         #endregion Protected Methods
+
     }
 }

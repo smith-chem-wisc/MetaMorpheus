@@ -7,6 +7,7 @@ namespace Test
 {
     internal class TestParentSpectrumMatch : ParentSpectrumMatch
     {
+
         #region Public Constructors
 
         public TestParentSpectrumMatch(int scanNumber, int scanPrecursorCharge)
@@ -25,5 +26,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }

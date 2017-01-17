@@ -10,6 +10,7 @@ namespace InternalLogicEngineLayer
 {
     public class ClassicSearchEngine : MyEngine
     {
+
         #region Private Fields
 
         private const int maximumMissedCleavages = 2;
@@ -205,5 +206,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }

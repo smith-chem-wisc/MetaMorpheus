@@ -16,6 +16,7 @@ namespace InternalLogicTaskLayer
 {
     public class GPTMDTask : MyTaskEngine
     {
+
         #region Public Fields
 
         public List<ModListForGPTMDTask> listOfModListsForGPTMD;
@@ -244,5 +245,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

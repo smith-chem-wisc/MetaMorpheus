@@ -16,6 +16,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
+
         #region Private Fields
 
         // Always create a new one, even if updating an existing task
@@ -127,5 +128,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 }

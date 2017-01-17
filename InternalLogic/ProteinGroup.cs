@@ -7,6 +7,7 @@ namespace InternalLogicEngineLayer
 {
     public class ProteinGroup
     {
+
         #region Public Fields
 
         public readonly bool isDecoy;
@@ -148,5 +149,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

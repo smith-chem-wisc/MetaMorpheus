@@ -12,6 +12,7 @@ namespace MetaMorpheusCommandLine
 {
     internal class Program
     {
+
         #region Private Fields
 
         private const string elementsLocation = @"elements.dat";
@@ -138,5 +139,6 @@ namespace MetaMorpheusCommandLine
         }
 
         #endregion Private Methods
+
     }
 }

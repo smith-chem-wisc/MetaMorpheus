@@ -18,6 +18,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+
         #region Private Fields
 
         private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
@@ -494,5 +495,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 }

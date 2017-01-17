@@ -6,6 +6,7 @@ namespace InternalLogicEngineLayer
 {
     public class SinglePpmAroundZeroSearchMode : SearchMode
     {
+
         #region Private Fields
 
         private readonly double ppmTolerance;
@@ -40,5 +41,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

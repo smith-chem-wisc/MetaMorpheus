@@ -7,6 +7,7 @@ namespace InternalLogicEngineLayer
 {
     public class LocalMs2Scan : IComparable, IComparable<double>
     {
+
         #region Public Constructors
 
         public LocalMs2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
@@ -72,5 +73,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

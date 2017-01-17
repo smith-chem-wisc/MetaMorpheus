@@ -6,6 +6,7 @@ namespace Test
 {
     internal class TestScan : IMsDataScan<DefaultMzSpectrum>
     {
+
         #region Private Fields
 
         private readonly double isolationMZ;
@@ -224,5 +225,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }

@@ -16,6 +16,7 @@ namespace InternalLogicTaskLayer
 {
     public class CalibrationTask : MyTaskEngine
     {
+
         #region Public Constructors
 
         public CalibrationTask(ObservableCollection<ModList> modList)
@@ -161,5 +162,6 @@ namespace InternalLogicTaskLayer
         }
 
         #endregion Protected Methods
+
     }
 }

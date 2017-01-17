@@ -13,6 +13,7 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisEngine : MyEngine
     {
+
         #region Private Fields
 
         private const double binTol = 0.003;
@@ -22,31 +23,19 @@ namespace InternalLogicEngineLayer
         private const int max_mods_for_peptide = 3;
         private readonly ParentSpectrumMatch[][] newPsms;
 
-        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
-
         private readonly List<Protein> proteinList;
-
         private readonly List<MorpheusModification> variableModifications;
-
         private readonly List<MorpheusModification> fixedModifications;
-
         private readonly List<MorpheusModification> localizeableModifications;
-
         private readonly Protease protease;
-
         private readonly List<SearchMode> searchModes;
-
         private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-
         private readonly Tolerance fragmentTolerance;
-
         private readonly Action<BinTreeStructure, string> action1;
-
         private readonly Action<List<NewPsmWithFDR>, string> action2;
-
         private readonly Action<List<ProteinGroup>, string> action3;
-
         private readonly bool doParsimony;
+        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
@@ -794,5 +783,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Private Methods
+
     }
 }
