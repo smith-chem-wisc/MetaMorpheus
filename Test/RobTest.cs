@@ -95,8 +95,6 @@ namespace Test
                     initialDictionary.Add(peptides[i], virtualPeptideSets[i]);
                 }
             }
-
-            var p = new ParentSpectrumMatch[0][];
             
             HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
 
