@@ -133,7 +133,7 @@ namespace InternalLogicEngineLayer
             else
             {
                 sb.Append(string.Join(",", peptidesWithSetModifications.Select(b => b.protein.Accession)) + "\t");
-                sb.Append("ambiguous");
+                sb.Append("ambiguous" + '\t');
             }
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
