@@ -32,7 +32,6 @@ namespace InternalLogicEngineLayer
 
         private readonly double[] myScanPrecursorMasses;
 
-        private readonly int spectraFileIndex;
         private readonly int myMsDataFileNumSpectra;
         private readonly string fileName;
 
@@ -40,12 +39,11 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName) : base(2)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName) : base(2)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
-            this.spectraFileIndex = spectraFileIndex;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;

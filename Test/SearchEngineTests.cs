@@ -29,7 +29,7 @@ namespace Test
 
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl");
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl");
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
@@ -59,7 +59,7 @@ namespace Test
 
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, 0, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "UUU");
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "UUU");
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
@@ -94,7 +94,7 @@ namespace Test
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, 0, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModes);
+            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModes);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
@@ -129,7 +129,7 @@ namespace Test
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, 0, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModes);
+            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModes);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
