@@ -1,5 +1,4 @@
-﻿using Chemistry;
-using OldInternalLogic;
+﻿using OldInternalLogic;
 using System.Collections.Generic;
 
 namespace InternalLogicEngineLayer
@@ -7,35 +6,20 @@ namespace InternalLogicEngineLayer
     public class ModernSpectrumMatch : ParentSpectrumMatch
     {
 
+        #region Private Fields
+
+        private CompactPeptide compactPeptide;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
-        public ModernSpectrumMatch(double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
+        public ModernSpectrumMatch(CompactPeptide theBestPeptide, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score)
         {
-            this.ScanPrecursorMZ = scanPrecursorMZ;
-            this.scanNumber = scanNumber;
-            this.scanPrecursorCharge = scanPrecursorCharge;
-            this.ScanRT = scanRT;
-            scanPrecursorMass = scanPrecursorMZ.ToMass(scanPrecursorCharge);
-            ScanPrecursorIntensity = precursorIntensity;
-            ScanExperimentalPeaks = scanExperimentalPeaksCount;
-            TotalIonCurrent = totalIonCurrent;
-            Score = score;
-            this.SpectraFileIndex = spectraFileIndex;
             compactPeptide = theBestPeptide;
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public int SpectraFileIndex { get; private set; }
-        public double ScanRT { get; private set; }
-        public double ScanPrecursorMZ { get; private set; }
-        public double ScanPrecursorIntensity { get; private set; }
-        public int ScanExperimentalPeaks { get; private set; }
-        public double TotalIonCurrent { get; private set; }
-
-        #endregion Public Properties
 
         #region Public Methods
 

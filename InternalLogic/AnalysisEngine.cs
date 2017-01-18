@@ -163,11 +163,11 @@ namespace InternalLogicEngineLayer
                 HashSet<CompactPeptide> peptideListNoDuplicates = new HashSet<CompactPeptide>();
                 HashSet<string> peptideListBaseSequences = new HashSet<string>();
 
-                foreach(var peptide in kvp.Value)
+                foreach (var peptide in kvp.Value)
                 {
                     string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
-                    if(!peptideListBaseSequences.Contains(peptideBaseSequence))
+                    if (!peptideListBaseSequences.Contains(peptideBaseSequence))
                     {
                         peptideListNoDuplicates.Add(peptide);
                     }
@@ -175,7 +175,6 @@ namespace InternalLogicEngineLayer
 
                 newDictNoDuplicatePeptides.Add(kvp.Key, peptideListNoDuplicates);
             }
-
 
             /*
                     // have found all PSMs but some of them are duplicate peptides - pick only the highest-scoring psm per peptide
@@ -216,8 +215,6 @@ namespace InternalLogicEngineLayer
                         newProteinGroupPsmList.Add(bestPsm);
                     }
              */
-
-
 
             // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
             Dictionary<Protein, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -486,7 +483,7 @@ namespace InternalLogicEngineLayer
 
                 proteinGroup.cumulativeTarget = cumulativeTarget;
                 proteinGroup.cumulativeDecoy = cumulativeDecoy;
-                proteinGroup.QValue = ((double) cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
+                proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
             }
 
             return proteinGroups;
@@ -526,7 +523,7 @@ namespace InternalLogicEngineLayer
                         {
                             var huh = newPsms[j][i];
                             if (huh != null)
-                                if (huh.Score >= 1)
+                                if (huh.score >= 1)
                                     psmsWithTargetDecoyKnown[i] = new PSMwithTargetDecoyKnown(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile);
                         }
                     });

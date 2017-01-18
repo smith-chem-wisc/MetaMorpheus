@@ -1,7 +1,6 @@
 ﻿using OldInternalLogic;
 using Spectra;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,19 +32,18 @@ namespace InternalLogicEngineLayer
 
         private readonly double[] myScanPrecursorMasses;
 
-        private readonly int spectraFileIndex;
         private readonly int myMsDataFileNumSpectra;
+        private readonly string fileName;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms) : base(2)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName) : base(2)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
-            this.spectraFileIndex = spectraFileIndex;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
@@ -54,6 +52,7 @@ namespace InternalLogicEngineLayer
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.searchModes = searchModes;
             this.protease = protease;
+            this.fileName = fileName;
         }
 
         #endregion Public Constructors
@@ -142,8 +141,8 @@ namespace InternalLogicEngineLayer
                                 foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var score = PSMwithTargetDecoyKnown.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new ClassicSpectrumMatch(score, yyy, scan.PrecursorMass, scan.MonoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorIntensity, spectraFileIndex);
-                                    if (psm.Score > 1)
+                                    var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
+                                    if (psm.score > 1)
                                     {
                                         ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
                                         if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
