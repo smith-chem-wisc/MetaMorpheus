@@ -24,18 +24,18 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFDR> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        internal ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFdr> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
-            this.proteins = proteins;
-            this.psmList = psmList;
-            peptideList = new List<CompactPeptide>();
-            uniquePeptideList = new List<CompactPeptide>();
+            this.Proteins = proteins;
+            this.PsmList = psmList;
+            PeptideList = new List<CompactPeptide>();
+            UniquePeptideList = new List<CompactPeptide>();
             proteinGroupScore = 0;
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
             {
-                if (protein.isDecoy)
+                if (protein.IsDecoy)
                     isDecoy = true;
             }
 
@@ -43,12 +43,12 @@ namespace InternalLogicEngineLayer
             foreach (var psm in psmList)
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                peptideList.Add(peptide);
+                PeptideList.Add(peptide);
 
                 // calculate the protein group score
                 if (allUniquePeptides.Contains(peptide))
                 {
-                    uniquePeptideList.Add(peptide);
+                    UniquePeptideList.Add(peptide);
                     proteinGroupScore += psm.thisPSM.Score;
                 }
             }
@@ -67,20 +67,21 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public HashSet<Protein> proteins { get; private set; }
-        public List<NewPsmWithFDR> psmList { get; private set; }
-        public List<CompactPeptide> peptideList { get; private set; }
-        public List<CompactPeptide> uniquePeptideList { get; private set; }
+        public HashSet<Protein> Proteins { get; private set; }
+        public List<NewPsmWithFdr> PsmList { get; private set; }
+        public List<CompactPeptide> PeptideList { get; private set; }
+        public List<CompactPeptide> UniquePeptideList { get; private set; }
         public double QValue { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public static string GetTabSeparatedHeader()
+        public static string TabSeparatedHeader
         {
+            get
+            {
             var sb = new StringBuilder();
-
             sb.Append("Proteins in group" + '\t');
             sb.Append("Number of proteins in group" + '\t');
             sb.Append("Unique peptides" + '\t');
@@ -91,25 +92,8 @@ namespace InternalLogicEngineLayer
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
             sb.Append("Q-Value (%)");
-
-
-            /*
-            sb.Append("Protein Description" + '\t');
-            sb.Append("Protein Sequence" + '\t');
-            sb.Append("Protein Length" + '\t');
-            sb.Append("Number of Proteins in Group" + '\t');
-            sb.Append("Number of Peptide-Spectrum Matches" + '\t');
-            sb.Append("Number of Unique Peptides" + '\t');
-            sb.Append("Summed Peptide-Spectrum Match Precursor Intensity" + '\t');
-            sb.Append("Summed Unique Peptide Precursor Intensity" + '\t');
-            sb.Append("Summed MetaMorpheus Score" + '\t');
-            sb.Append("Decoy?" + '\t');
-            sb.Append("Cumulative Target" + '\t');
-            sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("Q-Value (%)");
-            */
-
             return sb.ToString();
+            }
         }
 
         public override string ToString()
@@ -117,16 +101,16 @@ namespace InternalLogicEngineLayer
             var sb = new StringBuilder();
 
             // list of proteins in the group
-            foreach (Protein protein in proteins)
-                sb.Append("" + protein.name + " ;; ");
+            foreach (Protein protein in Proteins)
+                sb.Append("" + protein.Name + " ;; ");
             sb.Append("\t");
 
             // number of proteins in group
-            sb.Append("" + proteins.Count());
+            sb.Append("" + Proteins.Count());
             sb.Append("\t");
 
             // list of unique peptides
-            foreach (CompactPeptide peptide in uniquePeptideList)
+            foreach (CompactPeptide peptide in UniquePeptideList)
             {
                 string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
@@ -135,9 +119,9 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // list of shared peptides
-            foreach (CompactPeptide peptide in peptideList)
+            foreach (CompactPeptide peptide in PeptideList)
             {
-                if (!uniquePeptideList.Contains(peptide))
+                if (!UniquePeptideList.Contains(peptide))
                 {
                     string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
@@ -147,7 +131,7 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + uniquePeptideList.Count());
+            sb.Append("" + UniquePeptideList.Count());
             sb.Append("\t");
 
             // summed metamorpheus score
@@ -161,30 +145,30 @@ namespace InternalLogicEngineLayer
 
             /*
             // proteins in protein group
-            foreach (Protein protein in proteins)
+            foreach (Protein protein in Proteins)
                 sb.Append("" + protein.FullDescription + " ;; ");
             sb.Append("\t");
 
             // sequences of proteins in group
-            foreach (Protein protein in proteins)
+            foreach (Protein protein in Proteins)
                 sb.Append("" + protein.BaseSequence + " ;; ");
             sb.Append("\t");
 
             // length of each protein
-            foreach (Protein protein in proteins)
+            foreach (Protein protein in Proteins)
                 sb.Append("" + protein.BaseSequence.Length + " ;; ");
             sb.Append("\t");
 
             // number of proteins in group
-            sb.Append("" + proteins.Count);
+            sb.Append("" + Proteins.Count);
             sb.Append("\t");
 
             // number of psm's for the group
-            sb.Append("" + psmList.Count);
+            sb.Append("" + PsmList.Count);
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + uniquePeptideList.Count());
+            sb.Append("" + UniquePeptideList.Count());
             sb.Append("\t");
 
             // summed psm precursor intensity

@@ -35,9 +35,9 @@ namespace InternalLogicTaskLayer
 
         public static event EventHandler finishedAllTasksEngineHandler;
 
-        public static event EventHandler<List<string>> newDbsHandler;
+        public static event EventHandler<StringListEventArgs> newDbsHandler;
 
-        public static event EventHandler<List<string>> newSpectrasHandler;
+        public static event EventHandler<StringListEventArgs> newSpectrasHandler;
 
         #endregion Public Events
 
@@ -51,7 +51,7 @@ namespace InternalLogicTaskLayer
             var MatchingChars =
                 from len in Enumerable.Range(0, currentRawDataFilenameList.Min(s => s.Length)).Reverse()
                 let possibleMatch = currentRawDataFilenameList.First().Substring(0, len)
-                where currentRawDataFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.InvariantCulture))
+                where currentRawDataFilenameList.All(f => f.StartsWith(possibleMatch, StringComparison.Ordinal))
                 select possibleMatch;
 
             var longestDir = Path.GetDirectoryName(MatchingChars.First());
@@ -67,12 +67,12 @@ namespace InternalLogicTaskLayer
                 else
                 {
                     output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
-                    output_folder = Path.Combine(output_folder, "Task" + (i + 1) + ok.taskType);
+                    output_folder = Path.Combine(output_folder, "Task" + (i + 1) + ok.TaskType);
                 }
 
                 if (!Directory.Exists(output_folder))
                     Directory.CreateDirectory(output_folder);
-                ok.output_folder = output_folder;
+                ok.OutputFolder = output_folder;
                 ok.xmlDbFilenameList = currentXmlDbFilenameList;
                 ok.rawDataFilenameList = currentRawDataFilenameList;
 
@@ -109,12 +109,12 @@ namespace InternalLogicTaskLayer
 
         private void NewSpectras(List<string> newSpectra)
         {
-            newSpectrasHandler?.Invoke(this, newSpectra);
+            newSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
         }
 
         private void NewDBs(List<string> newDatabases)
         {
-            newDbsHandler?.Invoke(this, newDatabases);
+            newDbsHandler?.Invoke(this, new StringListEventArgs(newDatabases));
         }
 
         #endregion Private Methods

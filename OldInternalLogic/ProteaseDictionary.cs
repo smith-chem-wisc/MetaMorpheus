@@ -53,7 +53,7 @@ namespace OldInternalLogic
 
         #region Public Methods
 
-        public void Add(Protease protease)
+        internal void Add(Protease protease)
         {
             Add(protease.Name, protease);
         }

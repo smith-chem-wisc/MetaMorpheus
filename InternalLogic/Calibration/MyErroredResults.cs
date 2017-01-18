@@ -22,9 +22,12 @@ namespace InternalLogicCalibration
 
         #region Protected Methods
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            return v;
+            get
+            {
+                return v;
+            }
         }
 
         #endregion Protected Methods

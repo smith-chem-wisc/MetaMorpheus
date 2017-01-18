@@ -16,10 +16,13 @@ namespace InternalLogicTaskLayer
 
         #region Protected Methods
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                return sb.ToString();
+            }
         }
 
         #endregion Protected Methods

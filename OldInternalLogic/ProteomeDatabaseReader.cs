@@ -64,7 +64,7 @@ namespace OldInternalLogic
                 using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
                 {
                     Stream uniprotXmlFileStream = stream;
-                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz"))
+                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
                         uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
                     using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
                         while (xml.ReadToFollowing("feature"))

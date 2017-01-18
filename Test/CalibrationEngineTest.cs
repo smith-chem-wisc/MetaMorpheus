@@ -15,7 +15,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestCalibrationEngine()
+        public static void TestCalibrationEngine()
         {
             Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<MorpheusModification>>();
             Protein ParentProtein = new Protein("MQQQQQQQ", null, null, oneBasedPossibleLocalizedModifications, null, null, null, null, null, 0, false);
@@ -28,10 +28,10 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             double toleranceInMZforMS2Search = fragmentTolerance.Value;
 
-            List<NewPsmWithFDR> identifications = new List<NewPsmWithFDR>();
+            List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
             ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(2, 2);
             PSMwithTargetDecoyKnown thisPSM = new PSMwithTargetDecoyKnown(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile);
-            NewPsmWithFDR thePsmwithfdr = new NewPsmWithFDR(thisPSM, 1, 0, 0);
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             identifications.Add(thePsmwithfdr);
 
             int randomSeed = 0;

@@ -40,9 +40,12 @@ namespace InternalLogicTaskLayer
 
         #region Public Methods
 
-        public IEnumerable<MorpheusModification> getMods()
+        public IEnumerable<MorpheusModification> Mods
         {
-            return uu.getMods();
+            get
+            {
+                return uu.Mods;
+            }
         }
 
         #endregion Public Methods

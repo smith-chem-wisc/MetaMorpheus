@@ -14,32 +14,32 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ClassicSpectrumMatch(double Score, PeptideWithSetModifications ps, double scanPrecursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaks, double TotalIonCurrent, double scanPrecursorIntensity, int spectraFileIndex)
+        public ClassicSpectrumMatch(double score, PeptideWithSetModifications ps, double scanPrecursorMass, double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorIntensity, int spectraFileIndex)
         {
             this.ps = ps;
-            this.Score = Score;
+            this.Score = score;
             this.scanPrecursorMass = scanPrecursorMass;
 
-            this.scanPrecursorMZ = scanPrecursorMZ;
+            this.ScanPrecursorMZ = scanPrecursorMZ;
             this.scanNumber = scanNumber;
             this.scanPrecursorCharge = scanPrecursorCharge;
-            this.scanRT = scanRT;
-            this.scanPrecursorIntensity = scanPrecursorIntensity;
-            this.scanExperimentalPeaks = scanExperimentalPeaks;
-            this.TotalIonCurrent = TotalIonCurrent;
-            this.spectraFileIndex = spectraFileIndex;
+            this.ScanRT = scanRT;
+            this.ScanPrecursorIntensity = scanPrecursorIntensity;
+            this.ScanExperimentalPeaks = scanExperimentalPeaks;
+            this.TotalIonCurrent = totalIonCurrent;
+            this.SpectraFileIndex = spectraFileIndex;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public double scanPrecursorMZ { get; private set; }
-        public double scanRT { get; private set; }
-        public double scanPrecursorIntensity { get; private set; }
-        public int scanExperimentalPeaks { get; private set; }
+        public double ScanPrecursorMZ { get; private set; }
+        public double ScanRT { get; private set; }
+        public double ScanPrecursorIntensity { get; private set; }
+        public int ScanExperimentalPeaks { get; private set; }
         public double TotalIonCurrent { get; private set; }
-        public int spectraFileIndex { get; private set; }
+        public int SpectraFileIndex { get; private set; }
 
         #endregion Public Properties
 
@@ -82,7 +82,7 @@ namespace InternalLogicEngineLayer
             if (Math.Abs(first.MonoisotopicMass - pm) > 0.5 && Math.Abs(second.MonoisotopicMass - pm) < 0.5)
                 return false;
 
-            if (first.numVariableMods < second.numVariableMods)
+            if (first.NumVariableMods < second.NumVariableMods)
                 return true;
 
             return false;
