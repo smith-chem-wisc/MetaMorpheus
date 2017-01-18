@@ -78,7 +78,7 @@ namespace InternalLogicEngineLayer
         {
             get
             {
-                return newPsm.Score;
+                return newPsm.score;
             }
         }
 

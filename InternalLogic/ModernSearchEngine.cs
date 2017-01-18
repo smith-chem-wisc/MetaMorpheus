@@ -121,8 +121,7 @@ namespace InternalLogicEngineLayer
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            var cool = new ModernSpectrumMatch(thisScan.MonoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = cool;
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j]);
                         }
                     }
                 }
