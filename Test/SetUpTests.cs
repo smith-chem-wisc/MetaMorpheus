@@ -1,5 +1,6 @@
 ﻿// Copyright 2016 Stefan Solntsev
 using NUnit.Framework;
+using System;
 using System.IO;
 using UsefulProteomicsDatabases;
 
@@ -22,6 +23,10 @@ namespace Test
         [OneTimeSetUp]
         public static void Setup()
         {
+            Console.WriteLine("Setting up tests...");
+            Console.WriteLine("Environment.CurrentDirectory is " + Environment.CurrentDirectory);
+            Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
+            Console.WriteLine("Now Environment.CurrentDirectory is " + Environment.CurrentDirectory);
             Loaders.LoadElements(Path.Combine(TestContext.CurrentContext.TestDirectory, elementsLocation));
             //MyEngine.unimodDeserialized = Loaders.LoadUnimod(Path.Combine(TestContext.CurrentContext.TestDirectory, unimodLocation));
             //MyEngine.uniprotDeseralized = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, uniprotLocation));
