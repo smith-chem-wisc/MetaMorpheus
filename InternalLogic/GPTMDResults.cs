@@ -4,7 +4,7 @@ using System.Text;
 
 namespace InternalLogicEngineLayer
 {
-    public class GPTMDResults : MyResults
+    public class GptmdResults : MyResults
     {
         #region Private Fields
 
@@ -14,9 +14,9 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public GPTMDResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, string>>> mods, int modsAdded) : base(s)
+        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, string>>> mods, int modsAdded) : base(s)
         {
-            this.mods = mods;
+            this.Mods = mods;
             this.modsAdded = modsAdded;
         }
 
@@ -24,18 +24,21 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public Dictionary<string, HashSet<Tuple<int, string>>> mods { get; private set; }
+        public Dictionary<string, HashSet<Tuple<int, string>>> Mods { get; private set; }
 
         #endregion Public Properties
 
         #region Protected Methods
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("\t\tModifications added = " + modsAdded);
-            sb.Append("\t\tProteins expanded = " + mods.Count);
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("\t\tModifications added = " + modsAdded);
+                sb.Append("\t\tProteins expanded = " + Mods.Count);
+                return sb.ToString();
+            }
         }
 
         #endregion Protected Methods

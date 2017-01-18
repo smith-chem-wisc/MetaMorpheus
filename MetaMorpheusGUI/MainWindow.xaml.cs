@@ -89,14 +89,14 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
 
-            MyTaskEngine.startingSingleTaskHander += Po_startingSingleTaskHander;
-            MyTaskEngine.finishedSingleTaskHandler += Po_finishedSingleTaskHandler;
-            MyTaskEngine.finishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
+            MyTaskEngine.StartingSingleTaskHander += Po_startingSingleTaskHander;
+            MyTaskEngine.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
+            MyTaskEngine.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
 
-            MyEngine.outProgressHandler += NewoutProgressBar;
-            MyEngine.outLabelStatusHandler += NewoutLabelStatus;
-            MyEngine.startingSingleEngineHander += MyEngine_startingSingleEngineHander;
-            MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
+            MyEngine.OutProgressHandler += NewoutProgressBar;
+            MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
+            MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
+            MyEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
         }
@@ -140,7 +140,7 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new OpenSearchMode("Open"));
         }
 
-        private void AddNewDB(object sender, List<string> e)
+        private void AddNewDB(object sender, StringListEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -150,12 +150,12 @@ namespace MetaMorpheusGUI
             {
                 foreach (var uu in xmlDBobservableCollection)
                     uu.Use = false;
-                foreach (var uu in e)
+                foreach (var uu in e.StringList)
                     xmlDBobservableCollection.Add(new XMLdb(uu));
             }
         }
 
-        private void AddNewSpectra(object sender, List<string> e)
+        private void AddNewSpectra(object sender, StringListEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -165,7 +165,7 @@ namespace MetaMorpheusGUI
             {
                 foreach (var uu in rawDataObservableCollection)
                     uu.Use = false;
-                foreach (var uu in e)
+                foreach (var uu in e.StringList)
                     rawDataObservableCollection.Add(new RawData(uu));
             }
         }
@@ -178,8 +178,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                s.theTask.IsMySelected = true;
-                statusLabel.Content = "Running " + s.theTask.taskType + " task";
+                s.TheTask.IsMySelected = true;
+                statusLabel.Content = "Running " + s.TheTask.TaskType + " task";
                 outProgressBar.IsIndeterminate = true;
 
                 tasksDataGrid.Items.Refresh();
@@ -196,8 +196,8 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                s.theTask.IsMySelected = false;
-                statusLabel.Content = "Finished " + s.theTask.taskType + " task";
+                s.TheTask.IsMySelected = false;
+                statusLabel.Content = "Finished " + s.TheTask.TaskType + " task";
                 outProgressBar.Value = 100;
 
                 tasksDataGrid.Items.Refresh();
@@ -210,21 +210,6 @@ namespace MetaMorpheusGUI
         {
             finishedFileObservableCollection.Add(new FinishedFile(filepath));
             outputFilesDataGrid.Items.Refresh();
-        }
-
-        private RawData GetCorrespondingRawDataAndResultsEntry(string filepath)
-        {
-            var fileNameNoExtension = Path.GetFileNameWithoutExtension(filepath);
-            foreach (var a in rawDataObservableCollection)
-            {
-                if (a.FileName != null)
-                {
-                    var aNoExtension = Path.GetFileNameWithoutExtension(a.FileName);
-                    if (aNoExtension.Equals(fileNameNoExtension))
-                        return a;
-                }
-            }
-            return null;
         }
 
         private void ClearRaw_Click(object sender, RoutedEventArgs e)
@@ -287,7 +272,7 @@ namespace MetaMorpheusGUI
         {
             var ye = sender as DataGridCell;
             var hm = ye.Content as TextBlock;
-            if (hm != null && !hm.Text.Equals(""))
+            if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -331,9 +316,6 @@ namespace MetaMorpheusGUI
                 taskEngineObservableCollection.Add(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
-            else
-            {
-            }
         }
 
         private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
@@ -344,9 +326,6 @@ namespace MetaMorpheusGUI
                 taskEngineObservableCollection.Add(dialog.TheTask);
                 UpdateTaskGuiStuff();
             }
-            else
-            {
-            }
         }
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
@@ -356,9 +335,6 @@ namespace MetaMorpheusGUI
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
                 UpdateTaskGuiStuff();
-            }
-            else
-            {
             }
         }
 
@@ -373,26 +349,26 @@ namespace MetaMorpheusGUI
             var a = sender as DataGrid;
             var ok = (MyTaskEngine)a.SelectedItem;
             if (ok != null)
-                switch (ok.taskType)
+                switch (ok.TaskType)
                 {
-                    case MyTaskEnum.Search:
+                    case MyTask.Search:
                         var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection, searchModeObservableCollection);
                         searchDialog.ShowDialog();
                         break;
 
-                    case MyTaskEnum.GPTMD:
+                    case MyTask.Gptmd:
                         var gptmddialog = new GPTMDTaskWindow(ok as GPTMDTask, modListObservableCollection);
                         gptmddialog.ShowDialog();
                         break;
 
-                    case MyTaskEnum.Calibrate:
+                    case MyTask.Calibrate:
                         var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask, modListObservableCollection);
                         calibratedialog.ShowDialog();
                         break;
                 }
         }
 
-        private void NewoutLabelStatus(object sender, string s)
+        private void NewoutLabelStatus(object sender, StringEventArgs s)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -401,7 +377,7 @@ namespace MetaMorpheusGUI
             else
             {
                 outProgressBar.IsIndeterminate = true;
-                statusLabel.Content = s;
+                statusLabel.Content = s.s;
             }
         }
 

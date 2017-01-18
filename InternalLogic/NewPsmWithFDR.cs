@@ -3,7 +3,7 @@ using System.Text;
 
 namespace InternalLogicEngineLayer
 {
-    public class NewPsmWithFDR
+    public class NewPsmWithFdr
     {
         #region Public Fields
 
@@ -13,32 +13,32 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private readonly int cumulative_target;
-        private readonly int cumulative_decoy;
+        private readonly int cumulativeTarget;
+        private readonly int cumulativeDecoy;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NewPsmWithFDR(PSMwithTargetDecoyKnown thisPSM, int cumulative_target, int cumulative_decoy, double temp_q_value)
+        public NewPsmWithFdr(PSMwithTargetDecoyKnown thisPsm, int cumulativeTarget, int cumulativeDecoy, double tempQValue)
         {
-            this.thisPSM = thisPSM;
-            this.cumulative_target = cumulative_target;
-            this.cumulative_decoy = cumulative_decoy;
-            QValue = temp_q_value;
+            this.thisPSM = thisPsm;
+            this.cumulativeTarget = cumulativeTarget;
+            this.cumulativeDecoy = cumulativeDecoy;
+            qValue = tempQValue;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public double QValue { get; set; }
+        public double qValue { get; set; }
 
-        public bool isDecoy
+        public bool IsDecoy
         {
             get
             {
-                return thisPSM.isDecoy;
+                return thisPSM.IsDecoy;
             }
         }
 
@@ -46,25 +46,28 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public static string GetTabSeparatedHeader()
+        public static string TabSeparatedHeader
         {
-            var sb = new StringBuilder();
-            sb.Append(PSMwithTargetDecoyKnown.GetTabSeparatedHeader() + '\t');
-            sb.Append("Decoy" + '\t');
-            sb.Append("cumulative_target" + '\t');
-            sb.Append("cumulative_decoy" + '\t');
-            sb.Append("QValue");
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                sb.Append(PSMwithTargetDecoyKnown.TabSeparatedHeader + '\t');
+                sb.Append("Decoy" + '\t');
+                sb.Append("cumulative_target" + '\t');
+                sb.Append("cumulative_decoy" + '\t');
+                sb.Append("QValue");
+                return sb.ToString();
+            }
         }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
             sb.Append(thisPSM.ToString() + '\t');
-            sb.Append(isDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(cumulative_target.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(cumulative_decoy.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(QValue.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append(IsDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(qValue.ToString("F5", CultureInfo.InvariantCulture));
 
             return sb.ToString();
         }

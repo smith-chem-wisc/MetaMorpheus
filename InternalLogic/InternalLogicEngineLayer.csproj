@@ -21,6 +21,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x64</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -133,6 +134,8 @@
     <Compile Include="SingleEngineFinishedEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
     <Compile Include="Calibration\CalibrationEngine.cs" />
+    <Compile Include="StringEventArgs.cs" />
+    <Compile Include="StringListEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="elements.dat">

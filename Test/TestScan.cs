@@ -119,10 +119,10 @@ namespace Test
 
         #region Public Methods
 
-        public void tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double selectedIonGuessMonoisotopicMZ)
+        public void tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double newSelectedIonGuessMonoisotopicMZ)
         {
             MassSpectrum.replaceXbyApplyingFunction(convertorForSpectrum);
-            this.selectedIonGuessMonoisotopicMZ = selectedIonGuessMonoisotopicMZ;
+            selectedIonGuessMonoisotopicMZ = newSelectedIonGuessMonoisotopicMZ;
         }
 
         public bool TryGetDissociationType(out DissociationType DissociationType)

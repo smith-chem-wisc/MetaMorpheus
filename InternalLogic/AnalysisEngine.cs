@@ -31,7 +31,7 @@ namespace InternalLogicEngineLayer
         private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
         private readonly Action<BinTreeStructure, string> action1;
-        private readonly Action<List<NewPsmWithFDR>, string> action2;
+        private readonly Action<List<NewPsmWithFdr>, string> action2;
         private readonly Action<List<ProteinGroup>, string> action3;
         private readonly bool doParsimony;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
@@ -40,7 +40,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFDR>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms) : base(2)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms) : base(2)
         {
             this.doParsimony = doParsimony;
             this.newPsms = newPsms;
@@ -51,7 +51,7 @@ namespace InternalLogicEngineLayer
             this.localizeableModifications = localizeableModifications;
             this.protease = protease;
             this.searchModes = searchModes;
-            this.myMsDataFile = myMsDataFile;
+            this.myMsDataFile = myMSDataFile;
             this.fragmentTolerance = fragmentTolerance;
             this.action1 = action1;
             this.action2 = action2;
@@ -64,32 +64,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public static Dictionary<CompactPeptide, PeptideWithSetModifications> GetSingleMatchDictionary(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching)
-        {
-            // Right now very stupid, add the first decoy one, and if no decoy, add the first one
-            var outDict = new Dictionary<CompactPeptide, PeptideWithSetModifications>();
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
-            {
-                var k = kvp.Key;
-                var val = kvp.Value;
-                bool sawDecoy = false;
-                foreach (var entry in val)
-                {
-                    if (entry.protein.isDecoy)
-                    {
-                        outDict[kvp.Key] = entry;
-                        sawDecoy = true;
-                        break;
-                    }
-                }
-                if (sawDecoy == false)
-                    outDict[kvp.Key] = kvp.Value.First();
-            }
-
-            return outDict;
-        }
-
-        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, out HashSet<CompactPeptide> uniquePeptides)
+        public static Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, out HashSet<CompactPeptide> uniquePeptides)
         {
             // TODO**: protein group may have a shared peptide that is only shared within the group (peptide is unique to the group but shared within the group)
             // TODO**: how to handle indistinguishable proteins?
@@ -102,17 +77,17 @@ namespace InternalLogicEngineLayer
             // unique peptide is a peptide that can belong to only one protein
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
-                List<Protein> proteinList = new List<Protein>();
+                List<Protein> proteinListHere = new List<Protein>();
 
                 foreach (var peptide in kvp.Value)
                 {
-                    if (!proteinList.Contains(peptide.protein))
+                    if (!proteinListHere.Contains(peptide.Protein))
                     {
-                        proteinList.Add(peptide.protein);
+                        proteinListHere.Add(peptide.Protein);
                     }
                 }
 
-                if (proteinList.Count == 1)
+                if (proteinListHere.Count == 1)
                 {
                     uniquePeptides.Add(kvp.Key);
                 }
@@ -126,7 +101,7 @@ namespace InternalLogicEngineLayer
                 foreach (var virtualPeptide in kvp.Value)
                 {
                     // find peptides associated with new protein
-                    if (!newDict.ContainsKey(virtualPeptide.protein))
+                    if (!newDict.ContainsKey(virtualPeptide.Protein))
                     {
                         HashSet<CompactPeptide> peptides = new HashSet<CompactPeptide>();
 
@@ -135,14 +110,14 @@ namespace InternalLogicEngineLayer
                             foreach (var virtualPeptide2 in kvp1.Value)
                             {
                                 // if the virtual peptides come from the same protein, add the peptide to the protein's list
-                                if (virtualPeptide.protein == virtualPeptide2.protein)
+                                if (virtualPeptide.Protein == virtualPeptide2.Protein)
                                 {
                                     peptides.Add(kvp1.Key);
                                 }
                             }
                         }
 
-                        newDict.Add(virtualPeptide.protein, peptides);
+                        newDict.Add(virtualPeptide.Protein, peptides);
                     }
                 }
             }
@@ -245,17 +220,17 @@ namespace InternalLogicEngineLayer
                 {
                     if (!peptideProteinListMatch.ContainsKey(peptide))
                     {
-                        HashSet<Protein> proteinList = new HashSet<Protein>();
+                        HashSet<Protein> proteinListHere = new HashSet<Protein>();
 
                         foreach (var kvp1 in parsimonyDict)
                         {
                             if (kvp1.Value.Contains(peptide))
                             {
-                                proteinList.Add(kvp1.Key);
+                                proteinListHere.Add(kvp1.Key);
                             }
                         }
 
-                        peptideProteinListMatch.Add(peptide, proteinList);
+                        peptideProteinListMatch.Add(peptide, proteinListHere);
                     }
                 }
             }
@@ -271,10 +246,10 @@ namespace InternalLogicEngineLayer
                     {
                         HashSet<PeptideWithSetModifications> oldVirtualPeptides = new HashSet<PeptideWithSetModifications>();
                         HashSet<PeptideWithSetModifications> newVirtualPeptides = new HashSet<PeptideWithSetModifications>();
-                        HashSet<Protein> proteinList = new HashSet<Protein>();
+                        HashSet<Protein> proteinListHere = new HashSet<Protein>();
 
                         // get the peptide's protein group after parsimony
-                        peptideProteinListMatch.TryGetValue(peptide, out proteinList);
+                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
 
                         // find peptide's original (unparsimonious) virtual peptide matches
                         fullSequenceToProteinPeptideMatching.TryGetValue(peptide, out oldVirtualPeptides);
@@ -282,7 +257,7 @@ namespace InternalLogicEngineLayer
                         // get the virtual peptides that belong to the post-parsimony protein(s) only
                         foreach (var virtualPeptide in oldVirtualPeptides)
                         {
-                            if (proteinList.Contains(virtualPeptide.protein))
+                            if (proteinListHere.Contains(virtualPeptide.Protein))
                             {
                                 newVirtualPeptides.Add(virtualPeptide);
                             }
@@ -297,14 +272,14 @@ namespace InternalLogicEngineLayer
             return answer;
         }
 
-        public List<ProteinGroup> BuildProteinGroupsAndDoProteinFDR(List<NewPsmWithFDR> psmList, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, HashSet<CompactPeptide> allUniquePeptides)
+        public List<ProteinGroup> BuildProteinGroupsAndDoProteinFdr(List<NewPsmWithFdr> psmList, HashSet<CompactPeptide> allUniquePeptides)
         {
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
 
-            Dictionary<NewPsmWithFDR, HashSet<Protein>> psmProteinListMatching = new Dictionary<NewPsmWithFDR, HashSet<Protein>>();
+            Dictionary<NewPsmWithFdr, HashSet<Protein>> psmProteinListMatching = new Dictionary<NewPsmWithFdr, HashSet<Protein>>();
 
             HashSet<Protein> proteinGroupProteinSet = new HashSet<Protein>();
-            List<NewPsmWithFDR> proteinGroupPsmList = new List<NewPsmWithFDR>();
+            List<NewPsmWithFdr> proteinGroupPsmList = new List<NewPsmWithFdr>();
 
             // build protein list (get proteins associated with psm using the parsimony dictionary)
             foreach (var psm in psmList)
@@ -317,9 +292,9 @@ namespace InternalLogicEngineLayer
 
                 foreach (var virtualPeptide in virtualPeptides)
                 {
-                    if (!proteinGroupProteinSet.Contains(virtualPeptide.protein))
+                    if (!proteinGroupProteinSet.Contains(virtualPeptide.Protein))
                     {
-                        proteinGroupProteinSet.Add(virtualPeptide.protein);
+                        proteinGroupProteinSet.Add(virtualPeptide.Protein);
                     }
                 }
 
@@ -333,14 +308,14 @@ namespace InternalLogicEngineLayer
 
                 foreach (var proteinGroup in proteinGroups)
                 {
-                    if (proteinGroup.proteins.SetEquals(kvp.Value))
+                    if (proteinGroup.Proteins.SetEquals(kvp.Value))
                         newProteinGroup = false;
                 }
 
                 if (newProteinGroup)
                 {
                     // look for the protein list's associated PSMs
-                    proteinGroupPsmList = new List<NewPsmWithFDR>();
+                    proteinGroupPsmList = new List<NewPsmWithFdr>();
 
                     foreach (var kvp1 in psmProteinListMatching)
                     {
@@ -370,22 +345,22 @@ namespace InternalLogicEngineLayer
 
         protected override MyResults RunSpecific()
         {
-            status("Running analysis engine!");
+            Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-            status("Adding observed peptides to dictionary...");
+            Status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
 
             HashSet<CompactPeptide> uniquePeptides = new HashSet<CompactPeptide>();
             if (doParsimony)
             {
-                status("Getting protein parsimony dictionary...");
+                Status("Getting protein parsimony dictionary...");
                 compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching, out uniquePeptides);
             }
 
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
-            List<NewPsmWithFDR>[] yeah = new List<NewPsmWithFDR>[searchModes.Count];
+            List<NewPsmWithFdr>[] yeah = new List<NewPsmWithFdr>[searchModes.Count];
             List<ProteinGroup> proteinGroups = null;
             for (int j = 0; j < searchModes.Count; j++)
             {
@@ -405,20 +380,20 @@ namespace InternalLogicEngineLayer
 
                     var orderedPsmsWithPeptides = psmsWithTargetDecoyKnown.Where(b => b != null).OrderByDescending(b => b.Score);
 
-                    status("Running FDR analysis...");
+                    Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
-                    var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
-                    if (limitedpsms_with_fdr.Count(b => !b.isDecoy) > 0)
+                    var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
+                    if (limitedpsms_with_fdr.Count(b => !b.IsDecoy) > 0)
                     {
-                        status("Running histogram analysis...");
+                        Status("Running histogram analysis...");
                         var hm = MyAnalysis(limitedpsms_with_fdr);
                         action1(hm, searchModes[j].FileNameAddition);
                     }
 
                     if (doParsimony)
                     {
-                        status("Building protein groups and doing FDR...");
-                        proteinGroups = BuildProteinGroupsAndDoProteinFDR(orderedPsmsWithFDR, compactPeptideToProteinPeptideMatching, uniquePeptides);
+                        Status("Building protein groups and doing FDR...");
+                        proteinGroups = BuildProteinGroupsAndDoProteinFdr(orderedPsmsWithFDR, uniquePeptides);
 
                         action3(proteinGroups, searchModes[j].FileNameAddition);
                     }
@@ -438,10 +413,10 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyAAsInCommon(BinTreeStructure myTreeStructure)
         {
-            foreach (Bin bin in myTreeStructure.finalBins)
+            foreach (Bin bin in myTreeStructure.FinalBins)
             {
                 bin.AAsInCommon = new Dictionary<char, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.isDecoy))
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     var chars = new HashSet<char>();
                     for (int i = 0; i < hehe.Item1.Count(); i++)
@@ -463,10 +438,10 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyMods(BinTreeStructure myTreeStructure)
         {
-            foreach (Bin bin in myTreeStructure.finalBins)
+            foreach (Bin bin in myTreeStructure.FinalBins)
             {
                 bin.modsInCommon = new Dictionary<string, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.isDecoy))
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     int inModLevel = 0;
                     string currentMod = "";
@@ -505,13 +480,13 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyResidues(BinTreeStructure myTreeStructure)
         {
-            foreach (Bin bin in myTreeStructure.finalBins)
+            foreach (Bin bin in myTreeStructure.FinalBins)
             {
                 bin.residueCount = new Dictionary<char, int>();
                 foreach (var hehe in bin.uniquePSMs.Values)
                 {
                     double bestScore = hehe.Item3.thisPSM.LocalizedScores.Max();
-                    if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.isDecoy)
+                    if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
                         {
@@ -534,7 +509,7 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyUnimodBins(BinTreeStructure myTreeStructure, double v)
         {
-            foreach (var bin in myTreeStructure.finalBins)
+            foreach (var bin in myTreeStructure.FinalBins)
             {
                 var ok = new HashSet<string>();
                 var okformula = new HashSet<string>();
@@ -553,7 +528,7 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyUniprotBins(BinTreeStructure myTreeStructure, double v)
         {
-            foreach (var bin in myTreeStructure.finalBins)
+            foreach (var bin in myTreeStructure.FinalBins)
             {
                 var ok = new HashSet<string>();
                 foreach (var hm in uniprotDeseralized)
@@ -569,14 +544,14 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyCombos(BinTreeStructure myTreeStructure, double v)
         {
-            double totalTargetCount = myTreeStructure.finalBins.Select(b => b.CountTarget).Sum();
+            double totalTargetCount = myTreeStructure.FinalBins.Select(b => b.CountTarget).Sum();
             var ok = new HashSet<Tuple<double, double, double>>();
-            foreach (var bin in myTreeStructure.finalBins.Where(b => Math.Abs(b.MassShift) > v))
-                foreach (var bin2 in myTreeStructure.finalBins.Where(b => Math.Abs(b.MassShift) > v))
+            foreach (var bin in myTreeStructure.FinalBins.Where(b => Math.Abs(b.MassShift) > v))
+                foreach (var bin2 in myTreeStructure.FinalBins.Where(b => Math.Abs(b.MassShift) > v))
                     if (bin.CountTarget * bin2.CountTarget >= totalTargetCount * comboThresholdMultiplier)
                         ok.Add(new Tuple<double, double, double>(bin.MassShift, bin2.MassShift, Math.Min(bin.CountTarget, bin2.CountTarget)));
 
-            foreach (var bin in myTreeStructure.finalBins)
+            foreach (var bin in myTreeStructure.FinalBins)
             {
                 var okk = new HashSet<string>();
                 foreach (var hm in ok)
@@ -592,7 +567,7 @@ namespace InternalLogicEngineLayer
 
         private static void IdentifyAA(BinTreeStructure myTreeStructure, double v)
         {
-            foreach (var bin in myTreeStructure.finalBins)
+            foreach (var bin in myTreeStructure.FinalBins)
             {
                 var ok = new HashSet<string>();
                 for (char c = 'A'; c <= 'Z'; c++)
@@ -645,20 +620,20 @@ namespace InternalLogicEngineLayer
             myInfos.Add(new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"));
             myInfos.Add(new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"));
             myInfos.Add(new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"));
-            foreach (Bin bin in myTreeStructure.finalBins)
+            foreach (Bin bin in myTreeStructure.FinalBins)
             {
-                bin.mine = "";
+                bin.Mine = "";
                 foreach (MyInfo myInfo in myInfos)
                 {
                     if (Math.Abs(myInfo.MassShift - bin.MassShift) <= v)
                     {
-                        bin.mine = myInfo.infostring;
+                        bin.Mine = myInfo.infostring;
                     }
                 }
             }
         }
 
-        private static BinTreeStructure MyAnalysis(List<NewPsmWithFDR> limitedpsms_with_fdr)
+        private static BinTreeStructure MyAnalysis(List<NewPsmWithFdr> limitedpsms_with_fdr)
         {
             var myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);
@@ -680,31 +655,31 @@ namespace InternalLogicEngineLayer
             return myTreeStructure;
         }
 
-        private static List<NewPsmWithFDR> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithTargetDecoyKnown> items)
+        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithTargetDecoyKnown> items)
         {
-            var ids = new List<NewPsmWithFDR>();
+            var ids = new List<NewPsmWithFdr>();
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
             foreach (PSMwithTargetDecoyKnown item in items)
             {
-                var isDecoy = item.isDecoy;
+                var isDecoy = item.IsDecoy;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
                     cumulative_target++;
                 double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                ids.Add(new NewPsmWithFDR(item, cumulative_target, cumulative_decoy, temp_q_value));
+                ids.Add(new NewPsmWithFdr(item, cumulative_target, cumulative_decoy, temp_q_value));
             }
 
             double min_q_value = double.PositiveInfinity;
             for (int i = ids.Count - 1; i >= 0; i--)
             {
-                NewPsmWithFDR id = ids[i];
-                if (id.QValue > min_q_value)
-                    id.QValue = min_q_value;
-                else if (id.QValue < min_q_value)
-                    min_q_value = id.QValue;
+                NewPsmWithFdr id = ids[i];
+                if (id.qValue > min_q_value)
+                    id.qValue = min_q_value;
+                else if (id.qValue < min_q_value)
+                    min_q_value = id.qValue;
             }
 
             return ids;
@@ -712,7 +687,7 @@ namespace InternalLogicEngineLayer
 
         private void AddObservedPeptidesToDictionary()
         {
-            status("Adding new keys to peptide dictionary...");
+            Status("Adding new keys to peptide dictionary...");
             foreach (var psmListForAspecificSerchMode in newPsms)
             {
                 if (psmListForAspecificSerchMode != null)
@@ -729,7 +704,7 @@ namespace InternalLogicEngineLayer
 
             int totalProteins = proteinList.Count;
 
-            status("Adding possible sources to peptide dictionary...");
+            Status("Adding possible sources to peptide dictionary...");
 
             int proteinsSeen = 0;
             int old_progress = 0;

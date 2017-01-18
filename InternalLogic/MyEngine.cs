@@ -12,9 +12,9 @@ namespace InternalLogicEngineLayer
 
         #region Public Fields
 
-        public static readonly string MetaMorpheusVersion;
-        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized;
-        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized;
+        public static string MetaMorpheusVersion { get; private set; }
+        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; private set; }
+        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
 
         #endregion Public Fields
 
@@ -62,13 +62,13 @@ namespace InternalLogicEngineLayer
 
         #region Public Events
 
-        public static event EventHandler<SingleEngineEventArgs> startingSingleEngineHander;
+        public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;
 
-        public static event EventHandler<SingleEngineFinishedEventArgs> finishedSingleEngineHandler;
+        public static event EventHandler<SingleEngineFinishedEventArgs> FinishedSingleEngineHandler;
 
-        public static event EventHandler<string> outLabelStatusHandler;
+        public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
-        public static event EventHandler<ProgressEventArgs> outProgressHandler;
+        public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
         #endregion Public Events
 
@@ -90,14 +90,14 @@ namespace InternalLogicEngineLayer
 
         #region Protected Methods
 
-        protected void status(string v)
+        protected void Status(string v)
         {
-            outLabelStatusHandler?.Invoke(this, v);
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v));
         }
 
         protected void ReportProgress(ProgressEventArgs v)
         {
-            outProgressHandler?.Invoke(this, v);
+            OutProgressHandler?.Invoke(this, v);
         }
 
         protected abstract MyResults RunSpecific();
@@ -108,12 +108,12 @@ namespace InternalLogicEngineLayer
 
         private void startingSingleEngine()
         {
-            startingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
+            StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
         }
 
         private void finishedSingleEngine(MyResults myResults)
         {
-            finishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
+            FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
 
         #endregion Private Methods

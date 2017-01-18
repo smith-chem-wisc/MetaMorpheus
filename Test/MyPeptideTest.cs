@@ -12,7 +12,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestGoodPeptide()
+        public static void TestGoodPeptide()
         {
             var prot = new Protein("MNNNKQQQQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
@@ -23,17 +23,17 @@ namespace Test
 
             var pep1 = new PeptideWithSetModifications(ye[0], new Dictionary<int, MorpheusModification>());
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.b, ProductType.y }))
+            foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = new PeptideWithSetModifications(ye[1], new Dictionary<int, MorpheusModification>());
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
-            foreach (var huh in pep2.FastSortedProductMasses(new List<ProductType> { ProductType.b, ProductType.y }))
+            foreach (var huh in pep2.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
         }
 
         [Test]
-        public void TestBadPeptide()
+        public static void TestBadPeptide()
         {
             var prot = new Protein("MNNNKQQXQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
@@ -44,12 +44,12 @@ namespace Test
 
             var pep1 = new PeptideWithSetModifications(ye[0], new Dictionary<int, MorpheusModification>());
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.b, ProductType.y }))
+            foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = new PeptideWithSetModifications(ye[1], new Dictionary<int, MorpheusModification>());
             Assert.IsNaN(pep2.MonoisotopicMass);
-            var cool = pep2.FastSortedProductMasses(new List<ProductType> { ProductType.y });
+            var cool = pep2.FastSortedProductMasses(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);
             Assert.IsNaN(cool[1]);
             Assert.IsNaN(cool[2]);

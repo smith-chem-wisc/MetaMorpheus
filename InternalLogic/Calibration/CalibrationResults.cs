@@ -9,25 +9,28 @@ namespace InternalLogicCalibration
     {
         #region Public Constructors
 
-        public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, CalibrationEngine s) : base(s)
+        public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
         {
-            this.myMsDataFile = myMsDataFile;
+            this.MyMSDataFile = myMSDataFile;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile { get; private set; }
+        public IMsDataFile<IMzSpectrum<MzPeak>> MyMSDataFile { get; private set; }
 
         #endregion Public Properties
 
         #region Protected Methods
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                return sb.ToString();
+            }
         }
 
         #endregion Protected Methods

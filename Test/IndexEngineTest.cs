@@ -13,7 +13,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestIndexEngine()
+        public static void TestIndexEngine()
         {
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
             var variableModifications = new List<MorpheusModification>();
@@ -24,9 +24,9 @@ namespace Test
             var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096);
             var results = (IndexResults)engine.Run();
 
-            Assert.AreEqual(5, results.peptideIndex.Count);
+            Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var listOfPeptides = results.peptideIndex.Select(b => string.Join("", b.BaseSequence.Select(c => char.ConvertFromUtf32(c)))).ToList();
+            var listOfPeptides = results.PeptideIndex.Select(b => string.Join("", b.BaseSequence.Select(c => char.ConvertFromUtf32(c)))).ToList();
 
             Assert.Contains("MNNNK", listOfPeptides);
             Assert.Contains("NNNK", listOfPeptides);
@@ -36,7 +36,7 @@ namespace Test
         }
 
         [Test]
-        public void TestIndexEngineWithWeirdSeq()
+        public static void TestIndexEngineWithWeirdSeq()
         {
             var proteinList = new List<Protein> { new Protein("MQXQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
             var variableModifications = new List<MorpheusModification>();
@@ -47,10 +47,10 @@ namespace Test
             var engine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096);
             var results = (IndexResults)engine.Run();
 
-            Assert.AreEqual(1, results.peptideIndex.Count);
+            Assert.AreEqual(1, results.PeptideIndex.Count);
 
-            Assert.IsNaN(results.peptideIndex[0].MonoisotopicMass);
-            Assert.AreEqual(2, results.fragmentIndexDict.Count);
+            Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMass);
+            Assert.AreEqual(2, results.FragmentIndexDict.Count);
         }
 
         #endregion Public Methods

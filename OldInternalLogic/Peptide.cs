@@ -4,25 +4,25 @@ namespace OldInternalLogic
     {
         #region Protected Fields
 
-        protected string baseSequence;
-        protected string baseLeucineSequence;
+        private string baseSequence;
+        private string baseLeucineSequence;
 
         #endregion Protected Fields
 
         #region Protected Constructors
 
-        protected Peptide(Protein protein, int OneBasedStartResidueInProtein, int OneBasedEndResidueInProtein)
+        protected Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein)
         {
-            this.protein = protein;
-            this.OneBasedStartResidueInProtein = OneBasedStartResidueInProtein;
-            this.OneBasedEndResidueInProtein = OneBasedEndResidueInProtein;
+            this.Protein = protein;
+            this.OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
+            this.OneBasedEndResidueInProtein = oneBasedEndResidueInProtein;
         }
 
         #endregion Protected Constructors
 
         #region Public Properties
 
-        public Protein protein { get; private set; }
+        public Protein Protein { get; private set; }
         public int OneBasedStartResidueInProtein { get; private set; }
         public int OneBasedEndResidueInProtein { get; private set; }
 
@@ -40,7 +40,7 @@ namespace OldInternalLogic
         {
             get
             {
-                return OneBasedStartResidueInProtein > 1 ? protein[OneBasedStartResidueInProtein - 2] : '-';
+                return OneBasedStartResidueInProtein > 1 ? Protein[OneBasedStartResidueInProtein - 2] : '-';
             }
         }
 
@@ -48,7 +48,7 @@ namespace OldInternalLogic
         {
             get
             {
-                return OneBasedEndResidueInProtein < protein.Length ? protein[OneBasedEndResidueInProtein] : '-';
+                return OneBasedEndResidueInProtein < Protein.Length ? Protein[OneBasedEndResidueInProtein] : '-';
             }
         }
 
@@ -57,7 +57,7 @@ namespace OldInternalLogic
             get
             {
                 if (baseSequence == null)
-                    baseSequence = protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length);
+                    baseSequence = Protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length);
                 return baseSequence;
             }
         }
@@ -67,7 +67,7 @@ namespace OldInternalLogic
             get
             {
                 if (baseLeucineSequence == null)
-                    baseLeucineSequence = protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length).Replace('I', 'L');
+                    baseLeucineSequence = Protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length).Replace('I', 'L');
                 return baseLeucineSequence;
             }
         }
@@ -80,7 +80,7 @@ namespace OldInternalLogic
         {
             get
             {
-                return protein.BaseSequence[zeroBasedIndex + OneBasedStartResidueInProtein - 1];
+                return Protein.BaseSequence[zeroBasedIndex + OneBasedStartResidueInProtein - 1];
             }
         }
 

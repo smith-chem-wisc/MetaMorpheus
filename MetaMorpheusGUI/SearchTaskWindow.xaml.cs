@@ -64,7 +64,7 @@ namespace MetaMorpheusGUI
         {
             var ye = sender as DataGridCell;
             var hm = ye.Content as TextBlock;
-            if (hm != null && !hm.Text.Equals(""))
+            if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -95,25 +95,25 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            classicSearchRadioButton.IsChecked = task.classicSearch;
-            modernSearchRadioButton.IsChecked = !task.classicSearch;
-            checkBoxParsimony.IsChecked = task.doParsimony;
-            checkBoxDecoy.IsChecked = task.searchDecoy;
-            missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.protease;
-            maxModificationIsoformsTextBox.Text = task.maxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.initiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.productMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = (int)task.productMassTolerance.Unit;
-            bCheckBox.IsChecked = task.bIons;
-            yCheckBox.IsChecked = task.yIons;
+            classicSearchRadioButton.IsChecked = task.ClassicSearch;
+            modernSearchRadioButton.IsChecked = !task.ClassicSearch;
+            checkBoxParsimony.IsChecked = task.DoParsimony;
+            checkBoxDecoy.IsChecked = task.SearchDecoy;
+            missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.Protease;
+            maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
+            productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
+            bCheckBox.IsChecked = task.BIons;
+            yCheckBox.IsChecked = task.YIons;
             for (int i = 0; i < ModFileListInWindow.Count; i++)
             {
-                if (task.listOfModListsForSearch[i].Fixed)
+                if (task.ListOfModListsForSearch[i].Fixed)
                     ModFileListInWindow[i].Fixed = true;
-                if (task.listOfModListsForSearch[i].Variable)
+                if (task.ListOfModListsForSearch[i].Variable)
                     ModFileListInWindow[i].Variable = true;
-                if (task.listOfModListsForSearch[i].Localize)
+                if (task.ListOfModListsForSearch[i].Localize)
                     ModFileListInWindow[i].Localize = true;
             }
 
@@ -121,7 +121,7 @@ namespace MetaMorpheusGUI
 
             for (int i = 0; i < SearchModes.Count; i++)
             {
-                if (task.searchModes[i].Use)
+                if (task.SearchModes[i].Use)
                     SearchModes[i].Use = true;
             }
             allowedPrecursorMassDiffsDataGrid.Items.Refresh();
@@ -134,19 +134,19 @@ namespace MetaMorpheusGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.classicSearch = classicSearchRadioButton.IsChecked.Value;
-            TheTask.doParsimony = checkBoxParsimony.IsChecked.Value;
-            TheTask.searchDecoy = checkBoxDecoy.IsChecked.Value;
-            TheTask.maxMissedCleavages = int.Parse(missedCleavagesTextBox.Text);
-            TheTask.protease = (Protease)proteaseComboBox.SelectedItem;
-            TheTask.maxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text);
-            TheTask.initiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-            TheTask.productMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text);
-            TheTask.productMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
-            TheTask.bIons = bCheckBox.IsChecked.Value;
-            TheTask.yIons = yCheckBox.IsChecked.Value;
-            TheTask.listOfModListsForSearch = ModFileListInWindow.ToList();
-            TheTask.searchModes = SearchModes.ToList();
+            TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
+            TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
+            TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
+            TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
+            TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
+            TheTask.BIons = bCheckBox.IsChecked.Value;
+            TheTask.YIons = yCheckBox.IsChecked.Value;
+            TheTask.ListOfModListsForSearch = ModFileListInWindow.ToList();
+            TheTask.SearchModes = SearchModes.ToList();
 
             DialogResult = true;
         }
@@ -157,35 +157,28 @@ namespace MetaMorpheusGUI
             // Format: name, "dot", num, "ppm" or "da", dots
 
             var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
-
-            try
+            
+            switch (split[1])
             {
-                switch (split[1])
-                {
-                    case "dot":
-                        ToleranceUnit tu = ToleranceUnit.PPM;
-                        if (split[3].Equals("ppm"))
-                            tu = ToleranceUnit.PPM;
-                        else if (split[3].Equals("da"))
-                            tu = ToleranceUnit.Absolute;
-                        else
-                            break;
-                        DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2])));
-                        SearchModes.Add(new SearchModeFoSearch(dsm));
-                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                case "dot":
+                    ToleranceUnit tu = ToleranceUnit.PPM;
+                    if (split[3].Equals("ppm"))
+                        tu = ToleranceUnit.PPM;
+                    else if (split[3].Equals("da"))
+                        tu = ToleranceUnit.Absolute;
+                    else
                         break;
+                    DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2], CultureInfo.InvariantCulture)));
+                    SearchModes.Add(new SearchModeFoSearch(dsm));
+                    allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                    break;
 
-                    case "interval":
-                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[0]), double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[1])));
-                        IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
-                        SearchModes.Add(new SearchModeFoSearch(ism));
-                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
-                        break;
-                }
-            }
-            catch (Exception ee)
-            {
-                MessageBoxResult result = MessageBox.Show(ee.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                case "interval":
+                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[1], CultureInfo.InvariantCulture)));
+                    IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
+                    SearchModes.Add(new SearchModeFoSearch(ism));
+                    allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                    break;
             }
         }
 

@@ -13,7 +13,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestParsimony()
+        public static void TestParsimony()
         {
             // creates some test proteins and digests them (simulating a protein database)
             string sequence1 = "AKCKBK";
@@ -102,7 +102,7 @@ namespace Test
             HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
 
             // apply parsimony to initial dictionary
-            var parsimonyTest = analysisEngine.ApplyProteinParsimony(initialDictionary, out pep);
+            var parsimonyTest = AnalysisEngine.ApplyProteinParsimony(initialDictionary, out pep);
 
             var parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];
@@ -112,12 +112,12 @@ namespace Test
             {
                 foreach (var virtualPeptide in kvp.Value)
                 {
-                    if (!parsimonyProteinList.Contains(virtualPeptide.protein))
+                    if (!parsimonyProteinList.Contains(virtualPeptide.Protein))
                     {
                         if (j < 3)
                         {
-                            parsimonyProteinList.Add(virtualPeptide.protein);
-                            parsimonyBaseSequences[j] = virtualPeptide.protein.BaseSequence;
+                            parsimonyProteinList.Add(virtualPeptide.Protein);
+                            parsimonyBaseSequences[j] = virtualPeptide.Protein.BaseSequence;
                             j++;
                         }
                     }

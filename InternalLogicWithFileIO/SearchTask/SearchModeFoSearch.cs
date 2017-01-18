@@ -6,20 +6,20 @@ namespace InternalLogicTaskLayer
     {
         #region Public Constructors
 
-        public SearchModeFoSearch(SearchMode uu)
+        public SearchModeFoSearch(SearchMode searchMode)
         {
-            sm = uu;
+            SearchMode = searchMode;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public SearchMode sm { get; private set; }
+        public SearchMode SearchMode { get; private set; }
 
         public bool Use { get; set; }
 
-        public string name { get { return sm.FileNameAddition; } }
+        public string Name { get { return SearchMode.FileNameAddition; } }
 
         #endregion Public Properties
     }
