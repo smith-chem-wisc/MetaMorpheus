@@ -568,3 +568,66 @@ PP   Anywhere.
 SL   Labile
 MM   162.052824
 //
+ID   Farnesylation
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+SL   Both
+MM   204.187801
+//
+ID   Myristoylation
+FT   MOD_RES
+TG   Glycine
+PP   Protein N-terminal.
+SL   Both
+MM   210.198366
+//
+ID   Myristoylation
+FT   MOD_RES
+TG   Lysine
+PP   Anywhere.
+SL   Both
+MM   210.198366
+//
+ID   Myristoylation
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+SL   Both
+MM   210.198366
+//
+ID   Palmitoylation
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+SL   Both
+MM   238.229666
+//
+ID   Palmitoylation
+FT   MOD_RES
+TG   Lysine
+PP   Anywhere.
+SL   Both
+MM   238.229666
+//
+ID   Palmitoylation
+FT   MOD_RES
+TG   Serine
+PP   Anywhere.
+SL   Both
+MM   238.229666
+//
+ID   Palmitoylation
+FT   MOD_RES
+TG   Threonine
+PP   Anywhere.
+SL   Both
+MM   238.229666
+//
+ID   Palmitoylation
+FT   MOD_RES
+TG   Any
+PP   Protein N-terminal.
+SL   Both
+MM   238.229666
+//
