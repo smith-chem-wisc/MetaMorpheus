@@ -53,9 +53,9 @@ namespace InternalLogicTaskLayer
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
-        public List<ModListForSearchTask> ListOfModListsForSearch { get; set; }
+        public List<ModListForSearchTask> ListOfModListsForSearch { get; }
         public bool SearchDecoy { get; set; }
-        public List<SearchModeFoSearch> SearchModes { get; set; }
+        public List<SearchModeFoSearch> SearchModes { get; }
 
         #endregion Public Properties
 
