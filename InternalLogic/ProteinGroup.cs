@@ -42,14 +42,18 @@ namespace InternalLogicEngineLayer
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                 peptideList.Add(peptide);
+                proteinGroupScore += psm.thisPSM.Score;
 
-                // calculate the protein group score
+                // construct list of unique peptides
                 if (allUniquePeptides.Contains(peptide))
                 {
                     uniquePeptideList.Add(peptide);
-                    proteinGroupScore += psm.thisPSM.Score;
+                    //proteinGroupScore += psm.thisPSM.Score;
                 }
             }
+
+            if (uniquePeptideList.Count == 0)
+                proteinGroupScore = 0;
         }
 
         #endregion Public Constructors
@@ -92,7 +96,7 @@ namespace InternalLogicEngineLayer
 
             // list of proteins in the group
             foreach (Protein protein in proteins)
-                sb.Append("" + protein.name + " ;; ");
+                sb.Append("" + protein.FullDescription + " ;; ");
             sb.Append("\t");
 
             // number of proteins in group
