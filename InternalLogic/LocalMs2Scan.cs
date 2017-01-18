@@ -6,7 +6,6 @@ namespace InternalLogicEngineLayer
 {
     public class LocalMS2Scan
     {
-
         #region Public Constructors
 
         public LocalMS2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
