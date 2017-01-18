@@ -445,7 +445,7 @@ namespace InternalLogicCalibration
             bool addedAscan = true;
 
             int highestKnownChargeForThisPeptide = peptideCharge;
-            while (theIndex >= 1 && theIndex <= myMsDataFile.NumSpectra && addedAscan == true)
+            while (theIndex >= 1 && theIndex <= myMsDataFile.NumSpectra && addedAscan)
             {
                 int countForThisScan = 0;
                 if (myMsDataFile.GetOneBasedScan(theIndex).MsnOrder > 1)
@@ -693,7 +693,7 @@ namespace InternalLogicCalibration
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
-                        if (trainingPointsToAverage.Count == 0 && startingToAdd == true)
+                        if (trainingPointsToAverage.Count == 0 && startingToAdd)
                             break;
                         if (trainingPointsToAverage.Count < Math.Min(minMS2isotopicPeaksNeededForConfirmedIdentification, intensities.Count()))
                         {
