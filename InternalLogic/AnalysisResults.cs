@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -33,8 +33,8 @@ namespace InternalLogicEngineLayer
                 var sb = new StringBuilder();
                 sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
 
-                if (ProteinGroups != null)
-                    sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", ProteinGroups.Select(c => c.QValue <= 0.01).Count()));
+            if (ProteinGroups != null)
+                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", ProteinGroups.Count(c => c.QValue <= 0.01)));
 
                 return sb.ToString();
             }

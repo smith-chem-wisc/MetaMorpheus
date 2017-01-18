@@ -74,7 +74,6 @@ namespace InternalLogicEngineLayer
             //         peptide, not 10 for example)
             // TODO**: if a peptide is shared between target and decoy proteins, remove its association with the target proteins, leave
             //         only the decoy proteins
-
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
                 bool psmContainsDecoyProtein = false;
@@ -156,6 +155,69 @@ namespace InternalLogicEngineLayer
                     }
                 }
             }
+
+            // makes the same dictionary, but if a protein has multiple peptides with the same base sequence, only use one of them
+            Dictionary<Protein, HashSet<CompactPeptide>> newDictNoDuplicatePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
+            foreach (var kvp in newDict)
+            {
+                HashSet<CompactPeptide> peptideListNoDuplicates = new HashSet<CompactPeptide>();
+                HashSet<string> peptideListBaseSequences = new HashSet<string>();
+
+                foreach(var peptide in kvp.Value)
+                {
+                    string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+
+                    if(!peptideListBaseSequences.Contains(peptideBaseSequence))
+                    {
+                        peptideListNoDuplicates.Add(peptide);
+                    }
+                }
+
+                newDictNoDuplicatePeptides.Add(kvp.Key, peptideListNoDuplicates);
+            }
+
+
+            /*
+                    // have found all PSMs but some of them are duplicate peptides - pick only the highest-scoring psm per peptide
+                    List<NewPsmWithFDR> newProteinGroupPsmList = new List<NewPsmWithFDR>();
+                    Dictionary<string, List<NewPsmWithFDR>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFDR>>();
+                    foreach(var psm in proteinGroupPsmList)
+                    {
+                        CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                        string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+                        List<NewPsmWithFDR> tempPsmList = new List<NewPsmWithFDR>();
+
+                        if(peptideSequenceToPsmMatching.ContainsKey(peptideBaseSequence))
+                        {
+                            peptideSequenceToPsmMatching.TryGetValue(peptideBaseSequence, out tempPsmList);
+                            tempPsmList.Add(psm);
+                        }
+                        else
+                        {
+                            tempPsmList.Add(psm);
+                            peptideSequenceToPsmMatching.Add(peptideBaseSequence, tempPsmList);
+                        }
+                    }
+
+                    // pick the best-scoring psm per peptide
+                    foreach(var kvp1 in peptideSequenceToPsmMatching)
+                    {
+                        double bestScoreSoFar = 0;
+                        NewPsmWithFDR bestPsm = null;
+
+                        foreach(var psm in kvp1.Value)
+                        {
+                            if(psm.thisPSM.Score > bestScoreSoFar)
+                            {
+                                bestPsm = psm;
+                            }
+                        }
+
+                        newProteinGroupPsmList.Add(bestPsm);
+                    }
+             */
+
+
 
             // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
             Dictionary<Protein, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -405,9 +467,27 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            // protein groups are now properly constructed and scored
+            // protein groups are now properly constructed and scored; order by score
+            proteinGroups = proteinGroups.Where(b => b != null).OrderByDescending(b => b.proteinGroupScore).ToList();
 
             // do fdr
+            int cumulativeTarget = 0;
+            int cumulativeDecoy = 0;
+            foreach (var proteinGroup in proteinGroups)
+            {
+                if (proteinGroup.isDecoy)
+                {
+                    cumulativeDecoy++;
+                }
+                else
+                {
+                    cumulativeTarget++;
+                }
+
+                proteinGroup.cumulativeTarget = cumulativeTarget;
+                proteinGroup.cumulativeDecoy = cumulativeDecoy;
+                proteinGroup.QValue = ((double) cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
+            }
 
             return proteinGroups;
         }

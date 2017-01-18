@@ -15,9 +15,6 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Fields
 
-        //private readonly double summedIntensity;
-        //private readonly double summedUniquePeptideIntensity;
-
         #region Internal Constructors
 
         internal ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFdr> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
@@ -27,6 +24,7 @@ namespace InternalLogicEngineLayer
             PeptideList = new List<CompactPeptide>();
             UniquePeptideList = new List<CompactPeptide>();
             proteinGroupScore = 0;
+            QValue = 0;
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
@@ -48,15 +46,6 @@ namespace InternalLogicEngineLayer
                     proteinGroupScore += psm.thisPSM.Score;
                 }
             }
-
-            // calculate summed psm intensity
-            //summedIntensity = 0;
-
-            // calculate intensity of only unique peptides
-            //summedUniquePeptideIntensity = 0;
-
-            // q value
-            QValue = 0;
         }
 
         #endregion Internal Constructors
@@ -87,6 +76,8 @@ namespace InternalLogicEngineLayer
         public List<CompactPeptide> PeptideList { get; private set; }
         public List<CompactPeptide> UniquePeptideList { get; private set; }
         public double QValue { get; set; }
+        public int cumulativeTarget { get; set; }
+        public int cumulativeDecoy { get; set; }
 
         #endregion Public Properties
 
@@ -138,6 +129,7 @@ namespace InternalLogicEngineLayer
             sb.Append(isDecoy);
             sb.Append("\t");
 
+            return sb.ToString();
             /*
             // proteins in protein group
             foreach (Protein protein in Proteins)
@@ -174,16 +166,14 @@ namespace InternalLogicEngineLayer
             sb.Append(summedUniquePeptideIntensity);
             sb.Append("\t");
 
-            // summed metamorpheus score
-            sb.Append(proteinGroupScore);
+            // cumulative decoy
+            sb.Append(cumulativeDecoy);
             sb.Append("\t");
 
-            // isdecoy
-            sb.Append(isDecoy);
+            // q value
+            sb.Append(QValue * 100);
             sb.Append("\t");
             */
-
-            return sb.ToString();
         }
 
         #endregion Public Methods
