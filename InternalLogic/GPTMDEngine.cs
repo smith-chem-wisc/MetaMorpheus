@@ -5,12 +5,12 @@ using System.Linq;
 
 namespace InternalLogicEngineLayer
 {
-    public class GPTMDEngine : MyEngine
+    public class GptmdEngine : MyEngine
     {
 
         #region Private Fields
 
-        private readonly List<NewPsmWithFDR> allResultingIdentifications;
+        private readonly List<NewPsmWithFdr> allResultingIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<MorpheusModification> gptmdModifications;
         private readonly bool isotopeErrors;
@@ -20,7 +20,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public GPTMDEngine(List<NewPsmWithFDR> allResultingIdentifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
+        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.isotopeErrors = isotopeErrors;
@@ -38,7 +38,7 @@ namespace InternalLogicEngineLayer
             var Mods = new Dictionary<string, HashSet<Tuple<int, string>>>();
 
             int modsAdded = 0;
-            foreach (var ye in allResultingIdentifications.Where(b => b.QValue <= 0.01 && !b.isDecoy))
+            foreach (var ye in allResultingIdentifications.Where(b => b.qValue <= 0.01 && !b.IsDecoy))
             {
                 var theDict = ye.thisPSM.peptidesWithSetModifications;
                 // Only add to non-ambiguous peptides
@@ -46,11 +46,11 @@ namespace InternalLogicEngineLayer
                 {
                     var peptide = theDict.First();
                     var baseSequence = ye.thisPSM.BaseSequence;
-                    double massDiff = ye.thisPSM.scanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
+                    double massDiff = ye.thisPSM.ScanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
                     foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tol))
                     {
-                        int proteinLength = peptide.protein.Length;
-                        var proteinAcession = peptide.protein.Accession;
+                        int proteinLength = peptide.Protein.Length;
+                        var proteinAcession = peptide.Protein.Accession;
                         for (int i = 0; i < baseSequence.Length; i++)
                         {
                             int indexInProtein = peptide.OneBasedStartResidueInProtein + i;
@@ -59,7 +59,7 @@ namespace InternalLogicEngineLayer
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
                                     Mods[proteinAcession] = new HashSet<Tuple<int, string>>();
-                                var theTuple = new Tuple<int, string>(indexInProtein, mod.NameInXML);
+                                var theTuple = new Tuple<int, string>(indexInProtein, mod.NameInXml);
                                 if (!Mods[proteinAcession].Contains(theTuple))
                                 {
                                     Mods[proteinAcession].Add(theTuple);
@@ -70,7 +70,7 @@ namespace InternalLogicEngineLayer
                     }
                 }
             }
-            return new GPTMDResults(this, Mods, modsAdded);
+            return new GptmdResults(this, Mods, modsAdded);
         }
 
         #endregion Protected Methods
@@ -83,14 +83,14 @@ namespace InternalLogicEngineLayer
                 return false;
             if (!attemptToLocalize.PrevAminoAcid.Equals('\0') && !attemptToLocalize.PrevAminoAcid.Equals(prevAA))
                 return false;
-            if (attemptToLocalize.Type == ModificationType.ProteinNTerminus &&
+            if (attemptToLocalize.ThisModificationType == ModificationType.ProteinNTerminus &&
                 ((proteinIndex > 2) || (proteinIndex == 2 && prevAA != 'M')))
                 return false;
-            if (attemptToLocalize.Type == ModificationType.PeptideNTerminus && peptideIndex > 1)
+            if (attemptToLocalize.ThisModificationType == ModificationType.PeptideNTerminus && peptideIndex > 1)
                 return false;
-            if (attemptToLocalize.Type == ModificationType.PeptideCTerminus && peptideIndex < peptideLength)
+            if (attemptToLocalize.ThisModificationType == ModificationType.PeptideCTerminus && peptideIndex < peptideLength)
                 return false;
-            if (attemptToLocalize.Type == ModificationType.ProteinCTerminus && proteinIndex < proteinLength)
+            if (attemptToLocalize.ThisModificationType == ModificationType.ProteinCTerminus && proteinIndex < proteinLength)
                 return false;
             return true;
         }

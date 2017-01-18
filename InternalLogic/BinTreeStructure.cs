@@ -15,15 +15,15 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public List<Bin> finalBins { get; private set; }
+        public List<Bin> FinalBins { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public void GenerateBins(List<NewPsmWithFDR> targetAndDecoyMatches, double dc)
+        internal void GenerateBins(List<NewPsmWithFdr> targetAndDecoyMatches, double dc)
         {
-            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.scanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
+            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.ScanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
 
@@ -90,23 +90,23 @@ namespace InternalLogicEngineLayer
                     if (Math.Abs(a - b) <= dc)
                         forFinalBins[b].Add(a);
 
-            finalBins = forFinalBins.Select(b => new Bin(b.Value.Average())).ToList();
+            FinalBins = forFinalBins.Select(b => new Bin(b.Value.Average())).ToList();
 
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
-                foreach (Bin bin in finalBins)
-                    if (Math.Abs(targetAndDecoyMatches[i].thisPSM.scanPrecursorMass - targetAndDecoyMatches[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
+                foreach (Bin bin in FinalBins)
+                    if (Math.Abs(targetAndDecoyMatches[i].thisPSM.ScanPrecursorMass - targetAndDecoyMatches[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
                         bin.Add(targetAndDecoyMatches[i]);
             }
 
-            finalBins = finalBins.Where(b => b.Count > 1).ToList();
+            FinalBins = FinalBins.Where(b => b.Count > 1).ToList();
         }
 
         #endregion Public Methods
 
         #region Private Methods
 
-        private double getSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
+        private static double getSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
         {
             int currentDown = i - 1;
             int currentUp = i + 1;

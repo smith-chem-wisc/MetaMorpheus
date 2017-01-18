@@ -9,23 +9,26 @@ namespace InternalLogicEngineLayer
 
         public ModernSearchResults(List<ModernSpectrumMatch>[] newPsms, ModernSearchEngine s) : base(s)
         {
-            this.newPsms = newPsms;
+            this.NewPsms = newPsms;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<ModernSpectrumMatch>[] newPsms { get; private set; }
+        public List<ModernSpectrumMatch>[] NewPsms { get; private set; }
 
         #endregion Public Properties
 
         #region Protected Methods
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                return sb.ToString();
+            }
         }
 
         #endregion Protected Methods

@@ -16,7 +16,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestAnalysisEngineTests()
+        public static void TestAnalysisEngineTests()
         {
             List<MorpheusModification> localizeableModifications = null;
             List<MorpheusModification> variableModifications = new List<MorpheusModification>();
@@ -44,7 +44,7 @@ namespace Test
 
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             Action<List<ProteinGroup>, string> action3 = null;
-            Action<List<NewPsmWithFDR>, string> action2 = null;
+            Action<List<NewPsmWithFdr>, string> action2 = null;
             bool doParsimony = false;
             AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096);
 

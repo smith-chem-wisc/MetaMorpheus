@@ -20,7 +20,7 @@ namespace InternalLogicEngineLayer
 
         private readonly float[] keys;
 
-        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile;
 
         private readonly List<CompactPeptide> peptideIndex;
 
@@ -32,9 +32,9 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
         {
-            this.myMsDataFile = myMsDataFile;
+            this.myMSDataFile = myMSDataFile;
             this.spectraFileIndex = spectraFileIndex;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
@@ -49,13 +49,13 @@ namespace InternalLogicEngineLayer
 
         protected override MyResults RunSpecific()
         {
-            var totalSpectra = myMsDataFile.NumSpectra;
+            var totalSpectra = myMSDataFile.NumSpectra;
 
             List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchModes.Count];
             for (int i = 0; i < searchModes.Count; i++)
                 newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
 
-            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+            var listOfSortedms2Scans = myMSDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -70,7 +70,7 @@ namespace InternalLogicEngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var thisScan = listOfSortedms2Scans[i];
-                    var thisScanprecursorMass = thisScan.precursorMass;
+                    var thisScanprecursorMass = thisScan.PrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
                     CalculatePeptideScores(thisScan.theScan, fullPeptideScores);
 
@@ -121,7 +121,7 @@ namespace InternalLogicEngineLayer
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            var cool = new ModernSpectrumMatch(thisScan.monoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
+                            var cool = new ModernSpectrumMatch(thisScan.MonoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
                             newPsms[j][thisScan.OneBasedScanNumber - 1] = cool;
                         }
                     }

@@ -47,9 +47,12 @@ namespace InternalLogicTaskLayer
 
         #region Public Methods
 
-        public List<MorpheusModification> getMods()
+        public List<MorpheusModification> Mods
         {
-            return mods;
+            get
+            {
+                return mods;
+            }
         }
 
         #endregion Public Methods

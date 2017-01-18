@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace InternalLogicCalibration
 {
-    public class QuadraticCalibrationFunctionMathNet : CalibrationFunction
+    internal class QuadraticCalibrationFunctionMathNet : CalibrationFunction
     {
         #region Private Fields
 

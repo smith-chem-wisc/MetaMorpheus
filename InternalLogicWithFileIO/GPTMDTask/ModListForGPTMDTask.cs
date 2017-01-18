@@ -25,7 +25,7 @@ namespace InternalLogicTaskLayer
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
         public bool Localize { get; set; }
-        public bool GPTMD { get; set; }
+        public bool Gptmd { get; set; }
 
         public string FileName
         {
@@ -41,9 +41,12 @@ namespace InternalLogicTaskLayer
 
         #region Public Methods
 
-        public IEnumerable<MorpheusModification> getMods()
+        public IEnumerable<MorpheusModification> Mods
         {
-            return uu.getMods();
+            get
+            {
+                return uu.Mods;
+            }
         }
 
         #endregion Public Methods

@@ -8,15 +8,15 @@ namespace OldInternalLogic
 
         #region Public Constructors
 
-        public Protease(string name, IEnumerable<string> sequencesInducingCleavage, IEnumerable<string> sequencesPreventingCleavage, OldLogicTerminus cleavageTerminus, CleavageSpecificity cleavageSpecificity, string psiMsAccessionNumber, string psiMsName, string siteRegexp)
+        public Protease(string name, IEnumerable<string> sequencesInducingCleavage, IEnumerable<string> sequencesPreventingCleavage, OldLogicTerminus cleavageTerminus, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber, string psiMSName, string siteRegexp)
         {
             Name = name;
             SequencesInducingCleavage = sequencesInducingCleavage;
             SequencesPreventingCleavage = sequencesPreventingCleavage;
             CleavageTerminus = cleavageTerminus;
             CleavageSpecificity = cleavageSpecificity;
-            PsiMsAccessionNumber = psiMsAccessionNumber;
-            PsiMsName = psiMsName;
+            PsiMSAccessionNumber = psiMSAccessionNumber;
+            PsiMSName = psiMSName;
             SiteRegexp = siteRegexp;
         }
 
@@ -30,8 +30,8 @@ namespace OldInternalLogic
         public IEnumerable<string> SequencesInducingCleavage { get; private set; }
         public IEnumerable<string> SequencesPreventingCleavage { get; private set; }
         public CleavageSpecificity CleavageSpecificity { get; private set; }
-        public string PsiMsAccessionNumber { get; private set; }
-        public string PsiMsName { get; private set; }
+        public string PsiMSAccessionNumber { get; private set; }
+        public string PsiMSName { get; private set; }
         public string SiteRegexp { get; private set; }
 
         #endregion Public Properties
@@ -43,7 +43,7 @@ namespace OldInternalLogic
             return Name;
         }
 
-        public List<int> GetDigestionSiteIndices(string sequence)
+        internal List<int> GetDigestionSiteIndices(string sequence)
         {
             var indices = new List<int>();
 
@@ -51,14 +51,14 @@ namespace OldInternalLogic
             {
                 foreach (string c in SequencesInducingCleavage)
                 {
-                    if ((CleavageTerminus != OldLogicTerminus.N && i - c.Length + 1 >= 0 && sequence.Substring(i - c.Length + 1, c.Length).Equals(c, StringComparison.InvariantCultureIgnoreCase))
-                        || (CleavageTerminus == OldLogicTerminus.N && i + 1 + c.Length <= sequence.Length && sequence.Substring(i + 1, c.Length).Equals(c, StringComparison.InvariantCultureIgnoreCase)))
+                    if ((CleavageTerminus != OldLogicTerminus.N && i - c.Length + 1 >= 0 && sequence.Substring(i - c.Length + 1, c.Length).Equals(c, StringComparison.OrdinalIgnoreCase))
+                        || (CleavageTerminus == OldLogicTerminus.N && i + 1 + c.Length <= sequence.Length && sequence.Substring(i + 1, c.Length).Equals(c, StringComparison.OrdinalIgnoreCase)))
                     {
                         bool cleave = true;
                         foreach (string nc in SequencesPreventingCleavage)
                         {
-                            if ((CleavageTerminus != OldLogicTerminus.N && i + 1 + nc.Length <= sequence.Length && sequence.Substring(i + 1, nc.Length).Equals(nc, StringComparison.InvariantCultureIgnoreCase))
-                                || (CleavageTerminus == OldLogicTerminus.N && i - nc.Length + 1 >= 0 && sequence.Substring(i - nc.Length + 1, nc.Length).Equals(nc, StringComparison.InvariantCultureIgnoreCase)))
+                            if ((CleavageTerminus != OldLogicTerminus.N && i + 1 + nc.Length <= sequence.Length && sequence.Substring(i + 1, nc.Length).Equals(nc, StringComparison.OrdinalIgnoreCase))
+                                || (CleavageTerminus == OldLogicTerminus.N && i - nc.Length + 1 >= 0 && sequence.Substring(i - nc.Length + 1, nc.Length).Equals(nc, StringComparison.OrdinalIgnoreCase)))
                             {
                                 cleave = false;
                                 break;

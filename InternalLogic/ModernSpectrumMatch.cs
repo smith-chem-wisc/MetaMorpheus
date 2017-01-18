@@ -10,29 +10,27 @@ namespace InternalLogicEngineLayer
 
         public ModernSpectrumMatch(double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
         {
-            this.scanPrecursorMZ = scanPrecursorMZ;
+            this.ScanPrecursorMZ = scanPrecursorMZ;
             this.scanNumber = scanNumber;
             this.scanPrecursorCharge = scanPrecursorCharge;
-            this.scanRT = scanRT;
+            this.ScanRT = scanRT;
             scanPrecursorMass = scanPrecursorMZ.ToMass(scanPrecursorCharge);
-            scanPrecursorIntensity = precursorIntensity;
-            scanExperimentalPeaks = scanExperimentalPeaksCount;
+            ScanPrecursorIntensity = precursorIntensity;
+            ScanExperimentalPeaks = scanExperimentalPeaksCount;
             TotalIonCurrent = totalIonCurrent;
             Score = score;
-            this.spectraFileIndex = spectraFileIndex;
+            this.SpectraFileIndex = spectraFileIndex;
             compactPeptide = theBestPeptide;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
-
-        public double ScoreFromSearch { get; private set; }
-        public int spectraFileIndex { get; private set; }
-        public double scanRT { get; private set; }
-        public double scanPrecursorMZ { get; private set; }
-        public double scanPrecursorIntensity { get; private set; }
-        public int scanExperimentalPeaks { get; private set; }
+        public int SpectraFileIndex { get; private set; }
+        public double ScanRT { get; private set; }
+        public double ScanPrecursorMZ { get; private set; }
+        public double ScanPrecursorIntensity { get; private set; }
+        public int ScanExperimentalPeaks { get; private set; }
         public double TotalIonCurrent { get; private set; }
 
         #endregion Public Properties

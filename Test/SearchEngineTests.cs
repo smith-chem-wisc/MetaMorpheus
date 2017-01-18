@@ -14,7 +14,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestClassicSearchEngine()
+        public static void TestClassicSearchEngine()
         {
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<MorpheusModification>();
@@ -25,7 +25,7 @@ namespace Test
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
 
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
@@ -33,18 +33,18 @@ namespace Test
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, searchResults.outerPsms.Length);
+            Assert.AreEqual(1, searchResults.OuterPsms.Length);
 
             // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.outerPsms[0].Length);
+            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.outerPsms[0][1].Score > 1);
-            Assert.AreEqual(2, searchResults.outerPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.outerPsms[0][1].ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][1].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
+            Assert.AreEqual("QQQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
         }
 
         [Test]
-        public void TestClassicSearchEngineWithWeirdPeptide()
+        public static void TestClassicSearchEngineWithWeirdPeptide()
         {
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<MorpheusModification>();
@@ -55,7 +55,7 @@ namespace Test
             var searchModes = new List<SearchMode> { new OpenSearchMode("open") };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMs2Scan(b)).OrderBy(b => b.precursorMass).ToArray();
+            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
 
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
@@ -63,18 +63,18 @@ namespace Test
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, searchResults.outerPsms.Length);
+            Assert.AreEqual(1, searchResults.OuterPsms.Length);
 
             // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.outerPsms[0].Length);
+            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.outerPsms[0][1].Score > 1);
-            Assert.AreEqual(2, searchResults.outerPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.outerPsms[0][1].ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][1].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
+            Assert.AreEqual("QXQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
         }
 
         [Test]
-        public void TestModernSearchEngine()
+        public static void TestModernSearchEngine()
         {
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<MorpheusModification>();
@@ -89,8 +89,8 @@ namespace Test
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096);
             var indexResults = (IndexResults)indexEngine.Run();
-            var peptideIndex = indexResults.peptideIndex;
-            var fragmentIndexDict = indexResults.fragmentIndexDict;
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
@@ -98,18 +98,18 @@ namespace Test
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, searchResults.newPsms.Length);
+            Assert.AreEqual(1, searchResults.NewPsms.Length);
 
             // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.newPsms[0].Count);
+            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
 
-            Assert.IsTrue(searchResults.newPsms[0][1].Score > 1);
-            Assert.AreEqual(2, searchResults.newPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.newPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
+            Assert.IsTrue(searchResults.NewPsms[0][1].Score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
+            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
         }
 
         [Test]
-        public void TestModernSearchEngineWithWeirdPeptide()
+        public static void TestModernSearchEngineWithWeirdPeptide()
         {
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<MorpheusModification>();
@@ -124,8 +124,8 @@ namespace Test
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096);
             var indexResults = (IndexResults)indexEngine.Run();
-            var peptideIndex = indexResults.peptideIndex;
-            var fragmentIndexDict = indexResults.fragmentIndexDict;
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
@@ -133,14 +133,14 @@ namespace Test
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, searchResults.newPsms.Length);
+            Assert.AreEqual(1, searchResults.NewPsms.Length);
 
             // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.newPsms[0].Count);
+            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
 
-            Assert.IsTrue(searchResults.newPsms[0][1].Score > 1);
-            Assert.AreEqual(2, searchResults.newPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.newPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
+            Assert.IsTrue(searchResults.NewPsms[0][1].Score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
+            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
         }
 
         #endregion Public Methods

@@ -12,10 +12,10 @@ using System.Xml;
 
 namespace InternalLogicTaskLayer
 {
-    public enum MyTaskEnum
+    public enum MyTask
     {
         Search,
-        GPTMD,
+        Gptmd,
         Calibrate
     }
 
@@ -39,26 +39,26 @@ namespace InternalLogicTaskLayer
 
         #region Public Events
 
-        public static event EventHandler<SingleTaskEventArgs> finishedSingleTaskHandler;
+        public static event EventHandler<SingleTaskEventArgs> FinishedSingleTaskHandler;
 
-        public static event EventHandler<SingleFileEventArgs> finishedWritingFileHandler;
+        public static event EventHandler<SingleFileEventArgs> FinishedWritingFileHandler;
 
-        public static event EventHandler<SingleTaskEventArgs> startingSingleTaskHander;
+        public static event EventHandler<SingleTaskEventArgs> StartingSingleTaskHander;
 
         #endregion Public Events
 
         #region Public Properties
 
-        public MyTaskEnum taskType { get; internal set; }
-        public bool bIons { get; set; }
-        public InitiatorMethionineBehavior initiatorMethionineBehavior { get; set; }
+        public MyTask TaskType { get; internal set; }
+        public bool BIons { get; set; }
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
         public bool IsMySelected { get; set; }
-        public int maxMissedCleavages { get; set; }
-        public int maxModificationIsoforms { get; set; }
-        public string output_folder { get; set; }
-        public Protease protease { get; set; }
-        public bool yIons { get; set; }
-        public int maxNumPeaksPerScan { get; set; }
+        public int MaxMissedCleavages { get; set; }
+        public int MaxModificationIsoforms { get; set; }
+        public string OutputFolder { get; set; }
+        public Protease Protease { get; set; }
+        public bool YIons { get; set; }
+        public int MaxNumPeaksPerScan { get; set; }
 
         #endregion Public Properties
 
@@ -67,7 +67,7 @@ namespace InternalLogicTaskLayer
         public new MyResults Run()
         {
             startingSingleTask();
-            var paramsFileName = Path.Combine(output_folder, "params.txt");
+            var paramsFileName = Path.Combine(OutputFolder, "params.txt");
             using (StreamWriter file = new StreamWriter(paramsFileName))
             {
                 if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -78,7 +78,7 @@ namespace InternalLogicTaskLayer
             }
             SucessfullyFinishedWritingFile(paramsFileName);
             var heh = base.Run();
-            var resultsFileName = Path.Combine(output_folder, "results.txt");
+            var resultsFileName = Path.Combine(OutputFolder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
                 if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
@@ -95,19 +95,19 @@ namespace InternalLogicTaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(GetSpecificTaskInfo());
-            sb.AppendLine(taskType.ToString());
+            sb.AppendLine(SpecificTaskInfo);
+            sb.AppendLine(TaskType.ToString());
             sb.AppendLine("Spectra files:");
             sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
             sb.AppendLine("XML files:");
             sb.AppendLine(string.Join(Environment.NewLine, xmlDbFilenameList.Select(b => '\t' + b)));
-            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
-            sb.AppendLine("maxMissedCleavages: " + maxMissedCleavages);
-            sb.AppendLine("maxModificationIsoforms: " + maxModificationIsoforms);
-            sb.AppendLine("output_folder: " + output_folder);
-            sb.AppendLine("protease: " + protease);
-            sb.AppendLine("bIons: " + bIons);
-            sb.Append("yIons: " + yIons);
+            sb.AppendLine("initiatorMethionineBehavior: " + InitiatorMethionineBehavior);
+            sb.AppendLine("maxMissedCleavages: " + MaxMissedCleavages);
+            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
+            sb.AppendLine("output_folder: " + OutputFolder);
+            sb.AppendLine("protease: " + Protease);
+            sb.AppendLine("bIons: " + BIons);
+            sb.Append("yIons: " + YIons);
             return sb.ToString();
         }
 
@@ -115,23 +115,23 @@ namespace InternalLogicTaskLayer
 
         #region Protected Methods
 
-        protected static void MatchXMLmodsToKnownMods(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        protected internal static void MatchXMLmodsToKnownMods(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
             modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
             var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
             modsInXMLtoTrim = new HashSet<string>(modsInXML);
             foreach (var knownMod in modsKnown)
-                if (modsInXML.Contains(knownMod.NameInXML))
+                if (modsInXML.Contains(knownMod.NameInXml))
                 {
-                    if (modsToLocalize.ContainsKey(knownMod.NameInXML))
-                        modsToLocalize[knownMod.NameInXML].Add(knownMod);
+                    if (modsToLocalize.ContainsKey(knownMod.NameInXml))
+                        modsToLocalize[knownMod.NameInXml].Add(knownMod);
                     else
-                        modsToLocalize.Add(knownMod.NameInXML, new List<MorpheusModification> { knownMod });
-                    modsInXMLtoTrim.Remove(knownMod.NameInXML);
+                        modsToLocalize.Add(knownMod.NameInXml, new List<MorpheusModification> { knownMod });
+                    modsInXMLtoTrim.Remove(knownMod.NameInXml);
                 }
         }
 
-        protected IEnumerable<Protein> getProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
+        protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
         {
             using (var stream = new FileStream(FileName, FileMode.Open))
             {
@@ -360,27 +360,27 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        protected void WritePSMsToTSV(List<NewPsmWithFDR> items, string output_folder, string fileName)
+        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
         {
-            var writtenFile = Path.Combine(output_folder, fileName + ".psmtsv");
+            var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(NewPsmWithFDR.GetTabSeparatedHeader());
+                output.WriteLine(NewPsmWithFdr.TabSeparatedHeader);
                 for (int i = 0; i < items.Count; i++)
                     output.WriteLine(items[i]);
             }
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        protected void WriteProteinGroupsToTSV(List<ProteinGroup> items, string output_folder, string fileName)
+        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName)
         {
             if (items != null)
             {
-                var writtenFile = Path.Combine(output_folder, fileName + ".prottsv");
+                var writtenFile = Path.Combine(outputFolder, fileName + ".prottsv");
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader());
+                    output.WriteLine(ProteinGroup.TabSeparatedHeader);
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
@@ -395,7 +395,7 @@ namespace InternalLogicTaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tUniprot");
-                foreach (Bin bin in myTreeStructure.finalBins.OrderByDescending(b => b.Count))
+                foreach (Bin bin in myTreeStructure.FinalBins.OrderByDescending(b => b.Count))
                 {
                     output.WriteLine(bin.MassShift.ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + bin.Count.ToString(CultureInfo.InvariantCulture)
@@ -407,7 +407,7 @@ namespace InternalLogicTaskLayer
                         + "\t" + (Normal.CDF(0, 1, bin.ComputeZ(0.01))).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (Normal.CDF(0, 1, bin.ComputeZ(0.255))).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.CountTarget == 0 ? double.NaN : (double)bin.LocalizeableTarget / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + bin.mine
+                        + "\t" + bin.Mine
                         + "\t" + bin.UnimodId
                         + "\t" + bin.UnimodFormulas
                         + "\t" + bin.AA
@@ -423,11 +423,11 @@ namespace InternalLogicTaskLayer
             SucessfullyFinishedWritingFile(writtenFile);
         }
 
-        protected abstract string GetSpecificTaskInfo();
+        protected abstract string SpecificTaskInfo { get; }
 
         protected void SucessfullyFinishedWritingFile(string path)
         {
-            finishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
+            FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
         }
 
         #endregion Protected Methods
@@ -436,12 +436,12 @@ namespace InternalLogicTaskLayer
 
         private void finishedSingleTask()
         {
-            finishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
+            FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
         }
 
         private void startingSingleTask()
         {
-            startingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
+            StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
         }
 
         #endregion Private Methods

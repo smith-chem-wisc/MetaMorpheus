@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace OldInternalLogic
 {
-    public class UniqueModificationsList : List<MorpheusModification>
+    public class UniqueModificationsCollection : List<MorpheusModification>
     {
-        public new void Add(MorpheusModification mod)
+        internal new void Add(MorpheusModification mod)
         {
             foreach (MorpheusModification modHere in this)
             {

@@ -13,7 +13,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestSearchModeTest()
+        public static void TestSearchModeTest()
         {
             SearchMode sm = new TestSearchMode("My custom");
             Assert.IsTrue(sm.Accepts(2, 2));
@@ -25,7 +25,7 @@ namespace Test
         }
 
         [Test]
-        public void TestDotSearchMode()
+        public static void TestDotSearchMode()
         {
             var dsm1 = new DotSearchMode("test1", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.Absolute, 0.1));
 
@@ -74,7 +74,7 @@ namespace Test
         }
 
         [Test]
-        public void TestIntervalsSearchMode()
+        public static void TestIntervalsSearchMode()
         {
         }
 

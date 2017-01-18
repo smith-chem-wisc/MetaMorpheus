@@ -58,23 +58,23 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
-            missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.protease;
-            maxModificationIsoformsTextBox.Text = task.maxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.initiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.productMassToleranceInDaltons.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceTextBox.Text = task.precursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = (int)task.precursorMassTolerance.Unit;
+            missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.Protease;
+            maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
+            productMassToleranceTextBox.Text = task.ProductMassToleranceInDaltons.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = (int)task.PrecursorMassTolerance.Unit;
 
-            bCheckBox.IsChecked = task.bIons;
-            yCheckBox.IsChecked = task.yIons;
+            bCheckBox.IsChecked = task.BIons;
+            yCheckBox.IsChecked = task.YIons;
             for (int i = 0; i < ModFileListInWindow.Count; i++)
             {
-                if (task.listOfModListsForCalibration[i].Fixed)
+                if (task.ListOfModListsForCalibration[i].Fixed)
                     ModFileListInWindow[i].Fixed = true;
-                if (task.listOfModListsForCalibration[i].Variable)
+                if (task.ListOfModListsForCalibration[i].Variable)
                     ModFileListInWindow[i].Variable = true;
-                if (task.listOfModListsForCalibration[i].Localize)
+                if (task.ListOfModListsForCalibration[i].Localize)
                     ModFileListInWindow[i].Localize = true;
             }
             modificationsDataGrid.Items.Refresh();
@@ -105,16 +105,16 @@ namespace MetaMorpheusGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.maxMissedCleavages = int.Parse(missedCleavagesTextBox.Text);
-            TheTask.protease = (Protease)proteaseComboBox.SelectedItem;
-            TheTask.maxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text);
-            TheTask.initiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-            TheTask.productMassToleranceInDaltons = double.Parse(productMassToleranceTextBox.Text);
-            TheTask.bIons = bCheckBox.IsChecked.Value;
-            TheTask.yIons = yCheckBox.IsChecked.Value;
-            TheTask.listOfModListsForCalibration = ModFileListInWindow.ToList();
-            TheTask.precursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text);
-            TheTask.precursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+            TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
+            TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            TheTask.ProductMassToleranceInDaltons = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.BIons = bCheckBox.IsChecked.Value;
+            TheTask.YIons = yCheckBox.IsChecked.Value;
+            TheTask.ListOfModListsForCalibration = ModFileListInWindow.ToList();
+            TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             DialogResult = true;
         }
@@ -123,7 +123,7 @@ namespace MetaMorpheusGUI
         {
             var ye = sender as DataGridCell;
             var hm = ye.Content as TextBlock;
-            if (hm != null && !hm.Text.Equals(""))
+            if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }

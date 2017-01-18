@@ -34,17 +34,30 @@ namespace MetaMorpheusCommandLine
             if (args == null || args.Length == 0)
             {
                 Console.WriteLine("Usage:");
+                Console.WriteLine("\tmodern: runs the modern search engine");
+                Console.WriteLine("\tsearch: runs the search task");
                 return;
             }
 
-            MyEngine.finishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
-            MyEngine.outLabelStatusHandler += MyEngine_outLabelStatusHandler;
-            MyEngine.outProgressHandler += MyEngine_outProgressHandler;
-            MyEngine.startingSingleEngineHander += MyEngine_startingSingleEngineHander;
+            MyEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
+            MyEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+            MyEngine.OutProgressHandler += MyEngine_outProgressHandler;
+            MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
 
-            MyTaskEngine.finishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
-            MyTaskEngine.finishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
-            MyTaskEngine.startingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+            MyTaskEngine.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
+            MyTaskEngine.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
+            MyTaskEngine.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+
+            switch (args[0])
+            {
+                case "modern":
+                    RunModernSearchEngine();
+                    break;
+                case "search":
+                    RunSearchTask();
+                    break;
+
+            }
         }
 
         private static void RunModernSearchEngine()
@@ -74,10 +87,10 @@ namespace MetaMorpheusCommandLine
             IEnumerable<SearchMode> ism = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             var s = new SearchTask(modList, ism);
 
-            s.classicSearch = false;
+            s.ClassicSearch = false;
             s.rawDataFilenameList = new List<string> { @"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML" };
             s.xmlDbFilenameList = new List<string> { @"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml" };
-            s.output_folder = Path.GetTempPath();
+            s.OutputFolder = Path.GetTempPath();
 
             s.Run();
         }
@@ -88,7 +101,7 @@ namespace MetaMorpheusCommandLine
                 Console.WriteLine();
             inProgress = false;
             Console.WriteLine("Starting task:");
-            Console.WriteLine(e.theTask);
+            Console.WriteLine(e.TheTask);
         }
 
         private static void MyTaskEngine_finishedWritingFileHandler(object sender, SingleFileEventArgs e)
@@ -104,7 +117,7 @@ namespace MetaMorpheusCommandLine
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Finished task: " + e.theTask.GetType().Name);
+            Console.WriteLine("Finished task: " + e.TheTask.GetType().Name);
         }
 
         private static void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
@@ -121,12 +134,12 @@ namespace MetaMorpheusCommandLine
             inProgress = true;
         }
 
-        private static void MyEngine_outLabelStatusHandler(object sender, string e)
+        private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
         {
             if (inProgress)
                 Console.WriteLine();
             inProgress = false;
-            Console.WriteLine("Status: " + e);
+            Console.WriteLine("Status: " + e.s);
         }
 
         private static void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)

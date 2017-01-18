@@ -14,16 +14,19 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public ClassicSpectrumMatch[][] outerPsms { get; set; }
+        public ClassicSpectrumMatch[][] OuterPsms { get; set; }
 
         #endregion Public Properties
 
         #region Protected Methods
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                return sb.ToString();
+            }
         }
 
         #endregion Protected Methods
