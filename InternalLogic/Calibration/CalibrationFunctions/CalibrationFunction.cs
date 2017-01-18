@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace InternalLogicCalibration
 {
@@ -24,5 +23,6 @@ namespace InternalLogicCalibration
         }
 
         #endregion Internal Methods
+
     }
 }

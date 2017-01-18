@@ -10,14 +10,6 @@ namespace InternalLogicEngineLayer
     public abstract class MyEngine
     {
 
-        #region Public Fields
-
-        public static string MetaMorpheusVersion { get; private set; }
-        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; private set; }
-        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
-
-        #endregion Public Fields
-
         #region Internal Fields
 
         internal readonly int Level;
@@ -71,6 +63,14 @@ namespace InternalLogicEngineLayer
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
         #endregion Public Events
+
+        #region Public Properties
+
+        public static string MetaMorpheusVersion { get; private set; }
+        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; private set; }
+        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
+
+        #endregion Public Properties
 
         #region Public Methods
 

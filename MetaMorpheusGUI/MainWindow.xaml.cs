@@ -206,7 +206,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void addFinishedFile(string filepath)
+        private void AddFinishedFile(string filepath)
         {
             finishedFileObservableCollection.Add(new FinishedFile(filepath));
             outputFilesDataGrid.Items.Refresh();
@@ -463,7 +463,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                addFinishedFile(v.writtenFile);
+                AddFinishedFile(v.writtenFile);
             }
         }
 

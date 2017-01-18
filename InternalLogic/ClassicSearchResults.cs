@@ -4,6 +4,7 @@ namespace InternalLogicEngineLayer
 {
     public class ClassicSearchResults : MyResults
     {
+
         #region Internal Constructors
 
         internal ClassicSearchResults(ClassicSearchEngine searchParams) : base(searchParams)
@@ -18,7 +19,7 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -29,6 +30,7 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
+
     }
 }

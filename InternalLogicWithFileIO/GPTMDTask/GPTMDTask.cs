@@ -61,7 +61,7 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string SpecificTaskInfo
         {
@@ -79,6 +79,10 @@ namespace InternalLogicTaskLayer
                 return sb.ToString();
             }
         }
+
+        #endregion Protected Properties
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {

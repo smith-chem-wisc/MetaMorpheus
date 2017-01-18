@@ -118,6 +118,27 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
+        #region Internal Properties
+
+        internal static string TabSeparatedHeader
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
+                sb.Append("Protein" + '\t');
+                sb.Append("Peptide Description" + '\t');
+                sb.Append("FullSequence" + '\t');
+                sb.Append("numVariableMods" + '\t');
+                sb.Append("MissedCleavages" + '\t');
+                sb.Append("PeptideMonoisotopicMass" + '\t');
+                sb.Append("MassDiff");
+                return sb.ToString();
+            }
+        }
+
+        #endregion Internal Properties
+
         #region Public Methods
 
         public override string ToString()
@@ -147,23 +168,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Methods
 
         #region Internal Methods
-
-        internal static string TabSeparatedHeader
-        {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
-                sb.Append("Protein" + '\t');
-                sb.Append("Peptide Description" + '\t');
-                sb.Append("FullSequence" + '\t');
-                sb.Append("numVariableMods" + '\t');
-                sb.Append("MissedCleavages" + '\t');
-                sb.Append("PeptideMonoisotopicMass" + '\t');
-                sb.Append("MassDiff");
-                return sb.ToString();
-            }
-        }
 
         internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
         {

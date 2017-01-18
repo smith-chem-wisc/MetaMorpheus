@@ -53,10 +53,10 @@ namespace MetaMorpheusCommandLine
                 case "modern":
                     RunModernSearchEngine();
                     break;
+
                 case "search":
                     RunSearchTask();
                     break;
-
             }
         }
 

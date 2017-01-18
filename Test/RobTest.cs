@@ -95,7 +95,6 @@ namespace Test
                     initialDictionary.Add(peptides[i], virtualPeptideSets[i]);
                 }
             }
-            
             HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
 
             // apply parsimony to initial dictionary

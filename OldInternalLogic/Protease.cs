@@ -43,6 +43,10 @@ namespace OldInternalLogic
             return Name;
         }
 
+        #endregion Public Methods
+
+        #region Internal Methods
+
         internal List<int> GetDigestionSiteIndices(string sequence)
         {
             var indices = new List<int>();
@@ -75,7 +79,7 @@ namespace OldInternalLogic
             return indices;
         }
 
-        #endregion Public Methods
+        #endregion Internal Methods
 
     }
 }

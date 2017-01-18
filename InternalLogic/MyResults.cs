@@ -25,6 +25,8 @@ namespace InternalLogicEngineLayer
 
         protected MyEngine MyEngine { get; private set; }
 
+        protected abstract string StringForOutput { get; }
+
         #endregion Protected Properties
 
         #region Public Methods
@@ -52,12 +54,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
-
-        #region Protected Methods
-
-        protected abstract string StringForOutput { get;}
-
-        #endregion Protected Methods
 
     }
 }

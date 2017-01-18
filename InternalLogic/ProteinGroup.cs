@@ -15,14 +15,10 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Fields
 
-        #region Private Fields
-
         //private readonly double summedIntensity;
         //private readonly double summedUniquePeptideIntensity;
 
-        #endregion Private Fields
-
-        #region Public Constructors
+        #region Internal Constructors
 
         internal ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFdr> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
@@ -63,9 +59,28 @@ namespace InternalLogicEngineLayer
             QValue = 0;
         }
 
-        #endregion Public Constructors
+        #endregion Internal Constructors
 
         #region Public Properties
+
+        public static string TabSeparatedHeader
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                sb.Append("Proteins in group" + '\t');
+                sb.Append("Number of proteins in group" + '\t');
+                sb.Append("Unique peptides" + '\t');
+                sb.Append("Shared peptides" + '\t');
+                sb.Append("Number of unique peptides" + '\t');
+                sb.Append("Summed MetaMorpheus Score" + '\t');
+                sb.Append("Decoy?" + '\t');
+                sb.Append("Cumulative Target" + '\t');
+                sb.Append("Cumulative Decoy" + '\t');
+                sb.Append("Q-Value (%)");
+                return sb.ToString();
+            }
+        }
 
         public HashSet<Protein> Proteins { get; private set; }
         public List<NewPsmWithFdr> PsmList { get; private set; }
@@ -76,25 +91,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Properties
 
         #region Public Methods
-
-        public static string TabSeparatedHeader
-        {
-            get
-            {
-            var sb = new StringBuilder();
-            sb.Append("Proteins in group" + '\t');
-            sb.Append("Number of proteins in group" + '\t');
-            sb.Append("Unique peptides" + '\t');
-            sb.Append("Shared peptides" + '\t');
-            sb.Append("Number of unique peptides" + '\t');
-            sb.Append("Summed MetaMorpheus Score" + '\t');
-            sb.Append("Decoy?" + '\t');
-            sb.Append("Cumulative Target" + '\t');
-            sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("Q-Value (%)");
-            return sb.ToString();
-            }
-        }
 
         public override string ToString()
         {
@@ -142,7 +138,6 @@ namespace InternalLogicEngineLayer
             sb.Append(isDecoy);
             sb.Append("\t");
 
-
             /*
             // proteins in protein group
             foreach (Protein protein in Proteins)
@@ -187,7 +182,6 @@ namespace InternalLogicEngineLayer
             sb.Append(isDecoy);
             sb.Append("\t");
             */
-
 
             return sb.ToString();
         }
