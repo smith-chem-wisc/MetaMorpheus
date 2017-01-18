@@ -456,7 +456,7 @@ namespace InternalLogicEngineLayer
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
                     var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
-                    if (limitedpsms_with_fdr.Count(b => !b.IsDecoy) > 0)
+                    if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                     {
                         Status("Running histogram analysis...");
                         var hm = MyAnalysis(limitedpsms_with_fdr);

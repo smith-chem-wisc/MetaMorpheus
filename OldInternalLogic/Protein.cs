@@ -5,6 +5,7 @@ namespace OldInternalLogic
 {
     public class Protein
     {
+
         #region Private Fields
 
         private string fullDescription;
@@ -85,7 +86,6 @@ namespace OldInternalLogic
 
         public IEnumerable<PeptideWithPossibleModifications> Digest(Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior)
         {
-            //p.po.RTBoutput("Digesting " + this.BaseSequence);
             if (protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 // these are the 1-based residue indices the protease cleaves AFTER
@@ -99,7 +99,6 @@ namespace OldInternalLogic
                 {
                     for (int missed_cleavages = 0; missed_cleavages <= maximumMissedCleavages; missed_cleavages++)
                     {
-                        //p.po.RTBoutput("missed_cleavages: " + missed_cleavages);
                         for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - missed_cleavages - 1; i++)
                         {
                             // Retain!
@@ -110,9 +109,6 @@ namespace OldInternalLogic
                             // Cleave!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && i == 0 && this[0] == 'M')
                             {
-                                //p.po.RTBoutput("Start of REG cleave!:");
-                                //p.po.RTBoutput(" Starting index: " + (2));
-                                //p.po.RTBoutput("Ending index: " + (oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1]));
                                 yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], this, missed_cleavages, "full:M cleaved");
                             }
                         }
@@ -126,18 +122,12 @@ namespace OldInternalLogic
                                 while (oneBasedIndicesToCleaveAfter[i] < OneBasedBeginPositions[chainPeptideIndex])
                                     i++;
                                 // Start peptide
-                                //p.po.RTBoutput("Start of chain:");
-                                //p.po.RTBoutput(" Starting index: " + protein.oneBasedBeginPositions[chainPeptideIndex]);
-                                //p.po.RTBoutput(" Ending index: " + oneBasedIndicesToCleaveAfter[i + missed_cleavages ]);
                                 if (i + missed_cleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + missed_cleavages] <= OneBasedEndPositions[chainPeptideIndex])
                                     yield return new PeptideWithPossibleModifications(OneBasedBeginPositions[chainPeptideIndex], oneBasedIndicesToCleaveAfter[i + missed_cleavages], this, missed_cleavages, BigPeptideTypes[chainPeptideIndex] + " start");
 
                                 while (oneBasedIndicesToCleaveAfter[i] < OneBasedEndPositions[chainPeptideIndex])
                                     i++;
                                 // End
-                                //p.po.RTBoutput("End of chain:");
-                                //p.po.RTBoutput(" Starting index: " + (oneBasedIndicesToCleaveAfter[i - missed_cleavages-1]+1));
-                                //p.po.RTBoutput(" Ending index: " + protein.oneBasedEndPositions[chainPeptideIndex]);
                                 if (i - missed_cleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 >= OneBasedBeginPositions[chainPeptideIndex])
                                     yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, OneBasedEndPositions[chainPeptideIndex], this, missed_cleavages, BigPeptideTypes[chainPeptideIndex] + " end");
                             }
@@ -223,5 +213,6 @@ namespace OldInternalLogic
         }
 
         #endregion Public Methods
+
     }
 }

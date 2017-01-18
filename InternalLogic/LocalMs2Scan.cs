@@ -10,16 +10,16 @@ namespace InternalLogicEngineLayer
 
         public LocalMS2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
         {
-            theScan = b;
+            TheScan = b;
             double monoisotopicPrecursorMZhere;
             b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZhere);
             MonoisotopicPrecursorMZ = monoisotopicPrecursorMZhere;
 
             int monoisotopicPrecursorChargehere;
             b.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorChargehere);
-            monoisotopicPrecursorCharge = monoisotopicPrecursorChargehere;
+            MonoisotopicPrecursorCharge = monoisotopicPrecursorChargehere;
 
-            PrecursorMass = MonoisotopicPrecursorMZ.ToMass(monoisotopicPrecursorCharge);
+            PrecursorMass = MonoisotopicPrecursorMZ.ToMass(MonoisotopicPrecursorCharge);
 
             OneBasedScanNumber = b.OneBasedScanNumber;
 
@@ -29,7 +29,7 @@ namespace InternalLogicEngineLayer
 
             double monoisotopicPrecursorIntensityhere;
             b.TryGetSelectedIonGuessMonoisotopicIntensity(out monoisotopicPrecursorIntensityhere);
-            monoisotopicPrecursorIntensity = monoisotopicPrecursorIntensityhere;
+            MonoisotopicPrecursorIntensity = monoisotopicPrecursorIntensityhere;
 
             TotalIonCurrent = b.TotalIonCurrent;
         }
@@ -49,13 +49,13 @@ namespace InternalLogicEngineLayer
 
         #region Internal Properties
 
-        internal IMsDataScan<IMzSpectrum<MzPeak>> theScan { get; private set; }
+        internal IMsDataScan<IMzSpectrum<MzPeak>> TheScan { get; private set; }
         internal double MonoisotopicPrecursorMZ { get; private set; }
         internal int OneBasedScanNumber { get; private set; }
         internal double RetentionTime { get; private set; }
-        internal int monoisotopicPrecursorCharge { get; private set; }
+        internal int MonoisotopicPrecursorCharge { get; private set; }
         internal int NumPeaks { get; private set; }
-        internal double monoisotopicPrecursorIntensity { get; private set; }
+        internal double MonoisotopicPrecursorIntensity { get; private set; }
         internal double TotalIonCurrent { get; private set; }
 
         #endregion Internal Properties

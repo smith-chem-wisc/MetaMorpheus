@@ -24,7 +24,7 @@ namespace InternalLogicCalibration
         private readonly int numFragmentsNeededForEveryIdentification;
         private readonly double toleranceInMZforMS1Search;
         private readonly double toleranceInMZforMS2Search;
-        private int randomSeed;
+        private readonly int randomSeed;
         private List<NewPsmWithFdr> identifications;
         private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
 
