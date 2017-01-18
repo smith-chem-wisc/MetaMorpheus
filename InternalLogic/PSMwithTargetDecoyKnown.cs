@@ -126,13 +126,18 @@ namespace InternalLogicEngineLayer
             {
                 var sb = new StringBuilder();
                 sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
-                sb.Append("Protein" + '\t');
+                sb.Append("Protein DB" + '\t');
+                sb.Append("Protein Accession" + '\t');
+                sb.Append("Protein FullName" + '\t');
                 sb.Append("Peptide Description" + '\t');
+                sb.Append("OneBasedStartResidueInProtein" + '\t');
+                sb.Append("OneBasedEndResidueInProtein" + '\t');
+                sb.Append("BaseSequence" + '\t');
                 sb.Append("FullSequence" + '\t');
                 sb.Append("numVariableMods" + '\t');
                 sb.Append("MissedCleavages" + '\t');
                 sb.Append("PeptideMonoisotopicMass" + '\t');
-                sb.Append("MassDiff");
+                sb.Append("MassDiff (Da)");
                 return sb.ToString();
             }
         }
@@ -146,16 +151,14 @@ namespace InternalLogicEngineLayer
             var sb = new StringBuilder();
 
             sb.Append(newPsm.ToString() + '\t');
-            if (peptidesWithSetModifications.Count == 1)
-            {
-                sb.Append(peptidesWithSetModifications.First().Protein.FullDescription + "\t");
-                sb.Append(peptidesWithSetModifications.First().PeptideDescription + '\t');
-            }
-            else
-            {
-                sb.Append(string.Join(",", peptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
-                sb.Append("ambiguous" + '\t');
-            }
+
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.DatasetAbbreviation)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.FullName)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.PeptideDescription)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.OneBasedStartResidueInProtein)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.OneBasedEndResidueInProtein)) + "\t");
+            sb.Append(BaseSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
