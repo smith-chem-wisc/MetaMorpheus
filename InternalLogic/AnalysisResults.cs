@@ -31,7 +31,7 @@ namespace InternalLogicEngineLayer
             sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
 
             if (proteinGroups != null)
-                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", proteinGroups.Select(c => c.QValue <= 0.01).Count()));
+                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", proteinGroups.Count(c => c.QValue <= 0.01)));
 
             return sb.ToString();
         }
