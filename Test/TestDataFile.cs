@@ -70,7 +70,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+                return "TestDataFile";
             }
         }
 

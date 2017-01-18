@@ -54,9 +54,8 @@ namespace Test
 
             #region Public Constructors
 
-            public TestParentSpectrumMatch(double scanPrecursorMass)
+            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, double.NaN, scanPrecursorMass, 0, 0, 0, double.NaN, double.NaN, double.NaN)
             {
-                this.scanPrecursorMass = scanPrecursorMass;
             }
 
             #endregion Public Constructors

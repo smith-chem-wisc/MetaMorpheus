@@ -26,16 +26,13 @@ namespace InternalLogicEngineLayer
 
         private readonly List<SearchMode> searchModes;
 
-        private readonly int spectraFileIndex;
-
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int spectraFileIndex, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
         {
             this.myMSDataFile = myMSDataFile;
-            this.spectraFileIndex = spectraFileIndex;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
@@ -121,8 +118,7 @@ namespace InternalLogicEngineLayer
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            var cool = new ModernSpectrumMatch(thisScan.MonoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = cool;
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j]);
                         }
                     }
                 }

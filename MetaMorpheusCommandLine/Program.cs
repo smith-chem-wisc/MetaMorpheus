@@ -73,11 +73,10 @@ namespace MetaMorpheusCommandLine
 
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new Mzml(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML", 400);
             myMsDataFile.Open();
-            int spectraFileIndex = 0;
             double fragmentToleranceInDaltons = 0.01;
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
 
-            var s = new ModernSearchEngine(myMsDataFile, spectraFileIndex, peptideIndex, keys, fragmentIndex, fragmentToleranceInDaltons, searchModes);
+            var s = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, fragmentToleranceInDaltons, searchModes);
             s.Run();
         }
 
