@@ -56,7 +56,7 @@ namespace Test
 
                 #endregion Public Constructors
 
-                #region Protected Methods
+                #region Protected Properties
 
                 protected override string StringForOutput
                 {
@@ -68,7 +68,7 @@ namespace Test
                     }
                 }
 
-                #endregion Protected Methods
+                #endregion Protected Properties
 
             }
 

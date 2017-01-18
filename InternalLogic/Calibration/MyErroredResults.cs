@@ -20,7 +20,7 @@ namespace InternalLogicCalibration
 
         #endregion Public Constructors
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -30,7 +30,7 @@ namespace InternalLogicCalibration
             }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
 
     }
 }

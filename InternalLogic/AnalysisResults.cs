@@ -6,6 +6,7 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisResults : MyResults
     {
+
         #region Public Constructors
 
         public AnalysisResults(AnalysisEngine s, List<NewPsmWithFdr>[] allResultingIdentifications, List<ProteinGroup> proteinGroups) : base(s)
@@ -23,7 +24,7 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -39,6 +40,7 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
+
     }
 }

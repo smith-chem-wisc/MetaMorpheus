@@ -62,6 +62,12 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Properties
 
+        #region Protected Properties
+
+        protected abstract string SpecificTaskInfo { get; }
+
+        #endregion Protected Properties
+
         #region Public Methods
 
         public new MyResults Run()
@@ -113,7 +119,7 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Methods
 
-        #region Protected Methods
+        #region Protected Internal Methods
 
         protected internal static void MatchXMLmodsToKnownMods(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
@@ -130,6 +136,22 @@ namespace InternalLogicTaskLayer
                     modsInXMLtoTrim.Remove(knownMod.NameInXml);
                 }
         }
+
+        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
+        {
+            var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine(NewPsmWithFdr.TabSeparatedHeader);
+                for (int i = 0; i < items.Count; i++)
+                    output.WriteLine(items[i]);
+            }
+            SucessfullyFinishedWritingFile(writtenFile);
+        }
+
+        #endregion Protected Internal Methods
+
+        #region Protected Methods
 
         protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
         {
@@ -360,18 +382,6 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine(NewPsmWithFdr.TabSeparatedHeader);
-                for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i]);
-            }
-            SucessfullyFinishedWritingFile(writtenFile);
-        }
-
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName)
         {
             if (items != null)
@@ -422,8 +432,6 @@ namespace InternalLogicTaskLayer
             }
             SucessfullyFinishedWritingFile(writtenFile);
         }
-
-        protected abstract string SpecificTaskInfo { get; }
 
         protected void SucessfullyFinishedWritingFile(string path)
         {

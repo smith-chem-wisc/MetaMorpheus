@@ -5,6 +5,7 @@ namespace InternalLogicTaskLayer
 {
     public class ModListForGPTMDTask
     {
+
         #region Private Fields
 
         private readonly ModList uu;
@@ -37,10 +38,6 @@ namespace InternalLogicTaskLayer
 
         public string Description { get { return uu.Description; } }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public IEnumerable<MorpheusModification> Mods
         {
             get
@@ -49,6 +46,7 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        #endregion Public Methods
+        #endregion Public Properties
+
     }
 }

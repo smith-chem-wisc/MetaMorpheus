@@ -7,6 +7,7 @@ namespace InternalLogicCalibration
 {
     public class CalibrationResults : MyResults
     {
+
         #region Public Constructors
 
         public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
@@ -22,7 +23,7 @@ namespace InternalLogicCalibration
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -33,6 +34,7 @@ namespace InternalLogicCalibration
             }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
+
     }
 }

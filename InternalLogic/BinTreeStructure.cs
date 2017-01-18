@@ -19,7 +19,7 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
-        #region Public Methods
+        #region Internal Methods
 
         internal void GenerateBins(List<NewPsmWithFdr> targetAndDecoyMatches, double dc)
         {
@@ -102,7 +102,7 @@ namespace InternalLogicEngineLayer
             FinalBins = FinalBins.Where(b => b.Count > 1).ToList();
         }
 
-        #endregion Public Methods
+        #endregion Internal Methods
 
         #region Private Methods
 

@@ -13,7 +13,7 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Constructors
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -24,7 +24,7 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
 
     }
 }

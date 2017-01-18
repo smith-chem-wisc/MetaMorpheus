@@ -157,7 +157,7 @@ namespace MetaMorpheusGUI
             // Format: name, "dot", num, "ppm" or "da", dots
 
             var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
-            
+
             switch (split[1])
             {
                 case "dot":

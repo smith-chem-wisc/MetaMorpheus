@@ -97,7 +97,7 @@ namespace Test
             }
 
             var p = new ParentSpectrumMatch[0][];
-            
+
             HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
 
             // apply parsimony to initial dictionary

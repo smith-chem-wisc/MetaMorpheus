@@ -607,12 +607,6 @@ namespace InternalLogicCalibration
                             }
                             Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
                             computedIsotopologues = true;
-                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            //{
-                            //    output("    Isotopologue distribution: ");
-                            //    output("    masses = " + string.Join(", ", masses) + "...");
-                            //    output("    intensities = " + string.Join(", ", intensities) + "...");
-                            //}
 
                             break;
                         }

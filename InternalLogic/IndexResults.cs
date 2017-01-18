@@ -22,7 +22,7 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -35,6 +35,6 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
     }
 }

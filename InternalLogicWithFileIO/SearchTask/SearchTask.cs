@@ -59,18 +59,7 @@ namespace InternalLogicTaskLayer
 
         #endregion Public Properties
 
-        #region Public Methods
-
-        public static IEnumerable<Type> GetSubclassesAndItself(Type type)
-        {
-            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
-                yield return ok;
-            yield return type;
-        }
-
-        #endregion Public Methods
-
-        #region Protected Methods
+        #region Protected Properties
 
         protected override string SpecificTaskInfo
         {
@@ -89,6 +78,21 @@ namespace InternalLogicTaskLayer
                 return sb.ToString();
             }
         }
+
+        #endregion Protected Properties
+
+        #region Public Methods
+
+        public static IEnumerable<Type> GetSubclassesAndItself(Type type)
+        {
+            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
+                yield return ok;
+            yield return type;
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
 
         protected override MyResults RunSpecific()
         {
@@ -223,6 +227,14 @@ namespace InternalLogicTaskLayer
 
         #region Private Methods
 
+        private static bool SameSettings(string pathToOldParamsFile, IndexEngine indexEngine)
+        {
+            using (StreamReader reader = new StreamReader(pathToOldParamsFile))
+                if (reader.ReadToEnd().Equals(indexEngine.ToString()))
+                    return true;
+            return false;
+        }
+
         private string GenerateOutputFolderForIndices()
         {
             var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
@@ -260,14 +272,6 @@ namespace InternalLogicTaskLayer
                 }
             }
             return null;
-        }
-
-        private static bool SameSettings(string pathToOldParamsFile, IndexEngine indexEngine)
-        {
-            using (StreamReader reader = new StreamReader(pathToOldParamsFile))
-                if (reader.ReadToEnd().Equals(indexEngine.ToString()))
-                    return true;
-            return false;
         }
 
         private void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile)
