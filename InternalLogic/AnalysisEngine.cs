@@ -81,7 +81,7 @@ namespace InternalLogicEngineLayer
 
                 foreach(var peptide in kvp.Value)
                 {
-                    if(peptide.protein.isDecoy)
+                    if(peptide.Protein.IsDecoy)
                     {
                         psmContainsDecoyProtein = true;
                     }
@@ -94,7 +94,7 @@ namespace InternalLogicEngineLayer
 
                     foreach (var peptide in kvp.Value)
                     {
-                        if(!peptide.protein.isDecoy)
+                        if(!peptide.Protein.IsDecoy)
                         {
                             peptidesToRemove.Add(peptide);
                         }
@@ -362,13 +362,13 @@ namespace InternalLogicEngineLayer
                     }
 
                     // have found all PSMs but some of them are duplicate peptides - pick only the highest-scoring psm per peptide
-                    List<NewPsmWithFDR> newProteinGroupPsmList = new List<NewPsmWithFDR>();
-                    Dictionary<string, List<NewPsmWithFDR>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFDR>>();
+                    List<NewPsmWithFdr> newProteinGroupPsmList = new List<NewPsmWithFdr>();
+                    Dictionary<string, List<NewPsmWithFdr>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
                     foreach(var psm in proteinGroupPsmList)
                     {
                         CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                         string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                        List<NewPsmWithFDR> tempPsmList = new List<NewPsmWithFDR>();
+                        List<NewPsmWithFdr> tempPsmList = new List<NewPsmWithFdr>();
 
                         if(peptideSequenceToPsmMatching.ContainsKey(peptideBaseSequence))
                         {
@@ -386,7 +386,7 @@ namespace InternalLogicEngineLayer
                     foreach(var kvp1 in peptideSequenceToPsmMatching)
                     {
                         double bestScoreSoFar = 0;
-                        NewPsmWithFDR bestPsm = null;
+                        NewPsmWithFdr bestPsm = null;
 
                         foreach(var psm in kvp1.Value)
                         {

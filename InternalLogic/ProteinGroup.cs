@@ -101,16 +101,16 @@ namespace InternalLogicEngineLayer
             var sb = new StringBuilder();
 
             // list of proteins in the group
-            foreach (Protein protein in proteins)
-                sb.Append("" + protein.name + " ;; ");
+            foreach (Protein protein in Proteins)
+                sb.Append("" + protein.Name + " ;; ");
             sb.Append("\t");
 
             // number of proteins in group
-            sb.Append("" + proteins.Count());
+            sb.Append("" + Proteins.Count());
             sb.Append("\t");
 
             // list of unique peptides
-            foreach (CompactPeptide peptide in uniquePeptideList)
+            foreach (CompactPeptide peptide in UniquePeptideList)
             {
                 string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
@@ -119,9 +119,9 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // list of shared peptides
-            foreach (CompactPeptide peptide in peptideList)
+            foreach (CompactPeptide peptide in PeptideList)
             {
-                if (!uniquePeptideList.Contains(peptide))
+                if (!UniquePeptideList.Contains(peptide))
                 {
                     string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
@@ -131,7 +131,7 @@ namespace InternalLogicEngineLayer
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + uniquePeptideList.Count());
+            sb.Append("" + UniquePeptideList.Count());
             sb.Append("\t");
 
             // summed metamorpheus score
