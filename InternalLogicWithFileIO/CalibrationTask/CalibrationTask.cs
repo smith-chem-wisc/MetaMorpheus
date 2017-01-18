@@ -44,7 +44,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Properties
 
-        public List<ModListForCalibrationTask> ListOfModListsForCalibration { get; }
+        public List<ModListForCalibrationTask> ListOfModListsForCalibration { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
 
         public double ProductMassToleranceInDaltons { get; set; }
