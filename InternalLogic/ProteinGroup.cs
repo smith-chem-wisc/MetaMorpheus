@@ -19,8 +19,8 @@ namespace InternalLogicEngineLayer
 
         internal ProteinGroup(HashSet<Protein> proteins, List<NewPsmWithFdr> psmList, HashSet<CompactPeptide> allUniquePeptides, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
         {
-            this.Proteins = proteins;
-            this.PsmList = psmList;
+            Proteins = proteins;
+            PsmList = psmList;
             PeptideList = new List<CompactPeptide>();
             UniquePeptideList = new List<CompactPeptide>();
             proteinGroupScore = 0;
@@ -37,18 +37,18 @@ namespace InternalLogicEngineLayer
             foreach (var psm in psmList)
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                peptideList.Add(peptide);
+                PeptideList.Add(peptide);
                 proteinGroupScore += psm.thisPSM.Score;
 
                 // construct list of unique peptides
                 if (allUniquePeptides.Contains(peptide))
                 {
-                    uniquePeptideList.Add(peptide);
+                    UniquePeptideList.Add(peptide);
                     //proteinGroupScore += psm.thisPSM.Score;
                 }
             }
 
-            if (uniquePeptideList.Count == 0)
+            if (UniquePeptideList.Count == 0)
                 proteinGroupScore = 0;
         }
 
@@ -92,7 +92,7 @@ namespace InternalLogicEngineLayer
             var sb = new StringBuilder();
 
             // list of proteins in the group
-            foreach (Protein protein in proteins)
+            foreach (Protein protein in Proteins)
                 sb.Append("" + protein.FullDescription + " ;; ");
             sb.Append("\t");
 
