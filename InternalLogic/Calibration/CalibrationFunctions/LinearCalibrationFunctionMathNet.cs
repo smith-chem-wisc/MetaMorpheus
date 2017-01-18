@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace InternalLogicCalibration
 {
-    public class LinearCalibrationFunctionMathNet : CalibrationFunction
+    internal class LinearCalibrationFunctionMathNet : CalibrationFunction
     {
         private Func<double[], double> f;
         private readonly int numFeatures;
@@ -41,7 +41,6 @@ namespace InternalLogicCalibration
                 ye[j + 1] = a => a[j];
             }
             f = Fit.LinearMultiDimFunc(ok, ok2, ye);
-            //onOutput("Finished fitting a linear"));
         }
     }
 }

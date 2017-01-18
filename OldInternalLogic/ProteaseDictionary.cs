@@ -51,14 +51,14 @@ namespace OldInternalLogic
 
         #endregion Public Properties
 
-        #region Public Methods
+        #region Internal Methods
 
-        public void Add(Protease protease)
+        internal void Add(Protease protease)
         {
             Add(protease.Name, protease);
         }
 
-        #endregion Public Methods
+        #endregion Internal Methods
 
     }
 }

@@ -23,10 +23,10 @@ namespace InternalLogicEngineLayer
         public PSMwithTargetDecoyKnown(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
-            isDecoy = peptidesWithSetModifications.Count(b => b.protein.isDecoy) > 0;
+            IsDecoy = peptidesWithSetModifications.Count(b => b.Protein.IsDecoy) > 0;
             this.peptidesWithSetModifications = peptidesWithSetModifications;
 
-            var allProductTypes = new List<ProductType> { ProductType.b, ProductType.y };
+            var allProductTypes = new List<ProductType> { ProductType.B, ProductType.Y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
             if (myMsDataFile != null && newPsm.matchedIonsList == null)
             {
@@ -50,7 +50,7 @@ namespace InternalLogicEngineLayer
                 var localizedScores = new List<double>();
                 for (int indexToLocalize = 0; indexToLocalize < peptidesWithSetModifications.First().Length; indexToLocalize++)
                 {
-                    PeptideWithSetModifications localizedPeptide = peptidesWithSetModifications.First().Localize(indexToLocalize, scanPrecursorMass - peptidesWithSetModifications.First().MonoisotopicMass);
+                    PeptideWithSetModifications localizedPeptide = peptidesWithSetModifications.First().Localize(indexToLocalize, ScanPrecursorMass - peptidesWithSetModifications.First().MonoisotopicMass);
 
                     var gg = localizedPeptide.FastSortedProductMasses(allProductTypes);
                     double[] matchedIonList = new double[gg.Length];
@@ -64,7 +64,7 @@ namespace InternalLogicEngineLayer
             FullSequence = peptidesWithSetModifications.First().Sequence;
             BaseSequence = peptidesWithSetModifications.First().BaseSequence;
             MissedCleavages = peptidesWithSetModifications.First().MissedCleavages;
-            numVariableMods = peptidesWithSetModifications.First().numVariableMods;
+            NumVariableMods = peptidesWithSetModifications.First().NumVariableMods;
         }
 
         #endregion Public Constructors
@@ -72,17 +72,17 @@ namespace InternalLogicEngineLayer
         #region Public Properties
 
         public HashSet<PeptideWithSetModifications> peptidesWithSetModifications { get; private set; }
-        public bool isDecoy { get; private set; }
+        public bool IsDecoy { get; private set; }
 
         public double Score
         {
             get
             {
-                return newPsm.Score;
+                return newPsm.score;
             }
         }
 
-        public double scanPrecursorMass
+        public double ScanPrecursorMass
         {
             get
             {
@@ -106,7 +106,7 @@ namespace InternalLogicEngineLayer
 
         public int MissedCleavages { get; private set; }
 
-        public int numVariableMods { get; private set; }
+        public int NumVariableMods { get; private set; }
 
         public string SequenceWithChemicalFormulas
         {
@@ -118,6 +118,27 @@ namespace InternalLogicEngineLayer
 
         #endregion Public Properties
 
+        #region Internal Properties
+
+        internal static string TabSeparatedHeader
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
+                sb.Append("Protein" + '\t');
+                sb.Append("Peptide Description" + '\t');
+                sb.Append("FullSequence" + '\t');
+                sb.Append("numVariableMods" + '\t');
+                sb.Append("MissedCleavages" + '\t');
+                sb.Append("PeptideMonoisotopicMass" + '\t');
+                sb.Append("MassDiff");
+                return sb.ToString();
+            }
+        }
+
+        #endregion Internal Properties
+
         #region Public Methods
 
         public override string ToString()
@@ -127,19 +148,19 @@ namespace InternalLogicEngineLayer
             sb.Append(newPsm.ToString() + '\t');
             if (peptidesWithSetModifications.Count == 1)
             {
-                sb.Append(peptidesWithSetModifications.First().protein.FullDescription + "\t");
+                sb.Append(peptidesWithSetModifications.First().Protein.FullDescription + "\t");
                 sb.Append(peptidesWithSetModifications.First().PeptideDescription + '\t');
             }
             else
             {
-                sb.Append(string.Join(",", peptidesWithSetModifications.Select(b => b.protein.Accession)) + "\t");
+                sb.Append(string.Join(",", peptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
                 sb.Append("ambiguous" + '\t');
             }
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(numVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append((scanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture));
 
             return sb.ToString();
         }
@@ -147,20 +168,6 @@ namespace InternalLogicEngineLayer
         #endregion Public Methods
 
         #region Internal Methods
-
-        internal static string GetTabSeparatedHeader()
-        {
-            var sb = new StringBuilder();
-            sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
-            sb.Append("Protein" + '\t');
-            sb.Append("Peptide Description" + '\t');
-            sb.Append("FullSequence" + '\t');
-            sb.Append("numVariableMods" + '\t');
-            sb.Append("MissedCleavages" + '\t');
-            sb.Append("PeptideMonoisotopicMass" + '\t');
-            sb.Append("MassDiff");
-            return sb.ToString();
-        }
 
         internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
         {

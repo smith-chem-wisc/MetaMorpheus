@@ -8,14 +8,14 @@ namespace InternalLogicTaskLayer
 
         public SingleTaskEventArgs(MyTaskEngine theTask)
         {
-            this.theTask = theTask;
+            this.TheTask = theTask;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public MyTaskEngine theTask { get; private set; }
+        public MyTaskEngine TheTask { get; private set; }
 
         #endregion Public Properties
     }

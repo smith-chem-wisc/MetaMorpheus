@@ -4,6 +4,7 @@ namespace InternalLogicEngineLayer
 {
     public class ClassicSearchResults : MyResults
     {
+
         #region Internal Constructors
 
         internal ClassicSearchResults(ClassicSearchEngine searchParams) : base(searchParams)
@@ -14,18 +15,22 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public ClassicSpectrumMatch[][] outerPsms { get; set; }
+        public ClassicSpectrumMatch[][] OuterPsms { get; set; }
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            return sb.ToString();
+            get
+            {
+                var sb = new StringBuilder();
+                return sb.ToString();
+            }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
+
     }
 }

@@ -9,24 +9,24 @@ using System.Collections.Generic;
 namespace Test
 {
     [TestFixture]
-    public class GPTMDengineTest
+    public class GptmdEngineTest
     {
 
         #region Public Methods
 
         [Test]
-        public void TestGPTMDengine()
+        public static void TestGptmdEngine()
         {
-            List<NewPsmWithFDR> allResultingIdentifications = null;
+            List<NewPsmWithFdr> allResultingIdentifications = null;
             var gptmdModifications = new List<MorpheusModification> { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N', 42, null, null, '\0', double.NaN, false, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             double tol = 0.1;
             bool isotopeErrors = false;
 
-            allResultingIdentifications = new List<NewPsmWithFDR>();
-            var engine = new GPTMDEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
-            var res = (GPTMDResults)engine.Run();
-            Assert.AreEqual(0, res.mods.Count);
+            allResultingIdentifications = new List<NewPsmWithFdr>();
+            var engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
+            var res = (GptmdResults)engine.Run();
+            Assert.AreEqual(0, res.Mods.Count);
 
             ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 42);
             var parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false);
@@ -36,13 +36,13 @@ namespace Test
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
             var thisPSM = new PSMwithTargetDecoyKnown(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile);
-            var newPsmWithFDR = new NewPsmWithFDR(thisPSM, 1, 0, 0);
+            var newPsmWithFDR = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             allResultingIdentifications.Add(newPsmWithFDR);
 
-            engine = new GPTMDEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
-            res = (GPTMDResults)engine.Run();
-            Assert.AreEqual(1, res.mods.Count);
-            Assert.AreEqual(5, res.mods["accession"].Count);
+            engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
+            res = (GptmdResults)engine.Run();
+            Assert.AreEqual(1, res.Mods.Count);
+            Assert.AreEqual(5, res.Mods["accession"].Count);
         }
 
         #endregion Public Methods
@@ -54,9 +54,8 @@ namespace Test
 
             #region Public Constructors
 
-            public TestParentSpectrumMatch(double scanPrecursorMass)
+            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, double.NaN, scanPrecursorMass, 0, 0, 0, double.NaN, double.NaN, double.NaN)
             {
-                this.scanPrecursorMass = scanPrecursorMass;
             }
 
             #endregion Public Constructors

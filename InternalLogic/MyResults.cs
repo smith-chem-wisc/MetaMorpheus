@@ -16,14 +16,16 @@ namespace InternalLogicEngineLayer
 
         protected MyResults(MyEngine s)
         {
-            this.s = s;
+            this.MyEngine = s;
         }
 
         #endregion Protected Constructors
 
         #region Protected Properties
 
-        protected MyEngine s { get; private set; }
+        protected MyEngine MyEngine { get; private set; }
+
+        protected abstract string StringForOutput { get; }
 
         #endregion Protected Properties
 
@@ -32,10 +34,10 @@ namespace InternalLogicEngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            if (s.Level <= 1)
+            if (MyEngine.Level <= 1)
             {
                 sb.AppendLine(GetType().Name + ":");
-                var ok = GetStringForOutput();
+                var ok = StringForOutput;
                 if (!string.IsNullOrEmpty(ok))
                     sb.AppendLine(ok);
                 sb.AppendLine("\tTime to run: " + Time);
@@ -43,7 +45,7 @@ namespace InternalLogicEngineLayer
             else
             {
                 sb.AppendLine("\t" + GetType().Name + ":");
-                var ok = GetStringForOutput();
+                var ok = StringForOutput;
                 if (!string.IsNullOrEmpty(ok))
                     sb.AppendLine(ok);
                 sb.Append("\t\tTime to run: " + Time);
@@ -52,12 +54,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
-
-        #region Protected Methods
-
-        protected abstract string GetStringForOutput();
-
-        #endregion Protected Methods
 
     }
 }

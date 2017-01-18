@@ -43,7 +43,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.b, ProductType.y }))
+            foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMassToChargeRatio(1));
                 mz2.Add((aok + 1.003).ToMassToChargeRatio(1));
@@ -70,7 +70,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+                return "TestDataFile";
             }
         }
 

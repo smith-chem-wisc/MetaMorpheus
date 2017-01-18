@@ -24,22 +24,22 @@ namespace InternalLogicCalibration
         private readonly int numFragmentsNeededForEveryIdentification;
         private readonly double toleranceInMZforMS1Search;
         private readonly double toleranceInMZforMS2Search;
-        private int randomSeed;
-        private List<NewPsmWithFDR> identifications;
+        private readonly int randomSeed;
+        private List<NewPsmWithFdr> identifications;
         private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFDR> identifications, int minMS1isotopicPeaksNeededForConfirmedIdentification, int minMS2isotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, double toleranceInMZforMS1Search) : base(2)
+        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, double toleranceInMZforMS1Search) : base(2)
         {
-            this.myMsDataFile = myMsDataFile;
+            this.myMsDataFile = myMSDataFile;
             this.randomSeed = randomSeed;
             this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
             this.identifications = identifications;
-            this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
-            this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2isotopicPeaksNeededForConfirmedIdentification;
+            this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1IsotopicPeaksNeededForConfirmedIdentification;
+            this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2IsotopicPeaksNeededForConfirmedIdentification;
             this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
             this.toleranceInMZforMS1Search = toleranceInMZforMS1Search;
         }
@@ -50,15 +50,15 @@ namespace InternalLogicCalibration
 
         protected override MyResults RunSpecific()
         {
-            status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
+            Status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
 
             var trainingPointCounts = new List<int>();
             List<LabeledDataPoint> pointList;
             for (int calibrationRound = 1; ; calibrationRound++)
             {
-                status("Calibration round " + calibrationRound);
+                Status("Calibration round " + calibrationRound);
 
-                status("Getting Training Points");
+                Status("Getting Training Points");
 
                 pointList = GetDataPoints();
 
@@ -98,7 +98,7 @@ namespace InternalLogicCalibration
 
         private List<LabeledDataPoint> GetDataPoints()
         {
-            status("Extracting data points:");
+            Status("Extracting data points:");
             // The final training point list
             var trainingPointsToReturn = new List<LabeledDataPoint>();
 
@@ -110,7 +110,7 @@ namespace InternalLogicCalibration
             for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
             {
                 var identification = identifications[matchIndex];
-                if (identification.QValue > 0.01)
+                if (identification.qValue > 0.01)
                     break;
 
                 // Progress
@@ -118,7 +118,7 @@ namespace InternalLogicCalibration
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
 
                 // Skip decoys, they are for sure not there!
-                if (identification.isDecoy)
+                if (identification.IsDecoy)
                     continue;
 
                 // Each identification has an MS2 spectrum attached to it.
@@ -137,14 +137,7 @@ namespace InternalLogicCalibration
                 int numFragmentsIdentified = -1;
                 var candidateTrainingPointsForPeptide = new List<LabeledDataPoint>();
                 Peptide coolPeptide = null;
-                try
-                {
-                    coolPeptide = new Peptide(SequenceWithChemicalFormulas);
-                }
-                catch
-                {
-                    continue;
-                }
+                coolPeptide = new Peptide(SequenceWithChemicalFormulas);
 
                 candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified);
 
@@ -186,7 +179,7 @@ namespace InternalLogicCalibration
                 //}
                 trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
             }
-            status("Number of training points: " + trainingPointsToReturn.Count());
+            Status("Number of training points: " + trainingPointsToReturn.Count());
             return trainingPointsToReturn;
         }
 
@@ -262,41 +255,41 @@ namespace InternalLogicCalibration
 
             var transforms = new List<TransformFunction>();
 
-            transforms.Add(new TransformFunction(b => new double[] { b[1] }, 1, "TFFFF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2] }, 1, "FTFFF"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]) }, 1, "FFTFF"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[4]) }, 1, "FFFTF"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[5]) }, 1, "FFFFT"));
+            transforms.Add(new TransformFunction(b => new double[] { b[1] }, 1));
+            transforms.Add(new TransformFunction(b => new double[] { b[2] }, 1));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]) }, 1));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[4]) }, 1));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[5]) }, 1));
 
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2] }, 2, "TTFFF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]) }, 2, "TFTFF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[4]) }, 2, "TFFTF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[5]) }, 2, "TFFFT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]) }, 2, "FTTFF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[4]) }, 2, "FTFTF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[5]) }, 2, "FTFFT"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[4]) }, 2, "FFTTF"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[5]) }, 2, "FFTFT"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[4]), Math.Log(b[5]) }, 2, "FFFTT"));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2] }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[4]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[5]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[4]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[5]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[4]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[5]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[4]), Math.Log(b[5]) }, 2));
 
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]) }, 3, "TTTFF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[4]) }, 3, "TTFTF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[5]) }, 3, "TTFFT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[4]) }, 3, "TFTTF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[5]) }, 3, "TFTFT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[4]), Math.Log(b[5]) }, 3, "TFFTT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]), Math.Log(b[4]) }, 3, "FTTTF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]), Math.Log(b[5]) }, 3, "FTTFT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[4]), Math.Log(b[5]) }, 3, "FTFTT"));
-            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 3, "FFTTT"));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[4]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[5]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[4]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[5]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[4]), Math.Log(b[5]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]), Math.Log(b[4]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]), Math.Log(b[5]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[4]), Math.Log(b[5]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 3));
 
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]), Math.Log(b[4]) }, 4, "TTTTF"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]), Math.Log(b[5]) }, 4, "TTTFT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[4]), Math.Log(b[5]) }, 4, "TTFTT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 4, "TFTTT"));
-            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 4, "FTTTT"));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]), Math.Log(b[4]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]), Math.Log(b[5]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[4]), Math.Log(b[5]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[2], Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 4));
 
-            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 5, "TTTTT"));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], b[2], Math.Log(b[3]), Math.Log(b[4]), Math.Log(b[5]) }, 5));
 
             try
             {
@@ -355,7 +348,7 @@ namespace InternalLogicCalibration
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
 
-            status("Calibrating Spectra");
+            Status("Calibrating Spectra");
 
             CalibrateSpectra(bestCf);
 
@@ -564,8 +557,6 @@ namespace InternalLogicCalibration
             double IsolationMZ;
             ms2DataScan.TryGetIsolationMZ(out IsolationMZ);
 
-            int ms2spectrumIndex = ms2DataScan.OneBasedScanNumber;
-
             var countForThisMS2 = 0;
             var countForThisMS2a = 0;
             var numFragmentsIdentified = 0;
@@ -586,12 +577,6 @@ namespace InternalLogicCalibration
                 double[] masses = new double[0];
                 double[] intensities = new double[0];
                 // First look for monoisotopic masses, do not compute distribution spectrum!
-                //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                //{
-                //    output("  Considering fragment " + (fragment as Fragment).Sequence + " with formula " + fragment.ThisChemicalFormula.Formula);
-                //    //if ((fragment as Fragment).Modifications.Count() > 0)
-                //    //RTBoutput("  Modifications: " + string.Join(", ", (fragment as Fragment).Modifications));
-                //}
 
                 for (int chargeToLookAt = 1; chargeToLookAt <= peptideCharge; chargeToLookAt++)
                 {
@@ -622,12 +607,6 @@ namespace InternalLogicCalibration
                             }
                             Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
                             computedIsotopologues = true;
-                            //if (MS2spectraToWatch.Contains(ms2spectrumIndex))
-                            //{
-                            //    output("    Isotopologue distribution: ");
-                            //    output("    masses = " + string.Join(", ", masses) + "...");
-                            //    output("    intensities = " + string.Join(", ", intensities) + "...");
-                            //}
 
                             break;
                         }

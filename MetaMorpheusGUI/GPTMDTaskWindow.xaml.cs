@@ -60,7 +60,7 @@ namespace MetaMorpheusGUI
         {
             var ye = sender as DataGridCell;
             var hm = ye.Content as TextBlock;
-            if (hm != null && !hm.Text.Equals(""))
+            if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -68,17 +68,17 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GPTMDTask task)
         {
-            missedCleavagesTextBox.Text = task.maxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            proteaseComboBox.SelectedItem = task.protease;
-            maxModificationIsoformsTextBox.Text = task.maxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.initiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.productMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = (int)task.productMassTolerance.Unit;
+            missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            proteaseComboBox.SelectedItem = task.Protease;
+            maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
+            productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
             precursorMassToleranceTextBox.Text = task.precursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = (int)task.precursorMassTolerance.Unit;
 
-            bCheckBox.IsChecked = task.bIons;
-            yCheckBox.IsChecked = task.yIons;
+            bCheckBox.IsChecked = task.BIons;
+            yCheckBox.IsChecked = task.YIons;
             for (int i = 0; i < ModFileListInWindow.Count; i++)
             {
                 if (task.listOfModListsForGPTMD[i].Fixed)
@@ -87,8 +87,8 @@ namespace MetaMorpheusGUI
                     ModFileListInWindow[i].Variable = true;
                 if (task.listOfModListsForGPTMD[i].Localize)
                     ModFileListInWindow[i].Localize = true;
-                if (task.listOfModListsForGPTMD[i].GPTMD)
-                    ModFileListInWindow[i].GPTMD = true;
+                if (task.listOfModListsForGPTMD[i].Gptmd)
+                    ModFileListInWindow[i].Gptmd = true;
             }
             modificationsDataGrid.Items.Refresh();
         }
@@ -121,16 +121,16 @@ namespace MetaMorpheusGUI
 
         private void saveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.maxMissedCleavages = int.Parse(missedCleavagesTextBox.Text);
-            TheTask.protease = (Protease)proteaseComboBox.SelectedItem;
-            TheTask.maxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text);
-            TheTask.initiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-            TheTask.productMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text);
-            TheTask.productMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
-            TheTask.bIons = bCheckBox.IsChecked.Value;
-            TheTask.yIons = yCheckBox.IsChecked.Value;
+            TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
+            TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
+            TheTask.BIons = bCheckBox.IsChecked.Value;
+            TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.listOfModListsForGPTMD = ModFileListInWindow.ToList();
-            TheTask.precursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text);
+            TheTask.precursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.precursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             DialogResult = true;

@@ -7,7 +7,6 @@ namespace InternalLogicCalibration
         #region Internal Fields
 
         internal int numOutputs;
-        internal string name;
 
         #endregion Internal Fields
 
@@ -19,11 +18,10 @@ namespace InternalLogicCalibration
 
         #region Public Constructors
 
-        public TransformFunction(Func<double[], double[]> tf, int numOutputs, string name)
+        public TransformFunction(Func<double[], double[]> tf, int numOutputs)
         {
             this.tf = tf;
             this.numOutputs = numOutputs;
-            this.name = name;
         }
 
         #endregion Public Constructors

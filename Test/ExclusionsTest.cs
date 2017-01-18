@@ -10,7 +10,7 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestExclusions()
+        public static void TestExclusions()
         {
             double tolExclude = 0.0075;
             var exclude = new double[] { 1, 2, 3, 4, 5 };

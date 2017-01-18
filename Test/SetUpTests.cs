@@ -20,7 +20,7 @@ namespace Test
         #region Public Methods
 
         [OneTimeSetUp]
-        public void setup()
+        public static void Setup()
         {
             Loaders.LoadElements(Path.Combine(TestContext.CurrentContext.TestDirectory, elementsLocation));
             //MyEngine.unimodDeserialized = Loaders.LoadUnimod(Path.Combine(TestContext.CurrentContext.TestDirectory, unimodLocation));

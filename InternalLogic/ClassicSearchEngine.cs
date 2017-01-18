@@ -28,20 +28,22 @@ namespace InternalLogicEngineLayer
 
         private readonly Tolerance productMassTolerance;
 
-        private readonly LocalMs2Scan[] myMsDataFile;
+        private readonly LocalMS2Scan[] arrayOfSortedMS2Scans;
 
-        private readonly int spectraFileIndex;
+        private readonly double[] myScanPrecursorMasses;
+
         private readonly int myMsDataFileNumSpectra;
+        private readonly string fileName;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMs2Scan[] myMsDataFile, int myMsDataFileNumSpectra, int spectraFileIndex, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms) : base(2)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName) : base(2)
         {
-            this.myMsDataFile = myMsDataFile;
+            this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
+            this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
-            this.spectraFileIndex = spectraFileIndex;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
@@ -50,6 +52,7 @@ namespace InternalLogicEngineLayer
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.searchModes = searchModes;
             this.protease = protease;
+            this.fileName = fileName;
         }
 
         #endregion Public Constructors
@@ -58,7 +61,7 @@ namespace InternalLogicEngineLayer
 
         protected override MyResults RunSpecific()
         {
-            status("In classic search engine!");
+            Status("In classic search engine!");
 
             var searchResults = new ClassicSearchResults(this);
 
@@ -67,9 +70,9 @@ namespace InternalLogicEngineLayer
             var level3_observed = new HashSet<string>();
             var level4_observed = new HashSet<string>();
 
-            var lp = new List<ProductType> { ProductType.b, ProductType.y };
+            var lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
-            status("Getting ms2 scans...");
+            Status("Getting ms2 scans...");
 
             var outerPsms = new ClassicSpectrumMatch[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
@@ -79,7 +82,7 @@ namespace InternalLogicEngineLayer
             int proteinsSeen = 0;
             int old_progress = 0;
 
-            status("Starting classic search loop...");
+            Status("Starting classic search loop...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var psms = new ClassicSpectrumMatch[searchModes.Count][];
@@ -135,11 +138,11 @@ namespace InternalLogicEngineLayer
                             for (int aede = 0; aede < searchModes.Count; aede++)
                             {
                                 var searchMode = searchModes[aede];
-                                foreach (LocalMs2Scan scan in GetAcceptableScans(myMsDataFile, yyy.MonoisotopicMass, searchMode).ToList())
+                                foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.theScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new ClassicSpectrumMatch(score, yyy, scan.precursorMass, scan.monoisotopicPrecursorMZ, scan.OneBasedScanNumber, scan.RetentionTime, scan.monoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.monoisotopicPrecursorIntensity, spectraFileIndex);
-                                    if (psm.Score > 1)
+                                    var score = PSMwithTargetDecoyKnown.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
+                                    if (psm.score > 1)
                                     {
                                         ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
                                         if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
@@ -169,7 +172,7 @@ namespace InternalLogicEngineLayer
                     }
                 }
             });
-            searchResults.outerPsms = outerPsms;
+            searchResults.OuterPsms = outerPsms;
             return searchResults;
         }
 
@@ -177,29 +180,29 @@ namespace InternalLogicEngineLayer
 
         #region Private Methods
 
-        private IEnumerable<LocalMs2Scan> GetAcceptableScans(LocalMs2Scan[] listOfSortedms2Scans, double peptideMonoisotopicMass, SearchMode searchMode)
+        private IEnumerable<LocalMS2Scan> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
         {
             foreach (DoubleRange ye in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
             {
-                int scanIndex = GetFirstScanWithMassOverOrEqual(listOfSortedms2Scans, ye.Minimum);
-                if (scanIndex < listOfSortedms2Scans.Length)
+                int scanIndex = GetFirstScanWithMassOverOrEqual(ye.Minimum);
+                if (scanIndex < arrayOfSortedMS2Scans.Length)
                 {
-                    var scan = listOfSortedms2Scans[scanIndex];
-                    while (scan.precursorMass <= ye.Maximum)
+                    var scan = arrayOfSortedMS2Scans[scanIndex];
+                    while (scan.PrecursorMass <= ye.Maximum)
                     {
                         yield return scan;
                         scanIndex++;
-                        if (scanIndex == listOfSortedms2Scans.Length)
+                        if (scanIndex == arrayOfSortedMS2Scans.Length)
                             break;
-                        scan = listOfSortedms2Scans[scanIndex];
+                        scan = arrayOfSortedMS2Scans[scanIndex];
                     }
                 }
             }
         }
 
-        private int GetFirstScanWithMassOverOrEqual(LocalMs2Scan[] listOfSortedms2Scans, double minimum)
+        private int GetFirstScanWithMassOverOrEqual(double minimum)
         {
-            int index = Array.BinarySearch(listOfSortedms2Scans, minimum);
+            int index = Array.BinarySearch(myScanPrecursorMasses, minimum);
             if (index < 0)
                 index = ~index;
 

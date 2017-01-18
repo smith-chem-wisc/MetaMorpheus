@@ -70,7 +70,7 @@ namespace InternalLogicEngineLayer
             var level4_observed = new HashSet<string>();
             int proteinsSeen = 0;
             int old_progress = 0;
-            var lp = new List<ProductType> { ProductType.b, ProductType.y };
+            var lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -6,36 +6,41 @@ namespace InternalLogicEngineLayer
 {
     public class AnalysisResults : MyResults
     {
+
         #region Public Constructors
 
-        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFDR>[] allResultingIdentifications, List<ProteinGroup> proteinGroups) : base(s)
+        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFdr>[] allResultingIdentifications, List<ProteinGroup> proteinGroups) : base(s)
         {
-            this.allResultingIdentifications = allResultingIdentifications;
-            this.proteinGroups = proteinGroups;
+            this.AllResultingIdentifications = allResultingIdentifications;
+            this.ProteinGroups = proteinGroups;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<NewPsmWithFDR>[] allResultingIdentifications { get; private set; }
-        public List<ProteinGroup> proteinGroups { get; private set; }
+        public List<NewPsmWithFdr>[] AllResultingIdentifications { get; private set; }
+        public List<ProteinGroup> ProteinGroups { get; private set; }
 
         #endregion Public Properties
 
-        #region Protected Methods
+        #region Protected Properties
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            var sb = new StringBuilder();
-            sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", allResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
+            get
+            {
+                var sb = new StringBuilder();
+                sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
 
-            if (proteinGroups != null)
-                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", proteinGroups.Count(c => c.QValue <= 0.01)));
+            if (ProteinGroups != null)
+                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", ProteinGroups.Count(c => c.QValue <= 0.01)));
 
-            return sb.ToString();
+                return sb.ToString();
+            }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
+
     }
 }

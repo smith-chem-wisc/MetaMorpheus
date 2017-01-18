@@ -20,14 +20,17 @@ namespace InternalLogicCalibration
 
         #endregion Public Constructors
 
-        #region Protected Methods
+        #region Protected Properties
 
-        protected override string GetStringForOutput()
+        protected override string StringForOutput
         {
-            return v;
+            get
+            {
+                return v;
+            }
         }
 
-        #endregion Protected Methods
+        #endregion Protected Properties
 
     }
 }

@@ -22,9 +22,9 @@
 
         #region Public Methods
 
-        public void AddFilePath(string FileName)
+        public void AddFilePath(string fileName)
         {
-            this.FileName = FileName;
+            this.FileName = fileName;
             Use = true;
         }
 

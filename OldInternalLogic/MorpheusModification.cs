@@ -6,24 +6,24 @@ namespace OldInternalLogic
     {
         #region Public Constructors
 
-        public MorpheusModification(string NameInXML, ModificationType type, char aminoAcid, double monoisotopicMassShift,
-            string database, string databaseName, char prevAA, double AlternativeMassShift, bool labile, ChemicalFormula cf)
+        public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, double monoisotopicMassShift,
+            string database, string databaseName, char prevAA, double alternativeMassShift, bool labile, ChemicalFormula cf)
         {
-            this.NameInXML = NameInXML;
-            Type = type;
+            this.NameInXml = nameInXml;
+            ThisModificationType = type;
             AminoAcid = aminoAcid;
             MonoisotopicMassShift = monoisotopicMassShift;
             Database = database;
             DatabaseName = databaseName;
             PrevAminoAcid = prevAA;
-            this.AlternativeMassShift = AlternativeMassShift;
-            this.labile = labile;
-            this.cf = cf;
+            this.AlternativeMassShift = alternativeMassShift;
+            this.Labile = labile;
+            this.ChemicalFormula = cf;
         }
 
-        public MorpheusModification(string NameInXML)
+        public MorpheusModification(string NameInXml)
         {
-            this.NameInXML = NameInXML;
+            this.NameInXml = NameInXml;
         }
 
         #endregion Public Constructors
@@ -34,22 +34,20 @@ namespace OldInternalLogic
         {
             get
             {
-                return Database + (labile ? ":labile" : "") + ":" + NameInXML;
+                return Database + (Labile ? ":labile" : "") + ":" + NameInXml;
             }
         }
 
-        public bool labile { get; private set; }
-        public ModificationType Type { get; private set; }
+        public bool Labile { get; private set; }
+        public ModificationType ThisModificationType { get; private set; }
         public char AminoAcid { get; private set; }
         public double MonoisotopicMassShift { get; private set; }
-        public bool DefaultFixed { get; private set; }
-        public bool DefaultVariable { get; private set; }
         public string Database { get; private set; }
         public string DatabaseName { get; private set; }
-        public string NameInXML { get; private set; }
+        public string NameInXml { get; private set; }
         public char PrevAminoAcid { get; private set; }
         public double AlternativeMassShift { get; private set; }
-        public ChemicalFormula cf { get; private set; }
+        public ChemicalFormula ChemicalFormula { get; private set; }
 
         #endregion Public Properties
 

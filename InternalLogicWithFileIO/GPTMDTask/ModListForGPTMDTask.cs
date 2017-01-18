@@ -5,6 +5,7 @@ namespace InternalLogicTaskLayer
 {
     public class ModListForGPTMDTask
     {
+
         #region Private Fields
 
         private readonly ModList uu;
@@ -25,7 +26,7 @@ namespace InternalLogicTaskLayer
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
         public bool Localize { get; set; }
-        public bool GPTMD { get; set; }
+        public bool Gptmd { get; set; }
 
         public string FileName
         {
@@ -37,15 +38,15 @@ namespace InternalLogicTaskLayer
 
         public string Description { get { return uu.Description; } }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
-        public IEnumerable<MorpheusModification> getMods()
+        public IEnumerable<MorpheusModification> Mods
         {
-            return uu.getMods();
+            get
+            {
+                return uu.Mods;
+            }
         }
 
-        #endregion Public Methods
+        #endregion Public Properties
+
     }
 }

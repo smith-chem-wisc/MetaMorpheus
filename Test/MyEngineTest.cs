@@ -11,11 +11,11 @@ namespace Test
         #region Public Methods
 
         [Test]
-        public void TestMyEngine()
+        public static void TestMyEngine()
         {
-            MyEngine level0engine = new TestEngine(0, null);
+            MyEngine level0engine = new TestEngine(0);
 
-            level0engine = new TestEngine(0, new object());
+            level0engine = new TestEngine(0);
             level0engine.Run();
         }
 
@@ -28,7 +28,7 @@ namespace Test
 
             #region Public Constructors
 
-            public TestEngine(int level, object param1) : base(level)
+            public TestEngine(int level) : base(level)
             {
             }
 
@@ -56,16 +56,19 @@ namespace Test
 
                 #endregion Public Constructors
 
-                #region Protected Methods
+                #region Protected Properties
 
-                protected override string GetStringForOutput()
+                protected override string StringForOutput
                 {
-                    var sb = new StringBuilder();
-                    sb.Append("String for the TestResults results class");
-                    return sb.ToString();
+                    get
+                    {
+                        var sb = new StringBuilder();
+                        sb.Append("String for the TestResults results class");
+                        return sb.ToString();
+                    }
                 }
 
-                #endregion Protected Methods
+                #endregion Protected Properties
 
             }
 
