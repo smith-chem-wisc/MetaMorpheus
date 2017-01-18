@@ -57,7 +57,7 @@ namespace InternalLogicEngineLayer
         #region Public Properties
 
         public readonly HashSet<Protein> proteins;
-        public readonly List<NewPsmWithFDR> psmList;
+        public readonly List<NewPsmWithFdr> psmList;
         public readonly List<CompactPeptide> peptideList;
         public readonly List<CompactPeptide> uniquePeptideList;
         public double QValue { get; set; }
