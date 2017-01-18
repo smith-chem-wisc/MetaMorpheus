@@ -6,6 +6,7 @@ namespace InternalLogicEngineLayer
 {
     public class ModernSpectrumMatch : ParentSpectrumMatch
     {
+
         #region Public Constructors
 
         public ModernSpectrumMatch(double scanPrecursorMZ, int scanNumber, double scanRT, int scanPrecursorCharge, int scanExperimentalPeaksCount, double totalIonCurrent, double precursorIntensity, int spectraFileIndex, CompactPeptide theBestPeptide, double score)
@@ -26,6 +27,7 @@ namespace InternalLogicEngineLayer
         #endregion Public Constructors
 
         #region Public Properties
+
         public int SpectraFileIndex { get; private set; }
         public double ScanRT { get; private set; }
         public double ScanPrecursorMZ { get; private set; }
@@ -43,5 +45,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

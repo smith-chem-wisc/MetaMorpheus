@@ -43,10 +43,6 @@ namespace InternalLogicTaskLayer
 
         public string Description { get; private set; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public List<MorpheusModification> Mods
         {
             get
@@ -55,6 +51,6 @@ namespace InternalLogicTaskLayer
             }
         }
 
-        #endregion Public Methods
+        #endregion Public Properties
     }
 }

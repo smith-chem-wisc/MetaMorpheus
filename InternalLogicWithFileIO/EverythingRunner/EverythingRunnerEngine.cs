@@ -12,7 +12,7 @@ namespace InternalLogicTaskLayer
 
         #region Private Fields
 
-        private List<MyTaskEngine> taskList;
+        private readonly List<MyTaskEngine> taskList;
         private List<string> currentRawDataFilenameList;
         private List<string> currentXmlDbFilenameList;
 

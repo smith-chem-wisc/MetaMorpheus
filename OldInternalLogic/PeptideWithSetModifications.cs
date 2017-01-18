@@ -81,7 +81,7 @@ namespace OldInternalLogic
                 if (sequence == null)
                 {
                     var sbsequence = new StringBuilder();
-                    List<MorpheusModification> value = null;
+                    List<MorpheusModification> value;
                     // fixed modifications on protein N-terminus
                     if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
                         foreach (var fixed_modification in value)

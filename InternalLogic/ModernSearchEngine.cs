@@ -72,7 +72,7 @@ namespace InternalLogicEngineLayer
                     var thisScan = listOfSortedms2Scans[i];
                     var thisScanprecursorMass = thisScan.PrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
-                    CalculatePeptideScores(thisScan.theScan, fullPeptideScores);
+                    CalculatePeptideScores(thisScan.TheScan, fullPeptideScores);
 
                     Array.Clear(bestPeptides, 0, searchModesCount);
                     Array.Clear(bestScores, 0, searchModesCount);
@@ -121,7 +121,7 @@ namespace InternalLogicEngineLayer
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            var cool = new ModernSpectrumMatch(thisScan.MonoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.monoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.monoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
+                            var cool = new ModernSpectrumMatch(thisScan.MonoisotopicPrecursorMZ, thisScan.OneBasedScanNumber, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorIntensity, spectraFileIndex, theBestPeptide, bestScores[j]);
                             newPsms[j][thisScan.OneBasedScanNumber - 1] = cool;
                         }
                     }

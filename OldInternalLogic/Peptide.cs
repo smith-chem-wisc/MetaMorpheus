@@ -2,12 +2,13 @@ namespace OldInternalLogic
 {
     public abstract class Peptide
     {
-        #region Protected Fields
+
+        #region Private Fields
 
         private string baseSequence;
         private string baseLeucineSequence;
 
-        #endregion Protected Fields
+        #endregion Private Fields
 
         #region Protected Constructors
 
@@ -85,5 +86,6 @@ namespace OldInternalLogic
         }
 
         #endregion Public Indexers
+
     }
 }

@@ -72,33 +72,34 @@ namespace InternalLogicEngineLayer
             // TODO**: add proteins with unique peptides first, makes algo faster, use parsimony on remainder
             // TODO**: how to handle multiple CompactPeptide objects that have the same basesequence (should be treated as 1 unaccounted-for
             //         peptide, not 10 for example)
-
-            // if psm contains decoy protein, remove all target proteins associated with the psm
+            // TODO**: if a peptide is shared between target and decoy proteins, remove its association with the target proteins, leave
+            //         only the decoy proteins
             foreach (var kvp in fullSequenceToProteinPeptideMatching)
             {
                 bool psmContainsDecoyProtein = false;
 
-                foreach(var peptide in kvp.Value)
+                foreach (var peptide in kvp.Value)
                 {
-                    if(peptide.Protein.IsDecoy)
+                    if (peptide.Protein.IsDecoy)
                     {
                         psmContainsDecoyProtein = true;
                     }
                 }
 
-                if(psmContainsDecoyProtein)
+                // if psm contains decoy protein, remove all target proteins associated with the psm
+                if (psmContainsDecoyProtein)
                 {
                     HashSet<PeptideWithSetModifications> peptidesToRemove = new HashSet<PeptideWithSetModifications>();
 
                     foreach (var peptide in kvp.Value)
                     {
-                        if(!peptide.Protein.IsDecoy)
+                        if (!peptide.Protein.IsDecoy)
                         {
                             peptidesToRemove.Add(peptide);
                         }
                     }
 
-                    foreach(var peptide in peptidesToRemove)
+                    foreach (var peptide in peptidesToRemove)
                     {
                         kvp.Value.Remove(peptide);
                     }
@@ -231,7 +232,7 @@ namespace InternalLogicEngineLayer
             {
                 currentBestNumNewPeptides = 0;
 
-                if (bestProteinHasOnePeptide == false)
+                if (bestProteinHasOnePeptide)
                 {
                     // attempt to find protein that best accounts for unaccounted-for peptides
                     foreach (var kvp in newDict)
@@ -342,7 +343,7 @@ namespace InternalLogicEngineLayer
                     {
                         HashSet<PeptideWithSetModifications> oldVirtualPeptides = new HashSet<PeptideWithSetModifications>();
                         HashSet<PeptideWithSetModifications> newVirtualPeptides = new HashSet<PeptideWithSetModifications>();
-                        HashSet<Protein> proteinListHere = new HashSet<Protein>();
+                        HashSet<Protein> proteinListHere;
 
                         // get the peptide's protein group after parsimony
                         peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
@@ -425,13 +426,13 @@ namespace InternalLogicEngineLayer
                     // have found all PSMs but some of them are duplicate peptides - pick only the highest-scoring psm per peptide
                     List<NewPsmWithFdr> newProteinGroupPsmList = new List<NewPsmWithFdr>();
                     Dictionary<string, List<NewPsmWithFdr>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
-                    foreach(var psm in proteinGroupPsmList)
+                    foreach (var psm in proteinGroupPsmList)
                     {
                         CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                         string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
                         List<NewPsmWithFdr> tempPsmList = new List<NewPsmWithFdr>();
 
-                        if(peptideSequenceToPsmMatching.ContainsKey(peptideBaseSequence))
+                        if (peptideSequenceToPsmMatching.ContainsKey(peptideBaseSequence))
                         {
                             peptideSequenceToPsmMatching.TryGetValue(peptideBaseSequence, out tempPsmList);
                             tempPsmList.Add(psm);
@@ -444,14 +445,14 @@ namespace InternalLogicEngineLayer
                     }
 
                     // pick the best-scoring psm per peptide
-                    foreach(var kvp1 in peptideSequenceToPsmMatching)
+                    foreach (var kvp1 in peptideSequenceToPsmMatching)
                     {
                         double bestScoreSoFar = 0;
                         NewPsmWithFdr bestPsm = null;
 
-                        foreach(var psm in kvp1.Value)
+                        foreach (var psm in kvp1.Value)
                         {
-                            if(psm.thisPSM.Score > bestScoreSoFar)
+                            if (psm.thisPSM.Score > bestScoreSoFar)
                             {
                                 bestPsm = psm;
                             }
@@ -535,7 +536,7 @@ namespace InternalLogicEngineLayer
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
                     var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
-                    if (limitedpsms_with_fdr.Count(b => !b.IsDecoy) > 0)
+                    if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                     {
                         Status("Running histogram analysis...");
                         var hm = MyAnalysis(limitedpsms_with_fdr);
