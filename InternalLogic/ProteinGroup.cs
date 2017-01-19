@@ -52,6 +52,11 @@ namespace InternalLogicEngineLayer
                 proteinGroupScore = 0;
         }
 
+        internal ProteinGroup(HashSet<Protein> proteins, HashSet<CompactPeptide> peptides, HashSet<CompactPeptide> allUniquePeptides)
+        {
+            
+        }
+
         #endregion Internal Constructors
 
         #region Public Properties
