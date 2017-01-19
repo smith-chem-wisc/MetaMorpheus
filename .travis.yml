@@ -12,8 +12,6 @@ script:
 - xbuild /p:Configuration=TestAndReleaseTravis MetaMorpheus.sln
 - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
 - tar -zcvf MonoCommandLine.tar.gz -C MetaMorpheusCommandLine/bin/Release .
-- cd MetaMorpheusCommandLine/bin/Release
-- mono ./MetaMorpheusCommandLine.exe
 deploy:
   provider: releases
   api_key:
