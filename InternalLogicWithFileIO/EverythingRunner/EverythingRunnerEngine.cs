@@ -77,7 +77,6 @@ namespace InternalLogicTaskLayer
                 ok.rawDataFilenameList = currentRawDataFilenameList;
 
                 var myTaskResults = (MyTaskResults)ok.Run();
-
                 if (myTaskResults.newDatabases != null)
                 {
                     currentXmlDbFilenameList = myTaskResults.newDatabases;
