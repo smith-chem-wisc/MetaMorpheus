@@ -24,7 +24,7 @@ namespace Test
             ParentSpectrumMatch[][] newPsms = new ParentSpectrumMatch[1][];
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ","accession",  null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
 
             Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>(); ;
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya");
