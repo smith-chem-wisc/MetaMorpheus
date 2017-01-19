@@ -164,7 +164,6 @@ namespace InternalLogicTaskLayer
                 {
                     string[] nodes = new string[6];
 
-                    string dataset = null;
                     string accession = null;
                     string name = null;
                     string full_name = null;
