@@ -47,7 +47,7 @@ namespace Test
 
             string mzmlName = @"ok.mzML";
             Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<MorpheusModification>>();
-            Protein ParentProtein = new Protein("MAAAAAYYYYY", "accession", null, oneBasedPossibleLocalizedModifications, new int[0], new int[0], new string[0], null, null, 0, false);
+            Protein ParentProtein = new Protein("MAAAAAYYYYY", "accession", oneBasedPossibleLocalizedModifications, new int[0], new int[0], new string[0], null, null, 0, false, false);
             PeptideWithPossibleModifications modPep = ParentProtein.Digest(task1.Protease, task1.MaxMissedCleavages, task1.InitiatorMethionineBehavior).First();
             Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             PeptideWithSetModifications pepWithSetMods = new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss);
@@ -61,7 +61,7 @@ namespace Test
 
             List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1, task2, task3, task4 };
             List<string> startingRawFilenameList = new List<string> { mzmlName };
-            List<string> startingXmlDbFilenameList = new List<string> { xmlName };
+            List<XmlForTask> startingXmlDbFilenameList = new List<XmlForTask> { new XmlForTask(xmlName, false) };
             var engine = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
 
             var results = (EverythingRunnerResults)engine.Run();

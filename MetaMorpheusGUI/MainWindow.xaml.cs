@@ -140,7 +140,7 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new OpenSearchMode("Open"));
         }
 
-        private void AddNewDB(object sender, StringListEventArgs e)
+        private void AddNewDB(object sender, XmlForTaskListEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -150,8 +150,8 @@ namespace MetaMorpheusGUI
             {
                 foreach (var uu in xmlDBobservableCollection)
                     uu.Use = false;
-                foreach (var uu in e.StringList)
-                    xmlDBobservableCollection.Add(new XMLdb(uu));
+                foreach (var uu in e.newDatabases)
+                    xmlDBobservableCollection.Add(new XMLdb(uu.FileName));
             }
         }
 
@@ -280,7 +280,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => new XmlForTask(b.FileName, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();

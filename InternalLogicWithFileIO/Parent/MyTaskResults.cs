@@ -5,19 +5,21 @@ namespace InternalLogicTaskLayer
 {
     public abstract class MyTaskResults : MyResults
     {
+
         #region Public Fields
 
         public List<string> newSpectra;
-        public List<string> newDatabases;
+        public List<XmlForTask> newDatabases;
 
         #endregion Public Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
         protected MyTaskResults(MyTaskEngine s) : base(s)
         {
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
+
     }
 }

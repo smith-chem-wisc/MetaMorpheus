@@ -25,7 +25,7 @@ namespace InternalLogicTaskLayer
         #region Public Fields
 
         public List<string> rawDataFilenameList;
-        public List<string> xmlDbFilenameList;
+        public List<XmlForTask> xmlDbFilenameList;
 
         #endregion Public Fields
 
@@ -106,7 +106,7 @@ namespace InternalLogicTaskLayer
             sb.AppendLine("Spectra files:");
             sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
             sb.AppendLine("XML files:");
-            sb.AppendLine(string.Join(Environment.NewLine, xmlDbFilenameList.Select(b => '\t' + b)));
+            sb.AppendLine(string.Join(Environment.NewLine, xmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
             sb.AppendLine("initiatorMethionineBehavior: " + InitiatorMethionineBehavior);
             sb.AppendLine("maxMissedCleavages: " + MaxMissedCleavages);
             sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
@@ -121,10 +121,10 @@ namespace InternalLogicTaskLayer
 
         #region Protected Internal Methods
 
-        protected internal static void MatchXMLmodsToKnownMods(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        protected internal static void MatchXMLmodsToKnownMods(List<XmlForTask> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
             modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXmlModifications(listOfXMLdbs);
+            var modsInXML = ProteomeDatabaseReader.ReadXmlModifications(listOfXMLdbs.Select(b => b.FileName));
             modsInXMLtoTrim = new HashSet<string>(modsInXML);
             foreach (var knownMod in modsKnown)
                 if (modsInXML.Contains(knownMod.NameInXml))
@@ -153,12 +153,12 @@ namespace InternalLogicTaskLayer
 
         #region Protected Methods
 
-        protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, string FileName)
+        protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, XmlForTask xmlForTask)
         {
-            using (var stream = new FileStream(FileName, FileMode.Open))
+            using (var stream = new FileStream(xmlForTask.FileName, FileMode.Open))
             {
                 Stream uniprotXmlFileStream = stream;
-                if (FileName.EndsWith(".gz"))
+                if (xmlForTask.FileName.EndsWith(".gz"))
                     uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
                 using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
                 {
@@ -294,15 +294,9 @@ namespace InternalLogicTaskLayer
                                         break;
 
                                     case "entry":
-                                        string dataset_abbreviation;
-                                        if (dataset != null && dataset.Equals("Swiss-Prot", StringComparison.InvariantCultureIgnoreCase))
-                                            dataset_abbreviation = "sp";
-                                        else
-                                            dataset_abbreviation = "uk";
-
                                         if (accession != null && sequence != null)
                                         {
-                                            var protein = new Protein(sequence, accession, dataset_abbreviation, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false);
+                                            var protein = new Protein(sequence, accession, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false, xmlForTask.IsContaminant);
 
                                             yield return protein;
 
@@ -353,7 +347,7 @@ namespace InternalLogicTaskLayer
                                                     decoyendPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedBeginPositions[i] + 1;
                                                     decoyBigPeptideTypes[oneBasedBeginPositions.Count - i - 1] = peptideTypes[i];
                                                 }
-                                                var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, dataset_abbreviation, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true);
+                                                var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true, xmlForTask.IsContaminant);
                                                 yield return decoy_protein;
                                                 offset += protein.Length;
                                             }

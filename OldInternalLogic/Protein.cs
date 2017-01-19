@@ -14,19 +14,19 @@ namespace OldInternalLogic
 
         #region Public Constructors
 
-        public Protein(string baseSequence, string accession, string datasetAbbreviation, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy)
+        public Protein(string baseSequence, string accession, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy, bool isContaminant)
         {
             BaseSequence = baseSequence;
             Accession = accession;
-            this.DatasetAbbreviation = datasetAbbreviation;
             OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications;
             OneBasedBeginPositions = beginPositions;
             OneBasedEndPositions = endPositions;
-            this.BigPeptideTypes = bigPeptideTypes;
-            this.Name = name;
-            this.FullName = fullName;
-            this.Offset = offset;
-            this.IsDecoy = isDecoy;
+            BigPeptideTypes = bigPeptideTypes;
+            Name = name;
+            FullName = fullName;
+            Offset = offset;
+            IsDecoy = isDecoy;
+            IsContaminant = isContaminant;
         }
 
         #endregion Public Constructors
@@ -67,6 +67,7 @@ namespace OldInternalLogic
         public string FullName { get; private set; }
 
         public int Offset { get; private set; }
+        public bool IsContaminant { get; set; }
 
         #endregion Public Properties
 

@@ -24,6 +24,7 @@ namespace InternalLogicEngineLayer
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Count(b => b.Protein.IsDecoy) > 0;
+            IsContaminant = peptidesWithSetModifications.Count(b => b.Protein.IsContaminant) > 0;
             this.peptidesWithSetModifications = peptidesWithSetModifications;
 
             var allProductTypes = new List<ProductType> { ProductType.B, ProductType.Y };
@@ -127,20 +128,17 @@ namespace InternalLogicEngineLayer
             {
                 var sb = new StringBuilder();
                 sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
-                sb.Append("Protein DB" + '\t');
                 sb.Append("Protein Accession" + '\t');
                 sb.Append("Protein FullName" + '\t');
                 sb.Append("Peptide Description" + '\t');
-                sb.Append("OneBasedStartResidueInProtein" + '\t');
-                sb.Append("OneBasedEndResidueInProtein" + '\t');
+                sb.Append("Start and End ResidueInProtein" + '\t');
                 sb.Append("BaseSequence" + '\t');
                 sb.Append("FullSequence" + '\t');
                 sb.Append("numVariableMods" + '\t');
                 sb.Append("MissedCleavages" + '\t');
                 sb.Append("PeptideMonoisotopicMass" + '\t');
                 sb.Append("MassDiff (Da)" + '\t');
-                sb.Append("Contaminant" + '\t');
-                sb.Append("Decoy");
+                sb.Append("Decoy/Contaminant");
                 return sb.ToString();
             }
         }
@@ -155,20 +153,17 @@ namespace InternalLogicEngineLayer
 
             sb.Append(newPsm.ToString() + '\t');
 
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.DatasetAbbreviation)) + "\t");
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.FullName)) + "\t");
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.PeptideDescription)) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.OneBasedStartResidueInProtein)) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.OneBasedEndResidueInProtein)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")) + "\t");
             sb.Append(BaseSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(IsContaminant ? "*" : "" + '\t');
-            sb.Append(IsDecoy ? "*" : "" + '\t');
+            sb.Append("" + (IsDecoy ? "D" : " ") + (IsContaminant ? "C" : " "));
 
             return sb.ToString();
         }
