@@ -124,7 +124,7 @@ namespace InternalLogicTaskLayer
         protected internal static void MatchXMLmodsToKnownMods(List<string> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
             modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXMLmodifications(listOfXMLdbs);
+            var modsInXML = ProteomeDatabaseReader.ReadXmlModifications(listOfXMLdbs);
             modsInXMLtoTrim = new HashSet<string>(modsInXML);
             foreach (var knownMod in modsKnown)
                 if (modsInXML.Contains(knownMod.NameInXml))

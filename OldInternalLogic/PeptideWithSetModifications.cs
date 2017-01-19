@@ -25,7 +25,7 @@ namespace OldInternalLogic
 
         private string sequence;
 
-        private PeptideWithPossibleModifications modPep;
+        private readonly PeptideWithPossibleModifications modPep;
 
         #endregion Private Fields
 
@@ -47,7 +47,7 @@ namespace OldInternalLogic
             get
             {
                 if (double.IsNaN(monoisotopicMass))
-                    computeFragmentMasses();
+                    ComputeFragmentMasses();
                 return monoisotopicMass;
             }
             set
@@ -176,7 +176,7 @@ namespace OldInternalLogic
             get
             {
                 var sbsequence = new StringBuilder();
-                List<MorpheusModification> value = null;
+                List<MorpheusModification> value;
                 // fixed modifications on protein N-terminus
                 if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
                     foreach (var fixed_modification in value)
@@ -252,7 +252,7 @@ namespace OldInternalLogic
 
         public double[] FastSortedProductMasses(List<ProductType> productTypes)
         {
-            PeptideFragmentMasses p = computeFragmentMasses();
+            PeptideFragmentMasses p = ComputeFragmentMasses();
             double[] products1 = null;
             double[] products2 = null;
             if (productTypes.Contains(ProductType.B))
@@ -331,7 +331,7 @@ namespace OldInternalLogic
 
         #region Private Methods
 
-        private PeptideFragmentMasses computeFragmentMasses()
+        private PeptideFragmentMasses ComputeFragmentMasses()
         {
             var p = new PeptideFragmentMasses();
 
