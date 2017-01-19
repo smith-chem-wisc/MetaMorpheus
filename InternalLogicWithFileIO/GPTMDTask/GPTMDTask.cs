@@ -156,6 +156,8 @@ namespace InternalLogicTaskLayer
 
             WriteGPTMDdatabse(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
 
+            SucessfullyFinishedWritingFile(outputXMLdbFullName);
+
             myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
 
             return myGPTMDresults;
@@ -170,7 +172,7 @@ namespace InternalLogicTaskLayer
             yield return new Tuple<double, double>(15.994915, 15.994915);
         }
 
-        private void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
+        public static void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
         {
             var xmlWriterSettings = new XmlWriterSettings
             {
@@ -178,7 +180,6 @@ namespace InternalLogicTaskLayer
                 IndentChars = "  "
             };
 
-            Status("Writing XML...");
             using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
             {
                 writer.WriteStartDocument();
@@ -250,7 +251,6 @@ namespace InternalLogicTaskLayer
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
             }
-            SucessfullyFinishedWritingFile(outputFileName);
         }
 
         #endregion Private Methods

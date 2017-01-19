@@ -53,7 +53,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+				return OneBasedScanNumber.ToString();
             }
         }
 
@@ -63,7 +63,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+				return true;
             }
         }
 
@@ -85,7 +85,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+				return Polarity.Positive;
             }
         }
 
@@ -95,7 +95,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+				return id;
             }
         }
 
@@ -127,7 +127,13 @@ namespace Test
 
         public bool TryGetDissociationType(out DissociationType DissociationType)
         {
-            throw new NotImplementedException();
+			if (MsnOrder == 2)
+			{
+				DissociationType = DissociationType.HCD;
+				return true;
+			}
+			DissociationType = DissociationType.Unknown;
+			return false;
         }
 
         public bool TryGetIsolationMZ(out double IsolationMZ)
@@ -143,17 +149,35 @@ namespace Test
 
         public bool TryGetIsolationRange(out MzRange IsolationRange)
         {
-            throw new NotImplementedException();
+			if (MsnOrder == 2)
+			{
+				IsolationRange = new MzRange(isolationMZ-3,isolationMZ+3);
+				return true;
+			}
+			IsolationRange = null;
+			return false;
         }
 
         public bool TryGetIsolationWidth(out double IsolationWidth)
         {
-            throw new NotImplementedException();
+			if (MsnOrder == 2)
+			{
+				IsolationWidth = 6;
+				return true;
+			}
+			IsolationWidth = double.NaN;
+			return false;
         }
 
         public bool TryGetPrecursorID(out string PrecursorID)
         {
-            throw new NotImplementedException();
+			if (MsnOrder == 2)
+			{
+				PrecursorID = 1.ToString();
+				return true;
+			}
+			PrecursorID = null;
+			return false;
         }
 
         public bool TryGetPrecursorOneBasedScanNumber(out int PrecursorOneBasedScanNumber)
