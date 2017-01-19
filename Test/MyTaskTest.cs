@@ -21,6 +21,7 @@ namespace Test
         public static void TestEverythingRunner()
         {
             Console.WriteLine("Environment.CurrentDirectory is " + Environment.CurrentDirectory);
+
             MyEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
             MyEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
 
@@ -30,6 +31,19 @@ namespace Test
             ObservableCollection<ModList> modList = new ObservableCollection<ModList> { modlist1, modlist2, modlist3 };
             CalibrationTask task1 = new CalibrationTask(modList);
             task1.InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
+
+            ModList modlist4 = new ModList("m.txt");
+            GPTMDTask task2 = new GPTMDTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 });
+
+            IEnumerable<SearchMode> allSms = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("ye", 5) };
+
+            SearchTask task3 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 }, allSms);
+            task3.ListOfModListsForSearch[3].Localize = true;
+
+            SearchTask task4 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 }, allSms);
+            task4.ListOfModListsForSearch[3].Localize = true;
+            task4.ClassicSearch = false;
+
 
             string mzmlName = @"ok.mzML";
             Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<MorpheusModification>>();
@@ -45,7 +59,7 @@ namespace Test
             var ye = new Dictionary<string, HashSet<Tuple<int, string>>>();
             GPTMDTask.WriteGPTMDdatabse(ye, new List<Protein> { ParentProtein }, xmlName);
 
-            List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1 };
+            List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1, task2, task3, task4 };
             List<string> startingRawFilenameList = new List<string> { mzmlName };
             List<string> startingXmlDbFilenameList = new List<string> { xmlName };
             var engine = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
