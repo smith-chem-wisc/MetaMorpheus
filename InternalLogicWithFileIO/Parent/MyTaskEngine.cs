@@ -188,10 +188,6 @@ namespace InternalLogicTaskLayer
                                 nodes[xml.Depth] = xml.Name;
                                 switch (xml.Name)
                                 {
-                                    case "entry":
-                                        dataset = xml.GetAttribute("dataset");
-                                        break;
-
                                     case "accession":
                                         if (accession == null)
                                         {
@@ -351,7 +347,6 @@ namespace InternalLogicTaskLayer
                                                 offset += protein.Length;
                                             }
                                         }
-                                        dataset = null;
                                         accession = null;
                                         name = null;
                                         full_name = null;
