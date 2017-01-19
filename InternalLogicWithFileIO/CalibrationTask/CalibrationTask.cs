@@ -108,13 +108,23 @@ namespace InternalLogicTaskLayer
                 lock (myTaskResults)
                 {
                     Status("Loading spectra file " + origDataFileName + "...");
-                    if (Path.GetExtension(origDataFileName).Equals(".mzML"))
-                        myMsDataFile = new Mzml(origDataFileName, MaxNumPeaksPerScan);
-                    else
-                        myMsDataFile = new ThermoRawFile(origDataFileName, MaxNumPeaksPerScan);
+					if (Path.GetExtension(origDataFileName).Equals(".mzML"))
+					{
+						Status("Opening the mzML file " + origDataFileName + " with at most " + MaxNumPeaksPerScan + " peaks per scan");
+						myMsDataFile = new Mzml(origDataFileName, MaxNumPeaksPerScan);
+					}
+					else
+						myMsDataFile = new ThermoRawFile(origDataFileName, MaxNumPeaksPerScan);
                     Status("Opening spectra file " + origDataFileName + "...");
                     myMsDataFile.Open();
+					Status("opened file");
+					Status("myMsDataFile = "+myMsDataFile);
+					Status("myMsDataFile.NumSpectra = " + myMsDataFile.NumSpectra);
+					Status("myMsDataFile.GetOneBasedScan(1).MsnOrder = " + myMsDataFile.GetOneBasedScan(1).MsnOrder);
+					Status("myMsDataFile.GetOneBasedScan(2).MsnOrder = " + myMsDataFile.GetOneBasedScan(2).MsnOrder);
+					Status("myMsDataFile.Where(b => b.MsnOrder == 2).Count() = " + myMsDataFile.Where(b => b.MsnOrder == 2).Count());
                     listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
+					Status("mkay");
                 }
 
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);

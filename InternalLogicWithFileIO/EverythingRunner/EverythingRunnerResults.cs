@@ -3,7 +3,7 @@ using System.Text;
 
 namespace InternalLogicTaskLayer
 {
-    internal class EverythingRunnerResults : MyResults
+    public class EverythingRunnerResults : MyResults
     {
 
         #region Public Constructors
