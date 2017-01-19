@@ -30,7 +30,7 @@ namespace Test
 
             List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
             ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(2, 2);
-            PSMwithTargetDecoyKnown thisPSM = new PSMwithTargetDecoyKnown(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile);
+            PSMwithProteinHashSet thisPSM = new PSMwithProteinHashSet(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile);
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             identifications.Add(thePsmwithfdr);
 

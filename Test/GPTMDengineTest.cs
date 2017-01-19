@@ -35,7 +35,7 @@ namespace Test
             var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss) };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
-            var thisPSM = new PSMwithTargetDecoyKnown(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile);
+            var thisPSM = new PSMwithProteinHashSet(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile);
             var newPsmWithFDR = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             allResultingIdentifications.Add(newPsmWithFDR);
 

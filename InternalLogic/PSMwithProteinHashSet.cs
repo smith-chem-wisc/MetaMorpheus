@@ -9,7 +9,7 @@ using System.Text;
 
 namespace InternalLogicEngineLayer
 {
-    public class PSMwithTargetDecoyKnown
+    public class PSMwithProteinHashSet
     {
 
         #region Public Fields
@@ -20,7 +20,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public PSMwithTargetDecoyKnown(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
+        public PSMwithProteinHashSet(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Count(b => b.Protein.IsDecoy) > 0;
@@ -73,6 +73,7 @@ namespace InternalLogicEngineLayer
 
         public HashSet<PeptideWithSetModifications> peptidesWithSetModifications { get; private set; }
         public bool IsDecoy { get; private set; }
+        public bool IsContaminant { get; private set; }
 
         public double Score
         {
@@ -137,7 +138,9 @@ namespace InternalLogicEngineLayer
                 sb.Append("numVariableMods" + '\t');
                 sb.Append("MissedCleavages" + '\t');
                 sb.Append("PeptideMonoisotopicMass" + '\t');
-                sb.Append("MassDiff (Da)");
+                sb.Append("MassDiff (Da)" + '\t');
+                sb.Append("Contaminant" + '\t');
+                sb.Append("Decoy");
                 return sb.ToString();
             }
         }
@@ -163,7 +166,9 @@ namespace InternalLogicEngineLayer
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(IsContaminant ? "*" : "" + '\t');
+            sb.Append(IsDecoy ? "*" : "" + '\t');
 
             return sb.ToString();
         }
