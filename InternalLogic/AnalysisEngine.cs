@@ -64,12 +64,12 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
+        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinMatching, out List<ProteinGroup> proteinGroups)
         {
             Status("Getting initial protein dictionary...");
 
             var uniquePeptides = new HashSet<CompactPeptide>();
-            foreach (var kvp in compactPeptideToProteinPeptideMatching)
+            foreach (var kvp in compactPeptideToProteinMatching)
             {
                 // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
                 bool peptidePairedToDecoyProtein = false;
@@ -122,7 +122,7 @@ namespace InternalLogicEngineLayer
             // same dictionary, but if a protein has multiple peptides with the same base sequence, only use one of them
             Dictionary<Protein, HashSet<CompactPeptide>> newDictNoDuplicateBaseSeq = new Dictionary<Protein, HashSet<CompactPeptide>>();
 
-            foreach(var kvp in compactPeptideToProteinPeptideMatching)
+            foreach(var kvp in compactPeptideToProteinMatching)
             {
                 foreach(var peptide in kvp.Value)
                 {
@@ -132,7 +132,7 @@ namespace InternalLogicEngineLayer
 
             /*
 
-            foreach (var kvp in compactPeptideToProteinPeptideMatching)
+            foreach (var kvp in compactPeptideToProteinMatching)
             {
                 foreach (var virtualPeptide in kvp.Value)
                 {
@@ -144,7 +144,7 @@ namespace InternalLogicEngineLayer
                         HashSet<string> peptideListBaseSequencesNoDuplicates = new HashSet<string>();
                         HashSet<string> peptideListBaseSequences = new HashSet<string>();
 
-                        foreach (var kvp1 in compactPeptideToProteinPeptideMatching)
+                        foreach (var kvp1 in compactPeptideToProteinMatching)
                         {
                             foreach (var virtualPeptide2 in kvp1.Value)
                             {
@@ -342,7 +342,7 @@ namespace InternalLogicEngineLayer
                         peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
 
                         // find peptide's original (unparsimonious) virtual peptide matches
-                        compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out oldVirtualPeptides);
+                        compactPeptideToProteinMatching.TryGetValue(peptide, out oldVirtualPeptides);
 
                         // get the virtual peptides that belong to the post-parsimony protein(s) only
                         foreach (var virtualPeptide in oldVirtualPeptides)
@@ -359,8 +359,8 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            compactPeptideToProteinPeptideMatching = answer;
             Status("Finished parsimony");
+            return answer;
         }
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
@@ -497,7 +497,7 @@ namespace InternalLogicEngineLayer
             List<ProteinGroup> proteinGroups = null;
             if (doParsimony)
             {
-                ApplyProteinParsimony(out proteinGroups);
+                compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching, out proteinGroups);
             }
 
             //status("Getting single match just for FDR purposes...");
