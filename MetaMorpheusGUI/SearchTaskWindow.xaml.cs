@@ -98,6 +98,7 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.ClassicSearch;
             modernSearchRadioButton.IsChecked = !task.ClassicSearch;
             checkBoxParsimony.IsChecked = task.DoParsimony;
+            checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.Protease;
@@ -147,6 +148,7 @@ namespace MetaMorpheusGUI
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.ListOfModListsForSearch = ModFileListInWindow.ToList();
             TheTask.SearchModes = SearchModes.ToList();
+            TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             DialogResult = true;
         }
