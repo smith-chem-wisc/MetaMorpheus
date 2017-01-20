@@ -64,398 +64,14 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public static Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, out HashSet<CompactPeptide> uniquePeptides)
+        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
-            // TODO**: protein group may have a shared peptide that is only shared within the group (peptide is unique to the group but shared within the group)
-            // TODO**: how to handle indistinguishable proteins?
-            // TODO**: rewrite parsimony function using protein group objects (more efficient)
-            // TODO**: add proteins with unique peptides first, makes algo faster, use parsimony on remainder
+            Status("Getting initial protein dictionary...");
 
-            // if psm contains decoy protein, remove all target proteins associated with the psm
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
+            var uniquePeptides = new HashSet<CompactPeptide>();
+            foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
-                bool psmContainsDecoyProtein = false;
-
-                foreach (var peptide in kvp.Value)
-                {
-                    if (peptide.Protein.IsDecoy)
-                    {
-                        psmContainsDecoyProtein = true;
-                    }
-                }
-
-                // if psm contains decoy protein, remove all target proteins associated with the psm
-                if (psmContainsDecoyProtein)
-                {
-                    HashSet<PeptideWithSetModifications> peptidesToRemove = new HashSet<PeptideWithSetModifications>();
-
-                    foreach (var peptide in kvp.Value)
-                    {
-                        if (!peptide.Protein.IsDecoy)
-                        {
-                            peptidesToRemove.Add(peptide);
-                        }
-                    }
-
-                    foreach (var peptide in peptidesToRemove)
-                    {
-                        kvp.Value.Remove(peptide);
-                    }
-                }
-            }
-
-            // finds unique peptides first (not really used for parsimony but used later for protein groups)
-            // unique peptide is a peptide that can belong to only one protein
-            uniquePeptides = new HashSet<CompactPeptide>();
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
-            {
-                List<Protein> proteinListHere = new List<Protein>();
-
-                foreach (var peptide in kvp.Value)
-                {
-                    if (!proteinListHere.Contains(peptide.Protein))
-                    {
-                        proteinListHere.Add(peptide.Protein);
-                    }
-                }
-
-                if (proteinListHere.Count == 1)
-                {
-                    uniquePeptides.Add(kvp.Key);
-                }
-            }
-
-            // makes dictionary with proteins as keys and list of associated peptides as the value
-            Dictionary<Protein, HashSet<CompactPeptide>> newDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
-
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
-            {
-                foreach (var virtualPeptide in kvp.Value)
-                {
-                    // find peptides associated with new protein
-                    if (!newDict.ContainsKey(virtualPeptide.Protein))
-                    {
-                        HashSet<CompactPeptide> peptides = new HashSet<CompactPeptide>();
-
-                        foreach (var kvp1 in fullSequenceToProteinPeptideMatching)
-                        {
-                            foreach (var virtualPeptide2 in kvp1.Value)
-                            {
-                                // if the virtual peptides come from the same protein, add the peptide to the protein's list
-                                if (virtualPeptide.Protein == virtualPeptide2.Protein)
-                                {
-                                    peptides.Add(kvp1.Key);
-                                }
-                            }
-                        }
-
-                        newDict.Add(virtualPeptide.Protein, peptides);
-                    }
-                }
-            }
-
-            // makes the same dictionary, but if a protein has multiple peptides with the same base sequence, only use one of them
-            Dictionary<Protein, HashSet<CompactPeptide>> newDictNoDuplicatePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            foreach (var kvp in newDict)
-            {
-                HashSet<CompactPeptide> peptideListNoDuplicates = new HashSet<CompactPeptide>();
-                HashSet<string> peptideListBaseSequences = new HashSet<string>();
-
-                foreach (var peptide in kvp.Value)
-                {
-                    string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                    if (!peptideListBaseSequences.Contains(peptideBaseSequence))
-                    {
-                        peptideListNoDuplicates.Add(peptide);
-                        peptideListBaseSequences.Add(peptideBaseSequence);
-                    }
-                }
-
-                newDictNoDuplicatePeptides.Add(kvp.Key, peptideListNoDuplicates);
-            }
-
-            // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
-            Dictionary<Protein, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            HashSet<CompactPeptide> usedPeptides = new HashSet<CompactPeptide>();
-            HashSet<CompactPeptide> bestProteinPeptideList = new HashSet<CompactPeptide>();
-            Protein bestProtein = null;
-            int currentBestNumNewPeptides = -1;
-            bool bestProteinHasOnePeptide = false;
-
-            // as long as there are peptides that have not been accounted for, keep going
-            while (currentBestNumNewPeptides != 0)
-            {
-                currentBestNumNewPeptides = 0;
-
-                if (bestProteinHasOnePeptide)
-                {
-                    // attempt to find protein that best accounts for unaccounted-for peptides
-                    foreach (var kvp in newDictNoDuplicatePeptides)
-                    {
-                        int comparisonProteinNewPeptides = 0;
-
-                        // determines number of unaccounted-for peptides for the current protein
-                        foreach (CompactPeptide peptide in kvp.Value)
-                        {
-                            if (!usedPeptides.Contains(peptide))
-                            {
-                                comparisonProteinNewPeptides++;
-                            }
-                        }
-
-                        // if the current protein is better than the best so far, current protein is the new best protein
-                        if (comparisonProteinNewPeptides > currentBestNumNewPeptides)
-                        {
-                            bestProtein = kvp.Key;
-                            newDict.TryGetValue(kvp.Key, out bestProteinPeptideList);
-                            currentBestNumNewPeptides = comparisonProteinNewPeptides;
-                        }
-                    }
-
-                    if (currentBestNumNewPeptides == 1)
-                    {
-                        bestProteinHasOnePeptide = true;
-                    }
-
-                    // adds the best protein if algo found unaccounted-for peptides
-                    if (currentBestNumNewPeptides > 1)
-                    {
-                        parsimonyDict.Add(bestProtein, bestProteinPeptideList);
-
-                        // the new best protein's peptides have been accounted for
-                        foreach (CompactPeptide peptide in bestProteinPeptideList)
-                        {
-                            if (!usedPeptides.Contains(peptide))
-                                usedPeptides.Add(peptide);
-                        }
-                    }
-                }
-
-                // best protein has one unaccounted-for peptide (stop searching for more than that peptide)
-                else
-                {
-                    foreach (var kvp in newDict)
-                    {
-                        if (!parsimonyDict.ContainsKey(kvp.Key))
-                        {
-                            foreach (CompactPeptide peptide in kvp.Value)
-                            {
-                                if (!usedPeptides.Contains(peptide))
-                                {
-                                    bestProtein = kvp.Key;
-                                    bestProteinPeptideList = kvp.Value;
-
-                                    parsimonyDict.Add(bestProtein, bestProteinPeptideList);
-
-                                    foreach (CompactPeptide peptide2 in bestProteinPeptideList)
-                                    {
-                                        if (!usedPeptides.Contains(peptide))
-                                            usedPeptides.Add(peptide2);
-                                    }
-
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            /*
-            // add indistinguishable proteins to the protein group
-            foreach (var kvp in newDict)
-            {
-                if (!parsimonyDict.ContainsKey(kvp.Key))
-                {
-                    foreach(var kvp1 in parsimonyDict)
-                    {
-                        if(kvp.Value.SetEquals(kvp1.Value))
-                        {
-                            parsimonyDict.Add(kvp.Key, kvp.Value);
-                        }
-                    }
-                }
-            }
-            */
-
-
-            // build protein group after parsimony and match it to its peptide
-            Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
-
-            foreach (var kvp in parsimonyDict)
-            {
-                foreach (var peptide in kvp.Value)
-                {
-                    if (!peptideProteinListMatch.ContainsKey(peptide))
-                    {
-                        HashSet<Protein> proteinListHere = new HashSet<Protein>();
-
-                        foreach (var kvp1 in parsimonyDict)
-                        {
-                            if (kvp1.Value.Contains(peptide))
-                            {
-                                proteinListHere.Add(kvp1.Key);
-                            }
-                        }
-
-                        peptideProteinListMatch.Add(peptide, proteinListHere);
-                    }
-                }
-            }
-
-            
-
-            // constructs return dictionary (only use parsimony proteins for the new virtual peptide list)
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
-            foreach (var kvp in parsimonyDict)
-            {
-                foreach (var peptide in kvp.Value)
-                {
-                    if (!answer.ContainsKey(peptide))
-                    {
-                        HashSet<PeptideWithSetModifications> oldVirtualPeptides = new HashSet<PeptideWithSetModifications>();
-                        HashSet<PeptideWithSetModifications> newVirtualPeptides = new HashSet<PeptideWithSetModifications>();
-                        HashSet<Protein> proteinListHere;
-
-                        // get the peptide's protein group after parsimony
-                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
-
-                        // find peptide's original (unparsimonious) virtual peptide matches
-                        fullSequenceToProteinPeptideMatching.TryGetValue(peptide, out oldVirtualPeptides);
-
-                        // get the virtual peptides that belong to the post-parsimony protein(s) only
-                        foreach (var virtualPeptide in oldVirtualPeptides)
-                        {
-                            if (proteinListHere.Contains(virtualPeptide.Protein))
-                            {
-                                newVirtualPeptides.Add(virtualPeptide);
-                            }
-                        }
-
-                        // make new dictionary using only virtual peptides from parsimonious protein list
-                        answer.Add(peptide, newVirtualPeptides);
-                    }
-                }
-            }
-
-            return answer;
-        }
-
-        public List<ProteinGroup> scoreProteinGroups(List<NewPsmWithFdr> psmList, HashSet<CompactPeptide> allUniquePeptides)
-        {
-            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-
-            Dictionary<NewPsmWithFdr, HashSet<Protein>> psmProteinListMatching = new Dictionary<NewPsmWithFdr, HashSet<Protein>>();
-
-            HashSet<Protein> proteinGroupProteinSet = new HashSet<Protein>();
-            List<NewPsmWithFdr> proteinGroupPsmList = new List<NewPsmWithFdr>();
-
-            // build protein list (get proteins associated with psm using the parsimony dictionary)
-            foreach (var psm in psmList)
-            {
-                proteinGroupProteinSet = new HashSet<Protein>();
-                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-
-                HashSet<PeptideWithSetModifications> virtualPeptides = new HashSet<PeptideWithSetModifications>();
-                compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out virtualPeptides);
-
-                foreach (var virtualPeptide in virtualPeptides)
-                {
-                    if (!proteinGroupProteinSet.Contains(virtualPeptide.Protein))
-                    {
-                        proteinGroupProteinSet.Add(virtualPeptide.Protein);
-                    }
-                }
-
-                psmProteinListMatching.Add(psm, proteinGroupProteinSet);
-            }
-
-            // build psm list
-            foreach (var kvp in psmProteinListMatching)
-            {
-                bool newProteinGroup = true;
-
-                foreach (var proteinGroup in proteinGroups)
-                {
-                    if (proteinGroup.Proteins.SetEquals(kvp.Value))
-                        newProteinGroup = false;
-                }
-
-                if (newProteinGroup)
-                {
-                    // look for the protein list's associated PSMs
-                    proteinGroupPsmList = new List<NewPsmWithFdr>();
-
-                    foreach (var kvp1 in psmProteinListMatching)
-                    {
-                        // if the kvp's have the same protein list, add the newly found psm
-                        if (kvp1.Value.SetEquals(kvp.Value))
-                        {
-                            proteinGroupPsmList.Add(kvp1.Key);
-                        }
-                    }
-
-                    // have found all PSMs but some of them are duplicate base sequences - pick only the highest-scoring psm per base sequence
-                    List<NewPsmWithFdr> newProteinGroupPsmList = new List<NewPsmWithFdr>();
-                    Dictionary<string, List<NewPsmWithFdr>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
-                    foreach (var psm in proteinGroupPsmList)
-                    {
-                        CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                        string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                        List<NewPsmWithFdr> tempPsmList = new List<NewPsmWithFdr>();
-
-                        if (peptideSequenceToPsmMatching.ContainsKey(peptideBaseSequence))
-                        {
-                            peptideSequenceToPsmMatching.TryGetValue(peptideBaseSequence, out tempPsmList);
-                            tempPsmList.Add(psm);
-                        }
-                        else
-                        {
-                            tempPsmList.Add(psm);
-                            peptideSequenceToPsmMatching.Add(peptideBaseSequence, tempPsmList);
-                        }
-                    }
-
-                    // pick the best-scoring psm per base sequence
-                    foreach (var kvp1 in peptideSequenceToPsmMatching)
-                    {
-                        double bestScoreSoFar = 0;
-                        NewPsmWithFdr bestPsm = null;
-
-                        foreach (var psm in kvp1.Value)
-                        {
-                            if (psm.thisPSM.Score > bestScoreSoFar)
-                            {
-                                bestPsm = psm;
-                            }
-                        }
-
-                        newProteinGroupPsmList.Add(bestPsm);
-                    }
-
-                    // build new protein group
-                    ProteinGroup proteinGroup = new ProteinGroup(kvp.Value, newProteinGroupPsmList, allUniquePeptides, variableModifications, localizeableModifications);
-                    proteinGroups.Add(proteinGroup);
-                }
-            }
-
-            // order protein groups by score
-            var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.proteinGroupScore).ToList();
-
-            return sortedProteinGroups;
-        }
-
-        public static Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> fullSequenceToProteinPeptideMatching, out List<ProteinGroup> proteinGroups)
-        {
-            // TODO**: protein group may have a shared peptide that is only shared within the group (peptide is unique to the group but shared within the group)
-            // TODO**: how to handle indistinguishable proteins?
-            // TODO**: add proteins with unique peptides first, makes algo faster, use parsimony on remainder
-
-            // if a peptide is associated with a decoy protein, remove all target proteins associated with the peptide
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
-            {
+                // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
                 bool peptidePairedToDecoyProtein = false;
 
                 foreach (var peptide in kvp.Value)
@@ -465,7 +81,7 @@ namespace InternalLogicEngineLayer
                         peptidePairedToDecoyProtein = true;
                     }
                 }
-                
+
                 if (peptidePairedToDecoyProtein)
                 {
                     HashSet<PeptideWithSetModifications> peptidesToRemove = new HashSet<PeptideWithSetModifications>();
@@ -483,12 +99,8 @@ namespace InternalLogicEngineLayer
                         kvp.Value.Remove(peptide);
                     }
                 }
-            }
 
-            // finds unique peptides - a unique peptide is a peptide that can belong to only one protein
-            var uniquePeptides = new HashSet<CompactPeptide>();
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
-            {
+                // finds unique peptides (peptides that can belong to only one protein)
                 List<Protein> proteinListHere = new List<Protein>();
 
                 foreach (var peptide in kvp.Value)
@@ -505,10 +117,22 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            // makes dictionary with proteins as keys and list of associated peptides as the value
+            // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo a lot easier)
             Dictionary<Protein, HashSet<CompactPeptide>> newDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
+            // same dictionary, but if a protein has multiple peptides with the same base sequence, only use one of them
+            Dictionary<Protein, HashSet<CompactPeptide>> newDictNoDuplicateBaseSeq = new Dictionary<Protein, HashSet<CompactPeptide>>();
 
-            foreach (var kvp in fullSequenceToProteinPeptideMatching)
+            foreach(var kvp in compactPeptideToProteinPeptideMatching)
+            {
+                foreach(var peptide in kvp.Value)
+                {
+
+                }
+            }
+
+            /*
+
+            foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
                 foreach (var virtualPeptide in kvp.Value)
                 {
@@ -516,55 +140,51 @@ namespace InternalLogicEngineLayer
                     if (!newDict.ContainsKey(virtualPeptide.Protein))
                     {
                         HashSet<CompactPeptide> peptides = new HashSet<CompactPeptide>();
+                        HashSet<CompactPeptide> peptideListNoDuplicates = new HashSet<CompactPeptide>();
+                        HashSet<string> peptideListBaseSequencesNoDuplicates = new HashSet<string>();
+                        HashSet<string> peptideListBaseSequences = new HashSet<string>();
 
-                        foreach (var kvp1 in fullSequenceToProteinPeptideMatching)
+                        foreach (var kvp1 in compactPeptideToProteinPeptideMatching)
                         {
                             foreach (var virtualPeptide2 in kvp1.Value)
                             {
+                                string peptideBaseSequence = string.Join("", kvp1.Key.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+
                                 // if the virtual peptides come from the same protein, add the peptide to the protein's list
                                 if (virtualPeptide.Protein == virtualPeptide2.Protein)
                                 {
                                     peptides.Add(kvp1.Key);
+                                    peptideListBaseSequences.Add(peptideBaseSequence);
+
+                                    if (!peptideListBaseSequencesNoDuplicates.Contains(peptideBaseSequence))
+                                    {
+                                        peptideListNoDuplicates.Add(kvp1.Key);
+                                        peptideListBaseSequencesNoDuplicates.Add(peptideBaseSequence);
+                                    }
                                 }
                             }
                         }
 
                         newDict.Add(virtualPeptide.Protein, peptides);
+                        newDictNoDuplicateBaseSeq.Add(virtualPeptide.Protein, peptideListNoDuplicates);
                     }
                 }
             }
 
-            // makes the same dictionary, but if a protein has multiple peptides with the same base sequence, only use one of them
-            Dictionary<Protein, HashSet<CompactPeptide>> newDictNoDuplicatePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            foreach (var kvp in newDict)
-            {
-                HashSet<CompactPeptide> peptideListNoDuplicates = new HashSet<CompactPeptide>();
-                HashSet<string> peptideListBaseSequences = new HashSet<string>();
+            */
 
-                foreach (var peptide in kvp.Value)
-                {
-                    string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+            Status("Applying protein parsimony...");
 
-                    if (!peptideListBaseSequences.Contains(peptideBaseSequence))
-                    {
-                        peptideListNoDuplicates.Add(peptide);
-                        peptideListBaseSequences.Add(peptideBaseSequence);
-                    }
-                }
-
-                newDictNoDuplicatePeptides.Add(kvp.Key, peptideListNoDuplicates);
-            }
-
-            // add proteins with unique peptides first before applying parsimony (more efficient)
+            // add proteins with unique peptides to the parsimony dictionary before applying greedy algorithm (more efficient)
             Dictionary<Protein, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
             HashSet<CompactPeptide> usedPeptides = new HashSet<CompactPeptide>();
-            foreach(var kvp in newDict)
+            foreach (var kvp in newDict)
             {
                 bool proteinContainsUniquePeptide = false;
 
                 foreach (var peptide in kvp.Value)
                 {
-                    if(uniquePeptides.Contains(peptide))
+                    if (uniquePeptides.Contains(peptide))
                     {
                         proteinContainsUniquePeptide = true;
                     }
@@ -573,16 +193,11 @@ namespace InternalLogicEngineLayer
                 if (proteinContainsUniquePeptide)
                 {
                     parsimonyDict.Add(kvp.Key, kvp.Value);
-
-                    foreach (var peptide in kvp.Value)
-                    {
-                        usedPeptides.Add(peptide);
-                    }
+                    usedPeptides.UnionWith(kvp.Value);
                 }
             }
 
-
-            // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides (at this point only shared peptides remain)
+            // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
             HashSet<CompactPeptide> bestProteinPeptideList = new HashSet<CompactPeptide>();
             Protein bestProtein = null;
             int currentBestNumNewPeptides = -1;
@@ -596,7 +211,7 @@ namespace InternalLogicEngineLayer
                 if (bestProteinHasOnePeptide)
                 {
                     // attempt to find protein that best accounts for unaccounted-for peptides
-                    foreach (var kvp in newDictNoDuplicatePeptides)
+                    foreach (var kvp in newDictNoDuplicateBaseSeq)
                     {
                         int comparisonProteinNewPeptides = 0;
 
@@ -667,25 +282,7 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            /*
-            // add indistinguishable proteins to the protein group
-            foreach (var kvp in newDict)
-            {
-                if (!parsimonyDict.ContainsKey(kvp.Key))
-                {
-                    foreach(var kvp1 in parsimonyDict)
-                    {
-                        if(kvp.Value.SetEquals(kvp1.Value))
-                        {
-                            parsimonyDict.Add(kvp.Key, kvp.Value);
-                        }
-                    }
-                }
-            }
-            */
-
-
-            // build protein group after parsimony and match it to its peptide
+            // build protein list for each peptide after parsimony has been applied
             Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
 
             foreach (var kvp in parsimonyDict)
@@ -709,9 +306,26 @@ namespace InternalLogicEngineLayer
                 }
             }
 
+            // build protein groups after parsimony
+            proteinGroups = new List<ProteinGroup>();
+            foreach (var kvp in parsimonyDict)
+            {
+                HashSet<Protein> proteinListHere = new HashSet<Protein>();
+                HashSet<CompactPeptide> uniquePeptidesHere = new HashSet<CompactPeptide>();
 
+                foreach (var peptide in kvp.Value)
+                {
+                    if (uniquePeptides.Contains(peptide))
+                    {
+                        uniquePeptidesHere.Add(peptide);
+                    }
+                }
 
-            // constructs return dictionary (only use parsimony proteins for the new virtual peptide list)
+                proteinListHere.Add(kvp.Key);
+                proteinGroups.Add(new ProteinGroup(proteinListHere, kvp.Value, uniquePeptidesHere));
+            }
+
+            // constructs return dictionary (only use parsimony proteins for the new PeptideWithSetModifications list)
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             foreach (var kvp in parsimonyDict)
@@ -728,7 +342,7 @@ namespace InternalLogicEngineLayer
                         peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
 
                         // find peptide's original (unparsimonious) virtual peptide matches
-                        fullSequenceToProteinPeptideMatching.TryGetValue(peptide, out oldVirtualPeptides);
+                        compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out oldVirtualPeptides);
 
                         // get the virtual peptides that belong to the post-parsimony protein(s) only
                         foreach (var virtualPeptide in oldVirtualPeptides)
@@ -745,12 +359,14 @@ namespace InternalLogicEngineLayer
                 }
             }
 
-            proteinGroups = null;
-            return answer;
+            compactPeptideToProteinPeptideMatching = answer;
+            Status("Finished parsimony");
         }
 
-        public void scoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
+        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
         {
+            Status("Scoring protein groups...");
+
             Dictionary<string, List<NewPsmWithFdr>> peptideBaseSeqToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
             Dictionary<CompactPeptide, NewPsmWithFdr> peptideToBestPsmMatching = new Dictionary<CompactPeptide, NewPsmWithFdr>();
 
@@ -759,32 +375,33 @@ namespace InternalLogicEngineLayer
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                 string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
+                List<NewPsmWithFdr> psmListHere;
 
                 if (peptideBaseSeqToPsmMatching.ContainsKey(peptideBaseSequence))
                 {
-                    List<NewPsmWithFdr> psmListHere;
                     peptideBaseSeqToPsmMatching.TryGetValue(peptideBaseSequence, out psmListHere);
+                    psmListHere.Add(psm);
                 }
                 else
                 {
-                    List<NewPsmWithFdr> psmListHere = new List<NewPsmWithFdr>();
+                    psmListHere = new List<NewPsmWithFdr>();
                     psmListHere.Add(psm);
                     peptideBaseSeqToPsmMatching.Add(peptideBaseSequence, psmListHere);
                 }
             }
 
             // find the best psm per base sequence
-            foreach(var kvp in peptideBaseSeqToPsmMatching)
+            foreach (var kvp in peptideBaseSeqToPsmMatching)
             {
                 double bestScoreSoFar = 0;
                 NewPsmWithFdr bestPsm = null;
                 CompactPeptide bestPeptide = null;
 
-                foreach(var psm in kvp.Value)
+                foreach (var psm in kvp.Value)
                 {
                     if (psm.thisPSM.Score > bestScoreSoFar)
                     {
+                        bestScoreSoFar = psm.thisPSM.Score;
                         bestPsm = psm;
                         bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
                     }
@@ -807,39 +424,44 @@ namespace InternalLogicEngineLayer
                     if (foundPsm)
                     {
                         thisProteinGroupsPsmList.Add(psm);
-                        thisProteinGroupsNewPeptideList.Add(peptide);
+                        //thisProteinGroupsNewPeptideList.Add(peptide);
                     }
                 }
                 proteinGroup.PsmList = thisProteinGroupsPsmList;
-
-                // removes peptides that are not associated with the best psm per base sequence from the group
-                proteinGroup.PeptideList = thisProteinGroupsNewPeptideList;
-
-                HashSet<CompactPeptide> peptidesToRemove = new HashSet<CompactPeptide>();
-                foreach (var uniquePeptide in proteinGroup.UniquePeptideList)
+                
+                // remove CompactPeptides that are not associated with the best psm per base sequence from the group
+                HashSet<CompactPeptide> newPeptideList = new HashSet<CompactPeptide>();
+                HashSet<CompactPeptide> newUniquePeptideList = new HashSet<CompactPeptide>();
+                foreach (var psm in proteinGroup.PsmList)
                 {
-                    if(!thisProteinGroupsNewPeptideList.Contains(uniquePeptide))
+                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+
+                    newPeptideList.Add(peptide);
+
+                    if (proteinGroup.UniquePeptideList.Contains(peptide))
                     {
-                        peptidesToRemove.Add(uniquePeptide);
+                        newUniquePeptideList.Add(peptide);
                     }
                 }
-
-                foreach(var pep in peptidesToRemove)
-                {
-                    proteinGroup.UniquePeptideList.Remove(pep);
-                }
+                proteinGroup.PeptideList = newPeptideList;
+                proteinGroup.UniquePeptideList = newUniquePeptideList;
 
                 // score the group (scoring algorithm defined in the ProteinGroup class)
                 proteinGroup.scoreThisProteinGroup();
             }
         }
 
-        public void doProteinFdr(List<ProteinGroup> proteinGroups)
+        public List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
         {
+            Status("Calculating protein FDR...");
+
+            // order protein groups by score
+            var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.proteinGroupScore).ToList();
+
             // do fdr
             int cumulativeTarget = 0;
             int cumulativeDecoy = 0;
-            foreach (var proteinGroup in proteinGroups)
+            foreach (var proteinGroup in sortedProteinGroups)
             {
                 if (proteinGroup.isDecoy)
                 {
@@ -854,6 +476,8 @@ namespace InternalLogicEngineLayer
                 proteinGroup.cumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
             }
+
+            return sortedProteinGroups;
         }
 
         #endregion Public Methods
@@ -867,18 +491,17 @@ namespace InternalLogicEngineLayer
             Status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
 
-            HashSet<CompactPeptide> uniquePeptides = new HashSet<CompactPeptide>();
+            List<ProteinGroup> proteinGroups = null;
             if (doParsimony)
             {
-                Status("Getting protein parsimony dictionary...");
-                compactPeptideToProteinPeptideMatching = ApplyProteinParsimony(compactPeptideToProteinPeptideMatching, out uniquePeptides);
+                ApplyProteinParsimony(out proteinGroups);
             }
 
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
             List<NewPsmWithFdr>[] yeah = new List<NewPsmWithFdr>[searchModes.Count];
-            List<ProteinGroup> proteinGroups = null;
+
             for (int j = 0; j < searchModes.Count; j++)
             {
                 if (newPsms[j] != null)
@@ -909,9 +532,8 @@ namespace InternalLogicEngineLayer
 
                     if (doParsimony)
                     {
-                        Status("Building protein groups and doing FDR...");
-                        proteinGroups = scoreProteinGroups(orderedPsmsWithFDR, uniquePeptides);
-                        doProteinFdr(proteinGroups);
+                        ScoreProteinGroups(proteinGroups, orderedPsmsWithFDR);
+                        proteinGroups = DoProteinFdr(proteinGroups);
 
                         action3(proteinGroups, searchModes[j].FileNameAddition);
                     }

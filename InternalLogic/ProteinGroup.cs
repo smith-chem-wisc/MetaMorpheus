@@ -52,11 +52,11 @@ namespace InternalLogicEngineLayer
                 proteinGroupScore = 0;
         }
 
-        internal ProteinGroup(HashSet<Protein> proteins, HashSet<CompactPeptide> peptides, HashSet<CompactPeptide> allUniquePeptides)
+        internal ProteinGroup(HashSet<Protein> proteins, HashSet<CompactPeptide> peptides, HashSet<CompactPeptide> uniquePeptides)
         {
             Proteins = proteins;
             PeptideList = peptides;
-            UniquePeptideList = new HashSet<CompactPeptide>();
+            UniquePeptideList = uniquePeptides;
             PsmList = null;
             proteinGroupScore = 0;
             QValue = 0;
@@ -67,15 +67,6 @@ namespace InternalLogicEngineLayer
             {
                 if (protein.IsDecoy)
                     isDecoy = true;
-            }
-
-            // build list of unique peptides associated with the protein group
-            foreach (var peptide in peptides)
-            {
-                if (allUniquePeptides.Contains(peptide))
-                {
-                    UniquePeptideList.Add(peptide);
-                }
             }
         }
 
@@ -177,16 +168,11 @@ namespace InternalLogicEngineLayer
 
         public void scoreThisProteinGroup()
         {
-            if (UniquePeptideList.Any())
+            // score the protein group
+            foreach (var psm in PsmList)
             {
-                foreach (var psm in PsmList)
-                {
-                    proteinGroupScore += psm.thisPSM.Score;
-                }
+                proteinGroupScore += psm.thisPSM.Score;
             }
-
-            else
-                proteinGroupScore = 0;
         }
 
         #endregion Public Methods

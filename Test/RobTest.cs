@@ -95,10 +95,11 @@ namespace Test
                     initialDictionary.Add(peptides[i], virtualPeptideSets[i]);
                 }
             }
-            HashSet<CompactPeptide> pep = new HashSet<CompactPeptide>();
+            List<ProteinGroup> pg = new List<ProteinGroup>();
+            AnalysisEngine ae = new AnalysisEngine(null, null, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0);
 
             // apply parsimony to initial dictionary
-            var parsimonyTest = AnalysisEngine.ApplyProteinParsimony(initialDictionary, out pep);
+            var parsimonyTest = ae.ApplyProteinParsimony(initialDictionary, out pg);
 
             
 
