@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Search Task" Width="550" Height="650" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="Search Task" Width="550" Height="700" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <StackPanel>
         <Label Content="Search Parameters:" Height="30" />
         <Grid>
@@ -77,7 +77,7 @@
         </DataGrid>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save Search Task" Click="saveButton_Click" />
+            <Button x:Name="saveButton" Content="Save Search Task" Click="saveButton_Click"  FontSize="24" Margin="10" />
         </StackPanel>
     </StackPanel>
 </Window>

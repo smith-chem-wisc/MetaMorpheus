@@ -49,21 +49,21 @@ namespace Test
 
         #region Public Properties
 
-        public string id
+        public string Id
         {
             get
             {
-                throw new NotImplementedException();
+                return OneBasedScanNumber.ToString();
             }
         }
 
         public double InjectionTime { get; private set; }
 
-        public bool isCentroid
+        public bool IsCentroid
         {
             get
             {
-                throw new NotImplementedException();
+                return true;
             }
         }
 
@@ -85,7 +85,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+                return Polarity.Positive;
             }
         }
 
@@ -95,7 +95,7 @@ namespace Test
         {
             get
             {
-                throw new NotImplementedException();
+                return "FTMS" + Id;
             }
         }
 
@@ -119,7 +119,7 @@ namespace Test
 
         #region Public Methods
 
-        public void tranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double newSelectedIonGuessMonoisotopicMZ)
+        public void TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double newSelectedIonGuessMonoisotopicMZ)
         {
             MassSpectrum.replaceXbyApplyingFunction(convertorForSpectrum);
             selectedIonGuessMonoisotopicMZ = newSelectedIonGuessMonoisotopicMZ;
@@ -127,7 +127,13 @@ namespace Test
 
         public bool TryGetDissociationType(out DissociationType DissociationType)
         {
-            throw new NotImplementedException();
+            if (MsnOrder == 2)
+            {
+                DissociationType = DissociationType.HCD;
+                return true;
+            }
+            DissociationType = DissociationType.Unknown;
+            return false;
         }
 
         public bool TryGetIsolationMZ(out double IsolationMZ)
@@ -143,17 +149,35 @@ namespace Test
 
         public bool TryGetIsolationRange(out MzRange IsolationRange)
         {
-            throw new NotImplementedException();
+            if (MsnOrder == 2)
+            {
+                IsolationRange = new MzRange(isolationMZ - 3, isolationMZ + 3);
+                return true;
+            }
+            IsolationRange = null;
+            return false;
         }
 
         public bool TryGetIsolationWidth(out double IsolationWidth)
         {
-            throw new NotImplementedException();
+            if (MsnOrder == 2)
+            {
+                IsolationWidth = 6;
+                return true;
+            }
+            IsolationWidth = double.NaN;
+            return false;
         }
 
         public bool TryGetPrecursorID(out string PrecursorID)
         {
-            throw new NotImplementedException();
+            if (MsnOrder == 2)
+            {
+                PrecursorID = 1.ToString();
+                return true;
+            }
+            PrecursorID = null;
+            return false;
         }
 
         public bool TryGetPrecursorOneBasedScanNumber(out int PrecursorOneBasedScanNumber)

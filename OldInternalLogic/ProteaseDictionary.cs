@@ -17,7 +17,7 @@ namespace OldInternalLogic
 
         private ProteaseDictionary()
         {
-            using (StreamReader proteases = new StreamReader(Path.Combine(Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]), "proteases.tsv")))
+            using (StreamReader proteases = new StreamReader(Path.Combine(Environment.CurrentDirectory, "proteases.tsv")))
             {
                 proteases.ReadLine();
 

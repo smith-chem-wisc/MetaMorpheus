@@ -397,7 +397,7 @@ namespace InternalLogicEngineLayer
                         }
                     }
 
-                    // have found all PSMs but some of them are duplicate peptides - pick only the highest-scoring psm per peptide
+                    // have found all PSMs but some of them are duplicate base sequences - pick only the highest-scoring psm per base sequence
                     List<NewPsmWithFdr> newProteinGroupPsmList = new List<NewPsmWithFdr>();
                     Dictionary<string, List<NewPsmWithFdr>> peptideSequenceToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
                     foreach (var psm in proteinGroupPsmList)
@@ -418,7 +418,7 @@ namespace InternalLogicEngineLayer
                         }
                     }
 
-                    // pick the best-scoring psm per peptide
+                    // pick the best-scoring psm per base sequence
                     foreach (var kvp1 in peptideSequenceToPsmMatching)
                     {
                         double bestScoreSoFar = 0;

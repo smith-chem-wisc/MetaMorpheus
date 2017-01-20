@@ -35,7 +35,7 @@ namespace Test
 
         public TestDataFile(PeptideWithSetModifications pepWithSetMods)
         {
-            var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), 1046.4637599291714.ToMassToChargeRatio(2), 1047.4642172266576.ToMassToChargeRatio(2) };
+            var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMassToChargeRatio(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMassToChargeRatio(2) };
             var intensities1 = new double[] { 1, 1, 1 };
             var MassSpectrum1 = new DefaultMzSpectrum(mz1, intensities1, false);
 
@@ -113,7 +113,7 @@ namespace Test
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            throw new NotImplementedException();
+            return Scans.GetEnumerator();
         }
 
         IMsDataScan<DefaultMzSpectrum> IMsDataFile<DefaultMzSpectrum>.GetOneBasedScan(int oneBasedScanNumber)
