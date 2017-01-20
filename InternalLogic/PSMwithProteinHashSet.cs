@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using OldInternalLogic;
 using Spectra;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -27,6 +28,8 @@ namespace InternalLogicEngineLayer
             IsContaminant = peptidesWithSetModifications.Count(b => b.Protein.IsContaminant) > 0;
             this.peptidesWithSetModifications = peptidesWithSetModifications;
 
+            var representative = peptidesWithSetModifications.First();
+
             var allProductTypes = new List<ProductType> { ProductType.B, ProductType.Y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
             if (myMsDataFile != null && newPsm.matchedIonsList == null)
@@ -36,7 +39,7 @@ namespace InternalLogicEngineLayer
                 var MatchedIonDict = new Dictionary<ProductType, double[]>();
                 foreach (var huh in allProductTypes)
                 {
-                    var df = peptidesWithSetModifications.First().FastSortedProductMasses(new List<ProductType> { huh });
+                    var df = representative.FastSortedProductMasses(new List<ProductType> { huh });
                     double[] matchedIonList = new double[df.Length];
                     MatchIons(theScan, fragmentTolerance, df, matchedIonList);
                     MatchedIonDict.Add(huh, matchedIonList);
@@ -49,9 +52,9 @@ namespace InternalLogicEngineLayer
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
                 var localizedScores = new List<double>();
-                for (int indexToLocalize = 0; indexToLocalize < peptidesWithSetModifications.First().Length; indexToLocalize++)
+                for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
                 {
-                    PeptideWithSetModifications localizedPeptide = peptidesWithSetModifications.First().Localize(indexToLocalize, ScanPrecursorMass - peptidesWithSetModifications.First().MonoisotopicMass);
+                    PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ScanPrecursorMass - representative.MonoisotopicMass);
 
                     var gg = localizedPeptide.FastSortedProductMasses(allProductTypes);
                     double[] matchedIonList = new double[gg.Length];
@@ -61,11 +64,12 @@ namespace InternalLogicEngineLayer
                 newPsm.LocalizedScores = localizedScores;
             }
 
-            PeptideMonoisotopicMass = peptidesWithSetModifications.First().MonoisotopicMass;
-            FullSequence = peptidesWithSetModifications.First().Sequence;
-            BaseSequence = peptidesWithSetModifications.First().BaseSequence;
-            MissedCleavages = peptidesWithSetModifications.First().MissedCleavages;
-            NumVariableMods = peptidesWithSetModifications.First().NumVariableMods;
+            PeptideMonoisotopicMass = representative.MonoisotopicMass;
+
+            FullSequence = representative.Sequence;
+            BaseSequence = representative.BaseSequence;
+            MissedCleavages = representative.MissedCleavages;
+            NumVariableMods = representative.NumVariableMods;
         }
 
         #endregion Public Constructors
@@ -181,8 +185,8 @@ namespace InternalLogicEngineLayer
             double MatchingIntensityHere = 0;
 
             // speed optimizations
-            double[] experimental_mzs = thisScan.MassSpectrum.xArray;
-            double[] experimental_intensities = thisScan.MassSpectrum.yArray;
+            double[] experimental_mzs = thisScan.MassSpectrum.XArray;
+            double[] experimental_intensities = thisScan.MassSpectrum.YArray;
             int num_experimental_peaks = experimental_mzs.Length;
 
             int theoreticalIndex = 0;

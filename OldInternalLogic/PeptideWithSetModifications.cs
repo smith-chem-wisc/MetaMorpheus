@@ -19,13 +19,12 @@ namespace OldInternalLogic
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
+        private readonly PeptideWithPossibleModifications modPep;
         private double monoisotopicMass = double.NaN;
 
         private string extendedSequence;
 
         private string sequence;
-
-        private readonly PeptideWithPossibleModifications modPep;
 
         #endregion Private Fields
 
@@ -49,10 +48,6 @@ namespace OldInternalLogic
                 if (double.IsNaN(monoisotopicMass))
                     ComputeFragmentMasses();
                 return monoisotopicMass;
-            }
-            set
-            {
-                monoisotopicMass = value;
             }
         }
 

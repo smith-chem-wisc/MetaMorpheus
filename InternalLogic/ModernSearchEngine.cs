@@ -169,12 +169,12 @@ namespace InternalLogicEngineLayer
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
                 var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
+                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.ProtonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
                     ipos = ~ipos;
-                
+
                 if (ipos > 0)
                 {
                     var downIpos = ipos - 1;
