@@ -28,7 +28,7 @@ namespace InternalLogicTaskLayer
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassToleranceInDaltons = 0.01;
-            PrecursorMassToleranceInDaltons = 0.01;
+            PrecursorMassToleranceInDaltons = 0.05; // Experimentally determined
             BIons = true;
             YIons = true;
             ListOfModListsForCalibration = new List<ModListForCalibrationTask>();

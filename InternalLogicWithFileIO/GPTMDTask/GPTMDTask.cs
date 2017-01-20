@@ -187,7 +187,7 @@ namespace InternalLogicTaskLayer
             HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
-            IEnumerable<Tuple<double, double>> combos = LoadCombos();
+            IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
             // Do not remove the zero!!! It's needed here
             SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), precursorMassTolerance);
@@ -255,7 +255,14 @@ namespace InternalLogicTaskLayer
 
         private IEnumerable<Tuple<double, double>> LoadCombos()
         {
-            yield return new Tuple<double, double>(15.994915, 15.994915);
+            using (StreamReader r = new StreamReader(@"combos.txt"))
+            {
+                while (r.Peek() >= 0)
+                {
+                    var line = r.ReadLine().Split(' ');
+                    yield return new Tuple<double, double>(double.Parse(line[0]), double.Parse(line[1]));
+                }
+            }
         }
 
         #endregion Private Methods

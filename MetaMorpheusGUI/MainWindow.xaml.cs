@@ -140,7 +140,7 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
             searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
             searchModeObservableCollection.Add(new OpenSearchMode("Open"));
-            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode("0.01daltonsaroundzero", 0.01));
+            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode("0.05daltonsaroundzero", 0.05));
         }
 
         private void AddNewDB(object sender, XmlForTaskListEventArgs e)
