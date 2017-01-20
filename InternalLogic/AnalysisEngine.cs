@@ -504,9 +504,8 @@ namespace InternalLogicEngineLayer
 
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
-
             List<NewPsmWithFdr>[] allResultingIdentifications = new List<NewPsmWithFdr>[searchModes.Count];
-            List<ProteinGroup> proteinGroups = null;
+            
             for (int j = 0; j < searchModes.Count; j++)
             {
                 if (newPsms[j] != null)
