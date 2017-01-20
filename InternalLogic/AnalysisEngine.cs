@@ -874,7 +874,7 @@ namespace InternalLogicEngineLayer
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
-            List<NewPsmWithFdr>[] yeah = new List<NewPsmWithFdr>[searchModes.Count];
+            List<NewPsmWithFdr>[] allResultingIdentifications = new List<NewPsmWithFdr>[searchModes.Count];
             List<ProteinGroup> proteinGroups = null;
             for (int j = 0; j < searchModes.Count; j++)
             {
@@ -922,11 +922,11 @@ namespace InternalLogicEngineLayer
                         action3(proteinGroups, searchModes[j].FileNameAddition);
                     }
 
-                    yeah[j] = orderedPsmsWithFDR;
+                    allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }
             }
 
-            return new AnalysisResults(this, yeah, proteinGroups);
+            return new AnalysisResults(this, allResultingIdentifications, proteinGroups);
         }
 
         #endregion Protected Methods

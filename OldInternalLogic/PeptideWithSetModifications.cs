@@ -151,21 +151,6 @@ namespace OldInternalLogic
             get { return modPep.PeptideDescription; }
         }
 
-        public IEnumerable<KeyValuePair<int, MorpheusModification>> Modifications
-        {
-            get
-            {
-                foreach (var ye in twoBasedVariableAndLocalizeableModificationss)
-                    yield return ye;
-                foreach (var aass in modPep.twoBasedFixedModificationss)
-                {
-                    int key = aass.Key;
-                    foreach (var fff in aass.Value)
-                        yield return new KeyValuePair<int, MorpheusModification>(key, fff);
-                }
-            }
-        }
-
         public string SequenceWithChemicalFormulas
         {
             get
