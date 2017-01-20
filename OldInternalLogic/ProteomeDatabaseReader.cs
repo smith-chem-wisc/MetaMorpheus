@@ -57,7 +57,7 @@ namespace OldInternalLogic
 
         #region Public Methods
 
-        public static HashSet<string> ReadXMLmodifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
+        public static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
         {
             var modifications_in_database = new HashSet<string>();
             foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)

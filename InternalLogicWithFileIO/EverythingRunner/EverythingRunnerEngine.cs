@@ -14,13 +14,13 @@ namespace InternalLogicTaskLayer
 
         private readonly List<MyTaskEngine> taskList;
         private List<string> currentRawDataFilenameList;
-        private List<string> currentXmlDbFilenameList;
+        private List<XmlForTask> currentXmlDbFilenameList;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<string> startingXmlDbFilenameList) : base(0)
+        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<XmlForTask> startingXmlDbFilenameList) : base(0)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;
@@ -35,7 +35,7 @@ namespace InternalLogicTaskLayer
 
         public static event EventHandler finishedAllTasksEngineHandler;
 
-        public static event EventHandler<StringListEventArgs> newDbsHandler;
+        public static event EventHandler<XmlForTaskListEventArgs> newDbsHandler;
 
         public static event EventHandler<StringListEventArgs> newSpectrasHandler;
 
@@ -111,9 +111,9 @@ namespace InternalLogicTaskLayer
             newSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
         }
 
-        private void NewDBs(List<string> newDatabases)
+        private void NewDBs(List<XmlForTask> newDatabases)
         {
-            newDbsHandler?.Invoke(this, new StringListEventArgs(newDatabases));
+            newDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
         }
 
         #endregion Private Methods

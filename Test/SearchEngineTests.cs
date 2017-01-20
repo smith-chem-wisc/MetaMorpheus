@@ -19,7 +19,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<MorpheusModification>();
             var fixedModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
@@ -49,7 +49,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<MorpheusModification>();
             var fixedModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode("open") };
@@ -80,7 +80,7 @@ namespace Test
             var variableModifications = new List<MorpheusModification>();
             var fixedModifications = new List<MorpheusModification>();
             var localizeableModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
@@ -115,7 +115,7 @@ namespace Test
             var variableModifications = new List<MorpheusModification>();
             var fixedModifications = new List<MorpheusModification>();
             var localizeableModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode("d") };

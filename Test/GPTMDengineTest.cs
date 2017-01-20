@@ -29,13 +29,13 @@ namespace Test
             Assert.AreEqual(0, res.Mods.Count);
 
             ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 42);
-            var parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false);
+            var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false, false);
             var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
             var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss) };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
-            var thisPSM = new PSMwithTargetDecoyKnown(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile);
+            var thisPSM = new PSMwithProteinHashSet(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile);
             var newPsmWithFDR = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             allResultingIdentifications.Add(newPsmWithFDR);
 

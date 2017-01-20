@@ -28,9 +28,9 @@ namespace Test
             var protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
             var totalVirtualPeptideList = new HashSet<PeptideWithSetModifications>();
 
-            var p1 = new Protein(sequence1, "1", null, temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false);
-            var p2 = new Protein(sequence2, "2", null, temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false);
-            var p3 = new Protein(sequence3, "3", null, temp1, temp3, temp3, null, "Test3", "TestFullName3", 0, false);
+            var p1 = new Protein(sequence1, "1",  temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false, false);
+            var p2 = new Protein(sequence2, "2",  temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false, false);
+            var p3 = new Protein(sequence3, "3",  temp1, temp3, temp3, null, "Test3", "TestFullName3", 0, false, false);
 
             IEnumerable<PeptideWithPossibleModifications> digestedList1 = p1.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
             IEnumerable<PeptideWithPossibleModifications> digestedList2 = p2.Digest(protease, 2, InitiatorMethionineBehavior.Variable);

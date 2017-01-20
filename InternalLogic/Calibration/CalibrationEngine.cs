@@ -25,6 +25,7 @@ namespace InternalLogicCalibration
         private readonly double toleranceInMZforMS1Search;
         private readonly double toleranceInMZforMS2Search;
         private readonly int randomSeed;
+        private readonly FragmentTypes fragmentTypesForCalibration;
         private List<NewPsmWithFdr> identifications;
         private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
 
@@ -32,7 +33,7 @@ namespace InternalLogicCalibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, double toleranceInMZforMS1Search) : base(2)
+        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, double toleranceInMZforMS1Search, FragmentTypes fragmentTypesForCalibration) : base(2)
         {
             this.myMsDataFile = myMSDataFile;
             this.randomSeed = randomSeed;
@@ -42,6 +43,7 @@ namespace InternalLogicCalibration
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2IsotopicPeaksNeededForConfirmedIdentification;
             this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
             this.toleranceInMZforMS1Search = toleranceInMZforMS1Search;
+            this.fragmentTypesForCalibration = fragmentTypesForCalibration;
         }
 
         #endregion Public Constructors
@@ -53,14 +55,17 @@ namespace InternalLogicCalibration
             Status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
 
             var trainingPointCounts = new List<int>();
+            var goodResult = new CalibrationResults(myMsDataFile, this);
             List<LabeledDataPoint> pointList;
             for (int calibrationRound = 1; ; calibrationRound++)
             {
                 Status("Calibration round " + calibrationRound);
-
+                int numMs1MassChargeCombinationsConsidered = 0;
+                int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
                 Status("Getting Training Points");
+                pointList = GetDataPoints(ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
-                pointList = GetDataPoints();
+                goodResult.Add(calibrationRound, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, pointList.Count);
 
                 if (calibrationRound >= 2 && pointList.Count <= trainingPointCounts[calibrationRound - 2])
                     break;
@@ -84,14 +89,14 @@ namespace InternalLogicCalibration
                     return new MyErroredResults(this, "Could not calibrate");
             }
 
-            return new CalibrationResults(myMsDataFile, this);
+            return goodResult;
         }
 
         #endregion Protected Methods
 
         #region Private Methods
 
-        private List<LabeledDataPoint> GetDataPoints()
+        private List<LabeledDataPoint> GetDataPoints(ref int numMs1MassChargeCombinationsConsidered, ref int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             Status("Extracting data points:");
             // The final training point list
@@ -147,9 +152,8 @@ namespace InternalLogicCalibration
                 }
                 Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
-                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
-
-                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
+                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge, ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge, ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
             }
@@ -316,18 +320,18 @@ namespace InternalLogicCalibration
                     double IsolationMZ;
                     a.TryGetIsolationMZ(out IsolationMZ);
 
-                    Func<MzPeak, double> theFunc = x => x.MZ - bestCf.Predict(new double[] { 1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.MZ - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
+                    Func<MzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { 1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.Mz - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
                     a.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
                 }
                 else
                 {
-                    Func<MzPeak, double> theFUnc = x => x.MZ - bestCf.Predict(new double[] { -1, x.MZ, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
+                    Func<MzPeak, double> theFUnc = x => x.Mz - bestCf.Predict(new double[] { -1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
                     a.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN);
                 }
             }
         }
 
-        private int SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
+        private int SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, ref int numMs1MassChargeCombinationsConsidered, ref int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             int goodIndex = -1;
             var scores = new List<int>();
@@ -378,13 +382,15 @@ namespace InternalLogicCalibration
                         {
                             break;
                         }
+                        numMs1MassChargeCombinationsConsidered++;
                         if (npwr > 1)
                         {
+                            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
                             continue;
                         }
 
                         var closestPeak = fullMS1spectrum.GetClosestPeak(theMZ);
-                        var closestPeakMZ = closestPeak.MZ;
+                        var closestPeakMZ = closestPeak.Mz;
 
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
                         if (!peaksAddedHashSet.Contains(theTuple))
@@ -453,7 +459,7 @@ namespace InternalLogicCalibration
 
             var scanWindowRange = ms2DataScan.ScanWindowRange;
 
-            Fragment[] fragmentList = peptide.Fragment(FragmentTypes.b | FragmentTypes.y, true).ToArray();
+            Fragment[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).ToArray();
 
             foreach (IHasChemicalFormula fragment in fragmentList)
             {
@@ -519,7 +525,7 @@ namespace InternalLogicCalibration
                                 continue;
                             }
                             var closestPeak = ms2DataScan.MassSpectrum.GetClosestPeak(theMZ);
-                            var closestPeakMZ = closestPeak.MZ;
+                            var closestPeakMZ = closestPeak.Mz;
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));

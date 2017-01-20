@@ -55,9 +55,11 @@ namespace MetaMorpheusGUI
 
             LoadSearchModesFromFile();
 
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-12-15-2016.xml"));
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-17-2017.xml.gz"));
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml"));
 
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\120426_Jurkat_highLC_Frac17.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw"));
@@ -138,9 +140,10 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
             searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
             searchModeObservableCollection.Add(new OpenSearchMode("Open"));
+            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode("0.05daltonsaroundzero", 0.05));
         }
 
-        private void AddNewDB(object sender, StringListEventArgs e)
+        private void AddNewDB(object sender, XmlForTaskListEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -150,8 +153,8 @@ namespace MetaMorpheusGUI
             {
                 foreach (var uu in xmlDBobservableCollection)
                     uu.Use = false;
-                foreach (var uu in e.StringList)
-                    xmlDBobservableCollection.Add(new XMLdb(uu));
+                foreach (var uu in e.newDatabases)
+                    xmlDBobservableCollection.Add(new XMLdb(uu.FileName));
             }
         }
 
@@ -280,7 +283,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => new XmlForTask(b.FileName, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();

@@ -11,7 +11,7 @@
         <StackPanel Orientation="Horizontal" Margin="5">
             <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
             <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
-            <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
+            <Label x:Name="precursorMassToleranceLabel2" Content="Daltons" />
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>

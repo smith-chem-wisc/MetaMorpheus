@@ -14,19 +14,19 @@ namespace OldInternalLogic
 
         #region Public Constructors
 
-        public Protein(string baseSequence, string accession, string datasetAbbreviation, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy)
+        public Protein(string baseSequence, string accession, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy, bool isContaminant)
         {
             BaseSequence = baseSequence;
             Accession = accession;
-            this.DatasetAbbreviation = datasetAbbreviation;
             OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModifications;
             OneBasedBeginPositions = beginPositions;
             OneBasedEndPositions = endPositions;
-            this.BigPeptideTypes = bigPeptideTypes;
-            this.Name = name;
-            this.FullName = fullName;
-            this.Offset = offset;
-            this.IsDecoy = isDecoy;
+            BigPeptideTypes = bigPeptideTypes;
+            Name = name;
+            FullName = fullName;
+            Offset = offset;
+            IsDecoy = isDecoy;
+            IsContaminant = isContaminant;
         }
 
         #endregion Public Constructors
@@ -67,6 +67,7 @@ namespace OldInternalLogic
         public string FullName { get; private set; }
 
         public int Offset { get; private set; }
+        public bool IsContaminant { get; set; }
 
         #endregion Public Properties
 
@@ -143,62 +144,6 @@ namespace OldInternalLogic
             {
                 throw new NotImplementedException();
             }
-            //else  // protease.CleavageSpecificity == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.SemiN || protease.CleavageSpecificity == CleavageSpecificity.SemiC
-            //{
-            //    if (protease.CleavageSpecificity == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.SemiN)
-            //    {
-            //        for (int missed_cleavages = 0; missed_cleavages <= maximumMissedCleavages; missed_cleavages++)
-            //        {
-            //            for (int i = 0; i < indices.Count - missed_cleavages - 1; i++)
-            //            {
-            //                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || indices[i] + 1 != 0 || this[0] != 'M')
-            //                {
-            //                    // conditional ensures that we are generating peptides at their lowest missed cleavage state
-            //                    for (int length = indices[i + missed_cleavages + 1] - indices[i]; length > (indices[i + missed_cleavages + 1] - indices[i]) - (indices[i + missed_cleavages + 1] - indices[(i + missed_cleavages + 1) - 1]); length--)
-            //                    {
-            //                        if ((indices[i] + 1 + 1) + length - 1 <= Length)
-            //                        {
-            //                            yield return new PeptideWithPossibleModifications(indices[i] + this.OneBasedStartResidueInProtein, indices[i + missed_cleavages + 1] + this.OneBasedStartResidueInProtein, protein, PeptideDescription);
-            //                        }
-            //                    }
-            //                }
-
-            //                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && indices[i] + 1 == 0 && this[0] == 'M')
-            //                {
-            //                    // conditional ensures that we are generating peptides at their lowest missed cleavage state
-            //                    for (int length = indices[i + missed_cleavages + 1] - indices[i]; length > (indices[i + missed_cleavages + 1] - indices[i]) - (indices[i + missed_cleavages + 1] - indices[(i + missed_cleavages + 1) - 1]); length--)
-            //                    {
-            //                        if ((indices[i] + 1 + 1 + 1) + length - 1 <= Length)
-            //                        {
-            //                            yield return new PeptideWithPossibleModifications(indices[i] + this.OneBasedStartResidueInProtein, indices[i + missed_cleavages + 1] + this.OneBasedStartResidueInProtein, protein, PeptideDescription);
-            //                        }
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-            //    if (protease.CleavageSpecificity == CleavageSpecificity.Semi || protease.CleavageSpecificity == CleavageSpecificity.SemiC)
-            //    {
-            //        for (int missed_cleavages = 0; missed_cleavages <= maximumMissedCleavages; missed_cleavages++)
-            //        {
-            //            for (int i = 0; i < indices.Count - missed_cleavages - 1; i++)
-            //            {
-            //                // handling for initiator methionine not required
-
-            //                // - (protease.CleavageSpecificity == CleavageSpecificity.Semi ? 1 : 0) ensures that we don't repeat the same peptides we generated above in the SemiN digestion
-            //                // conditional ensures that we are generating peptides at their lowest missed cleavage state
-            //                for (int length = indices[i + missed_cleavages + 1] - indices[i] - (protease.CleavageSpecificity == CleavageSpecificity.Semi ? 1 : 0); length > (indices[i + missed_cleavages + 1] - indices[i]) - (indices[i + 1] - indices[i]); length--)
-            //                {
-            //                    if ((indices[i + missed_cleavages + 1] + 1) - length + 1 >= 1)
-            //                    {
-            //                        yield return new PeptideWithPossibleModifications(indices[i] + this.OneBasedStartResidueInProtein, indices[i + missed_cleavages + 1] + this.OneBasedStartResidueInProtein, protein, PeptideDescription);
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-            //}
         }
 
         public override bool Equals(object obj)
