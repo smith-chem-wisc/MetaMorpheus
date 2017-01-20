@@ -31,13 +31,13 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             PopulateChoices(modList);
 
-            TheTask = new GPTMDTask(modList);
+            TheTask = new GptmdTask(modList);
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the GPTMD Task";
         }
 
-        public GPTMDTaskWindow(GPTMDTask myGPTMDtask, ObservableCollection<ModList> modFileList)
+        public GPTMDTaskWindow(GptmdTask myGPTMDtask, ObservableCollection<ModList> modFileList)
         {
             InitializeComponent();
             PopulateChoices(modFileList);
@@ -50,7 +50,7 @@ namespace MetaMorpheusGUI
 
         #region Internal Properties
 
-        internal GPTMDTask TheTask { get; private set; }
+        internal GptmdTask TheTask { get; private set; }
 
         #endregion Internal Properties
 
@@ -66,7 +66,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void UpdateFieldsFromTask(GPTMDTask task)
+        private void UpdateFieldsFromTask(GptmdTask task)
         {
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             proteaseComboBox.SelectedItem = task.Protease;

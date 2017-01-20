@@ -130,6 +130,7 @@
     <Compile Include="SearchModes\SearchMode.cs" />
     <Compile Include="SearchModes\SingleAbsoluteAroundZeroSearchMode.cs" />
     <Compile Include="SearchModes\SinglePpmAroundZeroSearchMode.cs" />
+    <Compile Include="SequenceComparer.cs" />
     <Compile Include="SingleEngineEventArgs.cs" />
     <Compile Include="SingleEngineFinishedEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />

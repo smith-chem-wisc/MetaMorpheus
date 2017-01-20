@@ -22,6 +22,7 @@ namespace Test
             List<MorpheusModification> variableModifications = new List<MorpheusModification>();
 
             ParentSpectrumMatch[][] newPsms = new ParentSpectrumMatch[1][];
+
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
@@ -33,10 +34,12 @@ namespace Test
 
             CompactPeptide key = new CompactPeptide(value.First(), variableModifications, localizeableModifications);
 
+            newPsms[0] = new ParentSpectrumMatch[] { new ModernSpectrumMatch(key, null, 1, 1, 1, 1, 1, 1, 1, 1, 1) };
+
             compactPeptideToProteinPeptideMatching.Add(key, value);
 
             List<MorpheusModification> fixedModifications = new List<MorpheusModification>();
-            Action<BinTreeStructure, string> action1 = null;
+            Action<BinTreeStructure, string> action1 = (BinTreeStructure l, string s) => {; };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
 
@@ -44,9 +47,9 @@ namespace Test
 
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
             Action<List<ProteinGroup>, string> action3 = null;
-            Action<List<NewPsmWithFdr>, string> action2 = null;
+            Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
             bool doParsimony = false;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096, true);
 
             engine.Run();
         }
