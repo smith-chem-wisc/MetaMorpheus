@@ -1,6 +1,7 @@
 ﻿using InternalLogicEngineLayer;
 using MassSpectrometry;
 using Spectra;
+using System.Collections.Generic;
 using System.Text;
 
 namespace InternalLogicCalibration
@@ -8,11 +9,24 @@ namespace InternalLogicCalibration
     public class CalibrationResults : MyResults
     {
 
+        #region Private Fields
+
+        private List<int> calibrationRoundList;
+        private List<int> numMs1MassChargeCombinationsConsideredList;
+        private List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
+        private List<int> countList;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
+            calibrationRoundList = new List<int>();
+            numMs1MassChargeCombinationsConsideredList = new List<int>();
+            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList = new List<int>();
+            countList = new List<int>();
         }
 
         #endregion Public Constructors
@@ -30,11 +44,30 @@ namespace InternalLogicCalibration
             get
             {
                 var sb = new StringBuilder();
+                for (int i = 0; i < calibrationRoundList.Count; i++)
+                {
+                    sb.AppendLine("\t\tRound " + calibrationRoundList[i]);
+                    sb.AppendLine("\t\t\tTraining points: " + countList[i]);
+                    sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
+                    sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                }
                 return sb.ToString();
             }
         }
 
         #endregion Protected Properties
+
+        #region Internal Methods
+
+        internal void Add(int calibrationRound, int numMs1MassChargeCombinationsConsidered, int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, int count)
+        {
+            calibrationRoundList.Add(calibrationRound);
+            numMs1MassChargeCombinationsConsideredList.Add(numMs1MassChargeCombinationsConsidered);
+            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            countList.Add(count);
+        }
+
+        #endregion Internal Methods
 
     }
 }

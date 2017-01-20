@@ -1,6 +1,5 @@
 ﻿using InternalLogicTaskLayer;
 using OldInternalLogic;
-using Spectra;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -63,8 +62,7 @@ namespace MetaMorpheusGUI
             maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.ProductMassToleranceInDaltons.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = (int)task.PrecursorMassTolerance.Unit;
+            precursorMassToleranceTextBox.Text = task.PrecursorMassToleranceInDaltons.ToString(CultureInfo.InvariantCulture);
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
@@ -89,9 +87,6 @@ namespace MetaMorpheusGUI
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
-            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                precursorMassToleranceComboBox.Items.Add(toleranceUnit);
-
             // Always create new ModFileList
             foreach (var uu in modList)
                 ModFileListInWindow.Add(new ModListForCalibrationTask(uu));
@@ -113,8 +108,7 @@ namespace MetaMorpheusGUI
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.ListOfModListsForCalibration = ModFileListInWindow.ToList();
-            TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+            TheTask.PrecursorMassToleranceInDaltons = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
 
             DialogResult = true;
         }

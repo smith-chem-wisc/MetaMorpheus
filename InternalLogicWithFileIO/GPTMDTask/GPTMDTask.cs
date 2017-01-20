@@ -82,95 +82,7 @@ namespace InternalLogicTaskLayer
 
         #endregion Protected Properties
 
-        #region Protected Methods
-
-        protected override MyResults RunSpecific()
-        {
-            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b))) + "GPTMD.xml");
-
-            MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
-            myGPTMDresults.newDatabases = new List<string>();
-
-            var currentRawFileList = rawDataFilenameList;
-
-            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
-            Status("Loading modifications...");
-            List<MorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Gptmd).SelectMany(b => b.Mods).ToList();
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
-            HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
-
-            IEnumerable<Tuple<double, double>> combos = LoadCombos();
-
-            // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), precursorMassTolerance);
-            var searchModes = new List<SearchMode> { searchMode };
-
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
-            allPsms[0] = new List<ParentSpectrumMatch>();
-
-            Status("Loading proteins...");
-            var proteinList = xmlDbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
-            AnalysisEngine analysisEngine;
-            AnalysisResults analysisResults = null;
-            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
-            {
-                var origDataFile = currentRawFileList[spectraFileIndex];
-                Status("Loading spectra file...");
-                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
-                if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
-                else
-                    myMsDataFile = new ThermoRawFile(origDataFile, MaxNumPeaksPerScan);
-                Status("Opening spectra file...");
-                myMsDataFile.Open();
-
-                var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
-
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
-
-                var searchResults = (ClassicSearchResults)searchEngine.Run();
-
-                allPsms[0].AddRange(searchResults.OuterPsms[0]);
-
-                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms);
-                analysisResults = (AnalysisResults)analysisEngine.Run();
-                //output(analysisResults.ToString());
-            }
-
-            if (currentRawFileList.Count > 1)
-            {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms);
-                analysisResults = (AnalysisResults)analysisEngine.Run();
-                //output(analysisResults.ToString());
-            }
-
-            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, Tol);
-            var gptmdResults = (GptmdResults)gptmdEngine.Run();
-
-            //output(gptmdResults.ToString());
-
-            WriteGPTMDdatabse(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
-
-            SucessfullyFinishedWritingFile(outputXMLdbFullName);
-
-            myGPTMDresults.newDatabases.Add(outputXMLdbFullName);
-
-            return myGPTMDresults;
-        }
-
-        #endregion Protected Methods
-
-        #region Private Methods
-
-        private IEnumerable<Tuple<double, double>> LoadCombos()
-        {
-            yield return new Tuple<double, double>(15.994915, 15.994915);
-        }
+        #region Public Methods
 
         public static void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
         {
@@ -250,6 +162,106 @@ namespace InternalLogicTaskLayer
 
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected override MyResults RunSpecific()
+        {
+            MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
+            myGPTMDresults.newDatabases = new List<XmlForTask>();
+
+            var currentRawFileList = rawDataFilenameList;
+
+            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+
+            Status("Loading modifications...");
+            List<MorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
+            List<MorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
+            List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+            List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Gptmd).SelectMany(b => b.Mods).ToList();
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            HashSet<string> unidentifiedModStrings;
+            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+
+            IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
+
+            // Do not remove the zero!!! It's needed here
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), precursorMassTolerance);
+            var searchModes = new List<SearchMode> { searchMode };
+
+            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
+            allPsms[0] = new List<ParentSpectrumMatch>();
+
+            Status("Loading proteins...");
+            var proteinList = xmlDbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
+            AnalysisEngine analysisEngine;
+            AnalysisResults analysisResults = null;
+            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            {
+                var origDataFile = currentRawFileList[spectraFileIndex];
+                Status("Loading spectra file...");
+                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+                if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                    myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
+                else
+                    myMsDataFile = new ThermoRawFile(origDataFile, MaxNumPeaksPerScan);
+                Status("Opening spectra file...");
+                myMsDataFile.Open();
+
+                var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
+
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
+
+                var searchResults = (ClassicSearchResults)searchEngine.Run();
+
+                allPsms[0].AddRange(searchResults.OuterPsms[0]);
+
+                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms);
+                analysisResults = (AnalysisResults)analysisEngine.Run();
+                //output(analysisResults.ToString());
+            }
+
+            if (currentRawFileList.Count > 1)
+            {
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms);
+                analysisResults = (AnalysisResults)analysisEngine.Run();
+                //output(analysisResults.ToString());
+            }
+
+            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, Tol);
+            var gptmdResults = (GptmdResults)gptmdEngine.Run();
+
+            //output(gptmdResults.ToString());
+
+            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+
+            WriteGPTMDdatabse(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
+
+            SucessfullyFinishedWritingFile(outputXMLdbFullName);
+
+            // TODO: Fix so not always outputting a contaminant
+            myGPTMDresults.newDatabases.Add(new XmlForTask(outputXMLdbFullName, false));
+
+            return myGPTMDresults;
+        }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private IEnumerable<Tuple<double, double>> LoadCombos()
+        {
+            using (StreamReader r = new StreamReader(@"combos.txt"))
+            {
+                while (r.Peek() >= 0)
+                {
+                    var line = r.ReadLine().Split(' ');
+                    yield return new Tuple<double, double>(double.Parse(line[0]), double.Parse(line[1]));
+                }
             }
         }
 

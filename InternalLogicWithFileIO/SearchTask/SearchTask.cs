@@ -237,7 +237,7 @@ namespace InternalLogicTaskLayer
 
         private string GenerateOutputFolderForIndices()
         {
-            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First()), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First().FileName), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             return folder;
@@ -257,7 +257,7 @@ namespace InternalLogicTaskLayer
             // In every database location...
             foreach (var ok in xmlDbFilenameList)
             {
-                var baseDir = Path.GetDirectoryName(ok);
+                var baseDir = Path.GetDirectoryName(ok.FileName);
                 var directory = new DirectoryInfo(baseDir);
                 DirectoryInfo[] directories = directory.GetDirectories();
 

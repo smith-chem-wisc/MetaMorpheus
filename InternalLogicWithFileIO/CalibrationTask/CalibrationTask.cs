@@ -4,6 +4,7 @@ using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
 using OldInternalLogic;
+using Proteomics;
 using Spectra;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -27,6 +28,7 @@ namespace InternalLogicTaskLayer
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassToleranceInDaltons = 0.01;
+            PrecursorMassToleranceInDaltons = 0.05; // Experimentally determined
             BIons = true;
             YIons = true;
             ListOfModListsForCalibration = new List<ModListForCalibrationTask>();
@@ -35,7 +37,6 @@ namespace InternalLogicTaskLayer
             ListOfModListsForCalibration[0].Fixed = true;
             ListOfModListsForCalibration[1].Variable = true;
             ListOfModListsForCalibration[2].Localize = true;
-            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             TaskType = MyTask.Calibrate;
             MaxNumPeaksPerScan = 400;
         }
@@ -45,9 +46,8 @@ namespace InternalLogicTaskLayer
         #region Public Properties
 
         public List<ModListForCalibrationTask> ListOfModListsForCalibration { get; set; }
-        public Tolerance PrecursorMassTolerance { get; set; }
-
         public double ProductMassToleranceInDaltons { get; set; }
+        public double PrecursorMassToleranceInDaltons { get; set; }
 
         #endregion Public Properties
 
@@ -62,7 +62,7 @@ namespace InternalLogicTaskLayer
                 sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
                 sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
                 sb.AppendLine("productMassToleranceInDaltons: " + ProductMassToleranceInDaltons);
-                sb.Append("precursorMassTolerance: " + PrecursorMassTolerance);
+                sb.Append("precursorMassTolerance: " + PrecursorMassToleranceInDaltons);
                 return sb.ToString();
             }
         }
@@ -80,10 +80,7 @@ namespace InternalLogicTaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             SearchMode searchMode;
-            if (PrecursorMassTolerance.Unit == ToleranceUnit.PPM)
-                searchMode = new SinglePpmAroundZeroSearchMode("", PrecursorMassTolerance.Value);
-            else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode("", PrecursorMassTolerance.Value);
+            searchMode = new SingleAbsoluteAroundZeroSearchMode("", PrecursorMassToleranceInDaltons);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
@@ -150,10 +147,10 @@ namespace InternalLogicTaskLayer
                 int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
                 int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
                 int numFragmentsNeededForEveryIdentification = 10;
-                double toleranceInMZforMS1Search = 0.01;
+                FragmentTypes fragmentTypesForCalibration = FragmentTypes.b | FragmentTypes.y;
 
                 // TODO: fix the tolerance calculation below
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, toleranceInMZforMS1Search);
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassToleranceInDaltons * 2, fragmentTypesForCalibration);
 
                 var result = (CalibrationResults)a.Run();
 

@@ -489,7 +489,10 @@ namespace InternalLogicEngineLayer
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Status("Adding observed peptides to dictionary...");
-            AddObservedPeptidesToDictionary();
+            lock (compactPeptideToProteinPeptideMatching)
+            {
+                AddObservedPeptidesToDictionary();
+            }
 
             List<ProteinGroup> proteinGroups = null;
             if (doParsimony)
@@ -506,19 +509,15 @@ namespace InternalLogicEngineLayer
             {
                 if (newPsms[j] != null)
                 {
-                    PSMwithTargetDecoyKnown[] psmsWithTargetDecoyKnown = new PSMwithTargetDecoyKnown[newPsms[0].Length];
-                    Parallel.ForEach(Partitioner.Create(0, newPsms[0].Length), fff =>
+                    PSMwithProteinHashSet[] psmsWithProteinHashSet = new PSMwithProteinHashSet[newPsms[0].Length];
+                    for (int i = 0; i < newPsms[0].Length; i++)
                     {
-                        for (int i = fff.Item1; i < fff.Item2; i++)
-                        {
-                            var huh = newPsms[j][i];
-                            if (huh != null)
-                                if (huh.score >= 1)
-                                    psmsWithTargetDecoyKnown[i] = new PSMwithTargetDecoyKnown(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile);
-                        }
-                    });
+                        var huh = newPsms[j][i];
+                        if (huh != null && huh.score >= 1)
+                            psmsWithProteinHashSet[i] = new PSMwithProteinHashSet(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile);
+                    }
 
-                    var orderedPsmsWithPeptides = psmsWithTargetDecoyKnown.Where(b => b != null).OrderByDescending(b => b.Score);
+                    var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
 
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
@@ -795,13 +794,13 @@ namespace InternalLogicEngineLayer
             return myTreeStructure;
         }
 
-        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithTargetDecoyKnown> items)
+        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithProteinHashSet> items)
         {
             var ids = new List<NewPsmWithFdr>();
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
-            foreach (PSMwithTargetDecoyKnown item in items)
+            foreach (PSMwithProteinHashSet item in items)
             {
                 var isDecoy = item.IsDecoy;
                 if (isDecoy)
@@ -849,6 +848,8 @@ namespace InternalLogicEngineLayer
             int proteinsSeen = 0;
             int old_progress = 0;
 
+            var obj = new object();
+
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
@@ -875,7 +876,7 @@ namespace InternalLogicEngineLayer
                         }
                     }
                 }
-                lock (compactPeptideToProteinPeptideMatching)
+                lock (obj)
                 {
                     foreach (var ye in local)
                     {

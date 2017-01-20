@@ -169,13 +169,12 @@ namespace InternalLogicEngineLayer
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
                 var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.MZ - Constants.ProtonMass;
+                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.ProtonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
                     ipos = ~ipos;
 
-                //po.out(" ipos " + ipos);
                 if (ipos > 0)
                 {
                     var downIpos = ipos - 1;
@@ -183,9 +182,8 @@ namespace InternalLogicEngineLayer
                     while (downIpos >= 0)
                     {
                         closestPeak = keys[downIpos];
-                        // po.out("  closestPeak "+ closestPeak);
                         if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
-                        {// po.out("    ********************************");
+                        {
                             foreach (var heh in fragmentIndex[downIpos])
                                 peptideScores[heh] += theAdd;
                         }
@@ -201,10 +199,8 @@ namespace InternalLogicEngineLayer
                     while (upIpos < keys.Length)
                     {
                         closestPeak = keys[upIpos];
-                        //po.out("  closestPeak " + closestPeak);
                         if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
                         {
-                            //po.out("    ********************************");
                             foreach (var heh in fragmentIndex[upIpos])
                                 peptideScores[heh] += theAdd;
                         }

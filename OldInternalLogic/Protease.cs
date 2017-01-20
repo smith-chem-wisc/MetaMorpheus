@@ -15,8 +15,8 @@ namespace OldInternalLogic
             SequencesPreventingCleavage = sequencesPreventingCleavage;
             CleavageTerminus = cleavageTerminus;
             CleavageSpecificity = cleavageSpecificity;
-            PsiMSAccessionNumber = psiMSAccessionNumber;
-            PsiMSName = psiMSName;
+            PsiMsAccessionNumber = psiMSAccessionNumber;
+            PsiMsName = psiMSName;
             SiteRegexp = siteRegexp;
         }
 
@@ -30,8 +30,8 @@ namespace OldInternalLogic
         public IEnumerable<string> SequencesInducingCleavage { get; private set; }
         public IEnumerable<string> SequencesPreventingCleavage { get; private set; }
         public CleavageSpecificity CleavageSpecificity { get; private set; }
-        public string PsiMSAccessionNumber { get; private set; }
-        public string PsiMSName { get; private set; }
+        public string PsiMsAccessionNumber { get; private set; }
+        public string PsiMsName { get; private set; }
         public string SiteRegexp { get; private set; }
 
         #endregion Public Properties

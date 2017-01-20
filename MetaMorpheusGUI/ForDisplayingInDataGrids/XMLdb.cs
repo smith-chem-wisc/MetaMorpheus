@@ -2,6 +2,7 @@
 {
     public class XMLdb
     {
+
         #region Public Constructors
 
         public XMLdb(string FileName)
@@ -15,8 +16,10 @@
         #region Public Properties
 
         public bool Use { get; set; }
+        public bool Contaminant { get; set; }
         public string FileName { get; private set; }
 
         #endregion Public Properties
+
     }
 }

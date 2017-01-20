@@ -53,7 +53,6 @@ namespace InternalLogicCalibration
                 ye[j + 1] = a => a[j];
             }
             f = Fit.LinearMultiDimFunc(ok, ok2, ye);
-            //onOutput("Finished fitting a quadratic"));
         }
 
         #endregion Public Methods
