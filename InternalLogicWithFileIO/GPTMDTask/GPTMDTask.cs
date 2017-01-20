@@ -15,7 +15,7 @@ using System.Xml;
 
 namespace InternalLogicTaskLayer
 {
-    public class GPTMDTask : MyTaskEngine
+    public class GptmdTask : MyTaskEngine
     {
 
         #region Public Fields
@@ -27,7 +27,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Constructors
 
-        public GPTMDTask(ObservableCollection<ModList> modList)
+        public GptmdTask(ObservableCollection<ModList> modList)
         {
             // Set default values here:
             MaxMissedCleavages = 2;
@@ -84,7 +84,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Methods
 
-        public static void WriteGPTMDdatabse(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
+        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
         {
             var xmlWriterSettings = new XmlWriterSettings
             {
@@ -220,14 +220,14 @@ namespace InternalLogicTaskLayer
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms);
+                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
 
             if (currentRawFileList.Count > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms);
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
@@ -239,7 +239,7 @@ namespace InternalLogicTaskLayer
 
             string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
-            WriteGPTMDdatabse(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
+            WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
 
             SucessfullyFinishedWritingFile(outputXMLdbFullName);
 

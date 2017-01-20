@@ -24,6 +24,7 @@ namespace InternalLogicTaskLayer
             ClassicSearch = true;
             DoParsimony = false;
             SearchDecoy = true;
+            DoHistogramAnalysis = true;
             MaxMissedCleavages = 2;
             Protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
             MaxModificationIsoforms = 4096;
@@ -53,6 +54,7 @@ namespace InternalLogicTaskLayer
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
+        public bool DoHistogramAnalysis { get; set; }
         public List<ModListForSearchTask> ListOfModListsForSearch { get; set; }
         public bool SearchDecoy { get; set; }
         public List<SearchModeFoSearch> SearchModes { get; set; }
@@ -68,6 +70,7 @@ namespace InternalLogicTaskLayer
                 var sb = new StringBuilder();
                 sb.AppendLine("classicSearch: " + ClassicSearch);
                 sb.AppendLine("doParsimony: " + DoParsimony);
+                sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
                 sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsForSearch.Where(b => b.Fixed).Select(b => b.FileName)));
                 sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsForSearch.Where(b => b.Variable).Select(b => b.FileName)));
                 sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsForSearch.Where(b => b.Localize).Select(b => b.FileName)));
@@ -191,12 +194,7 @@ namespace InternalLogicTaskLayer
 
                     AnalysisEngine analysisEngine = null;
 
-                    if (DoParsimony)
-                    {
-                        analysisEngine = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms);
-                    }
-                    else
-                        analysisEngine = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms);
+                    analysisEngine = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis);
 
                     analysisEngine.Run();
                 }
@@ -208,7 +206,7 @@ namespace InternalLogicTaskLayer
                     for (int i = 0; i < searchModesS.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.NewPsms[i]);
 
-                    var analysisEngine = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms);
+                    var analysisEngine = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis);
 
                     analysisEngine.Run();
                 }
@@ -216,7 +214,7 @@ namespace InternalLogicTaskLayer
 
             if (currentRawFileList.Count > 1)
             {
-                var analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, "aggregate_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms);
+                var analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, "aggregate_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis);
 
                 analysisEngine.Run();
             }

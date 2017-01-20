@@ -21,8 +21,9 @@
             </Label>
         </Grid>
         <StackPanel Margin="5">
-            <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys and do FDR analysis" />
-            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins and do FDR analysis" />
+            <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys" />
+            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
+            <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
         </StackPanel>
         <StackPanel Margin="5">
             <Label x:Name="allowedPrecursorMassDiffsLabel" Content="Allowed precursor mass diffs:" />

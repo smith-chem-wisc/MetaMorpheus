@@ -360,7 +360,7 @@ namespace MetaMorpheusGUI
                         break;
 
                     case MyTask.Gptmd:
-                        var gptmddialog = new GPTMDTaskWindow(ok as GPTMDTask, modListObservableCollection);
+                        var gptmddialog = new GPTMDTaskWindow(ok as GptmdTask, modListObservableCollection);
                         gptmddialog.ShowDialog();
                         break;
 

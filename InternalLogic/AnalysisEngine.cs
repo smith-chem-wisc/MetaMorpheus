@@ -30,19 +30,21 @@ namespace InternalLogicEngineLayer
         private readonly List<SearchMode> searchModes;
         private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
-        private readonly Action<BinTreeStructure, string> action1;
-        private readonly Action<List<NewPsmWithFdr>, string> action2;
+        private readonly Action<BinTreeStructure, string> writeHistogramPeaksAction;
+        private readonly Action<List<NewPsmWithFdr>, string> writePsmsAction;
         private readonly Action<List<ProteinGroup>, string> action3;
         private readonly bool doParsimony;
+        private readonly bool doHistogramAnalysis;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms) : base(2)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis) : base(2)
         {
             this.doParsimony = doParsimony;
+            this.doHistogramAnalysis = doHistogramAnalysis;
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             this.proteinList = proteinList;
@@ -53,8 +55,8 @@ namespace InternalLogicEngineLayer
             this.searchModes = searchModes;
             this.myMsDataFile = myMSDataFile;
             this.fragmentTolerance = fragmentTolerance;
-            this.action1 = action1;
-            this.action2 = action2;
+            this.writeHistogramPeaksAction = action1;
+            this.writePsmsAction = action2;
             this.action3 = action3;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.maxModIsoforms = maxModIsoforms;
@@ -503,8 +505,8 @@ namespace InternalLogicEngineLayer
             //status("Getting single match just for FDR purposes...");
             //var fullSequenceToProteinSingleMatch = GetSingleMatchDictionary(compactPeptideToProteinPeptideMatching);
 
-            List<NewPsmWithFdr>[] yeah = new List<NewPsmWithFdr>[searchModes.Count];
-
+            List<NewPsmWithFdr>[] allResultingIdentifications = new List<NewPsmWithFdr>[searchModes.Count];
+            List<ProteinGroup> proteinGroups = null;
             for (int j = 0; j < searchModes.Count; j++)
             {
                 if (newPsms[j] != null)
@@ -521,12 +523,25 @@ namespace InternalLogicEngineLayer
 
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
-                    var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
-                    if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
+                    writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
+
+                    // This must come before the unique peptide identifications..
+                    // Or instead!!!
+                    if (doHistogramAnalysis)
                     {
-                        Status("Running histogram analysis...");
-                        var hm = MyAnalysis(limitedpsms_with_fdr);
-                        action1(hm, searchModes[j].FileNameAddition);
+                        var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
+                        if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
+                        {
+                            Status("Running histogram analysis...");
+                            var hm = MyAnalysis(limitedpsms_with_fdr);
+                            writeHistogramPeaksAction(hm, searchModes[j].FileNameAddition);
+                        }
+                    }
+                    else
+                    {
+                        Status("Running FDR analysis on unique peptides...");
+                        var uniquePsmsWithFdr = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.Distinct(new SequenceComparer()));
+                        writePsmsAction(uniquePsmsWithFdr, "uniquePeptides" + searchModes[j].FileNameAddition);
                     }
 
                     if (doParsimony)
@@ -537,13 +552,11 @@ namespace InternalLogicEngineLayer
                         action3(proteinGroups, searchModes[j].FileNameAddition);
                     }
 
-                    action2(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
-
-                    yeah[j] = orderedPsmsWithFDR;
+                    allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }
             }
 
-            return new AnalysisResults(this, yeah, proteinGroups);
+            return new AnalysisResults(this, allResultingIdentifications, proteinGroups);
         }
 
         #endregion Protected Methods
