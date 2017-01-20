@@ -90,12 +90,14 @@
   <ItemGroup>
     <Compile Include="CalibrationTask\MyCalibrationTaskResults.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
+    <Compile Include="EverythingRunner\XmlForTaskListEventArgs.cs" />
     <Compile Include="GPTMDTask\MyGPTMDTaskResults.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
     <Compile Include="CalibrationTask\CalibrationTask.cs" />
     <Compile Include="GPTMDTask\GPTMDTask.cs" />
     <Compile Include="GPTMDTask\ModListForGPTMDTask.cs" />
     <Compile Include="CalibrationTask\ModListForCalibrationTask.cs" />
+    <Compile Include="Parent\XmlForTask.cs" />
     <Compile Include="SearchTask\ModListForSearchTask.cs" />
     <Compile Include="ModList.cs" />
     <Compile Include="SearchTask\MySearchTaskResults.cs" />

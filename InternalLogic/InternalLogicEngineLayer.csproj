@@ -125,7 +125,7 @@
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="ProteinGroup.cs" />
-    <Compile Include="PSMwithTargetDecoyKnown.cs" />
+    <Compile Include="PSMwithProteinHashSet.cs" />
     <Compile Include="SearchModes\OpenSearchMode.cs" />
     <Compile Include="SearchModes\SearchMode.cs" />
     <Compile Include="SearchModes\SingleAbsoluteAroundZeroSearchMode.cs" />

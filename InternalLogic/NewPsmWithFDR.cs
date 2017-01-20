@@ -5,9 +5,10 @@ namespace InternalLogicEngineLayer
 {
     public class NewPsmWithFdr
     {
+
         #region Public Fields
 
-        public PSMwithTargetDecoyKnown thisPSM;
+        public PSMwithProteinHashSet thisPSM;
 
         #endregion Public Fields
 
@@ -20,7 +21,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public NewPsmWithFdr(PSMwithTargetDecoyKnown thisPsm, int cumulativeTarget, int cumulativeDecoy, double tempQValue)
+        public NewPsmWithFdr(PSMwithProteinHashSet thisPsm, int cumulativeTarget, int cumulativeDecoy, double tempQValue)
         {
             this.thisPSM = thisPsm;
             this.cumulativeTarget = cumulativeTarget;
@@ -31,6 +32,19 @@ namespace InternalLogicEngineLayer
         #endregion Public Constructors
 
         #region Public Properties
+
+        public static string TabSeparatedHeader
+        {
+            get
+            {
+                var sb = new StringBuilder();
+                sb.Append(PSMwithProteinHashSet.TabSeparatedHeader + '\t');
+                sb.Append("cumulative_target" + '\t');
+                sb.Append("cumulative_decoy" + '\t');
+                sb.Append("QValue");
+                return sb.ToString();
+            }
+        }
 
         public double qValue { get; set; }
 
@@ -46,25 +60,10 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public static string TabSeparatedHeader
-        {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.Append(PSMwithTargetDecoyKnown.TabSeparatedHeader + '\t');
-                sb.Append("Decoy" + '\t');
-                sb.Append("cumulative_target" + '\t');
-                sb.Append("cumulative_decoy" + '\t');
-                sb.Append("QValue");
-                return sb.ToString();
-            }
-        }
-
         public override string ToString()
         {
             var sb = new StringBuilder();
             sb.Append(thisPSM.ToString() + '\t');
-            sb.Append(IsDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(qValue.ToString("F5", CultureInfo.InvariantCulture));
@@ -73,5 +72,6 @@ namespace InternalLogicEngineLayer
         }
 
         #endregion Public Methods
+
     }
 }
