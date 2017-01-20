@@ -100,6 +100,8 @@ namespace Test
             // apply parsimony to initial dictionary
             var parsimonyTest = AnalysisEngine.ApplyProteinParsimony(initialDictionary, out pep);
 
+            
+
             var parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];
             int j = 0;
@@ -161,6 +163,7 @@ namespace Test
             */
 
             Assert.That(parsimonyProteinList.Count == 3);
+            Assert.That(parsimonyTest.Count == initialDictionary.Count);
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
             Assert.That(parsimonyBaseSequences.Contains(sequence2));
             Assert.That(parsimonyBaseSequences.Contains(sequence3));
