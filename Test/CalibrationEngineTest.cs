@@ -42,7 +42,7 @@ namespace Test
             int numFragmentsNeededForEveryIdentification = 10;
             double toleranceInMZforMS1Search = 0.01;
 
-            var calibrationEngine = new CalibrationEngine(myMsDataFile, randomSeed, toleranceInMZforMS2Search, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, toleranceInMZforMS1Search, FragmentTypes.b, FragmentTypes.y);
+            var calibrationEngine = new CalibrationEngine(myMsDataFile, randomSeed, toleranceInMZforMS2Search, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, toleranceInMZforMS1Search, FragmentTypes.b | FragmentTypes.y);
 
             var res = calibrationEngine.Run();
             Assert.IsTrue(res is CalibrationResults);

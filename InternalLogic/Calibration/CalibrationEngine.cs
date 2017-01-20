@@ -55,14 +55,17 @@ namespace InternalLogicCalibration
             Status("Calibrating " + Path.GetFileName(myMsDataFile.FilePath));
 
             var trainingPointCounts = new List<int>();
+            var goodResult = new CalibrationResults(myMsDataFile, this);
             List<LabeledDataPoint> pointList;
             for (int calibrationRound = 1; ; calibrationRound++)
             {
                 Status("Calibration round " + calibrationRound);
-
+                int numMs1MassChargeCombinationsConsidered = 0;
+                int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
                 Status("Getting Training Points");
+                pointList = GetDataPoints(ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
-                pointList = GetDataPoints();
+                goodResult.Add(calibrationRound, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, pointList.Count);
 
                 if (calibrationRound >= 2 && pointList.Count <= trainingPointCounts[calibrationRound - 2])
                     break;
@@ -86,14 +89,14 @@ namespace InternalLogicCalibration
                     return new MyErroredResults(this, "Could not calibrate");
             }
 
-            return new CalibrationResults(myMsDataFile, this);
+            return goodResult;
         }
 
         #endregion Protected Methods
 
         #region Private Methods
 
-        private List<LabeledDataPoint> GetDataPoints()
+        private List<LabeledDataPoint> GetDataPoints(ref int numMs1MassChargeCombinationsConsidered, ref int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             Status("Extracting data points:");
             // The final training point list
@@ -149,9 +152,8 @@ namespace InternalLogicCalibration
                 }
                 Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
-                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge);
-
-                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge);
+                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge, ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge, ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
             }
@@ -329,7 +331,7 @@ namespace InternalLogicCalibration
             }
         }
 
-        private int SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
+        private int SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, List<LabeledDataPoint> myCandidatePoints, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, ref int numMs1MassChargeCombinationsConsidered, ref int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             int goodIndex = -1;
             var scores = new List<int>();
@@ -380,8 +382,10 @@ namespace InternalLogicCalibration
                         {
                             break;
                         }
+                        numMs1MassChargeCombinationsConsidered++;
                         if (npwr > 1)
                         {
+                            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
                             continue;
                         }
 
