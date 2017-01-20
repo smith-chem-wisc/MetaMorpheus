@@ -121,7 +121,7 @@ namespace Test
 
         public void TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double newSelectedIonGuessMonoisotopicMZ)
         {
-            MassSpectrum.replaceXbyApplyingFunction(convertorForSpectrum);
+            MassSpectrum.ReplaceXbyApplyingFunction(convertorForSpectrum);
             selectedIonGuessMonoisotopicMZ = newSelectedIonGuessMonoisotopicMZ;
         }
 

@@ -181,8 +181,8 @@ namespace InternalLogicEngineLayer
             double MatchingIntensityHere = 0;
 
             // speed optimizations
-            double[] experimental_mzs = thisScan.MassSpectrum.xArray;
-            double[] experimental_intensities = thisScan.MassSpectrum.yArray;
+            double[] experimental_mzs = thisScan.MassSpectrum.XArray;
+            double[] experimental_intensities = thisScan.MassSpectrum.YArray;
             int num_experimental_peaks = experimental_mzs.Length;
 
             int theoreticalIndex = 0;

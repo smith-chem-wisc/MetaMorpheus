@@ -472,7 +472,10 @@ namespace InternalLogicEngineLayer
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Status("Adding observed peptides to dictionary...");
-            AddObservedPeptidesToDictionary();
+            lock (compactPeptideToProteinPeptideMatching)
+            {
+                AddObservedPeptidesToDictionary();
+            }
 
             HashSet<CompactPeptide> uniquePeptides = new HashSet<CompactPeptide>();
             if (doParsimony)
@@ -833,6 +836,8 @@ namespace InternalLogicEngineLayer
             int proteinsSeen = 0;
             int old_progress = 0;
 
+            var obj = new object();
+
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
@@ -859,7 +864,7 @@ namespace InternalLogicEngineLayer
                         }
                     }
                 }
-                lock (compactPeptideToProteinPeptideMatching)
+                lock (obj)
                 {
                     foreach (var ye in local)
                     {
