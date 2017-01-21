@@ -96,7 +96,7 @@ namespace Test
                 }
             }
             List<ProteinGroup> pg = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(null, null, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(null, null, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false);
 
             // apply parsimony to initial dictionary
             var parsimonyTest = ae.ApplyProteinParsimony(initialDictionary, out pg);
