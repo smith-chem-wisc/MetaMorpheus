@@ -416,7 +416,6 @@ namespace InternalLogicEngineLayer
             foreach (var proteinGroup in proteinGroups)
             {
                 List<NewPsmWithFdr> thisProteinGroupsPsmList = new List<NewPsmWithFdr>();
-                HashSet<CompactPeptide> thisProteinGroupsNewPeptideList = new HashSet<CompactPeptide>();
 
                 foreach (var peptide in proteinGroup.PeptideList)
                 {
