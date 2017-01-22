@@ -33,6 +33,34 @@ namespace Test
             Scans.Add(new TestScan(2, 2, MassSpectrum2, 402.18629720155.ToMassToChargeRatio(2), 2, 1, 402.18629720155.ToMassToChargeRatio(2), 2, 1));
         }
 
+
+		public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss)
+		{
+			Scans = new List<TestScan>();
+			for (int i = 0; i < pepWithSetModss.Count; i++)
+			{
+				var pepWithSetMods = pepWithSetModss[i];
+				var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMassToChargeRatio(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMassToChargeRatio(2) };
+				var intensities1 = new double[] { 1, 1, 1 };
+				var MassSpectrum1 = new DefaultMzSpectrum(mz1, intensities1, false);
+
+				Scans.Add(new TestScan(2 * i + 1, 2 * i, MassSpectrum1, 2 * i));
+
+				List<double> mz2 = new List<double>();
+				List<double> intensities2 = new List<double>();
+				foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+				{
+					mz2.Add(aok.ToMassToChargeRatio(1));
+					mz2.Add((aok + 1.003).ToMassToChargeRatio(1));
+					intensities2.Add(1);
+					intensities2.Add(1);
+				}
+				var MassSpectrum2 = new DefaultMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
+				Scans.Add(new TestScan(2 * i + 2, 2 * i + 1, MassSpectrum2, pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), 2 * i + 1, 2 * i + 1));
+
+			}
+		}
+
         public TestDataFile(PeptideWithSetModifications pepWithSetMods)
         {
             var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMassToChargeRatio(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMassToChargeRatio(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMassToChargeRatio(2) };

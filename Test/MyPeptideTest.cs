@@ -21,12 +21,13 @@ namespace Test
 
             Assert.AreEqual(2, ye.Count);
 
-            var pep1 = new PeptideWithSetModifications(ye[0], new Dictionary<int, MorpheusModification>());
+			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
+			var pep1 = ye[0].GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
             foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
-            var pep2 = new PeptideWithSetModifications(ye[1], new Dictionary<int, MorpheusModification>());
+			var pep2 = ye[1].GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
             foreach (var huh in pep2.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
@@ -42,12 +43,13 @@ namespace Test
 
             Assert.AreEqual(2, ye.Count);
 
-            var pep1 = new PeptideWithSetModifications(ye[0], new Dictionary<int, MorpheusModification>());
+			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
+			var pep1 = ye[0].GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
             foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
-            var pep2 = new PeptideWithSetModifications(ye[1], new Dictionary<int, MorpheusModification>());
+			var pep2 = ye[1].GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsNaN(pep2.MonoisotopicMass);
             var cool = pep2.FastSortedProductMasses(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);

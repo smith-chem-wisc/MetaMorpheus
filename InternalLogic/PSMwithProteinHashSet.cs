@@ -24,8 +24,8 @@ namespace InternalLogicEngineLayer
         public PSMwithProteinHashSet(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
         {
             this.newPsm = newPsm;
-            IsDecoy = peptidesWithSetModifications.Count(b => b.Protein.IsDecoy) > 0;
-            IsContaminant = peptidesWithSetModifications.Count(b => b.Protein.IsContaminant) > 0;
+            IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
+            IsContaminant = peptidesWithSetModifications.Any(b => b.Protein.IsContaminant);
             this.peptidesWithSetModifications = peptidesWithSetModifications;
 
             var representative = peptidesWithSetModifications.First();
