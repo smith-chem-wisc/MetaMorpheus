@@ -12,17 +12,21 @@
         public readonly double injectionTime;
         public readonly double relativeMZ;
 
-        public DataPoint(double mz, double rt, int msnOrder, double intensity, double totalIonCurrent, double injectionTime, int selectedIonGuessChargeStateGuess = 0, double isolationMZ = 0, double relativeMZ = 0)
+        public DataPoint(double mz, double rt, int msnOrder, double intensity, double totalIonCurrent, double injectionTime, int selectedIonGuessChargeStateGuess, double isolationMZ, double relativeMZ)
+			:this(mz,  rt,  msnOrder,  intensity,  totalIonCurrent,  injectionTime)
+		{
+			this.selectedIonGuessChargeStateGuess = selectedIonGuessChargeStateGuess;
+			this.isolationMZ = isolationMZ;
+			this.relativeMZ = relativeMZ;
+		}
+        public DataPoint(double mz, double rt, int msnOrder, double intensity, double totalIonCurrent, double injectionTime)
         {
             this.mz = mz;
             this.rt = rt;
             this.msnOrder = msnOrder;
             this.intensity = intensity;
-            this.selectedIonGuessChargeStateGuess = selectedIonGuessChargeStateGuess;
-            this.isolationMZ = isolationMZ;
             this.totalIonCurrent = totalIonCurrent;
             this.injectionTime = injectionTime;
-            this.relativeMZ = relativeMZ;
         }
 
         public override string ToString()
