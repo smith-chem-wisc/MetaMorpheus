@@ -157,7 +157,7 @@ namespace InternalLogicCalibration
 
                 trainingPointsToReturn.AddRange(candidateTrainingPointsForPeptide);
             }
-            Status("Number of training points: " + trainingPointsToReturn.Count());
+            Status("Number of training points: " + trainingPointsToReturn.Count);
             return trainingPointsToReturn;
         }
 
