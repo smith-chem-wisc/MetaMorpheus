@@ -75,7 +75,7 @@ namespace OldInternalLogic
                     }
                     else if (i == Length + 2)
                     {
-                        if (mod.ThisModificationType == ModificationType.PeptideCTerminus && (mod.AminoAcid.Equals(this[Length]) || mod.AminoAcid.Equals('\0')))
+                        if (mod.ThisModificationType == ModificationType.PeptideCTerminus && (mod.AminoAcid.Equals(this[Length-1]) || mod.AminoAcid.Equals('\0')))
                         {
                             List<MorpheusModification> val;
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
@@ -86,7 +86,7 @@ namespace OldInternalLogic
                     }
                     else if (i == Length + 3 && OneBasedEndResidueInProtein == Protein.Length)
                     {
-                        if (mod.ThisModificationType == ModificationType.ProteinCTerminus && (mod.AminoAcid.Equals(this[Length]) || mod.AminoAcid.Equals('\0')))
+                        if (mod.ThisModificationType == ModificationType.ProteinCTerminus && (mod.AminoAcid.Equals(this[Length-1]) || mod.AminoAcid.Equals('\0')))
                         {
                             List<MorpheusModification> val;
                             if (twoBasedFixedModificationss.TryGetValue(i, out val))
