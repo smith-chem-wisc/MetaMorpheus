@@ -2,6 +2,7 @@
 using OldInternalLogic;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace Test
 {
@@ -56,6 +57,29 @@ namespace Test
             Assert.IsNaN(cool[1]);
             Assert.IsNaN(cool[2]);
         }
+
+		[Test]
+		public static void TestPeptideWithSetModifications()
+		{
+			var prot = new Protein("M", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
+			var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+			var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain).First();
+			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
+			variableModifications.Add(new MorpheusModification("ProtNmod", ModificationType.ProteinNTerminus, 'M', 1, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("PepNmod", ModificationType.PeptideNTerminus, 'M', 1, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("resMod", ModificationType.AminoAcidResidue, 'M', 1, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("PepCmod", ModificationType.PeptideCTerminus, 'M', 1, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("ProtCmod", ModificationType.ProteinCTerminus, 'M', 1, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			var ok = ye.GetPeptideWithSetModifications(variableModifications, 4096, 5).ToList();
+
+			Console.WriteLine(string.Join(",", ok.Select(b => b.Sequence)));
+
+			Assert.AreEqual(32, ok.Count);
+
+			Assert.AreEqual("(:ProtNmod)(:PepNmod)M(:resMod)(:PepCmod)(:ProtCmod)", ok.Last().Sequence);
+			Assert.AreEqual("[H][H]M[H][H][H]", ok.Last().SequenceWithChemicalFormulas);
+
+		}
 
         #endregion Public Methods
 

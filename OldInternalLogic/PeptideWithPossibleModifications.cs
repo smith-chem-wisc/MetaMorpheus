@@ -151,7 +151,7 @@ namespace OldInternalLogic
                     pep_c_term_variable_mods.Add(variable_modification);
                 }
 
-                if (variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && (OneBasedEndResidueInProtein == Protein.Length - 1)
+                if (variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && (OneBasedEndResidueInProtein == Protein.Length)
                     && (variable_modification.AminoAcid == char.MinValue || this[Length - 1] == variable_modification.AminoAcid))
                 {
                     prot_c_term_variable_mods.Add(variable_modification);
