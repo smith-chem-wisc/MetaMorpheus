@@ -6,6 +6,7 @@ using OldInternalLogic;
 using Proteomics;
 using Spectra;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Test
 {
@@ -22,7 +23,8 @@ namespace Test
             Protein ParentProtein = new Protein("MQQQQQQQ", null, oneBasedPossibleLocalizedModifications, null, null, null, null, null, 0, false, false);
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(1, 8, ParentProtein, 0, "kk");
             Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
-            PeptideWithSetModifications pepWithSetMods = new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss);
+			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
+			PeptideWithSetModifications pepWithSetMods = modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
 
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(pepWithSetMods);
 

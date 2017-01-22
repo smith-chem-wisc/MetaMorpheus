@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Chemistry;
 
 namespace Test
 {
@@ -28,7 +29,6 @@ namespace Test
             ModList modlist4 = new ModList("m.txt");
             ObservableCollection<ModList> modList = new ObservableCollection<ModList> { modlist1, modlist2, modlist3 };
             CalibrationTask task1 = new CalibrationTask(modList);
-            task1.InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
             GptmdTask task2 = new GptmdTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 });
 
             IEnumerable<SearchMode> allSms = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("ye", 5) };
@@ -43,12 +43,33 @@ namespace Test
 
             #endregion Setup tasks
 
+			List<MorpheusModification> variableModifications = task1.ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
+			List<MorpheusModification> fixedModifications = task1.ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
+			List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+
             // Generate data for files
-            Protein ParentProtein = new Protein("MAAAAAYYYYY", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
-            PeptideWithPossibleModifications modPep = ParentProtein.Digest(task1.Protease, task1.MaxMissedCleavages, task1.InitiatorMethionineBehavior).First();
-            Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
-            PeptideWithSetModifications pepWithSetMods = new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss);
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(pepWithSetMods);
+            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
+
+			var digestedList = ParentProtein.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
+
+			Assert.AreEqual(2, digestedList.Count);
+
+            PeptideWithPossibleModifications modPep1 = digestedList[0];
+            Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss1 = new Dictionary<int, MorpheusModification>();
+			var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+
+			Assert.AreEqual(2, setList1.Count);
+
+			PeptideWithSetModifications pepWithSetMods1 = setList1[0];
+
+            PeptideWithPossibleModifications modPep2 = digestedList[1];
+			var setList2= modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+
+			Assert.AreEqual(1, setList2.Count);
+
+			PeptideWithSetModifications pepWithSetMods2 = setList2[0];
+
+			IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2 } );
 
             #region Write the files
 

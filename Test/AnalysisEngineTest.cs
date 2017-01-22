@@ -30,7 +30,7 @@ namespace Test
             Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>(); ;
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya");
 
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { new PeptideWithSetModifications(modPep, twoBasedVariableAndLocalizeableModificationss) };
+			HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First()};
 
             CompactPeptide key = new CompactPeptide(value.First(), variableModifications, localizeableModifications);
 
