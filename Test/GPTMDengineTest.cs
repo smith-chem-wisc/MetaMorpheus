@@ -32,7 +32,7 @@ namespace Test
             ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 42);
             var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false, false);
             var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
-            var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
+            //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
 			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
 			var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;

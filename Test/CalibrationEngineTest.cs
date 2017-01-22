@@ -22,7 +22,7 @@ namespace Test
             Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<MorpheusModification>>();
             Protein ParentProtein = new Protein("MQQQQQQQ", null, oneBasedPossibleLocalizedModifications, null, null, null, null, null, 0, false, false);
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(1, 8, ParentProtein, 0, "kk");
-            Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
+            //Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
 			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
 			PeptideWithSetModifications pepWithSetMods = modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
 

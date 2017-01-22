@@ -44,8 +44,8 @@ namespace Test
             #endregion Setup tasks
 
 			List<MorpheusModification> variableModifications = task1.ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-			List<MorpheusModification> fixedModifications = task1.ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-			List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+			//List<MorpheusModification> fixedModifications = task1.ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
+			//List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
@@ -55,8 +55,7 @@ namespace Test
 			Assert.AreEqual(2, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
-            Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss1 = new Dictionary<int, MorpheusModification>();
-			var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
 
 			Assert.AreEqual(2, setList1.Count);
 
