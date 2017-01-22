@@ -1,4 +1,4 @@
-﻿using MetaMorpheusCommandLine;
+﻿using InternalLogicEngineLayer;
 using NUnit.Framework;
 
 namespace Test
