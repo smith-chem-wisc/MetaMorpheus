@@ -51,28 +51,28 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Chemistry">
-      <HintPath>..\packages\mzLib.1.0.70\lib\Chemistry.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\Chemistry.dll</HintPath>
     </Reference>
     <Reference Include="MassSpectrometry">
-      <HintPath>..\packages\mzLib.1.0.70\lib\MassSpectrometry.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\MassSpectrometry.dll</HintPath>
     </Reference>
     <Reference Include="mzIdentML">
-      <HintPath>..\packages\mzLib.1.0.70\lib\mzIdentML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\mzIdentML.dll</HintPath>
     </Reference>
     <Reference Include="MzML">
-      <HintPath>..\packages\mzLib.1.0.70\lib\MzML.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\MzML.dll</HintPath>
     </Reference>
     <Reference Include="Proteomics">
-      <HintPath>..\packages\mzLib.1.0.70\lib\Proteomics.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\Proteomics.dll</HintPath>
     </Reference>
     <Reference Include="Spectra">
-      <HintPath>..\packages\mzLib.1.0.70\lib\Spectra.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\Spectra.dll</HintPath>
     </Reference>
     <Reference Include="Thermo">
-      <HintPath>..\packages\mzLib.1.0.70\lib\Thermo.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\Thermo.dll</HintPath>
     </Reference>
     <Reference Include="UsefulProteomicsDatabases">
-      <HintPath>..\packages\mzLib.1.0.70\lib\UsefulProteomicsDatabases.dll</HintPath>
+      <HintPath>..\packages\mzLib.1.0.71\lib\UsefulProteomicsDatabases.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
