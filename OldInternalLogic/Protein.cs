@@ -39,7 +39,6 @@ namespace OldInternalLogic
         public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
         public string Accession { get; private set; }
         public string BaseSequence { get; private set; }
-        public string DatasetAbbreviation { get; private set; }
         public bool IsDecoy { get; private set; }
 
         public int Length

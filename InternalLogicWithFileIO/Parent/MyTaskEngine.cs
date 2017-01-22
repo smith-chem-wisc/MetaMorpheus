@@ -167,8 +167,6 @@ namespace InternalLogicTaskLayer
                     string accession = null;
                     string name = null;
                     string full_name = null;
-                    string organism = null;
-                    string gene_name = null;
                     string sequence = null;
                     string feature_type = null;
                     string feature_description = null;
@@ -199,20 +197,6 @@ namespace InternalLogicTaskLayer
                                         if (xml.Depth == 2)
                                         {
                                             name = xml.ReadElementString();
-                                        }
-                                        else if (nodes[2] == "gene")
-                                        {
-                                            if (gene_name == null)
-                                            {
-                                                gene_name = xml.ReadElementString();
-                                            }
-                                        }
-                                        else if (nodes[2] == "organism")
-                                        {
-                                            if (organism == null)
-                                            {
-                                                organism = xml.ReadElementString();
-                                            }
                                         }
                                         break;
 
@@ -350,8 +334,6 @@ namespace InternalLogicTaskLayer
                                         accession = null;
                                         name = null;
                                         full_name = null;
-                                        organism = null;
-                                        gene_name = null;
                                         sequence = null;
                                         feature_type = null;
                                         feature_description = null;
