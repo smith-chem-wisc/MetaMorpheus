@@ -26,17 +26,20 @@ namespace Test
             ModList modlist2 = new ModList("v.txt");
             ModList modlist3 = new ModList("ptmlist.txt");
             ModList modlist4 = new ModList("m.txt");
+            ModList modlist5 = new ModList("glyco.txt");
             ObservableCollection<ModList> modList = new ObservableCollection<ModList> { modlist1, modlist2, modlist3 };
             CalibrationTask task1 = new CalibrationTask(modList);
-            GptmdTask task2 = new GptmdTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 });
+            GptmdTask task2 = new GptmdTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 });
 
             IEnumerable<SearchMode> allSms = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
 
-            SearchTask task3 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 }, allSms);
+            SearchTask task3 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 }, allSms);
             task3.ListOfModListsForSearch[3].Localize = true;
+            task3.ListOfModListsForSearch[4].Localize = true;
 
-            SearchTask task4 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4 }, allSms);
+            SearchTask task4 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 }, allSms);
             task4.ListOfModListsForSearch[3].Localize = true;
+            task4.ListOfModListsForSearch[4].Localize = true;
             task4.ClassicSearch = false;
             List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1, task2, task3, task4 };
 
