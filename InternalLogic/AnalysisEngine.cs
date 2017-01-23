@@ -300,16 +300,19 @@ namespace InternalLogicEngineLayer
             // grab indistinguishable proteins
             foreach (var proteinGroup in proteinGroups)
             {
-                foreach (var kvp in newDict)
+                if (!proteinGroup.UniquePeptideList.Any())
                 {
-                    if (!parsimonyDict.ContainsKey(kvp.Key))
+                    foreach (var kvp in newDict)
                     {
-                        if (kvp.Value.Count == proteinGroup.PeptideList.Count)
+                        if (!parsimonyDict.ContainsKey(kvp.Key))
                         {
-                            if (kvp.Value.SetEquals(proteinGroup.PeptideList))
+                            if (kvp.Value.Count == proteinGroup.PeptideList.Count)
                             {
-                                proteinGroup.Proteins.Add(kvp.Key);
-                                parsimonyDict.Add(kvp.Key, kvp.Value);
+                                if (kvp.Value.SetEquals(proteinGroup.PeptideList))
+                                {
+                                    proteinGroup.Proteins.Add(kvp.Key);
+                                    parsimonyDict.Add(kvp.Key, kvp.Value);
+                                }
                             }
                         }
                     }
@@ -414,8 +417,8 @@ namespace InternalLogicEngineLayer
 
                     if (foundPsm)
                     {
-                        thisProteinGroupsPsmList.Add(psm);
-                        //thisProteinGroupsNewPeptideList.Add(peptide);
+                        if(psm.qValue <= 0.01)
+                            thisProteinGroupsPsmList.Add(psm);
                     }
                 }
                 proteinGroup.PsmList = thisProteinGroupsPsmList;
@@ -430,7 +433,7 @@ namespace InternalLogicEngineLayer
                     newPeptideList.Add(peptide);
 
                     if (proteinGroup.UniquePeptideList.Contains(peptide))
-                    {
+                    { 
                         newUniquePeptideList.Add(peptide);
                     }
                 }
