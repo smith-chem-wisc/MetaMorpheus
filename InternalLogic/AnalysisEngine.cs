@@ -69,6 +69,7 @@ namespace InternalLogicEngineLayer
         public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             Status("Applying protein parsimony...");
+            //Status("Check1");
 
             var uniquePeptides = new HashSet<CompactPeptide>();
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
@@ -119,6 +120,8 @@ namespace InternalLogicEngineLayer
                 }
             }
 
+            //Status("Check2");
+
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
             Dictionary<Protein, HashSet<CompactPeptide>> newDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
@@ -139,6 +142,8 @@ namespace InternalLogicEngineLayer
                     }
                 }
             }
+
+            //Status("Check3");
 
             // add proteins with unique peptides to the parsimony dictionary before applying parsimony algorithm (more efficient)
             Dictionary<Protein, HashSet<CompactPeptide>> parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -168,6 +173,8 @@ namespace InternalLogicEngineLayer
                     }
                 }
             }
+
+            //Status("Check4");
 
             // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
             HashSet<CompactPeptide> bestProteinPeptideList = new HashSet<CompactPeptide>();
@@ -257,6 +264,8 @@ namespace InternalLogicEngineLayer
                 }
             }
 
+            //Status("Check5");
+
             // build protein list for each peptide after parsimony has been applied
             Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
             foreach (var kvp in parsimonyDict)
@@ -278,6 +287,8 @@ namespace InternalLogicEngineLayer
                 }
             }
 
+            //Status("Check6");
+
             // build protein groups after parsimony
             proteinGroups = new List<ProteinGroup>();
             foreach (var kvp in parsimonyDict)
@@ -297,24 +308,31 @@ namespace InternalLogicEngineLayer
                 proteinGroups.Add(new ProteinGroup(proteinListHere, kvp.Value, uniquePeptidesHere));
             }
 
+            //Status("Check7");
+
             // grab indistinguishable proteins
             foreach (var proteinGroup in proteinGroups)
             {
-                foreach (var kvp in newDict)
+                if (!proteinGroup.UniquePeptideList.Any())
                 {
-                    if (!parsimonyDict.ContainsKey(kvp.Key))
+                    foreach (var kvp in newDict)
                     {
-                        if (kvp.Value.Count == proteinGroup.PeptideList.Count)
+                        if (!parsimonyDict.ContainsKey(kvp.Key))
                         {
-                            if (kvp.Value.SetEquals(proteinGroup.PeptideList))
+                            if (kvp.Value.Count == proteinGroup.PeptideList.Count)
                             {
-                                proteinGroup.Proteins.Add(kvp.Key);
-                                parsimonyDict.Add(kvp.Key, kvp.Value);
+                                if (kvp.Value.SetEquals(proteinGroup.PeptideList))
+                                {
+                                    proteinGroup.Proteins.Add(kvp.Key);
+                                    parsimonyDict.Add(kvp.Key, kvp.Value);
+                                }
                             }
                         }
                     }
                 }
             }
+
+            //Status("Check8");
 
             // constructs return dictionary (only use parsimony proteins for the new PeptideWithSetModifications list)
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
@@ -414,8 +432,8 @@ namespace InternalLogicEngineLayer
 
                     if (foundPsm)
                     {
-                        thisProteinGroupsPsmList.Add(psm);
-                        //thisProteinGroupsNewPeptideList.Add(peptide);
+                        if(psm.qValue <= 0.01)
+                            thisProteinGroupsPsmList.Add(psm);
                     }
                 }
                 proteinGroup.PsmList = thisProteinGroupsPsmList;
@@ -430,7 +448,7 @@ namespace InternalLogicEngineLayer
                     newPeptideList.Add(peptide);
 
                     if (proteinGroup.UniquePeptideList.Contains(peptide))
-                    {
+                    { 
                         newUniquePeptideList.Add(peptide);
                     }
                 }
