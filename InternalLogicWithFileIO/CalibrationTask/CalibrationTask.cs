@@ -95,6 +95,19 @@ namespace InternalLogicTaskLayer
             Status("Loading proteins...");
             var proteinList = xmlDbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
 
+            List<ProductType> lp = new List<ProductType>();
+            FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
+            if (BIons)
+            {
+                fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.b;
+                lp.Add(ProductType.B);
+            }
+            if (YIons)
+            {
+                fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.y;
+                lp.Add(ProductType.Y);
+            }
+
             Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
             {
                 var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
@@ -114,7 +127,7 @@ namespace InternalLogicTaskLayer
                     listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                 }
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -122,7 +135,7 @@ namespace InternalLogicTaskLayer
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
 
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false);
+                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -147,7 +160,6 @@ namespace InternalLogicTaskLayer
                 int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
                 int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
                 int numFragmentsNeededForEveryIdentification = 10;
-                FragmentTypes fragmentTypesForCalibration = FragmentTypes.b | FragmentTypes.y;
 
                 // TODO: fix the tolerance calculation below
                 var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassToleranceInDaltons * 2, fragmentTypesForCalibration);
