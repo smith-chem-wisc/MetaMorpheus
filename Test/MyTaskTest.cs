@@ -48,7 +48,7 @@ namespace Test
 			//List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
 			// Generate data for files
-			Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
+			Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
 
 			var digestedList = ParentProtein.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
 
@@ -71,7 +71,7 @@ namespace Test
 
 			var dictHere = new Dictionary<int, List<MorpheusModification>>();
 			dictHere.Add(3, new List<MorpheusModification> { new MorpheusModification(null, ModificationType.AminoAcidResidue, 'E', 21.981943, null, null, '\0', double.NaN, false, null)});
-			Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
+			Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
 			 digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
 			var modPep3 = digestedList[0];
 			Assert.AreEqual(1, digestedList.Count);
@@ -81,12 +81,14 @@ namespace Test
 
 			IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] } );
 
+			Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new Dictionary<int, List<MorpheusModification>>(), new int[] { 4 }, new int[] { 8 }, new string[] { "chain" }, null, null, 0, false, false);
+
             #region Write the files
 
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(myMsDataFile, mzmlName);
             string xmlName = "ok.xml";
-            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string>>>(), new List<Protein> { ParentProtein }, xmlName);
+            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
             #endregion Write the files
 

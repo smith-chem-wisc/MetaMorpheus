@@ -490,10 +490,7 @@ namespace InternalLogicEngineLayer
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Status("Adding observed peptides to dictionary...");
-            lock (compactPeptideToProteinPeptideMatching)
-            {
-                AddObservedPeptidesToDictionary();
-            }
+            AddObservedPeptidesToDictionary();
 
             List<ProteinGroup> proteinGroups = null;
             if (doParsimony)
@@ -553,7 +550,6 @@ namespace InternalLogicEngineLayer
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }
             }
-
             return new AnalysisResults(this, allResultingIdentifications, proteinGroups);
         }
 

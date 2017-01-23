@@ -32,7 +32,6 @@ namespace Test
             this.selectedIonGuessChargeStateGuess = selectedIonGuessChargeStateGuess;
             this.selectedIonGuessMonoisotopicIntensity = selectedIonGuessMonoisotopicIntensity;
             this.isolationMZ = isolationMZ;
-			Console.WriteLine("set isolation mz to be: = " + isolationMZ);
             this.InjectionTime = InjectionTime;
             this.precursorOneBasedScanNumber = precursorOneBasedScanNumber;
         }

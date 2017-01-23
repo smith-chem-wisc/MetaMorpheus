@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MetaMorpheusCommandLine
+namespace InternalLogicEngineLayer
 {
     public static class Exclusions
     {

@@ -330,6 +330,7 @@ namespace OldInternalLogic
                             mass_shift += fixed_modification.MonoisotopicMassShift;
                         monoisotopicMass += fixed_modification.MonoisotopicMassShift;
                     }
+
             // variable modification on the protein N-terminus
             MorpheusModification prot_n_term_var_mod;
             if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_var_mod))
@@ -338,6 +339,7 @@ namespace OldInternalLogic
                     mass_shift += prot_n_term_var_mod.MonoisotopicMassShift;
                 monoisotopicMass += prot_n_term_var_mod.MonoisotopicMassShift;
             }
+
             // fixed modifications on peptide N-terminus
             if (modPep.twoBasedFixedModificationss.TryGetValue(1, out modificationList))
                 foreach (var fixed_modification in modificationList)
@@ -346,6 +348,7 @@ namespace OldInternalLogic
                         mass_shift += fixed_modification.MonoisotopicMassShift;
                     monoisotopicMass += fixed_modification.MonoisotopicMassShift;
                 }
+
             // variable modification on peptide N-terminus
             MorpheusModification pep_n_term_variable_mod;
             if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
@@ -354,9 +357,22 @@ namespace OldInternalLogic
                     mass_shift += pep_n_term_variable_mod.MonoisotopicMassShift;
                 monoisotopicMass += pep_n_term_variable_mod.MonoisotopicMassShift;
             }
+
+
             p.cumulativeNTerminalMass[0] = mass_shift;
 
-            for (int r = 1; r < Length; r++)
+			// Loop for monoisotopic mass
+            for (int r = 0; r < Length; r++)
+			{
+				if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out modificationList))
+					foreach (var fixed_modification in modificationList)
+						monoisotopicMass += fixed_modification.MonoisotopicMassShift;
+				MorpheusModification residue_variable_mod;
+				if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
+					monoisotopicMass += residue_variable_mod.MonoisotopicMassShift;
+			}
+
+			for (int r = 1; r < Length; r++)
             {
                 mass_shift = 0.0f;
                 // fixed modifications on this residue
@@ -365,16 +381,17 @@ namespace OldInternalLogic
                     {
                         if (!fixed_modification.Labile)
                             mass_shift += fixed_modification.MonoisotopicMassShift;
-                        monoisotopicMass += fixed_modification.MonoisotopicMassShift;
                     }
+
+
                 // variable modification on this residue
                 MorpheusModification residue_variable_mod;
                 if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 1, out residue_variable_mod))
                 {
                     if (!residue_variable_mod.Labile)
                         mass_shift += residue_variable_mod.MonoisotopicMassShift;
-                    monoisotopicMass += residue_variable_mod.MonoisotopicMassShift;
                 }
+
                 p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[r - 1]] + mass_shift;
             }
 
@@ -389,6 +406,7 @@ namespace OldInternalLogic
                         mass_shift += fixed_modification.MonoisotopicMassShift;
                     monoisotopicMass += fixed_modification.MonoisotopicMassShift;
                 }
+
             // variable modification on peptide C-terminus
             MorpheusModification pep_c_term_variable_mod;
             if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
@@ -397,6 +415,7 @@ namespace OldInternalLogic
                     mass_shift += pep_c_term_variable_mod.MonoisotopicMassShift;
                 monoisotopicMass += pep_c_term_variable_mod.MonoisotopicMassShift;
             }
+
             // fixed modifications on protein C-terminus
             if (OneBasedEndResidueInProtein == Protein.Length)
                 if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out modificationList))
@@ -406,6 +425,8 @@ namespace OldInternalLogic
                             mass_shift += fixed_modification.MonoisotopicMassShift;
                         monoisotopicMass += fixed_modification.MonoisotopicMassShift;
                     }
+
+
             // variable modification on protein C-terminus
             MorpheusModification prot_c_term_variable_mod;
             if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
@@ -418,10 +439,13 @@ namespace OldInternalLogic
             p.cumulativeCTerminalMass[0] = mass_shift;
             monoisotopicMass += Residue.ResidueMonoisotopicMass[BaseSequence[0]];
 
+
             for (int r = 1; r < Length; r++)
             {
                 mass_shift = 0.0f;
                 monoisotopicMass += Residue.ResidueMonoisotopicMass[BaseSequence[r]];
+
+
                 // fixed modifications on this residue
                 if (modPep.twoBasedFixedModificationss.TryGetValue(Length - r + 2, out modificationList))
                     foreach (var fixed_modification in modificationList)
