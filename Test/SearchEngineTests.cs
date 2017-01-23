@@ -25,8 +25,7 @@ namespace Test
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
-
+            var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
             var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl");
@@ -55,7 +54,7 @@ namespace Test
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;

@@ -184,8 +184,7 @@ namespace InternalLogicTaskLayer
 
                 if (ClassicSearch)
                 {
-                    var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
-               
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                     classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModesS, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();

@@ -1,4 +1,6 @@
-﻿using Proteomics;
+﻿using MassSpectrometry;
+using Proteomics;
+using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -68,11 +70,24 @@ namespace InternalLogicEngineLayer
 
         public static string MetaMorpheusVersion { get; private set; }
         public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; private set; }
+
         public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
+
+        public static IEnumerable<LocalMS2Scan> GetMs2Scans(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile)
+        {
+            foreach (var heh in myMSDataFile)
+            {
+                int chargeState = 0;
+                if (heh.TryGetSelectedIonGuessChargeStateGuess(out chargeState) && chargeState > 0)
+                {
+                    yield return new LocalMS2Scan(heh);
+                }
+            }
+        }
 
         public MyResults Run()
         {

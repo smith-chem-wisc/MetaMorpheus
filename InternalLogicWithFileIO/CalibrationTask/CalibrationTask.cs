@@ -111,7 +111,7 @@ namespace InternalLogicTaskLayer
                         myMsDataFile = new ThermoRawFile(origDataFileName, MaxNumPeaksPerScan);
                     Status("Opening spectra file " + origDataFileName + "...");
                     myMsDataFile.Open();
-                    listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
+                    listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                 }
 
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
