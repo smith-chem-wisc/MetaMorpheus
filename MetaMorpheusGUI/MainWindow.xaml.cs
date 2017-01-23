@@ -291,11 +291,11 @@ namespace MetaMorpheusGUI
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (var file in files)
             {
-                var theExtension = Path.GetExtension(file);
+                var theExtension = Path.GetExtension(file).ToLowerInvariant();
                 switch (theExtension)
                 {
                     case ".raw":
-                    case ".mzML":
+                    case ".mzml":
                         rawDataObservableCollection.Add(new RawData(file));
                         break;
 
