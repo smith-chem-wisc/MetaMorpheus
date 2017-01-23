@@ -77,8 +77,6 @@ namespace InternalLogicTaskLayer
             myTaskResults.newSpectra = new List<string>();
             var currentRawFileList = rawDataFilenameList;
 
-            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
             SearchMode searchMode;
             searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassToleranceInDaltons);
             var searchModes = new List<SearchMode> { searchMode };
@@ -99,11 +97,13 @@ namespace InternalLogicTaskLayer
 
             Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
             {
+                var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
                 var origDataFileName = currentRawFileList[spectraFileIndex];
                 LocalMS2Scan[] listOfSortedms2Scans;
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 lock (myTaskResults)
                 {
+                    StartingDataFile(origDataFileName);
                     Status("Loading spectra file " + origDataFileName + "...");
                     if (Path.GetExtension(origDataFileName).Equals(".mzML"))
                         myMsDataFile = new Mzml(origDataFileName, MaxNumPeaksPerScan);
@@ -121,49 +121,51 @@ namespace InternalLogicTaskLayer
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
 
+                // Run analysis on single file results
+                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false);
+
+                var analysisResults = (AnalysisResults)analysisEngine.Run();
+
+                var identifications = analysisResults.AllResultingIdentifications[0];
+
+                myMsDataFile.Close();
+
+                //Now can calibrate!!!
+                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFileForCalibration;
+                if (Path.GetExtension(origDataFileName).Equals(".mzML"))
+                {
+                    myMsDataFileForCalibration = new Mzml(origDataFileName);
+                    myMsDataFileForCalibration.Open();
+                }
+                else
+                {
+                    myMsDataFileForCalibration = new ThermoRawFile(origDataFileName);
+                    myMsDataFileForCalibration.Open();
+                }
+                int randomSeed = 1;
+
+                int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
+                int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
+                int numFragmentsNeededForEveryIdentification = 10;
+                FragmentTypes fragmentTypesForCalibration = FragmentTypes.b | FragmentTypes.y;
+
+                // TODO: fix the tolerance calculation below
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassToleranceInDaltons * 2, fragmentTypesForCalibration);
+
+                var result = (CalibrationResults)a.Run();
+
+                Status("Creating _indexedmzMLConnection, putting data in it, and writing!");
+                var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                 lock (myTaskResults)
                 {
-                    // Run analysis on single file results
-                    var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false);
-
-                    var analysisResults = (AnalysisResults)analysisEngine.Run();
-
-                    var identifications = analysisResults.AllResultingIdentifications[0];
-
-                    myMsDataFile.Close();
-
-                    //Now can calibrate!!!
-                    IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFileForCalibration;
-                    if (Path.GetExtension(origDataFileName).Equals(".mzML"))
-                    {
-                        myMsDataFileForCalibration = new Mzml(origDataFileName);
-                        myMsDataFileForCalibration.Open();
-                    }
-                    else
-                    {
-                        myMsDataFileForCalibration = new ThermoRawFile(origDataFileName);
-                        myMsDataFileForCalibration.Open();
-                    }
-                    int randomSeed = 1;
-
-                    int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
-                    int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
-                    int numFragmentsNeededForEveryIdentification = 10;
-                    FragmentTypes fragmentTypesForCalibration = FragmentTypes.b | FragmentTypes.y;
-
-                    // TODO: fix the tolerance calculation below
-                    var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassToleranceInDaltons * 2, fragmentTypesForCalibration);
-
-                    var result = (CalibrationResults)a.Run();
-
-                    Status("Creating _indexedmzMLConnection, putting data in it, and writing!");
-                    var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                     MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.MyMSDataFile, path);
 
                     SucessfullyFinishedWritingFile(path);
 
                     myTaskResults.newSpectra.Add(path);
                 }
+
+                FinishedDataFile(origDataFileName);
             }
             );
             return myTaskResults;

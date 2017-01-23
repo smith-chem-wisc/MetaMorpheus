@@ -17,7 +17,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public DotSearchMode(IEnumerable<double> acceptableSortedMassShifts, Tolerance tol) : base(tol.ToString() + "around" + string.Join("", acceptableSortedMassShifts.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))))
+        public DotSearchMode(IEnumerable<double> acceptableSortedMassShifts, Tolerance tol) : base(tol.ToString() + "around" + string.Join("|", acceptableSortedMassShifts.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))))
         {
             this.acceptableSortedMassShifts = acceptableSortedMassShifts.ToList();
             this.tol = tol;

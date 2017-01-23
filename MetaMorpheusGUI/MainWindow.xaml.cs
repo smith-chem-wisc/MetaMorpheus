@@ -94,7 +94,8 @@ namespace MetaMorpheusGUI
             MyTaskEngine.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MyTaskEngine.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             MyTaskEngine.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
-
+            MyTaskEngine.StartingDataFileHandler += MyTaskEngine_StartingDataFileHandler;
+            MyTaskEngine.FinishedDataFileHandler += MyTaskEngine_FinishedDataFileHandler;
             MyEngine.OutProgressHandler += NewoutProgressBar;
             MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
@@ -106,6 +107,34 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void MyTaskEngine_FinishedDataFileHandler(object sender, StringEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyTaskEngine_StartingDataFileHandler(sender, s)));
+            }
+            else
+            {
+                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                huh.SetInProgress(false);
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
+
+        private void MyTaskEngine_StartingDataFileHandler(object sender, StringEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyTaskEngine_StartingDataFileHandler(sender, s)));
+            }
+            else
+            {
+                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                huh.SetInProgress(true);
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
 
         private void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
