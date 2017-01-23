@@ -80,7 +80,7 @@ namespace MetaMorpheusGUI
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac7_6uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac8_9p5uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac9_9p5uL.raw"));
-
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\2017-01-20-17-11-20\Task1Calibrate\120426_Jurkat_highLC_Frac17-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-17-13-30-41\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));

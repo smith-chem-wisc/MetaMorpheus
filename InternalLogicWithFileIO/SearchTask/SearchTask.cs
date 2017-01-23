@@ -24,7 +24,7 @@ namespace InternalLogicTaskLayer
             ClassicSearch = true;
             DoParsimony = false;
             SearchDecoy = true;
-            DoHistogramAnalysis = true;
+            DoHistogramAnalysis = false;
             MaxMissedCleavages = 2;
             Protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
             MaxModificationIsoforms = 4096;
