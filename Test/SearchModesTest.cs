@@ -106,11 +106,6 @@ namespace Test
                 yield return new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue);
             }
 
-            public override string SearchModeString()
-            {
-                return "scanPrecursorMass * peptideMass >= 1";
-            }
-
             #endregion Public Methods
 
         }

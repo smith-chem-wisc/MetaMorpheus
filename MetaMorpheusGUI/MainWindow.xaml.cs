@@ -135,12 +135,11 @@ namespace MetaMorpheusGUI
 
         private void LoadSearchModesFromFile()
         {
-            searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode("5ppmAroundZero", 5));
-            searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
-            searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
-            searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
-            searchModeObservableCollection.Add(new OpenSearchMode("Open"));
-            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode("0.05daltonsaroundzero", 0.05));
+            searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode(5));
+            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode(0.05));
+            searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
+            searchModeObservableCollection.Add(new OpenSearchMode());
         }
 
         private void AddNewDB(object sender, XmlForTaskListEventArgs e)

@@ -22,7 +22,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
+            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
@@ -52,7 +52,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new OpenSearchMode("open") };
+            var searchModes = new List<SearchMode> { new OpenSearchMode() };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
@@ -83,7 +83,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
+            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
@@ -118,7 +118,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new OpenSearchMode("d") };
+            var searchModes = new List<SearchMode> { new OpenSearchMode() };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;

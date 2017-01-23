@@ -17,7 +17,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Properties
 
-        public string FileNameAddition { get; internal set; }
+        public string FileNameAddition { get; private set; }
 
         #endregion Public Properties
 
@@ -25,14 +25,7 @@ namespace InternalLogicEngineLayer
 
         public abstract bool Accepts(double scanPrecursorMass, double peptideMass);
 
-        public override string ToString()
-        {
-            return FileNameAddition + ": " + SearchModeString();
-        }
-
         public abstract IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
-
-        public abstract string SearchModeString();
 
         #endregion Public Methods
 

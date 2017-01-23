@@ -15,7 +15,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public SingleAbsoluteAroundZeroSearchMode(string v, double value) : base(v)
+        public SingleAbsoluteAroundZeroSearchMode(double value) : base(value + "daltonsAroundZero")
         {
             this.value = value;
         }
@@ -32,11 +32,6 @@ namespace InternalLogicEngineLayer
         public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             yield return new DoubleRange(peptideMonoisotopicMass - value, peptideMonoisotopicMass + value);
-        }
-
-        public override string SearchModeString()
-        {
-            return "SingleAbsoluteAroundZeroSearchMode" + value;
         }
 
         #endregion Public Methods
