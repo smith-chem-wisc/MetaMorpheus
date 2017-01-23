@@ -61,7 +61,7 @@ namespace Test
             }
 
             // creates the initial dictionary of "peptide" and "virtual peptide" matches
-            var initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            var dictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[totalVirtualPeptideList.Count()];
             HashSet<PeptideWithSetModifications>[] virtualPeptideSets = new HashSet<PeptideWithSetModifications>[totalVirtualPeptideList.Count()];
 
@@ -90,16 +90,16 @@ namespace Test
             // populates initial peptide-virtualpeptide dictionary
             for (int i = 0; i < peptides.Length; i++)
             {
-                if (!initialDictionary.ContainsKey(peptides[i]))
+                if (!dictionary.ContainsKey(peptides[i]))
                 {
-                    initialDictionary.Add(peptides[i], virtualPeptideSets[i]);
+                    dictionary.Add(peptides[i], virtualPeptideSets[i]);
                 }
             }
             List<ProteinGroup> pg = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(null, null, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false);
 
             // apply parsimony to initial dictionary
-            var parsimonyTest = ae.ApplyProteinParsimony(initialDictionary, out pg);
+            ae.ApplyProteinParsimony(out pg);
 
             
 
@@ -107,7 +107,7 @@ namespace Test
             string[] parsimonyBaseSequences = new string[3];
             int j = 0;
 
-            foreach (var kvp in parsimonyTest)
+            foreach (var kvp in dictionary)
             {
                 foreach (var virtualPeptide in kvp.Value)
                 {
@@ -164,7 +164,6 @@ namespace Test
             */
 
             Assert.That(parsimonyProteinList.Count == 3);
-            Assert.That(parsimonyTest.Count == initialDictionary.Count);
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
             Assert.That(parsimonyBaseSequences.Contains(sequence2));
             Assert.That(parsimonyBaseSequences.Contains(sequence3));

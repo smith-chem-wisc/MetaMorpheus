@@ -93,7 +93,7 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        public HashSet<Protein> Proteins { get; private set; }
+        public HashSet<Protein> Proteins { get; set; }
         public List<NewPsmWithFdr> PsmList { get; set; }
         public HashSet<CompactPeptide> PeptideList { get; set; }
         public HashSet<CompactPeptide> UniquePeptideList { get; set; }
