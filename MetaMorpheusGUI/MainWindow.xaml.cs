@@ -59,8 +59,9 @@ namespace MetaMorpheusGUI
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-17-2017.xml.gz"));
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml"));
 
-            xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
-            xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\MSQC4_heavy_light.xml"));
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\MSQC4_heavy_light.xml"));
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\120426_Jurkat_highLC_Frac17.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
@@ -88,6 +89,8 @@ namespace MetaMorpheusGUI
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\HC-GluC_ingel_071108-01.raw"));
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\LC_GluC_071808.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\HC-Trypsin_ingel_061808-01.raw"));
             // rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\LC-Trypsin_ingel_061808-01.raw"));
 

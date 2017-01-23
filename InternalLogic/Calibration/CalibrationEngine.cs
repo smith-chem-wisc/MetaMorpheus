@@ -62,10 +62,12 @@ namespace InternalLogicCalibration
                 Status("Calibration round " + calibrationRound);
                 int numMs1MassChargeCombinationsConsidered = 0;
                 int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
+                int numMs2MassChargeCombinationsConsidered = 0;
+                int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
                 Status("Getting Training Points");
-                pointList = GetDataPoints(ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                pointList = GetDataPoints(ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
-                goodResult.Add(calibrationRound, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, pointList.Count);
+                goodResult.Add(calibrationRound, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, pointList.Count, numMs2MassChargeCombinationsConsidered, numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 if (calibrationRound >= 2 && pointList.Count <= trainingPointCounts[calibrationRound - 2])
                     break;
@@ -75,13 +77,13 @@ namespace InternalLogicCalibration
                 var pointList2 = pointList.Where((b) => b.inputs[0] > 0).ToList();
                 if (pointList2.Count == 0)
                 {
-                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to increase the Fragment tolerance.");
+                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + goodResult.ToString());
                 }
 
                 var pointList1 = pointList.Where((b) => b.inputs[0] < 0).ToList();
                 if (pointList1.Count == 0)
                 {
-                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to increase the Parent tolerance.");
+                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + goodResult.ToString());
                 }
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
@@ -97,7 +99,7 @@ namespace InternalLogicCalibration
 
         #region Private Methods
 
-        private List<LabeledDataPoint> GetDataPoints(ref int numMs1MassChargeCombinationsConsidered, ref int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+        private List<LabeledDataPoint> GetDataPoints(ref int numMs1MassChargeCombinationsConsidered, ref int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, ref int numMs2MassChargeCombinationsConsidered, ref int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             Status("Extracting data points:");
             // The final training point list
@@ -134,7 +136,7 @@ namespace InternalLogicCalibration
                 Peptide coolPeptide = null;
                 coolPeptide = new Peptide(SequenceWithChemicalFormulas);
 
-                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified);
+                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 // If MS2 has low evidence for peptide, skip and go to next one
                 if (numFragmentsIdentified < numFragmentsNeededForEveryIdentification)
@@ -442,7 +444,7 @@ namespace InternalLogicCalibration
             return goodIndex;
         }
 
-        private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified)
+        private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified, ref int numMs2MassChargeCombinationsConsidered, ref int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             var myCandidatePoints = new List<LabeledDataPoint>();
 
@@ -521,8 +523,10 @@ namespace InternalLogicCalibration
                             {
                                 break;
                             }
+                            numMs2MassChargeCombinationsConsidered++;
                             if (npwr > 1)
                             {
+                                numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
                                 continue;
                             }
                             var closestPeak = ms2DataScan.MassSpectrum.GetClosestPeak(theMZ);
