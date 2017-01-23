@@ -148,7 +148,7 @@ namespace OldInternalLogic
                                 break;
 
                             case "//":
-                                if (feature_type == "MOD_RES" && (!float.IsNaN(monoisotopic_mass_shift)))
+                                if (feature_type == "MOD_RES" && (!float.IsNaN(monoisotopic_mass_shift)) && ye != null)
                                 {
                                     if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
                                         yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
