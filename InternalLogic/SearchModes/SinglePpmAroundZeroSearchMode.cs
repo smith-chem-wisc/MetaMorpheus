@@ -15,7 +15,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public SinglePpmAroundZeroSearchMode(string v1, double ppmTolerance) : base(v1)
+        public SinglePpmAroundZeroSearchMode(double ppmTolerance) : base(ppmTolerance + "ppmAroundZero")
         {
             this.ppmTolerance = ppmTolerance;
         }
@@ -33,11 +33,6 @@ namespace InternalLogicEngineLayer
         {
             var diff = ppmTolerance / 1e6 * peptideMonoisotopicMass;
             yield return new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff);
-        }
-
-        public override string SearchModeString()
-        {
-            return "SinglePpmAroundZeroSearchMode" + ppmTolerance;
         }
 
         #endregion Public Methods

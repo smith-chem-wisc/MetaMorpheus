@@ -8,7 +8,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public OpenSearchMode(string s) : base(s)
+        public OpenSearchMode() : base("OpenSearch")
         {
         }
 
@@ -24,11 +24,6 @@ namespace InternalLogicEngineLayer
         public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             yield return new DoubleRange(double.MinValue, double.MaxValue);
-        }
-
-        public override string SearchModeString()
-        {
-            return "OpenSearch";
         }
 
         #endregion Public Methods

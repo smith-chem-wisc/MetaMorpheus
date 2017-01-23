@@ -73,7 +73,7 @@ namespace InternalLogicEngineLayer
             var lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
             Status("Getting ms2 scans...");
-
+            
             var outerPsms = new ClassicSpectrumMatch[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFileNumSpectra];

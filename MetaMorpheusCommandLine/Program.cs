@@ -74,7 +74,7 @@ namespace MetaMorpheusCommandLine
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new Mzml(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML", 400);
             myMsDataFile.Open();
             double fragmentToleranceInDaltons = 0.01;
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
+            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
 
             var s = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, fragmentToleranceInDaltons, searchModes);
             s.Run();
@@ -83,7 +83,7 @@ namespace MetaMorpheusCommandLine
         private static void RunSearchTask()
         {
             IEnumerable<ModList> modList = new List<ModList> { new ModList("f.txt"), new ModList("v.txt"), new ModList("p.txt") };
-            IEnumerable<SearchMode> ism = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
+            IEnumerable<SearchMode> ism = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             var s = new SearchTask(modList, ism);
 
             s.ClassicSearch = false;

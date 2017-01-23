@@ -1,5 +1,6 @@
 ﻿using Spectra;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace InternalLogicEngineLayer
@@ -16,6 +17,11 @@ namespace InternalLogicEngineLayer
         #region Public Constructors
 
         public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
+        {
+            intervals = doubleRanges.ToList();
+        }
+
+        public IntervalSearchMode(IEnumerable<DoubleRange> doubleRanges) : base("intervals" + string.Join("", doubleRanges.Select(b => "[" + b.Minimum.ToString("F3", CultureInfo.InvariantCulture) + "-" + b.Maximum.ToString("F3", CultureInfo.InvariantCulture) + "]")))
         {
             intervals = doubleRanges.ToList();
         }
@@ -37,11 +43,6 @@ namespace InternalLogicEngineLayer
         public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             return intervals.Select(b => new DoubleRange(peptideMonoisotopicMass + b.Minimum, peptideMonoisotopicMass + b.Maximum));
-        }
-
-        public override string SearchModeString()
-        {
-            return "Intervals allowed: " + string.Join(",", intervals);
         }
 
         #endregion Public Methods

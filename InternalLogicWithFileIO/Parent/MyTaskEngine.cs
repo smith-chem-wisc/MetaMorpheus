@@ -45,6 +45,10 @@ namespace InternalLogicTaskLayer
 
         public static event EventHandler<SingleTaskEventArgs> StartingSingleTaskHander;
 
+        public static event EventHandler<StringEventArgs> StartingDataFileHandler;
+
+        public static event EventHandler<StringEventArgs> FinishedDataFileHandler;
+
         #endregion Public Events
 
         #region Public Properties
@@ -406,6 +410,16 @@ namespace InternalLogicTaskLayer
         protected void SucessfullyFinishedWritingFile(string path)
         {
             FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
+        }
+
+        protected void StartingDataFile(string v)
+        {
+            StartingDataFileHandler?.Invoke(this, new StringEventArgs(v));
+        }
+
+        protected void FinishedDataFile(string v)
+        {
+            FinishedDataFileHandler?.Invoke(this, new StringEventArgs(v));
         }
 
         #endregion Protected Methods

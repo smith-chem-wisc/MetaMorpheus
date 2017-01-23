@@ -80,7 +80,7 @@ namespace MetaMorpheusGUI
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac7_6uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac8_9p5uL.raw"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac9_9p5uL.raw"));
-
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\2017-01-20-17-11-20\Task1Calibrate\120426_Jurkat_highLC_Frac17-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-17-13-30-41\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
@@ -94,7 +94,8 @@ namespace MetaMorpheusGUI
             MyTaskEngine.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MyTaskEngine.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             MyTaskEngine.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
-
+            MyTaskEngine.StartingDataFileHandler += MyTaskEngine_StartingDataFileHandler;
+            MyTaskEngine.FinishedDataFileHandler += MyTaskEngine_FinishedDataFileHandler;
             MyEngine.OutProgressHandler += NewoutProgressBar;
             MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
@@ -106,6 +107,34 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void MyTaskEngine_FinishedDataFileHandler(object sender, StringEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyTaskEngine_StartingDataFileHandler(sender, s)));
+            }
+            else
+            {
+                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                huh.SetInProgress(false);
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
+
+        private void MyTaskEngine_StartingDataFileHandler(object sender, StringEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => MyTaskEngine_StartingDataFileHandler(sender, s)));
+            }
+            else
+            {
+                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                huh.SetInProgress(true);
+                dataGridDatafiles.Items.Refresh();
+            }
+        }
 
         private void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
         {
@@ -135,12 +164,11 @@ namespace MetaMorpheusGUI
 
         private void LoadSearchModesFromFile()
         {
-            searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode("5ppmAroundZero", 5));
-            searchModeObservableCollection.Add(new DotSearchMode("5ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 5)));
-            searchModeObservableCollection.Add(new DotSearchMode("10ppm", new double[] { 0 }, new Tolerance(ToleranceUnit.PPM, 10)));
-            searchModeObservableCollection.Add(new IntervalSearchMode("twoPointOneDalton", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
-            searchModeObservableCollection.Add(new OpenSearchMode("Open"));
-            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode("0.05daltonsaroundzero", 0.05));
+            searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode(5));
+            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode(0.05));
+            searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
+            searchModeObservableCollection.Add(new OpenSearchMode());
         }
 
         private void AddNewDB(object sender, XmlForTaskListEventArgs e)
