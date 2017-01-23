@@ -62,8 +62,10 @@ namespace MetaMorpheusGUI
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\MSQC4_heavy_light.xml"));
             //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\2017-01-23-13-23-29\Task2Gptmd\cRAP_database-MSQC4_heavy_lightGPTMD.xml"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\120426_Jurkat_highLC_Frac17.raw"));
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw"));
