@@ -5,6 +5,7 @@ chymotrypsin	F,W,Y	P	C	full	MS:1001306	Chymotrypsin	(?<=[FYWL])(?!P)
 chymotrypsin (no proline rule)	F,W,Y		C	full	MS:1001306	Chymotrypsin	(?<=[FYWL])	
 CNBr	M		C	full	MS:1001307	CNBr	(?<=M)	
 Glu-C	E		C	full				
+Glu-C (with asp)	E,D		C	full				
 Lys-C	K	P	C	full	MS:1001309	Lys-C	(?<=K)(?!P)	
 Lys-C (no proline rule)	K		C	full	MS:1001310	Lys-C/P	(?<=K)	
 Lys-N	K		N	full				

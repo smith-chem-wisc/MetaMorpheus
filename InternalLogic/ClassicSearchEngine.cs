@@ -35,11 +35,13 @@ namespace InternalLogicEngineLayer
         private readonly int myMsDataFileNumSpectra;
         private readonly string fileName;
 
+        private readonly List<ProductType> lp;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName) : base(2)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp) : base(2)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
@@ -53,6 +55,7 @@ namespace InternalLogicEngineLayer
             this.searchModes = searchModes;
             this.protease = protease;
             this.fileName = fileName;
+            this.lp = lp;
         }
 
         #endregion Public Constructors
@@ -70,10 +73,8 @@ namespace InternalLogicEngineLayer
             var level3_observed = new HashSet<string>();
             var level4_observed = new HashSet<string>();
 
-            var lp = new List<ProductType> { ProductType.B, ProductType.Y };
-
             Status("Getting ms2 scans...");
-            
+
             var outerPsms = new ClassicSpectrumMatch[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFileNumSpectra];

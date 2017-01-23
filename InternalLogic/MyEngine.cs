@@ -62,6 +62,8 @@ namespace InternalLogicEngineLayer
 
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
+        public static event EventHandler<StringEventArgs> WarnHandler;
+
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
         #endregion Public Events
@@ -104,6 +106,11 @@ namespace InternalLogicEngineLayer
         #endregion Public Methods
 
         #region Protected Methods
+
+        protected void Warn(string v)
+        {
+            WarnHandler?.Invoke(this, new StringEventArgs(v));
+        }
 
         protected void Status(string v)
         {

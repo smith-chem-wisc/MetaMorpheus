@@ -35,13 +35,14 @@ namespace InternalLogicEngineLayer
         private readonly Action<List<ProteinGroup>, string> action3;
         private readonly bool doParsimony;
         private readonly bool doHistogramAnalysis;
+        private readonly List<ProductType> lp;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis) : base(2)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp) : base(2)
         {
             this.doParsimony = doParsimony;
             this.doHistogramAnalysis = doHistogramAnalysis;
@@ -60,6 +61,7 @@ namespace InternalLogicEngineLayer
             this.action3 = action3;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.maxModIsoforms = maxModIsoforms;
+            this.lp = lp;
         }
 
         #endregion Public Constructors
@@ -417,7 +419,7 @@ namespace InternalLogicEngineLayer
 
                     if (foundPsm)
                     {
-                        if(psm.qValue <= 0.01)
+                        if (psm.qValue <= 0.01)
                             thisProteinGroupsPsmList.Add(psm);
                     }
                 }
@@ -433,7 +435,7 @@ namespace InternalLogicEngineLayer
                     newPeptideList.Add(peptide);
 
                     if (proteinGroup.UniquePeptideList.Contains(peptide))
-                    { 
+                    {
                         newUniquePeptideList.Add(peptide);
                     }
                 }
@@ -504,7 +506,7 @@ namespace InternalLogicEngineLayer
                     {
                         var huh = newPsms[j][i];
                         if (huh != null && huh.score >= 1)
-                            psmsWithProteinHashSet[i] = new PSMwithProteinHashSet(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile);
+                            psmsWithProteinHashSet[i] = new PSMwithProteinHashSet(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile, lp);
                     }
 
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
