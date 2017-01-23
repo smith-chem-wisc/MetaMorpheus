@@ -56,6 +56,7 @@ namespace InternalLogicEngineLayer
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
             sb.AppendLine("Number of localizeable mods: " + localizeableModifications.Count);
+            sb.AppendLine("lp: " + string.Join(",", lp));
             sb.Append("protease: " + protease);
             return sb.ToString();
         }

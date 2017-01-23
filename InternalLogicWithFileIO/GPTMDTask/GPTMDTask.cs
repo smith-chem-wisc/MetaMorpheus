@@ -44,6 +44,7 @@ namespace InternalLogicTaskLayer
             listOfModListsForGPTMD[1].Variable = true;
             listOfModListsForGPTMD[2].Localize = true;
             listOfModListsForGPTMD[3].Gptmd = true;
+            listOfModListsForGPTMD[4].Gptmd = true;
             precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             TaskType = MyTask.Gptmd;
             Tol = 0.003;
