@@ -1,4 +1,5 @@
-﻿using InternalLogicEngineLayer;
+﻿using InternalLogicCalibration;
+using InternalLogicEngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -46,6 +47,13 @@ namespace InternalLogicTaskLayer
         protected override MyResults RunSpecific()
         {
             StartingAllTasks();
+
+            if (!currentRawDataFilenameList.Any())
+            {
+                FinishedAllTasks();
+                return new MyErroredResults(this, "No data files selected");
+            }
+
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             var MatchingChars =

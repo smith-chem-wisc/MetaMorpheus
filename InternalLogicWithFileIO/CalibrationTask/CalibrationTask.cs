@@ -152,19 +152,25 @@ namespace InternalLogicTaskLayer
                 // TODO: fix the tolerance calculation below
                 var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassToleranceInDaltons * 2, fragmentTypesForCalibration);
 
-                var result = (CalibrationResults)a.Run();
+                var result = a.Run();
 
-                Status("Creating _indexedmzMLConnection, putting data in it, and writing!");
-                var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
-                lock (myTaskResults)
+                if (result is MyErroredResults)
                 {
-                    MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.MyMSDataFile, path);
-
-                    SucessfullyFinishedWritingFile(path);
-
-                    myTaskResults.newSpectra.Add(path);
+                    Warn(a.ToString());
                 }
+                else
+                {
+                    Status("Creating _indexedmzMLConnection, putting data in it, and writing!");
+                    var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
+                    lock (myTaskResults)
+                    {
+                        MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(((CalibrationResults)result).MyMSDataFile, path);
 
+                        SucessfullyFinishedWritingFile(path);
+
+                        myTaskResults.newSpectra.Add(path);
+                    }
+                }
                 FinishedDataFile(origDataFileName);
             }
             );

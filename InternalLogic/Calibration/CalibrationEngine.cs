@@ -72,15 +72,16 @@ namespace InternalLogicCalibration
 
                 trainingPointCounts.Add(pointList.Count);
 
-                var pointList1 = pointList.Where((b) => b.inputs[0] < 0).ToList();
-                if (pointList1.Count == 0)
-                {
-                    return new MyErroredResults(this, "Not enough MS1 training points, identification quality is poor");
-                }
                 var pointList2 = pointList.Where((b) => b.inputs[0] > 0).ToList();
                 if (pointList2.Count == 0)
                 {
-                    return new MyErroredResults(this, "Not enough MS2 training points, identification quality is poor");
+                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to increase the Fragment tolerance.");
+                }
+
+                var pointList1 = pointList.Where((b) => b.inputs[0] < 0).ToList();
+                if (pointList1.Count == 0)
+                {
+                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to increase the Parent tolerance.");
                 }
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
