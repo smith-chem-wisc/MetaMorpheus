@@ -1,5 +1,6 @@
 ﻿using Spectra;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace InternalLogicEngineLayer
@@ -15,6 +16,12 @@ namespace InternalLogicEngineLayer
         #endregion Private Fields
 
         #region Public Constructors
+
+        public DotSearchMode(IEnumerable<double> acceptableSortedMassShifts, Tolerance tol) : base(tol.ToString() + "around" + string.Join("|", acceptableSortedMassShifts.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))))
+        {
+            this.acceptableSortedMassShifts = acceptableSortedMassShifts.ToList();
+            this.tol = tol;
+        }
 
         public DotSearchMode(string FileNameAddition, IEnumerable<double> acceptableSortedMassShifts, Tolerance tol) : base(FileNameAddition)
         {
@@ -43,11 +50,6 @@ namespace InternalLogicEngineLayer
             {
                 yield return new DoubleRange(peptideMonoisotopicMass + huh, tol);
             }
-        }
-
-        public override string SearchModeString()
-        {
-            return "Tolerance of " + tol + " around mass diffs: " + string.Join(",", acceptableSortedMassShifts);
         }
 
         #endregion Public Methods

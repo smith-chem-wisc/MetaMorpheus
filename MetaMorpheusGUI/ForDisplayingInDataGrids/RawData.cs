@@ -2,6 +2,7 @@
 {
     public class RawData
     {
+
         #region Public Constructors
 
         public RawData(string FileName)
@@ -17,17 +18,18 @@
 
         public bool Use { get; set; }
         public string FileName { get; private set; }
+        public bool InProgress { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public void AddFilePath(string fileName)
+        public void SetInProgress(bool inProgress)
         {
-            this.FileName = fileName;
-            Use = true;
+            InProgress = inProgress;
         }
 
         #endregion Public Methods
+
     }
 }

@@ -77,10 +77,8 @@ namespace InternalLogicTaskLayer
             myTaskResults.newSpectra = new List<string>();
             var currentRawFileList = rawDataFilenameList;
 
-            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
             SearchMode searchMode;
-            searchMode = new SingleAbsoluteAroundZeroSearchMode("", PrecursorMassToleranceInDaltons);
+            searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassToleranceInDaltons);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
@@ -99,11 +97,13 @@ namespace InternalLogicTaskLayer
 
             Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
             {
+                var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
                 var origDataFileName = currentRawFileList[spectraFileIndex];
                 LocalMS2Scan[] listOfSortedms2Scans;
                 IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
                 lock (myTaskResults)
                 {
+                    StartingDataFile(origDataFileName);
                     Status("Loading spectra file " + origDataFileName + "...");
                     if (Path.GetExtension(origDataFileName).Equals(".mzML"))
                         myMsDataFile = new Mzml(origDataFileName, MaxNumPeaksPerScan);
@@ -111,7 +111,7 @@ namespace InternalLogicTaskLayer
                         myMsDataFile = new ThermoRawFile(origDataFileName, MaxNumPeaksPerScan);
                     Status("Opening spectra file " + origDataFileName + "...");
                     myMsDataFile.Open();
-                    listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
+                    listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                 }
 
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
@@ -121,8 +121,6 @@ namespace InternalLogicTaskLayer
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
 
-                lock (myTaskResults)
-				{
                 // Run analysis on single file results
                 var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false);
 
@@ -158,12 +156,16 @@ namespace InternalLogicTaskLayer
 
                 Status("Creating _indexedmzMLConnection, putting data in it, and writing!");
                 var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
-                MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.MyMSDataFile, path);
+                lock (myTaskResults)
+                {
+                    MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(result.MyMSDataFile, path);
 
-                SucessfullyFinishedWritingFile(path);
+                    SucessfullyFinishedWritingFile(path);
 
                     myTaskResults.newSpectra.Add(path);
                 }
+
+                FinishedDataFile(origDataFileName);
             }
             );
             return myTaskResults;

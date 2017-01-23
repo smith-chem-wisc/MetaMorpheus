@@ -24,7 +24,7 @@ namespace InternalLogicTaskLayer
             ClassicSearch = true;
             DoParsimony = false;
             SearchDecoy = true;
-            DoHistogramAnalysis = true;
+            DoHistogramAnalysis = false;
             MaxMissedCleavages = 2;
             Protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
             MaxModificationIsoforms = 4096;
@@ -184,8 +184,7 @@ namespace InternalLogicTaskLayer
 
                 if (ClassicSearch)
                 {
-                    var listOfSortedms2Scans = myMsDataFile.Where(b => b.MsnOrder == 2).Select(b => new LocalMS2Scan(b)).OrderBy(b => b.PrecursorMass).ToArray();
-
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                     classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModesS, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();

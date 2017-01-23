@@ -39,9 +39,41 @@
                         <Label x:Name="DatafilesLabel" Content="Datafiles" HorizontalAlignment="Center" />
                         <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
                             <DataGrid.Resources>
-                                <Style TargetType="DataGridCell">
-                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
-                                </Style>
+                                <ResourceDictionary>
+                                    <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
+                                        <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                    <Style TargetType="{x:Type DataGridRow}">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="Black" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ResourceDictionary>
                             </DataGrid.Resources>
                         </DataGrid>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

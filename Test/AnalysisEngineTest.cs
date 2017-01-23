@@ -29,7 +29,7 @@ namespace Test
 
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya");
 
-			HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First()};
+            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
 
             CompactPeptide key = new CompactPeptide(value.First(), variableModifications, localizeableModifications);
 
@@ -44,7 +44,7 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode("", 5) };
+            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<ProteinGroup>, string> action3 = null;
             Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
             bool doParsimony = false;
