@@ -121,6 +121,8 @@ namespace InternalLogicTaskLayer
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
 
+                lock (myTaskResults)
+				{
                 // Run analysis on single file results
                 var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false);
 
@@ -160,8 +162,6 @@ namespace InternalLogicTaskLayer
 
                 SucessfullyFinishedWritingFile(path);
 
-                lock (myTaskResults)
-                {
                     myTaskResults.newSpectra.Add(path);
                 }
             }

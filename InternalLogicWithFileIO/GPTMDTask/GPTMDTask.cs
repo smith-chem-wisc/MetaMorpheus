@@ -100,7 +100,6 @@ namespace InternalLogicTaskLayer
                 foreach (Protein protein in proteinList)
                 {
                     writer.WriteStartElement("entry");
-                    writer.WriteAttributeString("dataset", protein.DatasetAbbreviation);
                     writer.WriteStartElement("accession");
                     writer.WriteString(protein.Accession);
                     writer.WriteEndElement();
