@@ -71,7 +71,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods2 = setList2[0];
 
             var dictHere = new Dictionary<int, List<MorpheusModification>>();
-            dictHere.Add(3, new List<MorpheusModification> { new MorpheusModification(null, ModificationType.AminoAcidResidue, 'E', 21.981943, null, null, '\0', double.NaN, false, null) });
+            dictHere.Add(3, new List<MorpheusModification> { new MorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H-1 Na1")) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
             var modPep3 = digestedList[0];
