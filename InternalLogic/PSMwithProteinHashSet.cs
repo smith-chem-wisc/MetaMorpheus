@@ -2,7 +2,6 @@
 using MassSpectrometry;
 using OldInternalLogic;
 using Spectra;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -21,7 +20,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public PSMwithProteinHashSet(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile)
+        public PSMwithProteinHashSet(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<ProductType> lp)
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
@@ -30,14 +29,13 @@ namespace InternalLogicEngineLayer
 
             var representative = peptidesWithSetModifications.First();
 
-            var allProductTypes = new List<ProductType> { ProductType.B, ProductType.Y };
             IMsDataScan<IMzSpectrum<MzPeak>> theScan;
             if (myMsDataFile != null && newPsm.matchedIonsList == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
 
                 var MatchedIonDict = new Dictionary<ProductType, double[]>();
-                foreach (var huh in allProductTypes)
+                foreach (var huh in lp)
                 {
                     var df = representative.FastSortedProductMasses(new List<ProductType> { huh });
                     double[] matchedIonList = new double[df.Length];
@@ -56,7 +54,7 @@ namespace InternalLogicEngineLayer
                 {
                     PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var gg = localizedPeptide.FastSortedProductMasses(allProductTypes);
+                    var gg = localizedPeptide.FastSortedProductMasses(lp);
                     double[] matchedIonList = new double[gg.Length];
                     var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonList);
                     localizedScores.Add(score);

@@ -1,4 +1,5 @@
-﻿using InternalLogicEngineLayer;
+﻿using InternalLogicCalibration;
+using InternalLogicEngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -46,6 +47,13 @@ namespace InternalLogicTaskLayer
         protected override MyResults RunSpecific()
         {
             StartingAllTasks();
+
+            if (!currentRawDataFilenameList.Any())
+            {
+                FinishedAllTasks();
+                return new MyErroredResults(this, "No data files selected");
+            }
+
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             var MatchingChars =
@@ -58,6 +66,16 @@ namespace InternalLogicTaskLayer
 
             for (int i = 0; i < taskList.Count; i++)
             {
+                if (!currentRawDataFilenameList.Any())
+                {
+                    FinishedAllTasks();
+                    return new MyErroredResults(this, "Cannot proceed. No data files selected.");
+                }
+                if (!currentXmlDbFilenameList.Any())
+                {
+                    FinishedAllTasks();
+                    return new MyErroredResults(this, "Cannot proceed. No xml files selected.");
+                }
                 var ok = taskList[i];
                 string output_folder = null;
                 if (taskList.Count == 1)

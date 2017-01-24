@@ -28,9 +28,9 @@ namespace Test
             var protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
             var totalVirtualPeptideList = new HashSet<PeptideWithSetModifications>();
 
-            var p1 = new Protein(sequence1, "1",  temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false, false);
-            var p2 = new Protein(sequence2, "2",  temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false, false);
-            var p3 = new Protein(sequence3, "3",  temp1, temp3, temp3, null, "Test3", "TestFullName3", 0, false, false);
+            var p1 = new Protein(sequence1, "1", temp1, temp3, temp3, null, "Test1", "TestFullName1", 0, false, false);
+            var p2 = new Protein(sequence2, "2", temp1, temp3, temp3, null, "Test2", "TestFullName2", 0, false, false);
+            var p3 = new Protein(sequence3, "3", temp1, temp3, temp3, null, "Test3", "TestFullName3", 0, false, false);
 
             IEnumerable<PeptideWithPossibleModifications> digestedList1 = p1.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
             IEnumerable<PeptideWithPossibleModifications> digestedList2 = p2.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
@@ -96,12 +96,10 @@ namespace Test
                 }
             }
             List<ProteinGroup> pg = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false);
+            AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y });
 
             // apply parsimony to initial dictionary
             ae.ApplyProteinParsimony(out pg);
-
-            
 
             var parsimonyProteinList = new List<Protein>();
             string[] parsimonyBaseSequences = new string[3];

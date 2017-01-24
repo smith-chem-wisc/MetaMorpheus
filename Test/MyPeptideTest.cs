@@ -67,11 +67,11 @@ namespace Test
 			var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 			var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain).First();
 			List<MorpheusModification> variableModifications = new List<MorpheusModification>();
-			variableModifications.Add(new MorpheusModification("ProtNmod", ModificationType.ProteinNTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			variableModifications.Add(new MorpheusModification("PepNmod", ModificationType.PeptideNTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			variableModifications.Add(new MorpheusModification("resMod", ModificationType.AminoAcidResidue, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			variableModifications.Add(new MorpheusModification("PepCmod", ModificationType.PeptideCTerminus, 'M',GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			variableModifications.Add(new MorpheusModification("ProtCmod", ModificationType.ProteinCTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("ProtNmod", ModificationType.ProteinNTerminus, 'M',null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("PepNmod", ModificationType.PeptideNTerminus, 'M', null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("resMod", ModificationType.AminoAcidResidue, 'M',  null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("PepCmod", ModificationType.PeptideCTerminus, 'M', null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			variableModifications.Add(new MorpheusModification("ProtCmod", ModificationType.ProteinCTerminus, 'M', null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
 			var ok = ye.GetPeptideWithSetModifications(variableModifications, 4096, 5).ToList();
 
 			Assert.AreEqual(32, ok.Count);
@@ -90,11 +90,11 @@ namespace Test
 			var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 			var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain).First();
 			List<MorpheusModification> fixedMods = new List<MorpheusModification>();
-			fixedMods.Add(new MorpheusModification("ProtNmod", ModificationType.ProteinNTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			fixedMods.Add(new MorpheusModification("PepNmod", ModificationType.PeptideNTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			fixedMods.Add(new MorpheusModification("resMod", ModificationType.AminoAcidResidue, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			fixedMods.Add(new MorpheusModification("PepCmod", ModificationType.PeptideCTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
-			fixedMods.Add(new MorpheusModification("ProtCmod", ModificationType.ProteinCTerminus, 'M', GetElement("H").PrincipalIsotope.AtomicMass, null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			fixedMods.Add(new MorpheusModification("ProtNmod", ModificationType.ProteinNTerminus, 'M',  null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			fixedMods.Add(new MorpheusModification("PepNmod", ModificationType.PeptideNTerminus, 'M',  null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			fixedMods.Add(new MorpheusModification("resMod", ModificationType.AminoAcidResidue, 'M',  null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			fixedMods.Add(new MorpheusModification("PepCmod", ModificationType.PeptideCTerminus, 'M', null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
+			fixedMods.Add(new MorpheusModification("ProtCmod", ModificationType.ProteinCTerminus, 'M',  null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H")));
 
 
 			ye.SetFixedModifications(fixedMods);

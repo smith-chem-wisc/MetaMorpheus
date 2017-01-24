@@ -225,7 +225,7 @@ namespace OldInternalLogic
                 massInMs2OfExistingMod = existingMod.Labile ? 0 : existingMod.MonoisotopicMassShift;
                 vvv.Remove(j + 2);
             }
-            vvv.Add(j + 2, new MorpheusModification(null, ModificationType.AminoAcidResidue, '\0', v + massInMs2OfExistingMod, null, null, '\0', double.NaN, false, null));
+            vvv.Add(j + 2, new MorpheusModification(v + massInMs2OfExistingMod));
             var hm = new PeptideWithSetModifications(modPep, vvv);
             return hm;
         }

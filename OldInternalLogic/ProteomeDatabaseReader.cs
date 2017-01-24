@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Text;
 using System.Xml;
 
 namespace OldInternalLogic
@@ -92,9 +93,9 @@ namespace OldInternalLogic
                 ModificationType modification_type = ModificationType.AminoAcidResidue;
                 char amino_acid_residue = '\0';
                 char prevAA = '\0';
-                float monoisotopic_mass_shift = float.NaN;
+                double monoisotopic_mass_shift = double.NaN;
                 string database_name = null;
-                float alternative_mass = float.NaN;
+                double alternative_mass = double.NaN;
                 string labileOrSticky = "Sticky";
                 ChemicalFormula ye = null;
                 while (modsReader.Peek() != -1)
@@ -128,11 +129,11 @@ namespace OldInternalLogic
                                 break;
 
                             case "MM":
-                                monoisotopic_mass_shift = float.Parse(line.Substring(5));
+                                monoisotopic_mass_shift = double.Parse(line.Substring(5));
                                 break;
 
                             case "AL":
-                                alternative_mass = float.Parse(line.Substring(5));
+                                alternative_mass = double.Parse(line.Substring(5));
                                 break;
 
                             case "SL":
@@ -148,12 +149,16 @@ namespace OldInternalLogic
                                 break;
 
                             case "//":
-                                if (feature_type == "MOD_RES" && (!float.IsNaN(monoisotopic_mass_shift)))
+                                if (feature_type == "MOD_RES" && (!double.IsNaN(monoisotopic_mass_shift)))
                                 {
+                                    if (ye == null)
+                                        throw new InvalidDataException("In file" + v + " Modification " + description + " has no chemical formula");
+                                    if (Math.Abs(monoisotopic_mass_shift - ye.MonoisotopicMass) > 1e-3)
+                                        throw new InvalidDataException("In file" + v + " Modification " + description + " mass formula mismatch");
                                     if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue,  Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
                                     if (labileOrSticky.Equals("Sticky") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, monoisotopic_mass_shift, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false, ye);
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue,  Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false, ye);
                                 }
                                 description = null;
                                 feature_type = null;

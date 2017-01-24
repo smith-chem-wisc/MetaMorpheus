@@ -26,11 +26,13 @@ namespace InternalLogicEngineLayer
         private readonly List<MorpheusModification> localizeableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
+        private readonly List<ProductType> lp;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms) : base(2)
+        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -40,6 +42,7 @@ namespace InternalLogicEngineLayer
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
+            this.lp = lp;
         }
 
         #endregion Public Constructors
@@ -53,6 +56,7 @@ namespace InternalLogicEngineLayer
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
             sb.AppendLine("Number of localizeable mods: " + localizeableModifications.Count);
+            sb.AppendLine("lp: " + string.Join(",", lp));
             sb.Append("protease: " + protease);
             return sb.ToString();
         }
@@ -70,7 +74,6 @@ namespace InternalLogicEngineLayer
             var level4_observed = new HashSet<string>();
             int proteinsSeen = 0;
             int old_progress = 0;
-            var lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);
