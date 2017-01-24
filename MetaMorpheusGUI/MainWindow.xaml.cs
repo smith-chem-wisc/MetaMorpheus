@@ -51,8 +51,8 @@ namespace MetaMorpheusGUI
             modListObservableCollection.Add(new ModList("ptmlist.txt"));
             modListObservableCollection.Add(new ModList("m.txt"));
             modListObservableCollection.Add(new ModList("glyco.txt"));
-            modListObservableCollection.Add(new ModList("r.txt"));
-            modListObservableCollection.Add(new ModList("s.txt"));
+            //modListObservableCollection.Add(new ModList("r.txt"));
+            //modListObservableCollection.Add(new ModList("s.txt"));
 
             LoadSearchModesFromFile();
 

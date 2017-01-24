@@ -7,15 +7,6 @@ SL   Sticky
 MM   -89.02992
 CF   H-7 C-3 N-1 S-1
 //
-ID   Loss of oxidized methionine side chain
-FT   MOD_RES
-TG   Methionine
-PP   Anywhere.
-MM   -32.008456
-SL   Sticky
-AL   -48.003371
-CF   H-3 C-1 S-1
-//
 ID   P oxidation Anywhere.
 FT   MOD_RES
 TG   Proline
@@ -238,7 +229,7 @@ TG   Tryptophan
 PP   Anywhere.
 SL   Sticky
 MM   19.989829
-CF   C-2 O2
+CF   C-1 O2
 //
 ID   Magnesium Adduct to D Anywhere.
 FT   MOD_RES
@@ -426,7 +417,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   57.021464
-CF   H2 C2 N1 O1
+CF   H3 C2 N1 O1
 //
 ID   Carbamidomethylation of K Anywhere.
 FT   MOD_RES
@@ -434,7 +425,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   57.021464
-CF   H2 C2 N1 O1
+CF   H3 C2 N1 O1
 //
 ID   Carboxymethyl at any N-Terminus
 FT   MOD_RES
@@ -450,7 +441,7 @@ TG   Aspartate
 PP   Anywhere.
 SL   Sticky
 MM   61.913495
-CD   H-2 Zn1
+CF   H-2 Zn1
 //
 ID   Zinc Adduct to E Anywhere.
 FT   MOD_RES
@@ -458,7 +449,7 @@ TG   Glutamate
 PP   Anywhere.
 SL   Sticky
 MM   61.913495
-CD   H-2 Zn1
+CF   H-2 Zn1
 //
 ID   Sulfonation of S Anywhere.
 FT   MOD_RES
@@ -524,7 +515,7 @@ PP   Peptide N-terminal.
 PS   R
 SL   Sticky
 MM   156.10111
-CF   C6 H12 N1 4O
+CF   C6 H12 N4 O1
 //
 ID   Farnesylation
 FT   MOD_RES
