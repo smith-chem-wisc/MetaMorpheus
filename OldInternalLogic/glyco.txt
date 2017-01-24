@@ -1,0 +1,73 @@
+Glycans
+ID   HexNAc
+FT   MOD_RES
+TG   Asparagine
+PP   Anywhere.
+SL   Labile
+MM   203.079373
+CF   C8 O5 N1 H14
+//
+ID   HexNAc
+FT   MOD_RES
+TG   Serine
+PP   Anywhere.
+SL   Labile
+MM   203.079373
+CF   C8 O5 N1 H14
+//
+ID   HexNAc
+FT   MOD_RES
+TG   Threonine
+PP   Anywhere.
+SL   Labile
+MM   203.079373
+CF   C8 O5 N1 H14
+//
+ID   Hexose
+FT   MOD_RES
+TG   Asparagine
+PP   Anywhere.
+SL   Labile
+MM   162.052824
+CF   C6 O5 H10
+//
+ID   Hexose
+FT   MOD_RES
+TG   Serine
+PP   Anywhere.
+SL   Labile
+MM   162.052824
+CF   C6 O5 H10
+//
+ID   Hexose
+FT   MOD_RES
+TG   Threonine
+PP   Anywhere.
+SL   Labile
+MM   162.052824
+CF   C6 O5 H10
+//
+ID   Fucose
+FT   MOD_RES
+TG   Asparagine
+PP   Anywhere.
+SL   Labile
+MM   146.057909
+CF   C6 H10 O4
+//
+ID   Fucose
+FT   MOD_RES
+TG   Serine
+PP   Anywhere.
+SL   Labile
+MM   146.057909
+CF   C6 H10 O4
+//
+ID   Fucose
+FT   MOD_RES
+TG   Threonine
+PP   Anywhere.
+SL   Labile
+MM   146.057909
+CF   C6 H10 O4
+//

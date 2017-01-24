@@ -2,7 +2,7 @@
 
 namespace InternalLogicCalibration
 {
-    internal class MyErroredResults : MyResults
+    public class MyErroredResults : MyResults
     {
 
         #region Private Fields
@@ -26,7 +26,7 @@ namespace InternalLogicCalibration
         {
             get
             {
-                return v;
+                return "\t\t" + v;
             }
         }
 

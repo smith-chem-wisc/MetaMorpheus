@@ -1,24 +1,11 @@
 Custom Modifications
-ID   Ox Met loss + Acetylation at protein N-terminus
-FT   MOD_RES
-TG   Methionine
-PP   N-terminal.
-SL   Sticky
-MM   -105.02484
-//
-ID   Carbamidomethylation + H2S fall off Anywhere.
-FT   MOD_RES
-TG   Cysteine
-PP   Anywhere.
-SL   Sticky
-MM   -91.009185
-//
 ID   Met loss + Acetylation at N-terminus
 FT   MOD_RES
 TG   Methionine
 PP   Peptide N-terminal.
 SL   Sticky
 MM   -89.02992
+CF   H-7 C-3 N-1 S-1
 //
 ID   Loss of oxidized methionine side chain
 FT   MOD_RES
@@ -27,6 +14,7 @@ PP   Anywhere.
 MM   -32.008456
 SL   Sticky
 AL   -48.003371
+CF   H-3 C-1 S-1
 //
 ID   P oxidation Anywhere.
 FT   MOD_RES
@@ -34,6 +22,7 @@ TG   Proline
 PP   Anywhere.
 SL   Sticky
 MM   -30.010565
+CF   H-2 C-1 O-1
 //
 ID   water loss from S Anywhere.
 FT   MOD_RES
@@ -41,6 +30,7 @@ TG   Serine
 PP   Anywhere.
 SL   Sticky
 MM   -18.010565
+CF   H-2 O-1
 //
 ID   water loss from T Anywhere.
 FT   MOD_RES
@@ -48,6 +38,7 @@ TG   Threonine
 PP   Anywhere.
 SL   Sticky
 MM   -18.010565
+CF   H-2 O-1
 //
 ID   water loss from E at N-Term
 FT   MOD_RES
@@ -55,6 +46,7 @@ TG   Glutamate
 PP   Peptide N-terminal.
 SL   Sticky
 MM   -18.010565
+CF   H-2 O-1
 //
 ID   Ammonia loss from peptide N-term Q
 FT   MOD_RES
@@ -62,6 +54,7 @@ TG   Glutamine
 PP   Peptide N-terminal.
 SL   Sticky
 MM   -17.02655
+CF   H-3 N-1
 //
 ID   Ammonia loss from peptide N-term C
 FT   MOD_RES
@@ -69,34 +62,7 @@ TG   Cysteine
 PP   Peptide N-terminal.
 SL   Sticky
 MM   -17.02655
-//
-ID   Reduction of Serine Anywhere.
-FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-SL   Sticky
-MM   -15.994915
-//
-ID   N-term M loss of two Hydrogens
-FT   MOD_RES
-TG   Methionine
-PP   Peptide N-terminal.
-SL   Sticky
-MM   -2.015650
-//
-ID   Lysine Oxidation to aminoadipic semialdehyde
-FT   MOD_RES
-TG   Lysine
-PP   Anywhere.
-SL   Sticky
-MM   -1.031634
-//
-ID   Amidation of any C-terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide C-terminal.
-SL   Sticky
-MM   -0.984016
+CF   H-3 N-1
 //
 ID   Deamidation of N Anywhere.
 FT   MOD_RES
@@ -104,6 +70,7 @@ TG   Asparagine
 PP   Anywhere.
 SL   Sticky
 MM   0.984016
+CF   H-1 N-1 O1
 //
 ID   Deamidation of Q Anywhere.
 FT   MOD_RES
@@ -111,6 +78,7 @@ TG   Glutamine
 PP   Anywhere.
 SL   Sticky
 MM   0.984016
+CF   H-1 N-1 O1
 //
 ID   Oxidation of W to Kynurenine Anywhere.
 FT   MOD_RES
@@ -118,6 +86,7 @@ TG   Tryptophan
 PP   Anywhere.
 SL   Sticky
 MM   3.994915
+CF   C-1 O1
 //
 ID   Carbon Adduct at peptide n terminus
 FT   MOD_RES
@@ -125,6 +94,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   12
+CF   C1
 //
 ID   Proline Oxidation to pyroglutamic acid
 FT   MOD_RES
@@ -132,6 +102,7 @@ TG   Proline
 PP   Anywhere.
 SL   Sticky
 MM   13.979265
+CF   H-2 O1
 //
 ID   Tryptophan oxidation to oxolactone
 FT   MOD_RES
@@ -139,6 +110,7 @@ TG   Tryptophan
 PP   Anywhere.
 SL   Sticky
 MM   13.979265
+CF   H-2 O1
 //
 ID   Methylation of any N terminus
 FT   MOD_RES
@@ -146,6 +118,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of H Anywhere.
 FT   MOD_RES
@@ -153,6 +126,7 @@ TG   Histidine
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of R Anywhere.
 FT   MOD_RES
@@ -160,6 +134,7 @@ TG   Arginine
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of K Anywhere.
 FT   MOD_RES
@@ -167,6 +142,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of Q Anywhere.
 FT   MOD_RES
@@ -174,6 +150,7 @@ TG   Glutamine
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of N Anywhere.
 FT   MOD_RES
@@ -181,6 +158,7 @@ TG   Asparagine
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of S Anywhere.
 FT   MOD_RES
@@ -188,6 +166,7 @@ TG   Serine
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Methylation of D Anywhere.
 FT   MOD_RES
@@ -195,6 +174,7 @@ TG   Aspartate
 PP   Anywhere.
 SL   Sticky
 MM   14.015650
+CF   H2 C
 //
 ID   Oxidation of any N terminus
 FT   MOD_RES
@@ -202,6 +182,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Oxidation of D Anywhere.
 FT   MOD_RES
@@ -209,6 +190,7 @@ TG   Aspartate
 PP   Anywhere.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Oxidation of N Anywhere.
 FT   MOD_RES
@@ -216,6 +198,7 @@ TG   Asparagine
 PP   Anywhere.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Oxidation of K Anywhere.
 FT   MOD_RES
@@ -223,6 +206,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Oxidation of W Anywhere.
 FT   MOD_RES
@@ -230,6 +214,7 @@ TG   Tryptophan
 PP   Anywhere.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Oxidation of P Anywhere.
 FT   MOD_RES
@@ -237,6 +222,7 @@ TG   Proline
 PP   Anywhere.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Oxidation of Y Anywhere.
 FT   MOD_RES
@@ -244,6 +230,7 @@ TG   Tyrosine
 PP   Anywhere.
 SL   Sticky
 MM   15.994915
+CF   O1
 //
 ID   Tryptophan oxidation to hydroxykynurenin
 FT   MOD_RES
@@ -251,6 +238,7 @@ TG   Tryptophan
 PP   Anywhere.
 SL   Sticky
 MM   19.989829
+CF   C-2 O2
 //
 ID   Magnesium Adduct to D Anywhere.
 FT   MOD_RES
@@ -258,6 +246,7 @@ TG   Aspartate
 PP   Anywhere.
 SL   Sticky
 MM   21.969392
+CF   H-2 Mg1
 //
 ID   Magnesium Adduct to E Anywhere.
 FT   MOD_RES
@@ -265,6 +254,7 @@ TG   Glutamate
 PP   Anywhere.
 SL   Sticky
 MM   21.969392
+CF   H-2 Mg1
 //
 ID   Sodium Adduct to C-term
 FT   MOD_RES
@@ -273,6 +263,7 @@ PP   Peptide C-terminal.
 MM   21.981943
 SL   Sticky
 AL   5.987028
+CF   H-1 Na1
 //
 ID   Sodium Adduct to D Anywhere.
 FT   MOD_RES
@@ -281,6 +272,7 @@ PP   Anywhere.
 MM   21.981943
 SL   Sticky
 AL   5.987028
+CF   H-1 Na1
 //
 ID   Sodium Adduct to E Anywhere.
 FT   MOD_RES
@@ -289,6 +281,7 @@ PP   Anywhere.
 MM   21.981943
 SL   Sticky
 AL   5.987028
+CF   H-1 Na1
 //
 ID   Acetaldehyde of any N-Terminus
 FT   MOD_RES
@@ -296,6 +289,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   26.01565
+CF   H2 C2
 //
 ID   Formylation of any N-terminus
 FT   MOD_RES
@@ -303,6 +297,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   27.994915
+CF   C1 O1
 //
 ID   DiMethylation of K Anywhere.
 FT   MOD_RES
@@ -310,6 +305,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   28.031300
+CF   H4 C2
 //
 ID   DiMethylation of R Anywhere.
 FT   MOD_RES
@@ -317,6 +313,7 @@ TG   Arginine
 PP   Anywhere.
 SL   Sticky
 MM   28.031300
+CF   H4 C2
 //
 ID   DiMethylation of N Anywhere.
 FT   MOD_RES
@@ -324,6 +321,7 @@ TG   Asparagine
 PP   Anywhere.
 SL   Sticky
 MM   28.031300
+CF   H4 C2
 //
 ID   Dioxidation of P Anywhere.
 FT   MOD_RES
@@ -331,6 +329,7 @@ TG   Proline
 PP   Anywhere.
 SL   Sticky
 MM   31.989829
+CF   O2
 //
 ID   Dioxidation of R Anywhere.
 FT   MOD_RES
@@ -338,6 +337,7 @@ TG   Arginine
 PP   Anywhere.
 SL   Sticky
 MM   31.989829
+CF   O2
 //
 ID   Dioxidation of K Anywhere.
 FT   MOD_RES
@@ -345,6 +345,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   31.989829
+CF   O2
 //
 ID   Dioxidation of M Anywhere.
 FT   MOD_RES
@@ -352,6 +353,7 @@ TG   Methionine
 PP   Anywhere.
 SL   Sticky
 MM   31.989829
+CF   O2
 //
 ID   Dioxidation of W Anywhere.
 FT   MOD_RES
@@ -359,6 +361,7 @@ TG   Tryptophan
 PP   Anywhere.
 SL   Sticky
 MM   31.989829
+CF   O2
 //
 ID   Calcium Adduct to D Anywhere.
 FT   MOD_RES
@@ -366,6 +369,7 @@ TG   Aspartate
 PP   Anywhere.
 SL   Sticky
 MM   37.946941
+CF   H-2 Ca1
 //
 ID   Calcium Adduct to E Anywhere.
 FT   MOD_RES
@@ -373,6 +377,7 @@ TG   Glutamate
 PP   Anywhere.
 SL   Sticky
 MM   37.946941
+CF   H-2 Ca1
 //
 ID   Acetylation of Serine Anywhere.
 FT   MOD_RES
@@ -380,6 +385,7 @@ TG   Serine
 PP   Anywhere.
 SL   Sticky
 MM   42.010565
+CF   H2 C2 O1
 //
 ID   Acetylation of Lysine Anywhere.
 FT   MOD_RES
@@ -387,6 +393,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   42.010565
+CF   H2 C2 O1
 //
 ID   Acetylation of protein N-terminus
 FT   MOD_RES
@@ -395,6 +402,7 @@ PP   N-terminal.
 MM   42.010565
 SL   Sticky
 AL   26.01565
+CF   H2 C2 O1
 //
 ID   TriMethylation of K Anywhere.
 FT   MOD_RES
@@ -402,6 +410,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   42.046950
+CF   H6 C3
 //
 ID   Carbamylation of any N-terminus
 FT   MOD_RES
@@ -409,6 +418,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   43.005814
+CF   H1 C1 N1 O1
 //
 ID   Carbamidomethylation of any N-terminus
 FT   MOD_RES
@@ -416,6 +426,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   57.021464
+CF   H2 C2 N1 O1
 //
 ID   Carbamidomethylation of K Anywhere.
 FT   MOD_RES
@@ -423,6 +434,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Sticky
 MM   57.021464
+CF   H2 C2 N1 O1
 //
 ID   Carboxymethyl at any N-Terminus
 FT   MOD_RES
@@ -430,6 +442,7 @@ TG   Any
 PP   Peptide N-terminal.
 SL   Sticky
 MM   58.005479
+CF   H2 C2 O2
 //
 ID   Zinc Adduct to D Anywhere.
 FT   MOD_RES
@@ -437,6 +450,7 @@ TG   Aspartate
 PP   Anywhere.
 SL   Sticky
 MM   61.913495
+CD   H-2 Zn1
 //
 ID   Zinc Adduct to E Anywhere.
 FT   MOD_RES
@@ -444,6 +458,7 @@ TG   Glutamate
 PP   Anywhere.
 SL   Sticky
 MM   61.913495
+CD   H-2 Zn1
 //
 ID   Sulfonation of S Anywhere.
 FT   MOD_RES
@@ -451,6 +466,7 @@ TG   Serine
 PP   Anywhere.
 SL   Labile
 MM   79.956815
+CF   O3 S1
 //
 ID   Sulfonation of T Anywhere.
 FT   MOD_RES
@@ -458,6 +474,7 @@ TG   Threonine
 PP   Anywhere.
 SL   Labile
 MM   79.956815
+CF   O3 S1
 //
 ID   Sulfonation of Y Anywhere.
 FT   MOD_RES
@@ -465,6 +482,7 @@ TG   Tyrosine
 PP   Anywhere.
 SL   Labile
 MM   79.956815
+CF   O3 S1
 //
 ID   Phosphorylation of S Anywhere.
 FT   MOD_RES
@@ -472,6 +490,7 @@ TG   Serine
 PP   Anywhere.
 SL   Both
 MM   79.966331
+CF   H1 O3 P1
 //
 ID   Phosphorylation of T Anywhere.
 FT   MOD_RES
@@ -479,6 +498,7 @@ TG   Threonine
 PP   Anywhere.
 SL   Both
 MM   79.966331
+CF   H1 O3 P1
 //
 ID   Phosphorylation of Y Anywhere.
 FT   MOD_RES
@@ -486,13 +506,7 @@ TG   Tyrosine
 PP   Anywhere.
 SL   Both
 MM   79.966331
-//
-ID   ubiquitinylation residue
-FT   MOD_RES
-TG   Lysine
-PP   Anywhere.
-SL   Sticky
-MM   114.042927
+CF   H1 O3 P1
 //
 ID   Lysine still attached to any N-terminus
 FT   MOD_RES
@@ -501,6 +515,7 @@ PP   Peptide N-terminal.
 PS   K
 SL   Sticky
 MM   128.09496
+CF   C6 H12 N2 O1
 //
 ID   Arginine still attached at N-Terminus
 FT   MOD_RES
@@ -509,64 +524,7 @@ PP   Peptide N-terminal.
 PS   R
 SL   Sticky
 MM   156.10111
-//
-ID   Add acetylated M at Protein N-terminus
-FT   MOD_RES
-TG   Any
-PP   N-terminal.
-PS   M
-SL   Sticky
-MM   173.051055 
-//
-ID   Add Carboxymethylated M to N-terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-PS   M
-SL   Sticky
-MM   189.045969
-//
-ID   HexNAc
-FT   MOD_RES
-TG   Asparagine
-PP   Anywhere.
-SL   Labile
-MM   203.079373
-//
-ID   HexNAc
-FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-SL   Labile
-MM   203.079373
-//
-ID   HexNAc
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-SL   Labile
-MM   203.079373
-//
-ID   Hexose
-FT   MOD_RES
-TG   Asparagine
-PP   Anywhere.
-SL   Labile
-MM   162.052824
-//
-ID   Hexose
-FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-SL   Labile
-MM   162.052824
-//
-ID   Hexose
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-SL   Labile
-MM   162.052824
+CF   C6 H12 N1 4O
 //
 ID   Farnesylation
 FT   MOD_RES
@@ -574,6 +532,7 @@ TG   Cysteine
 PP   Anywhere.
 SL   Both
 MM   204.187801
+CF   H24 C15
 //
 ID   Myristoylation
 FT   MOD_RES
@@ -581,6 +540,7 @@ TG   Glycine
 PP   Protein N-terminal.
 SL   Both
 MM   210.198366
+CF   H26 C14 O1
 //
 ID   Myristoylation
 FT   MOD_RES
@@ -588,6 +548,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Both
 MM   210.198366
+CF   H26 C14 O1
 //
 ID   Myristoylation
 FT   MOD_RES
@@ -595,6 +556,7 @@ TG   Cysteine
 PP   Anywhere.
 SL   Both
 MM   210.198366
+CF   H26 C14 O1
 //
 ID   Palmitoylation
 FT   MOD_RES
@@ -602,6 +564,7 @@ TG   Cysteine
 PP   Anywhere.
 SL   Both
 MM   238.229666
+CF   H30 C16 O1
 //
 ID   Palmitoylation
 FT   MOD_RES
@@ -609,6 +572,7 @@ TG   Lysine
 PP   Anywhere.
 SL   Both
 MM   238.229666
+CF   H30 C16 O1
 //
 ID   Palmitoylation
 FT   MOD_RES
@@ -616,6 +580,7 @@ TG   Serine
 PP   Anywhere.
 SL   Both
 MM   238.229666
+CF   H30 C16 O1
 //
 ID   Palmitoylation
 FT   MOD_RES
@@ -623,6 +588,7 @@ TG   Threonine
 PP   Anywhere.
 SL   Both
 MM   238.229666
+CF   H30 C16 O1
 //
 ID   Palmitoylation
 FT   MOD_RES
@@ -630,4 +596,5 @@ TG   Any
 PP   Protein N-terminal.
 SL   Both
 MM   238.229666
+CF   H30 C16 O1
 //
