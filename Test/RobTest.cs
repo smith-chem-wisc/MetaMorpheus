@@ -160,6 +160,8 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
+
+            /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
 
@@ -205,7 +207,7 @@ namespace Test
             {
                 System.Console.WriteLine(proteinGroup);
             }
-
+            */
 
             Assert.That(parsimonyProteinList.Count == 3);
             Assert.That(parsimonyBaseSequences.Contains(sequence1));
