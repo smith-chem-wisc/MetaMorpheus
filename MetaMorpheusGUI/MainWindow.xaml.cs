@@ -178,7 +178,7 @@ namespace MetaMorpheusGUI
         {
             searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode(5));
             searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode(0.05));
-            searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003 }, new Tolerance(ToleranceUnit.PPM, 5)));
+            searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5)));
             searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
             searchModeObservableCollection.Add(new OpenSearchMode());
         }

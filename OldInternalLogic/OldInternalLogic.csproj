@@ -121,9 +121,6 @@
     <Content Include="f.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="help.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
