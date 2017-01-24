@@ -4,7 +4,6 @@ namespace OldInternalLogic
 {
     public class MorpheusModification
     {
-        private double v;
         #region Public Constructors
 
         public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, string database, string databaseName, char prevAA, double alternativeMassShift, bool labile, ChemicalFormula cf)
