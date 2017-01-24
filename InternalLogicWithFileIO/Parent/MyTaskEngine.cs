@@ -360,7 +360,7 @@ namespace InternalLogicTaskLayer
         {
             if (items != null)
             {
-                var writtenFile = Path.Combine(outputFolder, fileName + ".prottsv");
+                var writtenFile = Path.Combine(outputFolder, fileName + ".tsv");
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
