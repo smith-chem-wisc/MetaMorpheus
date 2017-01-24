@@ -19,7 +19,7 @@ namespace Test
         public static void TestGptmdEngine()
         {
             List<NewPsmWithFdr> allResultingIdentifications = null;
-            var gptmdModifications = new List<MorpheusModification> { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N', 42, null, null, '\0', double.NaN, false, null) };
+            var gptmdModifications = new List<MorpheusModification> { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N',null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H-1 Na1")) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             double tol = 0.1;
             bool isotopeErrors = false;
@@ -29,7 +29,7 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
-            ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 42);
+            ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
             var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<MorpheusModification>>(), null, null, null, null, null, 0, false, false);
             var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
