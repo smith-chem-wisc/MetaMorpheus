@@ -11,7 +11,7 @@ namespace InternalLogicEngineLayer
         #region Public Fields
 
         public readonly bool isDecoy;
-        public double proteinGroupScore;
+        public double proteinGroupScore { get; private set; }
 
         #endregion Public Fields
 
@@ -25,6 +25,7 @@ namespace InternalLogicEngineLayer
             BestPsmList = null;
             TotalPsmList = new List<NewPsmWithFdr>();
             RazorPeptideList = new HashSet<CompactPeptide>();
+            PeptideWithSetModsList = new HashSet<PeptideWithSetModifications>();
             proteinGroupScore = 0;
             QValue = 0;
             isDecoy = false;
@@ -53,6 +54,7 @@ namespace InternalLogicEngineLayer
                 sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
+                sb.Append("Sequence coverage" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy?" + '\t');
@@ -68,6 +70,8 @@ namespace InternalLogicEngineLayer
         public List<NewPsmWithFdr> TotalPsmList { get; set; }
         public HashSet<CompactPeptide> PeptideList { get; set; }
         public HashSet<CompactPeptide> UniquePeptideList { get; set; }
+        public HashSet<PeptideWithSetModifications> PeptideWithSetModsList { get; set; }
+        public List<double> sequenceCoverage { get; private set; }
         public HashSet<CompactPeptide> RazorPeptideList { get; set; }
         public double QValue { get; set; }
         public int cumulativeTarget { get; set; }
@@ -128,7 +132,17 @@ namespace InternalLogicEngineLayer
             sb.Append("" + UniquePeptideList.Count());
             sb.Append("\t");
 
-            // number of PSMs for final base sequences
+            // sequence coverage
+            foreach (double coverage in sequenceCoverage)
+            {
+                double coverage1 = coverage * 100;
+                string str = string.Format("{0:0}", coverage1);
+                
+                sb.Append("" + str + "% ;; ");
+            }
+            sb.Append("\t");
+
+            // number of PSMs for listed peptides
             sb.Append("" + TotalPsmList.Count());
             sb.Append("\t");
 
@@ -155,12 +169,33 @@ namespace InternalLogicEngineLayer
             return sb.ToString();
         }
 
-        public void scoreThisProteinGroup()
+        public void ScoreThisProteinGroup()
         {
             // score the protein group
             foreach (var psm in BestPsmList)
             {
                 proteinGroupScore += psm.thisPSM.Score;
+            }
+        }
+
+        public void CalculateSequenceCoverage()
+        {
+            sequenceCoverage = new List<double>();
+
+            foreach (var protein in Proteins)
+            {
+                HashSet<int> coveredResidues = new HashSet<int>();
+
+                foreach(var peptide in PeptideWithSetModsList)
+                {
+                    for(int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                    {
+                        coveredResidues.Add(i);
+                    }
+                }
+
+                double sequenceCoverageHere = (double)coveredResidues.Count / protein.Length;
+                sequenceCoverage.Add(sequenceCoverageHere);
             }
         }
 
