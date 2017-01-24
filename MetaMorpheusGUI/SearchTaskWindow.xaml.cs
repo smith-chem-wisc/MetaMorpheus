@@ -158,29 +158,36 @@ namespace MetaMorpheusGUI
             // Format: name, "interval", intervals
             // Format: name, "dot", num, "ppm" or "da", dots
 
-            var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
-
-            switch (split[1])
+            try
             {
-                case "dot":
-                    ToleranceUnit tu = ToleranceUnit.PPM;
-                    if (split[3].Equals("ppm"))
-                        tu = ToleranceUnit.PPM;
-                    else if (split[3].Equals("da"))
-                        tu = ToleranceUnit.Absolute;
-                    else
-                        break;
-                    DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2], CultureInfo.InvariantCulture)));
-                    SearchModes.Add(new SearchModeFoSearch(dsm));
-                    allowedPrecursorMassDiffsDataGrid.Items.Refresh();
-                    break;
+                var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
 
-                case "interval":
-                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split('-')[1], CultureInfo.InvariantCulture)));
-                    IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
-                    SearchModes.Add(new SearchModeFoSearch(ism));
-                    allowedPrecursorMassDiffsDataGrid.Items.Refresh();
-                    break;
+                switch (split[1])
+                {
+                    case "dot":
+                        ToleranceUnit tu = ToleranceUnit.PPM;
+                        if (split[3].Equals("ppm"))
+                            tu = ToleranceUnit.PPM;
+                        else if (split[3].Equals("da"))
+                            tu = ToleranceUnit.Absolute;
+                        else
+                            break;
+                        DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2], CultureInfo.InvariantCulture)));
+                        SearchModes.Add(new SearchModeFoSearch(dsm));
+                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                        break;
+
+                    case "interval":
+                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
+                        IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
+                        SearchModes.Add(new SearchModeFoSearch(ism));
+                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Examples:" + Environment.NewLine + "name dot 5 ppm 0,1.003,2.006" + Environment.NewLine + "name interval [-4;-3],[-0.5;0.5],[101;102]", "Error parsing search mode text box", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
