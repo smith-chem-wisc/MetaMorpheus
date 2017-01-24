@@ -4,15 +4,15 @@ namespace OldInternalLogic
 {
     public class MorpheusModification
     {
+        private double v;
         #region Public Constructors
 
-        public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, double monoisotopicMassShift,
-            string database, string databaseName, char prevAA, double alternativeMassShift, bool labile, ChemicalFormula cf)
+        public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, string database, string databaseName, char prevAA, double alternativeMassShift, bool labile, ChemicalFormula cf)
         {
             this.NameInXml = nameInXml;
             ThisModificationType = type;
             AminoAcid = aminoAcid;
-            MonoisotopicMassShift = monoisotopicMassShift;
+            MonoisotopicMassShift = cf.MonoisotopicMass;
             Database = database;
             DatabaseName = databaseName;
             PrevAminoAcid = prevAA;
@@ -24,6 +24,14 @@ namespace OldInternalLogic
         public MorpheusModification(string NameInXml)
         {
             this.NameInXml = NameInXml;
+        }
+
+        public MorpheusModification(double v)
+        {
+            this.MonoisotopicMassShift = v;
+            ThisModificationType = ModificationType.AminoAcidResidue;
+            PrevAminoAcid = '\0';
+            this.NameInXml = "";
         }
 
         #endregion Public Constructors

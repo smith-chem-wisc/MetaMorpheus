@@ -5,7 +5,7 @@ TG   Asparagine
 PP   Anywhere.
 SL   Labile
 MM   203.079373
-CF   C8 O5 N1 H14
+CF   C8 O5 N1 H13
 //
 ID   HexNAc
 FT   MOD_RES
@@ -13,7 +13,7 @@ TG   Serine
 PP   Anywhere.
 SL   Labile
 MM   203.079373
-CF   C8 O5 N1 H14
+CF   C8 O5 N1 H13
 //
 ID   HexNAc
 FT   MOD_RES
@@ -21,7 +21,7 @@ TG   Threonine
 PP   Anywhere.
 SL   Labile
 MM   203.079373
-CF   C8 O5 N1 H14
+CF   C8 O5 N1 H13
 //
 ID   Hexose
 FT   MOD_RES
