@@ -210,7 +210,7 @@ namespace InternalLogicTaskLayer
                 }
                 else
                 {
-                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance.Value, searchModesS);
+                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance.Value, searchModesS, variableModifications, localizeableModifications);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
