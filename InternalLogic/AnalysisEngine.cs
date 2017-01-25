@@ -486,8 +486,8 @@ namespace InternalLogicEngineLayer
                 proteinGroup.UniquePeptideList = newUniquePeptideList;
 
                 // score the group (scoring algorithm defined in the ProteinGroup class)
-                proteinGroup.scoreThisProteinGroup();
-
+                proteinGroup.ScoreThisProteinGroup();
+                
                 // remove empty protein groups (peptides were too poor quality and group doesn't exist anymore)
                 if (proteinGroup.proteinGroupScore == 0)
                     proteinGroupsToRemove.Add(proteinGroup);
@@ -504,17 +504,28 @@ namespace InternalLogicEngineLayer
                 if (kvp.Value.Count > 1)
                     allRazorPeptides.Add(kvp.Key);
             }
-
-            // build razor peptide list for each protein group
+            
             foreach (var proteinGroup in proteinGroups)
             {
                 foreach (var peptide in proteinGroup.PeptideList)
                 {
+                    // build razor peptide list for each protein group
                     if (allRazorPeptides.Contains(peptide))
                     {
                         proteinGroup.RazorPeptideList.Add(peptide);
                     }
+
+                    // build PeptideWithSetMod list to calc sequence coverage
+                    HashSet<PeptideWithSetModifications> peptidesWithSetMods = null;
+                    compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out peptidesWithSetMods);
+                    foreach(var pep in peptidesWithSetMods)
+                    {
+                        proteinGroup.PeptideWithSetModsList.Add(pep);
+                    }
                 }
+
+                // calculate sequence coverage for each protein in the group
+                proteinGroup.CalculateSequenceCoverage();
             }
         }
 
