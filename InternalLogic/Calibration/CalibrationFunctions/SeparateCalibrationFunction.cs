@@ -2,20 +2,34 @@
 {
     internal class SeparateCalibrationFunction : CalibrationFunction
     {
-        private readonly CalibrationFunction calibrationFunction1;
-        private readonly CalibrationFunction calibrationFunction2;
+
+        #region Public Constructors
 
         public SeparateCalibrationFunction(CalibrationFunction calibrationFunction1, CalibrationFunction calibrationFunction2)
         {
-            this.calibrationFunction1 = calibrationFunction1;
-            this.calibrationFunction2 = calibrationFunction2;
+            this.CalibrationFunction1 = calibrationFunction1;
+            this.CalibrationFunction2 = calibrationFunction2;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public CalibrationFunction CalibrationFunction1 { get; private set; }
+        public CalibrationFunction CalibrationFunction2 { get; private set; }
+
+        #endregion Public Properties
+
+        #region Internal Methods
 
         internal override double Predict(double[] t)
         {
             if (t[0] < 0)
-                return calibrationFunction1.Predict(t);
-            return calibrationFunction2.Predict(t);
+                return CalibrationFunction1.Predict(t);
+            return CalibrationFunction2.Predict(t);
         }
+
+        #endregion Internal Methods
+
     }
 }

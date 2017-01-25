@@ -67,7 +67,7 @@ namespace InternalLogicCalibration
                 Status("Getting Training Points");
                 pointList = GetDataPoints(ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
-                goodResult.Add(calibrationRound, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, pointList.Count, numMs2MassChargeCombinationsConsidered, numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                goodResult.Add(numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, pointList.Count, numMs2MassChargeCombinationsConsidered, numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 if (calibrationRound >= 2 && pointList.Count <= trainingPointCounts[calibrationRound - 2])
                     break;
@@ -87,6 +87,8 @@ namespace InternalLogicCalibration
                 }
 
                 CalibrationFunction combinedCalibration = Calibrate(pointList);
+
+                goodResult.Add(combinedCalibration);
 
                 if (combinedCalibration == null)
                     return new MyErroredResults(this, "Could not calibrate");
@@ -131,12 +133,10 @@ namespace InternalLogicCalibration
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
                 int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
-                int numFragmentsIdentified = -1;
-                var candidateTrainingPointsForPeptide = new List<LabeledDataPoint>();
-                Peptide coolPeptide = null;
-                coolPeptide = new Peptide(SequenceWithChemicalFormulas);
+                Peptide coolPeptide = new Peptide(SequenceWithChemicalFormulas);
 
-                candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                int numFragmentsIdentified;
+                var candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 // If MS2 has low evidence for peptide, skip and go to next one
                 if (numFragmentsIdentified < numFragmentsNeededForEveryIdentification)

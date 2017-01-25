@@ -2,16 +2,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace InternalLogicCalibration
 {
     internal class QuadraticCalibrationFunctionMathNet : CalibrationFunction
     {
+
         #region Private Fields
 
-        private Func<double[], double> f;
         private readonly int numFeatures;
         private readonly int numFeaturesExpanded;
+        private Func<double[], double> f;
         private TransformFunction transform;
 
         #endregion Private Fields
@@ -28,6 +30,20 @@ namespace InternalLogicCalibration
         #endregion Public Constructors
 
         #region Public Methods
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Quadratic");
+            sb.Append(" numFeatures: " + numFeatures);
+            sb.Append(" numFeaturesExpanded: " + numFeaturesExpanded);
+            sb.Append(" transform: " + transform.numOutputs);
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal override double Predict(double[] t)
         {
@@ -55,7 +71,7 @@ namespace InternalLogicCalibration
             f = Fit.LinearMultiDimFunc(ok, ok2, ye);
         }
 
-        #endregion Public Methods
+        #endregion Internal Methods
 
         #region Private Methods
 
@@ -77,5 +93,6 @@ namespace InternalLogicCalibration
         }
 
         #endregion Private Methods
+
     }
 }
