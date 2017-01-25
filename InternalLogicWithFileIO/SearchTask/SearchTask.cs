@@ -77,7 +77,7 @@ namespace InternalLogicTaskLayer
                 sb.AppendLine("searchDecoy: " + SearchDecoy);
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
                 sb.AppendLine("searchModes: ");
-                sb.Append(string.Join(Environment.NewLine, SearchModes.Where(b => b.Use).Select(b => "\t" + b.SearchMode)));
+                sb.Append(string.Join(Environment.NewLine, SearchModes.Where(b => b.Use).Select(b => "\t" + b.SearchMode.FileNameAddition)));
                 return sb.ToString();
             }
         }
