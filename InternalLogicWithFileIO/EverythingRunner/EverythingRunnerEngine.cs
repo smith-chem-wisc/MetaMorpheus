@@ -15,13 +15,13 @@ namespace InternalLogicTaskLayer
 
         private readonly List<MyTaskEngine> taskList;
         private List<string> currentRawDataFilenameList;
-        private List<XmlForTask> currentXmlDbFilenameList;
+        private List<DbForTask> currentXmlDbFilenameList;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<XmlForTask> startingXmlDbFilenameList) : base(0)
+        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList) : base(0)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;
@@ -91,7 +91,7 @@ namespace InternalLogicTaskLayer
                 if (!Directory.Exists(output_folder))
                     Directory.CreateDirectory(output_folder);
                 ok.OutputFolder = output_folder;
-                ok.xmlDbFilenameList = currentXmlDbFilenameList;
+                ok.dbFilenameList = currentXmlDbFilenameList;
                 ok.rawDataFilenameList = currentRawDataFilenameList;
 
                 var myTaskResults = (MyTaskResults)ok.Run();
@@ -129,7 +129,7 @@ namespace InternalLogicTaskLayer
             newSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
         }
 
-        private void NewDBs(List<XmlForTask> newDatabases)
+        private void NewDBs(List<DbForTask> newDatabases)
         {
             newDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
         }

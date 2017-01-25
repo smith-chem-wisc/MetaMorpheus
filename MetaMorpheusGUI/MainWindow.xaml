@@ -20,7 +20,7 @@
             <StackPanel>
                 <Border BorderBrush="Black" BorderThickness="2" Margin="5">
                     <StackPanel Margin="5" x:Name="XMLdbPanel">
-                        <Label x:Name="xmlLabel" Content="XML Databases" HorizontalAlignment="Center" />
+                        <Label x:Name="xmlLabel" Content="Protein Databases" HorizontalAlignment="Center" />
                         <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridCell">

@@ -94,7 +94,7 @@ namespace Test
             #endregion Write the files
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<XmlForTask> { new XmlForTask(xmlName, false) });
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             var results = (EverythingRunnerResults)engine.Run();
 
             Assert.NotNull(results);

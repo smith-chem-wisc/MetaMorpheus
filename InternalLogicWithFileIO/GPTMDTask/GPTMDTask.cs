@@ -169,7 +169,7 @@ namespace InternalLogicTaskLayer
         protected override MyResults RunSpecific()
         {
             MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
-            myGPTMDresults.newDatabases = new List<XmlForTask>();
+            myGPTMDresults.newDatabases = new List<DbForTask>();
 
             var currentRawFileList = rawDataFilenameList;
 
@@ -180,9 +180,10 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Gptmd).SelectMany(b => b.Mods).ToList();
+
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
@@ -200,7 +201,7 @@ namespace InternalLogicTaskLayer
                 lp.Add(ProductType.Y);
 
             Status("Loading proteins...");
-            var proteinList = xmlDbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
             AnalysisEngine analysisEngine;
             AnalysisResults analysisResults = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
@@ -240,14 +241,14 @@ namespace InternalLogicTaskLayer
 
             //output(gptmdResults.ToString());
 
-            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", xmlDbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
             WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
 
             SucessfullyFinishedWritingFile(outputXMLdbFullName);
 
             // TODO: Fix so not always outputting a contaminant
-            myGPTMDresults.newDatabases.Add(new XmlForTask(outputXMLdbFullName, false));
+            myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
 
             return myGPTMDresults;
         }
