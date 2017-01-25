@@ -13,7 +13,7 @@ namespace Test
         private readonly int precursorOneBasedScanNumber;
         private double selectedIonGuessMonoisotopicIntensity;
 
-        private int selectedIonGuessChargeStateGuess;
+        private int? selectedIonGuessChargeStateGuess;
 
         private double selectedIonGuessMonoisotopicMZ;
 
@@ -191,14 +191,14 @@ namespace Test
             return false;
         }
 
-        public bool TryGetSelectedIonGuessChargeStateGuess(out int SelectedIonGuessChargeStateGuess)
+        public bool TryGetSelectedIonGuessChargeStateGuess(out int? SelectedIonGuessChargeStateGuess)
         {
             if (MsnOrder == 2)
             {
                 SelectedIonGuessChargeStateGuess = selectedIonGuessChargeStateGuess;
                 return true;
             }
-            SelectedIonGuessChargeStateGuess = 0;
+            SelectedIonGuessChargeStateGuess = null;
             return false;
         }
 
