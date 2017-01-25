@@ -96,7 +96,7 @@ namespace Test
                 }
             }
             List<ProteinGroup> pg = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y });
+            AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
 
             // apply parsimony to initial dictionary
             ae.ApplyProteinParsimony(out pg);
