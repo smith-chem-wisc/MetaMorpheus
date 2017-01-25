@@ -278,7 +278,7 @@ namespace MetaMorpheusGUI
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog();
 
-            openFileDialog1.Filter = "Spectra Files(*.raw;*.mzML;*.mzid;*.psmtsv)|*.raw;*.mzML;*.mzid;*.psmtsv";
+            openFileDialog1.Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML";
             openFileDialog1.FilterIndex = 1;
             openFileDialog1.RestoreDirectory = true;
             openFileDialog1.Multiselect = true;
