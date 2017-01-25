@@ -83,8 +83,8 @@ namespace InternalLogicEngineLayer
         {
             foreach (var heh in myMSDataFile)
             {
-                int chargeState = 0;
-                if (heh.TryGetSelectedIonGuessChargeStateGuess(out chargeState) && chargeState > 0)
+                int? chargeState;
+				if (heh.TryGetSelectedIonGuessChargeStateGuess(out chargeState) && chargeState.HasValue)
                 {
                     yield return new LocalMS2Scan(heh);
                 }

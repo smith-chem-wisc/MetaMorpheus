@@ -144,14 +144,14 @@ namespace InternalLogicCalibration
 
                 // Calculate isotopic distribution of the full peptide
 
-                var dist = new IsotopicDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
+				var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
 
-                double[] masses = new double[dist.Masses.Count];
-                double[] intensities = new double[dist.Intensities.Count];
-                for (int i = 0; i < dist.Masses.Count; i++)
+				double[] masses = new double[dist.masses.Length];
+                double[] intensities = new double[dist.intensities.Length];
+                for (int i = 0; i < dist.masses.Length; i++)
                 {
-                    masses[i] = dist.Masses[i];
-                    intensities[i] = dist.Intensities[i];
+                    masses[i] = dist.masses[i];
+                    intensities[i] = dist.intensities[i];
                 }
                 Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
@@ -318,12 +318,10 @@ namespace InternalLogicCalibration
 
                     double newMonoisotopicMZ = monoisotopicMZ - bestCf.Predict(new double[] { -1, monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
-                    int SelectedIonGuessChargeStateGuess;
-                    a.TryGetSelectedIonGuessChargeStateGuess(out SelectedIonGuessChargeStateGuess);
                     double IsolationMZ;
                     a.TryGetIsolationMZ(out IsolationMZ);
 
-                    Func<MzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { 1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, (x.Mz - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
+                    Func<MzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { 1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, IsolationMZ, (x.Mz - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
                     a.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
                 }
                 else
@@ -451,8 +449,6 @@ namespace InternalLogicCalibration
             // Key: mz value, Value: error
             var addedPeaks = new Dictionary<double, double>();
 
-            int SelectedIonGuessChargeStateGuess;
-            ms2DataScan.TryGetSelectedIonGuessChargeStateGuess(out SelectedIonGuessChargeStateGuess);
             double IsolationMZ;
             ms2DataScan.TryGetIsolationMZ(out IsolationMZ);
 
@@ -484,14 +480,14 @@ namespace InternalLogicCalibration
                     {
                         if (!computedIsotopologues)
                         {
-                            var dist = new IsotopicDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
+							var dist = IsotopicDistribution.GetDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
 
-                            masses = new double[dist.Masses.Count];
-                            intensities = new double[dist.Intensities.Count];
-                            for (int i = 0; i < dist.Masses.Count; i++)
+                            masses = new double[dist.masses.Length];
+                            intensities = new double[dist.intensities.Length];
+                            for (int i = 0; i < dist.masses.Length; i++)
                             {
-                                masses[i] = dist.Masses[i];
-                                intensities[i] = dist.Intensities[i];
+                                masses[i] = dist.masses[i];
+                                intensities[i] = dist.intensities[i];
                             }
                             Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
                             computedIsotopologues = true;
@@ -557,7 +553,7 @@ namespace InternalLogicCalibration
 
                             double addedMZ = trainingPointsToAverage.Select(b => b.dp.mz).Average();
                             double relativeMZ = (addedMZ - ms2DataScan.ScanWindowRange.Minimum) / (ms2DataScan.ScanWindowRange.Maximum - ms2DataScan.ScanWindowRange.Minimum);
-                            double[] inputs = { 1, addedMZ, ms2DataScan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), ms2DataScan.TotalIonCurrent, ms2DataScan.InjectionTime, SelectedIonGuessChargeStateGuess, IsolationMZ, relativeMZ };
+                            double[] inputs = { 1, addedMZ, ms2DataScan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), ms2DataScan.TotalIonCurrent, ms2DataScan.InjectionTime, IsolationMZ, relativeMZ };
                             var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
 
                             myCandidatePoints.Add(a);

@@ -15,9 +15,9 @@ namespace InternalLogicEngineLayer
             b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZhere);
             MonoisotopicPrecursorMZ = monoisotopicPrecursorMZhere;
 
-            int monoisotopicPrecursorChargehere;
+            int? monoisotopicPrecursorChargehere;
             b.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorChargehere);
-            MonoisotopicPrecursorCharge = monoisotopicPrecursorChargehere;
+			MonoisotopicPrecursorCharge = monoisotopicPrecursorChargehere.Value;
 
             PrecursorMass = MonoisotopicPrecursorMZ.ToMass(MonoisotopicPrecursorCharge);
 
