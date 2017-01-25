@@ -9,7 +9,7 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const int minNumberInBin = 2;
+		private const int minAdditionalInBin = 1;
 
         #endregion Private Fields
 
@@ -26,6 +26,8 @@ namespace InternalLogicEngineLayer
             List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.ScanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
+
+			Console.WriteLine("Need those to be the same: "+string.Join(",", listOfMassShifts));
 
             int[] p = new int[listOfMassShifts.Count];
 
@@ -64,10 +66,15 @@ namespace InternalLogicEngineLayer
             for (int i = 0; i < sigma.Count(); i++)
                 listokbin.Add(new OkBin(listOfMassShifts[i], sigma[i], p[i]));
 
+
+			Console.WriteLine("listokbin: " + string.Join(",", listokbin.Select(b=>b.massShift)));
+			Console.WriteLine("listokbin sigma: " + string.Join(",", listokbin.Select(b => b.sigma)));
+			Console.WriteLine("listokbin p: " + string.Join(",", listokbin.Select(b => b.p)));
+
             var prelimBins = new HashSet<double>();
             foreach (OkBin okbin in listokbin.OrderByDescending(b => b.p))
             {
-                if (okbin.sigma < dc || okbin.p < minNumberInBin)
+                if (okbin.sigma < dc || okbin.p < minAdditionalInBin)
                     continue;
                 bool add = true;
                 foreach (double a in prelimBins)
@@ -81,6 +88,10 @@ namespace InternalLogicEngineLayer
                 if (add)
                     prelimBins.Add(okbin.massShift);
             }
+
+
+			Console.WriteLine("prelimBins: " + string.Join(",", prelimBins));
+
 
             var forFinalBins = new Dictionary<double, List<double>>();
             foreach (double ok in prelimBins)
@@ -100,6 +111,11 @@ namespace InternalLogicEngineLayer
             }
 
             FinalBins = FinalBins.Where(b => b.Count > 1).ToList();
+
+
+			Console.WriteLine("Final bins: " + string.Join(",", FinalBins.Select(b=>b.MassShift)));
+
+
         }
 
         #endregion Internal Methods
