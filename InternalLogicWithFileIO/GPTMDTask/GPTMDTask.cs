@@ -21,7 +21,6 @@ namespace InternalLogicTaskLayer
         #region Public Fields
 
         public List<ModListForGPTMDTask> listOfModListsForGPTMD;
-        public Tolerance precursorMassTolerance;
 
         #endregion Public Fields
 
@@ -45,9 +44,8 @@ namespace InternalLogicTaskLayer
             listOfModListsForGPTMD[2].Localize = true;
             listOfModListsForGPTMD[3].Gptmd = true;
             listOfModListsForGPTMD[4].Gptmd = true;
-            precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             TaskType = MyTask.Gptmd;
-            Tol = 0.003;
+            TolInDaltons = 0.01;
             IsotopeErrors = false;
             MaxNumPeaksPerScan = 400;
         }
@@ -57,7 +55,7 @@ namespace InternalLogicTaskLayer
         #region Public Properties
 
         public Tolerance ProductMassTolerance { get; set; }
-        public double Tol { get; set; }
+        public double TolInDaltons { get; set; }
         public bool IsotopeErrors { get; set; }
 
         #endregion Public Properties
@@ -74,9 +72,8 @@ namespace InternalLogicTaskLayer
                 sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
                 sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
                 sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Gptmd).Select(b => b.FileName)));
-                sb.AppendLine("precursorMassTolerance: " + precursorMassTolerance);
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-                sb.Append("tol: " + Tol);
+                sb.Append("TolInDaltons: " + TolInDaltons);
                 return sb.ToString();
             }
         }
@@ -190,7 +187,7 @@ namespace InternalLogicTaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
             // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), precursorMassTolerance);
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), new Tolerance(ToleranceUnit.Absolute, TolInDaltons));
             var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
@@ -238,7 +235,7 @@ namespace InternalLogicTaskLayer
                 //output(analysisResults.ToString());
             }
 
-            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, Tol);
+            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, TolInDaltons);
             var gptmdResults = (GptmdResults)gptmdEngine.Run();
 
             //output(gptmdResults.ToString());

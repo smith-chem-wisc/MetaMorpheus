@@ -6,6 +6,7 @@ namespace InternalLogicEngineLayer
 {
     public class LocalMS2Scan
     {
+
         #region Public Constructors
 
         public LocalMS2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
@@ -15,9 +16,9 @@ namespace InternalLogicEngineLayer
             b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZhere);
             MonoisotopicPrecursorMZ = monoisotopicPrecursorMZhere;
 
-            int monoisotopicPrecursorChargehere;
+            int? monoisotopicPrecursorChargehere;
             b.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorChargehere);
-            MonoisotopicPrecursorCharge = monoisotopicPrecursorChargehere;
+            MonoisotopicPrecursorCharge = monoisotopicPrecursorChargehere.Value;
 
             PrecursorMass = MonoisotopicPrecursorMZ.ToMass(MonoisotopicPrecursorCharge);
 

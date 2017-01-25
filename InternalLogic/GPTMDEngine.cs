@@ -14,19 +14,19 @@ namespace InternalLogicEngineLayer
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<MorpheusModification> gptmdModifications;
         private readonly bool isotopeErrors;
-        private readonly double tol;
+        private readonly double tolInDaltons;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tol) : base(2)
+        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tolInDaltons) : base(2)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.isotopeErrors = isotopeErrors;
             this.gptmdModifications = gptmdModifications;
             this.combos = combos;
-            this.tol = tol;
+            this.tolInDaltons = tolInDaltons;
         }
 
         #endregion Public Constructors
@@ -47,7 +47,7 @@ namespace InternalLogicEngineLayer
                     var peptide = theDict.First();
                     var baseSequence = ye.thisPSM.BaseSequence;
                     double massDiff = ye.thisPSM.ScanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
-                    foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tol))
+                    foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tolInDaltons))
                     {
                         int proteinLength = peptide.Protein.Length;
                         var proteinAcession = peptide.Protein.Accession;
@@ -95,17 +95,17 @@ namespace InternalLogicEngineLayer
             return true;
         }
 
-        private static IEnumerable<MorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tol)
+        private static IEnumerable<MorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tolInDaltons)
         {
             foreach (var Mod in allMods)
             {
-                if (Mod.MonoisotopicMassShift > massDiff - tol && Mod.MonoisotopicMassShift < massDiff + tol)
+                if (Mod.MonoisotopicMassShift > massDiff - tolInDaltons && Mod.MonoisotopicMassShift < massDiff + tolInDaltons)
                     yield return Mod;
-                if (isotopeErrors && Mod.MonoisotopicMassShift > massDiff - tol - 1.003 && Mod.MonoisotopicMassShift < massDiff + tol - 1.003)
+                if (isotopeErrors && Mod.MonoisotopicMassShift > massDiff - tolInDaltons - 1.003 && Mod.MonoisotopicMassShift < massDiff + tolInDaltons - 1.003)
                     yield return Mod;
-                if (!double.IsNaN(Mod.AlternativeMassShift) && Mod.AlternativeMassShift > massDiff - tol && Mod.AlternativeMassShift < massDiff + tol)
+                if (!double.IsNaN(Mod.AlternativeMassShift) && Mod.AlternativeMassShift > massDiff - tolInDaltons && Mod.AlternativeMassShift < massDiff + tolInDaltons)
                     yield return Mod;
-                if (!double.IsNaN(Mod.AlternativeMassShift) && isotopeErrors && Mod.AlternativeMassShift > massDiff - tol - 1.003 && Mod.AlternativeMassShift < massDiff + tol - 1.003)
+                if (!double.IsNaN(Mod.AlternativeMassShift) && isotopeErrors && Mod.AlternativeMassShift > massDiff - tolInDaltons - 1.003 && Mod.AlternativeMassShift < massDiff + tolInDaltons - 1.003)
                     yield return Mod;
             }
 
@@ -114,18 +114,18 @@ namespace InternalLogicEngineLayer
                 var m1 = combo.Item1;
                 var m2 = combo.Item2;
                 var combined = m1 + m2;
-                if (combined > massDiff - tol && combined < massDiff + tol)
+                if (combined > massDiff - tolInDaltons && combined < massDiff + tolInDaltons)
                 {
-                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tol))
+                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tolInDaltons))
                         yield return mod;
-                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tol))
+                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tolInDaltons))
                         yield return mod;
                 }
-                if (isotopeErrors && combined > massDiff - tol - 1.003 && combined < massDiff + tol - 1.003)
+                if (isotopeErrors && combined > massDiff - tolInDaltons - 1.003 && combined < massDiff + tolInDaltons - 1.003)
                 {
-                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tol))
+                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tolInDaltons))
                         yield return mod;
-                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tol))
+                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tolInDaltons))
                         yield return mod;
                 }
             }
