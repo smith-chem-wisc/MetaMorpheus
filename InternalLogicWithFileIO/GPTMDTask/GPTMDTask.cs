@@ -181,8 +181,8 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Gptmd).SelectMany(b => b.Mods).ToList();
 
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML = new Dictionary<string, List<MorpheusModification>>();
-            HashSet<string> unidentifiedModStrings = new HashSet<string>();
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();

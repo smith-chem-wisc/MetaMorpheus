@@ -112,8 +112,8 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> fixedModifications = ListOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> localizeableModifications = ListOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML = new Dictionary<string, List<MorpheusModification>>();
-            HashSet<string> unidentifiedModStrings = new HashSet<string>();
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             List<SearchMode> searchModesS = SearchModes.Where(b => b.Use).Select(b => b.SearchMode).ToList();

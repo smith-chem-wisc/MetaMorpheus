@@ -383,9 +383,12 @@ namespace InternalLogicTaskLayer
                             }
                             else
                             {
+                                // can't read protein description
                                 full_name = line.Substring(1);
+                                accession = "";
                             }
                             
+                            // new protein
                             sequence = "";
                         }
 

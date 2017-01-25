@@ -89,8 +89,8 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> fixedModifications = ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> localizeableModifications = ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML = new Dictionary<string, List<MorpheusModification>>();
-            HashSet<string> unidentifiedModStrings = new HashSet<string>();
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             Status("Loading proteins...");
