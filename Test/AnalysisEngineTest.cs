@@ -28,12 +28,17 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya");
+			HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+			CompactPeptide key = new CompactPeptide(value.First(), variableModifications, localizeableModifications);
 
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+			PeptideWithPossibleModifications modPep2 = new PeptideWithPossibleModifications(1, 5, proteinList.First(), 0, "ya");
+			HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+			CompactPeptide key2 = new CompactPeptide(value2.First(), variableModifications, localizeableModifications);
 
-            CompactPeptide key = new CompactPeptide(value.First(), variableModifications, localizeableModifications);
 
-            newPsms[0] = new ParentSpectrumMatch[] { new ModernSpectrumMatch(key, null, 1, 1, 1, 1, 1, 1, 1, 1, 1) };
+            newPsms[0] = new ParentSpectrumMatch[] { new ModernSpectrumMatch(key, null, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+													new ModernSpectrumMatch(key2, null,2,2,2+216.08849791,2,2,2,2,2,2)
+													};
 
             compactPeptideToProteinPeptideMatching.Add(key, value);
 
