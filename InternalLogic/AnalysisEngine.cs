@@ -16,9 +16,9 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const double binTol = 0.003;
         private const double comboThresholdMultiplier = 3;
         private const int max_mods_for_peptide = 3;
+        private readonly double binTol;
         private readonly int maximumMissedCleavages;
         private readonly int maxModIsoforms;
         private readonly ParentSpectrumMatch[][] newPsms;
@@ -42,7 +42,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp) : base(2)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
         {
             this.doParsimony = doParsimony;
             this.doHistogramAnalysis = doHistogramAnalysis;
@@ -62,6 +62,7 @@ namespace InternalLogicEngineLayer
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.maxModIsoforms = maxModIsoforms;
             this.lp = lp;
+            this.binTol = binTol;
         }
 
         #endregion Public Constructors
@@ -568,7 +569,6 @@ namespace InternalLogicEngineLayer
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
-
             List<ProteinGroup> proteinGroups = null;
             if (doParsimony)
             {
@@ -605,7 +605,7 @@ namespace InternalLogicEngineLayer
                         if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                         {
                             Status("Running histogram analysis...");
-                            var hm = MyAnalysis(limitedpsms_with_fdr);
+                            var hm = MyAnalysis(limitedpsms_with_fdr, binTol);
                             writeHistogramPeaksAction(hm, searchModes[j].FileNameAddition);
                         }
                     }
@@ -856,7 +856,7 @@ namespace InternalLogicEngineLayer
             }
         }
 
-        private static BinTreeStructure MyAnalysis(List<NewPsmWithFdr> limitedpsms_with_fdr)
+        private static BinTreeStructure MyAnalysis(List<NewPsmWithFdr> limitedpsms_with_fdr, double binTol)
         {
             var myTreeStructure = new BinTreeStructure();
             myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);

@@ -9,7 +9,7 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const int minNumberInBin = 2;
+        private const int minAdditionalPsmsInBin = 1;
 
         #endregion Private Fields
 
@@ -67,7 +67,7 @@ namespace InternalLogicEngineLayer
             var prelimBins = new HashSet<double>();
             foreach (OkBin okbin in listokbin.OrderByDescending(b => b.p))
             {
-                if (okbin.sigma < dc || okbin.p < minNumberInBin)
+                if (okbin.sigma < dc || okbin.p < minAdditionalPsmsInBin)
                     continue;
                 bool add = true;
                 foreach (double a in prelimBins)

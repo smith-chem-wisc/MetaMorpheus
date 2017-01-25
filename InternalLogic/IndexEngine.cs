@@ -55,9 +55,13 @@ namespace InternalLogicEngineLayer
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
-            sb.AppendLine("Number of localizeable mods: " + localizeableModifications.Count);
+            sb.AppendLine("Number of localizeable mods known: " + localizeableModifications.Count);
             sb.AppendLine("lp: " + string.Join(",", lp));
-            sb.Append("protease: " + protease);
+            sb.AppendLine("protease: " + protease);
+            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
+            sb.AppendLine("maximumMissedCleavages: " + maximumMissedCleavages);
+            sb.AppendLine("maximumVariableModificationIsoforms: " + maximumVariableModificationIsoforms);
+            sb.Append("Localizeable mods: " + proteinList.Select(b=>b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
 
