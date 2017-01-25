@@ -183,16 +183,7 @@ namespace InternalLogicTaskLayer
 
             Dictionary<string, List<MorpheusModification>> identifiedModsInXML = new Dictionary<string, List<MorpheusModification>>();
             HashSet<string> unidentifiedModStrings = new HashSet<string>();
-            List<DbForTask> xmlDbFilenameList = new List<DbForTask>();
-            foreach (var db in dbFilenameList)
-            {
-                if (!db.FileName.EndsWith(".fasta"))
-                {
-                    xmlDbFilenameList.Add(db);
-                }
-            }
-            if (xmlDbFilenameList.Any())
-                MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 

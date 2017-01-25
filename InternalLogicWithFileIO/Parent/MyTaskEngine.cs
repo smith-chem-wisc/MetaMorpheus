@@ -125,10 +125,10 @@ namespace InternalLogicTaskLayer
 
         #region Protected Internal Methods
 
-        protected internal static void MatchXMLmodsToKnownMods(List<DbForTask> listOfXMLdbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        protected internal static void MatchXMLmodsToKnownMods(List<DbForTask> listOfDbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
             modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXmlModifications(listOfXMLdbs.Select(b => b.FileName));
+            var modsInXML = ProteomeDatabaseReader.ReadXmlModifications(listOfDbs.Select(b => b.FileName).Where(r => (!r.Contains(".fasta"))));
             modsInXMLtoTrim = new HashSet<string>(modsInXML);
             foreach (var knownMod in modsKnown)
                 if (modsInXML.Contains(knownMod.NameInXml))
@@ -451,31 +451,6 @@ namespace InternalLogicTaskLayer
                                     yield return decoy_protein;
                                     offset += protein.Length;
                                 }
-
-                                /*
-                                if (onTheFlyDecoys)
-                                {
-                                    char[] sequence_array = sequence.ToCharArray();
-
-                                    if (sequence.StartsWith("M"))
-                                    {
-                                        Array.Reverse(sequence_array, 1, sequence.Length - 1);
-                                    }
-                                    else
-                                    {
-                                        Array.Reverse(sequence_array);
-                                    }
-
-                                    var reversed_sequence = new string(sequence_array);
-
-                                    Dictionary<int, List<MorpheusModification>> decoy_modifications = new Dictionary<int, List<MorpheusModification>>();
-                                    int[] decoybeginPositions = new int[oneBasedBeginPositions.Count];
-                                    int[] decoyendPositions = new int[oneBasedEndPositions.Count];
-                                    string[] decoyBigPeptideTypes = new string[oneBasedEndPositions.Count];
-                                    var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true, dbForTask.IsContaminant);
-                                    yield return decoy_protein;
-                                }
-                                */
                             }
                         }
 

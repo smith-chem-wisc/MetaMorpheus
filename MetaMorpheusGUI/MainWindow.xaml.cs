@@ -264,7 +264,7 @@ namespace MetaMorpheusGUI
         {
             // Create the OpenFIleDialog object
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
-            openPicker.Filter = "XML Files|*.xml;*.xml.gz|Fasta File| *.fasta";
+            openPicker.Filter = "Database Files|*.xml;*.xml.gz;*.fasta";
             openPicker.FilterIndex = 1;
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
