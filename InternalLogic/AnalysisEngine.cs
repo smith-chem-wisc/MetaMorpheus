@@ -487,7 +487,6 @@ namespace InternalLogicEngineLayer
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
-
             List<ProteinGroup> proteinGroups = null;
             if (doParsimony)
             {

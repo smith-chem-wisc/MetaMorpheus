@@ -24,7 +24,7 @@ namespace InternalLogicTaskLayer
         {
             // Set default values here:
             MaxMissedCleavages = 2;
-            Protease = ProteaseDictionary.Instance["trypsin (no proline rule)"];
+            Protease = ProteaseDictionary.Instance["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassToleranceInDaltons = 0.01;
