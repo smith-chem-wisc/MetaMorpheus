@@ -105,9 +105,19 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> variableModifications = ListOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> fixedModifications = ListOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> localizeableModifications = ListOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
-            HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML = new Dictionary<string, List<MorpheusModification>>();
+            HashSet<string> unidentifiedModStrings = new HashSet<string>();
+            List<DbForTask> xmlDbFilenameList = new List<DbForTask>();
+            foreach (var db in dbFilenameList)
+            {
+                if (!db.FileName.EndsWith(".fasta"))
+                {
+                    xmlDbFilenameList.Add(db);
+                }
+            }
+            if (xmlDbFilenameList.Any())
+                MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             List<SearchMode> searchModesS = SearchModes.Where(b => b.Use).Select(b => b.SearchMode).ToList();
 
@@ -116,7 +126,8 @@ namespace InternalLogicTaskLayer
                 allPsms[j] = new List<ParentSpectrumMatch>();
 
             Status("Loading proteins...");
-            var proteinList = xmlDbFilenameList.SelectMany(b => GetProteins(SearchDecoy, identifiedModsInXML, b)).ToList();
+
+            var proteinList = dbFilenameList.SelectMany(b => GetProteins(SearchDecoy, identifiedModsInXML, b)).ToList();
 
             List<CompactPeptide> peptideIndex = null;
             Dictionary<float, List<int>> fragmentIndexDict = null;
@@ -239,7 +250,7 @@ namespace InternalLogicTaskLayer
 
         private string GenerateOutputFolderForIndices()
         {
-            var folder = Path.Combine(Path.GetDirectoryName(xmlDbFilenameList.First().FileName), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FileName), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             return folder;
@@ -257,7 +268,7 @@ namespace InternalLogicTaskLayer
         private string GetExistingFolderWithIndices(IndexEngine indexEngine)
         {
             // In every database location...
-            foreach (var ok in xmlDbFilenameList)
+            foreach (var ok in dbFilenameList)
             {
                 var baseDir = Path.GetDirectoryName(ok.FileName);
                 var directory = new DirectoryInfo(baseDir);

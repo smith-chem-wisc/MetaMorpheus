@@ -88,12 +88,22 @@ namespace InternalLogicTaskLayer
             List<MorpheusModification> variableModifications = ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> fixedModifications = ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
             List<MorpheusModification> localizeableModifications = ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
-            HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+
+            Dictionary<string, List<MorpheusModification>> identifiedModsInXML = new Dictionary<string, List<MorpheusModification>>();
+            HashSet<string> unidentifiedModStrings = new HashSet<string>();
+            List<DbForTask> xmlDbFilenameList = new List<DbForTask>();
+            foreach (var db in dbFilenameList)
+            {
+                if(!db.FileName.EndsWith(".fasta"))
+                {
+                    xmlDbFilenameList.Add(db);
+                }
+            }
+            if(xmlDbFilenameList.Any())
+                MatchXMLmodsToKnownMods(xmlDbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
             Status("Loading proteins...");
-            var proteinList = xmlDbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
 
             List<ProductType> lp = new List<ProductType>();
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;

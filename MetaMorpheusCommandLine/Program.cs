@@ -88,7 +88,7 @@ namespace MetaMorpheusCommandLine
 
             s.ClassicSearch = false;
             s.rawDataFilenameList = new List<string> { @"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML" };
-            s.xmlDbFilenameList = new List<XmlForTask> { new XmlForTask(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml", false) };
+            s.dbFilenameList = new List<DbForTask> { new DbForTask(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml", false) };
             s.OutputFolder = Path.GetTempPath();
 
             s.Run();

@@ -97,7 +97,7 @@
     <Compile Include="GPTMDTask\GPTMDTask.cs" />
     <Compile Include="GPTMDTask\ModListForGPTMDTask.cs" />
     <Compile Include="CalibrationTask\ModListForCalibrationTask.cs" />
-    <Compile Include="Parent\XmlForTask.cs" />
+    <Compile Include="Parent\DbForTask.cs" />
     <Compile Include="SearchTask\ModListForSearchTask.cs" />
     <Compile Include="ModList.cs" />
     <Compile Include="SearchTask\MySearchTaskResults.cs" />
