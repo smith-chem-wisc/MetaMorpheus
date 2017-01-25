@@ -8,13 +8,13 @@ namespace InternalLogicTaskLayer
 
         #region Public Fields
 
-        public List<XmlForTask> newDatabases;
+        public List<DbForTask> newDatabases;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public XmlForTaskListEventArgs(List<XmlForTask> newDatabases)
+        public XmlForTaskListEventArgs(List<DbForTask> newDatabases)
         {
             this.newDatabases = newDatabases;
         }

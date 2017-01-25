@@ -9,7 +9,7 @@ namespace InternalLogicTaskLayer
         #region Public Fields
 
         public List<string> newSpectra;
-        public List<XmlForTask> newDatabases;
+        public List<DbForTask> newDatabases;
 
         #endregion Public Fields
 

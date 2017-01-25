@@ -1,11 +1,11 @@
 ﻿namespace InternalLogicTaskLayer
 {
-    public class XmlForTask
+    public class DbForTask
     {
 
         #region Public Constructors
 
-        public XmlForTask(string fileName, bool isContaminant)
+        public DbForTask(string fileName, bool isContaminant)
         {
             FileName = fileName;
             IsContaminant = isContaminant;

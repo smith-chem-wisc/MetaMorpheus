@@ -264,7 +264,7 @@ namespace MetaMorpheusGUI
         {
             // Create the OpenFIleDialog object
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
-            openPicker.Filter = "XML Files|*.xml;*.xml.gz";
+            openPicker.Filter = "Database Files|*.xml;*.xml.gz;*.fasta";
             openPicker.FilterIndex = 1;
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
@@ -323,7 +323,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => new XmlForTask(b.FileName, b.Contaminant)).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
