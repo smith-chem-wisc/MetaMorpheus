@@ -15,6 +15,14 @@ SL   Sticky
 MM   -89.02992
 CF   H-7 C-3 N-1 S-1
 //
+ID   oxidation and then loss of oxidized M side chain
+FT   MOD_RES
+TG   Methionine
+PP   Anywhere.
+SL   Sticky
+MM   -32.00845
+CF   H-4 C-1 S-1 O1
+//
 ID   P oxidation
 FT   MOD_RES
 TG   Proline
@@ -47,13 +55,13 @@ SL   Sticky
 MM   -17.02655
 CF   H-3 N-1
 //
-ID   Loss of two hydrogens from N term M
+ID   Ammonia loss from N
 FT   MOD_RES
-TG   Methionine
-PP   Protein N-terminal.
+TG   Asparagine
+PP   Anywhere.
 SL   Sticky
-MM   -2.016
-CF   H-2
+MM   -17.02655
+CF   H-3 N-1
 //
 ID   Ammonia loss from peptide N-term C
 FT   MOD_RES
@@ -62,6 +70,14 @@ PP   Peptide N-terminal.
 SL   Sticky
 MM   -17.02655
 CF   H-3 N-1
+//
+ID   Loss of two hydrogens from N term M
+FT   MOD_RES
+TG   Methionine
+PP   Protein N-terminal.
+SL   Sticky
+MM   -2.016
+CF   H-2
 //
 ID   Deamidation of N
 FT   MOD_RES
@@ -433,6 +449,22 @@ PP   Anywhere.
 SL   Both
 MM   79.966331
 CF   H1 O3 P1
+//
+ID   Addition of Lysine
+FT   MOD_RES
+TG   Any
+PP   Peptide C-terminal.
+SL   Sticky
+MM   128.09496
+CF   C6 H12 N2 O1
+//
+ID   Addition of Lysine
+FT   MOD_RES
+TG   Any
+PP   Peptide N-terminal.
+SL   Sticky
+MM   128.09496
+CF   C6 H12 N2 O1
 //
 ID   Acetylation+Methionine
 FT   MOD_RES
