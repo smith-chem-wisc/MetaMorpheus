@@ -47,53 +47,9 @@ namespace MetaMorpheusCommandLine
             MyTaskEngine.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
             MyTaskEngine.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
             MyTaskEngine.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
-
-            switch (args[0])
-            {
-                case "modern":
-                    RunModernSearchEngine();
-                    break;
-
-                case "search":
-                    RunSearchTask();
-                    break;
-            }
+            
         }
-
-        private static void RunModernSearchEngine()
-        {
-            List<CompactPeptide> peptideIndex;
-            using (var file = File.OpenRead(Path.Combine(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\2017-01-13-09-57-20", "peptideIndex.ind")))
-                peptideIndex = (List<CompactPeptide>)new NetSerializer.Serializer(SearchTask.GetSubclassesAndItself(typeof(List<CompactPeptide>))).Deserialize(file);
-            Dictionary<float, List<int>> fragmentIndexDict;
-            using (var file = File.OpenRead(Path.Combine(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\2017-01-13-09-57-20", "fragmentIndex.ind")))
-                fragmentIndexDict = (Dictionary<float, List<int>>)new NetSerializer.Serializer(SearchTask.GetSubclassesAndItself(typeof(Dictionary<float, List<int>>))).Deserialize(file);
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
-
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new Mzml(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML", 400);
-            myMsDataFile.Open();
-            double fragmentToleranceInDaltons = 0.01;
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-
-            var s = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, fragmentToleranceInDaltons, searchModes);
-            s.Run();
-        }
-
-        private static void RunSearchTask()
-        {
-            IEnumerable<ModList> modList = new List<ModList> { new ModList("f.txt"), new ModList("v.txt"), new ModList("p.txt") };
-            IEnumerable<SearchMode> ism = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            var s = new SearchTask(modList, ism);
-
-            s.ClassicSearch = false;
-            s.rawDataFilenameList = new List<string> { @"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML" };
-            s.dbFilenameList = new List<DbForTask> { new DbForTask(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-12-23-2016.xml", false) };
-            s.OutputFolder = Path.GetTempPath();
-
-            s.Run();
-        }
-
+        
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)
         {
             if (inProgress)

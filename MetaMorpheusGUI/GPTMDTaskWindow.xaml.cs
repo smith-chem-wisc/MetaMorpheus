@@ -74,8 +74,7 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
-            precursorMassToleranceTextBox.Text = task.precursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = (int)task.precursorMassTolerance.Unit;
+            precursorMassToleranceTextBox.Text = task.TolInDaltons.ToString(CultureInfo.InvariantCulture);
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
@@ -105,9 +104,6 @@ namespace MetaMorpheusGUI
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
                 productMassToleranceComboBox.Items.Add(toleranceUnit);
 
-            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                precursorMassToleranceComboBox.Items.Add(toleranceUnit);
-
             // Always create new ModFileList
             foreach (var uu in modList)
                 ModFileListInWindow.Add(new ModListForGPTMDTask(uu));
@@ -130,8 +126,7 @@ namespace MetaMorpheusGUI
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.listOfModListsForGPTMD = ModFileListInWindow.ToList();
-            TheTask.precursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.precursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+            TheTask.TolInDaltons = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
 
             DialogResult = true;
         }

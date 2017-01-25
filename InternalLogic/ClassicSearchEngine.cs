@@ -14,6 +14,8 @@ namespace InternalLogicEngineLayer
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
+
+        private const double tolForModificationMassDiffMatch = 0.003;
         private readonly int maximumMissedCleavages;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<SearchMode> searchModes;
@@ -141,15 +143,18 @@ namespace InternalLogicEngineLayer
                                 var searchMode = searchModes[aede];
                                 foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = PSMwithProteinHashSet.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
-                                    if (psm.score > 1)
+                                    if (!ModificationMassDiffMatch(yyy, scan, tolForModificationMassDiffMatch))
                                     {
-                                        ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
-                                        if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
+                                        var score = PSMwithProteinHashSet.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                        var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
+                                        if (psm.score > 1)
                                         {
-                                            psms[aede][scan.OneBasedScanNumber - 1] = psm;
-                                            matchedIonsArray = new double[sortedProductMasses.Length];
+                                            ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
+                                            if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
+                                            {
+                                                psms[aede][scan.OneBasedScanNumber - 1] = psm;
+                                                matchedIonsArray = new double[sortedProductMasses.Length];
+                                            }
                                         }
                                     }
                                 }
@@ -180,6 +185,14 @@ namespace InternalLogicEngineLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private bool ModificationMassDiffMatch(PeptideWithSetModifications yyy, LocalMS2Scan scan, double tolForModificationMassDiffMatch)
+        {
+            foreach (var kvp in yyy.twoBasedVariableAndLocalizeableModificationss)
+                if (Math.Abs(yyy.MonoisotopicMass - kvp.Value.MonoisotopicMassShift - scan.PrecursorMass) < tolForModificationMassDiffMatch)
+                    return true;
+            return false;
+        }
 
         private IEnumerable<LocalMS2Scan> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
         {
