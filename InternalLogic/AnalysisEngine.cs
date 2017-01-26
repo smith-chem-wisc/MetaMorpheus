@@ -404,12 +404,21 @@ namespace InternalLogicEngineLayer
                     List<NewPsmWithFdr> psmListForThisBaseSeq = new List<NewPsmWithFdr>();
 
                     peptideBaseSeqToPsmMatching.TryGetValue(peptideBaseSequence, out psmListForThisBaseSeq);
-                    foreach(var psm in psmListForThisBaseSeq)
+
+                    if (psmListForThisBaseSeq != null)
                     {
-                        if (!proteinGroup.TotalPsmList.Contains(psm))
+                        foreach (var psm in psmListForThisBaseSeq)
                         {
-                            proteinGroup.TotalPsmList.Add(psm);
+                            if (!proteinGroup.TotalPsmList.Contains(psm))
+                            {
+                                proteinGroup.TotalPsmList.Add(psm);
+                            }
                         }
+                    }
+
+                    else
+                    {
+                        psmListForThisBaseSeq = new List<NewPsmWithFdr>();
                     }
                 }
             }
@@ -421,17 +430,23 @@ namespace InternalLogicEngineLayer
                 NewPsmWithFdr bestPsm = null;
                 CompactPeptide bestPeptide = null;
 
-                foreach (var psm in kvp.Value)
+                if (kvp.Value != null)
                 {
-                    if (psm.thisPSM.Score > bestScoreSoFar)
+                    foreach (var psm in kvp.Value)
                     {
-                        bestScoreSoFar = psm.thisPSM.Score;
-                        bestPsm = psm;
-                        bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                        if (psm.thisPSM.Score > bestScoreSoFar)
+                        {
+                            bestScoreSoFar = psm.thisPSM.Score;
+                            bestPsm = psm;
+                            bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                        }
                     }
                 }
 
-                peptideToBestPsmMatching.Add(bestPeptide, bestPsm);
+                if (bestPsm != null)
+                {
+                    peptideToBestPsmMatching.Add(bestPeptide, bestPsm);
+                }
             }
 
             // add the best psm per base sequence to the protein group and score the protein group
