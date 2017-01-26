@@ -2,20 +2,45 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace InternalLogicCalibration
 {
     internal class LinearCalibrationFunctionMathNet : CalibrationFunction
     {
-        private Func<double[], double> f;
+
+        #region Private Fields
+
         private readonly int numFeatures;
         private readonly TransformFunction transformFunction;
+        private Func<double[], double> f;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public LinearCalibrationFunctionMathNet(TransformFunction transformFunction)
         {
             this.transformFunction = transformFunction;
             numFeatures = transformFunction.numOutputs;
         }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Linear");
+            sb.Append(" numFeatures: " + numFeatures);
+            sb.Append(" transform num outputs: " + transformFunction.numOutputs);
+            return sb.ToString();
+        }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal override double Predict(double[] t)
         {
@@ -42,5 +67,8 @@ namespace InternalLogicCalibration
             }
             f = Fit.LinearMultiDimFunc(ok, ok2, ye);
         }
+
+        #endregion Internal Methods
+
     }
 }
