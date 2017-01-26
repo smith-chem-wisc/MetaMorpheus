@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using OldInternalLogic;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -15,6 +14,7 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
+        private const double tolForModificationMassDiffMatch = 0.003;
         private readonly List<int>[] fragmentIndex;
 
         private readonly double fragmentToleranceInDaltons;
@@ -27,16 +27,11 @@ namespace InternalLogicEngineLayer
 
         private readonly List<SearchMode> searchModes;
 
-        private readonly List<MorpheusModification> variableModifications;
-        private readonly List<MorpheusModification> localizeableModifications;
-
-        private const double tolForModificationMassDiffMatch = 0.003;
-
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
         {
             this.myMSDataFile = myMSDataFile;
             this.peptideIndex = peptideIndex;
@@ -44,8 +39,6 @@ namespace InternalLogicEngineLayer
             this.fragmentIndex = fragmentIndex;
             this.fragmentToleranceInDaltons = fragmentToleranceInDaltons;
             this.searchModes = searchModes;
-            this.variableModifications = variableModifications;
-            this.localizeableModifications = localizeableModifications;
         }
 
         #endregion Public Constructors
@@ -87,41 +80,40 @@ namespace InternalLogicEngineLayer
                     {
                         var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
                         CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                        if (!MatchModificationsMassShift(candidatePeptide, thisScanprecursorMass))
-                            for (int j = 0; j < searchModesCount; j++)
+                        for (int j = 0; j < searchModesCount; j++)
+                        {
+                            // Check if makes sense to add due to peptidescore!
+                            var searchMode = searchModes[j];
+                            double currentBestScore = bestScores[j];
+                            if (currentBestScore > 1)
                             {
-                                // Check if makes sense to add due to peptidescore!
-                                var searchMode = searchModes[j];
-                                double currentBestScore = bestScores[j];
-                                if (currentBestScore > 1)
+                                // Existed! Need to compare with old match
+                                if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
-                                    // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                    // Score is same, need to see if accepts and if prefer the new one
+                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
                                     {
-                                        // Score is same, need to see if accepts and if prefer the new one
-                                        if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
-                                        {
-                                            bestPeptides[j] = candidatePeptide;
-                                            bestScores[j] = consideredScore;
-                                        }
-                                    }
-                                    else if (currentBestScore < consideredScore)
-                                    {
-                                        // Score is better, only make sure it is acceptable
-                                        if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
-                                        {
-                                            bestPeptides[j] = candidatePeptide;
-                                            bestScores[j] = consideredScore;
-                                        }
+                                        bestPeptides[j] = candidatePeptide;
+                                        bestScores[j] = consideredScore;
                                     }
                                 }
-                                // Did not exist! Only make sure that it is acceptable
-                                else if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
+                                else if (currentBestScore < consideredScore)
                                 {
-                                    bestPeptides[j] = candidatePeptide;
-                                    bestScores[j] = consideredScore;
+                                    // Score is better, only make sure it is acceptable
+                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
+                                    {
+                                        bestPeptides[j] = candidatePeptide;
+                                        bestScores[j] = consideredScore;
+                                    }
                                 }
                             }
+                            // Did not exist! Only make sure that it is acceptable
+                            else if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
+                            {
+                                bestPeptides[j] = candidatePeptide;
+                                bestScores[j] = consideredScore;
+                            }
+                        }
                     }
                     for (int j = 0; j < searchModesCount; j++)
                     {
@@ -144,50 +136,6 @@ namespace InternalLogicEngineLayer
                 }
             });
             return new ModernSearchResults(newPsms, this);
-        }
-
-        private bool MatchModificationsMassShift(CompactPeptide candidatePeptide, double thisScanprecursorMass)
-        {
-            if (candidatePeptide.varMod1Loc != 0)
-            {
-                if (candidatePeptide.varMod1Type<32767)
-                {
-                    if (Math.Abs(candidatePeptide.MonoisotopicMass - variableModifications[candidatePeptide.varMod1Type - 1].MonoisotopicMassShift - thisScanprecursorMass) < tolForModificationMassDiffMatch)
-                        return true;
-                }
-                else
-                {
-                    if (Math.Abs(candidatePeptide.MonoisotopicMass - localizeableModifications[candidatePeptide.varMod1Type - 1- 32767].MonoisotopicMassShift - thisScanprecursorMass) < tolForModificationMassDiffMatch)
-                        return true;
-                }
-            }
-            if (candidatePeptide.varMod2Loc != 0)
-            {
-                if (candidatePeptide.varMod2Type < 32767)
-                {
-                    if (Math.Abs(candidatePeptide.MonoisotopicMass - variableModifications[candidatePeptide.varMod2Type - 1].MonoisotopicMassShift - thisScanprecursorMass) < tolForModificationMassDiffMatch)
-                        return true;
-                }
-                else
-                {
-                    if (Math.Abs(candidatePeptide.MonoisotopicMass - localizeableModifications[candidatePeptide.varMod2Type - 1 - 32767].MonoisotopicMassShift - thisScanprecursorMass) < tolForModificationMassDiffMatch)
-                        return true;
-                }
-            }
-            if (candidatePeptide.varMod3Loc != 0)
-            {
-                if (candidatePeptide.varMod3Type < 32767)
-                {
-                    if (Math.Abs(candidatePeptide.MonoisotopicMass - variableModifications[candidatePeptide.varMod3Type - 1].MonoisotopicMassShift - thisScanprecursorMass) < tolForModificationMassDiffMatch)
-                        return true;
-                }
-                else
-                {
-                    if (Math.Abs(candidatePeptide.MonoisotopicMass - localizeableModifications[candidatePeptide.varMod3Type - 1 - 32767].MonoisotopicMassShift - thisScanprecursorMass) < tolForModificationMassDiffMatch)
-                        return true;
-                }
-            }
-            return false;
         }
 
         #endregion Protected Methods

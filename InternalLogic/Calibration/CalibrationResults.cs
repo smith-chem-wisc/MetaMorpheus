@@ -11,12 +11,12 @@ namespace InternalLogicCalibration
 
         #region Private Fields
 
-        private List<int> calibrationRoundList;
         private List<int> numMs1MassChargeCombinationsConsideredList;
         private List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
         private List<int> numMs2MassChargeCombinationsConsideredList;
         private List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
         private List<int> countList;
+        private List<SeparateCalibrationFunction> calibrationFunctions;
 
         #endregion Private Fields
 
@@ -25,7 +25,7 @@ namespace InternalLogicCalibration
         public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
-            calibrationRoundList = new List<int>();
+            calibrationFunctions = new List<SeparateCalibrationFunction>();
             numMs1MassChargeCombinationsConsideredList = new List<int>();
             numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList = new List<int>();
             numMs2MassChargeCombinationsConsideredList = new List<int>();
@@ -48,15 +48,20 @@ namespace InternalLogicCalibration
             get
             {
                 var sb = new StringBuilder();
-                for (int i = 0; i < calibrationRoundList.Count; i++)
+                for (int i = 0; i < countList.Count; i++)
                 {
-                    sb.AppendLine("\t\tRound " + calibrationRoundList[i]);
+                    sb.AppendLine("\t\tRound " + (i + 1));
                     sb.AppendLine("\t\t\tTraining points: " + countList[i]);
+                    sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
+                    sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
                     sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
                     sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
 
-                    sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
-                    sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                    if (i < calibrationFunctions.Count)
+                    {
+                        sb.AppendLine("\t\t\tMs1Calibration function: " + calibrationFunctions[i].CalibrationFunction1.ToString());
+                        sb.AppendLine("\t\t\tMs2Calibration function: " + calibrationFunctions[i].CalibrationFunction2.ToString());
+                    }
                 }
                 return sb.ToString();
             }
@@ -66,14 +71,18 @@ namespace InternalLogicCalibration
 
         #region Internal Methods
 
-        internal void Add(int calibrationRound, int numMs1MassChargeCombinationsConsidered, int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, int count, int numMs2MassChargeCombinationsConsidered, int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+        internal void Add(int numMs1MassChargeCombinationsConsidered, int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, int count, int numMs2MassChargeCombinationsConsidered, int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
-            calibrationRoundList.Add(calibrationRound);
             numMs1MassChargeCombinationsConsideredList.Add(numMs1MassChargeCombinationsConsidered);
             numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
             numMs2MassChargeCombinationsConsideredList.Add(numMs2MassChargeCombinationsConsidered);
             numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
             countList.Add(count);
+        }
+
+        internal void Add(CalibrationFunction combinedCalibration)
+        {
+            calibrationFunctions.Add((SeparateCalibrationFunction)combinedCalibration);
         }
 
         #endregion Internal Methods
