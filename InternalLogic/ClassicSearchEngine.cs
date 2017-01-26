@@ -143,18 +143,15 @@ namespace InternalLogicEngineLayer
                                 var searchMode = searchModes[aede];
                                 foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    if (!ModificationMassDiffMatch(yyy, scan, tolForModificationMassDiffMatch))
+                                    var score = PSMwithProteinHashSet.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
+                                    if (psm.score > 1)
                                     {
-                                        var score = PSMwithProteinHashSet.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                        var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
-                                        if (psm.score > 1)
+                                        ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
+                                        if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
                                         {
-                                            ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
-                                            if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
-                                            {
-                                                psms[aede][scan.OneBasedScanNumber - 1] = psm;
-                                                matchedIonsArray = new double[sortedProductMasses.Length];
-                                            }
+                                            psms[aede][scan.OneBasedScanNumber - 1] = psm;
+                                            matchedIonsArray = new double[sortedProductMasses.Length];
                                         }
                                     }
                                 }
