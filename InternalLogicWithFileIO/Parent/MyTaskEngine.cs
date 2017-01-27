@@ -368,14 +368,13 @@ namespace InternalLogicTaskLayer
                     while (true)
                     {
                         string line = fasta.ReadLine();
-                        
 
                         if (line.StartsWith(">"))
                         {
                             // fasta protein only has accession, fullname, sequence (no mods)
                             string[] delimiters = { ">", "|", " OS=" };
                             string[] output = line.Split(delimiters, StringSplitOptions.None);
-                            if(output.Length > 4)
+                            if (output.Length > 4)
                             {
                                 accession = output[2];
                                 name = accession;
@@ -387,11 +386,10 @@ namespace InternalLogicTaskLayer
                                 full_name = line.Substring(1);
                                 accession = "";
                             }
-                            
+
                             // new protein
                             sequence = "";
                         }
-
                         else
                         {
                             sequence += line.Trim();
@@ -489,7 +487,7 @@ namespace InternalLogicTaskLayer
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tUniprot");
+                output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tFracWithMaxMods\tOverlappingFrac\tUniprot");
                 foreach (Bin bin in myTreeStructure.FinalBins.OrderByDescending(b => b.Count))
                 {
                     output.WriteLine(bin.MassShift.ToString("F3", CultureInfo.InvariantCulture)
@@ -512,6 +510,8 @@ namespace InternalLogicTaskLayer
                         + "\t" + string.Join(",", bin.residueCount.OrderByDescending(b => b.Value).Select(b => b.Key + ":" + b.Value))
                         + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.NlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.FracWithMaxMods).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + ((double)bin.Overlapping / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + bin.uniprotID);
                 }
             }

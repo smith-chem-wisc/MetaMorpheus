@@ -174,7 +174,7 @@ namespace InternalLogicEngineLayer
 
         #region Internal Methods
 
-        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonsList)
+        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesList)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)
@@ -199,12 +199,12 @@ namespace InternalLogicEngineLayer
                 {
                     MatchingProductsHere++;
                     MatchingIntensityHere += experimental_intensities[i];
-                    matchedIonsList[theoreticalIndex] = nextTheoreticalMass;
+                    matchedIonMassesList[theoreticalIndex] = nextTheoreticalMass;
                 }
                 else if (currentExperimentalMZ < nextTheoreticalMZ)
                     continue;
                 else
-                    matchedIonsList[theoreticalIndex] = -nextTheoreticalMass;
+                    matchedIonMassesList[theoreticalIndex] = -nextTheoreticalMass;
                 i--;
                 // Passed a theoretical! Move counter forward
                 theoreticalIndex++;
