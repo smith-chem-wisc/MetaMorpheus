@@ -286,7 +286,7 @@ namespace InternalLogicEngineLayer
             // grab indistinguishable proteins
             foreach (var proteinGroup in proteinGroups)
             {
-                if (!proteinGroup.UniquePeptideList.Any())
+                if (!proteinGroup.TotalUniquePeptideList.Any())
                 {
                     foreach (var kvp in newDict)
                     {
@@ -294,9 +294,9 @@ namespace InternalLogicEngineLayer
                         {
                             if (!parsimonyDict.ContainsKey(kvp.Key))
                             {
-                                if (kvp.Value.Count == proteinGroup.PeptideList.Count)
+                                if (kvp.Value.Count == proteinGroup.TotalPeptideList.Count)
                                 {
-                                    if (kvp.Value.SetEquals(proteinGroup.PeptideList))
+                                    if (kvp.Value.SetEquals(proteinGroup.TotalPeptideList))
                                     {
                                         proteinGroup.Proteins.Add(kvp.Key);
                                         parsimonyDict.Add(kvp.Key, kvp.Value);
@@ -381,117 +381,40 @@ namespace InternalLogicEngineLayer
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
         {
             Status("Scoring protein groups...");
-
-            Dictionary<string, List<NewPsmWithFdr>> peptideBaseSeqToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
-            Dictionary<CompactPeptide, NewPsmWithFdr> peptideToBestPsmMatching = new Dictionary<CompactPeptide, NewPsmWithFdr>();
+            
             Dictionary<CompactPeptide, HashSet<ProteinGroup>> peptideToProteinGroupMatching = new Dictionary<CompactPeptide, HashSet<ProteinGroup>>();
             HashSet<CompactPeptide> allRazorPeptides = new HashSet<CompactPeptide>();
             HashSet<ProteinGroup> proteinGroupsToRemove = new HashSet<ProteinGroup>();
 
-            // match the peptide base sequence to all of its PSMs
-            foreach (var psm in psmList)
+            // add each protein group's psm's
+            Dictionary<CompactPeptide, NewPsmWithFdr> psmToCompactPeptideMatching = new Dictionary<CompactPeptide, NewPsmWithFdr>();
+            foreach(var psm in psmList)
             {
                 CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                List<NewPsmWithFdr> psmListHere;
-
-                if (peptideBaseSeqToPsmMatching.ContainsKey(peptideBaseSequence))
-                {
-                    peptideBaseSeqToPsmMatching.TryGetValue(peptideBaseSequence, out psmListHere);
-                    psmListHere.Add(psm);
-                }
-                else
-                {
-                    psmListHere = new List<NewPsmWithFdr>();
-                    psmListHere.Add(psm);
-                    peptideBaseSeqToPsmMatching.Add(peptideBaseSequence, psmListHere);
-                }
+                if(!psmToCompactPeptideMatching.ContainsKey(peptide))
+                    psmToCompactPeptideMatching.Add(peptide, psm);
             }
 
-            // add every psm that corresponds to the protein group's peptides to the group
             foreach(var proteinGroup in proteinGroups)
             {
-                foreach(var peptide in proteinGroup.PeptideList)
-                {
-                    string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                    List<NewPsmWithFdr> psmListForThisBaseSeq;
-
-                    peptideBaseSeqToPsmMatching.TryGetValue(peptideBaseSequence, out psmListForThisBaseSeq);
-
-                    if (psmListForThisBaseSeq != null)
-                    {
-                        foreach (var psm in psmListForThisBaseSeq)
-                        {
-                            if (!proteinGroup.TotalPsmList.Contains(psm))
-                            {
-                                proteinGroup.TotalPsmList.Add(psm);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // find the best psm per base sequence
-            foreach (var kvp in peptideBaseSeqToPsmMatching)
-            {
-                double bestScoreSoFar = 0;
-                NewPsmWithFdr bestPsm = null;
-                CompactPeptide bestPeptide = null;
-
-                if (kvp.Value != null)
-                {
-                    foreach (var psm in kvp.Value)
-                    {
-                        if (psm.thisPSM.Score > bestScoreSoFar)
-                        {
-                            bestScoreSoFar = psm.thisPSM.Score;
-                            bestPsm = psm;
-                            bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-                        }
-                    }
-                }
-
-                if (bestPsm != null)
-                {
-                    peptideToBestPsmMatching.Add(bestPeptide, bestPsm);
-                }
-            }
-
-            // add the best psm per base sequence to the protein group and score the protein group
-            foreach (var proteinGroup in proteinGroups)
-            {
-                List<NewPsmWithFdr> thisProteinGroupsPsmList = new List<NewPsmWithFdr>();
-
-                foreach (var peptide in proteinGroup.PeptideList)
+                foreach(var peptide in proteinGroup.TotalPeptideList)
                 {
                     NewPsmWithFdr psm;
-                    bool foundPsm = peptideToBestPsmMatching.TryGetValue(peptide, out psm);
-
-                    if (foundPsm)
-                    {
-                        if (psm.qValue <= 0.01)
-                            thisProteinGroupsPsmList.Add(psm);
-                    }
+                    psmToCompactPeptideMatching.TryGetValue(peptide, out psm);
+                    if(psm != null)
+                        proteinGroup.TotalPsmList.Add(psm);
                 }
-                proteinGroup.BestPsmList = thisProteinGroupsPsmList;
-
-                // remove CompactPeptides that are not associated with the best psm per base sequence from the group
-                HashSet<CompactPeptide> newPeptideList = new HashSet<CompactPeptide>();
-                HashSet<CompactPeptide> newUniquePeptideList = new HashSet<CompactPeptide>();
-                foreach (var psm in proteinGroup.BestPsmList)
-                {
-                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
-
-                    newPeptideList.Add(peptide);
-
-                    if (proteinGroup.UniquePeptideList.Contains(peptide))
-                    {
-                        newUniquePeptideList.Add(peptide);
-                    }
-                }
+            }
+            
+            // score the group and get number of protein groups per peptide
+            foreach (var proteinGroup in proteinGroups)
+            {
+                // score the group (scoring algorithm defined in the ProteinGroup class)
+                proteinGroup.ScoreThisProteinGroup(variableModifications, localizeableModifications);
 
                 // for finding razor peptides later
-                foreach (var peptide in proteinGroup.PeptideList)
+                List<NewPsmWithFdr> thisProteinGroupsPsmList = new List<NewPsmWithFdr>();
+                foreach (var peptide in proteinGroup.StrictPeptideList)
                 {
                     HashSet<ProteinGroup> proteinGroupsHere = new HashSet<ProteinGroup>();
                     if (peptideToProteinGroupMatching.ContainsKey(peptide))
@@ -505,12 +428,6 @@ namespace InternalLogicEngineLayer
                         peptideToProteinGroupMatching.Add(peptide, proteinGroupsHere);
                     }
                 }
-
-                proteinGroup.PeptideList = newPeptideList;
-                proteinGroup.UniquePeptideList = newUniquePeptideList;
-
-                // score the group (scoring algorithm defined in the ProteinGroup class)
-                proteinGroup.ScoreThisProteinGroup();
                 
                 // remove empty protein groups (peptides were too poor quality and group doesn't exist anymore)
                 if (proteinGroup.proteinGroupScore == 0)
@@ -522,7 +439,7 @@ namespace InternalLogicEngineLayer
                 proteinGroups.Remove(proteinGroup);
             }
 
-            // build razor peptide list (peptides that have >1 protein groups in the final protein group list)
+            // build razor peptide list (peptides that have >1 protein groups in the final, scored protein group list)
             foreach(var kvp in peptideToProteinGroupMatching)
             {
                 if (kvp.Value.Count > 1)
@@ -533,12 +450,12 @@ namespace InternalLogicEngineLayer
             
             foreach (var proteinGroup in proteinGroups)
             {
-                foreach (var peptide in proteinGroup.PeptideList)
+                foreach (var peptide in proteinGroup.TotalPeptideList)
                 {
                     // build razor peptide list for each protein group
                     if (allRazorPeptides.Contains(peptide))
                     {
-                        proteinGroup.RazorPeptideList.Add(peptide);
+                        proteinGroup.StrictRazorPeptideList.Add(peptide);
                     }
 
                     // build PeptideWithSetMod list to calc sequence coverage
@@ -546,7 +463,7 @@ namespace InternalLogicEngineLayer
                     compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out peptidesWithSetMods);
                     foreach(var pep in peptidesWithSetMods)
                     {
-                        proteinGroup.PeptideWithSetModsList.Add(pep);
+                        proteinGroup.TotalPeptideWithSetModsList.Add(pep);
                     }
                 }
 
@@ -594,10 +511,12 @@ namespace InternalLogicEngineLayer
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Status("Adding observed peptides to dictionary...");
             AddObservedPeptidesToDictionary();
-            List<ProteinGroup> proteinGroups = null;
+            List<ProteinGroup>[] proteinGroups = new List<ProteinGroup>[searchModes.Count];
             if (doParsimony)
             {
-                ApplyProteinParsimony(out proteinGroups);
+                // TODO**: make this faster (only apply parsimony once but make multiple instances of the same ProteinGroups
+                for(int i = 0; i < searchModes.Count; i++)
+                    ApplyProteinParsimony(out proteinGroups[i]);
             }
 
             //status("Getting single match just for FDR purposes...");
@@ -643,10 +562,10 @@ namespace InternalLogicEngineLayer
 
                     if (doParsimony)
                     {
-                        ScoreProteinGroups(proteinGroups, orderedPsmsWithFDR);
-                        proteinGroups = DoProteinFdr(proteinGroups);
+                        ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
+                        proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
-                        action3(proteinGroups, searchModes[j].FileNameAddition);
+                        action3(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
