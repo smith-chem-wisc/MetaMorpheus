@@ -149,8 +149,8 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
+            
             /*
-
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
 
@@ -195,20 +195,24 @@ namespace Test
             {
                 System.Console.WriteLine(proteinGroup);
             }
-
             */
             
-            Assert.That(parsimonyProteinList.Count == 5);
-            Assert.That(proteinGroups.Count == 2);
-            Assert.That(proteinGroups.First().proteinGroupScore  == 10);
+            
+            // check that correct proteins are in parsimony list
+            Assert.That(parsimonyProteinList.Count == 6);
             Assert.That(parsimonyBaseSequences.Contains("AAKBBK"));
             Assert.That(parsimonyBaseSequences.Contains("CCKEEK"));
             Assert.That(parsimonyBaseSequences.Contains("GGKHHK"));
             Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDK"));
             Assert.That(parsimonyBaseSequences.Contains("HHKIIK"));
-            //Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDKEEK"));
-            Assert.That(parsimonyBaseSequences.Count() == 5);
+            Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDKEEK"));
+            Assert.That(parsimonyBaseSequences.Count() == 6);
 
+            // protein group tests
+            Assert.That(proteinGroups.Count == 2);
+            Assert.That(proteinGroups.First().proteinGroupScore == 10);
+
+            // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
                 foreach (var coverage in proteinGroup.sequenceCoverage)
                     Assert.That(coverage <= 1.0);
