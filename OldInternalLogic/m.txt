@@ -74,7 +74,7 @@ CF   H-3 N-1
 ID   Loss of two hydrogens from N term M
 FT   MOD_RES
 TG   Methionine
-PP   Protein N-terminal.
+PP   N-terminal.
 SL   Sticky
 MM   -2.016
 CF   H-2
@@ -469,7 +469,7 @@ CF   C6 H12 N2 O1
 ID   Acetylation+Methionine
 FT   MOD_RES
 TG   Any
-PP   Protein N-terminal.
+PP   N-terminal.
 SL   Sticky
 MM   173.051055
 CF   C7 H11 N1 O2 S
@@ -485,7 +485,7 @@ CF   H24 C15
 ID   Myristoylation
 FT   MOD_RES
 TG   Glycine
-PP   Protein N-terminal.
+PP   N-terminal.
 SL   Both
 MM   210.198366
 CF   H26 C14 O1
@@ -541,7 +541,7 @@ CF   H30 C16 O1
 ID   Palmitoylation
 FT   MOD_RES
 TG   Any
-PP   Protein N-terminal.
+PP   N-terminal.
 SL   Both
 MM   238.229666
 CF   H30 C16 O1
