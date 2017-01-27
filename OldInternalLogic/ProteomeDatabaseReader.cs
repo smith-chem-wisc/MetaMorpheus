@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using System.Xml;
 
 namespace OldInternalLogic
@@ -28,6 +27,7 @@ namespace OldInternalLogic
             modificationTypeCodes.Add("Peptide N-terminal.", ModificationType.PeptideNTerminus);
             modificationTypeCodes.Add("Peptide C-terminal.", ModificationType.PeptideCTerminus);
             modificationTypeCodes.Add("Anywhere.", ModificationType.AminoAcidResidue);
+            modificationTypeCodes.Add("Protein core.", ModificationType.AminoAcidResidue);
 
             aminoAcidCodes = new Dictionary<string, char>();
             aminoAcidCodes.Add("Alanine", 'A');
@@ -124,7 +124,7 @@ namespace OldInternalLogic
                             case "PP":
                                 if (feature_type == "MOD_RES")
                                 {
-                                    modificationTypeCodes.TryGetValue(line.Substring(5), out modification_type);
+                                    modification_type = modificationTypeCodes[line.Substring(5)];
                                 }
                                 break;
 
@@ -156,9 +156,9 @@ namespace OldInternalLogic
                                     if (Math.Abs(monoisotopic_mass_shift - ye.MonoisotopicMass) > 1e-3)
                                         throw new InvalidDataException("In file" + v + " Modification " + description + " mass formula mismatch");
                                     if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue,  Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
                                     if (labileOrSticky.Equals("Sticky") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue,  Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false, ye);
+                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false, ye);
                                 }
                                 description = null;
                                 feature_type = null;

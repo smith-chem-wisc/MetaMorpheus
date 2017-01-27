@@ -16,7 +16,6 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
-        private const double comboThresholdMultiplier = 3;
         private const int max_mods_for_peptide = 3;
         private readonly double binTol;
         private readonly int maximumMissedCleavages;
@@ -281,7 +280,6 @@ namespace InternalLogicEngineLayer
                 proteinListHere.Add(kvp.Key);
                 proteinGroups.Add(new ProteinGroup(proteinListHere, kvp.Value, uniquePeptidesHere));
             }
-            
 
             // grab indistinguishable proteins
             foreach (var proteinGroup in proteinGroups)
@@ -434,7 +432,7 @@ namespace InternalLogicEngineLayer
                     proteinGroupsToRemove.Add(proteinGroup);
             }
 
-            foreach(var proteinGroup in proteinGroupsToRemove)
+            foreach (var proteinGroup in proteinGroupsToRemove)
             {
                 proteinGroups.Remove(proteinGroup);
             }
@@ -578,6 +576,28 @@ namespace InternalLogicEngineLayer
 
         #region Private Methods
 
+        private static void OverlappingIonSequences(BinTreeStructure myTreeStructure)
+        {
+            foreach (Bin bin in myTreeStructure.FinalBins)
+            {
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
+                {
+                    var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsList;
+                    if (ya.ContainsKey(ProductType.B) && ya.ContainsKey(ProductType.Y) && ya[ProductType.B].Any(b => b > 0) && ya[ProductType.Y].Any(b => b > 0))
+                        if (ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.PeptideMonoisotopicMass)
+                            bin.Overlapping++;
+                }
+            }
+        }
+
+        private static void IdentifyPsmsWithMaxMods(BinTreeStructure myTreeStructure)
+        {
+            foreach (Bin bin in myTreeStructure.FinalBins)
+            {
+                bin.FracWithMaxMods = ((double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.NumVariableMods == max_mods_for_peptide)) / bin.CountTarget;
+            }
+        }
+
         private static void IdentifyAAsInCommon(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
@@ -715,7 +735,7 @@ namespace InternalLogicEngineLayer
             var ok = new HashSet<Tuple<double, double, double>>();
             foreach (var bin in myTreeStructure.FinalBins.Where(b => Math.Abs(b.MassShift) > v))
                 foreach (var bin2 in myTreeStructure.FinalBins.Where(b => Math.Abs(b.MassShift) > v))
-                    if (bin.CountTarget * bin2.CountTarget >= totalTargetCount * comboThresholdMultiplier)
+                    if (bin.CountTarget * bin2.CountTarget >= totalTargetCount)
                         ok.Add(new Tuple<double, double, double>(bin.MassShift, bin2.MassShift, Math.Min(bin.CountTarget, bin2.CountTarget)));
 
             foreach (var bin in myTreeStructure.FinalBins)
@@ -818,6 +838,10 @@ namespace InternalLogicEngineLayer
             IdentifyAAsInCommon(myTreeStructure);
 
             IdentifyMine(myTreeStructure, binTol);
+
+            IdentifyPsmsWithMaxMods(myTreeStructure);
+
+            OverlappingIonSequences(myTreeStructure);
 
             return myTreeStructure;
         }
