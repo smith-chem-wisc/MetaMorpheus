@@ -16,7 +16,7 @@ namespace Test
         public static void TestParsimony()
         {
             // creates some test proteins and digests them (simulating a protein database)
-            string[] sequences = { "AAKBBK" , "BBKCCKDDKGGK", "BBKCCKDDKEEK", "GGK", "GGKHHK", "LLLLL" };
+            string[] sequences = { "AAKBBK", "BBKCCKDDK", "BBKCCKDDKEEK", "GGK", "GGKHHK", "HHKIIK", "IIKJJK", "LLK" };
 
             IEnumerable<string> sequencesInducingCleavage = new List<string> { "K", "R" };
             IEnumerable<string> sequencesPreventingCleavage = new List<string> { "KP", "RP" };
@@ -27,7 +27,7 @@ namespace Test
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();
-            for(int i = 0; i < sequences.Length; i++)
+            for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], i.ToString(), temp1, temp3, temp3, null, "Test" + i.ToString(), "FullTest" + i.ToString(), 0, false, false));
             p.Add(new Protein("CCKEEK", "D", temp1, temp3, temp3, null, "Decoy ", "Decoy ", 0, true, false));
 
@@ -38,18 +38,20 @@ namespace Test
             {
                 temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
 
-                foreach(var dbPeptide in temp)
+                foreach (var dbPeptide in temp)
                 {
                     pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3);
                     foreach (var peptide in pepWithSetMods)
                     {
-                        switch(peptide.BaseSequence)
+                        switch (peptide.BaseSequence)
                         {
                             case "AAK": peptideList.Add(peptide); break;
                             case "BBK": peptideList.Add(peptide); break;
                             case "CCK": peptideList.Add(peptide); break;
                             case "DDK": peptideList.Add(peptide); break;
                             case "GGK": peptideList.Add(peptide); break;
+                            case "HHK": peptideList.Add(peptide); break;
+                            case "IIK": peptideList.Add(peptide); break;
                         }
                     }
                 }
@@ -105,12 +107,11 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
-            ae.ApplyProteinParsimony(out proteinGroups);
+            AnalysisEngine ae = new AnalysisEngine(new ParentSpectrumMatch[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
+            dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
-            string[] parsimonyBaseSequences = new string[5];
-            int j = 0;
+            var parsimonyBaseSequences = new List<string>();
 
             foreach (var kvp in dictionary)
             {
@@ -118,12 +119,8 @@ namespace Test
                 {
                     if (!parsimonyProteinList.Contains(virtualPeptide.Protein))
                     {
-                        if (j < 5)
-                        {
-                            parsimonyProteinList.Add(virtualPeptide.Protein);
-                            parsimonyBaseSequences[j] = virtualPeptide.Protein.BaseSequence;
-                            j++;
-                        }
+                        parsimonyProteinList.Add(virtualPeptide.Protein);
+                        parsimonyBaseSequences.Add(virtualPeptide.Protein.BaseSequence);
                     }
                 }
             }
@@ -151,7 +148,9 @@ namespace Test
 
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
-            
+
+            /*
+
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
 
@@ -189,19 +188,28 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-            
+
             // prints protein groups after scoring/fdr
             System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);
             foreach (var proteinGroup in proteinGroups)
             {
                 System.Console.WriteLine(proteinGroup);
             }
+
+            */
             
             Assert.That(parsimonyProteinList.Count == 5);
             Assert.That(proteinGroups.Count == 2);
             Assert.That(proteinGroups.First().proteinGroupScore  == 10);
+            Assert.That(parsimonyBaseSequences.Contains("AAKBBK"));
+            Assert.That(parsimonyBaseSequences.Contains("CCKEEK"));
+            Assert.That(parsimonyBaseSequences.Contains("GGKHHK"));
+            Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDK"));
+            Assert.That(parsimonyBaseSequences.Contains("HHKIIK"));
+            //Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDKEEK"));
+            Assert.That(parsimonyBaseSequences.Count() == 5);
 
-            foreach(var proteinGroup in proteinGroups)
+            foreach (var proteinGroup in proteinGroups)
                 foreach (var coverage in proteinGroup.sequenceCoverage)
                     Assert.That(coverage <= 1.0);
         }

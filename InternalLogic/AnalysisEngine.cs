@@ -69,7 +69,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
+        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             Status("Applying protein parsimony...");
 
@@ -213,7 +213,9 @@ namespace InternalLogicEngineLayer
                     }
 
                     if (currentBestNumNewPeptides == 1)
+                    {
                         currentBestPeptidesIsOne = true;
+                    }
 
                     // adds the best protein if algo found unaccounted-for peptides
                     if (currentBestNumNewPeptides > 1)
@@ -222,6 +224,7 @@ namespace InternalLogicEngineLayer
                         foreach (var peptide in bestProteinPeptideList)
                         {
                             string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+                            
                             usedPeptides.Add(peptide);
                             usedBaseSequences.Add(peptideBaseSequence);
                         }
@@ -363,6 +366,9 @@ namespace InternalLogicEngineLayer
             Status("Finished Parsimony");
 
             compactPeptideToProteinPeptideMatching = answer;
+
+            // returns for test class
+            return answer;
         }
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
@@ -401,7 +407,7 @@ namespace InternalLogicEngineLayer
                 foreach(var peptide in proteinGroup.PeptideList)
                 {
                     string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                    List<NewPsmWithFdr> psmListForThisBaseSeq = new List<NewPsmWithFdr>();
+                    List<NewPsmWithFdr> psmListForThisBaseSeq;
 
                     peptideBaseSeqToPsmMatching.TryGetValue(peptideBaseSequence, out psmListForThisBaseSeq);
 
@@ -518,7 +524,9 @@ namespace InternalLogicEngineLayer
             foreach(var kvp in peptideToProteinGroupMatching)
             {
                 if (kvp.Value.Count > 1)
+                {
                     allRazorPeptides.Add(kvp.Key);
+                }
             }
             
             foreach (var proteinGroup in proteinGroups)
