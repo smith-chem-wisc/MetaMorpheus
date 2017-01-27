@@ -70,9 +70,9 @@ namespace InternalLogicEngineLayer
         public List<NewPsmWithFdr> TotalPsmList { get; set; }
         public HashSet<CompactPeptide> PeptideList { get; set; }
         public HashSet<CompactPeptide> UniquePeptideList { get; set; }
+        public HashSet<CompactPeptide> RazorPeptideList { get; set; }
         public HashSet<PeptideWithSetModifications> PeptideWithSetModsList { get; set; }
         public List<double> sequenceCoverage { get; private set; }
-        public HashSet<CompactPeptide> RazorPeptideList { get; set; }
         public double QValue { get; set; }
         public int cumulativeTarget { get; set; }
         public int cumulativeDecoy { get; set; }
@@ -188,9 +188,12 @@ namespace InternalLogicEngineLayer
 
                 foreach(var peptide in PeptideWithSetModsList)
                 {
-                    for(int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                    if (peptide.Protein == protein)
                     {
-                        coveredResidues.Add(i);
+                        for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                        {
+                            coveredResidues.Add(i);
+                        }
                     }
                 }
 
