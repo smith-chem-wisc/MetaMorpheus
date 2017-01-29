@@ -77,9 +77,9 @@ namespace InternalLogicEngineLayer
         public HashSet<NewPsmWithFdr> TotalPsmList { get; set; }
         public HashSet<CompactPeptide> TotalUniquePeptideList { get; set; }
         public HashSet<PeptideWithSetModifications> TotalPeptideWithSetModsList { get; set; }
-        public HashSet<CompactPeptide> StrictPeptideList { get; private set; }
         public HashSet<NewPsmWithFdr> BestPsmPerBaseSeq { get; private set; } // for scoring
-        public HashSet<NewPsmWithFdr> AllPsmsForStrictPeptideSequences { get; private set; } // for PSMs per protein group output
+        public HashSet<NewPsmWithFdr> AllPsmsForStrictPeptideSequences { get; private set; } // for PSMs per proteingroup output
+        public HashSet<CompactPeptide> StrictPeptideList { get; private set; }
         public HashSet<CompactPeptide> StrictUniquePeptideList { get; private set; }
         public HashSet<CompactPeptide> StrictRazorPeptideList { get; private set; }
         public HashSet<PeptideWithSetModifications> StrictPeptideWithSetModsList { get; private set; }
@@ -156,10 +156,6 @@ namespace InternalLogicEngineLayer
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsForStrictPeptideSequences.Count());
             sb.Append("\t");
-
-            // number of PSMs for listed peptides
-            //sb.Append("" + TotalPsmList.Count());
-            //sb.Append("\t");
 
             // summed metamorpheus score
             sb.Append(proteinGroupScore);
