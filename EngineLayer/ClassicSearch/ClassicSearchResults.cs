@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchResults : MyResults
     {

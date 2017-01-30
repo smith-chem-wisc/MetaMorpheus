@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EngineLayer
+namespace EngineLayer.ClassicSearch
 {
     public class ClassicSpectrumMatch : ParentSpectrumMatch
     {

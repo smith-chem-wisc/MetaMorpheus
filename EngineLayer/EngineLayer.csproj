@@ -99,9 +99,9 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="MyErroredResults.cs" />
-    <Compile Include="ClassicSearchEngine.cs" />
-    <Compile Include="ClassicSearchResults.cs" />
-    <Compile Include="ClassicSpectrumMatch.cs" />
+    <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
+    <Compile Include="ClassicSearch\ClassicSearchResults.cs" />
+    <Compile Include="ClassicSearch\ClassicSpectrumMatch.cs" />
     <Compile Include="CleavageSpecificity.cs" />
     <Compile Include="CompactPeptide.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
@@ -124,9 +124,9 @@
     <Compile Include="IndexResults.cs" />
     <Compile Include="SearchModes\IntervalSearchMode.cs" />
     <Compile Include="LocalMs2Scan.cs" />
-    <Compile Include="ModernSearchEngine.cs" />
-    <Compile Include="ModernSearchResults.cs" />
-    <Compile Include="ModernSpectrumMatch.cs" />
+    <Compile Include="ModernSearch\ModernSearchEngine.cs" />
+    <Compile Include="ModernSearch\ModernSearchResults.cs" />
+    <Compile Include="ModernSearch\ModernSpectrumMatch.cs" />
     <Compile Include="MyEngine.cs" />
     <Compile Include="MyInfo.cs" />
     <Compile Include="MyResults.cs" />

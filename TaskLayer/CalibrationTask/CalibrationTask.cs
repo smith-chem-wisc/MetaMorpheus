@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer.Analysis;
+using EngineLayer.ClassicSearch;
 
 namespace TaskLayer
 {

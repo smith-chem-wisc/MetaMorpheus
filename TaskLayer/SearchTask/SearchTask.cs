@@ -1,5 +1,7 @@
 using EngineLayer;
 using EngineLayer.Analysis;
+using EngineLayer.ClassicSearch;
+using EngineLayer.ModernSearch;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;

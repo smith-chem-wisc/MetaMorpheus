@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.ModernSearch
 {
     public class ModernSearchResults : MyResults
     {

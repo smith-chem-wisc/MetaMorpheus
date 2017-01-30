@@ -1,7 +1,7 @@
 ﻿
 using System.Collections.Generic;
 
-namespace EngineLayer
+namespace EngineLayer.ModernSearch
 {
     public class ModernSpectrumMatch : ParentSpectrumMatch
     {

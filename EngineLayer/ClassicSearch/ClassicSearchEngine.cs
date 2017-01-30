@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace EngineLayer
+namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MyEngine
     {

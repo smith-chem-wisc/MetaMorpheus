@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
+using EngineLayer.ClassicSearch;
 using NUnit.Framework;
 
 using System.Collections.Generic;

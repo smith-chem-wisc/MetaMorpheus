@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
+using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using NUnit.Framework;
 

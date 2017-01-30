@@ -1,4 +1,6 @@
 ﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
+using EngineLayer.ModernSearch;
 using NUnit.Framework;
 
 using Spectra;
