@@ -1,6 +1,9 @@
-﻿using InternalLogicEngineLayer;
+﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
+using EngineLayer.Indexing;
+using EngineLayer.ModernSearch;
 using NUnit.Framework;
-using OldInternalLogic;
+
 using Spectra;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +20,9 @@ namespace Test
         public static void TestClassicSearchEngine()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
@@ -46,9 +49,9 @@ namespace Test
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
@@ -76,18 +79,18 @@ namespace Test
         public static void TestModernSearchEngine()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var localizeableModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
-            var indexResults = (IndexResults)indexEngine.Run();
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+            var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
@@ -111,18 +114,18 @@ namespace Test
         public static void TestModernSearchEngineWithWeirdPeptide()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var localizeableModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
-            var indexResults = (IndexResults)indexEngine.Run();
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+            var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();

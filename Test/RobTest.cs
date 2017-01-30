@@ -1,6 +1,8 @@
-﻿using InternalLogicEngineLayer;
+﻿using EngineLayer;
+using EngineLayer.Analysis;
+using EngineLayer.ClassicSearch;
 using NUnit.Framework;
-using OldInternalLogic;
+
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,8 +22,8 @@ namespace Test
 
             IEnumerable<string> sequencesInducingCleavage = new List<string> { "K", "R" };
             IEnumerable<string> sequencesPreventingCleavage = new List<string> { "KP", "RP" };
-            var temp1 = new Dictionary<int, List<MorpheusModification>>();
-            var temp2 = new List<MorpheusModification>();
+            var temp1 = new Dictionary<int, List<MetaMorpheusModification>>();
+            var temp2 = new List<MetaMorpheusModification>();
             int[] temp3 = new int[0];
             var protease = new Protease("Trypsin", sequencesInducingCleavage, sequencesPreventingCleavage, OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
@@ -40,7 +42,7 @@ namespace Test
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MetaMorpheusModification>());
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -65,7 +67,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count(); i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), temp2, temp2, new List<MorpheusModification>());
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), temp2, temp2, new List<MetaMorpheusModification>());
             }
 
             // creates protein list
@@ -107,7 +109,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new ParentSpectrumMatch[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
             dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -137,11 +139,11 @@ namespace Test
 
                     switch (peptide.BaseSequence)
                     {
-                        case "AAK": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 10), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "BBK": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 9), hashSet, null, null, null), 1, 0, 0.1)); break;
-                        case "CCK": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 8), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "DDK": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.2)); break;
-                        case "GGK": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6), hashSet, null, null, null), 1, 0, 0.3)); break;
+                        case "AAK": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 10), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "BBK": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 9), hashSet, null, null, null), 1, 0, 0.1)); break;
+                        case "CCK": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 8), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "DDK": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.2)); break;
+                        case "GGK": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6), hashSet, null, null, null), 1, 0, 0.3)); break;
                     }
                 }
             }

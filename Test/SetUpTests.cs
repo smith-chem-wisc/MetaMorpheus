@@ -1,5 +1,5 @@
 ﻿// Copyright 2016 Stefan Solntsev
-using InternalLogicEngineLayer;
+using EngineLayer;
 using NUnit.Framework;
 using System;
 using System.IO;
