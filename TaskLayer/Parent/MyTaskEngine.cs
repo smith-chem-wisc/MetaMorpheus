@@ -141,31 +141,6 @@ namespace TaskLayer
                     modsInXMLtoTrim.Remove(knownMod.NameInXml);
                 }
         }
-        private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
-        {
-            var modifications_in_database = new HashSet<string>();
-            foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
-                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
-                {
-                    Stream uniprotXmlFileStream = stream;
-                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
-                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
-                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
-                        while (xml.ReadToFollowing("feature"))
-                            if (xml.GetAttribute("type") == "modified residue")
-                            {
-                                string description = xml.GetAttribute("description");
-                                if (!description.Contains("variant"))
-                                {
-                                    int semicolon_index = description.IndexOf(';');
-                                    if (semicolon_index >= 0)
-                                        description = description.Substring(0, semicolon_index);
-                                    modifications_in_database.Add(description);
-                                }
-                            }
-                }
-            return modifications_in_database;
-        }
 
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
         {
@@ -563,6 +538,32 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
+        {
+            var modifications_in_database = new HashSet<string>();
+            foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
+                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
+                {
+                    Stream uniprotXmlFileStream = stream;
+                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
+                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
+                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
+                        while (xml.ReadToFollowing("feature"))
+                            if (xml.GetAttribute("type") == "modified residue")
+                            {
+                                string description = xml.GetAttribute("description");
+                                if (!description.Contains("variant"))
+                                {
+                                    int semicolon_index = description.IndexOf(';');
+                                    if (semicolon_index >= 0)
+                                        description = description.Substring(0, semicolon_index);
+                                    modifications_in_database.Add(description);
+                                }
+                            }
+                }
+            return modifications_in_database;
+        }
 
         private void finishedSingleTask()
         {

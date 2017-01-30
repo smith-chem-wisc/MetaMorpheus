@@ -305,6 +305,8 @@ namespace EngineLayer
 
         #endregion Private Methods
 
+        #region Private Classes
+
         private class PeptideFragmentMasses
         {
 
@@ -316,5 +318,8 @@ namespace EngineLayer
             #endregion Internal Fields
 
         }
+
+        #endregion Private Classes
+
     }
 }

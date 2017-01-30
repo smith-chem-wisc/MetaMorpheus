@@ -1,5 +1,4 @@
-﻿
-using Spectra;
+﻿using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -180,7 +179,7 @@ namespace EngineLayer.ClassicSearch
         #endregion Protected Methods
 
         #region Private Methods
-        
+
         private IEnumerable<LocalMS2Scan> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
         {
             foreach (DoubleRange ye in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())

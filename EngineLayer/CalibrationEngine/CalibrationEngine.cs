@@ -1,5 +1,4 @@
 ﻿using Chemistry;
-using EngineLayer;
 using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using Proteomics;
@@ -398,7 +397,7 @@ namespace EngineLayer.Calibration
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledDataPoint(new double[] { closestPeakMZ, closestPeak.Intensity}, closestPeakMZ - theMZ));
+                            trainingPointsToAverage.Add(new LabeledDataPoint(new double[] { closestPeakMZ, closestPeak.Intensity }, closestPeakMZ - theMZ));
                         }
                         else
                             break;
@@ -530,7 +529,7 @@ namespace EngineLayer.Calibration
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledDataPoint(new double[] { closestPeakMZ,closestPeak.Intensity}, closestPeakMZ - theMZ));
+                                trainingPointsToAverage.Add(new LabeledDataPoint(new double[] { closestPeakMZ, closestPeak.Intensity }, closestPeakMZ - theMZ));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges

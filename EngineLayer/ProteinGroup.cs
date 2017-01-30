@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -11,7 +10,6 @@ namespace EngineLayer
         #region Public Fields
 
         public readonly bool isDecoy;
-        public double proteinGroupScore { get; private set; }
 
         #endregion Public Fields
 
@@ -65,6 +63,7 @@ namespace EngineLayer
             }
         }
 
+        public double proteinGroupScore { get; private set; }
         public HashSet<Protein> Proteins { get; set; }
         public List<NewPsmWithFdr> BestPsmList { get; set; }
         public List<NewPsmWithFdr> TotalPsmList { get; set; }
@@ -137,7 +136,7 @@ namespace EngineLayer
             {
                 double coverage1 = coverage * 100;
                 string str = string.Format("{0:0}", coverage1);
-                
+
                 sb.Append("" + str + "% ;; ");
             }
             sb.Append("\t");
@@ -186,7 +185,7 @@ namespace EngineLayer
             {
                 HashSet<int> coveredResidues = new HashSet<int>();
 
-                foreach(var peptide in PeptideWithSetModsList)
+                foreach (var peptide in PeptideWithSetModsList)
                 {
                     if (peptide.Protein == protein)
                     {

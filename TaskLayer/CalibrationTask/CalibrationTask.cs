@@ -1,5 +1,7 @@
-﻿using EngineLayer.Calibration;
-using EngineLayer;
+﻿using EngineLayer;
+using EngineLayer.Analysis;
+using EngineLayer.Calibration;
+using EngineLayer.ClassicSearch;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -11,8 +13,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EngineLayer.Analysis;
-using EngineLayer.ClassicSearch;
 
 namespace TaskLayer
 {

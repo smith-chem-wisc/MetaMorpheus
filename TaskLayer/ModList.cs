@@ -1,5 +1,4 @@
-﻿
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using System;
 using System.Collections.Generic;
@@ -11,8 +10,18 @@ namespace TaskLayer
     public class ModList
     {
 
+        #region Private Fields
+
         private static readonly Dictionary<string, ModificationType> modificationTypeCodes;
         private static readonly Dictionary<string, char> aminoAcidCodes;
+
+        private readonly List<MetaMorpheusModification> mods;
+
+        private string FullFileName;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         static ModList()
         {
@@ -51,15 +60,6 @@ namespace TaskLayer
             aminoAcidCodes.Add("Asparagine or Aspartate", 'B');
             aminoAcidCodes.Add("Undefined", '?');
         }
-        #region Private Fields
-
-        private readonly List<MetaMorpheusModification> mods;
-
-        private string FullFileName;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         public ModList(string fileName)
         {
@@ -151,7 +151,6 @@ namespace TaskLayer
             }
         }
 
-
         #endregion Public Constructors
 
         #region Public Properties
@@ -180,5 +179,6 @@ namespace TaskLayer
         }
 
         #endregion Public Properties
+
     }
 }

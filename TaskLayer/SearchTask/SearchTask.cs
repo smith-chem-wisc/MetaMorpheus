@@ -6,7 +6,6 @@ using EngineLayer.ModernSearch;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-
 using Spectra;
 using System;
 using System.Collections.Generic;

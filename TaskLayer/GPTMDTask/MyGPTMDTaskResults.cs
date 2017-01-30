@@ -4,9 +4,16 @@ namespace TaskLayer
 {
     internal class MyGPTMDTaskResults : MyTaskResults
     {
+
+        #region Public Constructors
+
         public MyGPTMDTaskResults(MyTaskEngine s) : base(s)
         {
         }
+
+        #endregion Public Constructors
+
+        #region Protected Properties
 
         protected override string StringForOutput
         {
@@ -16,5 +23,8 @@ namespace TaskLayer
                 return sb.ToString();
             }
         }
+
+        #endregion Protected Properties
+
     }
 }

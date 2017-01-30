@@ -1,6 +1,4 @@
-﻿using EngineLayer;
-
-namespace EngineLayer
+﻿namespace EngineLayer
 {
     public class MyErroredResults : MyResults
     {
