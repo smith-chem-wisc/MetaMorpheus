@@ -86,11 +86,11 @@ namespace TaskLayer
             allPsms[0] = new List<ParentSpectrumMatch>();
 
             Status("Loading modifications...");
-            List<MorpheusModification> variableModifications = ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> fixedModifications = ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> localizeableModifications = ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> variableModifications = ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> fixedModifications = ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> localizeableModifications = ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 

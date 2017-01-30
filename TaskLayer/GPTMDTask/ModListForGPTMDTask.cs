@@ -39,7 +39,7 @@ namespace TaskLayer
 
         public string Description { get { return uu.Description; } }
 
-        public IEnumerable<MorpheusModification> Mods
+        public IEnumerable<MetaMorpheusModification> Mods
         {
             get
             {

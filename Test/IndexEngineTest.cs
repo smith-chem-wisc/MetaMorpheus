@@ -16,10 +16,10 @@ namespace Test
         [Test]
         public static void TestIndexEngine()
         {
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var localizeableModifications = new List<MetaMorpheusModification>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -39,10 +39,10 @@ namespace Test
         [Test]
         public static void TestIndexEngineWithWeirdSeq()
         {
-            var proteinList = new List<Protein> { new Protein("MQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var localizeableModifications = new List<MetaMorpheusModification>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });

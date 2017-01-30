@@ -21,9 +21,9 @@ namespace EngineLayer.Indexing
 
         private readonly Protease protease;
 
-        private readonly List<MorpheusModification> fixedModifications;
-        private readonly List<MorpheusModification> variableModifications;
-        private readonly List<MorpheusModification> localizeableModifications;
+        private readonly List<MetaMorpheusModification> fixedModifications;
+        private readonly List<MetaMorpheusModification> variableModifications;
+        private readonly List<MetaMorpheusModification> localizeableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
@@ -32,7 +32,7 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
+        public IndexingEngine(List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;

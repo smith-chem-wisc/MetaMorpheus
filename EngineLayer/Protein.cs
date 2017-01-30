@@ -14,7 +14,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public Protein(string baseSequence, string accession, Dictionary<int, List<MorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy, bool isContaminant)
+        public Protein(string baseSequence, string accession, Dictionary<int, List<MetaMorpheusModification>> oneBasedPossibleLocalizedModifications, int[] beginPositions, int[] endPositions, string[] bigPeptideTypes, string name, string fullName, int offset, bool isDecoy, bool isContaminant)
         {
             BaseSequence = baseSequence;
             Accession = accession;
@@ -36,7 +36,7 @@ namespace EngineLayer
         public int[] OneBasedBeginPositions { get; private set; }
         public int[] OneBasedEndPositions { get; private set; }
         public string[] BigPeptideTypes { get; private set; }
-        public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
+        public Dictionary<int, List<MetaMorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
         public string Accession { get; private set; }
         public string BaseSequence { get; private set; }
         public bool IsDecoy { get; private set; }

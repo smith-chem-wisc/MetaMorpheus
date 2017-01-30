@@ -31,7 +31,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications)
+        public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
         {
             if (compactPeptide == null)
                 compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications, fixedModifications);

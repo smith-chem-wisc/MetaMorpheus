@@ -126,10 +126,10 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal static void MatchXMLmodsToKnownMods(List<DbForTask> listOfDbs, List<MorpheusModification> modsKnown, out Dictionary<string, List<MorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        protected internal static void MatchXMLmodsToKnownMods(List<DbForTask> listOfDbs, List<MetaMorpheusModification> modsKnown, out Dictionary<string, List<MetaMorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
         {
-            modsToLocalize = new Dictionary<string, List<MorpheusModification>>();
-            var modsInXML = ProteomeDatabaseReader.ReadXmlModifications(listOfDbs.Select(b => b.FileName).Where(r => (!r.Contains(".fasta"))));
+            modsToLocalize = new Dictionary<string, List<MetaMorpheusModification>>();
+            var modsInXML = ReadXmlModifications(listOfDbs.Select(b => b.FileName).Where(r => (!r.Contains(".fasta"))));
             modsInXMLtoTrim = new HashSet<string>(modsInXML);
             foreach (var knownMod in modsKnown)
                 if (modsInXML.Contains(knownMod.NameInXml))
@@ -137,9 +137,34 @@ namespace TaskLayer
                     if (modsToLocalize.ContainsKey(knownMod.NameInXml))
                         modsToLocalize[knownMod.NameInXml].Add(knownMod);
                     else
-                        modsToLocalize.Add(knownMod.NameInXml, new List<MorpheusModification> { knownMod });
+                        modsToLocalize.Add(knownMod.NameInXml, new List<MetaMorpheusModification> { knownMod });
                     modsInXMLtoTrim.Remove(knownMod.NameInXml);
                 }
+        }
+        private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
+        {
+            var modifications_in_database = new HashSet<string>();
+            foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
+                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
+                {
+                    Stream uniprotXmlFileStream = stream;
+                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
+                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
+                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
+                        while (xml.ReadToFollowing("feature"))
+                            if (xml.GetAttribute("type") == "modified residue")
+                            {
+                                string description = xml.GetAttribute("description");
+                                if (!description.Contains("variant"))
+                                {
+                                    int semicolon_index = description.IndexOf(';');
+                                    if (semicolon_index >= 0)
+                                        description = description.Substring(0, semicolon_index);
+                                    modifications_in_database.Add(description);
+                                }
+                            }
+                }
+            return modifications_in_database;
         }
 
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
@@ -158,7 +183,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MorpheusModification>> allModifications, DbForTask dbForTask)
+        protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MetaMorpheusModification>> allModifications, DbForTask dbForTask)
         {
             using (var stream = new FileStream(dbForTask.FileName, FileMode.Open))
             {
@@ -180,7 +205,7 @@ namespace TaskLayer
                 var oneBasedBeginPositions = new List<int>();
                 var oneBasedEndPositions = new List<int>();
                 var peptideTypes = new List<string>();
-                var oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
+                var oneBasedModifications = new Dictionary<int, List<MetaMorpheusModification>>();
                 int offset = 0;
 
                 // xml db
@@ -258,10 +283,10 @@ namespace TaskLayer
                                         case "feature":
                                             if (feature_type == "modified residue" && allModifications != null && !feature_description.Contains("variant") && allModifications.ContainsKey(feature_description))
                                             {
-                                                List<MorpheusModification> residue_modifications;
+                                                List<MetaMorpheusModification> residue_modifications;
                                                 if (!oneBasedModifications.TryGetValue(oneBasedfeature_position, out residue_modifications))
                                                 {
-                                                    residue_modifications = new List<MorpheusModification>();
+                                                    residue_modifications = new List<MetaMorpheusModification>();
                                                     oneBasedModifications.Add(oneBasedfeature_position, residue_modifications);
                                                 }
                                                 int semicolon_index = feature_description.IndexOf(';');
@@ -293,15 +318,15 @@ namespace TaskLayer
                                                 if (onTheFlyDecoys)
                                                 {
                                                     char[] sequence_array = sequence.ToCharArray();
-                                                    Dictionary<int, List<MorpheusModification>> decoy_modifications = null;
+                                                    Dictionary<int, List<MetaMorpheusModification>> decoy_modifications = null;
                                                     if (sequence.StartsWith("M", StringComparison.InvariantCulture))
                                                     {
                                                         // Do not include the initiator methionine in reversal!!!
                                                         Array.Reverse(sequence_array, 1, sequence.Length - 1);
                                                         if (oneBasedModifications != null)
                                                         {
-                                                            decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
-                                                            foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
+                                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
+                                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
                                                             {
                                                                 if (kvp.Key == 1)
                                                                 {
@@ -319,8 +344,8 @@ namespace TaskLayer
                                                         Array.Reverse(sequence_array);
                                                         if (oneBasedModifications != null)
                                                         {
-                                                            decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
-                                                            foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
+                                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
+                                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
                                                             {
                                                                 decoy_modifications.Add(sequence.Length - kvp.Key + 1, kvp.Value);
                                                             }
@@ -348,7 +373,7 @@ namespace TaskLayer
                                             feature_type = null;
                                             feature_description = null;
                                             oneBasedfeature_position = -1;
-                                            oneBasedModifications = new Dictionary<int, List<MorpheusModification>>();
+                                            oneBasedModifications = new Dictionary<int, List<MetaMorpheusModification>>();
 
                                             oneBasedBeginPositions = new List<int>();
                                             oneBasedEndPositions = new List<int>();
@@ -406,15 +431,15 @@ namespace TaskLayer
                                 if (onTheFlyDecoys)
                                 {
                                     char[] sequence_array = sequence.ToCharArray();
-                                    Dictionary<int, List<MorpheusModification>> decoy_modifications = null;
+                                    Dictionary<int, List<MetaMorpheusModification>> decoy_modifications = null;
                                     if (sequence.StartsWith("M", StringComparison.InvariantCulture))
                                     {
                                         // Do not include the initiator methionine in reversal!!!
                                         Array.Reverse(sequence_array, 1, sequence.Length - 1);
                                         if (oneBasedModifications != null)
                                         {
-                                            decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
-                                            foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
+                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
+                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
                                             {
                                                 if (kvp.Key == 1)
                                                 {
@@ -432,8 +457,8 @@ namespace TaskLayer
                                         Array.Reverse(sequence_array);
                                         if (oneBasedModifications != null)
                                         {
-                                            decoy_modifications = new Dictionary<int, List<MorpheusModification>>(oneBasedModifications.Count);
-                                            foreach (KeyValuePair<int, List<MorpheusModification>> kvp in oneBasedModifications)
+                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
+                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
                                             {
                                                 decoy_modifications.Add(sequence.Length - kvp.Key + 1, kvp.Value);
                                             }

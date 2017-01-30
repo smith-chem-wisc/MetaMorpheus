@@ -24,7 +24,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications)
+        public CompactPeptide(PeptideWithSetModifications yyy, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
         {
             varMod1Type = 0;
             varMod1Loc = 0;

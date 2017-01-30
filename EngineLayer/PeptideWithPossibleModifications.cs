@@ -21,14 +21,14 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public Dictionary<int, List<MorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
+        public Dictionary<int, List<MetaMorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
         public int MissedCleavages { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide, IEnumerable<MorpheusModification> allKnownFixedModifications)
+        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MetaMorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide, IEnumerable<MetaMorpheusModification> allKnownFixedModifications)
         {
             var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsCollection>(Length + 4);
 
@@ -38,7 +38,7 @@ namespace EngineLayer
             var pep_c_term_variable_mods = new UniqueModificationsCollection();
             two_based_possible_variable_and_localizeable_modifications.Add(Length + 2, pep_c_term_variable_mods);
 
-            foreach (MorpheusModification variable_modification in variableModifications)
+            foreach (MetaMorpheusModification variable_modification in variableModifications)
             {
                 if (variable_modification.ThisModificationType == ModificationType.ProteinNTerminus && (OneBasedStartResidueInProtein == 1 || (OneBasedStartResidueInProtein == 2 && Protein[0] == 'M'))
                     && (variable_modification.AminoAcid == char.MinValue || this[0] == variable_modification.AminoAcid))
@@ -84,9 +84,9 @@ namespace EngineLayer
             // LOCALIZED MODS
             if (OneBasedPossibleLocalizedModifications != null)
             {
-                foreach (KeyValuePair<int, List<MorpheusModification>> kvp in OneBasedPossibleLocalizedModifications)
+                foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in OneBasedPossibleLocalizedModifications)
                 {
-                    foreach (MorpheusModification variable_modification in kvp.Value)
+                    foreach (MetaMorpheusModification variable_modification in kvp.Value)
                     {
                         if (((variable_modification.ThisModificationType == ModificationType.ProteinNTerminus && !Protein.IsDecoy) ||
                             (variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && Protein.IsDecoy))
@@ -141,7 +141,7 @@ namespace EngineLayer
             }
 
             int variable_modification_isoforms = 0;
-            foreach (Dictionary<int, MorpheusModification> kvp in GetVariableModificationPatterns(two_based_possible_variable_and_localizeable_modifications, maxModsForPeptide))
+            foreach (Dictionary<int, MetaMorpheusModification> kvp in GetVariableModificationPatterns(two_based_possible_variable_and_localizeable_modifications, maxModsForPeptide))
             {
                 yield return new PeptideWithSetModifications(this, AddFixedMods(kvp, allKnownFixedModifications));
                 variable_modification_isoforms++;
@@ -154,7 +154,7 @@ namespace EngineLayer
 
         #region Protected Methods
 
-        protected IEnumerable<Dictionary<int, MorpheusModification>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsCollection> possibleVariableModifications, int maxModsForPeptide)
+        protected IEnumerable<Dictionary<int, MetaMorpheusModification>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsCollection> possibleVariableModifications, int maxModsForPeptide)
         {
             if (possibleVariableModifications.Count == 0)
             {
@@ -179,14 +179,14 @@ namespace EngineLayer
         #endregion Protected Methods
 
         #region Private Methods
-        protected class UniqueModificationsCollection : List<MorpheusModification>
+        protected class UniqueModificationsCollection : List<MetaMorpheusModification>
         {
 
             #region Internal Methods
 
-            internal new void Add(MorpheusModification mod)
+            internal new void Add(MetaMorpheusModification mod)
             {
-                foreach (MorpheusModification modHere in this)
+                foreach (MetaMorpheusModification modHere in this)
                 {
                     if (Math.Abs(modHere.PrecursorMassShift - mod.PrecursorMassShift) < 0.001)
                     {
@@ -240,9 +240,9 @@ namespace EngineLayer
             }
         }
 
-        private static Dictionary<int, MorpheusModification> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications)
+        private static Dictionary<int, MetaMorpheusModification> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications)
         {
-            var modification_pattern = new Dictionary<int, MorpheusModification>();
+            var modification_pattern = new Dictionary<int, MetaMorpheusModification>();
 
             foreach (KeyValuePair<int, UniqueModificationsCollection> kvp in possibleVariableModifications)
             {
@@ -255,12 +255,12 @@ namespace EngineLayer
             return modification_pattern;
         }
 
-        private Dictionary<int, MorpheusModification> AddFixedMods(Dictionary<int, MorpheusModification> allModsOneIsNterminus, IEnumerable<MorpheusModification> allKnownFixedModifications)
+        private Dictionary<int, MetaMorpheusModification> AddFixedMods(Dictionary<int, MetaMorpheusModification> allModsOneIsNterminus, IEnumerable<MetaMorpheusModification> allKnownFixedModifications)
         {
-            MorpheusModification val;
+            MetaMorpheusModification val;
             for (int i = 0; i <= Length + 3; i++)
             {
-                foreach (MorpheusModification mod in allKnownFixedModifications)
+                foreach (MetaMorpheusModification mod in allKnownFixedModifications)
                 {
                     if (i == 0 && (OneBasedStartResidueInProtein == 1 || OneBasedStartResidueInProtein == 2))
                     {

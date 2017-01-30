@@ -112,11 +112,11 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...");
-            List<MorpheusModification> variableModifications = ListOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> fixedModifications = ListOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MorpheusModification> localizeableModifications = ListOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> variableModifications = ListOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> fixedModifications = ListOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> localizeableModifications = ListOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
-            Dictionary<string, List<MorpheusModification>> identifiedModsInXML;
+            Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 

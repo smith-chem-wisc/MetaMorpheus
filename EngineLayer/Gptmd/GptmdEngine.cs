@@ -12,7 +12,7 @@ namespace EngineLayer.Gptmd
 
         private readonly List<NewPsmWithFdr> allResultingIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
-        private readonly List<MorpheusModification> gptmdModifications;
+        private readonly List<MetaMorpheusModification> gptmdModifications;
         private readonly bool isotopeErrors;
         private readonly double tolInDaltons;
 
@@ -20,7 +20,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tolInDaltons) : base(2)
+        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MetaMorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tolInDaltons) : base(2)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.isotopeErrors = isotopeErrors;
@@ -47,7 +47,7 @@ namespace EngineLayer.Gptmd
                     var peptide = theDict.First();
                     var baseSequence = ye.thisPSM.BaseSequence;
                     double massDiff = ye.thisPSM.ScanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
-                    foreach (MorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tolInDaltons))
+                    foreach (MetaMorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tolInDaltons))
                     {
                         int proteinLength = peptide.Protein.Length;
                         var proteinAcession = peptide.Protein.Accession;
@@ -77,7 +77,7 @@ namespace EngineLayer.Gptmd
 
         #region Private Methods
 
-        private static bool ModFits(MorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
+        private static bool ModFits(MetaMorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
         {
             if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
                 return false;
@@ -95,7 +95,7 @@ namespace EngineLayer.Gptmd
             return true;
         }
 
-        private static IEnumerable<MorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tolInDaltons)
+        private static IEnumerable<MetaMorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MetaMorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tolInDaltons)
         {
             foreach (var Mod in allMods)
             {

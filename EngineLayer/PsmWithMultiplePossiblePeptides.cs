@@ -9,7 +9,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class PSMwithProteinHashSet
+    public class PsmWithMultiplePossiblePeptides
     {
 
         #region Public Fields
@@ -20,7 +20,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PSMwithProteinHashSet(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<ProductType> lp)
+        public PsmWithMultiplePossiblePeptides(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<ProductType> lp)
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);

@@ -24,9 +24,9 @@ namespace EngineLayer.ClassicSearch
 
         private readonly Protease protease;
 
-        private readonly List<MorpheusModification> fixedModifications;
+        private readonly List<MetaMorpheusModification> fixedModifications;
 
-        private readonly List<MorpheusModification> variableModifications;
+        private readonly List<MetaMorpheusModification> variableModifications;
 
         private readonly Tolerance productMassTolerance;
 
@@ -43,7 +43,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp) : base(2)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp) : base(2)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
@@ -141,7 +141,7 @@ namespace EngineLayer.ClassicSearch
                                 var searchMode = searchModes[aede];
                                 foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = PSMwithProteinHashSet.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
                                     var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
                                     if (psm.score > 1)
                                     {

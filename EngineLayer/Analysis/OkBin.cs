@@ -1,4 +1,4 @@
-﻿namespace EngineLayer
+﻿namespace EngineLayer.Analysis
 {
     internal class OkBin
     {

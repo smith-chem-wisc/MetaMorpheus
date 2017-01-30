@@ -20,9 +20,9 @@ namespace Test
         public static void TestClassicSearchEngine()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
@@ -49,9 +49,9 @@ namespace Test
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
@@ -79,10 +79,10 @@ namespace Test
         public static void TestModernSearchEngine()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var localizeableModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
@@ -114,10 +114,10 @@ namespace Test
         public static void TestModernSearchEngineWithWeirdPeptide()
         {
             var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<MorpheusModification>();
-            var fixedModifications = new List<MorpheusModification>();
-            var localizeableModifications = new List<MorpheusModification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<MetaMorpheusModification>();
+            var fixedModifications = new List<MetaMorpheusModification>();
+            var localizeableModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };

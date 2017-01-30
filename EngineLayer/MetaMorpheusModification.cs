@@ -4,12 +4,12 @@ using System.Globalization;
 
 namespace EngineLayer
 {
-    public class MorpheusModification
+    public class MetaMorpheusModification
     {
 
         #region Public Constructors
 
-        public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, string database, char prevAA, double precursorMassShift, double fragmentMassShift, double observedMassShift, ChemicalFormula cf)
+        public MetaMorpheusModification(string nameInXml, ModificationType type, char aminoAcid, string database, char prevAA, double precursorMassShift, double fragmentMassShift, double observedMassShift, ChemicalFormula cf)
         {
             NameInXml = nameInXml;
             ThisModificationType = type;
@@ -22,12 +22,12 @@ namespace EngineLayer
             ChemicalFormula = cf;
         }
 
-        public MorpheusModification(string NameInXml)
+        public MetaMorpheusModification(string NameInXml)
         {
             this.NameInXml = NameInXml;
         }
 
-        public MorpheusModification(double v)
+        public MetaMorpheusModification(double v)
         {
             this.PrecursorMassShift = v;
             ThisModificationType = ModificationType.AminoAcidResidue;

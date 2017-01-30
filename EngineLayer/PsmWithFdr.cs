@@ -8,7 +8,7 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public PSMwithProteinHashSet thisPSM;
+        public PsmWithMultiplePossiblePeptides thisPSM;
 
         #endregion Public Fields
 
@@ -21,7 +21,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public NewPsmWithFdr(PSMwithProteinHashSet thisPsm, int cumulativeTarget, int cumulativeDecoy, double tempQValue)
+        public NewPsmWithFdr(PsmWithMultiplePossiblePeptides thisPsm, int cumulativeTarget, int cumulativeDecoy, double tempQValue)
         {
             this.thisPSM = thisPsm;
             this.cumulativeTarget = cumulativeTarget;
@@ -38,7 +38,7 @@ namespace EngineLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.Append(PSMwithProteinHashSet.TabSeparatedHeader + '\t');
+                sb.Append(PsmWithMultiplePossiblePeptides.TabSeparatedHeader + '\t');
                 sb.Append("cumulative_target" + '\t');
                 sb.Append("cumulative_decoy" + '\t');
                 sb.Append("QValue");

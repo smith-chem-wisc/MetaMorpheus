@@ -51,7 +51,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications);
+        public abstract CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications);
 
         public override string ToString()
         {

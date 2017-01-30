@@ -20,29 +20,29 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
-            List<MorpheusModification> localizeableModifications = null;
-            List<MorpheusModification> variableModifications = new List<MorpheusModification>();
-            List<MorpheusModification> fixedModifications = new List<MorpheusModification>();
+            List<MetaMorpheusModification> localizeableModifications = null;
+            List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
+            List<MetaMorpheusModification> fixedModifications = new List<MetaMorpheusModification>();
 
             ParentSpectrumMatch[][] newPsms = new ParentSpectrumMatch[1][];
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya");
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).First() };
+            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), variableModifications, localizeableModifications, fixedModifications);
 
             Assert.AreEqual("QQQ", value.First().BaseSequence);
             PeptideWithPossibleModifications modPep2 = new PeptideWithPossibleModifications(1, 5, proteinList.First(), 0, "ya");
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).First() };
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), variableModifications, localizeableModifications, fixedModifications);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
             PeptideWithPossibleModifications modPep3 = new PeptideWithPossibleModifications(2, 5, proteinList.First(), 0, "ya");
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).First() };
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), variableModifications, localizeableModifications, fixedModifications);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 

@@ -106,17 +106,15 @@
     <Compile Include="CompactPeptide.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
     <Compile Include="ModificationType.cs" />
-    <Compile Include="MorpheusModification.cs" />
+    <Compile Include="MetaMorpheusModification.cs" />
     <Compile Include="OldLogicTerminus.cs" />
     <Compile Include="Peptide.cs" />
-    <Compile Include="PeptideFragmentMasses.cs" />
     <Compile Include="PeptideWithPossibleModifications.cs" />
     <Compile Include="PeptideWithSetModifications.cs" />
     <Compile Include="ProductType.cs" />
     <Compile Include="Protease.cs" />
     <Compile Include="ProteaseDictionary.cs" />
     <Compile Include="Protein.cs" />
-    <Compile Include="ProteomeDatabaseReader.cs" />
     <Compile Include="SearchModes\DotSearchMode.cs" />
     <Compile Include="Gptmd\GptmdEngine.cs" />
     <Compile Include="Gptmd\GptmdResults.cs" />
@@ -128,17 +126,17 @@
     <Compile Include="ModernSearch\ModernSearchResults.cs" />
     <Compile Include="ModernSearch\ModernSpectrumMatch.cs" />
     <Compile Include="MyEngine.cs" />
-    <Compile Include="MyInfo.cs" />
+    <Compile Include="Analysis\MyInfo.cs" />
     <Compile Include="MyResults.cs" />
-    <Compile Include="NewPsmWithFDR.cs" />
-    <Compile Include="OkBin.cs" />
+    <Compile Include="PsmWithFdr.cs" />
+    <Compile Include="Analysis\OkBin.cs" />
     <Compile Include="ParentSpectrumMatch.cs" />
-    <Compile Include="ProgressEventArgs.cs" />
+    <Compile Include="EventArgs\ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="ProteinGroup.cs" />
-    <Compile Include="PSMwithProteinHashSet.cs" />
+    <Compile Include="PsmWithMultiplePossiblePeptides.cs" />
     <Compile Include="SearchModes\OpenSearchMode.cs" />
     <Compile Include="SearchModes\SearchMode.cs" />
     <Compile Include="SearchModes\SingleAbsoluteAroundZeroSearchMode.cs" />

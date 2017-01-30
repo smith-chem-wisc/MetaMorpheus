@@ -21,9 +21,9 @@ namespace EngineLayer.Analysis
         private readonly int maxModIsoforms;
         private readonly ParentSpectrumMatch[][] newPsms;
         private readonly List<Protein> proteinList;
-        private readonly List<MorpheusModification> variableModifications;
-        private readonly List<MorpheusModification> fixedModifications;
-        private readonly List<MorpheusModification> localizeableModifications;
+        private readonly List<MetaMorpheusModification> variableModifications;
+        private readonly List<MetaMorpheusModification> fixedModifications;
+        private readonly List<MetaMorpheusModification> localizeableModifications;
         private readonly Protease protease;
         private readonly List<SearchMode> searchModes;
         private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
@@ -40,7 +40,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
+        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
         {
             this.doParsimony = doParsimony;
             this.doHistogramAnalysis = doHistogramAnalysis;
@@ -604,12 +604,12 @@ namespace EngineLayer.Analysis
             {
                 if (newPsms[j] != null)
                 {
-                    PSMwithProteinHashSet[] psmsWithProteinHashSet = new PSMwithProteinHashSet[newPsms[0].Length];
+                    PsmWithMultiplePossiblePeptides[] psmsWithProteinHashSet = new PsmWithMultiplePossiblePeptides[newPsms[0].Length];
                     for (int i = 0; i < newPsms[0].Length; i++)
                     {
                         var huh = newPsms[j][i];
                         if (huh != null && huh.score >= 1)
-                            psmsWithProteinHashSet[i] = new PSMwithProteinHashSet(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications)], fragmentTolerance, myMsDataFile, lp);
+                            psmsWithProteinHashSet[i] = new PsmWithMultiplePossiblePeptides(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications)], fragmentTolerance, myMsDataFile, lp);
                     }
 
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
@@ -933,13 +933,13 @@ namespace EngineLayer.Analysis
             return myTreeStructure;
         }
 
-        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PSMwithProteinHashSet> items)
+        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmWithMultiplePossiblePeptides> items)
         {
             var ids = new List<NewPsmWithFdr>();
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
-            foreach (PSMwithProteinHashSet item in items)
+            foreach (PsmWithMultiplePossiblePeptides item in items)
             {
                 var isDecoy = item.IsDecoy;
                 if (isDecoy)
@@ -1039,17 +1039,17 @@ namespace EngineLayer.Analysis
 
         #region Private Classes
 
-        private class SequenceComparer : IEqualityComparer<PSMwithProteinHashSet>
+        private class SequenceComparer : IEqualityComparer<PsmWithMultiplePossiblePeptides>
         {
 
             #region Public Methods
 
-            public bool Equals(PSMwithProteinHashSet x, PSMwithProteinHashSet y)
+            public bool Equals(PsmWithMultiplePossiblePeptides x, PsmWithMultiplePossiblePeptides y)
             {
                 return x.FullSequence.Equals(y.FullSequence);
             }
 
-            public int GetHashCode(PSMwithProteinHashSet obj)
+            public int GetHashCode(PsmWithMultiplePossiblePeptides obj)
             {
                 return obj.FullSequence.GetHashCode();
             }
