@@ -1,9 +1,10 @@
 Custom Modifications
-ID   Neg Carbamidomethylation - H2S
+ID   Dehydroalanine from Cysteine
 FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
-MM   -91.009
+MM   -33.987721
+OM   -91.009
 CF   H-5 C-2 N-1 O-1 S-1
 //
 ID   Met loss + Acetylation at N-terminus
@@ -447,6 +448,7 @@ FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 MM   204.187801
+OM   147.166337
 CF   H24 C15
 //
 ID   Labile Farnesylation
@@ -455,6 +457,7 @@ TG   Cysteine
 PP   Anywhere.
 FM   0
 MM   204.187801
+OM   147.166337
 CF   H24 C15
 //
 ID   Labile Myristoylation
@@ -479,6 +482,7 @@ TG   Cysteine
 PP   Anywhere.
 FM   0
 MM   210.198366
+OM   153.176902
 CF   H26 C14 O1
 //
 ID   Myristoylation
@@ -500,6 +504,7 @@ FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 MM   210.198366
+OM   153.176902
 CF   H26 C14 O1
 //
 ID   Palmitoylation
@@ -507,6 +512,7 @@ FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 MM   238.229666
+OM   181.208202
 CF   H30 C16 O1
 //
 ID   Palmitoylation
@@ -540,6 +546,7 @@ CF   H30 C16 O1
 ID   Labile Palmitoylation
 FT   MOD_RES
 TG   Cysteine
+OM   181.208202
 PP   Anywhere.
 FM   0
 MM   238.229666
