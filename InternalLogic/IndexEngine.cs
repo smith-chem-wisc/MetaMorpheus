@@ -117,7 +117,7 @@ namespace InternalLogicEngineLayer
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy, variableModifications, localizeableModifications);
+                            var ps = new CompactPeptide(yyy, variableModifications, localizeableModifications, fixedModifications);
 
                             int index;
                             lock (myDictionary)
@@ -137,7 +137,7 @@ namespace InternalLogicEngineLayer
                                     else
                                         myInnerDictionary.Add(rounded, new List<int> { index });
                                 }
-                                ps.MonoisotopicMass = (float)yyy.MonoisotopicMass;
+                                ps.MonoisotopicMassIncludingFixedMods = (float)yyy.MonoisotopicMass;
                             }
                         }
                     }

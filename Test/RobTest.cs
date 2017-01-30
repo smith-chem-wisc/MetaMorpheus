@@ -65,7 +65,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count(); i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), temp2, temp2);
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), temp2, temp2, new List<MorpheusModification>());
             }
 
             // creates protein list
@@ -149,7 +149,6 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
-
             /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
@@ -193,7 +192,6 @@ namespace Test
                 System.Console.WriteLine(proteinGroup);
             }
             */
-
 
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 6);

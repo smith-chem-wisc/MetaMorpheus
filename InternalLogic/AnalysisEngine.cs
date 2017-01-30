@@ -223,7 +223,7 @@ namespace InternalLogicEngineLayer
                         foreach (var peptide in bestProteinPeptideList)
                         {
                             string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                            
+
                             usedPeptides.Add(peptide);
                             usedBaseSequences.Add(peptideBaseSequence);
                         }
@@ -1007,7 +1007,7 @@ namespace InternalLogicEngineLayer
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(yyy, variableModifications, localizeableModifications), out v))
+                            if (local.TryGetValue(new CompactPeptide(yyy, variableModifications, localizeableModifications, fixedModifications), out v))
                             {
                                 v.Add(yyy);
                             }

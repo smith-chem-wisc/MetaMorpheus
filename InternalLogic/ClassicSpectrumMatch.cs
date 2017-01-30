@@ -31,10 +31,10 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications)
         {
             if (compactPeptide == null)
-                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications);
+                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications, fixedModifications);
             return compactPeptide;
         }
 
