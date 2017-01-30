@@ -15,7 +15,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Properties
 
-        public ClassicSpectrumMatch[][] OuterPsms { get; set; }
+        public PsmClassic[][] OuterPsms { get; set; }
 
         #endregion Public Properties
 

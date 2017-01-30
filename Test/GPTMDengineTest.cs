@@ -30,7 +30,7 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
-            ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
+            PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
             var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), null, null, null, null, null, 0, false, false);
             var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
@@ -52,7 +52,7 @@ namespace Test
 
         #region Private Classes
 
-        private class TestParentSpectrumMatch : ParentSpectrumMatch
+        private class TestParentSpectrumMatch : PsmParent
         {
 
             #region Public Constructors

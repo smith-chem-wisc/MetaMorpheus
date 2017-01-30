@@ -121,9 +121,9 @@ namespace TaskLayer
 
             List<SearchMode> searchModesS = SearchModes.Where(b => b.Use).Select(b => b.SearchMode).ToList();
 
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[searchModesS.Count];
+            List<PsmParent>[] allPsms = new List<PsmParent>[searchModesS.Count];
             for (int j = 0; j < searchModesS.Count; j++)
-                allPsms[j] = new List<ParentSpectrumMatch>();
+                allPsms[j] = new List<PsmParent>();
 
             Status("Loading proteins...");
 

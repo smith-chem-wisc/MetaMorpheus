@@ -101,7 +101,7 @@
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearch\ClassicSearchResults.cs" />
-    <Compile Include="ClassicSearch\ClassicSpectrumMatch.cs" />
+    <Compile Include="ClassicSearch\PsmClassic.cs" />
     <Compile Include="CleavageSpecificity.cs" />
     <Compile Include="CompactPeptide.cs" />
     <Compile Include="InitiatorMethionineBehavior.cs" />
@@ -124,13 +124,13 @@
     <Compile Include="LocalMs2Scan.cs" />
     <Compile Include="ModernSearch\ModernSearchEngine.cs" />
     <Compile Include="ModernSearch\ModernSearchResults.cs" />
-    <Compile Include="ModernSearch\ModernSpectrumMatch.cs" />
+    <Compile Include="ModernSearch\PsmModern.cs" />
     <Compile Include="MyEngine.cs" />
     <Compile Include="Analysis\MyInfo.cs" />
     <Compile Include="MyResults.cs" />
     <Compile Include="PsmWithFdr.cs" />
     <Compile Include="Analysis\OkBin.cs" />
-    <Compile Include="ParentSpectrumMatch.cs" />
+    <Compile Include="PsmParent.cs" />
     <Compile Include="EventArgs\ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>

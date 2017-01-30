@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Test
 {
-    internal class TestParentSpectrumMatch : ParentSpectrumMatch
+    internal class TestParentSpectrumMatch : PsmParent
     {
 
         #region Public Constructors

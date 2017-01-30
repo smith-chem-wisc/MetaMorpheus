@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer.ClassicSearch
 {
-    public class ClassicSpectrumMatch : ParentSpectrumMatch
+    public class PsmClassic : PsmParent
     {
 
         #region Public Fields
@@ -21,7 +21,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSpectrumMatch(PeptideWithSetModifications ps, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score)
+        public PsmClassic(PeptideWithSetModifications ps, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score)
         {
             this.ps = ps;
         }
@@ -41,7 +41,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Internal Methods
 
-        internal static bool FirstIsPreferable(ClassicSpectrumMatch psm, ClassicSpectrumMatch current_best_psm)
+        internal static bool FirstIsPreferable(PsmClassic psm, PsmClassic current_best_psm)
         {
             // Existed! Need to compare with old match
             if (Math.Abs(psm.score - current_best_psm.score) < 1e-9)

@@ -76,9 +76,9 @@ namespace EngineLayer.ClassicSearch
 
             Status("Getting ms2 scans...");
 
-            var outerPsms = new ClassicSpectrumMatch[searchModes.Count][];
+            var outerPsms = new PsmClassic[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                outerPsms[aede] = new ClassicSpectrumMatch[myMsDataFileNumSpectra];
+                outerPsms[aede] = new PsmClassic[myMsDataFileNumSpectra];
 
             var lockObject = new object();
             int proteinsSeen = 0;
@@ -87,9 +87,9 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...");
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                var psms = new ClassicSpectrumMatch[searchModes.Count][];
+                var psms = new PsmClassic[searchModes.Count][];
                 for (int aede = 0; aede < searchModes.Count; aede++)
-                    psms[aede] = new ClassicSpectrumMatch[myMsDataFileNumSpectra];
+                    psms[aede] = new PsmClassic[myMsDataFileNumSpectra];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -141,11 +141,11 @@ namespace EngineLayer.ClassicSearch
                                 foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new ClassicSpectrumMatch(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
+                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
                                     if (psm.score > 1)
                                     {
-                                        ClassicSpectrumMatch current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
-                                        if (current_best_psm == null || ClassicSpectrumMatch.FirstIsPreferable(psm, current_best_psm))
+                                        PsmClassic current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
+                                        if (current_best_psm == null || PsmClassic.FirstIsPreferable(psm, current_best_psm))
                                         {
                                             psms[aede][scan.OneBasedScanNumber - 1] = psm;
                                             matchedIonsArray = new double[sortedProductMasses.Length];
@@ -161,7 +161,7 @@ namespace EngineLayer.ClassicSearch
                     for (int aede = 0; aede < searchModes.Count; aede++)
                         for (int i = 0; i < outerPsms[aede].Length; i++)
                             if (psms[aede][i] != null)
-                                if (outerPsms[aede][i] == null || ClassicSpectrumMatch.FirstIsPreferable(psms[aede][i], outerPsms[aede][i]))
+                                if (outerPsms[aede][i] == null || PsmClassic.FirstIsPreferable(psms[aede][i], outerPsms[aede][i]))
                                     outerPsms[aede][i] = psms[aede][i];
                     proteinsSeen += fff.Item2 - fff.Item1;
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);

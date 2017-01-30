@@ -2,7 +2,7 @@
 
 namespace EngineLayer.ModernSearch
 {
-    public class ModernSpectrumMatch : ParentSpectrumMatch
+    public class PsmModern : PsmParent
     {
 
         #region Private Fields
@@ -13,7 +13,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSpectrumMatch(CompactPeptide theBestPeptide, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score)
+        public PsmModern(CompactPeptide theBestPeptide, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score)
         {
             compactPeptide = theBestPeptide;
         }

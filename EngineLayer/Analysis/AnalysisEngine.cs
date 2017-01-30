@@ -19,7 +19,7 @@ namespace EngineLayer.Analysis
         private readonly double binTol;
         private readonly int maximumMissedCleavages;
         private readonly int maxModIsoforms;
-        private readonly ParentSpectrumMatch[][] newPsms;
+        private readonly PsmParent[][] newPsms;
         private readonly List<Protein> proteinList;
         private readonly List<MetaMorpheusModification> variableModifications;
         private readonly List<MetaMorpheusModification> fixedModifications;
@@ -40,7 +40,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(ParentSpectrumMatch[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
         {
             this.doParsimony = doParsimony;
             this.doHistogramAnalysis = doHistogramAnalysis;
@@ -681,7 +681,7 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
             {
-                bin.FracWithSingle = (double)bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1).Count() / bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Count();
+                bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
             }
         }
 
@@ -929,6 +929,8 @@ namespace EngineLayer.Analysis
             IdentifyPsmsWithMaxMods(myTreeStructure);
 
             OverlappingIonSequences(myTreeStructure);
+
+            IdentifyFracWithSingle(myTreeStructure);
 
             return myTreeStructure;
         }

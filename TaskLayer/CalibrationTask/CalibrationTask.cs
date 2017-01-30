@@ -82,8 +82,8 @@ namespace TaskLayer
             searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassToleranceInDaltons);
             var searchModes = new List<SearchMode> { searchMode };
 
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
-            allPsms[0] = new List<ParentSpectrumMatch>();
+            List<PsmParent>[] allPsms = new List<PsmParent>[1];
+            allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...");
             List<MetaMorpheusModification> variableModifications = ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();

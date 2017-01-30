@@ -52,9 +52,9 @@ namespace EngineLayer.ModernSearch
         {
             var totalSpectra = myMSDataFile.NumSpectra;
 
-            List<ModernSpectrumMatch>[] newPsms = new List<ModernSpectrumMatch>[searchModes.Count];
+            List<PsmModern>[] newPsms = new List<PsmModern>[searchModes.Count];
             for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new List<ModernSpectrumMatch>(new ModernSpectrumMatch[totalSpectra]);
+                newPsms[i] = new List<PsmModern>(new PsmModern[totalSpectra]);
 
             LocalMS2Scan[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -123,7 +123,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new ModernSpectrumMatch(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j]);
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j]);
                         }
                     }
                 }

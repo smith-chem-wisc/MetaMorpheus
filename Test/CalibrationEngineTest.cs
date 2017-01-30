@@ -31,7 +31,7 @@ namespace Test
             double toleranceInMZforMS2Search = fragmentTolerance.Value;
 
             List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
-            ParentSpectrumMatch newPsm = new TestParentSpectrumMatch(2, 2);
+            PsmParent newPsm = new TestParentSpectrumMatch(2, 2);
             PsmWithMultiplePossiblePeptides thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             identifications.Add(thePsmwithfdr);

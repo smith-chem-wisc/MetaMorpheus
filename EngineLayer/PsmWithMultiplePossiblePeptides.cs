@@ -14,13 +14,13 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public ParentSpectrumMatch newPsm;
+        public PsmParent newPsm;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public PsmWithMultiplePossiblePeptides(ParentSpectrumMatch newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<ProductType> lp)
+        public PsmWithMultiplePossiblePeptides(PsmParent newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<ProductType> lp)
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
@@ -129,7 +129,7 @@ namespace EngineLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.Append(ParentSpectrumMatch.GetTabSeparatedHeader() + '\t');
+                sb.Append(PsmParent.GetTabSeparatedHeader() + '\t');
                 sb.Append("Protein Accession" + '\t');
                 sb.Append("Protein FullName" + '\t');
                 sb.Append("Peptide Description" + '\t');

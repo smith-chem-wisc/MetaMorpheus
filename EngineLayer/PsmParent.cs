@@ -5,7 +5,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public abstract class ParentSpectrumMatch
+    public abstract class PsmParent
     {
 
         #region Public Fields
@@ -32,7 +32,7 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected ParentSpectrumMatch(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score)
+        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score)
         {
             this.fileName = fileName;
             this.scanNumber = scanNumber;

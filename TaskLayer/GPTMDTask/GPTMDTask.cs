@@ -196,8 +196,8 @@ namespace TaskLayer
             SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.PrecursorMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), new Tolerance(ToleranceUnit.Absolute, TolInDaltons));
             var searchModes = new List<SearchMode> { searchMode };
 
-            List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
-            allPsms[0] = new List<ParentSpectrumMatch>();
+            List<PsmParent>[] allPsms = new List<PsmParent>[1];
+            allPsms[0] = new List<PsmParent>();
 
             List<ProductType> lp = new List<ProductType>();
             if (BIons)
