@@ -31,36 +31,16 @@ namespace Test
                 p.Add(new Protein(sequences[i], i.ToString(), temp1, temp3, temp3, null, "Test" + i.ToString(), "FullTest" + i.ToString(), 0, false, false));
             p.Add(new Protein("CCKEEK", "D", temp1, temp3, temp3, null, "Decoy ", "Decoy ", 0, true, false));
 
-            IEnumerable<PeptideWithPossibleModifications> digestedList1 = p1.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
-            IEnumerable<PeptideWithPossibleModifications> digestedList2 = p2.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
-            IEnumerable<PeptideWithPossibleModifications> digestedList3 = p3.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
-            IEnumerable<PeptideWithSetModifications> peptides1 = null;
-            IEnumerable<PeptideWithSetModifications> peptides2 = null;
-            IEnumerable<PeptideWithSetModifications> peptides3 = null;
-
-            foreach (var protein in digestedList1)
+            // list of "detected" peptides
+            IEnumerable<PeptideWithPossibleModifications> temp;
+            IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
+            foreach (var protein in p)
             {
-                peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
-
-                foreach (var peptide in peptides1)
-                    totalVirtualPeptideList.Add(peptide);
-            }
-
-            foreach (var protein in digestedList2)
-            {
-                peptides2 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
-
-                foreach (var peptide in peptides2)
-                    totalVirtualPeptideList.Add(peptide);
-            }
-
-            foreach (var protein in digestedList3)
-            {
-                peptides3 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
+                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -122,8 +102,13 @@ namespace Test
                 foreach (var pep in kvp.Value)
                     peps.Add(pep);
 
-            // apply parsimony to initial dictionary
-            ae.ApplyProteinParsimony(out proteinGroups);
+                initialDictionary.Add(cp, peps);
+            }
+
+            // apply parsimony to dictionary
+            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
+            AnalysisEngine ae = new AnalysisEngine(new ParentSpectrumMatch[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
+            dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
             var parsimonyBaseSequences = new List<string>();
@@ -140,6 +125,7 @@ namespace Test
                 }
             }
 
+            // builds psm list to match to peptides
             List<NewPsmWithFdr> psms = new List<NewPsmWithFdr>();
 
             foreach (var kvp in dictionary)
@@ -163,10 +149,10 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
+
             /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
-
             System.Console.WriteLine("----Initial Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN\t\t\tPeptideWithSetModifications");
             foreach (var kvp in initialDictionary)
@@ -183,7 +169,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
             // prints parsimonious dictionary
             System.Console.WriteLine("----Parsimonious Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN\t\t\tPeptideWithSetModifications");
@@ -201,7 +186,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
             // prints protein groups after scoring/fdr
             System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);
             foreach (var proteinGroup in proteinGroups)
@@ -209,8 +193,8 @@ namespace Test
                 System.Console.WriteLine(proteinGroup);
             }
             */
-            
-            
+
+
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 6);
             Assert.That(parsimonyBaseSequences.Contains("AAKBBK"));
