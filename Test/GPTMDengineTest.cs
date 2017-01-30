@@ -64,7 +64,7 @@ namespace Test
 
             #region Public Methods
 
-            public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+            public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification>  fixedModifications)
             {
                 throw new NotImplementedException();
             }

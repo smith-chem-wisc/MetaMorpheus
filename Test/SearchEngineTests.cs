@@ -104,7 +104,7 @@ namespace Test
 
             Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
             Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
+            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications).BaseSequence);
         }
 
         [Test]
@@ -139,7 +139,7 @@ namespace Test
 
             Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
             Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications).BaseSequence);
+            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications).BaseSequence);
         }
 
         #endregion Public Methods

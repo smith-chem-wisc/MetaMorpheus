@@ -52,7 +52,6 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3, value3);
 
-            List<MorpheusModification> fixedModifications = new List<MorpheusModification>();
             Action<BinTreeStructure, string> action1 = (BinTreeStructure l, string s) => {; };
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });

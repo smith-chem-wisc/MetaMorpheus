@@ -389,7 +389,7 @@ namespace InternalLogicEngineLayer
             // match the peptide base sequence to all of its PSMs
             foreach (var psm in psmList)
             {
-                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                 string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
                 List<NewPsmWithFdr> psmListHere;
 
@@ -443,7 +443,7 @@ namespace InternalLogicEngineLayer
                         {
                             bestScoreSoFar = psm.thisPSM.Score;
                             bestPsm = psm;
-                            bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                            bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                         }
                     }
                 }
@@ -477,7 +477,7 @@ namespace InternalLogicEngineLayer
                 HashSet<CompactPeptide> newUniquePeptideList = new HashSet<CompactPeptide>();
                 foreach (var psm in proteinGroup.BestPsmList)
                 {
-                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
 
                     newPeptideList.Add(peptide);
 
@@ -610,7 +610,7 @@ namespace InternalLogicEngineLayer
                     {
                         var huh = newPsms[j][i];
                         if (huh != null && huh.score >= 1)
-                            psmsWithProteinHashSet[i] = new PSMwithProteinHashSet(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications)], fragmentTolerance, myMsDataFile, lp);
+                            psmsWithProteinHashSet[i] = new PSMwithProteinHashSet(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications)], fragmentTolerance, myMsDataFile, lp);
                     }
 
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
@@ -974,7 +974,7 @@ namespace InternalLogicEngineLayer
                     {
                         if (psm != null)
                         {
-                            var cp = psm.GetCompactPeptide(variableModifications, localizeableModifications);
+                            var cp = psm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                             if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                                 compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                         }
