@@ -1,6 +1,6 @@
 ﻿namespace EngineLayer
 {
-    public enum OldLogicTerminus
+    public enum TerminusType
     {
         None,
         N,

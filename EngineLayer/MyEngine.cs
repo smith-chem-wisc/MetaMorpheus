@@ -73,7 +73,6 @@ namespace EngineLayer
 
         public static string MetaMorpheusVersion { get; private set; }
         public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; private set; }
-
         public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
 
         #endregion Public Properties

@@ -58,7 +58,7 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<ProteinGroup>, string> action3 = null;

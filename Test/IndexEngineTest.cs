@@ -20,7 +20,7 @@ namespace Test
             var variableModifications = new List<MetaMorpheusModification>();
             var fixedModifications = new List<MetaMorpheusModification>();
             var localizeableModifications = new List<MetaMorpheusModification>();
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
             var results = (IndexingResults)engine.Run();
@@ -43,7 +43,7 @@ namespace Test
             var variableModifications = new List<MetaMorpheusModification>();
             var fixedModifications = new List<MetaMorpheusModification>();
             var localizeableModifications = new List<MetaMorpheusModification>();
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
             var results = (IndexingResults)engine.Run();
