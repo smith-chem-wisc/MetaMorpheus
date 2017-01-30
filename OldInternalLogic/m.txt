@@ -1,18 +1,18 @@
 Custom Modifications
-ID   Dehydroalanine from Cysteine
-FT   MOD_RES
-TG   Cysteine
-PP   Anywhere.
-MM   -33.987721
-OM   -91.009
-CF   H-5 C-2 N-1 O-1 S-1
-//
 ID   Met loss + Acetylation at N-terminus
 FT   MOD_RES
 TG   Methionine
 PP   Peptide N-terminal.
 MM   -89.02992
 CF   H-7 C-3 N-1 S-1
+//
+ID   Dehydroalanine from Cysteine
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+MM   -33.987721
+OM   -91.009
+CF   H-2 S-1
 //
 ID   oxidation and then loss of oxidized M side chain
 FT   MOD_RES
@@ -324,7 +324,7 @@ TG   Cysteine
 PP   Anywhere.
 MM   47.984744
 OM   -9.03672
-CF   H3
+CF   O3
 //
 ID   Carbamidomethylation of K
 FT   MOD_RES
