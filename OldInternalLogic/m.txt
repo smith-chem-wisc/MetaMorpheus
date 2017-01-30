@@ -318,6 +318,14 @@ PP   Peptide N-terminal.
 MM   43.005814
 CF   H1 C1 N1 O1
 //
+ID   Trioxidation of C
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+MM   47.984744
+OM   -9.03672
+CF   H3
+//
 ID   Carbamidomethylation of K
 FT   MOD_RES
 TG   Lysine
