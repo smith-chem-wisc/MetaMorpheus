@@ -68,7 +68,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
+        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             Status("Applying protein parsimony...");
 
@@ -212,7 +212,9 @@ namespace InternalLogicEngineLayer
                     }
 
                     if (currentBestNumNewPeptides == 1)
+                    {
                         currentBestPeptidesIsOne = true;
+                    }
 
                     // adds the best protein if algo found unaccounted-for peptides
                     if (currentBestNumNewPeptides > 1)
@@ -221,6 +223,7 @@ namespace InternalLogicEngineLayer
                         foreach (var peptide in bestProteinPeptideList)
                         {
                             string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+                            
                             usedPeptides.Add(peptide);
                             usedBaseSequences.Add(peptideBaseSequence);
                         }
@@ -255,27 +258,6 @@ namespace InternalLogicEngineLayer
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            // build protein list for each peptide after parsimony has been applied
-            Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
-            foreach (var kvp in parsimonyDict)
-            {
-                foreach (var peptide in kvp.Value)
-                {
-                    HashSet<Protein> proteinListHere = new HashSet<Protein>();
-
-                    if (!peptideProteinListMatch.ContainsKey(peptide))
-                    {
-                        proteinListHere.Add(kvp.Key);
-                        peptideProteinListMatch.Add(peptide, proteinListHere);
-                    }
-                    else
-                    {
-                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
-                        proteinListHere.Add(kvp.Key);
                     }
                 }
             }
@@ -324,6 +306,27 @@ namespace InternalLogicEngineLayer
                 }
             }
 
+            // build protein list for each peptide after parsimony has been applied
+            Dictionary<CompactPeptide, HashSet<Protein>> peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
+            foreach (var kvp in parsimonyDict)
+            {
+                foreach (var peptide in kvp.Value)
+                {
+                    HashSet<Protein> proteinListHere = new HashSet<Protein>();
+
+                    if (!peptideProteinListMatch.ContainsKey(peptide))
+                    {
+                        proteinListHere.Add(kvp.Key);
+                        peptideProteinListMatch.Add(peptide, proteinListHere);
+                    }
+                    else
+                    {
+                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
+                        proteinListHere.Add(kvp.Key);
+                    }
+                }
+            }
+
             // constructs return dictionary (only use parsimony proteins for the new PeptideWithSetModifications list)
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
@@ -331,36 +334,46 @@ namespace InternalLogicEngineLayer
             {
                 foreach (var peptide in kvp.Value)
                 {
+                    HashSet<PeptideWithSetModifications> oldPeptides = new HashSet<PeptideWithSetModifications>();
+                    HashSet<PeptideWithSetModifications> newPeptides = new HashSet<PeptideWithSetModifications>();
+                    HashSet<Protein> proteinListHere;
+
+                    // get the CompactPeptide's protein list after parsimony
+                    peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
+
+                    // find CompactPeptide's original (unparsimonious) peptide matches
+                    compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out oldPeptides);
+
+                    // get the peptides that belong to the post-parsimony protein(s) only
+                    foreach (var peptide1 in oldPeptides)
+                    {
+                        if (proteinListHere.Contains(peptide1.Protein))
+                        {
+                            newPeptides.Add(peptide1);
+                        }
+                    }
+
                     if (!answer.ContainsKey(peptide))
                     {
-                        HashSet<PeptideWithSetModifications> oldPeptides = new HashSet<PeptideWithSetModifications>();
-                        HashSet<PeptideWithSetModifications> newPeptides = new HashSet<PeptideWithSetModifications>();
-                        HashSet<Protein> proteinListHere;
-
-                        // get the CompactPeptide's protein list after parsimony
-                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
-
-                        // find CompactPeptide's original (unparsimonious) peptide matches
-                        compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out oldPeptides);
-
-                        // get the peptides that belong to the post-parsimony protein(s) only
-                        foreach (var peptide1 in oldPeptides)
-                        {
-                            if (proteinListHere.Contains(peptide1.Protein))
-                            {
-                                newPeptides.Add(peptide1);
-                            }
-                        }
-
-                        // make new dictionary using only peptides from parsimonious protein list
                         answer.Add(peptide, newPeptides);
                     }
+                    /*
+                    else
+                    {
+                        HashSet<PeptideWithSetModifications> temp = new HashSet<PeptideWithSetModifications>();
+                        answer.TryGetValue(peptide, out temp);
+                        temp.UnionWith(newPeptides);
+                    }
+                    */
                 }
             }
 
             Status("Finished Parsimony");
 
             compactPeptideToProteinPeptideMatching = answer;
+
+            // returns for test class
+            return answer;
         }
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
@@ -399,14 +412,17 @@ namespace InternalLogicEngineLayer
                 foreach (var peptide in proteinGroup.PeptideList)
                 {
                     string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                    List<NewPsmWithFdr> psmListForThisBaseSeq = new List<NewPsmWithFdr>();
+                    List<NewPsmWithFdr> psmListForThisBaseSeq;
 
                     peptideBaseSeqToPsmMatching.TryGetValue(peptideBaseSequence, out psmListForThisBaseSeq);
-                    foreach (var psm in psmListForThisBaseSeq)
+                    if (psmListForThisBaseSeq != null)
                     {
-                        if (!proteinGroup.TotalPsmList.Contains(psm))
+                        foreach (var psm in psmListForThisBaseSeq)
                         {
-                            proteinGroup.TotalPsmList.Add(psm);
+                            if (!proteinGroup.TotalPsmList.Contains(psm))
+                            {
+                                proteinGroup.TotalPsmList.Add(psm);
+                            }
                         }
                     }
                 }
@@ -419,17 +435,23 @@ namespace InternalLogicEngineLayer
                 NewPsmWithFdr bestPsm = null;
                 CompactPeptide bestPeptide = null;
 
-                foreach (var psm in kvp.Value)
+                if (kvp.Value != null)
                 {
-                    if (psm.thisPSM.Score > bestScoreSoFar)
+                    foreach (var psm in kvp.Value)
                     {
-                        bestScoreSoFar = psm.thisPSM.Score;
-                        bestPsm = psm;
-                        bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                        if (psm.thisPSM.Score > bestScoreSoFar)
+                        {
+                            bestScoreSoFar = psm.thisPSM.Score;
+                            bestPsm = psm;
+                            bestPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                        }
                     }
                 }
 
-                peptideToBestPsmMatching.Add(bestPeptide, bestPsm);
+                if (bestPsm != null)
+                {
+                    peptideToBestPsmMatching.Add(bestPeptide, bestPsm);
+                }
             }
 
             // add the best psm per base sequence to the protein group and score the protein group
@@ -501,7 +523,9 @@ namespace InternalLogicEngineLayer
             foreach (var kvp in peptideToProteinGroupMatching)
             {
                 if (kvp.Value.Count > 1)
+                {
                     allRazorPeptides.Add(kvp.Key);
+                }
             }
 
             foreach (var proteinGroup in proteinGroups)

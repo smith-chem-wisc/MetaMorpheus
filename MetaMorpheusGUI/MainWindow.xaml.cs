@@ -303,6 +303,7 @@ namespace MetaMorpheusGUI
                         break;
 
                     case ".xml":
+                    case ".fasta":
                     case ".gz":
                         xmlDBobservableCollection.Add(new XMLdb(file));
                         break;
