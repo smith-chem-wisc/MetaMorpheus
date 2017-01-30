@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EngineLayer
+namespace EngineLayer.Analysis
 {
     public class BinTreeStructure
     {

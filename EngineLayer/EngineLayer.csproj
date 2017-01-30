@@ -84,21 +84,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnalysisEngine.cs" />
-    <Compile Include="AnalysisResults.cs" />
-    <Compile Include="Bin.cs" />
-    <Compile Include="BinTreeStructure.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\CalibrationFunction.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\ConstantCalibrationFunction.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\DataPoint.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\IdentityCalibrationFunction.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\LabeledDataPoint.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\SeparateCalibrationFunction.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\TrainingPoint.cs" />
-    <Compile Include="Calibration\CalibrationFunctions\TransformFunction.cs" />
-    <Compile Include="Calibration\CalibrationResults.cs" />
+    <Compile Include="Analysis\AnalysisEngine.cs" />
+    <Compile Include="Analysis\AnalysisResults.cs" />
+    <Compile Include="Analysis\Bin.cs" />
+    <Compile Include="Analysis\BinTreeStructure.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\CalibrationFunction.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\ConstantCalibrationFunction.cs" />
+    <Compile Include="CalibrationEngine\DataPoint.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\IdentityCalibrationFunction.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationEngine\LabeledDataPoint.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationEngine\CalibrationFunctions\SeparateCalibrationFunction.cs" />
+    <Compile Include="CalibrationEngine\TransformFunction.cs" />
+    <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearchResults.cs" />
@@ -148,7 +147,7 @@
     <Compile Include="SingleEngineEventArgs.cs" />
     <Compile Include="SingleEngineFinishedEventArgs.cs" />
     <Compile Include="SingleFileEventArgs.cs" />
-    <Compile Include="Calibration\CalibrationEngine.cs" />
+    <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
     <Compile Include="StringEventArgs.cs" />
     <Compile Include="StringListEventArgs.cs" />
     <Compile Include="Exclusions.cs" />

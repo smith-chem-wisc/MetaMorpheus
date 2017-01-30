@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.Analysis;
 using NUnit.Framework;
 
 using System.Collections.Generic;

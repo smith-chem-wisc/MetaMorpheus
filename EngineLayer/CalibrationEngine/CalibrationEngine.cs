@@ -373,7 +373,7 @@ namespace EngineLayer.Calibration
                     }
                     if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) < scanWindowRange.Minimum)
                         break;
-                    var trainingPointsToAverage = new List<TrainingPoint>();
+                    var trainingPointsToAverage = new List<LabeledDataPoint>();
                     foreach (double a in originalMasses)
                     {
                         double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
@@ -398,7 +398,7 @@ namespace EngineLayer.Calibration
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 1, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
+                            trainingPointsToAverage.Add(new LabeledDataPoint(new double[] { closestPeakMZ, closestPeak.Intensity}, closestPeakMZ - theMZ));
                         }
                         else
                             break;
@@ -423,8 +423,8 @@ namespace EngineLayer.Calibration
                         addedAscan = true;
                         startingToAddCharges = true;
                         countForThisScan += 1;
-                        double[] inputs = { -1, trainingPointsToAverage.Select(b => b.dp.mz).Average(), fullMS1scan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), fullMS1scan.TotalIonCurrent, fullMS1scan.InjectionTime };
-                        var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
+                        double[] inputs = { -1, trainingPointsToAverage.Select(b => b.inputs[0]).Average(), fullMS1scan.RetentionTime, trainingPointsToAverage.Select(b => b.inputs[1]).Average(), fullMS1scan.TotalIonCurrent, fullMS1scan.InjectionTime };
+                        var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.output).Median());
 
                         myCandidatePointsForThisMS1scan.Add(a);
                     }
@@ -510,7 +510,7 @@ namespace EngineLayer.Calibration
                         {
                             break;
                         }
-                        var trainingPointsToAverage = new List<TrainingPoint>();
+                        var trainingPointsToAverage = new List<LabeledDataPoint>();
                         foreach (double a in masses)
                         {
                             double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
@@ -530,7 +530,7 @@ namespace EngineLayer.Calibration
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new TrainingPoint(new DataPoint(closestPeakMZ, double.NaN, 0, closestPeak.Intensity, double.NaN, double.NaN), closestPeakMZ - theMZ));
+                                trainingPointsToAverage.Add(new LabeledDataPoint(new double[] { closestPeakMZ,closestPeak.Intensity}, closestPeakMZ - theMZ));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -551,10 +551,10 @@ namespace EngineLayer.Calibration
                             countForThisMS2 += trainingPointsToAverage.Count;
                             countForThisMS2a += 1;
 
-                            double addedMZ = trainingPointsToAverage.Select(b => b.dp.mz).Average();
+                            double addedMZ = trainingPointsToAverage.Select(b => b.inputs[0]).Average();
                             double relativeMZ = (addedMZ - ms2DataScan.ScanWindowRange.Minimum) / (ms2DataScan.ScanWindowRange.Maximum - ms2DataScan.ScanWindowRange.Minimum);
-                            double[] inputs = { 1, addedMZ, ms2DataScan.RetentionTime, trainingPointsToAverage.Select(b => b.dp.intensity).Average(), ms2DataScan.TotalIonCurrent, ms2DataScan.InjectionTime, IsolationMZ, relativeMZ };
-                            var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.l).Median());
+                            double[] inputs = { 1, addedMZ, ms2DataScan.RetentionTime, trainingPointsToAverage.Select(b => b.inputs[1]).Average(), ms2DataScan.TotalIonCurrent, ms2DataScan.InjectionTime, IsolationMZ, relativeMZ };
+                            var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.output).Median());
 
                             myCandidatePoints.Add(a);
                         }

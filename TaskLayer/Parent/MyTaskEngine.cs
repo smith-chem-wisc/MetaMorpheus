@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.Analysis;
 using MathNet.Numerics.Distributions;
 
 using System;
