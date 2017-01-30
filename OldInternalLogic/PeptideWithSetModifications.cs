@@ -2,6 +2,7 @@
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace OldInternalLogic
@@ -11,7 +12,7 @@ namespace OldInternalLogic
 
         #region Public Fields
 
-        public Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss;
+        public Dictionary<int, MorpheusModification> allModsOneIsNterminus;
 
         #endregion Public Fields
 
@@ -26,18 +27,22 @@ namespace OldInternalLogic
 
         private string sequence;
 
+        private PeptideFragmentMasses p;
+
+        private List<MorpheusModification> allKnownFixedModifications;
+
         #endregion Private Fields
 
-        #region Public Constructors
+        #region Internal Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss)
-                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, MorpheusModification> allModsOneIsNterminus)
+                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
-            this.twoBasedVariableAndLocalizeableModificationss = twoBasedVariableAndLocalizeableModificationss;
+            this.allModsOneIsNterminus = allModsOneIsNterminus;
         }
 
-        #endregion Public Constructors
+        #endregion Internal Constructors
 
         #region Public Properties
 
@@ -46,7 +51,11 @@ namespace OldInternalLogic
             get
             {
                 if (double.IsNaN(monoisotopicMass))
-                    ComputeFragmentMasses();
+                {
+                    monoisotopicMass = waterMonoisotopicMass;
+                    monoisotopicMass += allModsOneIsNterminus.Select(b => b.Value.PrecursorMassShift).Sum();
+                    monoisotopicMass += BaseSequence.Select(b => Residue.ResidueMonoisotopicMass[b]).Sum();
+                }
                 return monoisotopicMass;
             }
         }
@@ -76,57 +85,26 @@ namespace OldInternalLogic
                 if (sequence == null)
                 {
                     var sbsequence = new StringBuilder();
-                    List<MorpheusModification> value;
-                    // fixed modifications on protein N-terminus
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
-                        foreach (var fixed_modification in value)
-                            sbsequence.Append('[' + fixed_modification.Description + ']');
-                    // variable modification on protein N-terminus
-                    MorpheusModification prot_n_term_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_variable_mod))
-                        sbsequence.Append('(' + prot_n_term_variable_mod.Description + ')');
-
-                    // fixed modifications on peptide N-terminus
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(1, out value))
-                        foreach (var fixed_modification in value)
-                            sbsequence.Append('[' + fixed_modification.Description + ']');
 
                     // variable modification on peptide N-terminus
                     MorpheusModification pep_n_term_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
-                        sbsequence.Append('(' + pep_n_term_variable_mod.Description + ')');
+                    if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                        sbsequence.Append('[' + pep_n_term_variable_mod.Description + ']');
 
                     for (int r = 0; r < Length; r++)
                     {
                         sbsequence.Append(this[r]);
-                        // fixed modifications on this residue
-                        if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out value))
-                            foreach (var fixed_modification in value)
-                                sbsequence.Append('[' + fixed_modification.Description + ']');
                         // variable modification on this residue
                         MorpheusModification residue_variable_mod;
-                        if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
-                            sbsequence.Append('(' + residue_variable_mod.Description + ')');
+                        if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
+                            sbsequence.Append('[' + residue_variable_mod.Description + ']');
                     }
-
-                    // fixed modifications on peptide C-terminus
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out value))
-                        foreach (var fixed_modification in value)
-                            sbsequence.Append('[' + fixed_modification.Description + ']');
 
                     // variable modification on peptide C-terminus
                     MorpheusModification pep_c_term_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
-                        sbsequence.Append('(' + pep_c_term_variable_mod.Description + ')');
+                    if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                        sbsequence.Append('[' + pep_c_term_variable_mod.Description + ']');
 
-                    // fixed modifications on protein C-terminus
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out value))
-                        foreach (var fixed_modification in value)
-                            sbsequence.Append('[' + fixed_modification.Description + ']');
-                    // variable modification on protein C-terminus
-                    MorpheusModification prot_c_term_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
-                        sbsequence.Append('(' + prot_c_term_variable_mod.Description + ')');
                     sequence = sbsequence.ToString();
                 }
                 return sequence;
@@ -137,7 +115,7 @@ namespace OldInternalLogic
         {
             get
             {
-                return twoBasedVariableAndLocalizeableModificationss.Count;
+                return allModsOneIsNterminus.Count;
             }
         }
 
@@ -156,57 +134,26 @@ namespace OldInternalLogic
             get
             {
                 var sbsequence = new StringBuilder();
-                List<MorpheusModification> value;
-                // fixed modifications on protein N-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(0, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.ChemicalFormula.Formula + ']');
-                // variable modification on protein N-terminus
-                MorpheusModification prot_n_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_variable_mod))
-                    sbsequence.Append('[' + prot_n_term_variable_mod.ChemicalFormula.Formula + ']');
-
-                // fixed modifications on peptide N-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(1, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.ChemicalFormula.Formula + ']');
 
                 // variable modification on peptide N-terminus
                 MorpheusModification pep_n_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
+                if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
                     sbsequence.Append('[' + pep_n_term_variable_mod.ChemicalFormula.Formula + ']');
 
                 for (int r = 0; r < Length; r++)
                 {
                     sbsequence.Append(this[r]);
-                    // fixed modifications on this residue
-                    if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out value))
-                        foreach (var fixed_modification in value)
-                            sbsequence.Append('[' + fixed_modification.ChemicalFormula.Formula + ']');
                     // variable modification on this residue
                     MorpheusModification residue_variable_mod;
-                    if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
+                    if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
                         sbsequence.Append('[' + residue_variable_mod.ChemicalFormula.Formula + ']');
                 }
 
-                // fixed modifications on peptide C-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.ChemicalFormula.Formula + ']');
-
                 // variable modification on peptide C-terminus
                 MorpheusModification pep_c_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
                     sbsequence.Append('[' + pep_c_term_variable_mod.ChemicalFormula.Formula + ']');
 
-                // fixed modifications on protein C-terminus
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out value))
-                    foreach (var fixed_modification in value)
-                        sbsequence.Append('[' + fixed_modification.ChemicalFormula.Formula + ']');
-                // variable modification on protein C-terminus
-                MorpheusModification prot_c_term_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
-                    sbsequence.Append('[' + prot_c_term_variable_mod.ChemicalFormula.Formula + ']');
                 return sbsequence.ToString();
             }
         }
@@ -217,12 +164,12 @@ namespace OldInternalLogic
 
         public PeptideWithSetModifications Localize(int j, double v)
         {
-            var vvv = new Dictionary<int, MorpheusModification>(twoBasedVariableAndLocalizeableModificationss);
+            var vvv = new Dictionary<int, MorpheusModification>(allModsOneIsNterminus);
             MorpheusModification existingMod;
             double massInMs2OfExistingMod = 0;
             if (vvv.TryGetValue(j + 2, out existingMod))
             {
-                massInMs2OfExistingMod = existingMod.Labile ? 0 : existingMod.MonoisotopicMassShift;
+                massInMs2OfExistingMod = existingMod.FragmentMassShift;
                 vvv.Remove(j + 2);
             }
             vvv.Add(j + 2, new MorpheusModification(v + massInMs2OfExistingMod));
@@ -232,7 +179,9 @@ namespace OldInternalLogic
 
         public double[] FastSortedProductMasses(List<ProductType> productTypes)
         {
-            PeptideFragmentMasses p = ComputeFragmentMasses();
+            if (p == null)
+                p = ComputeFragmentMasses();
+
             double[] products1 = null;
             double[] products2 = null;
             if (productTypes.Contains(ProductType.B))
@@ -315,148 +264,42 @@ namespace OldInternalLogic
         {
             var p = new PeptideFragmentMasses();
 
-            monoisotopicMass = waterMonoisotopicMass;
-
-            double mass_shift;
             p.cumulativeNTerminalMass = new double[Length];
-            mass_shift = 0.0f;
-            List<MorpheusModification> modificationList;
-            // fixed modifications on protein N-terminus
-            if (OneBasedEndResidueInProtein == 1 || OneBasedEndResidueInProtein == 2)
-                if (modPep.twoBasedFixedModificationss.TryGetValue(0, out modificationList))
-                    foreach (var fixed_modification in modificationList)
-                    {
-                        if (!fixed_modification.Labile)
-                            mass_shift += fixed_modification.MonoisotopicMassShift;
-                        monoisotopicMass += fixed_modification.MonoisotopicMassShift;
-                    }
 
-            // variable modification on the protein N-terminus
-            MorpheusModification prot_n_term_var_mod;
-            if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(0, out prot_n_term_var_mod))
-            {
-                if (!prot_n_term_var_mod.Labile)
-                    mass_shift += prot_n_term_var_mod.MonoisotopicMassShift;
-                monoisotopicMass += prot_n_term_var_mod.MonoisotopicMassShift;
-            }
-
-            // fixed modifications on peptide N-terminus
-            if (modPep.twoBasedFixedModificationss.TryGetValue(1, out modificationList))
-                foreach (var fixed_modification in modificationList)
-                {
-                    if (!fixed_modification.Labile)
-                        mass_shift += fixed_modification.MonoisotopicMassShift;
-                    monoisotopicMass += fixed_modification.MonoisotopicMassShift;
-                }
-
-            // variable modification on peptide N-terminus
+            // N-terminus
             MorpheusModification pep_n_term_variable_mod;
-            if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(1, out pep_n_term_variable_mod))
+            if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
             {
-                if (!pep_n_term_variable_mod.Labile)
-                    mass_shift += pep_n_term_variable_mod.MonoisotopicMassShift;
-                monoisotopicMass += pep_n_term_variable_mod.MonoisotopicMassShift;
+                monoisotopicMass += pep_n_term_variable_mod.PrecursorMassShift;
+                p.cumulativeNTerminalMass[0] = pep_n_term_variable_mod.FragmentMassShift;
             }
 
-
-            p.cumulativeNTerminalMass[0] = mass_shift;
-
-			// Loop for monoisotopic mass
-            for (int r = 0; r < Length; r++)
-			{
-				if (modPep.twoBasedFixedModificationss.TryGetValue(r + 2, out modificationList))
-					foreach (var fixed_modification in modificationList)
-						monoisotopicMass += fixed_modification.MonoisotopicMassShift;
-				MorpheusModification residue_variable_mod;
-				if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 2, out residue_variable_mod))
-					monoisotopicMass += residue_variable_mod.MonoisotopicMassShift;
-			}
-
-			for (int r = 1; r < Length; r++)
+            // Loop for cumulative n mass
+            for (int r = 1; r < Length; r++)
             {
-                mass_shift = 0.0f;
-                // fixed modifications on this residue
-                if (modPep.twoBasedFixedModificationss.TryGetValue(r + 1, out modificationList))
-                    foreach (var fixed_modification in modificationList)
-                    {
-                        if (!fixed_modification.Labile)
-                            mass_shift += fixed_modification.MonoisotopicMassShift;
-                    }
-
-
-                // variable modification on this residue
+                p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[r - 1]];
                 MorpheusModification residue_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(r + 1, out residue_variable_mod))
-                {
-                    if (!residue_variable_mod.Labile)
-                        mass_shift += residue_variable_mod.MonoisotopicMassShift;
-                }
-
-                p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[r - 1]] + mass_shift;
+                if (allModsOneIsNterminus.TryGetValue(r + 1, out residue_variable_mod))
+                    p.cumulativeNTerminalMass[r] += residue_variable_mod.FragmentMassShift;
             }
 
             p.cumulativeCTerminalMass = new double[Length];
 
-            mass_shift = 0.0f;
-            // fixed modifications on peptide C-terminus
-            if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 2, out modificationList))
-                foreach (var fixed_modification in modificationList)
-                {
-                    if (!fixed_modification.Labile)
-                        mass_shift += fixed_modification.MonoisotopicMassShift;
-                    monoisotopicMass += fixed_modification.MonoisotopicMassShift;
-                }
-
             // variable modification on peptide C-terminus
             MorpheusModification pep_c_term_variable_mod;
-            if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+            if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
             {
-                if (!pep_c_term_variable_mod.Labile)
-                    mass_shift += pep_c_term_variable_mod.MonoisotopicMassShift;
-                monoisotopicMass += pep_c_term_variable_mod.MonoisotopicMassShift;
+                monoisotopicMass += pep_c_term_variable_mod.PrecursorMassShift;
+                p.cumulativeCTerminalMass[0] = pep_c_term_variable_mod.FragmentMassShift;
             }
 
-            // fixed modifications on protein C-terminus
-            if (OneBasedEndResidueInProtein == Protein.Length)
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length + 3, out modificationList))
-                    foreach (var fixed_modification in modificationList)
-                    {
-                        if (!fixed_modification.Labile)
-                            mass_shift += fixed_modification.MonoisotopicMassShift;
-                        monoisotopicMass += fixed_modification.MonoisotopicMassShift;
-                    }
-
-
-            // variable modification on protein C-terminus
-            MorpheusModification prot_c_term_variable_mod;
-            if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length + 3, out prot_c_term_variable_mod))
-            {
-                if (!prot_c_term_variable_mod.Labile)
-                    mass_shift += prot_c_term_variable_mod.MonoisotopicMassShift;
-                monoisotopicMass += prot_c_term_variable_mod.MonoisotopicMassShift;
-            }
-
-            p.cumulativeCTerminalMass[0] = mass_shift;
-            monoisotopicMass += Residue.ResidueMonoisotopicMass[BaseSequence[0]];
-
-
+            // Loop for cumulative c terminal mass
             for (int r = 1; r < Length; r++)
             {
-                mass_shift = 0.0f;
-                monoisotopicMass += Residue.ResidueMonoisotopicMass[BaseSequence[r]];
-
-
-                // fixed modifications on this residue
-                if (modPep.twoBasedFixedModificationss.TryGetValue(Length - r + 2, out modificationList))
-                    foreach (var fixed_modification in modificationList)
-                        if (!fixed_modification.Labile)
-                            mass_shift += fixed_modification.MonoisotopicMassShift;
-                // variable modification on this residue
+                p.cumulativeCTerminalMass[r] = p.cumulativeCTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[Length - r]];
                 MorpheusModification residue_variable_mod;
-                if (twoBasedVariableAndLocalizeableModificationss.TryGetValue(Length - r + 2, out residue_variable_mod))
-                    if (!residue_variable_mod.Labile)
-                        mass_shift += residue_variable_mod.MonoisotopicMassShift;
-                p.cumulativeCTerminalMass[r] = p.cumulativeCTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[Length - r]] + mass_shift;
+                if (allModsOneIsNterminus.TryGetValue(Length - r + 2, out residue_variable_mod))
+                    p.cumulativeCTerminalMass[r] += residue_variable_mod.FragmentMassShift;
             }
 
             return p;

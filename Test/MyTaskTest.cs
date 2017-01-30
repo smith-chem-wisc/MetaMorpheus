@@ -57,26 +57,26 @@ namespace Test
             Assert.AreEqual(2, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
-            var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).ToList();
 
             Assert.AreEqual(2, setList1.Count);
 
             PeptideWithSetModifications pepWithSetMods1 = setList1[0];
 
             PeptideWithPossibleModifications modPep2 = digestedList[1];
-            var setList2 = modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList2 = modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).ToList();
 
             Assert.AreEqual(1, setList2.Count);
 
             PeptideWithSetModifications pepWithSetMods2 = setList2[0];
 
             var dictHere = new Dictionary<int, List<MorpheusModification>>();
-            dictHere.Add(3, new List<MorpheusModification> { new MorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H-1 Na1")) });
+            dictHere.Add(3, new List<MorpheusModification> { new MorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, '\0', double.NaN, double.NaN, double.NaN, new Chemistry.ChemicalFormula("H-1 Na1")) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
-            var setList3 = modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList3 = modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).ToList();
             Assert.AreEqual(4, setList3.Count);
             Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
 
@@ -88,8 +88,8 @@ namespace Test
 
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(myMsDataFile, mzmlName);
-            string xmlName = "ok.xml";
-            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
+            string xmlName = "okk.xml";
+            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string, string>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
             #endregion Write the files
 

@@ -24,7 +24,7 @@ namespace Test
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(1, 8, ParentProtein, 0, "kk");
             //Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<MorpheusModification> variableModifications = new List<MorpheusModification>();
-            PeptideWithSetModifications pepWithSetMods = modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
+            PeptideWithSetModifications pepWithSetMods = modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).First();
 
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(pepWithSetMods);
 

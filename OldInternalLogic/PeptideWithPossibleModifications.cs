@@ -6,11 +6,6 @@ namespace OldInternalLogic
 {
     public class PeptideWithPossibleModifications : Peptide
     {
-        #region Public Fields
-
-        public Dictionary<int, List<MorpheusModification>> twoBasedFixedModificationss = new Dictionary<int, List<MorpheusModification>>();
-
-        #endregion Public Fields
 
         #region Public Constructors
 
@@ -33,78 +28,9 @@ namespace OldInternalLogic
 
         #region Public Methods
 
-        public void SetFixedModifications(IEnumerable<MorpheusModification> allKnownFixedModifications)
-        {
-            twoBasedFixedModificationss = new Dictionary<int, List<MorpheusModification>>();
-            for (int i = 0; i <= Length + 3; i++)
-            {
-                foreach (MorpheusModification mod in allKnownFixedModifications)
-                {
-                    if (i == 0 && (OneBasedStartResidueInProtein == 1 || OneBasedStartResidueInProtein == 2))
-                    {
-                        if (mod.ThisModificationType == ModificationType.ProteinNTerminus && (mod.AminoAcid.Equals(this[0]) || mod.AminoAcid.Equals('\0')))
-                        {
-                            List<MorpheusModification> val;
-                            if (twoBasedFixedModificationss.TryGetValue(i, out val))
-                                val.Add(mod);
-                            else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
-                        }
-                    }
-                    else if (i == 1)
-                    {
-                        if (mod.ThisModificationType == ModificationType.PeptideNTerminus && (mod.AminoAcid.Equals(this[0]) || mod.AminoAcid.Equals('\0')))
-                        {
-                            List<MorpheusModification> val;
-                            if (twoBasedFixedModificationss.TryGetValue(i, out val))
-                                val.Add(mod);
-                            else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
-                        }
-                    }
-                    else if (i >= 2 && i <= Length + 1)
-                    {
-                        if (mod.ThisModificationType == ModificationType.AminoAcidResidue && (mod.AminoAcid.Equals(this[i - 2]) || mod.AminoAcid.Equals('\0')))
-                        {
-                            List<MorpheusModification> val;
-                            if (twoBasedFixedModificationss.TryGetValue(i, out val))
-                                val.Add(mod);
-                            else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
-                        }
-                    }
-                    else if (i == Length + 2)
-                    {
-                        if (mod.ThisModificationType == ModificationType.PeptideCTerminus && (mod.AminoAcid.Equals(this[Length-1]) || mod.AminoAcid.Equals('\0')))
-                        {
-                            List<MorpheusModification> val;
-                            if (twoBasedFixedModificationss.TryGetValue(i, out val))
-                                val.Add(mod);
-                            else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
-                        }
-                    }
-                    else if (i == Length + 3 && OneBasedEndResidueInProtein == Protein.Length)
-                    {
-                        if (mod.ThisModificationType == ModificationType.ProteinCTerminus && (mod.AminoAcid.Equals(this[Length-1]) || mod.AminoAcid.Equals('\0')))
-                        {
-                            List<MorpheusModification> val;
-                            if (twoBasedFixedModificationss.TryGetValue(i, out val))
-                                val.Add(mod);
-                            else
-                                twoBasedFixedModificationss.Add(i, new List<MorpheusModification> { mod });
-                        }
-                    }
-                }
-            }
-        }
-
-        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide)
+        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide, IEnumerable<MorpheusModification> allKnownFixedModifications)
         {
             var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsCollection>(Length + 4);
-
-            var prot_n_term_variable_mods = new UniqueModificationsCollection();
-            two_based_possible_variable_and_localizeable_modifications.Add(0, prot_n_term_variable_mods);
 
             var pep_n_term_variable_mods = new UniqueModificationsCollection();
             two_based_possible_variable_and_localizeable_modifications.Add(1, pep_n_term_variable_mods);
@@ -112,15 +38,12 @@ namespace OldInternalLogic
             var pep_c_term_variable_mods = new UniqueModificationsCollection();
             two_based_possible_variable_and_localizeable_modifications.Add(Length + 2, pep_c_term_variable_mods);
 
-            var prot_c_term_variable_mods = new UniqueModificationsCollection();
-            two_based_possible_variable_and_localizeable_modifications.Add(Length + 3, prot_c_term_variable_mods);
-
             foreach (MorpheusModification variable_modification in variableModifications)
             {
                 if (variable_modification.ThisModificationType == ModificationType.ProteinNTerminus && (OneBasedStartResidueInProtein == 1 || (OneBasedStartResidueInProtein == 2 && Protein[0] == 'M'))
                     && (variable_modification.AminoAcid == char.MinValue || this[0] == variable_modification.AminoAcid))
                 {
-                    prot_n_term_variable_mods.Add(variable_modification);
+                    pep_n_term_variable_mods.Add(variable_modification);
                 }
 
                 if (variable_modification.ThisModificationType == ModificationType.PeptideNTerminus && (variable_modification.AminoAcid == char.MinValue || this[0] == variable_modification.AminoAcid))
@@ -154,10 +77,11 @@ namespace OldInternalLogic
                 if (variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && (OneBasedEndResidueInProtein == Protein.Length)
                     && (variable_modification.AminoAcid == char.MinValue || this[Length - 1] == variable_modification.AminoAcid))
                 {
-                    prot_c_term_variable_mods.Add(variable_modification);
+                    pep_c_term_variable_mods.Add(variable_modification);
                 }
             }
 
+            // LOCALIZED MODS
             if (OneBasedPossibleLocalizedModifications != null)
             {
                 foreach (KeyValuePair<int, List<MorpheusModification>> kvp in OneBasedPossibleLocalizedModifications)
@@ -169,7 +93,7 @@ namespace OldInternalLogic
                             && (OneBasedStartResidueInProtein == 1 || (OneBasedStartResidueInProtein == 2 && Protein[0] == 'M'))
                             && kvp.Key == 1)
                         {
-                            prot_n_term_variable_mods.Add(variable_modification);
+                            pep_n_term_variable_mods.Add(variable_modification);
                         }
 
                         if (((variable_modification.ThisModificationType == ModificationType.PeptideNTerminus && !Protein.IsDecoy) ||
@@ -210,7 +134,7 @@ namespace OldInternalLogic
                             && (OneBasedEndResidueInProtein == Protein.Length)
                             && kvp.Key == Length)
                         {
-                            prot_c_term_variable_mods.Add(variable_modification);
+                            pep_c_term_variable_mods.Add(variable_modification);
                         }
                     }
                 }
@@ -219,7 +143,7 @@ namespace OldInternalLogic
             int variable_modification_isoforms = 0;
             foreach (Dictionary<int, MorpheusModification> kvp in GetVariableModificationPatterns(two_based_possible_variable_and_localizeable_modifications, maxModsForPeptide))
             {
-                yield return new PeptideWithSetModifications(this, kvp);
+                yield return new PeptideWithSetModifications(this, AddFixedMods(kvp, allKnownFixedModifications));
                 variable_modification_isoforms++;
                 if (variable_modification_isoforms == maximumVariableModificationIsoforms)
                     yield break;
@@ -313,6 +237,59 @@ namespace OldInternalLogic
             return modification_pattern;
         }
 
+        private Dictionary<int, MorpheusModification> AddFixedMods(Dictionary<int, MorpheusModification> allModsOneIsNterminus, IEnumerable<MorpheusModification> allKnownFixedModifications)
+        {
+            MorpheusModification val;
+            for (int i = 0; i <= Length + 3; i++)
+            {
+                foreach (MorpheusModification mod in allKnownFixedModifications)
+                {
+                    if (i == 0 && (OneBasedStartResidueInProtein == 1 || OneBasedStartResidueInProtein == 2))
+                    {
+                        if (mod.ThisModificationType == ModificationType.ProteinNTerminus && (mod.AminoAcid.Equals(this[0]) || mod.AminoAcid.Equals('\0')))
+                        {
+                            if (!allModsOneIsNterminus.TryGetValue(1, out val))
+                                allModsOneIsNterminus.Add(1, mod);
+                        }
+                    }
+                    else if (i == 1)
+                    {
+                        if (mod.ThisModificationType == ModificationType.PeptideNTerminus && (mod.AminoAcid.Equals(this[0]) || mod.AminoAcid.Equals('\0')))
+                        {
+                            if (!allModsOneIsNterminus.TryGetValue(1, out val))
+                                allModsOneIsNterminus.Add(1, mod);
+                        }
+                    }
+                    else if (i >= 2 && i <= Length + 1)
+                    {
+                        if (mod.ThisModificationType == ModificationType.AminoAcidResidue && (mod.AminoAcid.Equals(this[i - 2]) || mod.AminoAcid.Equals('\0')))
+                        {
+                            if (!allModsOneIsNterminus.TryGetValue(i, out val))
+                                allModsOneIsNterminus.Add(i, mod);
+                        }
+                    }
+                    else if (i == Length + 2)
+                    {
+                        if (mod.ThisModificationType == ModificationType.PeptideCTerminus && (mod.AminoAcid.Equals(this[Length - 1]) || mod.AminoAcid.Equals('\0')))
+                        {
+                            if (!allModsOneIsNterminus.TryGetValue(Length + 2, out val))
+                                allModsOneIsNterminus.Add(Length + 2, mod);
+                        }
+                    }
+                    else if (i == Length + 3 && OneBasedEndResidueInProtein == Protein.Length)
+                    {
+                        if (mod.ThisModificationType == ModificationType.ProteinCTerminus && (mod.AminoAcid.Equals(this[Length - 1]) || mod.AminoAcid.Equals('\0')))
+                        {
+                            if (!allModsOneIsNterminus.TryGetValue(Length + 2, out val))
+                                allModsOneIsNterminus.Add(Length + 2, mod);
+                        }
+                    }
+                }
+            }
+            return allModsOneIsNterminus;
+        }
+
         #endregion Private Methods
+
     }
 }

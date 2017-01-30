@@ -15,6 +15,9 @@ namespace InternalLogicEngineLayer
         #region Private Fields
 
         private const double tolForModificationMassDiffMatch = 0.003;
+
+        private const double tolInDaForPreferringHavingMods = 0.03;
+
         private readonly List<int>[] fragmentIndex;
 
         private readonly double fragmentToleranceInDaltons;
@@ -145,9 +148,9 @@ namespace InternalLogicEngineLayer
         // Want this to return false more!! So less computation is done. So second is preferable more often.
         private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
         {
-            if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
+            if (Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods)
                 return true;
-            if (Math.Abs(first.MonoisotopicMass - pm) > 0.5 && Math.Abs(second.MonoisotopicMass - pm) < 0.5)
+            if (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
                 return false;
 
             if (first.varMod1Type == 0 && second.varMod1Type > 0)

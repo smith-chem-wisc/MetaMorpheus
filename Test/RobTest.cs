@@ -41,7 +41,7 @@ namespace Test
 
             foreach (var protein in digestedList1)
             {
-                peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3);
+                peptides1 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
 
                 foreach (var peptide in peptides1)
                     totalVirtualPeptideList.Add(peptide);
@@ -49,7 +49,7 @@ namespace Test
 
             foreach (var protein in digestedList2)
             {
-                peptides2 = protein.GetPeptideWithSetModifications(temp2, 4098, 3);
+                peptides2 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
 
                 foreach (var peptide in peptides2)
                     totalVirtualPeptideList.Add(peptide);
@@ -57,7 +57,7 @@ namespace Test
 
             foreach (var protein in digestedList3)
             {
-                peptides3 = protein.GetPeptideWithSetModifications(temp2, 4098, 3);
+                peptides3 = protein.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
 
                 foreach (var peptide in peptides3)
                     totalVirtualPeptideList.Add(peptide);
@@ -102,11 +102,10 @@ namespace Test
             AnalysisEngine ae = new AnalysisEngine(null, dictionary, null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-            foreach(var kvp in dictionary)
+            foreach (var kvp in dictionary)
             {
                 initialDictionary.Add(kvp.Key, kvp.Value);
             }
-
 
             // apply parsimony to initial dictionary
             ae.ApplyProteinParsimony(out proteinGroups);
@@ -131,13 +130,11 @@ namespace Test
                 }
             }
 
-            
-
             List<NewPsmWithFdr> psms = new List<NewPsmWithFdr>();
 
-            foreach(var kvp in dictionary)
+            foreach (var kvp in dictionary)
             {
-                foreach(var peptide in kvp.Value)
+                foreach (var peptide in kvp.Value)
                 {
                     HashSet<PeptideWithSetModifications> hashSet = new HashSet<PeptideWithSetModifications>();
                     hashSet.Add(peptide);
@@ -159,7 +156,6 @@ namespace Test
 
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
-
 
             /*
             // prints initial dictionary
@@ -199,7 +195,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
 
             // prints protein groups after scoring/fdr
             System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);

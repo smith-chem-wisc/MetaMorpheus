@@ -654,6 +654,14 @@ namespace InternalLogicEngineLayer
             }
         }
 
+        private static void IdentifyFracWithSingle(BinTreeStructure myTreeStructure)
+        {
+            foreach (Bin bin in myTreeStructure.FinalBins)
+            {
+                bin.FracWithSingle = (double)bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1).Count() / bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Count();
+            }
+        }
+
         private static void IdentifyAAsInCommon(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
@@ -971,9 +979,7 @@ namespace InternalLogicEngineLayer
                         if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2) // 2 is for indexing terminal modifications
                             continue;
 
-                        peptide.SetFixedModifications(fixedModifications);
-
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide, fixedModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             HashSet<PeptideWithSetModifications> v;

@@ -32,7 +32,7 @@ namespace InternalLogicEngineLayer
             varMod2Loc = 0;
             varMod3Type = 0;
             varMod3Loc = 0;
-            foreach (var kvpp in yyy.twoBasedVariableAndLocalizeableModificationss)
+            foreach (var kvpp in yyy.allModsOneIsNterminus)
             {
                 int twoBasedLoc = kvpp.Key;
                 var mod = kvpp.Value;

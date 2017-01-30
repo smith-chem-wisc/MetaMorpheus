@@ -61,7 +61,7 @@ namespace InternalLogicEngineLayer
             sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + maximumMissedCleavages);
             sb.AppendLine("maximumVariableModificationIsoforms: " + maximumVariableModificationIsoforms);
-            sb.Append("Localizeable mods: " + proteinList.Select(b=>b.OneBasedPossibleLocalizedModifications.Count).Sum());
+            sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
 
@@ -102,9 +102,7 @@ namespace InternalLogicEngineLayer
                             }
                         }
 
-                        peptide.SetFixedModifications(fixedModifications);
-
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide, fixedModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)

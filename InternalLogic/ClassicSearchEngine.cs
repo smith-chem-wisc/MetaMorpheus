@@ -115,9 +115,7 @@ namespace InternalLogicEngineLayer
                             }
                         }
 
-                        peptide.SetFixedModifications(fixedModifications);
-
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide, fixedModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
@@ -182,15 +180,7 @@ namespace InternalLogicEngineLayer
         #endregion Protected Methods
 
         #region Private Methods
-
-        private bool ModificationMassDiffMatch(PeptideWithSetModifications yyy, LocalMS2Scan scan, double tolForModificationMassDiffMatch)
-        {
-            foreach (var kvp in yyy.twoBasedVariableAndLocalizeableModificationss)
-                if (Math.Abs(yyy.MonoisotopicMass - kvp.Value.MonoisotopicMassShift - scan.PrecursorMass) < tolForModificationMassDiffMatch)
-                    return true;
-            return false;
-        }
-
+        
         private IEnumerable<LocalMS2Scan> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
         {
             foreach (DoubleRange ye in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())

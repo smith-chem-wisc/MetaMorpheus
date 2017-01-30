@@ -82,7 +82,7 @@ namespace InternalLogicTaskLayer
 
         #region Public Methods
 
-        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, string>>> Mods, List<Protein> proteinList, string outputFileName)
+        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, string, string>>> Mods, List<Protein> proteinList, string outputFileName)
         {
             var xmlWriterSettings = new XmlWriterSettings
             {
@@ -128,10 +128,10 @@ namespace InternalLogicTaskLayer
                         writer.WriteEndElement();
                     }
 
-                    IEnumerable<Tuple<int, string>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
-                        b => b.Value.Select(c => new Tuple<int, string>(b.Key, c.NameInXml)
-                        ));
-                    IEnumerable<Tuple<int, string>> FinalSortedMods;
+                    IEnumerable<Tuple<int, string, string>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
+                        b => b.Value.Select(c => new Tuple<int, string, string>(b.Key, c.NameInXml, c.Database))
+                        );
+                    IEnumerable<Tuple<int, string, string>> FinalSortedMods;
                     if (Mods.ContainsKey(protein.Accession))
                         FinalSortedMods = SortedMods.Union(Mods[protein.Accession]).OrderBy(b => b.Item1);
                     else
@@ -141,6 +141,9 @@ namespace InternalLogicTaskLayer
                         writer.WriteStartElement("feature");
                         writer.WriteAttributeString("type", "modified residue");
                         writer.WriteAttributeString("description", ye.Item2);
+                        writer.WriteStartElement("db");
+                        writer.WriteString(ye.Item3);
+                        writer.WriteEndElement();
                         writer.WriteStartElement("location");
                         writer.WriteStartElement("position");
                         writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
@@ -188,7 +191,7 @@ namespace InternalLogicTaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
             // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.MonoisotopicMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), new Tolerance(ToleranceUnit.Absolute, TolInDaltons));
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.PrecursorMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), new Tolerance(ToleranceUnit.Absolute, TolInDaltons));
             var searchModes = new List<SearchMode> { searchMode };
 
             List<ParentSpectrumMatch>[] allPsms = new List<ParentSpectrumMatch>[1];
