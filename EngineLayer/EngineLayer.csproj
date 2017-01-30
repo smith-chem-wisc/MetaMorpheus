@@ -118,10 +118,10 @@
     <Compile Include="Protein.cs" />
     <Compile Include="ProteomeDatabaseReader.cs" />
     <Compile Include="SearchModes\DotSearchMode.cs" />
-    <Compile Include="GPTMDEngine.cs" />
-    <Compile Include="GPTMDResults.cs" />
-    <Compile Include="IndexEngine.cs" />
-    <Compile Include="IndexResults.cs" />
+    <Compile Include="Gptmd\GptmdEngine.cs" />
+    <Compile Include="Gptmd\GptmdResults.cs" />
+    <Compile Include="Indexing\IndexingEngine.cs" />
+    <Compile Include="Indexing\IndexingResults.cs" />
     <Compile Include="SearchModes\IntervalSearchMode.cs" />
     <Compile Include="LocalMs2Scan.cs" />
     <Compile Include="ModernSearch\ModernSearchEngine.cs" />
@@ -143,52 +143,50 @@
     <Compile Include="SearchModes\SearchMode.cs" />
     <Compile Include="SearchModes\SingleAbsoluteAroundZeroSearchMode.cs" />
     <Compile Include="SearchModes\SinglePpmAroundZeroSearchMode.cs" />
-    <Compile Include="SequenceComparer.cs" />
-    <Compile Include="SingleEngineEventArgs.cs" />
-    <Compile Include="SingleEngineFinishedEventArgs.cs" />
-    <Compile Include="SingleFileEventArgs.cs" />
+    <Compile Include="EventArgs\SingleEngineEventArgs.cs" />
+    <Compile Include="EventArgs\SingleEngineFinishedEventArgs.cs" />
+    <Compile Include="EventArgs\SingleFileEventArgs.cs" />
     <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
-    <Compile Include="StringEventArgs.cs" />
-    <Compile Include="StringListEventArgs.cs" />
+    <Compile Include="EventArgs\StringEventArgs.cs" />
+    <Compile Include="EventArgs\StringListEventArgs.cs" />
     <Compile Include="Exclusions.cs" />
-    <Compile Include="UniqueModificationsList.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="elements.dat">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Content Include="Data\elements.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config" />
-    <None Include="proteases.tsv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Content Include="Data\proteases.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="combos.txt">
+    <Content Include="Data\combos.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="f.txt">
+    <Content Include="Data\f.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="glyco.txt">
+    <Content Include="Data\glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="m.txt">
+    <Content Include="Data\m.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="ptmlist.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="r.txt">
+    <Content Include="Data\ptmlist.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="s.txt">
+    <Content Include="Data\r.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="unimod_tables.xml">
+    <Content Include="Data\s.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\unimod_tables.xml">
       <SonarQubeExclude>true</SonarQubeExclude>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="v.txt">
+    <Content Include="Data\v.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

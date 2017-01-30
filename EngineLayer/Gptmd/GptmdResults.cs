@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.Gptmd
 {
     public class GptmdResults : MyResults
     {

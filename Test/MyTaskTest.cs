@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.IO;
 
 namespace Test
 {
@@ -21,12 +22,13 @@ namespace Test
         public static void TestEverythingRunner()
         {
             #region Setup tasks
-
-            ModList modlist1 = new ModList("f.txt");
-            ModList modlist2 = new ModList("v.txt");
-            ModList modlist3 = new ModList("ptmlist.txt");
-            ModList modlist4 = new ModList("m.txt");
-            ModList modlist5 = new ModList("glyco.txt");
+            
+            ModList modlist1 = new ModList(Path.Combine("Data", "f.txt"));
+            ModList modlist2 = new ModList(Path.Combine("Data", "v.txt"));
+            ModList modlist3 = new ModList(Path.Combine("Data", "ptmlist.txt"));
+            ModList modlist4 = new ModList(Path.Combine("Data", "m.txt"));
+            ModList modlist5 = new ModList(Path.Combine("Data", "glyco.txt"));
+            
             ObservableCollection<ModList> modList = new ObservableCollection<ModList> { modlist1, modlist2, modlist3 };
             CalibrationTask task1 = new CalibrationTask(modList);
             GptmdTask task2 = new GptmdTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 });

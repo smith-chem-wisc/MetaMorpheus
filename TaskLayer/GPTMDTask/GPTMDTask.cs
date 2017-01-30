@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
+using EngineLayer.Gptmd;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -263,7 +264,7 @@ namespace TaskLayer
 
         private IEnumerable<Tuple<double, double>> LoadCombos()
         {
-            using (StreamReader r = new StreamReader(@"combos.txt"))
+            using (StreamReader r = new StreamReader(Path.Combine("Data", @"combos.txt")))
             {
                 while (r.Peek() >= 0)
                 {

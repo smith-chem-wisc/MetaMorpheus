@@ -4,6 +4,7 @@ using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Reflection;
 
@@ -20,9 +21,9 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private const string elementsLocation = @"elements.dat";
-        private const string unimodLocation = @"unimod_tables.xml";
-        private const string uniprotLocation = @"ptmlist.txt";
+        private static  readonly string elementsLocation = Path.Combine("Data", @"elements.dat");
+        private static readonly string unimodLocation = Path.Combine("Data", @"unimod_tables.xml");
+        private static readonly string uniprotLocation = Path.Combine("Data", @"ptmlist.txt");
 
         #endregion Private Fields
 

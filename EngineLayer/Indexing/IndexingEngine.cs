@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EngineLayer
+namespace EngineLayer.Indexing
 {
-    public class IndexEngine : MyEngine
+    public class IndexingEngine : MyEngine
     {
 
         #region Private Fields
@@ -32,7 +32,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public IndexEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
+        public IndexingEngine(List<Protein> proteinList, List<MorpheusModification> variableModifications, List<MorpheusModification> fixedModifications, List<MorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -165,7 +165,7 @@ namespace EngineLayer
                 }
             });
 
-            return new IndexResults(myDictionary, myFragmentDictionary, this);
+            return new IndexingResults(myDictionary, myFragmentDictionary, this);
         }
 
         #endregion Protected Methods

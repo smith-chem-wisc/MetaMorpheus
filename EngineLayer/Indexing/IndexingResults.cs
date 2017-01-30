@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace EngineLayer
+namespace EngineLayer.Indexing
 {
-    public class IndexResults : MyResults
+    public class IndexingResults : MyResults
     {
         #region Public Constructors
 
-        public IndexResults(List<CompactPeptide> peptideIndex, Dictionary<float, List<int>> fragmentIndexDict, IndexEngine indexParams) : base(indexParams)
+        public IndexingResults(List<CompactPeptide> peptideIndex, Dictionary<float, List<int>> fragmentIndexDict, IndexingEngine indexParams) : base(indexParams)
         {
             this.PeptideIndex = peptideIndex;
             this.FragmentIndexDict = fragmentIndexDict;

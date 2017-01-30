@@ -46,11 +46,11 @@ namespace MetaMorpheusGUI
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
-            modListObservableCollection.Add(new ModList("f.txt"));
-            modListObservableCollection.Add(new ModList("v.txt"));
-            modListObservableCollection.Add(new ModList("ptmlist.txt"));
-            modListObservableCollection.Add(new ModList("m.txt"));
-            modListObservableCollection.Add(new ModList("glyco.txt"));
+            modListObservableCollection.Add(new ModList(Path.Combine("Data", "f.txt")));
+            modListObservableCollection.Add(new ModList(Path.Combine("Data", "v.txt")));
+            modListObservableCollection.Add(new ModList(Path.Combine("Data", "ptmlist.txt")));
+            modListObservableCollection.Add(new ModList(Path.Combine("Data", "m.txt")));
+            modListObservableCollection.Add(new ModList(Path.Combine("Data", "glyco.txt")));
             //modListObservableCollection.Add(new ModList("r.txt"));
             //modListObservableCollection.Add(new ModList("s.txt"));
 

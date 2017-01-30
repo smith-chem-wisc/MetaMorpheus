@@ -1,6 +1,7 @@
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
+using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using IO.MzML;
 using IO.Thermo;
@@ -142,7 +143,7 @@ namespace TaskLayer
             if (!ClassicSearch)
             {
                 Status("Getting fragment dictionary...");
-                var indexEngine = new IndexEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MaxModificationIsoforms, lp);
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MaxModificationIsoforms, lp);
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine);
 
                 if (pathToFolderWithIndices == null)
@@ -152,7 +153,7 @@ namespace TaskLayer
                     Status("Writing params...");
                     writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"));
 
-                    var indexResults = (IndexResults)indexEngine.Run();
+                    var indexResults = (IndexingResults)indexEngine.Run();
                     peptideIndex = indexResults.PeptideIndex;
                     fragmentIndexDict = indexResults.FragmentIndexDict;
 
@@ -240,7 +241,7 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private static bool SameSettings(string pathToOldParamsFile, IndexEngine indexEngine)
+        private static bool SameSettings(string pathToOldParamsFile, IndexingEngine indexEngine)
         {
             using (StreamReader reader = new StreamReader(pathToOldParamsFile))
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
@@ -256,7 +257,7 @@ namespace TaskLayer
             return folder;
         }
 
-        private void writeIndexEngineParams(IndexEngine indexEngine, string fileName)
+        private void writeIndexEngineParams(IndexingEngine indexEngine, string fileName)
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {
@@ -265,7 +266,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(fileName);
         }
 
-        private string GetExistingFolderWithIndices(IndexEngine indexEngine)
+        private string GetExistingFolderWithIndices(IndexingEngine indexEngine)
         {
             // In every database location...
             foreach (var ok in dbFilenameList)

@@ -179,7 +179,25 @@ namespace EngineLayer
         #endregion Protected Methods
 
         #region Private Methods
+        protected class UniqueModificationsCollection : List<MorpheusModification>
+        {
 
+            #region Internal Methods
+
+            internal new void Add(MorpheusModification mod)
+            {
+                foreach (MorpheusModification modHere in this)
+                {
+                    if (Math.Abs(modHere.PrecursorMassShift - mod.PrecursorMassShift) < 0.001)
+                    {
+                        return;
+                    }
+                }
+                base.Add(mod);
+            }
+
+            #endregion Internal Methods
+        }
         private static IEnumerable<int[]> GetVariableModificationPatterns(List<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications, int unmodifiedResiduesDesired, int[] variableModificationPattern, int index)
         {
             if (index < possibleVariableModifications.Count - 1)
