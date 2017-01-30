@@ -1,4 +1,5 @@
 ﻿using Spectra;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,19 +12,20 @@ namespace InternalLogicEngineLayer
         #region Private Fields
 
         private readonly List<DoubleRange> intervals;
+        private readonly double[] means;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
+        public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> nonOverlappingDoubleRanges) : base(fileNameAddition)
         {
-            intervals = doubleRanges.ToList();
+            intervals = nonOverlappingDoubleRanges.OrderBy(b => b.Mean).ToList();
+            means = intervals.Select(b => b.Mean).ToArray();
         }
 
-        public IntervalSearchMode(IEnumerable<DoubleRange> doubleRanges) : base("intervals" + string.Join("", doubleRanges.Select(b => "[" + b.Minimum.ToString("F3", CultureInfo.InvariantCulture) + "-" + b.Maximum.ToString("F3", CultureInfo.InvariantCulture) + "]")))
+        public IntervalSearchMode(IEnumerable<DoubleRange> doubleRanges) : this("intervals" + string.Join("", doubleRanges.Select(b => "[" + b.Minimum.ToString("F3", CultureInfo.InvariantCulture) + "-" + b.Maximum.ToString("F3", CultureInfo.InvariantCulture) + "]")), doubleRanges)
         {
-            intervals = doubleRanges.ToList();
         }
 
         #endregion Public Constructors
@@ -32,11 +34,19 @@ namespace InternalLogicEngineLayer
 
         public override bool Accepts(double scanPrecursorMass, double peptideMass)
         {
-            foreach (var huh in intervals)
-            {
-                if (huh.Contains(scanPrecursorMass - peptideMass))
+            double diff = scanPrecursorMass - peptideMass;
+
+            int index = Array.BinarySearch(means, diff);
+            if (index >= 0)
+                return true;
+            index = ~index;
+            // Two options: either it's the index of the first element greater than diff, or len if diff greater than all
+            if (index < means.Length)
+                if (intervals[index].Contains(diff))
                     return true;
-            }
+            if (index > 0)
+                if (intervals[index - 1].Contains(diff))
+                    return true;
             return false;
         }
 

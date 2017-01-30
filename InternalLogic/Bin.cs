@@ -73,6 +73,7 @@ namespace InternalLogicEngineLayer
         public Dictionary<char, int> AAsInCommon { get; internal set; }
         public double FracWithMaxMods { get; internal set; }
         public int Overlapping { get; internal set; }
+        public double FracWithSingle { get; set; }
 
         #endregion Public Properties
 

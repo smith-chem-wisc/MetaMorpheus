@@ -40,7 +40,7 @@ namespace Test
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(temp2, 4098, 3, new List<MorpheusModification>());
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -65,7 +65,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count(); i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), temp2, temp2);
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), temp2, temp2, new List<MorpheusModification>());
             }
 
             // creates protein list
@@ -149,11 +149,9 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
-            
             /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
-
             System.Console.WriteLine("----Initial Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN\t\t\tPeptideWithSetModifications");
             foreach (var kvp in initialDictionary)
@@ -170,7 +168,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
             // prints parsimonious dictionary
             System.Console.WriteLine("----Parsimonious Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN\t\t\tPeptideWithSetModifications");
@@ -188,7 +185,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
             // prints protein groups after scoring/fdr
             System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);
             foreach (var proteinGroup in proteinGroups)
@@ -196,8 +192,7 @@ namespace Test
                 System.Console.WriteLine(proteinGroup);
             }
             */
-            
-            
+
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 6);
             Assert.That(parsimonyBaseSequences.Contains("AAKBBK"));

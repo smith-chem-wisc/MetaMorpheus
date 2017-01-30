@@ -15,6 +15,7 @@ namespace InternalLogicEngineLayer
 
         #region Private Fields
 
+        private const double tolInDaForPreferringHavingMods = 0.03;
         private CompactPeptide compactPeptide;
 
         #endregion Private Fields
@@ -30,10 +31,10 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications)
         {
             if (compactPeptide == null)
-                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications);
+                compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications, fixedModifications);
             return compactPeptide;
         }
 
@@ -62,9 +63,9 @@ namespace InternalLogicEngineLayer
 
         private static bool FirstIsPreferableWithoutScore(PeptideWithSetModifications first, PeptideWithSetModifications second, double pm)
         {
-            if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
+            if (Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods)
                 return true;
-            if (Math.Abs(first.MonoisotopicMass - pm) > 0.5 && Math.Abs(second.MonoisotopicMass - pm) < 0.5)
+            if (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
                 return false;
 
             if (first.NumVariableMods < second.NumVariableMods)

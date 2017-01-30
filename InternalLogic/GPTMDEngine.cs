@@ -35,7 +35,7 @@ namespace InternalLogicEngineLayer
 
         protected override MyResults RunSpecific()
         {
-            var Mods = new Dictionary<string, HashSet<Tuple<int, string>>>();
+            var Mods = new Dictionary<string, HashSet<Tuple<int, string, string>>>();
 
             int modsAdded = 0;
             foreach (var ye in allResultingIdentifications.Where(b => b.qValue <= 0.01 && !b.IsDecoy))
@@ -58,8 +58,8 @@ namespace InternalLogicEngineLayer
                             if (ModFits(mod, baseSequence[i], i > 0 ? baseSequence[i - 1] : peptide.PreviousAminoAcid, i + 1, baseSequence.Length, indexInProtein, proteinLength))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, string>>();
-                                var theTuple = new Tuple<int, string>(indexInProtein, mod.NameInXml);
+                                    Mods[proteinAcession] = new HashSet<Tuple<int, string, string>>();
+                                var theTuple = new Tuple<int, string, string>(indexInProtein, mod.NameInXml, mod.Database);
                                 if (!Mods[proteinAcession].Contains(theTuple))
                                 {
                                     Mods[proteinAcession].Add(theTuple);
@@ -99,13 +99,9 @@ namespace InternalLogicEngineLayer
         {
             foreach (var Mod in allMods)
             {
-                if (Mod.MonoisotopicMassShift > massDiff - tolInDaltons && Mod.MonoisotopicMassShift < massDiff + tolInDaltons)
+                if (Mod.ObservedMassShift > massDiff - tolInDaltons && Mod.ObservedMassShift < massDiff + tolInDaltons)
                     yield return Mod;
-                if (isotopeErrors && Mod.MonoisotopicMassShift > massDiff - tolInDaltons - 1.003 && Mod.MonoisotopicMassShift < massDiff + tolInDaltons - 1.003)
-                    yield return Mod;
-                if (!double.IsNaN(Mod.AlternativeMassShift) && Mod.AlternativeMassShift > massDiff - tolInDaltons && Mod.AlternativeMassShift < massDiff + tolInDaltons)
-                    yield return Mod;
-                if (!double.IsNaN(Mod.AlternativeMassShift) && isotopeErrors && Mod.AlternativeMassShift > massDiff - tolInDaltons - 1.003 && Mod.AlternativeMassShift < massDiff + tolInDaltons - 1.003)
+                if (isotopeErrors && Mod.ObservedMassShift > massDiff - tolInDaltons - 1.003 && Mod.ObservedMassShift < massDiff + tolInDaltons - 1.003)
                     yield return Mod;
             }
 

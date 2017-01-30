@@ -1,23 +1,25 @@
 ﻿using Chemistry;
+using System;
+using System.Globalization;
 
 namespace OldInternalLogic
 {
     public class MorpheusModification
     {
+
         #region Public Constructors
 
-        public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, string database, string databaseName, char prevAA, double alternativeMassShift, bool labile, ChemicalFormula cf)
+        public MorpheusModification(string nameInXml, ModificationType type, char aminoAcid, string database, char prevAA, double precursorMassShift, double fragmentMassShift, double observedMassShift, ChemicalFormula cf)
         {
-            this.NameInXml = nameInXml;
+            NameInXml = nameInXml;
             ThisModificationType = type;
             AminoAcid = aminoAcid;
-            MonoisotopicMassShift = cf.MonoisotopicMass;
             Database = database;
-            DatabaseName = databaseName;
             PrevAminoAcid = prevAA;
-            this.AlternativeMassShift = alternativeMassShift;
-            this.Labile = labile;
-            this.ChemicalFormula = cf;
+            PrecursorMassShift = precursorMassShift;
+            FragmentMassShift = fragmentMassShift;
+            ObservedMassShift = observedMassShift;
+            ChemicalFormula = cf;
         }
 
         public MorpheusModification(string NameInXml)
@@ -27,7 +29,7 @@ namespace OldInternalLogic
 
         public MorpheusModification(double v)
         {
-            this.MonoisotopicMassShift = v;
+            this.PrecursorMassShift = v;
             ThisModificationType = ModificationType.AminoAcidResidue;
             PrevAminoAcid = '\0';
             this.NameInXml = "";
@@ -37,24 +39,24 @@ namespace OldInternalLogic
 
         #region Public Properties
 
+        public double FragmentMassShift { get; private set; }
+
         public string Description
         {
             get
             {
-                return Database + (Labile ? ":labile" : "") + ":" + NameInXml;
+                return Database + ":" + NameInXml + (Math.Abs(PrecursorMassShift - FragmentMassShift) < 1e-6 ? ":fms" + FragmentMassShift.ToString("F3", CultureInfo.InvariantCulture) : "");
             }
         }
 
-        public bool Labile { get; private set; }
         public ModificationType ThisModificationType { get; private set; }
         public char AminoAcid { get; private set; }
-        public double MonoisotopicMassShift { get; private set; }
+        public double PrecursorMassShift { get; private set; }
         public string Database { get; private set; }
-        public string DatabaseName { get; private set; }
         public string NameInXml { get; private set; }
         public char PrevAminoAcid { get; private set; }
-        public double AlternativeMassShift { get; private set; }
         public ChemicalFormula ChemicalFormula { get; private set; }
+        public double ObservedMassShift { get; private set; }
 
         #endregion Public Properties
 
@@ -66,5 +68,6 @@ namespace OldInternalLogic
         }
 
         #endregion Public Methods
+
     }
 }

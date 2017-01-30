@@ -18,13 +18,13 @@ namespace InternalLogicEngineLayer
         public readonly byte varMod2Loc;
         public readonly ushort varMod3Type;
         public readonly byte varMod3Loc;
-        public float MonoisotopicMass;
+        public float MonoisotopicMassIncludingFixedMods;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public CompactPeptide(PeptideWithSetModifications yyy, List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications)
         {
             varMod1Type = 0;
             varMod1Loc = 0;
@@ -32,7 +32,7 @@ namespace InternalLogicEngineLayer
             varMod2Loc = 0;
             varMod3Type = 0;
             varMod3Loc = 0;
-            foreach (var kvpp in yyy.twoBasedVariableAndLocalizeableModificationss)
+            foreach (var kvpp in yyy.allModsOneIsNterminus)
             {
                 int twoBasedLoc = kvpp.Key;
                 var mod = kvpp.Value;
@@ -41,28 +41,52 @@ namespace InternalLogicEngineLayer
                 {
                     // Set first
                     if (variableModifications.Contains(mod))
+                    {
                         varMod1Type = (ushort)(variableModifications.IndexOf(mod) + 1);
+                        varMod1Loc = (byte)twoBasedLoc;
+                    }
+                    else if (fixedModifications.Contains(mod))
+                    {
+                    }
                     else
+                    {
                         varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                    varMod1Loc = (byte)twoBasedLoc;
+                        varMod1Loc = (byte)twoBasedLoc;
+                    }
                 }
                 else if (varMod2Type == 0)
                 {
                     // Set second
                     if (variableModifications.Contains(mod))
+                    {
                         varMod2Type = (ushort)(variableModifications.IndexOf(mod) + 1);
+                        varMod2Loc = (byte)twoBasedLoc;
+                    }
+                    else if (fixedModifications.Contains(mod))
+                    {
+                    }
                     else
+                    {
                         varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                    varMod2Loc = (byte)twoBasedLoc;
+                        varMod2Loc = (byte)twoBasedLoc;
+                    }
                 }
                 else
                 {
                     // Set third
                     if (variableModifications.Contains(mod))
+                    {
                         varMod3Type = (ushort)(variableModifications.IndexOf(mod) + 1);
+                        varMod3Loc = (byte)twoBasedLoc;
+                    }
+                    else if (fixedModifications.Contains(mod))
+                    {
+                    }
                     else
+                    {
                         varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                    varMod3Loc = (byte)twoBasedLoc;
+                        varMod3Loc = (byte)twoBasedLoc;
+                    }
                 }
             }
 

@@ -52,6 +52,9 @@ namespace OldInternalLogic
             aminoAcidCodes.Add("Tryptophan", 'W');
             aminoAcidCodes.Add("Tyrosine", 'Y');
             aminoAcidCodes.Add("Valine", 'V');
+            aminoAcidCodes.Add("Any", '\0');
+            aminoAcidCodes.Add("Asparagine or Aspartate", 'B');
+            aminoAcidCodes.Add("Undefined", '?');
         }
 
         #endregion Public Constructors
@@ -93,11 +96,10 @@ namespace OldInternalLogic
                 ModificationType modification_type = ModificationType.AminoAcidResidue;
                 char amino_acid_residue = '\0';
                 char prevAA = '\0';
-                double monoisotopic_mass_shift = double.NaN;
-                string database_name = null;
-                double alternative_mass = double.NaN;
-                string labileOrSticky = "Sticky";
-                ChemicalFormula ye = null;
+                double pms = double.NaN;
+                double fms = double.NaN;
+                double oms = double.NaN;
+                ChemicalFormula chemicalFormula = null;
                 while (modsReader.Peek() != -1)
                 {
                     string line = modsReader.ReadLine();
@@ -117,7 +119,7 @@ namespace OldInternalLogic
                                 if (feature_type == "MOD_RES")
                                 {
                                     string amino_acid = line.Substring(5);
-                                    aminoAcidCodes.TryGetValue(char.ToUpperInvariant(amino_acid[0]) + amino_acid.Substring(1).TrimEnd('.'), out amino_acid_residue);
+                                    amino_acid_residue = aminoAcidCodes[char.ToUpperInvariant(amino_acid[0]) + amino_acid.Substring(1).TrimEnd('.')];
                                 }
                                 break;
 
@@ -129,15 +131,15 @@ namespace OldInternalLogic
                                 break;
 
                             case "MM":
-                                monoisotopic_mass_shift = double.Parse(line.Substring(5));
+                                pms = double.Parse(line.Substring(5));
                                 break;
 
-                            case "AL":
-                                alternative_mass = double.Parse(line.Substring(5));
+                            case "FM":
+                                fms = double.Parse(line.Substring(5));
                                 break;
 
-                            case "SL":
-                                labileOrSticky = line.Substring(5);
+                            case "OM":
+                                oms = double.Parse(line.Substring(5));
                                 break;
 
                             case "PS":
@@ -145,29 +147,26 @@ namespace OldInternalLogic
                                 break;
 
                             case "CF":
-                                ye = new ChemicalFormula(line.Substring(5).Replace(" ", string.Empty));
+                                chemicalFormula = new ChemicalFormula(line.Substring(5).Replace(" ", string.Empty));
                                 break;
 
                             case "//":
-                                if (feature_type == "MOD_RES" && (!double.IsNaN(monoisotopic_mass_shift)))
+                                if (feature_type == "MOD_RES" && (!double.IsNaN(pms)))
                                 {
-                                    if (ye == null)
+                                    if (chemicalFormula == null)
                                         throw new InvalidDataException("In file" + v + " Modification " + description + " has no chemical formula");
-                                    if (Math.Abs(monoisotopic_mass_shift - ye.MonoisotopicMass) > 1e-3)
+                                    if (Math.Abs(pms - chemicalFormula.MonoisotopicMass) > 1e-3)
                                         throw new InvalidDataException("In file" + v + " Modification " + description + " mass formula mismatch");
-                                    if (labileOrSticky.Equals("Labile") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, true, ye);
-                                    if (labileOrSticky.Equals("Sticky") || labileOrSticky.Equals("Both"))
-                                        yield return new MorpheusModification(description, modification_type, amino_acid_residue, Path.GetFileNameWithoutExtension(v), database_name, prevAA, alternative_mass, false, ye);
+                                    yield return new MorpheusModification(description, modification_type, amino_acid_residue, Path.GetFileNameWithoutExtension(v), prevAA, pms, double.IsNaN(fms) ? pms : fms, double.IsNaN(oms) ? pms : oms, chemicalFormula);
                                 }
                                 description = null;
                                 feature_type = null;
                                 modification_type = ModificationType.AminoAcidResidue;
                                 amino_acid_residue = '\0';
-                                monoisotopic_mass_shift = float.NaN;
-                                alternative_mass = float.NaN;
-                                labileOrSticky = "Sticky";
-                                ye = null;
+                                pms = double.NaN;
+                                fms = double.NaN;
+                                oms = double.NaN;
+                                chemicalFormula = null;
                                 break;
                         }
                     }

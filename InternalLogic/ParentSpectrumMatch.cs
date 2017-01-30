@@ -51,7 +51,7 @@ namespace InternalLogicEngineLayer
 
         #region Public Methods
 
-        public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications);
+        public abstract CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification> fixedModifications);
 
         public override string ToString()
         {

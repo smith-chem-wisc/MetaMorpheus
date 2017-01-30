@@ -15,6 +15,9 @@ namespace InternalLogicEngineLayer
         #region Private Fields
 
         private const double tolForModificationMassDiffMatch = 0.003;
+
+        private const double tolInDaForPreferringHavingMods = 0.03;
+
         private readonly List<int>[] fragmentIndex;
 
         private readonly double fragmentToleranceInDaltons;
@@ -91,7 +94,7 @@ namespace InternalLogicEngineLayer
                                 if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
-                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
+                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
@@ -100,7 +103,7 @@ namespace InternalLogicEngineLayer
                                 else if (currentBestScore < consideredScore)
                                 {
                                     // Score is better, only make sure it is acceptable
-                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
+                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
@@ -108,7 +111,7 @@ namespace InternalLogicEngineLayer
                                 }
                             }
                             // Did not exist! Only make sure that it is acceptable
-                            else if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass))
+                            else if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods))
                             {
                                 bestPeptides[j] = candidatePeptide;
                                 bestScores[j] = consideredScore;
@@ -145,9 +148,9 @@ namespace InternalLogicEngineLayer
         // Want this to return false more!! So less computation is done. So second is preferable more often.
         private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
         {
-            if (Math.Abs(first.MonoisotopicMass - pm) < 0.5 && Math.Abs(second.MonoisotopicMass - pm) > 0.5)
+            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods)
                 return true;
-            if (Math.Abs(first.MonoisotopicMass - pm) > 0.5 && Math.Abs(second.MonoisotopicMass - pm) < 0.5)
+            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods)
                 return false;
 
             if (first.varMod1Type == 0 && second.varMod1Type > 0)

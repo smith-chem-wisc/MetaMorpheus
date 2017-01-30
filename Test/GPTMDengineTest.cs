@@ -19,7 +19,7 @@ namespace Test
         public static void TestGptmdEngine()
         {
             List<NewPsmWithFdr> allResultingIdentifications = null;
-            var gptmdModifications = new List<MorpheusModification> { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N',null, null, '\0', double.NaN, false, new Chemistry.ChemicalFormula("H-1 Na1")) };
+            var gptmdModifications = new List<MorpheusModification> { new MorpheusModification("name", ModificationType.AminoAcidResidue, 'N', null, '\0', double.NaN, double.NaN, 21.981943, new Chemistry.ChemicalFormula("H-1 Na1")) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             double tol = 0.1;
             bool isotopeErrors = false;
@@ -34,7 +34,7 @@ namespace Test
             var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<MorpheusModification> variableModifications = new List<MorpheusModification>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MorpheusModification>()).First() };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
             var thisPSM = new PSMwithProteinHashSet(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -64,7 +64,7 @@ namespace Test
 
             #region Public Methods
 
-            public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+            public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications, List<MorpheusModification>  fixedModifications)
             {
                 throw new NotImplementedException();
             }
