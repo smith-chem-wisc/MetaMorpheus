@@ -1,6 +1,6 @@
-﻿using InternalLogicEngineLayer;
+﻿using EngineLayer;
 using NUnit.Framework;
-using OldInternalLogic;
+
 using Spectra;
 using System.Collections.Generic;
 using System.Linq;

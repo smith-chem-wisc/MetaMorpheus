@@ -1,8 +1,8 @@
-﻿using InternalLogicEngineLayer;
-using InternalLogicTaskLayer;
+﻿using EngineLayer;
+using TaskLayer;
 using MassSpectrometry;
 using NUnit.Framework;
-using OldInternalLogic;
+
 using Spectra;
 using System;
 using System.Collections.Generic;

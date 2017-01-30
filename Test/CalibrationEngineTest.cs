@@ -1,8 +1,8 @@
-﻿using InternalLogicCalibration;
-using InternalLogicEngineLayer;
+﻿using EngineLayer.Calibration;
+using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
-using OldInternalLogic;
+
 using Proteomics;
 using Spectra;
 using System.Collections.Generic;

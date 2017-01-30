@@ -116,21 +116,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\InternalLogic\InternalLogicEngineLayer.csproj">
+    <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">
       <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
-      <Name>InternalLogicEngineLayer</Name>
+      <Name>EngineLayer</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MetaMorpheusCommandLine\MetaMorpheusCommandLine.csproj">
+    <ProjectReference Include="..\CMD\CMD.csproj">
       <Project>{dd89ef8c-a47a-4c6b-97bf-01b81d48847c}</Project>
-      <Name>MetaMorpheusCommandLine</Name>
+      <Name>CMD</Name>
     </ProjectReference>
-    <ProjectReference Include="..\InternalLogicWithFileIO\InternalLogicTaskLayer.csproj">
+    <ProjectReference Include="..\TaskLayer\TaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
-      <Name>InternalLogicTaskLayer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\OldInternalLogic\OldInternalLogic.csproj">
-      <Project>{D2178D2E-7CBD-48A3-835D-8B13872202FF}</Project>
-      <Name>OldInternalLogic</Name>
+      <Name>TaskLayer</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
