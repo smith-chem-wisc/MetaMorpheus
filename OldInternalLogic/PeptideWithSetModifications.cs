@@ -29,8 +29,6 @@ namespace OldInternalLogic
 
         private PeptideFragmentMasses p;
 
-        private List<MorpheusModification> allKnownFixedModifications;
-
         #endregion Private Fields
 
         #region Internal Constructors
