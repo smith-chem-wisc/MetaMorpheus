@@ -395,7 +395,6 @@ namespace EngineLayer.Analysis
                 proteinGroup.ScoreThisProteinGroup(variableModifications, localizeableModifications, fixedModifications);
 
                 // for finding razor peptides later
-                List<NewPsmWithFdr> thisProteinGroupsPsmList = new List<NewPsmWithFdr>();
                 foreach (var peptide in proteinGroup.StrictPeptideList)
                 {
                     HashSet<ProteinGroup> proteinGroupsHere = new HashSet<ProteinGroup>();
