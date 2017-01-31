@@ -179,7 +179,7 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void ScoreThisProteinGroup(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public void ScoreThisProteinGroup(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
         {
             // find the best psm per base sequence (peptide FDR must be <1%) for scoring
             Dictionary<string, NewPsmWithFdr> peptideBaseSeqToBestPsmMatching = new Dictionary<string, NewPsmWithFdr>();
@@ -187,7 +187,7 @@ namespace EngineLayer
             {
                 if (psm.qValue < 0.01)
                 {
-                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                     string baseSeq = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
                     if (peptideBaseSeqToBestPsmMatching.ContainsKey(baseSeq))
@@ -216,7 +216,7 @@ namespace EngineLayer
             // create StrictPeptideList (only the CompactPeptide belonging to the best psm per base seq, and only if peptide FDR < 1%)
             foreach (var psm in BestPsmPerBaseSeq)
             {
-                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                 StrictPeptideList.Add(peptide);
             }
 
@@ -235,7 +235,7 @@ namespace EngineLayer
                 // if the psm matches a base sequence of a peptide in the strict peptide list, add it to the psm list
                 foreach (var psm in TotalPsmList)
                 {
-                    CompactPeptide psmPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                    CompactPeptide psmPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                     string psmPeptideBaseSeq = string.Join("", psmPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
 
                     if (strictPepBaseSeq.Equals(psmPeptideBaseSeq))

@@ -28,13 +28,13 @@ namespace Test
                                    "----EFG--J" }; // 10: indistinguishable from 6 (J will not be a "detected" PSM)
 
             IEnumerable<string> sequencesInducingCleavage = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "-" };
-            var protease = new Protease("test", sequencesInducingCleavage, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("test", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], null, "", "", 0, false, false));
-            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<MorpheusModification>>(), new int[0], new int[0], null, "", "", 0, true, false));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], null, "", "", 0, false, false));
+            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], null, "", "", 0, true, false));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -44,7 +44,7 @@ namespace Test
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MorpheusModification>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MetaMorpheusModification>(), 4098, 3, new List<MetaMorpheusModification>());
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -71,7 +71,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count(); i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<MorpheusModification>(), new List<MorpheusModification>());
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>());
             }
 
             // creates protein list
@@ -143,23 +143,21 @@ namespace Test
 
                     switch (peptide.BaseSequence)
                     {
-                        case "A": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 10), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "B": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 9), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "C": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 8), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "D": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "E": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "F": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "G": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "H": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.0)); break;
-                        case "I": psms.Add(new NewPsmWithFdr(new PSMwithProteinHashSet(new ClassicSpectrumMatch(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "A": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 10), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "B": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 9), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "C": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 8), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "E": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "F": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 5), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "G": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 4), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3), hashSet, null, null, null), 1, 0, 0.0)); break;
+                        case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2), hashSet, null, null, null), 1, 0, 0.0)); break;
                     }
                 }
             }
 
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
-
-            
             
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
@@ -179,6 +177,7 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
+
             // prints parsimonious dictionary
             System.Console.WriteLine("----Parsimonious Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
@@ -196,6 +195,7 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
+
             // prints protein groups after scoring/fdr
             System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);
             foreach (var proteinGroup in proteinGroups)
@@ -204,21 +204,23 @@ namespace Test
             }
 
 
-            /*
+            
             // check that correct proteins are in parsimony list
-            Assert.That(parsimonyProteinList.Count == 6);
-            Assert.That(parsimonyBaseSequences.Contains("AAKBBK"));
-            Assert.That(parsimonyBaseSequences.Contains("CCKEEK"));
-            Assert.That(parsimonyBaseSequences.Contains("GGKHHK"));
-            Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDK"));
-            Assert.That(parsimonyBaseSequences.Contains("HHKIIK"));
-            Assert.That(parsimonyBaseSequences.Contains("BBKCCKDDKEEK"));
-            Assert.That(parsimonyBaseSequences.Count() == 6);
+            Assert.That(parsimonyProteinList.Count == 7);
+            Assert.That(parsimonyBaseSequences.Contains("AB--------"));
+            Assert.That(parsimonyBaseSequences.Contains("--C-------"));
+            Assert.That(parsimonyBaseSequences.Contains("-B-D------"));
+            Assert.That(parsimonyBaseSequences.Contains("----EFG---"));
+            Assert.That(parsimonyBaseSequences.Contains("-----F----*"));
+            Assert.That(parsimonyBaseSequences.Contains("-B------I-"));
+            Assert.That(parsimonyBaseSequences.Contains("----EFG--J"));
+            Assert.That(parsimonyBaseSequences.Count() == 7);
 
             // protein group tests
-            Assert.That(proteinGroups.Count == 2);
-            Assert.That(proteinGroups.First().proteinGroupScore == 10);
-            */
+            Assert.That(proteinGroups.Count == 6);
+            Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count() == 2);
+            Assert.That(proteinGroups.First().proteinGroupScore == 19);
+
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
                 foreach (var coverage in proteinGroup.sequenceCoverage)

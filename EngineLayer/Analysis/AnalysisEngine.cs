@@ -124,7 +124,6 @@ namespace EngineLayer.Analysis
 
                 if (uniquePeptidesHere.Any())
                 {
-                    Console.WriteLine("Unique adding " + kvp.Key.BaseSequence);
                     parsimonyDict.Add(kvp.Key, kvp.Value);
                     proteinsWithUniquePeptides.Add(kvp.Key);
 
@@ -136,7 +135,7 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            // build protein list for each peptide before parsimony has been applied (helps determine where to put razor peptides)
+            // build protein list for each peptide before parsimony has been applied 
             var peptideBaseSeqProteinListMatch = new Dictionary<string, HashSet<Protein>>();
             foreach (var kvp in proteinToPeptidesMatching)
             {
@@ -182,7 +181,7 @@ namespace EngineLayer.Analysis
                             if (comparisonProteinNewPeptides >= currentBestNumNewPeptides)
                             {
                                 // if the current protein is better than the best so far, current protein is the new best protein
-                                if (comparisonProteinNewPeptides > currentBestNumNewPeptides)
+                                if (comparisonProteinNewPeptides > currentBestNumNewPeptides || currentBestNumNewPeptides == 0)
                                 {
                                     bestProtein = kvp.Key;
                                     currentBestNumNewPeptides = comparisonProteinNewPeptides;
@@ -200,7 +199,6 @@ namespace EngineLayer.Analysis
                                         {
                                             bestProtein = kvp.Key;
                                         }
-                                        Console.WriteLine("   Razor pick " + bestProtein.BaseSequence);
                                     }
                                 }
                             }
@@ -215,15 +213,13 @@ namespace EngineLayer.Analysis
                     {
                         HashSet<CompactPeptide> bestProteinPeptideList;
                         proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
-
-                        Console.WriteLine("Greedy adding " + bestProtein.BaseSequence);
+                        
                         parsimonyDict.Add(bestProtein, bestProteinPeptideList);
 
                         foreach (var peptide in bestProteinPeptideList)
                         {
                             string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                            usedPeptides.Add(peptide);
+                            
                             usedBaseSequences.Add(peptideBaseSequence);
                         }
                     }
@@ -246,14 +242,26 @@ namespace EngineLayer.Analysis
 
                                     var proteins = new HashSet<Protein>();
                                     peptideBaseSeqProteinListMatch.TryGetValue(peptideBaseSequence, out proteins);
+
+                                    // multiple proteins have the same new base seq - pick the one with the most total peptides
                                     if (proteins.Count() > 1)
                                     {
-                                        Console.WriteLine("   Razor1 " + string.Join(", ", proteins.Select(p => p.BaseSequence)));
+                                        var proteinsWithNumBaseSeqs = new Dictionary<Protein, int>();
 
-                                        // need to find protein with most peptides
+                                        // count how many peptides each protein has
+                                        foreach(var protein in proteins)
+                                        {
+                                            HashSet<CompactPeptide> peps;
+                                            proteinToPeptidesMatching.TryGetValue(protein, out peps);
+                                            var baseSeqs = new HashSet<string>(peps.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+                                            proteinsWithNumBaseSeqs.Add(protein, baseSeqs.Count());
+                                        }
+
+                                        // pick the protein with the most peptides
+                                        proteinsWithNumBaseSeqs.OrderByDescending(b => b.Value);
+                                        bestProtein = proteinsWithNumBaseSeqs.First().Key;
                                     }
 
-                                    Console.WriteLine("Greedy1 adding " + kvp.Key.BaseSequence);
                                     parsimonyDict.Add(bestProtein, kvp.Value);
                                     usedBaseSequences.Add(peptideBaseSequence);
                                     break;
@@ -290,7 +298,6 @@ namespace EngineLayer.Analysis
                                     {
                                         proteinGroup.Proteins.Add(kvp.Key);
                                         parsimonyDict.Add(kvp.Key, kvp.Value);
-                                        Console.WriteLine("Indistinguishable adding " + kvp.Key.BaseSequence);
                                     }
                                 }
                             }
@@ -365,7 +372,7 @@ namespace EngineLayer.Analysis
             Dictionary<CompactPeptide, NewPsmWithFdr> psmToCompactPeptideMatching = new Dictionary<CompactPeptide, NewPsmWithFdr>();
             foreach (var psm in psmList)
             {
-                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications);
+                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
                 if (!psmToCompactPeptideMatching.ContainsKey(peptide))
                     psmToCompactPeptideMatching.Add(peptide, psm);
             }
@@ -385,7 +392,7 @@ namespace EngineLayer.Analysis
             foreach (var proteinGroup in proteinGroups)
             {
                 // score the group (scoring algorithm defined in the ProteinGroup class)
-                proteinGroup.ScoreThisProteinGroup(variableModifications, localizeableModifications);
+                proteinGroup.ScoreThisProteinGroup(variableModifications, localizeableModifications, fixedModifications);
 
                 // for finding razor peptides later
                 List<NewPsmWithFdr> thisProteinGroupsPsmList = new List<NewPsmWithFdr>();
