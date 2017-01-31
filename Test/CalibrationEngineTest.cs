@@ -28,7 +28,6 @@ namespace Test
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(pepWithSetMods);
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            double toleranceInMZforMS2Search = fragmentTolerance.Value;
 
             List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
             PsmParent newPsm = new TestParentSpectrumMatch(2, 2);
@@ -41,9 +40,8 @@ namespace Test
             int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
             int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
             int numFragmentsNeededForEveryIdentification = 10;
-            double toleranceInMZforMS1Search = 0.01;
 
-            var calibrationEngine = new CalibrationEngine(myMsDataFile, randomSeed, toleranceInMZforMS2Search, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, toleranceInMZforMS1Search, FragmentTypes.b | FragmentTypes.y);
+            var calibrationEngine = new CalibrationEngine(myMsDataFile, randomSeed, fragmentTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y);
 
             var res = calibrationEngine.Run();
             Assert.IsTrue(res is CalibrationResults);

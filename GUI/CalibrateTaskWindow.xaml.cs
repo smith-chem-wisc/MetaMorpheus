@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using Spectra;
 using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
@@ -61,8 +62,11 @@ namespace MetaMorpheusGUI
             proteaseComboBox.SelectedItem = task.Protease;
             maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
-            productMassToleranceTextBox.Text = task.ProductMassToleranceInDaltons.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceTextBox.Text = task.PrecursorMassToleranceInDaltons.ToString(CultureInfo.InvariantCulture);
+
+            productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
+            precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
+            precursorMassToleranceComboBox.SelectedIndex = (int)task.PrecursorMassTolerance.Unit;
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
@@ -87,6 +91,12 @@ namespace MetaMorpheusGUI
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
+            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
+                productMassToleranceComboBox.Items.Add(toleranceUnit);
+
+            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
+                precursorMassToleranceComboBox.Items.Add(toleranceUnit);
+
             // Always create new ModFileList
             foreach (var uu in modList)
                 ModFileListInWindow.Add(new ModListForCalibrationTask(uu));
@@ -104,11 +114,20 @@ namespace MetaMorpheusGUI
             TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-            TheTask.ProductMassToleranceInDaltons = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
+
             TheTask.ListOfModListsForCalibration = ModFileListInWindow.ToList();
-            TheTask.PrecursorMassToleranceInDaltons = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+
+
+            TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
+
+
+            TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+
 
             DialogResult = true;
         }

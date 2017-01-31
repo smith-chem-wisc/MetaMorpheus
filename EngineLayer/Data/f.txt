@@ -1,5 +1,5 @@
 ﻿Fixed modifications
-ID   Carbamidomethylation of C anywhere
+ID   Carbamidomethyl
 FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.

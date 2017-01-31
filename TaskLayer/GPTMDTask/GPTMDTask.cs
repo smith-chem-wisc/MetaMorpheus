@@ -26,6 +26,12 @@ namespace TaskLayer
 
         #endregion Public Fields
 
+        #region Private Fields
+
+        private const double binTolInDaltons = 0.003;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public GptmdTask(ObservableCollection<ModList> modList)
@@ -36,6 +42,7 @@ namespace TaskLayer
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
             listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
@@ -47,7 +54,6 @@ namespace TaskLayer
             listOfModListsForGPTMD[3].Gptmd = true;
             listOfModListsForGPTMD[4].Gptmd = true;
             TaskType = MyTask.Gptmd;
-            TolInDaltons = 0.01;
             IsotopeErrors = false;
             MaxNumPeaksPerScan = 400;
         }
@@ -57,7 +63,7 @@ namespace TaskLayer
         #region Public Properties
 
         public Tolerance ProductMassTolerance { get; set; }
-        public double TolInDaltons { get; set; }
+        public Tolerance PrecursorMassTolerance { get; set; }
         public bool IsotopeErrors { get; set; }
 
         #endregion Public Properties
@@ -75,7 +81,7 @@ namespace TaskLayer
                 sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
                 sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Gptmd).Select(b => b.FileName)));
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-                sb.Append("TolInDaltons: " + TolInDaltons);
+                sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
                 return sb.ToString();
             }
         }
@@ -193,7 +199,7 @@ namespace TaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
             // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.PrecursorMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), new Tolerance(ToleranceUnit.Absolute, TolInDaltons));
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.PrecursorMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), PrecursorMassTolerance);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
@@ -229,19 +235,19 @@ namespace TaskLayer
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, TolInDaltons);
+                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
 
             if (currentRawFileList.Count > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, TolInDaltons);
+                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
                 analysisResults = (AnalysisResults)analysisEngine.Run();
                 //output(analysisResults.ToString());
             }
 
-            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, TolInDaltons);
+            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance);
             var gptmdResults = (GptmdResults)gptmdEngine.Run();
 
             //output(gptmdResults.ToString());

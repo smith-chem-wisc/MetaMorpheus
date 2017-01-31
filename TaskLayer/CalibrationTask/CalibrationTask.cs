@@ -28,8 +28,8 @@ namespace TaskLayer
             Protease = ProteaseDictionary.Instance["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassToleranceInDaltons = 0.01;
-            PrecursorMassToleranceInDaltons = 0.05; // Experimentally determined
+            ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
             ListOfModListsForCalibration = new List<ModListForCalibrationTask>();
@@ -47,8 +47,8 @@ namespace TaskLayer
         #region Public Properties
 
         public List<ModListForCalibrationTask> ListOfModListsForCalibration { get; set; }
-        public double ProductMassToleranceInDaltons { get; set; }
-        public double PrecursorMassToleranceInDaltons { get; set; }
+        public Tolerance ProductMassTolerance { get; set; }
+        public Tolerance PrecursorMassTolerance { get; set; }
 
         #endregion Public Properties
 
@@ -62,8 +62,8 @@ namespace TaskLayer
                 sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
                 sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
                 sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
-                sb.AppendLine("productMassToleranceInDaltons: " + ProductMassToleranceInDaltons);
-                sb.Append("precursorMassTolerance: " + PrecursorMassToleranceInDaltons);
+                sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
+                sb.Append("ProductMassTolerance: " + ProductMassTolerance);
                 return sb.ToString();
             }
         }
@@ -79,7 +79,10 @@ namespace TaskLayer
             var currentRawFileList = rawDataFilenameList;
 
             SearchMode searchMode;
-            searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassToleranceInDaltons);
+            if (PrecursorMassTolerance.Unit == ToleranceUnit.PPM)
+                searchMode = new SinglePpmAroundZeroSearchMode(PrecursorMassTolerance.Value);
+            else
+                searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassTolerance.Value);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
@@ -129,7 +132,7 @@ namespace TaskLayer
                     listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                 }
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
 
@@ -137,7 +140,7 @@ namespace TaskLayer
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
 
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, new Tolerance(ToleranceUnit.Absolute, ProductMassToleranceInDaltons), (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN);
+                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -164,7 +167,8 @@ namespace TaskLayer
                 int numFragmentsNeededForEveryIdentification = 10;
 
                 // TODO: fix the tolerance calculation below
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassToleranceInDaltons * 2, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassToleranceInDaltons * 2, fragmentTypesForCalibration);
+
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration);
 
                 var result = a.Run();
 

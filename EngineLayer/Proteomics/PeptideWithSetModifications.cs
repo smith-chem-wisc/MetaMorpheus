@@ -109,7 +109,7 @@ namespace EngineLayer
             }
         }
 
-        public int NumVariableMods
+        public int NumMods
         {
             get
             {

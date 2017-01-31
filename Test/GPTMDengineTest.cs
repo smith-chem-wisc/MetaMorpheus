@@ -22,11 +22,11 @@ namespace Test
             List<NewPsmWithFdr> allResultingIdentifications = null;
             var gptmdModifications = new List<MetaMorpheusModification> { new MetaMorpheusModification("name", ModificationType.AminoAcidResidue, 'N', null, '\0', double.NaN, double.NaN, 21.981943, new Chemistry.ChemicalFormula("H-1 Na1")) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
-            double tol = 0.1;
+            Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
 
             allResultingIdentifications = new List<NewPsmWithFdr>();
-            var engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
+            var engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, precursorMassTolerance);
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
@@ -42,7 +42,7 @@ namespace Test
             var newPsmWithFDR = new NewPsmWithFdr(thisPSM, 1, 0, 0);
             allResultingIdentifications.Add(newPsmWithFDR);
 
-            engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, tol);
+            engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, precursorMassTolerance);
             res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(5, res.Mods["accession"].Count);

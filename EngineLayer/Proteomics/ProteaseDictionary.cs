@@ -29,7 +29,7 @@ namespace EngineLayer
                     string name = fields[0];
                     string[] sequences_inducing_cleavage = fields[1].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                     string[] sequences_preventing_cleavage = fields[2].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    var cleavage_terminus = (OldLogicTerminus)Enum.Parse(typeof(OldLogicTerminus), fields[3], true);
+                    var cleavage_terminus = (TerminusType)Enum.Parse(typeof(TerminusType), fields[3], true);
                     var cleavage_specificity = (CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), fields[4], true);
                     string psi_ms_accession_number = fields[5];
                     string psi_ms_name = fields[6];

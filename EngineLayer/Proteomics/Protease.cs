@@ -8,7 +8,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public Protease(string name, IEnumerable<string> sequencesInducingCleavage, IEnumerable<string> sequencesPreventingCleavage, OldLogicTerminus cleavageTerminus, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber, string psiMSName, string siteRegexp)
+        public Protease(string name, IEnumerable<string> sequencesInducingCleavage, IEnumerable<string> sequencesPreventingCleavage, TerminusType cleavageTerminus, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber, string psiMSName, string siteRegexp)
         {
             Name = name;
             SequencesInducingCleavage = sequencesInducingCleavage;
@@ -26,7 +26,7 @@ namespace EngineLayer
 
         public string Name { get; private set; }
 
-        public OldLogicTerminus CleavageTerminus { get; private set; }
+        public TerminusType CleavageTerminus { get; private set; }
         public IEnumerable<string> SequencesInducingCleavage { get; private set; }
         public IEnumerable<string> SequencesPreventingCleavage { get; private set; }
         public CleavageSpecificity CleavageSpecificity { get; private set; }
@@ -55,14 +55,14 @@ namespace EngineLayer
             {
                 foreach (string c in SequencesInducingCleavage)
                 {
-                    if ((CleavageTerminus != OldLogicTerminus.N && i - c.Length + 1 >= 0 && sequence.Substring(i - c.Length + 1, c.Length).Equals(c, StringComparison.OrdinalIgnoreCase))
-                        || (CleavageTerminus == OldLogicTerminus.N && i + 1 + c.Length <= sequence.Length && sequence.Substring(i + 1, c.Length).Equals(c, StringComparison.OrdinalIgnoreCase)))
+                    if ((CleavageTerminus != TerminusType.N && i - c.Length + 1 >= 0 && sequence.Substring(i - c.Length + 1, c.Length).Equals(c, StringComparison.OrdinalIgnoreCase))
+                        || (CleavageTerminus == TerminusType.N && i + 1 + c.Length <= sequence.Length && sequence.Substring(i + 1, c.Length).Equals(c, StringComparison.OrdinalIgnoreCase)))
                     {
                         bool cleave = true;
                         foreach (string nc in SequencesPreventingCleavage)
                         {
-                            if ((CleavageTerminus != OldLogicTerminus.N && i + 1 + nc.Length <= sequence.Length && sequence.Substring(i + 1, nc.Length).Equals(nc, StringComparison.OrdinalIgnoreCase))
-                                || (CleavageTerminus == OldLogicTerminus.N && i - nc.Length + 1 >= 0 && sequence.Substring(i - nc.Length + 1, nc.Length).Equals(nc, StringComparison.OrdinalIgnoreCase)))
+                            if ((CleavageTerminus != TerminusType.N && i + 1 + nc.Length <= sequence.Length && sequence.Substring(i + 1, nc.Length).Equals(nc, StringComparison.OrdinalIgnoreCase))
+                                || (CleavageTerminus == TerminusType.N && i - nc.Length + 1 >= 0 && sequence.Substring(i - nc.Length + 1, nc.Length).Equals(nc, StringComparison.OrdinalIgnoreCase)))
                             {
                                 cleave = false;
                                 break;

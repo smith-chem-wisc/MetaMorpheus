@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spectra;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,23 +10,24 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
+        private const double missedMonoisopePeak = 1.003;
         private readonly List<NewPsmWithFdr> allResultingIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<MetaMorpheusModification> gptmdModifications;
         private readonly bool isotopeErrors;
-        private readonly double tolInDaltons;
+        private readonly Tolerance precursorMassTolerance;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MetaMorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, double tolInDaltons) : base(2)
+        public GptmdEngine(List<NewPsmWithFdr> allResultingIdentifications, bool isotopeErrors, List<MetaMorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance) : base(2)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.isotopeErrors = isotopeErrors;
             this.gptmdModifications = gptmdModifications;
             this.combos = combos;
-            this.tolInDaltons = tolInDaltons;
+            this.precursorMassTolerance = precursorMassTolerance;
         }
 
         #endregion Public Constructors
@@ -46,7 +48,7 @@ namespace EngineLayer.Gptmd
                     var peptide = theDict.First();
                     var baseSequence = ye.thisPSM.BaseSequence;
                     double massDiff = ye.thisPSM.ScanPrecursorMass - ye.thisPSM.PeptideMonoisotopicMass;
-                    foreach (MetaMorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, tolInDaltons))
+                    foreach (MetaMorpheusModification mod in GetMod(massDiff, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))
                     {
                         int proteinLength = peptide.Protein.Length;
                         var proteinAcession = peptide.Protein.Accession;
@@ -94,13 +96,13 @@ namespace EngineLayer.Gptmd
             return true;
         }
 
-        private static IEnumerable<MetaMorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MetaMorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, double tolInDaltons)
+        private static IEnumerable<MetaMorpheusModification> GetMod(double massDiff, bool isotopeErrors, IEnumerable<MetaMorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance)
         {
             foreach (var Mod in allMods)
             {
-                if (Mod.ObservedMassShift > massDiff - tolInDaltons && Mod.ObservedMassShift < massDiff + tolInDaltons)
+                if (precursorTolerance.Within(massDiff, Mod.ObservedMassShift))
                     yield return Mod;
-                if (isotopeErrors && Mod.ObservedMassShift > massDiff - tolInDaltons - 1.003 && Mod.ObservedMassShift < massDiff + tolInDaltons - 1.003)
+                if (isotopeErrors && precursorTolerance.Within(massDiff - missedMonoisopePeak, Mod.ObservedMassShift))
                     yield return Mod;
             }
 
@@ -109,18 +111,18 @@ namespace EngineLayer.Gptmd
                 var m1 = combo.Item1;
                 var m2 = combo.Item2;
                 var combined = m1 + m2;
-                if (combined > massDiff - tolInDaltons && combined < massDiff + tolInDaltons)
+                if (precursorTolerance.Within(massDiff, combined))
                 {
-                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tolInDaltons))
+                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, precursorTolerance))
                         yield return mod;
-                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tolInDaltons))
+                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, precursorTolerance))
                         yield return mod;
                 }
-                if (isotopeErrors && combined > massDiff - tolInDaltons - 1.003 && combined < massDiff + tolInDaltons - 1.003)
+                if (isotopeErrors && precursorTolerance.Within(massDiff - missedMonoisopePeak, combined))
                 {
-                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, tolInDaltons))
+                    foreach (var mod in GetMod(m1, isotopeErrors, allMods, combos, precursorTolerance))
                         yield return mod;
-                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, tolInDaltons))
+                    foreach (var mod in GetMod(m2, isotopeErrors, allMods, combos, precursorTolerance))
                         yield return mod;
                 }
             }

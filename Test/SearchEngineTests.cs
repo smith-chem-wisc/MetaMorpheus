@@ -26,7 +26,7 @@ namespace Test
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
@@ -55,7 +55,7 @@ namespace Test
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -86,7 +86,7 @@ namespace Test
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -121,7 +121,7 @@ namespace Test
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), OldLogicTerminus.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });

@@ -21,8 +21,8 @@ namespace EngineLayer.Calibration
         private readonly int minMS1isotopicPeaksNeededForConfirmedIdentification;
         private readonly int minMS2isotopicPeaksNeededForConfirmedIdentification;
         private readonly int numFragmentsNeededForEveryIdentification;
-        private readonly double toleranceInMZforMS1Search;
-        private readonly double toleranceInMZforMS2Search;
+        private readonly Tolerance mzToleranceForMs1Search;
+        private readonly Tolerance mzToleranceForMs2Search;
         private readonly int randomSeed;
         private readonly FragmentTypes fragmentTypesForCalibration;
         private List<NewPsmWithFdr> identifications;
@@ -32,16 +32,16 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int randomSeed, double toleranceInMZforMS2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, double toleranceInMZforMS1Search, FragmentTypes fragmentTypesForCalibration) : base(2)
+        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int randomSeed, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration) : base(2)
         {
             this.myMsDataFile = myMSDataFile;
             this.randomSeed = randomSeed;
-            this.toleranceInMZforMS2Search = toleranceInMZforMS2Search;
             this.identifications = identifications;
             this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1IsotopicPeaksNeededForConfirmedIdentification;
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2IsotopicPeaksNeededForConfirmedIdentification;
             this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
-            this.toleranceInMZforMS1Search = toleranceInMZforMS1Search;
+            this.mzToleranceForMs1Search = mzToleranceForMS1Search;
+            this.mzToleranceForMs2Search = mzToleranceForMs2Search;
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
         }
 
@@ -377,7 +377,7 @@ namespace EngineLayer.Calibration
                     {
                         double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
 
-                        var npwr = fullMS1spectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS1Search, theMZ + toleranceInMZforMS1Search);
+                        var npwr = fullMS1spectrum.NumPeaksWithinRange(mzToleranceForMs1Search.GetMinimumValue(theMZ), mzToleranceForMs1Search.GetMaximumValue(theMZ));
                         if (npwr == 0)
                         {
                             break;
@@ -421,7 +421,7 @@ namespace EngineLayer.Calibration
                     {
                         addedAscan = true;
                         startingToAddCharges = true;
-                        countForThisScan += 1;
+                        countForThisScan++;
                         double[] inputs = { -1, trainingPointsToAverage.Select(b => b.inputs[0]).Average(), fullMS1scan.RetentionTime, trainingPointsToAverage.Select(b => b.inputs[1]).Average(), fullMS1scan.TotalIonCurrent, fullMS1scan.InjectionTime };
                         var a = new LabeledDataPoint(inputs, trainingPointsToAverage.Select(b => b.output).Median());
 
@@ -475,7 +475,8 @@ namespace EngineLayer.Calibration
                     if (monoisotopicMZ < scanWindowRange.Minimum)
                         break;
                     var closestPeakMZ = ms2DataScan.MassSpectrum.GetClosestPeakXvalue(monoisotopicMZ);
-                    if (Math.Abs(closestPeakMZ - monoisotopicMZ) < toleranceInMZforMS2Search)
+
+                    if (mzToleranceForMs2Search.Within(closestPeakMZ, monoisotopicMZ))
                     {
                         if (!computedIsotopologues)
                         {
@@ -513,7 +514,7 @@ namespace EngineLayer.Calibration
                         foreach (double a in masses)
                         {
                             double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
-                            var npwr = ms2DataScan.MassSpectrum.NumPeaksWithinRange(theMZ - toleranceInMZforMS2Search, theMZ + toleranceInMZforMS2Search);
+                            var npwr = ms2DataScan.MassSpectrum.NumPeaksWithinRange(mzToleranceForMs2Search.GetMinimumValue(theMZ), mzToleranceForMs2Search.GetMaximumValue(theMZ));
                             if (npwr == 0)
                             {
                                 break;
@@ -548,7 +549,7 @@ namespace EngineLayer.Calibration
                             }
 
                             countForThisMS2 += trainingPointsToAverage.Count;
-                            countForThisMS2a += 1;
+                            countForThisMS2a++;
 
                             double addedMZ = trainingPointsToAverage.Select(b => b.inputs[0]).Average();
                             double relativeMZ = (addedMZ - ms2DataScan.ScanWindowRange.Minimum) / (ms2DataScan.ScanWindowRange.Maximum - ms2DataScan.ScanWindowRange.Minimum);

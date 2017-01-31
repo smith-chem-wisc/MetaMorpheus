@@ -45,7 +45,7 @@ namespace EngineLayer
         {
             get
             {
-                return Database + ":" + NameInXml + (Math.Abs(PrecursorMassShift - FragmentMassShift) < 1e-6 ? ":fms" + FragmentMassShift.ToString("F3", CultureInfo.InvariantCulture) : "");
+                return Database + ":" + NameInXml + (Math.Abs(PrecursorMassShift - FragmentMassShift) > 1e-3 ? ":fms" + FragmentMassShift.ToString("F3", CultureInfo.InvariantCulture) : "");
             }
         }
 

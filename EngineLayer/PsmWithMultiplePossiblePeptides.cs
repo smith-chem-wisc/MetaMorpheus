@@ -67,7 +67,7 @@ namespace EngineLayer
             FullSequence = representative.Sequence;
             BaseSequence = representative.BaseSequence;
             MissedCleavages = representative.MissedCleavages;
-            NumVariableMods = representative.NumVariableMods;
+            NumMods = representative.NumMods;
         }
 
         #endregion Public Constructors
@@ -110,7 +110,7 @@ namespace EngineLayer
 
         public int MissedCleavages { get; private set; }
 
-        public int NumVariableMods { get; private set; }
+        public int NumMods { get; private set; }
 
         public string SequenceWithChemicalFormulas
         {
@@ -136,7 +136,7 @@ namespace EngineLayer
                 sb.Append("Start and End ResidueInProtein" + '\t');
                 sb.Append("BaseSequence" + '\t');
                 sb.Append("FullSequence" + '\t');
-                sb.Append("numVariableMods" + '\t');
+                sb.Append("numMods" + '\t');
                 sb.Append("MissedCleavages" + '\t');
                 sb.Append("PeptideMonoisotopicMass" + '\t');
                 sb.Append("MassDiff (Da)" + '\t');
@@ -161,7 +161,7 @@ namespace EngineLayer
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")) + "\t");
             sb.Append(BaseSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(NumMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
