@@ -125,6 +125,7 @@ namespace InternalLogicEngineLayer
 
                 if (uniquePeptidesHere.Any())
                 {
+                    Console.WriteLine("Unique adding " + kvp.Key.BaseSequence);
                     parsimonyDict.Add(kvp.Key, kvp.Value);
                     proteinsWithUniquePeptides.Add(kvp.Key);
 
@@ -176,13 +177,33 @@ namespace InternalLogicEngineLayer
                         if (!parsimonyDict.ContainsKey(kvp.Key))
                         {
                             var baseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
-                            comparisonProteinNewPeptides = baseSeqs.Except(usedBaseSequences).Count();
+                            var comparisonProteinNewPeptideBaseSeqs = new HashSet<string>(baseSeqs.Except(usedBaseSequences));
+                            comparisonProteinNewPeptides = comparisonProteinNewPeptideBaseSeqs.Count();
 
-                            // if the current protein is better than the best so far, current protein is the new best protein
-                            if (comparisonProteinNewPeptides > currentBestNumNewPeptides)
+                            if (comparisonProteinNewPeptides >= currentBestNumNewPeptides)
                             {
-                                bestProtein = kvp.Key;
-                                currentBestNumNewPeptides = comparisonProteinNewPeptides;
+                                // if the current protein is better than the best so far, current protein is the new best protein
+                                if (comparisonProteinNewPeptides > currentBestNumNewPeptides)
+                                {
+                                    bestProtein = kvp.Key;
+                                    currentBestNumNewPeptides = comparisonProteinNewPeptides;
+                                }
+                                else
+                                {
+                                    HashSet<CompactPeptide> bestProteinPeptideList;
+                                    proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
+                                    var bestProteinBaseSeqs = new HashSet<string>(bestProteinPeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+                                    var bestProteinNewPeptideBaseSeqs = new HashSet<string>(bestProteinBaseSeqs.Except(usedBaseSequences));
+
+                                    if(bestProteinNewPeptideBaseSeqs.SetEquals(comparisonProteinNewPeptideBaseSeqs))
+                                    {
+                                        if (bestProteinBaseSeqs.Count() < comparisonProteinNewPeptideBaseSeqs.Count())
+                                        {
+                                            bestProtein = kvp.Key;
+                                        }
+                                        Console.WriteLine("   Razor pick " + bestProtein.BaseSequence);
+                                    }
+                                }
                             }
                         }
                     }
@@ -196,35 +217,7 @@ namespace InternalLogicEngineLayer
                         HashSet<CompactPeptide> bestProteinPeptideList;
                         proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
 
-                        /*
-                        // checks if these are razor peptides, if we need to change the best protein
-                        var baseSeqs = new HashSet<string>(bestProteinPeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
-                        var newBaseSeqs = baseSeqs.Except(usedBaseSequences);
-                        HashSet<Protein> proteinsWithAllNewBaseSeqs = new HashSet<Protein>();
-
-                        // find all proteins that have all newly found base sequences
-                        foreach(var pep in newBaseSeqs)
-                        {
-                            HashSet<Protein> proteinsWithThisBaseSeq;
-                            peptideBaseSeqProteinListMatch.TryGetValue(pep, out proteinsWithThisBaseSeq);
-
-                            if(proteinsWithAllNewBaseSeqs.Any())
-                            {
-                                proteinsWithAllNewBaseSeqs = proteinsWithThisBaseSeq;
-                            }
-                            else
-                            {
-                                proteinsWithAllNewBaseSeqs.IntersectWith(proteinsWithThisBaseSeq);
-                            }
-                        }
-
-                        // found multiple proteins that have all of the new peptides - pick the one with the most peptides
-                        if(proteinsWithAllNewBaseSeqs.Count() > 1)
-                        {
-                            bool check = true;
-                        }
-                        */                    
-
+                        Console.WriteLine("Greedy adding " + bestProtein.BaseSequence);
                         parsimonyDict.Add(bestProtein, bestProteinPeptideList);
 
                         foreach (var peptide in bestProteinPeptideList)
@@ -248,7 +241,19 @@ namespace InternalLogicEngineLayer
 
                                 if (!usedBaseSequences.Contains(peptideBaseSequence))
                                 {
-                                    parsimonyDict.Add(kvp.Key, kvp.Value);
+                                    bestProtein = kvp.Key;
+
+                                    var proteins = new HashSet<Protein>();
+                                    peptideBaseSeqProteinListMatch.TryGetValue(peptideBaseSequence, out proteins);
+                                    if (proteins.Count() > 1)
+                                    {
+                                        Console.WriteLine("   Razor1 " + string.Join(", ", proteins.Select(p => p.BaseSequence)));
+
+                                        // need to find protein with most peptides
+                                    }
+
+                                    Console.WriteLine("Greedy1 adding " + kvp.Key.BaseSequence);
+                                    parsimonyDict.Add(bestProtein, kvp.Value);
                                     usedBaseSequences.Add(peptideBaseSequence);
                                     break;
                                 }
@@ -284,6 +289,7 @@ namespace InternalLogicEngineLayer
                                     {
                                         proteinGroup.Proteins.Add(kvp.Key);
                                         parsimonyDict.Add(kvp.Key, kvp.Value);
+                                        Console.WriteLine("Indistinguishable adding " + kvp.Key.BaseSequence);
                                     }
                                 }
                             }

@@ -33,8 +33,20 @@ namespace InternalLogicEngineLayer
                 var sb = new StringBuilder();
                 sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
 
-                if (ProteinGroups != null)
-                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", ProteinGroups.Select(b => b.Count(c => c.QValue <= 0.01))));
+                var check = ProteinGroups.Where(s => s != null);
+                if (check.Any())
+                {
+                    var numProteinsList = new List<int>(); 
+                    for(int i = 0; i < ProteinGroups.Length; i++)
+                    {
+                        if (ProteinGroups[i] == null)
+                            numProteinsList.Add(0);
+                        else
+                            numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
+                    }
+
+                    sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", numProteinsList));
+                }
 
                 return sb.ToString();
             }
