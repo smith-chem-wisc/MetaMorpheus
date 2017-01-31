@@ -56,46 +56,9 @@ namespace MetaMorpheusGUI
 
             LoadSearchModesFromFile();
 
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-12-15-2016.xml"));
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-17-2017.xml.gz"));
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\cRAP-11-11-2016.xml"));
+            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-23-2017.xml"));
 
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\MSQC4_heavy_light.xml"));
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\cRAP_database.xml"));
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\2017-01-23-13-23-29\Task2Gptmd\cRAP_database-MSQC4_heavy_lightGPTMD.xml"));
-
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\120426_Jurkat_highLC_Frac17.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\Step2\Mouse\Calib-0.1.2\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac1_9uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac2_9p5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac3_9p5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac4_8uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac5_4uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac6_5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac7_5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac8_9p5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac1_9uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac2_9uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac3_6uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac4_6uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac5_4uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac6_5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac7_6uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac8_9p5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-30-13_CAST_Frac9_9p5uL.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Jurkat\2017-01-20-17-11-20\Task1Calibrate\120426_Jurkat_highLC_Frac17-Calibrated.mzML"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-17-13-30-41\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
-
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\04-29-13_B6_Frac9_9p5uL-Calibrated.mzML"));
-
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\HC-GluC_ingel_071108-01.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\LC_GluC_071808.raw"));
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\HC-Trypsin_ingel_061808-01.raw"));
-            // rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Desktop\MM_error\sigma_rawFiles\LC-Trypsin_ingel_061808-01.raw"));
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-30-19-07-49\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
@@ -181,6 +144,7 @@ namespace MetaMorpheusGUI
             searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5)));
             searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
             searchModeObservableCollection.Add(new OpenSearchMode());
+            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) }));
         }
 
         private void AddNewDB(object sender, XmlForTaskListEventArgs e)

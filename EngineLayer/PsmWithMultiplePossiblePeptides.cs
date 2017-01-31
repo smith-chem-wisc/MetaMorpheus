@@ -174,7 +174,7 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance product_mass_tolerance_value, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesList)
+        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesList)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)
@@ -195,7 +195,7 @@ namespace EngineLayer
             for (int i = 0; i < num_experimental_peaks; i++)
             {
                 currentExperimentalMZ = experimental_mzs[i];
-                if (product_mass_tolerance_value.Within(currentExperimentalMZ, nextTheoreticalMZ))
+                if (productMassTolerance.Within(currentExperimentalMZ, nextTheoreticalMZ))
                 {
                     MatchingProductsHere++;
                     MatchingIntensityHere += experimental_intensities[i];

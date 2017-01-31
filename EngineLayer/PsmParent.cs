@@ -21,14 +21,10 @@ namespace EngineLayer
         public readonly double scanPrecursorMass;
         public readonly double score;
 
+        public Dictionary<ProductType, double[]> matchedIonsList;
+        public List<double> LocalizedScores;
+
         #endregion Public Fields
-
-        #region Internal Fields
-
-        internal Dictionary<ProductType, double[]> matchedIonsList;
-        internal List<double> LocalizedScores;
-
-        #endregion Internal Fields
 
         #region Protected Constructors
 
