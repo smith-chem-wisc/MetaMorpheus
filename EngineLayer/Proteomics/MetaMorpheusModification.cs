@@ -29,7 +29,7 @@ namespace EngineLayer
 
         public MetaMorpheusModification(double v)
         {
-            this.PrecursorMassShift = v;
+            this.FragmentMassShift = v;
             ThisModificationType = ModificationType.AminoAcidResidue;
             PrevAminoAcid = '\0';
             this.NameInXml = "";
