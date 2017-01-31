@@ -1,11 +1,11 @@
-﻿using InternalLogicEngineLayer;
-using OldInternalLogic;
+﻿using EngineLayer;
+
 using System;
 using System.Collections.Generic;
 
 namespace Test
 {
-    internal class TestParentSpectrumMatch : ParentSpectrumMatch
+    internal class TestParentSpectrumMatch : PsmParent
     {
 
         #region Public Constructors
@@ -18,7 +18,7 @@ namespace Test
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MorpheusModification> variableModifications, List<MorpheusModification> localizeableModifications)
+        public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
         {
             throw new NotImplementedException();
         }

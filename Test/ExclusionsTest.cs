@@ -1,4 +1,4 @@
-﻿using InternalLogicEngineLayer;
+﻿using EngineLayer;
 using NUnit.Framework;
 
 namespace Test

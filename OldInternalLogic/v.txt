@@ -1,8 +1,0 @@
-﻿Variable Modifications
-ID   Oxidation of M anywhere
-FT   MOD_RES
-TG   Methionine
-PP   Anywhere.
-MM   15.994915
-CF   O1
-//

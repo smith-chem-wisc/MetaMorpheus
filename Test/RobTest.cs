@@ -1,6 +1,8 @@
-﻿using InternalLogicEngineLayer;
+﻿using EngineLayer;
+using EngineLayer.Analysis;
+using EngineLayer.ClassicSearch;
 using NUnit.Framework;
-using OldInternalLogic;
+
 using System.Collections.Generic;
 using System.Linq;
 
@@ -111,7 +113,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new ParentSpectrumMatch[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
             dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -161,7 +163,6 @@ namespace Test
             
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
-
             System.Console.WriteLine("----Initial Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in initialDictionary)
@@ -178,7 +179,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
             // prints parsimonious dictionary
             System.Console.WriteLine("----Parsimonious Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
@@ -196,7 +196,6 @@ namespace Test
                 }
                 System.Console.WriteLine();
             }
-
             // prints protein groups after scoring/fdr
             System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);
             foreach (var proteinGroup in proteinGroups)
