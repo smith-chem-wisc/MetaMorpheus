@@ -71,3 +71,27 @@ FM   0
 MM   146.057909
 CF   C6 H10 O4
 //
+ID   HexNAc2
+FT   MOD_RES
+TG   Asparagine
+PP   Anywhere.
+FM   0
+MM   406.158745 
+CF   C16 O10 N2 H26
+//
+ID   HexNAc2
+FT   MOD_RES
+TG   Serine
+PP   Anywhere.
+FM   0
+MM   406.158745 
+CF   C16 O10 N2 H26
+//
+ID   HexNAc2
+FT   MOD_RES
+TG   Threonine
+PP   Anywhere.
+FM   0
+MM   406.158745 
+CF   C16 O10 N2 H26
+//
