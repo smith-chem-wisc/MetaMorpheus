@@ -44,9 +44,10 @@ namespace TaskLayer
             ListOfModListsForSearch = new List<ModListForSearchTask>();
             foreach (var uu in modList)
                 ListOfModListsForSearch.Add(new ModListForSearchTask(uu));
-            ListOfModListsForSearch[0].Fixed = true;
-            ListOfModListsForSearch[1].Variable = true;
-            ListOfModListsForSearch[2].Localize = true;
+
+            ListOfModListsForSearch.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
+            ListOfModListsForSearch.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
+            ListOfModListsForSearch.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
 
             SearchModes = new List<SearchModeFoSearch>();
             foreach (var uu in inputSearchModes)

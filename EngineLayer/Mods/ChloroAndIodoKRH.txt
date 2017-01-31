@@ -1,0 +1,22 @@
+﻿K R H mods for 2-chloro and iodo
+ID   57-K
+FT   MOD_RES
+TG   Lysine
+PP   Anywhere.
+MM   57.02146373
+CF   H3 C2 N1 O1
+//
+ID   57-R
+FT   MOD_RES
+TG   Arginine
+PP   Anywhere.
+MM   57.02146373
+CF   H3 C2 N1 O1
+//
+ID   57-H
+FT   MOD_RES
+TG   Histidine
+PP   Anywhere.
+MM   57.02146373
+CF   H3 C2 N1 O1
+//

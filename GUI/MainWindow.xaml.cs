@@ -46,13 +46,9 @@ namespace MetaMorpheusGUI
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "f.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "v.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "ptmlist.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "m.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "glyco.txt")));
-            //modListObservableCollection.Add(new ModList("r.txt"));
-            //modListObservableCollection.Add(new ModList("s.txt"));
+            foreach(var modFile in Directory.GetFiles(@"Mods"))
+                modListObservableCollection.Add(new ModList(modFile));
+            
 
             LoadSearchModesFromFile();
 
@@ -61,7 +57,7 @@ namespace MetaMorpheusGUI
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Downloads\small.pwiz.1.1.mzML"));
 
-            //DataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-30-19-07-49\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-30-19-07-49\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;

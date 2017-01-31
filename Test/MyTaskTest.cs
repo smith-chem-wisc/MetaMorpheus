@@ -21,26 +21,22 @@ namespace Test
         public static void TestEverythingRunner()
         {
             #region Setup tasks
-
-            ModList modlist1 = new ModList(Path.Combine("Data", "f.txt"));
-            ModList modlist2 = new ModList(Path.Combine("Data", "v.txt"));
-            ModList modlist3 = new ModList(Path.Combine("Data", "ptmlist.txt"));
-            ModList modlist4 = new ModList(Path.Combine("Data", "m.txt"));
-            ModList modlist5 = new ModList(Path.Combine("Data", "glyco.txt"));
-
-            ObservableCollection<ModList> modList = new ObservableCollection<ModList> { modlist1, modlist2, modlist3 };
-            CalibrationTask task1 = new CalibrationTask(modList);
-            GptmdTask task2 = new GptmdTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 });
+            ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
+                modListObservableCollection.Add(new ModList(modFile));
+            
+            CalibrationTask task1 = new CalibrationTask(modListObservableCollection);
+            GptmdTask task2 = new GptmdTask(modListObservableCollection);
 
             IEnumerable<SearchMode> allSms = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
 
-            SearchTask task3 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 }, allSms);
-            task3.ListOfModListsForSearch[3].Localize = true;
-            task3.ListOfModListsForSearch[4].Localize = true;
+            SearchTask task3 = new SearchTask(modListObservableCollection, allSms);
+            task3.ListOfModListsForSearch.First(b => b.FileName.EndsWith("m.txt")).Localize = true;
+            task3.ListOfModListsForSearch.First(b => b.FileName.EndsWith("glyco.txt")).Localize = true;
 
-            SearchTask task4 = new SearchTask(new ObservableCollection<ModList> { modlist1, modlist2, modlist3, modlist4, modlist5 }, allSms);
-            task4.ListOfModListsForSearch[3].Localize = true;
-            task4.ListOfModListsForSearch[4].Localize = true;
+            SearchTask task4 = new SearchTask(modListObservableCollection, allSms);
+            task4.ListOfModListsForSearch.First(b => b.FileName.EndsWith("m.txt")).Localize = true;
+            task4.ListOfModListsForSearch.First(b => b.FileName.EndsWith("glyco.txt")).Localize = true;
             task4.ClassicSearch = false;
             List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1, task2, task3, task4 };
 

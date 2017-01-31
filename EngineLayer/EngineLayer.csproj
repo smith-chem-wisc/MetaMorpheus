@@ -153,6 +153,12 @@
     <Content Include="Data\elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Mods\vinylC.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Mods\vinylKRH.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config" />
     <Content Include="Data\proteases.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -162,29 +168,35 @@
     <Content Include="Data\combos.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\f.txt">
+    <Content Include="Mods\ChloroAndIodoC.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\glyco.txt">
+    <Content Include="Mods\ChloroAndIodoKRH.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\m.txt">
+    <Content Include="Mods\di-ethylC.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\ptmlist.txt">
+    <Content Include="Mods\di-ethylKRH.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\r.txt">
+    <Content Include="Mods\f.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\s.txt">
+    <Content Include="Mods\glyco.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Mods\m.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Mods\ptmlist.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\unimod_tables.xml">
       <SonarQubeExclude>true</SonarQubeExclude>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Data\v.txt">
+    <Content Include="Mods\v.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
