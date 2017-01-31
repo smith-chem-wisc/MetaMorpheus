@@ -59,7 +59,7 @@ namespace Test
 
             Assert.IsNull(newPsm.LocalizedScores);
             Assert.IsNull(newPsm.matchedIonsList);
-            var cool = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, lp);
+            new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, lp);
 
             // Was single peak, now three match!!!
             Assert.AreEqual(0, newPsm.matchedIonsList[ProductType.B].Count(b => b > 0));
