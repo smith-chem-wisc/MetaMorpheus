@@ -668,15 +668,7 @@ namespace EngineLayer.Analysis
                 }
             }
         }
-
-        private static void IdentifyPsmsWithMaxMods(BinTreeStructure myTreeStructure)
-        {
-            foreach (Bin bin in myTreeStructure.FinalBins)
-            {
-                bin.FracWithMaxMods = ((double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.NumVariableMods == max_mods_for_peptide)) / bin.CountTarget;
-            }
-        }
-
+        
         private static void IdentifyFracWithSingle(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
@@ -925,8 +917,6 @@ namespace EngineLayer.Analysis
             IdentifyAAsInCommon(myTreeStructure);
 
             IdentifyMine(myTreeStructure, binTol);
-
-            IdentifyPsmsWithMaxMods(myTreeStructure);
 
             OverlappingIonSequences(myTreeStructure);
 

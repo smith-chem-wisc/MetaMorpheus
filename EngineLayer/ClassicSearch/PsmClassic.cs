@@ -66,8 +66,7 @@ namespace EngineLayer.ClassicSearch
                 return true;
             if (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
                 return false;
-
-            if (first.NumVariableMods < second.NumVariableMods)
+            if (first.NumMods < second.NumMods)
                 return true;
 
             return false;

@@ -105,6 +105,9 @@ namespace MetaMorpheusGUI
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
                 productMassToleranceComboBox.Items.Add(toleranceUnit);
 
+            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
+                precursorMassToleranceComboBox.Items.Add(toleranceUnit);
+
             // Always create new ModFileList
             foreach (var uu in modList)
                 ModFileListInWindow.Add(new ModListForGPTMDTask(uu));
