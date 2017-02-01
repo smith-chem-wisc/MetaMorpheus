@@ -140,6 +140,7 @@ namespace TaskLayer
                                 feature_type = null;
                                 modification_type = ModificationType.AminoAcidResidue;
                                 amino_acid_residue = '\0';
+                                prevAA = '\0';
                                 pms = double.NaN;
                                 fms = double.NaN;
                                 oms = double.NaN;
