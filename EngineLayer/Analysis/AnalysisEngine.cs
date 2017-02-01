@@ -159,7 +159,8 @@ namespace EngineLayer.Analysis
 
             // greedy algorithm adds the next protein that will account for the most unaccounted-for peptides
             bool currentBestPeptidesIsOne = false;
-            int currentBestNumNewPeptides = 0;
+            int currentBestNumNewPeptides;
+
             do
             {
                 currentBestNumNewPeptides = 0;
@@ -170,13 +171,11 @@ namespace EngineLayer.Analysis
                     // attempt to find protein that best accounts for unaccounted-for peptides
                     foreach (var kvp in proteinToPeptidesMatching)
                     {
-                        int comparisonProteinNewPeptides = 0;
-
                         if (!parsimonyDict.ContainsKey(kvp.Key))
                         {
                             var baseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
                             var comparisonProteinNewPeptideBaseSeqs = new HashSet<string>(baseSeqs.Except(usedBaseSequences));
-                            comparisonProteinNewPeptides = comparisonProteinNewPeptideBaseSeqs.Count();
+                            int comparisonProteinNewPeptides = comparisonProteinNewPeptideBaseSeqs.Count;
 
                             if (comparisonProteinNewPeptides >= currentBestNumNewPeptides)
                             {
@@ -195,7 +194,7 @@ namespace EngineLayer.Analysis
 
                                     if(bestProteinNewPeptideBaseSeqs.SetEquals(comparisonProteinNewPeptideBaseSeqs))
                                     {
-                                        if (bestProteinBaseSeqs.Count() < comparisonProteinNewPeptideBaseSeqs.Count())
+                                        if (bestProteinBaseSeqs.Count < comparisonProteinNewPeptideBaseSeqs.Count)
                                         {
                                             bestProtein = kvp.Key;
                                         }
@@ -244,7 +243,7 @@ namespace EngineLayer.Analysis
                                     peptideBaseSeqProteinListMatch.TryGetValue(peptideBaseSequence, out proteins);
 
                                     // multiple proteins have the same new base seq - pick the one with the most total peptides
-                                    if (proteins.Count() > 1)
+                                    if (proteins.Count > 1)
                                     {
                                         var proteinsWithNumBaseSeqs = new Dictionary<Protein, int>();
 
@@ -254,12 +253,12 @@ namespace EngineLayer.Analysis
                                             HashSet<CompactPeptide> peps;
                                             proteinToPeptidesMatching.TryGetValue(protein, out peps);
                                             var baseSeqs = new HashSet<string>(peps.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
-                                            proteinsWithNumBaseSeqs.Add(protein, baseSeqs.Count());
+                                            proteinsWithNumBaseSeqs.Add(protein, baseSeqs.Count);
                                         }
 
                                         // pick the protein with the most peptides
-                                        proteinsWithNumBaseSeqs.OrderByDescending(b => b.Value);
-                                        bestProtein = proteinsWithNumBaseSeqs.First().Key;
+                                        var temp = proteinsWithNumBaseSeqs.OrderByDescending(b => b.Value);
+                                        bestProtein = temp.First().Key;
                                     }
 
                                     parsimonyDict.Add(bestProtein, kvp.Value);
@@ -381,10 +380,19 @@ namespace EngineLayer.Analysis
             {
                 foreach (var peptide in proteinGroup.TotalPeptideList)
                 {
+                    // build PSM list for scoring
                     NewPsmWithFdr psm;
                     psmToCompactPeptideMatching.TryGetValue(peptide, out psm);
                     if (psm != null)
                         proteinGroup.TotalPsmList.Add(psm);
+
+                    // build PeptideWithSetMod list to calc sequence coverage
+                    HashSet<PeptideWithSetModifications> peptidesWithSetMods = null;
+                    compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out peptidesWithSetMods);
+                    foreach (var pep in peptidesWithSetMods)
+                    {
+                        proteinGroup.TotalPeptideWithSetModsList.Add(pep);
+                    }
                 }
             }
 
@@ -409,12 +417,31 @@ namespace EngineLayer.Analysis
                         peptideToProteinGroupMatching.Add(peptide, proteinGroupsHere);
                     }
                 }
+            }
 
-                // remove empty protein groups (peptides were too poor quality and group doesn't exist anymore)
+            /*
+            // TODO**
+            // merge indistinguishable protein groups after scoring
+            var pg = proteinGroups.OrderByDescending(p => p.proteinGroupScore).ToArray();
+            for(int i = 0; i < (pg.Length - 1); i++)
+            {
+                if (pg[i].proteinGroupScore == pg[i + 1].proteinGroupScore)
+                {
+                    if (pg[i].StrictPeptideList.SetEquals(pg[i + 1].StrictPeptideList))
+                    {
+                        pg[i].MergeProteinGroupWith(pg[i + 1]);
+                    }
+                }
+            }
+            */
+
+            foreach (var proteinGroup in proteinGroups)
+            {
                 if (proteinGroup.proteinGroupScore == 0)
                     proteinGroupsToRemove.Add(proteinGroup);
             }
 
+            // remove empty protein groups (peptides were too poor quality and group doesn't exist anymore)
             foreach (var proteinGroup in proteinGroupsToRemove)
             {
                 proteinGroups.Remove(proteinGroup);
@@ -436,16 +463,13 @@ namespace EngineLayer.Analysis
                     // build razor peptide list for each protein group
                     if (allRazorPeptides.Contains(peptide))
                     {
+                        // TODO**
+                        // if the razor pep is associated with >1 protein group, it's a razor only for the group with the most ID'd peptides
+                        // var sortedProteinGroups = 
                         proteinGroup.StrictRazorPeptideList.Add(peptide);
                     }
 
-                    // build PeptideWithSetMod list to calc sequence coverage
-                    HashSet<PeptideWithSetModifications> peptidesWithSetMods = null;
-                    compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out peptidesWithSetMods);
-                    foreach (var pep in peptidesWithSetMods)
-                    {
-                        proteinGroup.TotalPeptideWithSetModsList.Add(pep);
-                    }
+                    
                 }
 
                 // calculate sequence coverage for each protein in the group
