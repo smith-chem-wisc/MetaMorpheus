@@ -171,13 +171,11 @@ namespace EngineLayer.Analysis
                     // attempt to find protein that best accounts for unaccounted-for peptides
                     foreach (var kvp in proteinToPeptidesMatching)
                     {
-                        int comparisonProteinNewPeptides = 0;
-
                         if (!parsimonyDict.ContainsKey(kvp.Key))
                         {
                             var baseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
                             var comparisonProteinNewPeptideBaseSeqs = new HashSet<string>(baseSeqs.Except(usedBaseSequences));
-                            comparisonProteinNewPeptides = comparisonProteinNewPeptideBaseSeqs.Count;
+                            int comparisonProteinNewPeptides = comparisonProteinNewPeptideBaseSeqs.Count;
 
                             if (comparisonProteinNewPeptides >= currentBestNumNewPeptides)
                             {
