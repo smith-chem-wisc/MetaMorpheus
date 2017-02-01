@@ -359,7 +359,7 @@ namespace MetaMorpheusGUI
                 switch (ok.TaskType)
                 {
                     case MyTask.Search:
-                        var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection, searchModeObservableCollection);
+                        var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection);
                         searchDialog.ShowDialog();
                         break;
 

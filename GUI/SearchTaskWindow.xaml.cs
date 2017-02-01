@@ -40,10 +40,10 @@ namespace MetaMorpheusGUI
             this.saveButton.Content = "Add the Search Task";
         }
 
-        public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
+        public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList)
         {
             InitializeComponent();
-            PopulateChoices(modList, searchModes);
+            PopulateChoices(modList, task.SearchModes.Select(b => b.SearchMode));
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
