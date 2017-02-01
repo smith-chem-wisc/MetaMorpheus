@@ -140,7 +140,7 @@ namespace EngineLayer
                 sb.Append("MissedCleavages" + '\t');
                 sb.Append("PeptideMonoisotopicMass" + '\t');
                 sb.Append("MassDiff (Da)" + '\t');
-                sb.Append("Decoy/Contaminant");
+                sb.Append("Decoy/Contaminant/Target");
                 return sb.ToString();
             }
         }
@@ -165,7 +165,12 @@ namespace EngineLayer
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append("" + (IsDecoy ? "D" : " ") + (IsContaminant ? "C" : " "));
+            if (IsDecoy)
+                sb.Append("D");
+            else if (IsContaminant)
+                sb.Append("C");
+            else
+                sb.Append("T");
 
             return sb.ToString();
         }

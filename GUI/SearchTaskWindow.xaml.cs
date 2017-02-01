@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -40,10 +41,10 @@ namespace MetaMorpheusGUI
             this.saveButton.Content = "Add the Search Task";
         }
 
-        public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
+        public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList)
         {
             InitializeComponent();
-            PopulateChoices(modList, searchModes);
+            PopulateChoices(modList, task.SearchModes.Select(b => b.SearchMode));
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
@@ -65,7 +66,7 @@ namespace MetaMorpheusGUI
             var hm = ye.Content as TextBlock;
             if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(hm.Text);
+                System.Diagnostics.Process.Start(Path.Combine(@"Mods", hm.Text));
             }
         }
 
