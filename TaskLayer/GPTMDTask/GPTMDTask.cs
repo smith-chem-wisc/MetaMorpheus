@@ -48,11 +48,13 @@ namespace TaskLayer
             listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
             foreach (var uu in modList)
                 listOfModListsForGPTMD.Add(new ModListForGPTMDTask(uu));
-            listOfModListsForGPTMD[0].Fixed = true;
-            listOfModListsForGPTMD[1].Variable = true;
-            listOfModListsForGPTMD[2].Localize = true;
-            listOfModListsForGPTMD[3].Gptmd = true;
-            listOfModListsForGPTMD[4].Gptmd = true;
+
+            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
+            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
+            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
+            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("m.txt")).Gptmd = true;
+            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("glyco.txt")).Gptmd = true;
+
             TaskType = MyTask.Gptmd;
             IsotopeErrors = false;
             MaxNumPeaksPerScan = 400;

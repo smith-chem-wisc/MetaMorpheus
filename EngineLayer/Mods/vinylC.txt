@@ -1,0 +1,8 @@
+﻿Cysteine mod for vinyl 
+ID   105-C
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+MM   105.058
+CF   C7 H7 N1
+//
