@@ -1,0 +1,8 @@
+﻿Cysteine mod for di-ethyl 
+ID   113-C 
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+MM   113.084
+CF   C6 H11 N1 O1
+//

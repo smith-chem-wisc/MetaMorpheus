@@ -1,0 +1,22 @@
+﻿K R H mods for vinyl 
+ID   105-K
+FT   MOD_RES
+TG   Lysine
+PP   Anywhere.
+MM   105.058
+CF   C7 H7 N1
+//
+ID   105-R
+FT   MOD_RES
+TG   Arginine
+PP   Anywhere.
+MM   105.058
+CF   C7 H7 N1
+//
+ID   105-H
+FT   MOD_RES
+TG   Histidine
+PP   Anywhere.
+MM   105.058
+CF   C7 H7 N1
+//

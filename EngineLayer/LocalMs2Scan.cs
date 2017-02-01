@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using Spectra;
+using System;
 
 namespace EngineLayer
 {
@@ -9,17 +10,11 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public LocalMS2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b)
+        public LocalMS2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b, int charge)
         {
             TheScan = b;
-            double monoisotopicPrecursorMZhere;
-            b.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicPrecursorMZhere);
-            MonoisotopicPrecursorMZ = monoisotopicPrecursorMZhere;
-
-            int? monoisotopicPrecursorChargehere;
-            b.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorChargehere);
-            MonoisotopicPrecursorCharge = monoisotopicPrecursorChargehere.Value;
-
+            b.TryGetSelectedIonGuessMonoisotopicMZ(out MonoisotopicPrecursorMZ);
+            MonoisotopicPrecursorCharge = charge;
             PrecursorMass = MonoisotopicPrecursorMZ.ToMass(MonoisotopicPrecursorCharge);
 
             OneBasedScanNumber = b.OneBasedScanNumber;
@@ -51,7 +46,7 @@ namespace EngineLayer
         #region Internal Properties
 
         internal IMsDataScan<IMzSpectrum<MzPeak>> TheScan { get; private set; }
-        internal double MonoisotopicPrecursorMZ { get; private set; }
+        internal readonly double MonoisotopicPrecursorMZ;
         internal int OneBasedScanNumber { get; private set; }
         internal double RetentionTime { get; private set; }
         internal int MonoisotopicPrecursorCharge { get; private set; }

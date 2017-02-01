@@ -35,9 +35,11 @@ namespace TaskLayer
             ListOfModListsForCalibration = new List<ModListForCalibrationTask>();
             foreach (var uu in modList)
                 ListOfModListsForCalibration.Add(new ModListForCalibrationTask(uu));
-            ListOfModListsForCalibration[0].Fixed = true;
-            ListOfModListsForCalibration[1].Variable = true;
-            ListOfModListsForCalibration[2].Localize = true;
+
+            ListOfModListsForCalibration.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
+            ListOfModListsForCalibration.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
+            ListOfModListsForCalibration.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
+
             TaskType = MyTask.Calibrate;
             MaxNumPeaksPerScan = 400;
         }

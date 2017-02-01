@@ -22,7 +22,7 @@ namespace MetaMorpheusGUI
         #region Private Fields
 
         private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
-        private readonly ObservableCollection<XMLdb> xmlDBobservableCollection = new ObservableCollection<XMLdb>();
+        private readonly ObservableCollection<XMLdb> proteinDbObservableCollection = new ObservableCollection<XMLdb>();
         private readonly ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
         private readonly ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
         private readonly ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
@@ -41,22 +41,21 @@ namespace MetaMorpheusGUI
             else
                 this.Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
-            dataGridXMLs.DataContext = xmlDBobservableCollection;
+            dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "f.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "v.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "ptmlist.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "m.txt")));
-            modListObservableCollection.Add(new ModList(Path.Combine("Data", "glyco.txt")));
-            //modListObservableCollection.Add(new ModList("r.txt"));
-            //modListObservableCollection.Add(new ModList("s.txt"));
+            foreach(var modFile in Directory.GetFiles(@"Mods"))
+                modListObservableCollection.Add(new ModList(modFile));
+            
 
             LoadSearchModesFromFile();
 
-            //xmlDBobservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-23-2017.xml"));
+            //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-23-2017.xml"));
+            //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-1-23-2017.xml"));
+
+            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Downloads\small.pwiz.1.1.mzML"));
 
             //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-30-19-07-49\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
 
@@ -155,10 +154,10 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                foreach (var uu in xmlDBobservableCollection)
+                foreach (var uu in proteinDbObservableCollection)
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
-                    xmlDBobservableCollection.Add(new XMLdb(uu.FileName));
+                    proteinDbObservableCollection.Add(new XMLdb(uu.FileName));
             }
         }
 
@@ -233,7 +232,7 @@ namespace MetaMorpheusGUI
             openPicker.RestoreDirectory = true;
             if (openPicker.ShowDialog() == true)
             {
-                xmlDBobservableCollection.Add(new XMLdb(openPicker.FileName));
+                proteinDbObservableCollection.Add(new XMLdb(openPicker.FileName));
             }
             dataGridXMLs.Items.Refresh();
         }
@@ -269,7 +268,7 @@ namespace MetaMorpheusGUI
                     case ".xml":
                     case ".fasta":
                     case ".gz":
-                        xmlDBobservableCollection.Add(new XMLdb(file));
+                        proteinDbObservableCollection.Add(new XMLdb(file));
                         break;
                 }
                 dataGridDatafiles.Items.Refresh();
@@ -288,7 +287,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), xmlDBobservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
@@ -477,7 +476,7 @@ namespace MetaMorpheusGUI
 
         private void ClearXML_Click(object sender, RoutedEventArgs e)
         {
-            xmlDBobservableCollection.Clear();
+            proteinDbObservableCollection.Clear();
         }
 
         #endregion Private Methods
