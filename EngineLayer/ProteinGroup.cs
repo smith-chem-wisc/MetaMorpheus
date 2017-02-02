@@ -243,6 +243,15 @@ namespace EngineLayer
                         AllPsmsForStrictPeptideSequences.Add(psm);
                     }
                 }
+                
+                // TODO**: StrictPeptideWithSetModsList
+                foreach(var pep in TotalPeptideWithSetModsList)
+                {
+                    if(pep.BaseSequence.Equals(strictPepBaseSeq))
+                    {
+                        StrictPeptideWithSetModsList.Add(pep);
+                    }
+                }
             }
 
             // score the protein group
@@ -251,6 +260,7 @@ namespace EngineLayer
                 proteinGroupScore += psm.thisPSM.Score;
             }
 
+            //TODO**: give option to ignore protein groups with one peptide
             //if (StrictPeptideList.Count == 1)
             //    proteinGroupScore = 0;
         }
@@ -263,7 +273,7 @@ namespace EngineLayer
             {
                 HashSet<int> coveredResidues = new HashSet<int>();
 
-                foreach (var peptide in TotalPeptideWithSetModsList)
+                foreach (var peptide in StrictPeptideWithSetModsList)
                 {
                     if (peptide.Protein == protein)
                     {
@@ -277,6 +287,15 @@ namespace EngineLayer
                 double sequenceCoverageHere = (double)coveredResidues.Count / protein.Length;
                 sequenceCoverage.Add(sequenceCoverageHere);
             }
+        }
+
+        public void MergeProteinGroupWith(ProteinGroup other)
+        {
+            foreach(var protein in other.Proteins)
+            {
+                this.Proteins.Add(protein);
+            }
+            other.proteinGroupScore = 0;
         }
 
         #endregion Public Methods
