@@ -24,15 +24,15 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public override bool Accepts(double scanPrecursorMass, double peptideMass)
+        public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return Math.Abs((scanPrecursorMass - peptideMass) / (peptideMass) * 1e6) < ppmTolerance;
+            return Math.Abs((scanPrecursorMass - peptideMass) / (peptideMass) * 1e6) < ppmTolerance ? 0 : -1;
         }
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             var diff = ppmTolerance / 1e6 * peptideMonoisotopicMass;
-            yield return new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff);
+            yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
         }
 
         #endregion Public Methods

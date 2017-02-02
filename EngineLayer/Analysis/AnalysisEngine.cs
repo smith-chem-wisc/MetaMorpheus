@@ -135,7 +135,7 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            // build protein list for each peptide before parsimony has been applied 
+            // build protein list for each peptide before parsimony has been applied
             var peptideBaseSeqProteinListMatch = new Dictionary<string, HashSet<Protein>>();
             foreach (var kvp in proteinToPeptidesMatching)
             {
@@ -164,7 +164,7 @@ namespace EngineLayer.Analysis
             {
                 currentBestNumNewPeptides = 0;
                 Protein bestProtein = null;
-                
+
                 if (!currentBestPeptidesIsOne)
                 {
                     // attempt to find protein that best accounts for unaccounted-for peptides
@@ -193,7 +193,7 @@ namespace EngineLayer.Analysis
                                     var bestProteinBaseSeqs = new HashSet<string>(bestProteinPeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
                                     var bestProteinNewPeptideBaseSeqs = new HashSet<string>(bestProteinBaseSeqs.Except(usedBaseSequences));
 
-                                    if(bestProteinNewPeptideBaseSeqs.SetEquals(comparisonProteinNewPeptideBaseSeqs))
+                                    if (bestProteinNewPeptideBaseSeqs.SetEquals(comparisonProteinNewPeptideBaseSeqs))
                                     {
                                         if (bestProteinBaseSeqs.Count() < comparisonProteinNewPeptideBaseSeqs.Count())
                                         {
@@ -213,13 +213,13 @@ namespace EngineLayer.Analysis
                     {
                         HashSet<CompactPeptide> bestProteinPeptideList;
                         proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
-                        
+
                         parsimonyDict.Add(bestProtein, bestProteinPeptideList);
 
                         foreach (var peptide in bestProteinPeptideList)
                         {
                             string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                            
+
                             usedBaseSequences.Add(peptideBaseSequence);
                         }
                     }
@@ -249,7 +249,7 @@ namespace EngineLayer.Analysis
                                         var proteinsWithNumBaseSeqs = new Dictionary<Protein, int>();
 
                                         // count how many peptides each protein has
-                                        foreach(var protein in proteins)
+                                        foreach (var protein in proteins)
                                         {
                                             HashSet<CompactPeptide> peps;
                                             proteinToPeptidesMatching.TryGetValue(protein, out peps);
@@ -346,7 +346,7 @@ namespace EngineLayer.Analysis
 
                         // get the peptides that belong to the post-parsimony protein(s) only
                         var newPeptides = new HashSet<PeptideWithSetModifications>(oldPepsWithSetMods.Where(p => proteinListHere.Contains(p.Protein)));
-                        
+
                         answer.Add(peptide, newPeptides);
                     }
                 }
@@ -519,7 +519,7 @@ namespace EngineLayer.Analysis
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
 
                     Status("Running FDR analysis...");
-                    var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
+                    var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
                     // This must come before the unique peptide identifications..
@@ -537,7 +537,7 @@ namespace EngineLayer.Analysis
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
-                        var uniquePsmsWithFdr = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.Distinct(new SequenceComparer()));
+                        var uniquePsmsWithFdr = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.Distinct(new SequenceComparer()), searchModes[j]);
                         writePsmsAction(uniquePsmsWithFdr, "uniquePeptides" + searchModes[j].FileNameAddition);
                     }
 
@@ -572,7 +572,7 @@ namespace EngineLayer.Analysis
                 }
             }
         }
-        
+
         private static void IdentifyFracWithSingle(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
@@ -829,24 +829,45 @@ namespace EngineLayer.Analysis
             return myTreeStructure;
         }
 
-        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmWithMultiplePossiblePeptides> items)
+        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmWithMultiplePossiblePeptides> items, SearchMode sm)
         {
             var ids = new List<NewPsmWithFdr>();
+            foreach (PsmWithMultiplePossiblePeptides item in items)
+            {
+                ids.Add(new NewPsmWithFdr(item));
+            }
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
-            foreach (PsmWithMultiplePossiblePeptides item in items)
+
+            int[] cumulative_target_per_notch = new int[sm.NumNotches];
+            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
+
+            for (int i = 0; i < ids.Count; i++)
             {
+                var item = ids[i];
                 var isDecoy = item.IsDecoy;
+                int notch = item.thisPSM.newPsm.notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
                     cumulative_target++;
+
+                if (isDecoy)
+                    cumulative_decoy_per_notch[notch]++;
+                else
+                    cumulative_target_per_notch[notch]++;
+
                 double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                ids.Add(new NewPsmWithFdr(item, cumulative_target, cumulative_decoy, temp_q_value));
+                double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / (cumulative_target_per_notch[notch] + cumulative_decoy_per_notch[notch]);
+                item.SetValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
             }
 
             double min_q_value = double.PositiveInfinity;
+            double[] min_q_value_notch = new double[sm.NumNotches];
+            for (int i = 0; i < sm.NumNotches; i++)
+                min_q_value_notch[i] = double.PositiveInfinity;
+
             for (int i = ids.Count - 1; i >= 0; i--)
             {
                 NewPsmWithFdr id = ids[i];
@@ -854,6 +875,12 @@ namespace EngineLayer.Analysis
                     id.qValue = min_q_value;
                 else if (id.qValue < min_q_value)
                     min_q_value = id.qValue;
+
+                int notch = id.thisPSM.newPsm.notch;
+                if (id.qValueNotch > min_q_value_notch[notch])
+                    id.qValueNotch = min_q_value_notch[notch];
+                else if (id.qValueNotch < min_q_value_notch[notch])
+                    min_q_value_notch[notch] = id.qValueNotch;
             }
 
             return ids;

@@ -1,4 +1,5 @@
 ﻿using Spectra;
+using System;
 using System.Collections.Generic;
 
 namespace EngineLayer
@@ -16,14 +17,14 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public override bool Accepts(double scanPrecursorMass, double peptideMass)
+        public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            return true;
+            return 0;
         }
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            yield return new DoubleRange(double.MinValue, double.MaxValue);
+            yield return new Tuple<DoubleRange, int>(new DoubleRange(double.MinValue, double.MaxValue), 0);
         }
 
         #endregion Public Methods
