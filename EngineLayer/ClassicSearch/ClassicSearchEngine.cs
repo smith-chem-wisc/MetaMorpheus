@@ -138,10 +138,11 @@ namespace EngineLayer.ClassicSearch
                             for (int aede = 0; aede < searchModes.Count; aede++)
                             {
                                 var searchMode = searchModes[aede];
-                                foreach (LocalMS2Scan scan in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
+                                foreach (Tuple<LocalMS2Scan, int> theTuple in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
+                                    var scan = theTuple.Item1;
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score);
+                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)
                                     {
                                         PsmClassic current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
@@ -180,17 +181,18 @@ namespace EngineLayer.ClassicSearch
 
         #region Private Methods
 
-        private IEnumerable<LocalMS2Scan> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
+        private IEnumerable<Tuple<LocalMS2Scan, int>> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
         {
-            foreach (DoubleRange ye in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
+            foreach (Tuple<DoubleRange, int> theTuple in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
             {
+                DoubleRange ye = theTuple.Item1;
                 int scanIndex = GetFirstScanWithMassOverOrEqual(ye.Minimum);
                 if (scanIndex < arrayOfSortedMS2Scans.Length)
                 {
                     var scan = arrayOfSortedMS2Scans[scanIndex];
                     while (scan.PrecursorMass <= ye.Maximum)
                     {
-                        yield return scan;
+                        yield return new Tuple<LocalMS2Scan, int>(scan, theTuple.Item2);
                         scanIndex++;
                         if (scanIndex == arrayOfSortedMS2Scans.Length)
                             break;

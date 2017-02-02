@@ -139,9 +139,22 @@ namespace EngineLayer
                     throw new NotImplementedException();
                 }
             }
-            else
+            else  // protease.CleavageSpecificity == CleavageSpecificity.None
             {
-                throw new NotImplementedException();
+                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || this[0] != 'M')
+                {
+                    yield return new PeptideWithPossibleModifications(1, Length, this, 0, "full");
+                }
+                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && this[0] == 'M')
+                {
+                    yield return new PeptideWithPossibleModifications(2, Length, this, 0, "full:M cleaved");
+                }
+
+                // Also digest using the chain peptide start/end indices
+                for (int chainPeptideIndex = 0; chainPeptideIndex < OneBasedBeginPositions.Length; chainPeptideIndex++)
+                {
+                    yield return new PeptideWithPossibleModifications(OneBasedBeginPositions[chainPeptideIndex], OneBasedEndPositions[chainPeptideIndex], this, 0, BigPeptideTypes[chainPeptideIndex]);
+                }
             }
         }
 

@@ -39,8 +39,10 @@ namespace Test
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
-            var newPsmWithFDR = new NewPsmWithFdr(thisPSM, 1, 0, 0);
-            allResultingIdentifications.Add(newPsmWithFDR);
+            
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
+            thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
+            allResultingIdentifications.Add(thePsmwithfdr);
 
             engine = new GptmdEngine(allResultingIdentifications, isotopeErrors, gptmdModifications, combos, precursorMassTolerance);
             res = (GptmdResults)engine.Run();
@@ -67,8 +69,9 @@ namespace Test
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
-            var newPsmWithFDR = new NewPsmWithFdr(thisPSM, 1, 0, 0);
-            allIdentifications = new List<NewPsmWithFdr> { newPsmWithFDR };
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
+            thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
+            allIdentifications = new List<NewPsmWithFdr> { thePsmwithfdr };
 
             var engine = new GptmdEngine(allIdentifications, isotopeErrors, gptmdModifications, combos, precursorMassTolerance);
             var res = (GptmdResults)engine.Run();
@@ -89,7 +92,7 @@ namespace Test
 
             #region Public Constructors
 
-            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, double.NaN, scanPrecursorMass, 0, 0, 0, double.NaN, double.NaN, double.NaN)
+            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, double.NaN, scanPrecursorMass, 0, 0, 0, double.NaN, double.NaN, double.NaN, 1)
             {
             }
 
