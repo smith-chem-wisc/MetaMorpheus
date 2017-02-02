@@ -96,7 +96,7 @@ namespace Test
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModes);
+            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
@@ -131,7 +131,7 @@ namespace Test
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance.Value, searchModes);
+            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode

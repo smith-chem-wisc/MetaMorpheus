@@ -20,7 +20,7 @@ namespace EngineLayer.ModernSearch
 
         private readonly List<int>[] fragmentIndex;
 
-        private readonly double fragmentToleranceInDaltons;
+        private readonly Tolerance fragmentTolerance;
 
         private readonly float[] keys;
 
@@ -34,13 +34,13 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes) : base(2)
         {
             this.myMSDataFile = myMSDataFile;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
-            this.fragmentToleranceInDaltons = fragmentToleranceInDaltons;
+            this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
         }
 
@@ -198,7 +198,7 @@ namespace EngineLayer.ModernSearch
                     while (downIpos >= 0)
                     {
                         closestPeak = keys[downIpos];
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[downIpos])
                                 peptideScores[heh] += theAdd;
@@ -215,7 +215,7 @@ namespace EngineLayer.ModernSearch
                     while (upIpos < keys.Length)
                     {
                         closestPeak = keys[upIpos];
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[upIpos])
                                 peptideScores[heh] += theAdd;
