@@ -37,14 +37,15 @@ namespace EngineLayer
             try
             {
                 UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-                unimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-                uniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+                UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
+                UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
             }
             catch (WebException)
             {
             }
 
             MetaMorpheusVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            SearchModesKnown = LoadSearchModesFromFile().ToList();
         }
 
         #endregion Public Constructors
@@ -75,8 +76,10 @@ namespace EngineLayer
         #region Public Properties
 
         public static string MetaMorpheusVersion { get; private set; }
-        public static UsefulProteomicsDatabases.Generated.unimod unimodDeserialized { get; private set; }
-        public static Dictionary<int, ChemicalFormulaModification> uniprotDeseralized { get; private set; }
+        public static UsefulProteomicsDatabases.Generated.unimod UnimodDeserialized { get; private set; }
+        public static Dictionary<int, ChemicalFormulaModification> UniprotDeseralized { get; private set; }
+
+        public static List<SearchMode> SearchModesKnown { get; private set; }
 
         #endregion Public Properties
 
@@ -140,6 +143,16 @@ namespace EngineLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static IEnumerable<SearchMode> LoadSearchModesFromFile()
+        {
+            yield return new SinglePpmAroundZeroSearchMode(5);
+            yield return new SingleAbsoluteAroundZeroSearchMode(0.05);
+            yield return new DotSearchMode(new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
+            yield return new OpenSearchMode();
+            yield return new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
+        }
 
         private static int GuessCharge(IMzSpectrum<MzPeak> mzSpectrum)
         {

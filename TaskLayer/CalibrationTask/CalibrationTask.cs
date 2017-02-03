@@ -8,7 +8,6 @@ using MassSpectrometry;
 using Proteomics;
 using Spectra;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,7 +20,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public CalibrationTask(ObservableCollection<ModList> modList)
+        public CalibrationTask()
         {
             // Set default values here:
             MaxMissedCleavages = 2;
@@ -32,13 +31,10 @@ namespace TaskLayer
             PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
-            ListOfModListsForCalibration = new List<ModListForCalibrationTask>();
-            foreach (var uu in modList)
-                ListOfModListsForCalibration.Add(new ModListForCalibrationTask(uu));
 
-            ListOfModListsForCalibration.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
-            ListOfModListsForCalibration.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
-            ListOfModListsForCalibration.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
+            ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
+            ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
+            ListOfModListsLocalize = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("ptmlist.txt")) };
 
             TaskType = MyTask.Calibrate;
             MaxNumPeaksPerScan = 400;
@@ -48,7 +44,9 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public List<ModListForCalibrationTask> ListOfModListsForCalibration { get; set; }
+        public List<ModList> ListOfModListsFixed { get; set; }
+        public List<ModList> ListOfModListsVariable { get; set; }
+        public List<ModList> ListOfModListsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
 
@@ -61,9 +59,9 @@ namespace TaskLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Fixed).Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Variable).Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsForCalibration.Where(b => b.Localize).Select(b => b.FileName)));
+                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed.Select(b => b.FileName)));
+                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable.Select(b => b.FileName)));
+                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize.Select(b => b.FileName)));
                 sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
                 sb.Append("ProductMassTolerance: " + ProductMassTolerance);
                 return sb.ToString();
@@ -91,9 +89,9 @@ namespace TaskLayer
             allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...");
-            List<MetaMorpheusModification> variableModifications = ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
 
             Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;

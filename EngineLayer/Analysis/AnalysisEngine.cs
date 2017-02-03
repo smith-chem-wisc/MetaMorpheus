@@ -465,11 +465,9 @@ namespace EngineLayer.Analysis
                     {
                         // TODO**
                         // if the razor pep is associated with >1 protein group, it's a razor only for the group with the most ID'd peptides
-                        // var sortedProteinGroups = 
+                        // var sortedProteinGroups =
                         proteinGroup.StrictRazorPeptideList.Add(peptide);
                     }
-
-                    
                 }
 
                 // calculate sequence coverage for each protein in the group
@@ -707,7 +705,7 @@ namespace EngineLayer.Analysis
             {
                 var ok = new HashSet<string>();
                 var okformula = new HashSet<string>();
-                foreach (var hm in unimodDeserialized.modifications)
+                foreach (var hm in UnimodDeserialized.modifications)
                 {
                     if (Math.Abs(hm.mono_mass - bin.MassShift) <= v)
                     {
@@ -725,7 +723,7 @@ namespace EngineLayer.Analysis
             foreach (var bin in myTreeStructure.FinalBins)
             {
                 var ok = new HashSet<string>();
-                foreach (var hm in uniprotDeseralized)
+                foreach (var hm in UniprotDeseralized)
                 {
                     if (Math.Abs(hm.Value.MonoisotopicMass - bin.MassShift) <= v)
                     {

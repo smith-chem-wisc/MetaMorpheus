@@ -8,7 +8,6 @@ using MassSpectrometry;
 using Spectra;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -20,12 +19,6 @@ namespace TaskLayer
     public class GptmdTask : MyTaskEngine
     {
 
-        #region Public Fields
-
-        public List<ModListForGPTMDTask> listOfModListsForGPTMD;
-
-        #endregion Public Fields
-
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
@@ -34,7 +27,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public GptmdTask(ObservableCollection<ModList> modList)
+        public GptmdTask()
         {
             // Set default values here:
             MaxMissedCleavages = 2;
@@ -45,15 +38,15 @@ namespace TaskLayer
             PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
-            listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
-            foreach (var uu in modList)
-                listOfModListsForGPTMD.Add(new ModListForGPTMDTask(uu));
 
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("m.txt")).Gptmd = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("glyco.txt")).Gptmd = true;
+            ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
+            ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
+            ListOfModListsLocalize = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("ptmlist.txt")) };
+
+            ListOfModListsGptmd = new List<ModList> {
+                AllModLists.First(b => b.FileName.EndsWith("m.txt")),
+                AllModLists.First(b => b.FileName.EndsWith("glyco.txt")),
+            };
 
             TaskType = MyTask.Gptmd;
             IsotopeErrors = false;
@@ -64,6 +57,10 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public List<ModList> ListOfModListsFixed { get; set; }
+        public List<ModList> ListOfModListsVariable { get; set; }
+        public List<ModList> ListOfModListsLocalize { get; set; }
+        public List<ModList> ListOfModListsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
         public bool IsotopeErrors { get; set; }
@@ -78,10 +75,10 @@ namespace TaskLayer
             {
                 var sb = new StringBuilder();
                 sb.AppendLine("isotopeErrors: " + IsotopeErrors);
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Fixed).Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
-                sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Gptmd).Select(b => b.FileName)));
+                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed.Select(b => b.FileName)));
+                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable.Select(b => b.FileName)));
+                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize.Select(b => b.FileName)));
+                sb.AppendLine("GPTMD mod lists: " + string.Join(",", ListOfModListsGptmd.Select(b => b.FileName)));
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
                 sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
                 return sb.ToString();
@@ -189,10 +186,10 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...");
-            List<MetaMorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Gptmd).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).ToList();
 
             Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;

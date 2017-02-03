@@ -30,6 +30,15 @@ namespace TaskLayer
 
         #endregion Public Fields
 
+        #region Public Constructors
+
+        static MyTaskEngine()
+        {
+            AllModLists = LoadMods().ToList();
+        }
+
+        #endregion Public Constructors
+
         #region Protected Constructors
 
         protected MyTaskEngine() : base(1)
@@ -54,15 +63,26 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public static List<ModList> AllModLists { get; private set; }
+
         public MyTask TaskType { get; internal set; }
+
         public bool BIons { get; set; }
+
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
+
         public bool IsMySelected { get; set; }
+
         public int MaxMissedCleavages { get; set; }
+
         public int MaxModificationIsoforms { get; set; }
+
         public string OutputFolder { get; set; }
+
         public Protease Protease { get; set; }
+
         public bool YIons { get; set; }
+
         public int MaxNumPeaksPerScan { get; set; }
 
         #endregion Public Properties
@@ -81,10 +101,7 @@ namespace TaskLayer
             var paramsFileName = Path.Combine(OutputFolder, "params.txt");
             using (StreamWriter file = new StreamWriter(paramsFileName))
             {
-                if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
-                    file.WriteLine("MetaMorpheus: Not a release version");
-                else
-                    file.WriteLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
                 file.Write(ToString());
             }
             SucessfullyFinishedWritingFile(paramsFileName);
@@ -92,10 +109,7 @@ namespace TaskLayer
             var resultsFileName = Path.Combine(OutputFolder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
-                if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
-                    file.WriteLine("MetaMorpheus: Not a release version");
-                else
-                    file.WriteLine("MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
                 file.Write(heh.ToString());
             }
             SucessfullyFinishedWritingFile(resultsFileName);
@@ -537,6 +551,12 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static IEnumerable<ModList> LoadMods()
+        {
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
+                yield return new ModList(modFile);
+        }
 
         private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
         {

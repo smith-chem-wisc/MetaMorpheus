@@ -1,7 +1,5 @@
 ﻿using EngineLayer;
-using Spectra;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -23,8 +21,6 @@ namespace MetaMorpheusGUI
 
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
-        private readonly ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
-        private readonly ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
         private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
         private readonly ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
 
@@ -37,19 +33,14 @@ namespace MetaMorpheusGUI
             InitializeComponent();
 
             if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
-                this.Title = "MetaMorpheus: Not a release version";
+                Title = "MetaMorpheus: Not a release version";
             else
-                this.Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
+                Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
-
-            foreach (var modFile in Directory.GetFiles(@"Mods"))
-                modListObservableCollection.Add(new ModList(modFile));
-
-            LoadSearchModesFromFile();
 
             //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-23-2017.xml"));
             //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-1-23-2017.xml"));
@@ -133,16 +124,6 @@ namespace MetaMorpheusGUI
                 outRichTextBox.AppendText(e.ToString() + Environment.NewLine);
                 outRichTextBox.ScrollToEnd();
             }
-        }
-
-        private void LoadSearchModesFromFile()
-        {
-            searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode(5));
-            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode(0.05));
-            searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5)));
-            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
-            searchModeObservableCollection.Add(new OpenSearchMode());
-            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) }));
         }
 
         private void AddNewDB(object sender, XmlForTaskListEventArgs e)
@@ -315,7 +296,7 @@ namespace MetaMorpheusGUI
 
         private void addSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SearchTaskWindow(modListObservableCollection, searchModeObservableCollection);
+            var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
@@ -325,7 +306,7 @@ namespace MetaMorpheusGUI
 
         private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CalibrateTaskWindow(modListObservableCollection);
+            var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
@@ -335,7 +316,7 @@ namespace MetaMorpheusGUI
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GPTMDTaskWindow(modListObservableCollection);
+            var dialog = new GPTMDTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
@@ -357,17 +338,17 @@ namespace MetaMorpheusGUI
                 switch (ok.TaskType)
                 {
                     case MyTask.Search:
-                        var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection);
+                        var searchDialog = new SearchTaskWindow(ok as SearchTask);
                         searchDialog.ShowDialog();
                         break;
 
                     case MyTask.Gptmd:
-                        var gptmddialog = new GPTMDTaskWindow(ok as GptmdTask, modListObservableCollection);
+                        var gptmddialog = new GPTMDTaskWindow(ok as GptmdTask);
                         gptmddialog.ShowDialog();
                         break;
 
                     case MyTask.Calibrate:
-                        var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask, modListObservableCollection);
+                        var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask);
                         calibratedialog.ShowDialog();
                         break;
                 }

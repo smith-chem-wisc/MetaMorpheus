@@ -21,28 +21,27 @@ namespace Test
         public static void TestEverythingRunner()
         {
             #region Setup tasks
+
             ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 modListObservableCollection.Add(new ModList(modFile));
-            
-            CalibrationTask task1 = new CalibrationTask(modListObservableCollection);
-            GptmdTask task2 = new GptmdTask(modListObservableCollection);
 
-            IEnumerable<SearchMode> allSms = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+            CalibrationTask task1 = new CalibrationTask();
+            GptmdTask task2 = new GptmdTask();
 
-            SearchTask task3 = new SearchTask(modListObservableCollection, allSms);
-            task3.ListOfModListsForSearch.First(b => b.FileName.EndsWith("m.txt")).Localize = true;
-            task3.ListOfModListsForSearch.First(b => b.FileName.EndsWith("glyco.txt")).Localize = true;
+            SearchTask task3 = new SearchTask();
+            task3.ListOfModListsLocalize.Add(MyTaskEngine.AllModLists.First(b => b.FileName.EndsWith("m.txt")));
+            task3.ListOfModListsLocalize.Add(MyTaskEngine.AllModLists.First(b => b.FileName.EndsWith("glyco.txt")));
 
-            SearchTask task4 = new SearchTask(modListObservableCollection, allSms);
-            task4.ListOfModListsForSearch.First(b => b.FileName.EndsWith("m.txt")).Localize = true;
-            task4.ListOfModListsForSearch.First(b => b.FileName.EndsWith("glyco.txt")).Localize = true;
+            SearchTask task4 = new SearchTask();
+            task4.ListOfModListsLocalize.Add(MyTaskEngine.AllModLists.First(b => b.FileName.EndsWith("m.txt")));
+            task4.ListOfModListsLocalize.Add(MyTaskEngine.AllModLists.First(b => b.FileName.EndsWith("glyco.txt")));
             task4.ClassicSearch = false;
             List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1, task2, task3, task4 };
 
             #endregion Setup tasks
 
-            List<MetaMorpheusModification> variableModifications = task1.ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> variableModifications = task1.ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
             //List<MorpheusModification> fixedModifications = task1.ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
             //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
