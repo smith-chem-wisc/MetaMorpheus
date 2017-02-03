@@ -1,20 +1,22 @@
 ﻿namespace MetaMorpheusGUI
 {
-    public class FinishedFile
+    public class FinishedFileForDataGrid
     {
+
         #region Public Constructors
 
-        public FinishedFile(string filepath)
+        public FinishedFileForDataGrid(string filePath)
         {
-            this.filepath = filepath;
+            FilePath = filePath;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public string filepath { get; private set; }
+        public string FilePath { get; private set; }
 
         #endregion Public Properties
+
     }
 }

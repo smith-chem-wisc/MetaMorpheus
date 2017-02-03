@@ -46,6 +46,8 @@ namespace TaskLayer
             }
         }
 
+        public ModList ModList { get { return uu; } }
+
         #endregion Public Properties
 
     }
