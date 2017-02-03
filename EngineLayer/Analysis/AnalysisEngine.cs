@@ -203,8 +203,6 @@ namespace EngineLayer.Analysis
                         {
                             HashSet<Protein> proteinsWithThisBaseSeq;
                             peptideBaseSeqProteinListMatch.TryGetValue(newBaseSeq, out proteinsWithThisBaseSeq);
-
-                            var thisProteinsPeptideBaseSeqs = new HashSet<string>();
                             
                             foreach(var protein in proteinsWithThisBaseSeq)
                             {
