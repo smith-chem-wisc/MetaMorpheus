@@ -26,21 +26,21 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public GPTMDTaskWindow(ObservableCollection<ModList> modList)
+        public GPTMDTaskWindow()
         {
             InitializeComponent();
-            PopulateChoices(modList);
+            PopulateChoices();
 
-            TheTask = new GptmdTask(modList);
+            TheTask = new GptmdTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the GPTMD Task";
         }
 
-        public GPTMDTaskWindow(GptmdTask myGPTMDtask, ObservableCollection<ModList> modFileList)
+        public GPTMDTaskWindow(GptmdTask myGPTMDtask)
         {
             InitializeComponent();
-            PopulateChoices(modFileList);
+            PopulateChoices();
 
             TheTask = myGPTMDtask;
             UpdateFieldsFromTask(TheTask);
@@ -79,21 +79,20 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
-            for (int i = 0; i < ModFileListInWindow.Count; i++)
-            {
-                if (task.listOfModListsForGPTMD[i].Fixed)
-                    ModFileListInWindow[i].Fixed = true;
-                if (task.listOfModListsForGPTMD[i].Variable)
-                    ModFileListInWindow[i].Variable = true;
-                if (task.listOfModListsForGPTMD[i].Localize)
-                    ModFileListInWindow[i].Localize = true;
-                if (task.listOfModListsForGPTMD[i].Gptmd)
-                    ModFileListInWindow[i].Gptmd = true;
-            }
+
+            foreach (var modList in task.ListOfModListsFixed)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
+            foreach (var modList in task.ListOfModListsVariable)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Variable = true;
+            foreach (var modList in task.ListOfModListsLocalize)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Localize = true;
+            foreach (var modList in task.ListOfModListsGptmd)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Gptmd = true;
+
             modificationsDataGrid.Items.Refresh();
         }
 
-        private void PopulateChoices(ObservableCollection<ModList> modList)
+        private void PopulateChoices()
         {
             foreach (Protease protease in ProteaseDictionary.Instance.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -109,7 +108,7 @@ namespace MetaMorpheusGUI
                 precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
             // Always create new ModFileList
-            foreach (var uu in modList)
+            foreach (var uu in MyTaskEngine.AllModLists)
                 ModFileListInWindow.Add(new ModListForGPTMDTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
@@ -129,7 +128,12 @@ namespace MetaMorpheusGUI
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
-            TheTask.listOfModListsForGPTMD = ModFileListInWindow.ToList();
+
+            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsGptmd = ModFileListInWindow.Where(b => b.Gptmd).Select(b => b.ModList).ToList();
+
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;

@@ -1,7 +1,5 @@
 ﻿using EngineLayer;
-using Spectra;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -21,11 +19,9 @@ namespace MetaMorpheusGUI
 
         #region Private Fields
 
-        private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
-        private readonly ObservableCollection<XMLdb> proteinDbObservableCollection = new ObservableCollection<XMLdb>();
-        private readonly ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
-        private readonly ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
-        private readonly ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
+        private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
+        private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
+        private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
         private readonly ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
 
         #endregion Private Fields
@@ -37,20 +33,14 @@ namespace MetaMorpheusGUI
             InitializeComponent();
 
             if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
-                this.Title = "MetaMorpheus: Not a release version";
+                Title = "MetaMorpheus: Not a release version";
             else
-                this.Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
+                Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
-
-            foreach(var modFile in Directory.GetFiles(@"Mods"))
-                modListObservableCollection.Add(new ModList(modFile));
-            
-
-            LoadSearchModesFromFile();
 
             //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-23-2017.xml"));
             //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-1-23-2017.xml"));
@@ -136,16 +126,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void LoadSearchModesFromFile()
-        {
-            searchModeObservableCollection.Add(new SinglePpmAroundZeroSearchMode(5));
-            searchModeObservableCollection.Add(new SingleAbsoluteAroundZeroSearchMode(0.05));
-            searchModeObservableCollection.Add(new DotSearchMode(new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5)));
-            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) }));
-            searchModeObservableCollection.Add(new OpenSearchMode());
-            searchModeObservableCollection.Add(new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) }));
-        }
-
         private void AddNewDB(object sender, XmlForTaskListEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
@@ -157,7 +137,7 @@ namespace MetaMorpheusGUI
                 foreach (var uu in proteinDbObservableCollection)
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
-                    proteinDbObservableCollection.Add(new XMLdb(uu.FileName));
+                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu.FileName));
             }
         }
 
@@ -171,8 +151,8 @@ namespace MetaMorpheusGUI
             {
                 foreach (var uu in rawDataObservableCollection)
                     uu.Use = false;
-                foreach (var uu in e.StringList)
-                    rawDataObservableCollection.Add(new RawData(uu));
+                foreach (var newRawData in e.StringList)
+                    rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
             }
         }
 
@@ -214,7 +194,7 @@ namespace MetaMorpheusGUI
 
         private void AddFinishedFile(string filepath)
         {
-            finishedFileObservableCollection.Add(new FinishedFile(filepath));
+            finishedFileObservableCollection.Add(new FinishedFileForDataGrid(filepath));
             outputFilesDataGrid.Items.Refresh();
         }
 
@@ -225,50 +205,49 @@ namespace MetaMorpheusGUI
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
         {
-            // Create the OpenFIleDialog object
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
             openPicker.Filter = "Database Files|*.xml;*.xml.gz;*.fasta";
             openPicker.FilterIndex = 1;
             openPicker.RestoreDirectory = true;
+            openPicker.Multiselect = true;
+
             if (openPicker.ShowDialog() == true)
-            {
-                proteinDbObservableCollection.Add(new XMLdb(openPicker.FileName));
-            }
+                foreach (var filepath in openPicker.FileNames)
+                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(filepath));
             dataGridXMLs.Items.Refresh();
         }
 
         private void AddRaw_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog();
-
             openFileDialog1.Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML";
             openFileDialog1.FilterIndex = 1;
             openFileDialog1.RestoreDirectory = true;
             openFileDialog1.Multiselect = true;
 
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var filepath in openFileDialog1.FileNames)
-                    rawDataObservableCollection.Add(new RawData(filepath));
+                foreach (var rawDataFromSelected in openFileDialog1.FileNames)
+                    rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromSelected));
             dataGridDatafiles.Items.Refresh();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (var file in files)
+            foreach (var rawDataFromDragged in files)
             {
-                var theExtension = Path.GetExtension(file).ToLowerInvariant();
+                var theExtension = Path.GetExtension(rawDataFromDragged).ToLowerInvariant();
                 switch (theExtension)
                 {
                     case ".raw":
                     case ".mzml":
-                        rawDataObservableCollection.Add(new RawData(file));
+                        rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromDragged));
                         break;
 
                     case ".xml":
                     case ".fasta":
                     case ".gz":
-                        proteinDbObservableCollection.Add(new XMLdb(file));
+                        proteinDbObservableCollection.Add(new ProteinDbForDataGrid(rawDataFromDragged));
                         break;
                 }
                 dataGridDatafiles.Items.Refresh();
@@ -317,7 +296,7 @@ namespace MetaMorpheusGUI
 
         private void addSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new SearchTaskWindow(modListObservableCollection, searchModeObservableCollection);
+            var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
@@ -327,7 +306,7 @@ namespace MetaMorpheusGUI
 
         private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new CalibrateTaskWindow(modListObservableCollection);
+            var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
@@ -337,7 +316,7 @@ namespace MetaMorpheusGUI
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GPTMDTaskWindow(modListObservableCollection);
+            var dialog = new GPTMDTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(dialog.TheTask);
@@ -359,17 +338,17 @@ namespace MetaMorpheusGUI
                 switch (ok.TaskType)
                 {
                     case MyTask.Search:
-                        var searchDialog = new SearchTaskWindow(ok as SearchTask, modListObservableCollection);
+                        var searchDialog = new SearchTaskWindow(ok as SearchTask);
                         searchDialog.ShowDialog();
                         break;
 
                     case MyTask.Gptmd:
-                        var gptmddialog = new GPTMDTaskWindow(ok as GptmdTask, modListObservableCollection);
+                        var gptmddialog = new GPTMDTaskWindow(ok as GptmdTask);
                         gptmddialog.ShowDialog();
                         break;
 
                     case MyTask.Calibrate:
-                        var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask, modListObservableCollection);
+                        var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask);
                         calibratedialog.ShowDialog();
                         break;
                 }
@@ -477,6 +456,11 @@ namespace MetaMorpheusGUI
         private void ClearXML_Click(object sender, RoutedEventArgs e)
         {
             proteinDbObservableCollection.Clear();
+        }
+
+        private void ClearOutput_Click(object sender, RoutedEventArgs e)
+        {
+            finishedFileObservableCollection.Clear();
         }
 
         #endregion Private Methods

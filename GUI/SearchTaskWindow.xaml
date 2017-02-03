@@ -27,7 +27,7 @@
         </StackPanel>
         <StackPanel Margin="5">
             <Label x:Name="allowedPrecursorMassDiffsLabel" Content="Allowed precursor mass diffs:" />
-            <DataGrid x:Name="allowedPrecursorMassDiffsDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
+            <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
             <StackPanel Orientation="Horizontal" Margin="5">
                 <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox"  Width="300" />
                 <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="addNewAllowedPrecursorMassDiffsButton_Click" />

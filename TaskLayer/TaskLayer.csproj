@@ -107,7 +107,6 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="SearchTask\SearchModeFoSearch.cs" />
     <Compile Include="Parent\SingleTaskEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>

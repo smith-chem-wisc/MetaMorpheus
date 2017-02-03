@@ -27,7 +27,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public SearchTask(IEnumerable<ModList> modList, IEnumerable<SearchMode> inputSearchModes)
+        public SearchTask()
         {
             // Set default values here:
             ClassicSearch = true;
@@ -41,18 +41,12 @@ namespace TaskLayer
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             BIons = true;
             YIons = true;
-            ListOfModListsForSearch = new List<ModListForSearchTask>();
-            foreach (var uu in modList)
-                ListOfModListsForSearch.Add(new ModListForSearchTask(uu));
 
-            ListOfModListsForSearch.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
-            ListOfModListsForSearch.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
-            ListOfModListsForSearch.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
+            ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
+            ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
+            ListOfModListsLocalize = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("ptmlist.txt")) };
 
-            SearchModes = new List<SearchModeFoSearch>();
-            foreach (var uu in inputSearchModes)
-                SearchModes.Add(new SearchModeFoSearch(uu));
-            SearchModes[0].Use = true;
+            SearchModes = SearchModesKnown.Take(1).ToList();
             TaskType = MyTask.Search;
             MaxNumPeaksPerScan = 400;
         }
@@ -61,13 +55,15 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public List<ModList> ListOfModListsFixed { get; set; }
+        public List<ModList> ListOfModListsVariable { get; set; }
+        public List<ModList> ListOfModListsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
         public bool DoHistogramAnalysis { get; set; }
-        public List<ModListForSearchTask> ListOfModListsForSearch { get; set; }
         public bool SearchDecoy { get; set; }
-        public List<SearchModeFoSearch> SearchModes { get; set; }
+        public List<SearchMode> SearchModes { get; set; }
 
         #endregion Public Properties
 
@@ -81,13 +77,13 @@ namespace TaskLayer
                 sb.AppendLine("classicSearch: " + ClassicSearch);
                 sb.AppendLine("doParsimony: " + DoParsimony);
                 sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsForSearch.Where(b => b.Fixed).Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsForSearch.Where(b => b.Variable).Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsForSearch.Where(b => b.Localize).Select(b => b.FileName)));
+                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed.Select(b => b.FileName)));
+                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable.Select(b => b.FileName)));
+                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize.Select(b => b.FileName)));
                 sb.AppendLine("searchDecoy: " + SearchDecoy);
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
                 sb.AppendLine("searchModes: ");
-                sb.Append(string.Join(Environment.NewLine, SearchModes.Where(b => b.Use).Select(b => "\t" + b.SearchMode.FileNameAddition)));
+                sb.Append(string.Join(Environment.NewLine, SearchModes.Select(b => "\t" + b.FileNameAddition)));
                 return sb.ToString();
             }
         }
@@ -112,18 +108,16 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...");
-            List<MetaMorpheusModification> variableModifications = ListOfModListsForSearch.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = ListOfModListsForSearch.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = ListOfModListsForSearch.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> fixedModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> localizeableModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
 
             Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
             MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
 
-            List<SearchMode> searchModesS = SearchModes.Where(b => b.Use).Select(b => b.SearchMode).ToList();
-
-            List<PsmParent>[] allPsms = new List<PsmParent>[searchModesS.Count];
-            for (int j = 0; j < searchModesS.Count; j++)
+            List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
+            for (int j = 0; j < SearchModes.Count; j++)
                 allPsms[j] = new List<PsmParent>();
 
             Status("Loading proteins...");
@@ -202,27 +196,27 @@ namespace TaskLayer
                 if (ClassicSearch)
                 {
                     var listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
-                    classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModesS, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
+                    classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
 
                     classicSearchResults = (ClassicSearchResults)classicSearchEngine.Run();
-                    for (int i = 0; i < searchModesS.Count; i++)
+                    for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);
 
                     AnalysisEngine analysisEngine = null;
 
-                    analysisEngine = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons);
+                    analysisEngine = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons);
 
                     analysisEngine.Run();
                 }
                 else
                 {
-                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance, searchModesS);
+                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance, SearchModes);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
-                    for (int i = 0; i < searchModesS.Count; i++)
+                    for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.NewPsms[i]);
 
-                    var analysisEngine = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons);
+                    var analysisEngine = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups"), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons);
 
                     analysisEngine.Run();
                 }
@@ -230,7 +224,7 @@ namespace TaskLayer
 
             if (currentRawFileList.Count > 1)
             {
-                var analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModesS, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, "aggregate_ProteinGroups" + s), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons);
+                var analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, "aggregate_ProteinGroups" + s), DoParsimony, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons);
 
                 analysisEngine.Run();
             }

@@ -1,15 +1,14 @@
 ﻿namespace MetaMorpheusGUI
 {
-    public class RawData
+    public class RawDataForDataGrid
     {
 
         #region Public Constructors
 
-        public RawData(string FileName)
+        public RawDataForDataGrid(string fileName)
         {
-            this.FileName = FileName;
-            if (FileName != null)
-                Use = true;
+            FileName = fileName;
+            Use = true;
         }
 
         #endregion Public Constructors

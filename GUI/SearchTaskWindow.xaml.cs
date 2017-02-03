@@ -24,27 +24,27 @@ namespace MetaMorpheusGUI
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForSearchTask> ModFileListInWindow = new ObservableCollection<ModListForSearchTask>();
 
-        private ObservableCollection<SearchModeFoSearch> SearchModes = new ObservableCollection<SearchModeFoSearch>();
+        private ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public SearchTaskWindow(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
+        public SearchTaskWindow()
         {
             InitializeComponent();
-            PopulateChoices(modList, searchModes);
+            PopulateChoices();
 
-            TheTask = new SearchTask(modList, searchModes);
+            TheTask = new SearchTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Search Task";
         }
 
-        public SearchTaskWindow(SearchTask task, IEnumerable<ModList> modList)
+        public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            PopulateChoices(modList, task.SearchModes.Select(b => b.SearchMode));
+            PopulateChoices();
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
@@ -70,7 +70,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void PopulateChoices(IEnumerable<ModList> modList, IEnumerable<SearchMode> searchModes)
+        private void PopulateChoices()
         {
             foreach (Protease protease in ProteaseDictionary.Instance.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -83,14 +83,14 @@ namespace MetaMorpheusGUI
                 productMassToleranceComboBox.Items.Add(toleranceUnit);
 
             // Always create new ModFileList
-            foreach (var uu in modList)
+            foreach (var uu in MyTaskEngine.AllModLists)
                 ModFileListInWindow.Add(new ModListForSearchTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
 
             // Always create new ModFileList
-            foreach (var uu in searchModes)
-                SearchModes.Add(new SearchModeFoSearch(uu));
-            allowedPrecursorMassDiffsDataGrid.DataContext = SearchModes;
+            foreach (var uu in MyEngine.SearchModesKnown)
+                SearchModesForThisTask.Add(new SearchModeForDataGrid(uu));
+            searchModesDataGrid.DataContext = SearchModesForThisTask;
         }
 
         private void UpdateFieldsFromTask(SearchTask task)
@@ -108,24 +108,20 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
-            for (int i = 0; i < ModFileListInWindow.Count; i++)
-            {
-                if (task.ListOfModListsForSearch[i].Fixed)
-                    ModFileListInWindow[i].Fixed = true;
-                if (task.ListOfModListsForSearch[i].Variable)
-                    ModFileListInWindow[i].Variable = true;
-                if (task.ListOfModListsForSearch[i].Localize)
-                    ModFileListInWindow[i].Localize = true;
-            }
+
+            foreach (var modList in task.ListOfModListsFixed)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
+            foreach (var modList in task.ListOfModListsVariable)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Variable = true;
+            foreach (var modList in task.ListOfModListsLocalize)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Localize = true;
 
             modificationsDataGrid.Items.Refresh();
 
-            for (int i = 0; i < SearchModes.Count; i++)
-            {
-                if (task.SearchModes[i].Use)
-                    SearchModes[i].Use = true;
-            }
-            allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+            foreach (var cool in task.SearchModes)
+                SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
+
+            searchModesDataGrid.Items.Refresh();
         }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
@@ -146,8 +142,12 @@ namespace MetaMorpheusGUI
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
-            TheTask.ListOfModListsForSearch = ModFileListInWindow.ToList();
-            TheTask.SearchModes = SearchModes.ToList();
+
+            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.ModList).ToList();
+
+            TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             DialogResult = true;
@@ -173,15 +173,17 @@ namespace MetaMorpheusGUI
                         else
                             break;
                         DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2], CultureInfo.InvariantCulture)));
-                        SearchModes.Add(new SearchModeFoSearch(dsm));
-                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                        MyEngine.SearchModesKnown.Add(dsm);
+                        SearchModesForThisTask.Add(new SearchModeForDataGrid(dsm));
+                        searchModesDataGrid.Items.Refresh();
                         break;
 
                     case "interval":
                         IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
                         IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
-                        SearchModes.Add(new SearchModeFoSearch(ism));
-                        allowedPrecursorMassDiffsDataGrid.Items.Refresh();
+                        MyEngine.SearchModesKnown.Add(ism);
+                        SearchModesForThisTask.Add(new SearchModeForDataGrid(ism));
+                        searchModesDataGrid.Items.Refresh();
                         break;
                 }
             }
