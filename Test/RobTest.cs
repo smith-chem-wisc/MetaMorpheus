@@ -20,8 +20,8 @@ namespace Test
             // creates some test proteins and digests them (simulating a protein database)
             string[] sequences = { "AB--------",   // 1: contains unique
                                    "--C-------",   // 2: contains unique
-                                   "---D------",   // 3: subset
-                                   "-B-D------",   // 4: D should go to 4, not 3
+                                   "---D---HHH--", // 3: subset
+                                   "-B-D---HHH--", // 4: D should go to 4, not 3 (3 is subset)
                                    "-B--E-----",   // 5: subsumable
                                    "----EFG---",   // 6: indistinguishable from 8 (J will not be a "detected" PSM)
                                    "-----F----",   // 7: only pep shared w/ decoy
@@ -148,12 +148,12 @@ namespace Test
                         case "A": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), hashSet, null, null, null))); break;
                         case "B": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0), hashSet, null, null, null))); break;
                         case "C": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0), hashSet, null, null, null))); break;
-                        //case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7,0), hashSet, null, null, null))); break;
+                        //case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0), hashSet, null, null, null))); break;
                         case "E": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0), hashSet, null, null, null))); break;
                         case "F": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0), hashSet, null, null, null))); break;
                         case "G": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0), hashSet, null, null, null))); break;
-                        case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
-                            //case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2,0), hashSet, null, null, null))); break;
+                        //case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
+                        //case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0), hashSet, null, null, null))); break;
                     }
                 }
             }
@@ -161,6 +161,7 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
+            /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
             System.Console.WriteLine("----Initial Dictionary----");
@@ -204,12 +205,13 @@ namespace Test
             {
                 System.Console.WriteLine(proteinGroup);
             }
+            */
 
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 7);
             Assert.That(parsimonyBaseSequences.Contains("AB--------"));
             Assert.That(parsimonyBaseSequences.Contains("--C-------"));
-            Assert.That(parsimonyBaseSequences.Contains("-B-D------"));
+            Assert.That(parsimonyBaseSequences.Contains("-B-D---HHH--"));
             Assert.That(parsimonyBaseSequences.Contains("----EFG---"));
             Assert.That(parsimonyBaseSequences.Contains("-----F----*"));
             Assert.That(parsimonyBaseSequences.Contains("-B------I-"));
@@ -223,7 +225,7 @@ namespace Test
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
-                foreach (var coverage in proteinGroup.sequenceCoverage)
+                foreach (var coverage in proteinGroup.sequenceCoveragePercent)
                     Assert.That(coverage <= 1.0);
         }
 

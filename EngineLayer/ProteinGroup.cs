@@ -59,6 +59,7 @@ namespace EngineLayer
                 sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
+                sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
@@ -82,7 +83,8 @@ namespace EngineLayer
         public HashSet<CompactPeptide> StrictUniquePeptideList { get; private set; }
         public HashSet<CompactPeptide> StrictRazorPeptideList { get; private set; }
         public HashSet<PeptideWithSetModifications> StrictPeptideWithSetModsList { get; private set; }
-        public List<double> sequenceCoverage { get; private set; }
+        public List<double> sequenceCoveragePercent { get; private set; }
+        public List<string> sequenceCoverageDisplayList { get; private set; }
         public double QValue { get; set; }
         public int cumulativeTarget { get; set; }
         public int cumulativeDecoy { get; set; }
@@ -142,13 +144,20 @@ namespace EngineLayer
             sb.Append("" + StrictUniquePeptideList.Count());
             sb.Append("\t");
 
-            // sequence coverage
-            foreach (double coverage in sequenceCoverage)
+            // sequence coverage percent
+            foreach (double coverage in sequenceCoveragePercent)
             {
                 double coverage1 = coverage * 100;
                 string str = string.Format("{0:0}", coverage1);
 
                 sb.Append("" + str + "% ;; ");
+            }
+            sb.Append("\t");
+
+            // sequence coverage
+            foreach (string coverage in sequenceCoverageDisplayList)
+            {
+                sb.Append("" + coverage + " ;; ");
             }
             sb.Append("\t");
 
@@ -267,7 +276,8 @@ namespace EngineLayer
 
         public void CalculateSequenceCoverage()
         {
-            sequenceCoverage = new List<double>();
+            sequenceCoveragePercent = new List<double>();
+            sequenceCoverageDisplayList = new List<string>();
 
             foreach (var protein in Proteins)
             {
@@ -285,7 +295,18 @@ namespace EngineLayer
                 }
 
                 double sequenceCoverageHere = (double)coveredResidues.Count / protein.Length;
-                sequenceCoverage.Add(sequenceCoverageHere);
+                sequenceCoveragePercent.Add(sequenceCoverageHere);
+
+                var sequenceCoverageDisplay = protein.BaseSequence.ToLower();
+                var coverageArray = sequenceCoverageDisplay.ToCharArray();
+                foreach (var residue in coveredResidues)
+                {
+                    var temp = char.ToUpper(coverageArray[residue - 1]);
+                    coverageArray[residue - 1] = temp;
+                }
+
+                sequenceCoverageDisplay = new string(coverageArray);
+                sequenceCoverageDisplayList.Add(sequenceCoverageDisplay);
             }
         }
 
