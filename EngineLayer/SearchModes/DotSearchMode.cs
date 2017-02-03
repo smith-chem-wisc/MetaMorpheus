@@ -1,4 +1,5 @@
 ﻿using Spectra;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -17,38 +18,35 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public DotSearchMode(IEnumerable<double> acceptableSortedMassShifts, Tolerance tol) : base(tol.Value.ToString("F3", CultureInfo.InvariantCulture) + "around" + string.Join("-", acceptableSortedMassShifts.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))))
+        public DotSearchMode(IEnumerable<double> acceptableMassShifts, Tolerance tol) : this(tol.Value.ToString("F3", CultureInfo.InvariantCulture) + "around" + string.Join("-", acceptableMassShifts.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))), acceptableMassShifts, tol)
         {
-            this.acceptableSortedMassShifts = acceptableSortedMassShifts.ToList();
-            this.tol = tol;
         }
 
-        public DotSearchMode(string FileNameAddition, IEnumerable<double> acceptableSortedMassShifts, Tolerance tol) : base(FileNameAddition)
+        public DotSearchMode(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
-            this.acceptableSortedMassShifts = acceptableSortedMassShifts.ToList();
+            HashSet<double> hs = new HashSet<double>(acceptableMassShifts.Select(b => Math.Round(b, 5)));
+            this.acceptableSortedMassShifts = hs.OrderBy(b => b).ToList();
             this.tol = tol;
+            this.NumNotches = acceptableSortedMassShifts.Count;
         }
 
         #endregion Public Constructors
 
         #region Public Methods
 
-        public override bool Accepts(double scanPrecursorMass, double peptideMass)
+        public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            foreach (double huh in acceptableSortedMassShifts)
-            {
-                // TODO: verify that the theoretical and experimental ones make sense here
-                if (tol.Within(scanPrecursorMass, huh + peptideMass))
-                    return true;
-            }
-            return false;
+            for (int j = 0; j < acceptableSortedMassShifts.Count; j++)
+                if (tol.Within(scanPrecursorMass, acceptableSortedMassShifts[j] + peptideMass))
+                    return j;
+            return -1;
         }
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            foreach (double huh in acceptableSortedMassShifts)
+            for (int j = 0; j < acceptableSortedMassShifts.Count; j++)
             {
-                yield return new DoubleRange(peptideMonoisotopicMass + huh, tol);
+                yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass + acceptableSortedMassShifts[j], tol), j);
             }
         }
 

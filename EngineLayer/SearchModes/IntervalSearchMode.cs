@@ -32,27 +32,27 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public override bool Accepts(double scanPrecursorMass, double peptideMass)
+        public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
             double diff = scanPrecursorMass - peptideMass;
 
             int index = Array.BinarySearch(means, diff);
             if (index >= 0)
-                return true;
+                return 0;
             index = ~index;
             // Two options: either it's the index of the first element greater than diff, or len if diff greater than all
             if (index < means.Length)
                 if (intervals[index].Contains(diff))
-                    return true;
+                    return 0;
             if (index > 0)
                 if (intervals[index - 1].Contains(diff))
-                    return true;
-            return false;
+                    return 0;
+            return -1;
         }
 
-        public override IEnumerable<DoubleRange> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            return intervals.Select(b => new DoubleRange(peptideMonoisotopicMass + b.Minimum, peptideMonoisotopicMass + b.Maximum));
+            return intervals.Select(b => new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass + b.Minimum, peptideMonoisotopicMass + b.Maximum), 0));
         }
 
         #endregion Public Methods

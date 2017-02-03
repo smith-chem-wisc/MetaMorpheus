@@ -37,6 +37,17 @@ namespace Test
         }
 
         [Test]
+        public static void TestNoCleavage()
+        {
+            var prot = new Protein("MNNNKQQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[] { 5 }, new int[] { 6 }, new string[] { "lala" }, null, null, 0, false, false);
+            var protease = new Protease("Custom Protease", null, null, TerminusType.None, CleavageSpecificity.None, null, null, null);
+
+            var ye = prot.Digest(protease, int.MaxValue, InitiatorMethionineBehavior.Variable).ToList();
+
+            Assert.AreEqual(3, ye.Count);
+        }
+
+        [Test]
         public static void TestBadPeptide()
         {
             var prot = new Protein("MNNNKQQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);

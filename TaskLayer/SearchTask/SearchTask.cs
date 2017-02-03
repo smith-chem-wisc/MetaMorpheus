@@ -216,7 +216,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance.Value, searchModesS);
+                    modernSearchEngine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance, searchModesS);
 
                     modernSearchResults = (ModernSearchResults)modernSearchEngine.Run();
                     for (int i = 0; i < searchModesS.Count; i++)
