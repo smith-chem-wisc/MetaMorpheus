@@ -244,37 +244,32 @@ namespace EngineLayer
 
         private Dictionary<int, MetaMorpheusModification> AddFixedMods(IEnumerable<MetaMorpheusModification> allKnownFixedModifications)
         {
-            var allModsOneIsNterminus = new Dictionary<int, MetaMorpheusModification>();
+            var allModsOneIsNterminus = new Dictionary<int, MetaMorpheusModification>(Length + 3);
             foreach (MetaMorpheusModification mod in allKnownFixedModifications)
             {
-                if (OneBasedStartResidueInProtein == 1 || OneBasedStartResidueInProtein == 2)
+                switch (mod.ThisModificationType)
                 {
-                    if (mod.ThisModificationType == ModificationType.ProteinNTerminus && (mod.AminoAcid.Equals(this[0]) || mod.AminoAcid.Equals('\0')))
-                    {
-                        allModsOneIsNterminus[1] = mod;
-                    }
-                }
-                if (mod.ThisModificationType == ModificationType.PeptideNTerminus && (mod.AminoAcid.Equals(this[0]) || mod.AminoAcid.Equals('\0')))
-                {
-                    allModsOneIsNterminus[1] = mod;
-                }
-                for (int i = 2; i <= Length + 1; i++)
-                {
-                    if (mod.ThisModificationType == ModificationType.AminoAcidResidue && (mod.AminoAcid.Equals(this[i - 2]) || mod.AminoAcid.Equals('\0')))
-                    {
-                        allModsOneIsNterminus[i] = mod;
-                    }
-                }
-                if (mod.ThisModificationType == ModificationType.PeptideCTerminus && (mod.AminoAcid.Equals(this[Length - 1]) || mod.AminoAcid.Equals('\0')))
-                {
-                    allModsOneIsNterminus[Length + 2] = mod;
-                }
-                if (OneBasedEndResidueInProtein == Protein.Length)
-                {
-                    if (mod.ThisModificationType == ModificationType.ProteinCTerminus && (mod.AminoAcid.Equals(this[Length - 1]) || mod.AminoAcid.Equals('\0')))
-                    {
-                        allModsOneIsNterminus[Length + 2] = mod;
-                    }
+                    case ModificationType.ProteinNTerminus:
+                        if ((OneBasedStartResidueInProtein == 1 || OneBasedStartResidueInProtein == 2) && (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[0])))
+                            allModsOneIsNterminus[1] = mod;
+                        break;
+                    case ModificationType.PeptideNTerminus:
+                        if (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[0]))
+                            allModsOneIsNterminus[1] = mod;
+                        break;
+                    case ModificationType.AminoAcidResidue:
+                        for (int i = 2; i <= Length + 1; i++)
+                            if (mod.AminoAcid.Equals(this[i - 2]) || mod.AminoAcid.Equals('\0'))
+                                allModsOneIsNterminus[i] = mod;
+                        break;
+                    case ModificationType.PeptideCTerminus:
+                        if (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[Length - 1]))
+                            allModsOneIsNterminus[Length + 2] = mod;
+                        break;
+                    case ModificationType.ProteinCTerminus:
+                        if (OneBasedEndResidueInProtein == Protein.Length && (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[Length - 1])))
+                            allModsOneIsNterminus[Length + 2] = mod;
+                        break;
                 }
             }
             return allModsOneIsNterminus;

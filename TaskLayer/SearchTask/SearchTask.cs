@@ -109,8 +109,8 @@ namespace TaskLayer
 
             Status("Loading modifications...");
             List<MetaMorpheusModification> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
+            List<MetaMorpheusModification> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
 
             Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
             HashSet<string> unidentifiedModStrings;
