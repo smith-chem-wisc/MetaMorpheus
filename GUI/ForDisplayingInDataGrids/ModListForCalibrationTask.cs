@@ -1,7 +1,8 @@
 ﻿using EngineLayer;
 using System.Collections.Generic;
+using TaskLayer;
 
-namespace TaskLayer
+namespace MetaMorpheusGUI
 {
     public class ModListForCalibrationTask
     {

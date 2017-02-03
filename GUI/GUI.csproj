@@ -102,6 +102,9 @@
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
+    <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />
+    <Compile Include="ForDisplayingInDataGrids\ModListForGPTMDTask.cs" />
+    <Compile Include="ForDisplayingInDataGrids\ModListForSearchTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\SearchModeForDataGrid.cs" />
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
