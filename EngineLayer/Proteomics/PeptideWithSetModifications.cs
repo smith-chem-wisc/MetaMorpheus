@@ -22,9 +22,7 @@ namespace EngineLayer
 
         private readonly PeptideWithPossibleModifications modPep;
         private double monoisotopicMass = double.NaN;
-
-        private string extendedSequence;
-
+        
         private string sequence;
 
         private PeptideFragmentMasses p;
