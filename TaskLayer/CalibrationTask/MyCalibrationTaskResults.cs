@@ -7,7 +7,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public MyCalibrationTaskResults(MyTaskEngine s) : base(s)
+        public MyCalibrationTaskResults(MetaMorpheusTask s) : base(s)
         {
         }
 

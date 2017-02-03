@@ -7,7 +7,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public MySearchTaskResults(MyTaskEngine s) : base(s)
+        public MySearchTaskResults(MetaMorpheusTask s) : base(s)
         {
         }
 

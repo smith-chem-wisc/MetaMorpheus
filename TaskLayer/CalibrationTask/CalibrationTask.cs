@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace TaskLayer
 {
-    public class CalibrationTask : MyTaskEngine
+    public class CalibrationTask : MetaMorpheusTask
     {
 
         #region Public Constructors

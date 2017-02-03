@@ -32,14 +32,15 @@ namespace Test
 
             PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
             var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), null, null, null, null, null, 0, false, false);
-            var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
+            IEnumerable<MetaMorpheusModification> allKnownFixedModifications = new List<MetaMorpheusModification>();
+            var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh", allKnownFixedModifications);
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
+            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
-            
+
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
             allResultingIdentifications.Add(thePsmwithfdr);
@@ -62,10 +63,10 @@ namespace Test
 
             PsmParent newPsm = new TestParentSpectrumMatch(651.297638557 + 21.981943 + 15.994915);
             var parentProtein = new Protein("NNNPPP", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), null, null, null, null, null, 0, false, false);
-            var modPep = new PeptideWithPossibleModifications(1, 6, parentProtein, 0, "ugh");
+            var modPep = new PeptideWithPossibleModifications(1, 6, parentProtein, 0, "ugh", new List<MetaMorpheusModification>());
 
             List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
+            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -77,7 +78,7 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(6, res.Mods["accession"].Count);
-            Assert.AreEqual(3, res.Mods["accession"].Where(b=>b.Item2.Equals("21")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.Equals("21")).Count());
             Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.Equals("16")).Count());
         }
 

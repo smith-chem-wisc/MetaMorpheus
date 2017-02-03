@@ -1,6 +1,6 @@
 ﻿namespace MetaMorpheusGUI
 {
-    public class RawDataForDataGrid
+    class RawDataForDataGrid
     {
 
         #region Public Constructors

@@ -1,9 +1,10 @@
 ﻿using EngineLayer;
 using System.Collections.Generic;
+using TaskLayer;
 
-namespace TaskLayer
+namespace MetaMorpheusGUI
 {
-    public class ModListForCalibrationTask
+    class ModListForGptmdTask
     {
 
         #region Private Fields
@@ -14,7 +15,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public ModListForCalibrationTask(ModList uu)
+        public ModListForGptmdTask(ModList uu)
         {
             this.uu = uu;
         }
@@ -26,6 +27,7 @@ namespace TaskLayer
         public bool Fixed { get; set; }
         public bool Variable { get; set; }
         public bool Localize { get; set; }
+        public bool Gptmd { get; set; }
 
         public string FileName
         {
