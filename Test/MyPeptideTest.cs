@@ -23,8 +23,7 @@ namespace Test
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<MetaMorpheusModification>()).ToList();
 
             Assert.AreEqual(2, ye.Count);
-
-            List<MetaMorpheusModification> fixedModifications = new List<MetaMorpheusModification>();
+            
             List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
             var pep1 = ye[0].GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
