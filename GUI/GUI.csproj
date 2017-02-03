@@ -103,13 +103,14 @@
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />
-    <Compile Include="ForDisplayingInDataGrids\ModListForGPTMDTask.cs" />
+    <Compile Include="ForDisplayingInDataGrids\ModListForGptmdTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForSearchTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\SearchModeForDataGrid.cs" />
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
+    <Compile Include="ForDisplayingInDataGrids\MetaMorpheusTaskForDataGrid.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>

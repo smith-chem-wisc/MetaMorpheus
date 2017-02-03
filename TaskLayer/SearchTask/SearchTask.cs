@@ -16,7 +16,7 @@ using System.Text;
 
 namespace TaskLayer
 {
-    public class SearchTask : MyTaskEngine
+    public class SearchTask : MetaMorpheusTask
     {
 
         #region Private Fields

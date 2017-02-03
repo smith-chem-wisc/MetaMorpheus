@@ -2,7 +2,7 @@
 
 namespace MetaMorpheusGUI
 {
-    public class SearchModeForDataGrid
+    class SearchModeForDataGrid
     {
 
         #region Public Fields

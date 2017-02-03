@@ -20,7 +20,7 @@ namespace TaskLayer
         Calibrate
     }
 
-    public abstract class MyTaskEngine : MyEngine
+    public abstract class MetaMorpheusTask : MyEngine
     {
 
         #region Public Fields
@@ -32,7 +32,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        static MyTaskEngine()
+        static MetaMorpheusTask()
         {
             AllModLists = LoadMods().ToList();
         }
@@ -41,7 +41,7 @@ namespace TaskLayer
 
         #region Protected Constructors
 
-        protected MyTaskEngine() : base(1)
+        protected MetaMorpheusTask() : base(1)
         {
         }
 
@@ -70,9 +70,7 @@ namespace TaskLayer
         public bool BIons { get; set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
-        public bool IsMySelected { get; set; }
-
+        
         public int MaxMissedCleavages { get; set; }
 
         public int MaxModificationIsoforms { get; set; }

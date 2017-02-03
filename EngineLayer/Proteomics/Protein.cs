@@ -84,7 +84,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public IEnumerable<PeptideWithPossibleModifications> Digest(Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior)
+        public IEnumerable<PeptideWithPossibleModifications> Digest(Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior, IEnumerable<MetaMorpheusModification> allKnownFixedModifications)
         {
             if (protease.CleavageSpecificity != CleavageSpecificity.None)
             {
@@ -104,12 +104,12 @@ namespace EngineLayer
                             // Retain!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || i != 0 || this[0] != 'M')
                             {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], this, missed_cleavages, "full");
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], this, missed_cleavages, "full", allKnownFixedModifications);
                             }
                             // Cleave!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && i == 0 && this[0] == 'M')
                             {
-                                yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], this, missed_cleavages, "full:M cleaved");
+                                yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], this, missed_cleavages, "full:M cleaved", allKnownFixedModifications);
                             }
                         }
 
@@ -123,13 +123,13 @@ namespace EngineLayer
                                     i++;
                                 // Start peptide
                                 if (i + missed_cleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + missed_cleavages] <= OneBasedEndPositions[chainPeptideIndex])
-                                    yield return new PeptideWithPossibleModifications(OneBasedBeginPositions[chainPeptideIndex], oneBasedIndicesToCleaveAfter[i + missed_cleavages], this, missed_cleavages, BigPeptideTypes[chainPeptideIndex] + " start");
+                                    yield return new PeptideWithPossibleModifications(OneBasedBeginPositions[chainPeptideIndex], oneBasedIndicesToCleaveAfter[i + missed_cleavages], this, missed_cleavages, BigPeptideTypes[chainPeptideIndex] + " start", allKnownFixedModifications);
 
                                 while (oneBasedIndicesToCleaveAfter[i] < OneBasedEndPositions[chainPeptideIndex])
                                     i++;
                                 // End
                                 if (i - missed_cleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 >= OneBasedBeginPositions[chainPeptideIndex])
-                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, OneBasedEndPositions[chainPeptideIndex], this, missed_cleavages, BigPeptideTypes[chainPeptideIndex] + " end");
+                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, OneBasedEndPositions[chainPeptideIndex], this, missed_cleavages, BigPeptideTypes[chainPeptideIndex] + " end", allKnownFixedModifications);
                             }
                         }
                     }
@@ -143,17 +143,17 @@ namespace EngineLayer
             {
                 if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || this[0] != 'M')
                 {
-                    yield return new PeptideWithPossibleModifications(1, Length, this, 0, "full");
+                    yield return new PeptideWithPossibleModifications(1, Length, this, 0, "full", allKnownFixedModifications);
                 }
                 if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && this[0] == 'M')
                 {
-                    yield return new PeptideWithPossibleModifications(2, Length, this, 0, "full:M cleaved");
+                    yield return new PeptideWithPossibleModifications(2, Length, this, 0, "full:M cleaved", allKnownFixedModifications);
                 }
 
                 // Also digest using the chain peptide start/end indices
                 for (int chainPeptideIndex = 0; chainPeptideIndex < OneBasedBeginPositions.Length; chainPeptideIndex++)
                 {
-                    yield return new PeptideWithPossibleModifications(OneBasedBeginPositions[chainPeptideIndex], OneBasedEndPositions[chainPeptideIndex], this, 0, BigPeptideTypes[chainPeptideIndex]);
+                    yield return new PeptideWithPossibleModifications(OneBasedBeginPositions[chainPeptideIndex], OneBasedEndPositions[chainPeptideIndex], this, 0, BigPeptideTypes[chainPeptideIndex], allKnownFixedModifications);
                 }
             }
         }

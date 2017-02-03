@@ -4,7 +4,7 @@ using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
-    public class ModListForGPTMDTask
+    class ModListForGptmdTask
     {
 
         #region Private Fields
@@ -15,7 +15,7 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public ModListForGPTMDTask(ModList uu)
+        public ModListForGptmdTask(ModList uu)
         {
             this.uu = uu;
         }

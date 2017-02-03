@@ -42,11 +42,11 @@ namespace Test
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable);
+                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<MetaMorpheusModification>());
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MetaMorpheusModification>(), 4098, 3, new List<MetaMorpheusModification>());
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MetaMorpheusModification>(), 4098, 3);
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)

@@ -15,7 +15,7 @@ namespace TaskLayer
 
         #region Protected Constructors
 
-        protected MyTaskResults(MyTaskEngine s) : base(s)
+        protected MyTaskResults(MetaMorpheusTask s) : base(s)
         {
         }
 

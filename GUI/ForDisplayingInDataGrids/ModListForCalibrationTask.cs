@@ -4,7 +4,7 @@ using TaskLayer;
 
 namespace MetaMorpheusGUI
 {
-    public class ModListForCalibrationTask
+    class ModListForCalibrationTask
     {
 
         #region Private Fields
