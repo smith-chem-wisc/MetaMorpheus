@@ -165,7 +165,7 @@ namespace EngineLayer.Analysis
             {
                 currentBestNumNewPeptides = 0;
                 Protein bestProtein = null;
-                
+
                 if (!currentBestPeptidesIsOne)
                 {
                     // attempt to find protein that best accounts for unaccounted-for peptides
@@ -180,26 +180,8 @@ namespace EngineLayer.Analysis
                             if (comparisonProteinNewPeptides >= currentBestNumNewPeptides)
                             {
                                 // if the current protein is better than the best so far, current protein is the new best protein
-                                if (comparisonProteinNewPeptides > currentBestNumNewPeptides || currentBestNumNewPeptides == 0)
-                                {
-                                    bestProtein = kvp.Key;
-                                    currentBestNumNewPeptides = comparisonProteinNewPeptides;
-                                }
-                                else
-                                {
-                                    HashSet<CompactPeptide> bestProteinPeptideList;
-                                    proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
-                                    var bestProteinBaseSeqs = new HashSet<string>(bestProteinPeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
-                                    var bestProteinNewPeptideBaseSeqs = new HashSet<string>(bestProteinBaseSeqs.Except(usedBaseSequences));
-
-                                    if(bestProteinNewPeptideBaseSeqs.SetEquals(comparisonProteinNewPeptideBaseSeqs))
-                                    {
-                                        if (bestProteinBaseSeqs.Count < comparisonProteinNewPeptideBaseSeqs.Count)
-                                        {
-                                            bestProtein = kvp.Key;
-                                        }
-                                    }
-                                }
+                                bestProtein = kvp.Key;
+                                currentBestNumNewPeptides = comparisonProteinNewPeptides;
                             }
                         }
                     }
@@ -212,13 +194,54 @@ namespace EngineLayer.Analysis
                     {
                         HashSet<CompactPeptide> bestProteinPeptideList;
                         proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
-                        
+                        var baseSeqs = new HashSet<string>(bestProteinPeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+                        var bestProteinNewPeptideBaseSeqs = new HashSet<string>(baseSeqs.Except(usedBaseSequences));
+                        var proteinsWithNewSeqs = new HashSet<Protein>();
+
+                        // find all proteins that have the new base sequences
+                        foreach (var newBaseSeq in bestProteinNewPeptideBaseSeqs)
+                        {
+                            HashSet<Protein> proteinsWithThisBaseSeq;
+                            peptideBaseSeqProteinListMatch.TryGetValue(newBaseSeq, out proteinsWithThisBaseSeq);
+
+                            var thisProteinsPeptideBaseSeqs = new HashSet<string>();
+                            
+                            foreach(var protein in proteinsWithThisBaseSeq)
+                            {
+                                HashSet<CompactPeptide> t;
+                                proteinToPeptidesMatching.TryGetValue(protein, out t);
+                                var temp = new HashSet<string>(t.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+                                if (baseSeqs.IsSubsetOf(temp))
+                                    proteinsWithNewSeqs.Add(protein);
+                            }
+                        }
+
+                        // multiple proteins have the same new base seqs - pick the one with the most total peptides
+                        if (proteinsWithNewSeqs.Count > 1)
+                        {
+                            var proteinsWithNumBaseSeqs = new Dictionary<Protein, int>();
+
+                            // count how many peptides each protein has
+                            foreach (var protein in proteinsWithNewSeqs)
+                            {
+                                HashSet<CompactPeptide> peps;
+                                proteinToPeptidesMatching.TryGetValue(protein, out peps);
+                                baseSeqs = new HashSet<string>(peps.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+                                proteinsWithNumBaseSeqs.Add(protein, baseSeqs.Count);
+                            }
+
+                            // pick the protein with the most peptides
+                            var temp = proteinsWithNumBaseSeqs.OrderByDescending(b => b.Value);
+                            bestProtein = temp.First().Key;
+                        }
+
+                        proteinToPeptidesMatching.TryGetValue(bestProtein, out bestProteinPeptideList);
                         parsimonyDict.Add(bestProtein, bestProteinPeptideList);
 
                         foreach (var peptide in bestProteinPeptideList)
                         {
                             string peptideBaseSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                            
+
                             usedBaseSequences.Add(peptideBaseSequence);
                         }
                     }
@@ -239,7 +262,7 @@ namespace EngineLayer.Analysis
                                 {
                                     bestProtein = kvp.Key;
 
-                                    var proteins = new HashSet<Protein>();
+                                    HashSet<Protein> proteins;
                                     peptideBaseSeqProteinListMatch.TryGetValue(peptideBaseSequence, out proteins);
 
                                     // multiple proteins have the same new base seq - pick the one with the most total peptides
@@ -248,7 +271,7 @@ namespace EngineLayer.Analysis
                                         var proteinsWithNumBaseSeqs = new Dictionary<Protein, int>();
 
                                         // count how many peptides each protein has
-                                        foreach(var protein in proteins)
+                                        foreach (var protein in proteins)
                                         {
                                             HashSet<CompactPeptide> peps;
                                             proteinToPeptidesMatching.TryGetValue(protein, out peps);
@@ -345,7 +368,7 @@ namespace EngineLayer.Analysis
 
                         // get the peptides that belong to the post-parsimony protein(s) only
                         var newPeptides = new HashSet<PeptideWithSetModifications>(oldPepsWithSetMods.Where(p => proteinListHere.Contains(p.Protein)));
-                        
+
                         answer.Add(peptide, newPeptides);
                     }
                 }
@@ -469,7 +492,7 @@ namespace EngineLayer.Analysis
                         proteinGroup.StrictRazorPeptideList.Add(peptide);
                     }
 
-                    
+
                 }
 
                 // calculate sequence coverage for each protein in the group
@@ -596,7 +619,7 @@ namespace EngineLayer.Analysis
                 }
             }
         }
-        
+
         private static void IdentifyFracWithSingle(BinTreeStructure myTreeStructure)
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
