@@ -101,15 +101,15 @@
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ForDisplayingInDataGrids\FinishedFile.cs" />
+    <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ForDisplayingInDataGrids\RawData.cs" />
+    <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ForDisplayingInDataGrids\XMLdb.cs" />
+    <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

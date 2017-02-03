@@ -21,11 +21,11 @@ namespace MetaMorpheusGUI
 
         #region Private Fields
 
-        private readonly ObservableCollection<RawData> rawDataObservableCollection = new ObservableCollection<RawData>();
-        private readonly ObservableCollection<XMLdb> proteinDbObservableCollection = new ObservableCollection<XMLdb>();
+        private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
+        private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
         private readonly ObservableCollection<SearchMode> searchModeObservableCollection = new ObservableCollection<SearchMode>();
-        private readonly ObservableCollection<FinishedFile> finishedFileObservableCollection = new ObservableCollection<FinishedFile>();
+        private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
         private readonly ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
 
         #endregion Private Fields
@@ -46,9 +46,8 @@ namespace MetaMorpheusGUI
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
-            foreach(var modFile in Directory.GetFiles(@"Mods"))
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
                 modListObservableCollection.Add(new ModList(modFile));
-            
 
             LoadSearchModesFromFile();
 
@@ -157,7 +156,7 @@ namespace MetaMorpheusGUI
                 foreach (var uu in proteinDbObservableCollection)
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
-                    proteinDbObservableCollection.Add(new XMLdb(uu.FileName));
+                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu.FileName));
             }
         }
 
@@ -171,8 +170,8 @@ namespace MetaMorpheusGUI
             {
                 foreach (var uu in rawDataObservableCollection)
                     uu.Use = false;
-                foreach (var uu in e.StringList)
-                    rawDataObservableCollection.Add(new RawData(uu));
+                foreach (var newRawData in e.StringList)
+                    rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
             }
         }
 
@@ -214,7 +213,7 @@ namespace MetaMorpheusGUI
 
         private void AddFinishedFile(string filepath)
         {
-            finishedFileObservableCollection.Add(new FinishedFile(filepath));
+            finishedFileObservableCollection.Add(new FinishedFileForDataGrid(filepath));
             outputFilesDataGrid.Items.Refresh();
         }
 
@@ -225,50 +224,49 @@ namespace MetaMorpheusGUI
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
         {
-            // Create the OpenFIleDialog object
             Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
             openPicker.Filter = "Database Files|*.xml;*.xml.gz;*.fasta";
             openPicker.FilterIndex = 1;
             openPicker.RestoreDirectory = true;
+            openPicker.Multiselect = true;
+
             if (openPicker.ShowDialog() == true)
-            {
-                proteinDbObservableCollection.Add(new XMLdb(openPicker.FileName));
-            }
+                foreach (var filepath in openPicker.FileNames)
+                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(filepath));
             dataGridXMLs.Items.Refresh();
         }
 
         private void AddRaw_Click(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog();
-
             openFileDialog1.Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML";
             openFileDialog1.FilterIndex = 1;
             openFileDialog1.RestoreDirectory = true;
             openFileDialog1.Multiselect = true;
 
             if (openFileDialog1.ShowDialog() == true)
-                foreach (var filepath in openFileDialog1.FileNames)
-                    rawDataObservableCollection.Add(new RawData(filepath));
+                foreach (var rawDataFromSelected in openFileDialog1.FileNames)
+                    rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromSelected));
             dataGridDatafiles.Items.Refresh();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (var file in files)
+            foreach (var rawDataFromDragged in files)
             {
-                var theExtension = Path.GetExtension(file).ToLowerInvariant();
+                var theExtension = Path.GetExtension(rawDataFromDragged).ToLowerInvariant();
                 switch (theExtension)
                 {
                     case ".raw":
                     case ".mzml":
-                        rawDataObservableCollection.Add(new RawData(file));
+                        rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromDragged));
                         break;
 
                     case ".xml":
                     case ".fasta":
                     case ".gz":
-                        proteinDbObservableCollection.Add(new XMLdb(file));
+                        proteinDbObservableCollection.Add(new ProteinDbForDataGrid(rawDataFromDragged));
                         break;
                 }
                 dataGridDatafiles.Items.Refresh();
@@ -477,6 +475,11 @@ namespace MetaMorpheusGUI
         private void ClearXML_Click(object sender, RoutedEventArgs e)
         {
             proteinDbObservableCollection.Clear();
+        }
+
+        private void ClearOutput_Click(object sender, RoutedEventArgs e)
+        {
+            finishedFileObservableCollection.Clear();
         }
 
         #endregion Private Methods
