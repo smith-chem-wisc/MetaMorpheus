@@ -20,7 +20,7 @@ namespace EngineLayer.ModernSearch
 
         private readonly List<int>[] fragmentIndex;
 
-        private readonly double fragmentToleranceInDaltons;
+        private readonly Tolerance fragmentTolerance;
 
         private readonly float[] keys;
 
@@ -34,13 +34,13 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes) : base(2)
         {
             this.myMSDataFile = myMSDataFile;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
-            this.fragmentToleranceInDaltons = fragmentToleranceInDaltons;
+            this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
         }
 
@@ -68,6 +68,7 @@ namespace EngineLayer.ModernSearch
             {
                 CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
                 double[] bestScores = new double[searchModesCount];
+                int[] bestNotches = new int[searchModesCount];
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -78,6 +79,7 @@ namespace EngineLayer.ModernSearch
 
                     Array.Clear(bestPeptides, 0, searchModesCount);
                     Array.Clear(bestScores, 0, searchModesCount);
+                    Array.Clear(bestNotches, 0, searchModesCount);
 
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
@@ -94,27 +96,36 @@ namespace EngineLayer.ModernSearch
                                 if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
-                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods) && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    if (notch >= 0 && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
+                                        bestNotches[j] = notch;
                                     }
                                 }
                                 else if (currentBestScore < consideredScore)
                                 {
                                     // Score is better, only make sure it is acceptable
-                                    if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods))
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    if (notch >= 0)
                                     {
                                         bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
+                                        bestNotches[j] = notch;
                                     }
                                 }
                             }
                             // Did not exist! Only make sure that it is acceptable
-                            else if (searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods))
+                            else
                             {
-                                bestPeptides[j] = candidatePeptide;
-                                bestScores[j] = consideredScore;
+                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                if (notch >= 0)
+                                {
+                                    bestPeptides[j] = candidatePeptide;
+                                    bestScores[j] = consideredScore;
+                                    bestNotches[j] = notch;
+                                }
                             }
                         }
                     }
@@ -123,7 +134,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j]);
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j], bestNotches[j]);
                         }
                     }
                 }
@@ -187,7 +198,7 @@ namespace EngineLayer.ModernSearch
                     while (downIpos >= 0)
                     {
                         closestPeak = keys[downIpos];
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[downIpos])
                                 peptideScores[heh] += theAdd;
@@ -204,7 +215,7 @@ namespace EngineLayer.ModernSearch
                     while (upIpos < keys.Length)
                     {
                         closestPeak = keys[upIpos];
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[upIpos])
                                 peptideScores[heh] += theAdd;

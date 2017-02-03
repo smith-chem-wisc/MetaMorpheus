@@ -14,19 +14,18 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private readonly int cumulativeTarget;
-        private readonly int cumulativeDecoy;
+        private int cumulativeTarget;
+        private int cumulativeDecoy;
+        private int cumulativeTargetNotch;
+        private int cumulativeDecoyNotch;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NewPsmWithFdr(PsmWithMultiplePossiblePeptides thisPsm, int cumulativeTarget, int cumulativeDecoy, double tempQValue)
+        public NewPsmWithFdr(PsmWithMultiplePossiblePeptides thisPsm)
         {
             this.thisPSM = thisPsm;
-            this.cumulativeTarget = cumulativeTarget;
-            this.cumulativeDecoy = cumulativeDecoy;
-            qValue = tempQValue;
         }
 
         #endregion Public Constructors
@@ -41,12 +40,16 @@ namespace EngineLayer
                 sb.Append(PsmWithMultiplePossiblePeptides.TabSeparatedHeader + '\t');
                 sb.Append("cumulative_target" + '\t');
                 sb.Append("cumulative_decoy" + '\t');
-                sb.Append("QValue");
+                sb.Append("QValue" + '\t');
+                sb.Append("cumulative_target_notch" + '\t');
+                sb.Append("cumulative_decoy_notch" + '\t');
+                sb.Append("QValue_notch");
                 return sb.ToString();
             }
         }
 
         public double qValue { get; set; }
+        public double qValueNotch { get; set; }
 
         public bool IsDecoy
         {
@@ -66,9 +69,23 @@ namespace EngineLayer
             sb.Append(thisPSM.ToString() + '\t');
             sb.Append(cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(qValue.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append(qValue.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(qValueNotch.ToString("F5", CultureInfo.InvariantCulture));
 
             return sb.ToString();
+        }
+
+        public void SetValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
+        {
+            this.cumulativeTarget = cumulativeTarget;
+            this.cumulativeDecoy = cumulativeDecoy;
+            qValue = tempQValue;
+
+            this.cumulativeTargetNotch = cumulativeTargetNotch;
+            this.cumulativeDecoyNotch = cumulativeDecoyNotch;
+            qValueNotch = tempQValueNotch;
         }
 
         #endregion Public Methods

@@ -11,7 +11,9 @@ namespace Test
     [TestFixture]
     public class RobTest
     {
+
         #region Public Methods
+
         [Test]
         public static void TestParsimony()
         {
@@ -158,8 +160,7 @@ namespace Test
 
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
-            
-            
+
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
             System.Console.WriteLine("----Initial Dictionary----");
@@ -203,9 +204,7 @@ namespace Test
             {
                 System.Console.WriteLine(proteinGroup);
             }
-            
 
-            
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 7);
             Assert.That(parsimonyBaseSequences.Contains("AB--------"));
@@ -226,9 +225,9 @@ namespace Test
             foreach (var proteinGroup in proteinGroups)
                 foreach (var coverage in proteinGroup.sequenceCoveragePercent)
                     Assert.That(coverage <= 1.0);
-                    
         }
 
         #endregion Public Methods
+
     }
 }

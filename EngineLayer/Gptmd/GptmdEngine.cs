@@ -39,7 +39,7 @@ namespace EngineLayer.Gptmd
             var Mods = new Dictionary<string, HashSet<Tuple<int, string, string>>>();
 
             int modsAdded = 0;
-            foreach (var ye in allIdentifications.Where(b => b.qValue <= 0.01 && !b.IsDecoy))
+            foreach (var ye in allIdentifications.Where(b => b.qValueNotch <= 0.01 && !b.IsDecoy))
             {
                 var theDict = ye.thisPSM.peptidesWithSetModifications;
                 // Only add to non-ambiguous peptides

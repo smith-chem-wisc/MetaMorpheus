@@ -26,9 +26,15 @@ namespace EngineLayer
 
         #endregion Public Fields
 
+        #region Internal Fields
+
+        internal readonly int notch;
+
+        #endregion Internal Fields
+
         #region Protected Constructors
 
-        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score)
+        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
         {
             this.fileName = fileName;
             this.scanNumber = scanNumber;
@@ -40,6 +46,7 @@ namespace EngineLayer
             this.scanPrecursorMZ = scanPrecursorMZ;
             this.scanPrecursorMass = scanPrecursorMass;
             this.score = score;
+            this.notch = notch;
         }
 
         #endregion Protected Constructors
@@ -62,6 +69,7 @@ namespace EngineLayer
             sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
             foreach (var kvp in matchedIonsList)
@@ -101,6 +109,7 @@ namespace EngineLayer
             sb.Append("scanPrecursorMZ" + '\t');
             sb.Append("scanPrecursorMass" + '\t');
             sb.Append("score" + '\t');
+            sb.Append("notch" + '\t');
 
             sb.Append("matched ions" + '\t');
             sb.Append("matched ion counts" + '\t');

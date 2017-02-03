@@ -135,7 +135,7 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            // build protein list for each peptide before parsimony has been applied 
+            // build protein list for each peptide before parsimony has been applied
             var peptideBaseSeqProteinListMatch = new Dictionary<string, HashSet<Protein>>();
             foreach (var kvp in proteinToPeptidesMatching)
             {
@@ -566,7 +566,7 @@ namespace EngineLayer.Analysis
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
 
                     Status("Running FDR analysis...");
-                    var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides);
+                    var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
                     // This must come before the unique peptide identifications..
@@ -584,7 +584,7 @@ namespace EngineLayer.Analysis
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
-                        var uniquePsmsWithFdr = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.Distinct(new SequenceComparer()));
+                        var uniquePsmsWithFdr = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.Distinct(new SequenceComparer()), searchModes[j]);
                         writePsmsAction(uniquePsmsWithFdr, "uniquePeptides" + searchModes[j].FileNameAddition);
                     }
 
@@ -876,24 +876,45 @@ namespace EngineLayer.Analysis
             return myTreeStructure;
         }
 
-        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmWithMultiplePossiblePeptides> items)
+        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmWithMultiplePossiblePeptides> items, SearchMode sm)
         {
             var ids = new List<NewPsmWithFdr>();
+            foreach (PsmWithMultiplePossiblePeptides item in items)
+            {
+                ids.Add(new NewPsmWithFdr(item));
+            }
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
-            foreach (PsmWithMultiplePossiblePeptides item in items)
+
+            int[] cumulative_target_per_notch = new int[sm.NumNotches];
+            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
+
+            for (int i = 0; i < ids.Count; i++)
             {
+                var item = ids[i];
                 var isDecoy = item.IsDecoy;
+                int notch = item.thisPSM.newPsm.notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
                     cumulative_target++;
+
+                if (isDecoy)
+                    cumulative_decoy_per_notch[notch]++;
+                else
+                    cumulative_target_per_notch[notch]++;
+
                 double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                ids.Add(new NewPsmWithFdr(item, cumulative_target, cumulative_decoy, temp_q_value));
+                double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / (cumulative_target_per_notch[notch] + cumulative_decoy_per_notch[notch]);
+                item.SetValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
             }
 
             double min_q_value = double.PositiveInfinity;
+            double[] min_q_value_notch = new double[sm.NumNotches];
+            for (int i = 0; i < sm.NumNotches; i++)
+                min_q_value_notch[i] = double.PositiveInfinity;
+
             for (int i = ids.Count - 1; i >= 0; i--)
             {
                 NewPsmWithFdr id = ids[i];
@@ -901,6 +922,12 @@ namespace EngineLayer.Analysis
                     id.qValue = min_q_value;
                 else if (id.qValue < min_q_value)
                     min_q_value = id.qValue;
+
+                int notch = id.thisPSM.newPsm.notch;
+                if (id.qValueNotch > min_q_value_notch[notch])
+                    id.qValueNotch = min_q_value_notch[notch];
+                else if (id.qValueNotch < min_q_value_notch[notch])
+                    min_q_value_notch[notch] = id.qValueNotch;
             }
 
             return ids;
