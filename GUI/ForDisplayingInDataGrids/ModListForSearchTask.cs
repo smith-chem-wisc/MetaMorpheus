@@ -1,9 +1,10 @@
 ﻿using EngineLayer;
 using System.Collections.Generic;
+using TaskLayer;
 
-namespace TaskLayer
+namespace MetaMorpheusGUI
 {
-    public class ModListForSearchTask
+    class ModListForSearchTask
     {
 
         #region Private Fields

@@ -6,7 +6,7 @@ namespace TaskLayer
     {
         #region Public Constructors
 
-        public SingleTaskEventArgs(MyTaskEngine theTask)
+        public SingleTaskEventArgs(MetaMorpheusTask theTask)
         {
             this.TheTask = theTask;
         }
@@ -15,7 +15,7 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public MyTaskEngine TheTask { get; private set; }
+        public MetaMorpheusTask TheTask { get; private set; }
 
         #endregion Public Properties
     }

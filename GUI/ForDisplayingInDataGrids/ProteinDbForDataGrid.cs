@@ -1,6 +1,6 @@
 ﻿namespace MetaMorpheusGUI
 {
-    public class ProteinDbForDataGrid
+    class ProteinDbForDataGrid
     {
 
         #region Public Constructors

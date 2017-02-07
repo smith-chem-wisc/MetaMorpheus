@@ -12,7 +12,7 @@ namespace TaskLayer
 
         #region Private Fields
 
-        private readonly List<MyTaskEngine> taskList;
+        private readonly List<MetaMorpheusTask> taskList;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
 
@@ -20,7 +20,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList) : base(0)
+        public EverythingRunnerEngine(List<MetaMorpheusTask> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList) : base(0)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;

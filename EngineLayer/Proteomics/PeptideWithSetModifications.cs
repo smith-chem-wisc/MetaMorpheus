@@ -22,9 +22,7 @@ namespace EngineLayer
 
         private readonly PeptideWithPossibleModifications modPep;
         private double monoisotopicMass = double.NaN;
-
-        private string extendedSequence;
-
+        
         private string sequence;
 
         private PeptideFragmentMasses p;
@@ -57,25 +55,7 @@ namespace EngineLayer
                 return monoisotopicMass;
             }
         }
-
-        public virtual string ExtendedSequence
-        {
-            get
-            {
-                if (extendedSequence == null)
-                {
-                    var exSeq = new StringBuilder();
-                    exSeq.Append(PreviousAminoAcid);
-                    exSeq.Append(".");
-                    exSeq.Append(Sequence);
-                    exSeq.Append(".");
-                    exSeq.Append(NextAminoAcid);
-                    extendedSequence = exSeq.ToString();
-                }
-                return extendedSequence;
-            }
-        }
-
+        
         public virtual string Sequence
         {
             get
@@ -251,7 +231,7 @@ namespace EngineLayer
 
         public override int GetHashCode()
         {
-            return ExtendedSequence.GetHashCode();
+            return Sequence.GetHashCode();
         }
 
         #endregion Public Methods

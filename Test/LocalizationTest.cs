@@ -27,14 +27,14 @@ namespace Test
             string[] bigPeptideTypes = null;
             string name = null;
             string fullName = null;
+            IEnumerable<MetaMorpheusModification> allKnownFixedModifications = new List<MetaMorpheusModification>();
+
             Protein parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, 0, false, false);
-            PeptideWithPossibleModifications pwpm = new PeptideWithPossibleModifications(1, 3, parentProteinForMatch, 0, null);
+            PeptideWithPossibleModifications pwpm = new PeptideWithPossibleModifications(1, 3, parentProteinForMatch, 0, null, allKnownFixedModifications);
 
             List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification> { new MetaMorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, '\0', 21.981943, 21.981943, 21.981943, new Chemistry.ChemicalFormula("Na-1 H1")) };
 
-            IEnumerable<MetaMorpheusModification> allKnownFixedModifications = new List<MetaMorpheusModification>();
-
-            List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptideWithSetModifications(variableModifications, 2, 1, allKnownFixedModifications).ToList();
+            List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptideWithSetModifications(variableModifications, 2, 1).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
