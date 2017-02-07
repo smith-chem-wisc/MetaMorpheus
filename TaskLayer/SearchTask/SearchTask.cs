@@ -41,6 +41,8 @@ namespace TaskLayer
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             BIons = true;
             YIons = true;
+            ZdotIons = false;
+            CIons = false;
 
             ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
             ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
@@ -133,6 +135,10 @@ namespace TaskLayer
                 lp.Add(ProductType.B);
             if (YIons)
                 lp.Add(ProductType.Y);
+            if (ZdotIons)
+                lp.Add(ProductType.Zdot);
+            if (CIons)
+                lp.Add(ProductType.C);
 
             if (!ClassicSearch)
             {

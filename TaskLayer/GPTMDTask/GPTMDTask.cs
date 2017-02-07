@@ -38,6 +38,8 @@ namespace TaskLayer
             PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
+            CIons = false;
+            ZdotIons = false;
 
             ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
             ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
@@ -209,6 +211,10 @@ namespace TaskLayer
                 lp.Add(ProductType.B);
             if (YIons)
                 lp.Add(ProductType.Y);
+            if (CIons)
+                lp.Add(ProductType.C);
+            if (ZdotIons)
+                lp.Add(ProductType.Zdot);
 
             Status("Loading proteins...");
             var proteinList = dbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();

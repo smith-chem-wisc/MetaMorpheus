@@ -31,6 +31,8 @@ namespace TaskLayer
             PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
+            CIons = false;
+            ZdotIons = false;
 
             ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
             ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
@@ -111,6 +113,16 @@ namespace TaskLayer
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.y;
                 lp.Add(ProductType.Y);
+            }
+            if (CIons)
+            {
+                fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.c;
+                lp.Add(ProductType.C);
+            }
+            if (ZdotIons)
+            {
+                fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.zdot;
+                lp.Add(ProductType.Zdot);
             }
 
             Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
