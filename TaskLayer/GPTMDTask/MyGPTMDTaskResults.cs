@@ -7,7 +7,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public MyGPTMDTaskResults(MyTaskEngine s) : base(s)
+        public MyGPTMDTaskResults(MetaMorpheusTask s) : base(s)
         {
         }
 

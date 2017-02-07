@@ -38,9 +38,9 @@ namespace MetaMorpheusCommandLine
             MyEngine.OutProgressHandler += MyEngine_outProgressHandler;
             MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
 
-            MyTaskEngine.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
-            MyTaskEngine.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
-            MyTaskEngine.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+            MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
+            MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
+            MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
         }
 
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)

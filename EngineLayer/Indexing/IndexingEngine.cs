@@ -83,7 +83,7 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
@@ -101,7 +101,7 @@ namespace EngineLayer.Indexing
                             }
                         }
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide, fixedModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)

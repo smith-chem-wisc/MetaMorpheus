@@ -17,6 +17,7 @@ namespace EngineLayer
             this.Protein = protein;
             this.OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
             this.OneBasedEndResidueInProtein = oneBasedEndResidueInProtein;
+            Length = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
         }
 
         #endregion Protected Constructors
@@ -29,27 +30,13 @@ namespace EngineLayer
 
         public virtual string PeptideDescription { get; protected set; }
 
-        public int Length
-        {
-            get
-            {
-                return OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
-            }
-        }
+        public int Length { get; private set; }
 
         public virtual char PreviousAminoAcid
         {
             get
             {
                 return OneBasedStartResidueInProtein > 1 ? Protein[OneBasedStartResidueInProtein - 2] : '-';
-            }
-        }
-
-        public virtual char NextAminoAcid
-        {
-            get
-            {
-                return OneBasedEndResidueInProtein < Protein.Length ? Protein[OneBasedEndResidueInProtein] : '-';
             }
         }
 

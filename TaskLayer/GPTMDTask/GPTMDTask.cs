@@ -16,7 +16,7 @@ using System.Xml;
 
 namespace TaskLayer
 {
-    public class GptmdTask : MyTaskEngine
+    public class GptmdTask : MetaMorpheusTask
     {
 
         #region Private Fields

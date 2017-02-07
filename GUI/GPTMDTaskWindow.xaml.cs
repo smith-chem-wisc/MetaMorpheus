@@ -20,7 +20,7 @@ namespace MetaMorpheusGUI
         #region Private Fields
 
         // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForGPTMDTask> ModFileListInWindow = new ObservableCollection<ModListForGPTMDTask>();
+        private ObservableCollection<ModListForGptmdTask> ModFileListInWindow = new ObservableCollection<ModListForGptmdTask>();
 
         #endregion Private Fields
 
@@ -110,8 +110,8 @@ namespace MetaMorpheusGUI
                 precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
             // Always create new ModFileList
-            foreach (var uu in MyTaskEngine.AllModLists)
-                ModFileListInWindow.Add(new ModListForGPTMDTask(uu));
+            foreach (var uu in MetaMorpheusTask.AllModLists)
+                ModFileListInWindow.Add(new ModListForGptmdTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 

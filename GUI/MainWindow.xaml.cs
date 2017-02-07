@@ -22,7 +22,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
-        private readonly ObservableCollection<MyTaskEngine> taskEngineObservableCollection = new ObservableCollection<MyTaskEngine>();
+        private readonly ObservableCollection<MetaMorpheusTaskForDataGrid> taskEngineObservableCollection = new ObservableCollection<MetaMorpheusTaskForDataGrid>();
 
         #endregion Private Fields
 
@@ -32,10 +32,9 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
-                Title = "MetaMorpheus: Not a release version";
-            else
-                Title = "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
+            Title = MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ?
+                "MetaMorpheus: Not a release version" :
+                "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
@@ -55,11 +54,11 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
 
-            MyTaskEngine.StartingSingleTaskHander += Po_startingSingleTaskHander;
-            MyTaskEngine.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
-            MyTaskEngine.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
-            MyTaskEngine.StartingDataFileHandler += MyTaskEngine_StartingDataFileHandler;
-            MyTaskEngine.FinishedDataFileHandler += MyTaskEngine_FinishedDataFileHandler;
+            MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
+            MetaMorpheusTask.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
+            MetaMorpheusTask.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
+            MetaMorpheusTask.StartingDataFileHandler += MyTaskEngine_StartingDataFileHandler;
+            MetaMorpheusTask.FinishedDataFileHandler += MyTaskEngine_FinishedDataFileHandler;
             MyEngine.OutProgressHandler += NewoutProgressBar;
             MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
@@ -164,7 +163,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                s.TheTask.IsMySelected = true;
+                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).IsMySelected = true;
                 statusLabel.Content = "Running " + s.TheTask.TaskType + " task";
                 outProgressBar.IsIndeterminate = true;
 
@@ -182,7 +181,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                s.TheTask.IsMySelected = false;
+                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).IsMySelected = false;
                 statusLabel.Content = "Finished " + s.TheTask.TaskType + " task";
                 outProgressBar.Value = 100;
 
@@ -266,7 +265,7 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.Select(b => b.metaMorpheusTask).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
@@ -299,7 +298,7 @@ namespace MetaMorpheusGUI
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                taskEngineObservableCollection.Add(dialog.TheTask);
+                taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
                 UpdateTaskGuiStuff();
             }
         }
@@ -309,7 +308,7 @@ namespace MetaMorpheusGUI
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                taskEngineObservableCollection.Add(dialog.TheTask);
+                taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
                 UpdateTaskGuiStuff();
             }
         }
@@ -319,7 +318,7 @@ namespace MetaMorpheusGUI
             var dialog = new GPTMDTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                taskEngineObservableCollection.Add(dialog.TheTask);
+                taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
                 UpdateTaskGuiStuff();
             }
         }
@@ -333,22 +332,22 @@ namespace MetaMorpheusGUI
         private void tasksDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var a = sender as DataGrid;
-            var ok = (MyTaskEngine)a.SelectedItem;
+            var ok = (MetaMorpheusTaskForDataGrid)a.SelectedItem;
             if (ok != null)
-                switch (ok.TaskType)
+                switch (ok.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
-                        var searchDialog = new SearchTaskWindow(ok as SearchTask);
+                        var searchDialog = new SearchTaskWindow(ok.metaMorpheusTask as SearchTask);
                         searchDialog.ShowDialog();
                         break;
 
                     case MyTask.Gptmd:
-                        var gptmddialog = new GPTMDTaskWindow(ok as GptmdTask);
+                        var gptmddialog = new GPTMDTaskWindow(ok.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
                         break;
 
                     case MyTask.Calibrate:
-                        var calibratedialog = new CalibrateTaskWindow(ok as CalibrationTask);
+                        var calibratedialog = new CalibrateTaskWindow(ok.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
                         break;
                 }
