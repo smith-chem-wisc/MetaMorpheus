@@ -1,152 +1,152 @@
-﻿using EngineLayer;
-using EngineLayer.ClassicSearch;
-using EngineLayer.Indexing;
-using EngineLayer.ModernSearch;
-using MzLibUtil;
-using NUnit.Framework;
-using Proteomics;
-using Spectra;
-using System.Collections.Generic;
-using System.Linq;
+﻿//using EngineLayer;
+//using EngineLayer.ClassicSearch;
+//using EngineLayer.Indexing;
+//using EngineLayer.ModernSearch;
+//using MzLibUtil;
+//using NUnit.Framework;
+//using Proteomics;
+//using Spectra;
+//using System.Collections.Generic;
+//using System.Linq;
 
-namespace Test
-{
-    [TestFixture]
-    public class SearchEngineTests
-    {
+//namespace Test
+//{
+//    [TestFixture]
+//    public class SearchEngineTests
+//    {
 
-        #region Public Methods
+//        #region Public Methods
 
-        [Test]
-        public static void TestClassicSearchEngine()
-        {
-            var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+//        [Test]
+//        public static void TestClassicSearchEngine()
+//        {
+//            var myMsDataFile = new TestDataFile();
+//            var variableModifications = new List<ModificationWithMass>();
+//            var fixedModifications = new List<ModificationWithMass>();
+//            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
-            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+//            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+//            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
-            int maximumMissedCleavages = 2;
-            int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl", new List<ProductType> { ProductType.B, ProductType.Y });
-            var searchResults = (ClassicSearchResults)engine.Run();
+//            var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+//            int maximumMissedCleavages = 2;
+//            int maximumVariableModificationIsoforms = 4096;
+//            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl", new List<ProductType> { ProductType.B, ProductType.Y });
+//            var searchResults = (ClassicSearchResults)engine.Run();
 
-            // Single search mode
-            Assert.AreEqual(1, searchResults.OuterPsms.Length);
+//            // Single search mode
+//            Assert.AreEqual(1, searchResults.OuterPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
+//            // Two scans, even including the MS1 scans
+//            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
-        }
+//            Assert.IsTrue(searchResults.OuterPsms[0][1].score > 1);
+//            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
+//            Assert.AreEqual("QQQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
+//        }
 
-        [Test]
-        public static void TestClassicSearchEngineWithWeirdPeptide()
-        {
-            var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+//        [Test]
+//        public static void TestClassicSearchEngineWithWeirdPeptide()
+//        {
+//            var myMsDataFile = new TestDataFile();
+//            var variableModifications = new List<ModificationWithMass>();
+//            var fixedModifications = new List<ModificationWithMass>();
+//            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
-            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new OpenSearchMode() };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+//            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+//            var searchModes = new List<SearchMode> { new OpenSearchMode() };
+//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+//            var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
-            int maximumMissedCleavages = 2;
-            int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "UUU", new List<ProductType> { ProductType.B, ProductType.Y });
-            var searchResults = (ClassicSearchResults)engine.Run();
+//            int maximumMissedCleavages = 2;
+//            int maximumVariableModificationIsoforms = 4096;
+//            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "UUU", new List<ProductType> { ProductType.B, ProductType.Y });
+//            var searchResults = (ClassicSearchResults)engine.Run();
 
-            // Single search mode
-            Assert.AreEqual(1, searchResults.OuterPsms.Length);
+//            // Single search mode
+//            Assert.AreEqual(1, searchResults.OuterPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
+//            // Two scans, even including the MS1 scans
+//            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
-        }
+//            Assert.IsTrue(searchResults.OuterPsms[0][1].score > 1);
+//            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
+//            Assert.AreEqual("QXQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
+//        }
 
-        [Test]
-        public static void TestModernSearchEngine()
-        {
-            var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var localizeableModifications = new List<ModificationWithMass>();
-            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+//        [Test]
+//        public static void TestModernSearchEngine()
+//        {
+//            var myMsDataFile = new TestDataFile();
+//            var variableModifications = new List<ModificationWithMass>();
+//            var fixedModifications = new List<ModificationWithMass>();
+//            var localizeableModifications = new List<ModificationWithMass>();
+//            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
-            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+//            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+//            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
-            var indexResults = (IndexingResults)indexEngine.Run();
-            var peptideIndex = indexResults.PeptideIndex;
-            var fragmentIndexDict = indexResults.FragmentIndexDict;
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+//            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+//            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+//            var indexResults = (IndexingResults)indexEngine.Run();
+//            var peptideIndex = indexResults.PeptideIndex;
+//            var fragmentIndexDict = indexResults.FragmentIndexDict;
+//            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+//            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes);
-            var searchResults = (ModernSearchResults)engine.Run();
+//            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes);
+//            var searchResults = (ModernSearchResults)engine.Run();
 
-            // Single search mode
-            Assert.AreEqual(1, searchResults.NewPsms.Length);
+//            // Single search mode
+//            Assert.AreEqual(1, searchResults.NewPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
+//            // Two scans, even including the MS1 scans
+//            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
 
-            Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications).BaseSequence);
-        }
+//            Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
+//            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
+//            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications).BaseSequence);
+//        }
 
-        [Test]
-        public static void TestModernSearchEngineWithWeirdPeptide()
-        {
-            var myMsDataFile = new TestDataFile();
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var localizeableModifications = new List<ModificationWithMass>();
-            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+//        [Test]
+//        public static void TestModernSearchEngineWithWeirdPeptide()
+//        {
+//            var myMsDataFile = new TestDataFile();
+//            var variableModifications = new List<ModificationWithMass>();
+//            var fixedModifications = new List<ModificationWithMass>();
+//            var localizeableModifications = new List<ModificationWithMass>();
+//            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
-            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new OpenSearchMode() };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+//            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+//            var searchModes = new List<SearchMode> { new OpenSearchMode() };
+//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
-            var indexResults = (IndexingResults)indexEngine.Run();
-            var peptideIndex = indexResults.PeptideIndex;
-            var fragmentIndexDict = indexResults.FragmentIndexDict;
-            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+//            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+//            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+//            var indexResults = (IndexingResults)indexEngine.Run();
+//            var peptideIndex = indexResults.PeptideIndex;
+//            var fragmentIndexDict = indexResults.FragmentIndexDict;
+//            var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+//            var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes);
-            var searchResults = (ModernSearchResults)engine.Run();
+//            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes);
+//            var searchResults = (ModernSearchResults)engine.Run();
 
-            // Single search mode
-            Assert.AreEqual(1, searchResults.NewPsms.Length);
+//            // Single search mode
+//            Assert.AreEqual(1, searchResults.NewPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
+//            // Two scans, even including the MS1 scans
+//            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
 
-            Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications).BaseSequence);
-        }
+//            Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
+//            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
+//            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications).BaseSequence);
+//        }
 
-        #endregion Public Methods
+//        #endregion Public Methods
 
-    }
-}
+//    }
+//}

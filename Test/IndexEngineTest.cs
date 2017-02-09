@@ -1,60 +1,60 @@
-﻿using EngineLayer;
-using EngineLayer.Indexing;
-using NUnit.Framework;
+﻿//using EngineLayer;
+//using EngineLayer.Indexing;
+//using NUnit.Framework;
 
-using System.Collections.Generic;
-using System.Linq;
+//using System.Collections.Generic;
+//using System.Linq;
 
-namespace Test
-{
-    [TestFixture]
-    public class IndexEngineTest
-    {
+//namespace Test
+//{
+//    [TestFixture]
+//    public class IndexEngineTest
+//    {
 
-        #region Public Methods
+//        #region Public Methods
 
-        [Test]
-        public static void TestIndexEngine()
-        {
-            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var localizeableModifications = new List<ModificationWithMass>();
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+//        [Test]
+//        public static void TestIndexEngine()
+//        {
+//            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+//            var variableModifications = new List<ModificationWithMass>();
+//            var fixedModifications = new List<ModificationWithMass>();
+//            var localizeableModifications = new List<ModificationWithMass>();
+//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
-            var results = (IndexingResults)engine.Run();
+//            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+//            var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(5, results.PeptideIndex.Count);
+//            Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var listOfPeptides = results.PeptideIndex.Select(b => string.Join("", b.BaseSequence.Select(c => char.ConvertFromUtf32(c)))).ToList();
+//            var listOfPeptides = results.PeptideIndex.Select(b => string.Join("", b.BaseSequence.Select(c => char.ConvertFromUtf32(c)))).ToList();
 
-            Assert.Contains("MNNNK", listOfPeptides);
-            Assert.Contains("NNNK", listOfPeptides);
-            Assert.Contains("QQQ", listOfPeptides);
-            Assert.Contains("MNNNKQQQ", listOfPeptides);
-            Assert.Contains("NNNKQQQ", listOfPeptides);
-        }
+//            Assert.Contains("MNNNK", listOfPeptides);
+//            Assert.Contains("NNNK", listOfPeptides);
+//            Assert.Contains("QQQ", listOfPeptides);
+//            Assert.Contains("MNNNKQQQ", listOfPeptides);
+//            Assert.Contains("NNNKQQQ", listOfPeptides);
+//        }
 
-        [Test]
-        public static void TestIndexEngineWithWeirdSeq()
-        {
-            var proteinList = new List<ProteinExtensions> { new Protein("MQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var localizeableModifications = new List<ModificationWithMass>();
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+//        [Test]
+//        public static void TestIndexEngineWithWeirdSeq()
+//        {
+//            var proteinList = new List<ProteinExtensions> { new Protein("MQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+//            var variableModifications = new List<ModificationWithMass>();
+//            var fixedModifications = new List<ModificationWithMass>();
+//            var localizeableModifications = new List<ModificationWithMass>();
+//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
-            var results = (IndexingResults)engine.Run();
+//            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+//            var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(1, results.PeptideIndex.Count);
+//            Assert.AreEqual(1, results.PeptideIndex.Count);
 
-            Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMassIncludingFixedMods);
-            Assert.AreEqual(2, results.FragmentIndexDict.Count);
-        }
+//            Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMassIncludingFixedMods);
+//            Assert.AreEqual(2, results.FragmentIndexDict.Count);
+//        }
 
-        #endregion Public Methods
+//        #endregion Public Methods
 
-    }
-}
+//    }
+//}
