@@ -141,7 +141,20 @@ namespace TaskLayer
 
         protected internal IDictionary<string, HashSet<BaseModification>> GetDict(List<ModificationWithMass> localizeableModifications)
         {
-            throw new NotImplementedException();
+            Dictionary<string, HashSet<BaseModification>> dict = new Dictionary<string, HashSet<BaseModification>>();
+            foreach (var nice in localizeableModifications)
+            {
+                HashSet<BaseModification> val;
+                if (dict.TryGetValue(nice.id, out val))
+                {
+                    val.Add(nice);
+                }
+                else
+                {
+                    dict.Add(nice.id, new HashSet<BaseModification> { nice });
+                }
+            }
+            return dict;
         }
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
         {

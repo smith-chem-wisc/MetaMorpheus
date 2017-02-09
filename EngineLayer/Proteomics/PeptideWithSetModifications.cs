@@ -293,7 +293,7 @@ namespace EngineLayer
             ModificationWithMass pep_c_term_variable_mod;
             if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
             {
-                p.cumulativeNTerminalMass[0] = pep_c_term_variable_mod.monoisotopicMass - pep_c_term_variable_mod.neutralLoss;
+                p.cumulativeCTerminalMass[0] = pep_c_term_variable_mod.monoisotopicMass - pep_c_term_variable_mod.neutralLoss;
             }
 
             // Loop for cumulative c terminal mass
@@ -303,7 +303,7 @@ namespace EngineLayer
                 ModificationWithMass residue_variable_mod;
                 if (allModsOneIsNterminus.TryGetValue(Length - r + 2, out residue_variable_mod))
                 {
-                    p.cumulativeNTerminalMass[0] += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLoss;
+                    p.cumulativeCTerminalMass[r] += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLoss;
                 }
             }
 

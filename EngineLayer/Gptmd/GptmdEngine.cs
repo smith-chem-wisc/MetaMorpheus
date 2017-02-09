@@ -126,7 +126,7 @@ namespace EngineLayer.Gptmd
                     // First find the capital letter...
                     var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
 
-                    var proteinToMotifOffset = proteinOneBasedIndex - hehe;
+                    var proteinToMotifOffset = proteinOneBasedIndex - hehe-1;
                     var indexUp = 0;
                     // Look up starting at and including the capital letter
                     while (indexUp < motif.Length)

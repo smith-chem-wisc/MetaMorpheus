@@ -129,10 +129,10 @@ namespace TaskLayer
                         writer.WriteAttributeString("type", protein.BigPeptideTypes[i]);
                         writer.WriteStartElement("location");
                         writer.WriteStartElement("begin");
-                        writer.WriteAttributeString("position", protein.OneBasedBeginPositions[i].ToString(CultureInfo.InvariantCulture));
+                        writer.WriteAttributeString("position", protein.OneBasedBeginPositions[i].ToString());
                         writer.WriteEndElement();
                         writer.WriteStartElement("end");
-                        writer.WriteAttributeString("position", protein.OneBasedEndPositions[i].ToString(CultureInfo.InvariantCulture));
+                        writer.WriteAttributeString("position", protein.OneBasedEndPositions[i].ToString());
                         writer.WriteEndElement();
                         writer.WriteEndElement();
                         writer.WriteEndElement();

@@ -751,10 +751,11 @@ namespace EngineLayer.Analysis
                 foreach (var hm in UniprotDeseralized)
                 {
                     var theMod = hm as ModificationWithMass;
-                    if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
-                    {
-                        ok.Add(hm.id);
-                    }
+                    if (theMod != null)
+                        if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
+                        {
+                            ok.Add(hm.id);
+                        }
                 }
                 bin.uniprotID = string.Join(" or ", ok);
             }

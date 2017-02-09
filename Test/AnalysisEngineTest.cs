@@ -1,76 +1,76 @@
-﻿//using EngineLayer;
-//using EngineLayer.Analysis;
-//using EngineLayer.ModernSearch;
-//using MassSpectrometry;
-//using MzLibUtil;
-//using NUnit.Framework;
-//using Proteomics;
-//using Spectra;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
+﻿using EngineLayer;
+using EngineLayer.Analysis;
+using EngineLayer.ModernSearch;
+using MassSpectrometry;
+using MzLibUtil;
+using NUnit.Framework;
+using Proteomics;
+using Spectra;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-//namespace Test
-//{
-//    [TestFixture]
-//    public class AnalysisEngineTests
-//    {
+namespace Test
+{
+    [TestFixture]
+    public class AnalysisEngineTests
+    {
 
-//        #region Public Methods
+        #region Public Methods
 
-//        [Test]
-//        public static void TestAnalysisEngineTests()
-//        {
-//            List<ModificationWithMass> localizeableModifications = null;
-//            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-//            List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
+        [Test]
+        public static void TestAnalysisEngineTests()
+        {
+            List<ModificationWithMass> localizeableModifications = null;
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
+            List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-//            PsmParent[][] newPsms = new PsmParent[1][];
+            PsmParent[][] newPsms = new PsmParent[1][];
 
-//            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-//            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, HashSet<BaseModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, HashSet<BaseModification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false) };
 
-//            PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya", fixedModifications);
-//            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
-//            CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), variableModifications, localizeableModifications, fixedModifications);
+            PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya", fixedModifications);
+            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+            CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), variableModifications, localizeableModifications, fixedModifications);
 
-//            Assert.AreEqual("QQQ", value.First().BaseSequence);
-//            PeptideWithPossibleModifications modPep2 = new PeptideWithPossibleModifications(1, 5, proteinList.First(), 0, "ya", fixedModifications);
-//            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
-//            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), variableModifications, localizeableModifications, fixedModifications);
+            Assert.AreEqual("QQQ", value.First().BaseSequence);
+            PeptideWithPossibleModifications modPep2 = new PeptideWithPossibleModifications(1, 5, proteinList.First(), 0, "ya", fixedModifications);
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), variableModifications, localizeableModifications, fixedModifications);
 
-//            Assert.AreEqual("MNNNK", value2.First().BaseSequence);
+            Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-//            PeptideWithPossibleModifications modPep3 = new PeptideWithPossibleModifications(2, 5, proteinList.First(), 0, "ya", fixedModifications);
-//            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
-//            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), variableModifications, localizeableModifications, fixedModifications);
-//            Assert.AreEqual("NNNK", value3.First().BaseSequence);
+            PeptideWithPossibleModifications modPep3 = new PeptideWithPossibleModifications(2, 5, proteinList.First(), 0, "ya", fixedModifications);
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
+            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), variableModifications, localizeableModifications, fixedModifications);
+            Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
-//            newPsms[0] = new PsmParent[] { new PsmModern(compactPeptide1, null,1, 1, 1, 2, 1, 1, 1, 1, 3,0),
-//                                                     new PsmModern(compactPeptide2, null, 2,2,2+132.040,3,2,2,2,2,2,0),
-//                                                     new PsmModern(compactPeptide3, null, 3,3,3,4,3,3,3,3,3,0) };
+            newPsms[0] = new PsmParent[] { new PsmModern(compactPeptide1, null,1, 1, 1, 2, 1, 1, 1, 1, 3,0),
+                                                     new PsmModern(compactPeptide2, null, 2,2,2+132.040,3,2,2,2,2,2,0),
+                                                     new PsmModern(compactPeptide3, null, 3,3,3,4,3,3,3,3,3,0) };
 
-//            compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value);
-//            compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);
-//            compactPeptideToProteinPeptideMatching.Add(compactPeptide3, value3);
+            compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value);
+            compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);
+            compactPeptideToProteinPeptideMatching.Add(compactPeptide3, value3);
 
-//            Action<BinTreeStructure, string> action1 = (BinTreeStructure l, string s) => {; };
-//            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
-//            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
+            Action<BinTreeStructure, string> action1 = (BinTreeStructure l, string s) => {; };
+            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
 
-//            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-//            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-//            Action<List<ProteinGroup>, string> action3 = null;
-//            Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
-//            bool doParsimony = false;
-//            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003);
+            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+            Action<List<ProteinGroup>, string> action3 = null;
+            Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
+            bool doParsimony = false;
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003);
 
-//            engine.Run();
-//        }
+            engine.Run();
+        }
 
-//        #endregion Public Methods
+        #endregion Public Methods
 
-//    }
-//}
+    }
+}

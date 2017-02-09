@@ -318,7 +318,7 @@ namespace EngineLayer.Calibration
                 else
                 {
                     Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { -1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
-                    theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, double.NaN, double.NaN);
+                    a.TransformByApplyingFunctionToSpectra(theFunc);
                 }
             }
         }
