@@ -1,10 +1,12 @@
 ﻿using MassSpectrometry;
 using Spectra;
 using System;
+using MzLibUtil;
+using IO.MzML;
 
 namespace Test
 {
-    internal class TestScan : IMsDataScan<DefaultMzSpectrum>
+    internal class TestScan : IMsDataScan<IMzSpectrum<IMzPeak>>
     {
 
         #region Private Fields
@@ -21,7 +23,7 @@ namespace Test
 
         #region Public Constructors
 
-        public TestScan(int OneBasedScanNumber, double RetentionTime, DefaultMzSpectrum MassSpectrum, double selectedIonGuessMonoisotopicMZ, int selectedIonGuessChargeStateGuess, double selectedIonGuessMonoisotopicIntensity, double isolationMZ, double InjectionTime, int precursorOneBasedScanNumber)
+        public TestScan(int OneBasedScanNumber, double RetentionTime, MzmlMzSpectrum MassSpectrum, double selectedIonGuessMonoisotopicMZ, int selectedIonGuessChargeStateGuess, double selectedIonGuessMonoisotopicIntensity, double isolationMZ, double InjectionTime, int precursorOneBasedScanNumber)
         {
             MsnOrder = 2;
             this.OneBasedScanNumber = OneBasedScanNumber;
@@ -36,7 +38,7 @@ namespace Test
             this.precursorOneBasedScanNumber = precursorOneBasedScanNumber;
         }
 
-        public TestScan(int OneBasedScanNumber, double RetentionTime, DefaultMzSpectrum MassSpectrum, double InjectionTime)
+        public TestScan(int OneBasedScanNumber, double RetentionTime, MzmlMzSpectrum MassSpectrum, double InjectionTime)
         {
             MsnOrder = 1;
             this.OneBasedScanNumber = OneBasedScanNumber;
@@ -67,7 +69,7 @@ namespace Test
             }
         }
 
-        public DefaultMzSpectrum MassSpectrum { get; private set; }
+        public MzmlMzSpectrum MassSpectrum { get; private set; }
 
         public int MsnOrder { get; private set; }
 
@@ -115,11 +117,27 @@ namespace Test
             }
         }
 
+        //MzRange TestScan.ScanWindowRange
+        //{
+        //    get
+        //    {
+        //        throw new NotImplementedException();
+        //    }
+        //}
+
+        IMzSpectrum<IMzPeak> IMsDataScan<IMzSpectrum<IMzPeak>>.MassSpectrum
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         #endregion Public Properties
 
         #region Public Methods
 
-        public void TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<MzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double newSelectedIonGuessMonoisotopicMZ)
+        public void TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(Func<IMzPeak, double> convertorForSpectrum, double selectedIonGuessMZ, double newSelectedIonGuessMonoisotopicMZ)
         {
             MassSpectrum.ReplaceXbyApplyingFunction(convertorForSpectrum);
             selectedIonGuessMonoisotopicMZ = newSelectedIonGuessMonoisotopicMZ;
@@ -244,6 +262,11 @@ namespace Test
             }
             SelectedIonGuessMZ = double.NaN;
             return false;
+        }
+
+        public void TransformByApplyingFunctionToSpectra(Func<IMzPeak, double> convertorForSpectrum)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion Public Methods

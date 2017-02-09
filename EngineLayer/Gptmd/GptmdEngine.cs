@@ -1,4 +1,6 @@
-﻿using Spectra;
+﻿using MzLibUtil;
+using Proteomics;
+using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +15,7 @@ namespace EngineLayer.Gptmd
         private const double missedMonoisopePeak = 1.003;
         private readonly List<NewPsmWithFdr> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
-        private readonly List<MetaMorpheusModification> gptmdModifications;
+        private readonly List<ModificationWithMass> gptmdModifications;
         private readonly bool isotopeErrors;
         private readonly Tolerance precursorMassTolerance;
 
@@ -21,7 +23,34 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<NewPsmWithFdr> allIdentifications, bool isotopeErrors, List<MetaMorpheusModification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance) : base(2)
+        static GptmdEngine()
+        {
+            aminoAcidCodes = new Dictionary<string, char>();
+            aminoAcidCodes.Add("Alanine", 'A');
+            aminoAcidCodes.Add("Arginine", 'R');
+            aminoAcidCodes.Add("Asparagine", 'N');
+            aminoAcidCodes.Add("Aspartate", 'D');
+            aminoAcidCodes.Add("Aspartic Acid", 'D');
+            aminoAcidCodes.Add("Cysteine", 'C');
+            aminoAcidCodes.Add("Glutamate", 'E');
+            aminoAcidCodes.Add("Glutamic Acid", 'E');
+            aminoAcidCodes.Add("Glutamine", 'Q');
+            aminoAcidCodes.Add("Glycine", 'G');
+            aminoAcidCodes.Add("Histidine", 'H');
+            aminoAcidCodes.Add("Isoleucine", 'I');
+            aminoAcidCodes.Add("Leucine", 'L');
+            aminoAcidCodes.Add("Lysine", 'K');
+            aminoAcidCodes.Add("Methionine", 'M');
+            aminoAcidCodes.Add("Phenylalanine", 'F');
+            aminoAcidCodes.Add("Proline", 'P');
+            aminoAcidCodes.Add("Serine", 'S');
+            aminoAcidCodes.Add("Threonine", 'T');
+            aminoAcidCodes.Add("Tryptophan", 'W');
+            aminoAcidCodes.Add("Tyrosine", 'Y');
+            aminoAcidCodes.Add("Valine", 'V');
+        }
+
+        public GptmdEngine(List<NewPsmWithFdr> allIdentifications, bool isotopeErrors, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance) : base(2)
         {
             this.allIdentifications = allIdentifications;
             this.isotopeErrors = isotopeErrors;
@@ -36,7 +65,7 @@ namespace EngineLayer.Gptmd
 
         protected override MyResults RunSpecific()
         {
-            var Mods = new Dictionary<string, HashSet<Tuple<int, string, string>>>();
+            var Mods = new Dictionary<string, HashSet<Tuple<int, BaseModification>>>();
 
             int modsAdded = 0;
             foreach (var ye in allIdentifications.Where(b => b.qValueNotch <= 0.01 && !b.IsDecoy))
@@ -47,7 +76,7 @@ namespace EngineLayer.Gptmd
                 {
                     var peptide = theDict.First();
                     var baseSequence = ye.thisPSM.BaseSequence;
-                    foreach (MetaMorpheusModification mod in GetMod(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))
+                    foreach (ModificationWithMass mod in GetMod(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))
                     {
                         int proteinLength = peptide.Protein.Length;
                         var proteinAcession = peptide.Protein.Accession;
@@ -55,11 +84,11 @@ namespace EngineLayer.Gptmd
                         {
                             int indexInProtein = peptide.OneBasedStartResidueInProtein + i;
 
-                            if (ModFits(mod, baseSequence[i], i > 0 ? baseSequence[i - 1] : peptide.PreviousAminoAcid, i + 1, baseSequence.Length, indexInProtein, proteinLength))
+                            if (ModFits(mod, peptide.Protein.BaseSequence, i + 1, baseSequence.Length, indexInProtein, proteinLength))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, string, string>>();
-                                var theTuple = new Tuple<int, string, string>(indexInProtein, mod.NameInXml, mod.Database);
+                                    Mods[proteinAcession] = new HashSet<Tuple<int, BaseModification>>();
+                                var theTuple = new Tuple<int, BaseModification>(indexInProtein, mod);
                                 if (!Mods[proteinAcession].Contains(theTuple))
                                 {
                                     Mods[proteinAcession].Add(theTuple);
@@ -75,34 +104,61 @@ namespace EngineLayer.Gptmd
 
         #endregion Protected Methods
 
+        private static readonly Dictionary<string, char> aminoAcidCodes;
+
         #region Private Methods
 
-        private static bool ModFits(MetaMorpheusModification attemptToLocalize, char v1, char prevAA, int peptideIndex, int peptideLength, int proteinIndex, int proteinLength)
+        public static bool ModFits(ModificationWithMass attemptToLocalize, string proteinBaseSequence, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, int proteinLength)
         {
-            if (!attemptToLocalize.AminoAcid.Equals('\0') && !attemptToLocalize.AminoAcid.Equals(v1))
+            char theChar;
+            if (aminoAcidCodes.TryGetValue(attemptToLocalize.site, out theChar))
+            {
+                if (!proteinBaseSequence[proteinOneBasedIndex - 1].Equals(theChar))
+                    return false;
+            }
+            else
+            {
+                // It's a motif!!!
+                var motifs = attemptToLocalize.site.Split(new string[] { " or " }, StringSplitOptions.None);
+
+                foreach (var motif in motifs)
+                {
+                    // First find the capital letter...
+                    var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
+
+                    var proteinToMotifOffset = proteinOneBasedIndex - hehe;
+                    var indexUp = 0;
+                    // Look up starting at and including the capital letter
+                    while (indexUp < motif.Length)
+                    {
+                        if (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(proteinBaseSequence[indexUp + proteinToMotifOffset]))
+                            return false;
+                        indexUp++;
+                    }
+                }
+            }
+            if (attemptToLocalize.position == ModificationSites.NProt && (proteinOneBasedIndex > 2))
                 return false;
-            if (!attemptToLocalize.PrevAminoAcid.Equals('\0') && !attemptToLocalize.PrevAminoAcid.Equals(prevAA))
+            if (attemptToLocalize.position == ModificationSites.NPep && peptideOneBasedIndex > 1)
                 return false;
-            if (attemptToLocalize.ThisModificationType == ModificationType.ProteinNTerminus &&
-                ((proteinIndex > 2) || (proteinIndex == 2 && prevAA != 'M')))
+            if (attemptToLocalize.position == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
                 return false;
-            if (attemptToLocalize.ThisModificationType == ModificationType.PeptideNTerminus && peptideIndex > 1)
-                return false;
-            if (attemptToLocalize.ThisModificationType == ModificationType.PeptideCTerminus && peptideIndex < peptideLength)
-                return false;
-            if (attemptToLocalize.ThisModificationType == ModificationType.ProteinCTerminus && proteinIndex < proteinLength)
+            if (attemptToLocalize.position == ModificationSites.ProtC && proteinOneBasedIndex < proteinLength)
                 return false;
             return true;
         }
 
-        private static IEnumerable<MetaMorpheusModification> GetMod(double scanPrecursorMass, double peptideMonoisotopicMass, bool isotopeErrors, IEnumerable<MetaMorpheusModification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance)
+        private static IEnumerable<ModificationWithMass> GetMod(double scanPrecursorMass, double peptideMonoisotopicMass, bool isotopeErrors, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance)
         {
             foreach (var Mod in allMods)
             {
-                if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.ObservedMassShift))
-                    yield return Mod;
-                if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.ObservedMassShift))
-                    yield return Mod;
+                foreach (var massObserved in Mod.massesObserved)
+                {
+                    if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + massObserved))
+                        yield return Mod;
+                    if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + massObserved))
+                        yield return Mod;
+                }
             }
 
             foreach (var combo in combos)

@@ -1,3 +1,5 @@
+using Proteomics;
+
 namespace EngineLayer
 {
     public abstract class Peptide

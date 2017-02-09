@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +21,9 @@ namespace EngineLayer.Indexing
 
         private readonly Protease protease;
 
-        private readonly List<MetaMorpheusModification> fixedModifications;
-        private readonly List<MetaMorpheusModification> variableModifications;
-        private readonly List<MetaMorpheusModification> localizeableModifications;
+        private readonly List<ModificationWithMass> fixedModifications;
+        private readonly List<ModificationWithMass> variableModifications;
+        private readonly List<ModificationWithMass> localizeableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
@@ -31,7 +32,7 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;

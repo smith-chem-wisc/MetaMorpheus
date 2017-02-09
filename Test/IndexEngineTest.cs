@@ -16,10 +16,10 @@ namespace Test
         [Test]
         public static void TestIndexEngine()
         {
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
-            var variableModifications = new List<MetaMorpheusModification>();
-            var fixedModifications = new List<MetaMorpheusModification>();
-            var localizeableModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<ProteinExtensions> { new Protein("MNNNKQQQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<ModificationWithMass>();
+            var fixedModifications = new List<ModificationWithMass>();
+            var localizeableModifications = new List<ModificationWithMass>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -39,10 +39,10 @@ namespace Test
         [Test]
         public static void TestIndexEngineWithWeirdSeq()
         {
-            var proteinList = new List<Protein> { new Protein("MQXQ", null, new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
-            var variableModifications = new List<MetaMorpheusModification>();
-            var fixedModifications = new List<MetaMorpheusModification>();
-            var localizeableModifications = new List<MetaMorpheusModification>();
+            var proteinList = new List<ProteinExtensions> { new Protein("MQXQ", null, new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var variableModifications = new List<ModificationWithMass>();
+            var fixedModifications = new List<ModificationWithMass>();
+            var localizeableModifications = new List<ModificationWithMass>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });

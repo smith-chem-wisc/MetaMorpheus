@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.Calibration;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using Spectra;
@@ -18,15 +19,15 @@ namespace Test
         [Test]
         public static void TestCalibrationEngine()
         {
-            Dictionary<int, List<MetaMorpheusModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<MetaMorpheusModification>>();
+            Dictionary<int, HashSet<BaseModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<BaseModification>>();
             Protein ParentProtein = new Protein("MQQQQQQQ", null, oneBasedPossibleLocalizedModifications, null, null, null, null, null, 0, false, false);
-            IEnumerable<MetaMorpheusModification> fixedModifications = new List<MetaMorpheusModification>();
+            IEnumerable<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(1, 8, ParentProtein, 0, "kk", fixedModifications);
             //Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
-            List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             PeptideWithSetModifications pepWithSetMods = modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First();
 
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(pepWithSetMods);
+            IMsDataFile < IMsDataScan < IMzSpectrum < IMzPeak >>> myMsDataFile = new TestDataFile(pepWithSetMods);
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 

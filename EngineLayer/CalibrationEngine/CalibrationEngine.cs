@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MzLibUtil;
 
 namespace EngineLayer.Calibration
 {
@@ -26,13 +27,13 @@ namespace EngineLayer.Calibration
         private readonly int randomSeed;
         private readonly FragmentTypes fragmentTypesForCalibration;
         private List<NewPsmWithFdr> identifications;
-        private IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, int randomSeed, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration) : base(2)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, int randomSeed, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration) : base(2)
         {
             this.myMsDataFile = myMSDataFile;
             this.randomSeed = randomSeed;
@@ -135,7 +136,7 @@ namespace EngineLayer.Calibration
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
                 int numFragmentsIdentified;
-                var candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex), coolPeptide, peptideCharge, out numFragmentsIdentified, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+                var candidateTrainingPointsForPeptide = SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge, out numFragmentsIdentified, ref numMs2MassChargeCombinationsConsidered, ref numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
 
                 // If MS2 has low evidence for peptide, skip and go to next one
                 if (numFragmentsIdentified < numFragmentsNeededForEveryIdentification)
@@ -145,13 +146,9 @@ namespace EngineLayer.Calibration
 
                 var dist = IsotopicDistribution.GetDistribution(coolPeptide.GetChemicalFormula(), fineResolutionForIsotopeDistCalculation, 0.001);
 
-                double[] masses = new double[dist.masses.Length];
-                double[] intensities = new double[dist.intensities.Length];
-                for (int i = 0; i < dist.masses.Length; i++)
-                {
-                    masses[i] = dist.masses[i];
-                    intensities[i] = dist.intensities[i];
-                }
+                double[] masses = dist.Masses.ToArray();
+                double[] intensities = dist.Intensities.ToArray();
+
                 Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
 
                 SearchMS1Spectra(masses, intensities, candidateTrainingPointsForPeptide, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge, ref numMs1MassChargeCombinationsConsidered, ref numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
@@ -295,38 +292,33 @@ namespace EngineLayer.Calibration
         {
             foreach (var a in myMsDataFile)
             {
-                if (a.MsnOrder == 2)
+                var theScan = a as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+                if (theScan != null)
                 {
-                    int oneBasedScanNumber;
-                    a.TryGetPrecursorOneBasedScanNumber(out oneBasedScanNumber);
+                    int oneBasedScanNumber = theScan.OneBasedScanNumber;
                     var precursorScan = myMsDataFile.GetOneBasedScan(oneBasedScanNumber);
 
-                    double precursorMZ;
-                    a.TryGetSelectedIonGuessMZ(out precursorMZ);
-                    double precursorIntensity;
-                    a.TryGetSelectedIonGuessIntensity(out precursorIntensity);
+                    double precursorMZ = theScan.SelectedIonGuessMZ;
+                    double precursorIntensity = theScan.SelectedIonGuessIntensity;
                     double newSelectedMZ = precursorMZ - bestCf.Predict(new double[] { -1, precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
-                    double monoisotopicMZ;
-                    a.TryGetSelectedIonGuessMonoisotopicMZ(out monoisotopicMZ);
-                    double monoisotopicIntensity;
-                    a.TryGetSelectedIonGuessMonoisotopicIntensity(out monoisotopicIntensity);
+                    double monoisotopicMZ = theScan.SelectedIonGuessMonoisotopicMZ;
+                    double monoisotopicIntensity = theScan.SelectedIonGuessMonoisotopicIntensity;
 
                     if (double.IsNaN(monoisotopicIntensity))
                         monoisotopicIntensity = precursorScan.MassSpectrum.GetClosestPeak(monoisotopicMZ).Intensity;
 
                     double newMonoisotopicMZ = monoisotopicMZ - bestCf.Predict(new double[] { -1, monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime });
 
-                    double IsolationMZ;
-                    a.TryGetIsolationMZ(out IsolationMZ);
+                    double IsolationMZ = theScan.IsolationMz;
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { 1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, IsolationMZ, (x.Mz - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
 
-                    Func<MzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { 1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime, IsolationMZ, (x.Mz - a.ScanWindowRange.Minimum) / (a.ScanWindowRange.Maximum - a.ScanWindowRange.Minimum) });
-                    a.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
+                    theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
                 }
                 else
                 {
-                    Func<MzPeak, double> theFUnc = x => x.Mz - bestCf.Predict(new double[] { -1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
-                    a.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFUnc, double.NaN, double.NaN);
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Predict(new double[] { -1, x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime });
+                    theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, double.NaN, double.NaN);
                 }
             }
         }
@@ -358,24 +350,24 @@ namespace EngineLayer.Calibration
                 double ms1RetentionTime = fullMS1scan.RetentionTime;
                 var scanWindowRange = fullMS1scan.ScanWindowRange;
                 var fullMS1spectrum = fullMS1scan.MassSpectrum;
-                if (fullMS1spectrum.Count == 0)
+                if (fullMS1spectrum.Size == 0)
                     break;
 
                 bool startingToAddCharges = false;
                 int chargeToLookAt = 1;
                 do
                 {
-                    if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
+                    if (originalMasses[0].ToMz(chargeToLookAt) > scanWindowRange.Maximum)
                     {
                         chargeToLookAt++;
                         continue;
                     }
-                    if (originalMasses[0].ToMassToChargeRatio(chargeToLookAt) < scanWindowRange.Minimum)
+                    if (originalMasses[0].ToMz(chargeToLookAt) < scanWindowRange.Minimum)
                         break;
                     var trainingPointsToAverage = new List<LabeledDataPoint>();
                     foreach (double a in originalMasses)
                     {
-                        double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
+                        double theMZ = a.ToMz(chargeToLookAt);
 
                         var npwr = fullMS1spectrum.NumPeaksWithinRange(mzToleranceForMs1Search.GetMinimumValue(theMZ), mzToleranceForMs1Search.GetMaximumValue(theMZ));
                         if (npwr == 0)
@@ -441,15 +433,14 @@ namespace EngineLayer.Calibration
             return goodIndex;
         }
 
-        private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScan<IMzSpectrum<MzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified, ref int numMs2MassChargeCombinationsConsidered, ref int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+        private List<LabeledDataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, out int candidateFragmentsIdentified, ref int numMs2MassChargeCombinationsConsidered, ref int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
         {
             var myCandidatePoints = new List<LabeledDataPoint>();
 
             // Key: mz value, Value: error
             var addedPeaks = new Dictionary<double, double>();
 
-            double IsolationMZ;
-            ms2DataScan.TryGetIsolationMZ(out IsolationMZ);
+            double IsolationMZ = ms2DataScan.IsolationMz;
 
             var countForThisMS2 = 0;
             var countForThisMS2a = 0;
@@ -469,7 +460,7 @@ namespace EngineLayer.Calibration
 
                 for (int chargeToLookAt = 1; chargeToLookAt <= peptideCharge; chargeToLookAt++)
                 {
-                    var monoisotopicMZ = fragment.MonoisotopicMass.ToMassToChargeRatio(chargeToLookAt);
+                    var monoisotopicMZ = fragment.MonoisotopicMass.ToMz(chargeToLookAt);
                     if (monoisotopicMZ > scanWindowRange.Maximum)
                         continue;
                     if (monoisotopicMZ < scanWindowRange.Minimum)
@@ -482,13 +473,9 @@ namespace EngineLayer.Calibration
                         {
                             var dist = IsotopicDistribution.GetDistribution(fragment.ThisChemicalFormula, fineResolutionForIsotopeDistCalculation, 0.001);
 
-                            masses = new double[dist.masses.Length];
-                            intensities = new double[dist.intensities.Length];
-                            for (int i = 0; i < dist.masses.Length; i++)
-                            {
-                                masses[i] = dist.masses[i];
-                                intensities[i] = dist.intensities[i];
-                            }
+                            masses = dist.Masses.ToArray();
+                            intensities = dist.Intensities.ToArray();
+
                             Array.Sort(intensities, masses, Comparer<double>.Create((x, y) => y.CompareTo(x)));
                             computedIsotopologues = true;
 
@@ -502,18 +489,18 @@ namespace EngineLayer.Calibration
                     bool startingToAdd = false;
                     for (int chargeToLookAt = 1; chargeToLookAt <= peptideCharge; chargeToLookAt++)
                     {
-                        if (masses.First().ToMassToChargeRatio(chargeToLookAt) > scanWindowRange.Maximum)
+                        if (masses.First().ToMz(chargeToLookAt) > scanWindowRange.Maximum)
                         {
                             continue;
                         }
-                        if (masses.Last().ToMassToChargeRatio(chargeToLookAt) < scanWindowRange.Minimum)
+                        if (masses.Last().ToMz(chargeToLookAt) < scanWindowRange.Minimum)
                         {
                             break;
                         }
                         var trainingPointsToAverage = new List<LabeledDataPoint>();
                         foreach (double a in masses)
                         {
-                            double theMZ = a.ToMassToChargeRatio(chargeToLookAt);
+                            double theMZ = a.ToMz(chargeToLookAt);
                             var npwr = ms2DataScan.MassSpectrum.NumPeaksWithinRange(mzToleranceForMs2Search.GetMinimumValue(theMZ), mzToleranceForMs2Search.GetMaximumValue(theMZ));
                             if (npwr == 0)
                             {

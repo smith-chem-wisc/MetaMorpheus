@@ -2,8 +2,9 @@
 using EngineLayer.Analysis;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
-
+using Proteomics;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -20,15 +21,15 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
-            List<MetaMorpheusModification> localizeableModifications = null;
-            List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
-            List<MetaMorpheusModification> fixedModifications = new List<MetaMorpheusModification>();
+            List<ModificationWithMass> localizeableModifications = null;
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
+            List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
             PsmParent[][] newPsms = new PsmParent[1][];
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", new Dictionary<int, HashSet<BaseModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false) };
 
             PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(6, 8, proteinList.First(), 0, "ya", fixedModifications);
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
@@ -56,7 +57,7 @@ namespace Test
 
             Action<BinTreeStructure, string> action1 = (BinTreeStructure l, string s) => {; };
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 

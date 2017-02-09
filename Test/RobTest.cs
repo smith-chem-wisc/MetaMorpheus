@@ -33,20 +33,20 @@ namespace Test
             var protease = new Protease("test", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
-            var p = new List<Protein>();
+            var p = new List<ProteinExtensions>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], null, "", "", 0, false, false));
-            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], null, "", "", 0, true, false));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], null, "", "", 0, false, false));
+            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], null, "", "", 0, true, false));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<MetaMorpheusModification>());
+                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MetaMorpheusModification>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -73,7 +73,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count; i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>());
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ModificationWithMass>());
             }
 
             // creates protein list
@@ -115,10 +115,10 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<ProteinExtensions>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
             dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
-            var parsimonyProteinList = new List<Protein>();
+            var parsimonyProteinList = new List<ProteinExtensions>();
             var parsimonyBaseSequences = new List<string>();
 
             foreach (var kvp in dictionary)

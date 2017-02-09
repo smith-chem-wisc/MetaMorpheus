@@ -34,32 +34,36 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Chemistry, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\Chemistry.dll</HintPath>
+    <Reference Include="Chemistry, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\Chemistry.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MassSpectrometry, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\MassSpectrometry.dll</HintPath>
+    <Reference Include="MassSpectrometry, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\MassSpectrometry.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="MathNet.Numerics, Version=3.17.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MathNet.Numerics.3.17.0\lib\net40\MathNet.Numerics.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="mzIdentML, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\mzIdentML.dll</HintPath>
+    <Reference Include="mzIdentML, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\mzIdentML.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MzML, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\MzML.dll</HintPath>
+    <Reference Include="MzLibUtil, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\MzLibUtil.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Proteomics, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\Proteomics.dll</HintPath>
+    <Reference Include="MzML, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\MzML.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Spectra, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\Spectra.dll</HintPath>
+    <Reference Include="Proteomics, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\Proteomics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Spectra, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\Spectra.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -70,12 +74,12 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Thermo, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\Thermo.dll</HintPath>
+    <Reference Include="Thermo, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\Thermo.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="UsefulProteomicsDatabases, Version=1.0.78.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\mzLib.1.0.78\lib\UsefulProteomicsDatabases.dll</HintPath>
+    <Reference Include="UsefulProteomicsDatabases, Version=1.0.86.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\mzLib.1.0.86\lib\UsefulProteomicsDatabases.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Zlib.Portable, Version=1.11.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -106,7 +110,6 @@
     <Compile Include="Proteomics\CompactPeptide.cs" />
     <Compile Include="Proteomics\InitiatorMethionineBehavior.cs" />
     <Compile Include="Proteomics\ModificationType.cs" />
-    <Compile Include="Proteomics\MetaMorpheusModification.cs" />
     <Compile Include="Proteomics\TerminusType.cs" />
     <Compile Include="Proteomics\Peptide.cs" />
     <Compile Include="Proteomics\PeptideWithPossibleModifications.cs" />
@@ -114,7 +117,7 @@
     <Compile Include="Proteomics\ProductType.cs" />
     <Compile Include="Proteomics\Protease.cs" />
     <Compile Include="Proteomics\ProteaseDictionary.cs" />
-    <Compile Include="Proteomics\Protein.cs" />
+    <Compile Include="Proteomics\ProteinExtensions.cs" />
     <Compile Include="SearchModes\DotSearchMode.cs" />
     <Compile Include="Gptmd\GptmdEngine.cs" />
     <Compile Include="Gptmd\GptmdResults.cs" />

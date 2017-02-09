@@ -41,12 +41,12 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<MetaMorpheusModification> variableModifications = task1.ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
+            List<ModificationWithMass> variableModifications = task1.ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
+            List<ModificationWithMass> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
             //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
             // Generate data for files
-            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
+            ProteinExtensions ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new Dictionary<int, List<ModificationWithMass>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
 
             var digestedList = ParentProtein.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
@@ -66,9 +66,9 @@ namespace Test
 
             PeptideWithSetModifications pepWithSetMods2 = setList2[0];
 
-            var dictHere = new Dictionary<int, List<MetaMorpheusModification>>();
-            dictHere.Add(3, new List<MetaMorpheusModification> { new MetaMorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, '\0', double.NaN, double.NaN, double.NaN, new Chemistry.ChemicalFormula("H-1 Na1")) });
-            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
+            var dictHere = new Dictionary<int, List<ModificationWithMass>>();
+            dictHere.Add(3, new List<ModificationWithMass> { new ModificationWithMass(null, ModificationType.AminoAcidResidue, 'E', null, '\0', double.NaN, double.NaN, double.NaN, new Chemistry.ChemicalFormula("H-1 Na1")) });
+            ProteinExtensions ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
@@ -76,16 +76,16 @@ namespace Test
             Assert.AreEqual(4, setList3.Count);
             Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
 
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
+            IMsDataFile < IMsDataScan < IMzSpectrum < IMzPeak >>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
 
-            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new Dictionary<int, List<MetaMorpheusModification>>(), new int[] { 4 }, new int[] { 8 }, new string[] { "chain" }, null, null, 0, false, false);
+            ProteinExtensions proteinWithChain = new Protein("MAACNNNCAA", "accession3", new Dictionary<int, List<ModificationWithMass>>(), new int[] { 4 }, new int[] { 8 }, new string[] { "chain" }, null, null, 0, false, false);
 
             #region Write the files
 
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(myMsDataFile, mzmlName);
             string xmlName = "okk.xml";
-            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string, string>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
+            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string, string>>>(), new List<ProteinExtensions> { ParentProtein, proteinWithChain }, xmlName);
 
             #endregion Write the files
 

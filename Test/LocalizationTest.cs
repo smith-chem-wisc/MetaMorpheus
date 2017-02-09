@@ -20,19 +20,19 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-            Dictionary<int, List<MetaMorpheusModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<MetaMorpheusModification>>();
+            Dictionary<int, List<ModificationWithMass>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<ModificationWithMass>>();
             string accession = null;
             int[] beginPositions = null;
             int[] endPositions = null;
             string[] bigPeptideTypes = null;
             string name = null;
             string fullName = null;
-            IEnumerable<MetaMorpheusModification> allKnownFixedModifications = new List<MetaMorpheusModification>();
+            IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
 
-            Protein parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, 0, false, false);
+            ProteinExtensions parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, 0, false, false);
             PeptideWithPossibleModifications pwpm = new PeptideWithPossibleModifications(1, 3, parentProteinForMatch, 0, null, allKnownFixedModifications);
 
-            List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification> { new MetaMorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, '\0', 21.981943, 21.981943, 21.981943, new Chemistry.ChemicalFormula("Na-1 H1")) };
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass(null, ModificationType.AminoAcidResidue, 'E', null, '\0', 21.981943, 21.981943, 21.981943, new Chemistry.ChemicalFormula("Na-1 H1")) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptideWithSetModifications(variableModifications, 2, 1).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
@@ -41,7 +41,7 @@ namespace Test
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications.Last();
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
+            IMsDataFile < IMsDataScan < IMzSpectrum < IMzPeak >>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 
             HashSet<PeptideWithSetModifications> peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { ps };

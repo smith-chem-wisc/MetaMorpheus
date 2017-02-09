@@ -1,4 +1,6 @@
-﻿using Spectra;
+﻿using MzLibUtil;
+using Proteomics;
+using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,9 +25,9 @@ namespace EngineLayer.ClassicSearch
 
         private readonly Protease protease;
 
-        private readonly List<MetaMorpheusModification> fixedModifications;
+        private readonly List<ModificationWithMass> fixedModifications;
 
-        private readonly List<MetaMorpheusModification> variableModifications;
+        private readonly List<ModificationWithMass> variableModifications;
 
         private readonly Tolerance productMassTolerance;
 
@@ -42,7 +44,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp) : base(2)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp) : base(2)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();

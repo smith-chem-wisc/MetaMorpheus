@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -53,7 +54,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public abstract CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications);
+        public abstract CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications);
 
         public override string ToString()
         {

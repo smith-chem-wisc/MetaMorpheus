@@ -6,6 +6,8 @@ using EngineLayer.ModernSearch;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
+using MzLibUtil;
+using Proteomics;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -108,21 +111,19 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...");
-            List<MetaMorpheusModification> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
-
-            Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
-            HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            
 
             List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
             for (int j = 0; j < SearchModes.Count; j++)
                 allPsms[j] = new List<PsmParent>();
 
             Status("Loading proteins...");
+            IDictionary<string, HashSet<BaseModification>> allKnownModifications = GetDict(localizeableModifications);
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
 
-            var proteinList = dbFilenameList.SelectMany(b => GetProteins(SearchDecoy, identifiedModsInXML, b)).ToList();
 
             List<CompactPeptide> peptideIndex = null;
             Dictionary<float, List<int>> fragmentIndexDict = null;
@@ -179,7 +180,7 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 Status("Loading spectra file...");
-                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+                IMsDataFile < IMsDataScan < IMzSpectrum < IMzPeak >>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
                 else
