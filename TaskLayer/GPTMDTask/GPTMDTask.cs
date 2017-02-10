@@ -222,7 +222,8 @@ namespace TaskLayer
 
             Status("Loading proteins...");
             var allKnownModifications = GetDict(localizeableModifications);
-            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
+            Dictionary<string, Modification> um = null;
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
             AnalysisEngine analysisEngine;
             AnalysisResults analysisResults = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)

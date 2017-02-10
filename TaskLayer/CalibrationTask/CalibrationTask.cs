@@ -97,7 +97,8 @@ namespace TaskLayer
 
             Status("Loading proteins...");
            var allKnownModifications = GetDict(localizeableModifications);
-            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
+            Dictionary<string, Modification> um;
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
 
 
             List<ProductType> lp = new List<ProductType>();

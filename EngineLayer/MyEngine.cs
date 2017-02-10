@@ -87,7 +87,6 @@ namespace EngineLayer
 
         public static IEnumerable<LocalMS2Scan> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
         {
-            myMSDataFile.LoadAllScansInMemory();
             foreach (var heh in myMSDataFile)
             {
                 var ms2scan = heh as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
