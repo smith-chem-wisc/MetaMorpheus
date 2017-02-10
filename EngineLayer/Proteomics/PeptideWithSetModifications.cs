@@ -27,12 +27,16 @@ namespace EngineLayer
 
         private PeptideFragmentMasses p;
 
+        private bool? hasChemicalFormulas;
+
+        private string sequenceWithChemicalFormulas;
+
         #endregion Private Fields
 
         #region Internal Constructors
 
         internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus)
-                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
@@ -56,6 +60,7 @@ namespace EngineLayer
                 return monoisotopicMass.Value;
             }
         }
+
         public virtual string Sequence
         {
             get
@@ -67,7 +72,7 @@ namespace EngineLayer
                     // variable modification on peptide N-terminus
                     ModificationWithMass pep_n_term_variable_mod;
                     if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
-                        sbsequence.Append('[' + pep_n_term_variable_mod.id + ']');
+                        sbsequence.Append('[' + pep_n_term_variable_mod.database + ":" + pep_n_term_variable_mod.id + ']');
 
                     for (int r = 0; r < Length; r++)
                     {
@@ -75,13 +80,13 @@ namespace EngineLayer
                         // variable modification on this residue
                         ModificationWithMass residue_variable_mod;
                         if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
-                            sbsequence.Append('[' + residue_variable_mod.id + ']');
+                            sbsequence.Append('[' + residue_variable_mod.database + ":" + residue_variable_mod.id + ']');
                     }
 
                     // variable modification on peptide C-terminus
                     ModificationWithMass pep_c_term_variable_mod;
                     if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
-                        sbsequence.Append('[' + pep_c_term_variable_mod.id + ']');
+                        sbsequence.Append('[' + pep_c_term_variable_mod.database + ":" + pep_c_term_variable_mod.id + ']');
 
                     sequence = sbsequence.ToString();
                 }
@@ -107,8 +112,6 @@ namespace EngineLayer
             get { return modPep.PeptideDescription; }
         }
 
-        bool? hasChemicalFormulas;
-        private string sequenceWithChemicalFormulas;
         public string SequenceWithChemicalFormulas
         {
             get

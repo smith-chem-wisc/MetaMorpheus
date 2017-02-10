@@ -87,7 +87,7 @@ namespace Test
             var ok = ye.GetPeptideWithSetModifications(variableModifications, 4096, 5).ToList();
             Assert.AreEqual(8, ok.Count);
 
-            Assert.AreEqual("[ProtNmod]M[resMod][PepCmod]", ok.Last().Sequence);
+            Assert.AreEqual("[:ProtNmod]M[:resMod][:PepCmod]", ok.Last().Sequence);
             Assert.AreEqual("[H]M[H][H]", ok.Last().SequenceWithChemicalFormulas);
             Assert.AreEqual(5 * GetElement("H").PrincipalIsotope.AtomicMass + Residue.ResidueMonoisotopicMass['M'] + GetElement("O").PrincipalIsotope.AtomicMass, ok.Last().MonoisotopicMass, 1e-9);
         }
@@ -111,7 +111,7 @@ namespace Test
 
             Assert.AreEqual(1, ok.Count);
 
-            Assert.AreEqual("[PepNmod]M[resMod][ProtCmod]", ok.Last().Sequence);
+            Assert.AreEqual("[:PepNmod]M[:resMod][:ProtCmod]", ok.Last().Sequence);
             Assert.AreEqual("[H]M[H][H]", ok.Last().SequenceWithChemicalFormulas);
             Assert.AreEqual(5 * GetElement("H").PrincipalIsotope.AtomicMass + Residue.ResidueMonoisotopicMass['M'] + GetElement("O").PrincipalIsotope.AtomicMass, ok.Last().MonoisotopicMass, 1e-9);
         }

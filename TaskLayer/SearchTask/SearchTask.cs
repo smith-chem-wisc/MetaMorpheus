@@ -8,7 +8,6 @@ using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -114,16 +113,14 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
             List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
             List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            
 
             List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
             for (int j = 0; j < SearchModes.Count; j++)
                 allPsms[j] = new List<PsmParent>();
 
-            Status("Loading proteins...");
             var allKnownModifications = GetDict(localizeableModifications);
+            Status("Loading proteins...");
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
-
 
             List<CompactPeptide> peptideIndex = null;
             Dictionary<float, List<int>> fragmentIndexDict = null;
@@ -180,7 +177,7 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 Status("Loading spectra file...");
-                IMsDataFile < IMsDataScan < IMzSpectrum < IMzPeak >>> myMsDataFile;
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
                 else
