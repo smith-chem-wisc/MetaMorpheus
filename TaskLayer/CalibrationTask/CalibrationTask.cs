@@ -96,7 +96,7 @@ namespace TaskLayer
             List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
 
             Status("Loading proteins...");
-            IDictionary<string, HashSet<BaseModification>> allKnownModifications = GetDict(localizeableModifications);
+           var allKnownModifications = GetDict(localizeableModifications);
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
 
 

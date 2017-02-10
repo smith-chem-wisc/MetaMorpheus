@@ -182,7 +182,7 @@ namespace Test
 
         public void LoadAllScansInMemory()
         {
-            throw new NotImplementedException();
+
         }
 
         public IEnumerator<TestScan> GetEnumerator()

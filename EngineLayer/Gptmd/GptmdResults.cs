@@ -16,7 +16,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, BaseModification>>> mods, int modsAdded) : base(s)
+        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> mods, int modsAdded) : base(s)
         {
             this.Mods = mods;
             this.modsAdded = modsAdded;
@@ -26,7 +26,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Properties
 
-        public Dictionary<string, HashSet<Tuple<int, BaseModification>>> Mods { get; private set; }
+        public Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> Mods { get; private set; }
 
         #endregion Public Properties
 

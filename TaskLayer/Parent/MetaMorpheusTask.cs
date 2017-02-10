@@ -139,20 +139,16 @@ namespace TaskLayer
         #region Protected Internal Methods
 
 
-        protected internal IDictionary<string, HashSet<BaseModification>> GetDict(List<ModificationWithMass> localizeableModifications)
+        protected internal IDictionary<string, IList<Modification>> GetDict(List<ModificationWithMass> localizeableModifications)
         {
-            Dictionary<string, HashSet<BaseModification>> dict = new Dictionary<string, HashSet<BaseModification>>();
+            var dict = new Dictionary<string, IList<Modification>>();
             foreach (var nice in localizeableModifications)
             {
-                HashSet<BaseModification> val;
+                IList<Modification> val;
                 if (dict.TryGetValue(nice.id, out val))
-                {
                     val.Add(nice);
-                }
                 else
-                {
-                    dict.Add(nice.id, new HashSet<BaseModification> { nice });
-                }
+                    dict.Add(nice.id, new List<Modification> { nice });
             }
             return dict;
         }

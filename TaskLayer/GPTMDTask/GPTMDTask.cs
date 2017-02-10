@@ -92,7 +92,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, BaseModification>>> Mods, List<Protein> proteinList, string outputFileName)
+        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> Mods, List<Protein> proteinList, string outputFileName)
         {
             var xmlWriterSettings = new XmlWriterSettings
             {
@@ -137,30 +137,41 @@ namespace TaskLayer
                         writer.WriteEndElement();
                         writer.WriteEndElement();
                     }
-
-                    IEnumerable<Tuple<int, BaseModification>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
-                        b => b.Value.Select(c => new Tuple<int, BaseModification>(b.Key, c))
-                        );
-                    IEnumerable<Tuple<int, BaseModification>> FinalSortedMods;
-                    if (Mods.ContainsKey(protein.Accession))
-                        FinalSortedMods = SortedMods.Union(Mods[protein.Accession]).OrderBy(b => b.Item1);
-                    else
-                        FinalSortedMods = SortedMods.OrderBy(b => b.Item1);
-                    foreach (var ye in FinalSortedMods)
+                    foreach (var ye in protein.OneBasedPossibleLocalizedModifications.OrderBy(b => b.Key))
                     {
-                        writer.WriteStartElement("feature");
-                        writer.WriteAttributeString("type", "modified residue");
-                        writer.WriteAttributeString("description", ye.Item2.id);
-                        //writer.WriteStartElement("db");
-                        //writer.WriteString(ye.Item3);
-                        //writer.WriteEndElement();
-                        writer.WriteStartElement("location");
-                        writer.WriteStartElement("position");
-                        writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
+                        foreach (var nice in ye.Value)
+                        {
+                            writer.WriteStartElement("feature");
+                            writer.WriteAttributeString("type", "modified residue");
+                            writer.WriteAttributeString("description", nice.id);
+                            //writer.WriteStartElement("db");
+                            //writer.WriteString(ye.Item3);
+                            //writer.WriteEndElement();
+                            writer.WriteStartElement("location");
+                            writer.WriteStartElement("position");
+                            writer.WriteAttributeString("position", ye.Key.ToString(CultureInfo.InvariantCulture));
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+
+                        }
                     }
+                    if (Mods.ContainsKey(protein.Accession))
+                        foreach (var ye in Mods[protein.Accession].OrderBy(b => b.Item1))
+                        {
+                            writer.WriteStartElement("feature");
+                            writer.WriteAttributeString("type", "modified residue");
+                            writer.WriteAttributeString("description", ye.Item2.id);
+                            //writer.WriteStartElement("db");
+                            //writer.WriteString(ye.Item3);
+                            //writer.WriteEndElement();
+                            writer.WriteStartElement("location");
+                            writer.WriteStartElement("position");
+                            writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                        }
 
                     writer.WriteStartElement("sequence");
                     writer.WriteAttributeString("length", protein.Length.ToString(CultureInfo.InvariantCulture));
@@ -210,7 +221,7 @@ namespace TaskLayer
                 lp.Add(ProductType.Y);
 
             Status("Loading proteins...");
-            IDictionary<string, HashSet<BaseModification>> allKnownModifications = GetDict(localizeableModifications);
+            var allKnownModifications = GetDict(localizeableModifications);
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
             AnalysisEngine analysisEngine;
             AnalysisResults analysisResults = null;

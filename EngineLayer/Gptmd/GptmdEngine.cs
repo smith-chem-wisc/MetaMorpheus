@@ -23,33 +23,6 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        static GptmdEngine()
-        {
-            aminoAcidCodes = new Dictionary<string, char>();
-            aminoAcidCodes.Add("Alanine", 'A');
-            aminoAcidCodes.Add("Arginine", 'R');
-            aminoAcidCodes.Add("Asparagine", 'N');
-            aminoAcidCodes.Add("Aspartate", 'D');
-            aminoAcidCodes.Add("Aspartic Acid", 'D');
-            aminoAcidCodes.Add("Cysteine", 'C');
-            aminoAcidCodes.Add("Glutamate", 'E');
-            aminoAcidCodes.Add("Glutamic Acid", 'E');
-            aminoAcidCodes.Add("Glutamine", 'Q');
-            aminoAcidCodes.Add("Glycine", 'G');
-            aminoAcidCodes.Add("Histidine", 'H');
-            aminoAcidCodes.Add("Isoleucine", 'I');
-            aminoAcidCodes.Add("Leucine", 'L');
-            aminoAcidCodes.Add("Lysine", 'K');
-            aminoAcidCodes.Add("Methionine", 'M');
-            aminoAcidCodes.Add("Phenylalanine", 'F');
-            aminoAcidCodes.Add("Proline", 'P');
-            aminoAcidCodes.Add("Serine", 'S');
-            aminoAcidCodes.Add("Threonine", 'T');
-            aminoAcidCodes.Add("Tryptophan", 'W');
-            aminoAcidCodes.Add("Tyrosine", 'Y');
-            aminoAcidCodes.Add("Valine", 'V');
-        }
-
         public GptmdEngine(List<NewPsmWithFdr> allIdentifications, bool isotopeErrors, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance) : base(2)
         {
             this.allIdentifications = allIdentifications;
@@ -65,7 +38,7 @@ namespace EngineLayer.Gptmd
 
         protected override MyResults RunSpecific()
         {
-            var Mods = new Dictionary<string, HashSet<Tuple<int, BaseModification>>>();
+            var Mods = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
 
             int modsAdded = 0;
             foreach (var ye in allIdentifications.Where(b => b.qValueNotch <= 0.01 && !b.IsDecoy))
@@ -87,8 +60,8 @@ namespace EngineLayer.Gptmd
                             if (ModFits(mod, peptide.Protein.BaseSequence, i + 1, baseSequence.Length, indexInProtein, proteinLength))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, BaseModification>>();
-                                var theTuple = new Tuple<int, BaseModification>(indexInProtein, mod);
+                                    Mods[proteinAcession] = new HashSet<Tuple<int, ModificationWithMass>>();
+                                var theTuple = new Tuple<int, ModificationWithMass>(indexInProtein, mod);
                                 if (!Mods[proteinAcession].Contains(theTuple))
                                 {
                                     Mods[proteinAcession].Add(theTuple);
@@ -104,38 +77,23 @@ namespace EngineLayer.Gptmd
 
         #endregion Protected Methods
 
-        private static readonly Dictionary<string, char> aminoAcidCodes;
 
         #region Private Methods
 
         public static bool ModFits(ModificationWithMass attemptToLocalize, string proteinBaseSequence, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, int proteinLength)
         {
-            char theChar;
-            if (aminoAcidCodes.TryGetValue(attemptToLocalize.site, out theChar))
+            var motif = attemptToLocalize.motif.Motif;
+            // First find the capital letter...
+            var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
+
+            var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
+            var indexUp = 0;
+            // Look up starting at and including the capital letter
+            while (indexUp < motif.Length)
             {
-                if (!proteinBaseSequence[proteinOneBasedIndex - 1].Equals(theChar))
+                if (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(proteinBaseSequence[indexUp + proteinToMotifOffset]))
                     return false;
-            }
-            else
-            {
-                // It's a motif!!!
-                var motifs = attemptToLocalize.site.Split(new string[] { " or " }, StringSplitOptions.None);
-
-                foreach (var motif in motifs)
-                {
-                    // First find the capital letter...
-                    var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
-
-                    var proteinToMotifOffset = proteinOneBasedIndex - hehe-1;
-                    var indexUp = 0;
-                    // Look up starting at and including the capital letter
-                    while (indexUp < motif.Length)
-                    {
-                        if (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(proteinBaseSequence[indexUp + proteinToMotifOffset]))
-                            return false;
-                        indexUp++;
-                    }
-                }
+                indexUp++;
             }
             if (attemptToLocalize.position == ModificationSites.NProt && (proteinOneBasedIndex > 2))
                 return false;

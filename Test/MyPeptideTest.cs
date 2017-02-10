@@ -17,7 +17,7 @@ namespace Test
         [Test]
         public static void TestGoodPeptide()
         {
-            var prot = new Protein("MNNNKQQQQ", null, new Dictionary<int, HashSet<BaseModification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
+            var prot = new Protein("MNNNKQQQQ", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
@@ -40,7 +40,7 @@ namespace Test
         public static void TestNoCleavage()
         {
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
-            var prot = new Protein("MNNNKQQQQ", null, new Dictionary<int, HashSet<BaseModification>>(), new int?[] { 5 }, new int?[] { 6 }, new string[] { "lala" }, null, null, 0, false, false);
+            var prot = new Protein("MNNNKQQQQ", null, new Dictionary<int, List<Modification>>(), new int?[] { 5 }, new int?[] { 6 }, new string[] { "lala" }, null, null, 0, false, false);
             var protease = new Protease("Custom Protease", null, null, TerminusType.None, CleavageSpecificity.None, null, null, null);
 
             var ye = prot.Digest(protease, int.MaxValue, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
@@ -51,7 +51,7 @@ namespace Test
         [Test]
         public static void TestBadPeptide()
         {
-            var prot = new Protein("MNNNKQQXQ", null, new Dictionary<int, HashSet<BaseModification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
+            var prot = new Protein("MNNNKQQXQ", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
@@ -73,15 +73,17 @@ namespace Test
         [Test]
         public static void TestPeptideWithSetModifications()
         {
-            var prot = new Protein("M", null, new Dictionary<int, HashSet<BaseModification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
+            var prot = new Protein("M", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, "M", ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, "M", ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, "M", ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            variableModifications.Add(new ModificationWithMassAndCf("PepCmod", null, "M", ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            variableModifications.Add(new ModificationWithMassAndCf("ProtCmod", null, "M", ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("M", out motif);
+            variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
             var ok = ye.GetPeptideWithSetModifications(variableModifications, 4096, 5).ToList();
             Assert.AreEqual(8, ok.Count);
 
@@ -93,14 +95,16 @@ namespace Test
         [Test]
         public static void TestPeptideWithFixedModifications()
         {
-            var prot = new Protein("M", null, new Dictionary<int, HashSet<BaseModification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
+            var prot = new Protein("M", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, 0, false, false);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             List<ModificationWithMass> fixedMods = new List<ModificationWithMass>();
-            fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, "M", ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            fixedMods.Add(new ModificationWithMassAndCf("PepNmod", null, "M", ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            fixedMods.Add(new ModificationWithMassAndCf("resMod", null, "M", ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            fixedMods.Add(new ModificationWithMassAndCf("PepCmod", null, "M", ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
-            fixedMods.Add(new ModificationWithMassAndCf("ProtCmod", null, "M", ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, 0, null));
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("M", out motif);
+            fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("PepNmod", null, motif, ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
 
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, fixedMods).First();
             var ok = ye.GetPeptideWithSetModifications(new List<ModificationWithMass>(), 4096, 5).ToList();

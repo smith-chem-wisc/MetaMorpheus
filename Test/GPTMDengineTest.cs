@@ -20,7 +20,9 @@ namespace Test
         public static void TestGptmdEngine()
         {
             List<NewPsmWithFdr> allResultingIdentifications = null;
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, "N", ModificationSites.Any, 21.981943, 0, null) };
+            ModificationMotif motifN;
+            ModificationMotif.TryGetMotif("N", out motifN);
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, 0, new List<double> { 21.981943 }, null, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
@@ -31,9 +33,11 @@ namespace Test
             Assert.AreEqual(0, res.Mods.Count);
 
             PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
-            var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, HashSet<BaseModification>>(), null, null, null, null, null, 0, false, false);
+            var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<Modification>>(), null, null, null, null, null, 0, false, false);
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh", allKnownFixedModifications);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            var modPep = parentProtein.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };
@@ -55,15 +59,20 @@ namespace Test
         public static void TestCombos()
         {
             List<NewPsmWithFdr> allIdentifications = null;
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, "N", ModificationSites.Any, 21.981943, 0, null),
-                                                                      new ModificationWithMass("16", null, "P", ModificationSites.Any, 15.994915, 0, null) };
+            ModificationMotif motifN;
+            ModificationMotif.TryGetMotif("N", out motifN);
+            ModificationMotif motifP;
+            ModificationMotif.TryGetMotif("P", out motifP);
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, 0, new List<double> { 21.981943 }, null, null),
+                                                                      new ModificationWithMass("16", null, motifP, ModificationSites.Any, 15.994915,null, 0, new List<double> { 15.994915 }, null, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             PsmParent newPsm = new TestParentSpectrumMatch(651.297638557 + 21.981943 + 15.994915);
-            var parentProtein = new Protein("NNNPPP", "accession", new Dictionary<int, HashSet<BaseModification>>(), null, null, null, null, null, 0, false, false);
-            var modPep = new PeptideWithPossibleModifications(1, 6, parentProtein, 0, "ugh", new List<ModificationWithMass>());
+            var parentProtein = new Protein("NNNPPP", "accession", new Dictionary<int, List<Modification>>(), null, null, null, null, null, 0, false, false);
+            var modPep = parentProtein.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First() };

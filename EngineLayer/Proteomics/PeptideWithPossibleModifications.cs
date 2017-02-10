@@ -11,10 +11,10 @@ namespace EngineLayer
         private readonly Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods;
         #region Public Constructors
 
-        public PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications)
+        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications, IEnumerable<Tuple<int, List<ModificationWithMass>>> oneBasedPossibleLocalizedModificationsWithMass)
             : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
         {
-            OneBasedPossibleLocalizedModifications = Protein.OneBasedPossibleLocalizedModifications.Where(ok => ok.Key >= OneBasedStartResidueInProtein && ok.Key <= OneBasedEndResidueInProtein).ToDictionary(ok => ok.Key - OneBasedStartResidueInProtein + 1, ok => new HashSet<ModificationWithMass>(ok.Value.Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass)));
+            OneBasedPossibleLocalizedModifications = oneBasedPossibleLocalizedModificationsWithMass.Where(ok => ok.Item1 >= OneBasedStartResidueInProtein && ok.Item1 <= OneBasedEndResidueInProtein).ToList();
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
             thisDictionaryOfFixedMods = AddFixedMods(allKnownFixedModifications);
@@ -24,7 +24,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public Dictionary<int, HashSet<ModificationWithMass>> OneBasedPossibleLocalizedModifications { get; private set; }
+        public List<Tuple<int, List<ModificationWithMass>>> OneBasedPossibleLocalizedModifications { get; private set; }
         public int MissedCleavages { get; private set; }
 
         #endregion Public Properties
@@ -71,20 +71,19 @@ namespace EngineLayer
             }
 
             // LOCALIZED MODS
-            foreach (KeyValuePair<int, HashSet<ModificationWithMass>> kvp in OneBasedPossibleLocalizedModifications)
+            foreach (var kvp in OneBasedPossibleLocalizedModifications)
             {
-                foreach (ModificationWithMass variable_modification in kvp.Value)
+                foreach (ModificationWithMass variable_modification in kvp.Item2)
                 {
-
                     // Check if can be a n-term mod
-                    if (kvp.Key == 1
+                    if (kvp.Item1 == 1
                         && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length)
                         && (variable_modification.position == ModificationSites.NProt || variable_modification.position == ModificationSites.NPep))
                         pep_n_term_variable_mods.Add(variable_modification);
 
                     for (int r = 0; r < Length; r++)
                     {
-                        if (kvp.Key == r + 1
+                        if (kvp.Item1 == r + 1
                             && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, r + 1, this.Length, this.OneBasedStartResidueInProtein + r, this.Protein.Length)
                             && variable_modification.position == ModificationSites.Any)
                         {
@@ -100,7 +99,7 @@ namespace EngineLayer
                         }
                     }
                     // Check if can be a c-term mod
-                    if (kvp.Key == Length
+                    if (kvp.Item1 == Length
                         && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1, this.Protein.Length)
                         && (variable_modification.position == ModificationSites.ProtC || variable_modification.position == ModificationSites.PepC))
                         pep_c_term_variable_mods.Add(variable_modification);

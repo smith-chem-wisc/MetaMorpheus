@@ -175,7 +175,7 @@ namespace EngineLayer
                 massInMs2OfExistingMod = existingMod.monoisotopicMass - existingMod.neutralLoss;
                 vvv.Remove(j + 2);
             }
-            vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, v + massInMs2OfExistingMod, 0, null));
+            vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, v + massInMs2OfExistingMod, null, 0, new List<double> { v + massInMs2OfExistingMod }, null, null));
             var hm = new PeptideWithSetModifications(modPep, vvv);
             return hm;
         }

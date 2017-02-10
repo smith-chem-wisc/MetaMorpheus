@@ -39,7 +39,7 @@ namespace MetaMorpheusGUI
 
         public string Description { get { return uu.Description; } }
 
-        public IEnumerable<BaseModification> Mods
+        public IEnumerable<Modification> Mods
         {
             get
             {

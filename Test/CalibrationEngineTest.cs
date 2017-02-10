@@ -19,10 +19,12 @@ namespace Test
         [Test]
         public static void TestCalibrationEngine()
         {
-            Dictionary<int, HashSet<BaseModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, HashSet<BaseModification>>();
+            var oneBasedPossibleLocalizedModifications = new Dictionary<int, List<Modification>>();
             Protein ParentProtein = new Protein("MQQQQQQQ", null, oneBasedPossibleLocalizedModifications, null, null, null, null, null, 0, false, false);
             IEnumerable<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
-            PeptideWithPossibleModifications modPep = new PeptideWithPossibleModifications(1, 8, ParentProtein, 0, "kk", fixedModifications);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            PeptideWithPossibleModifications modPep = ParentProtein.Digest(protease, 0, InitiatorMethionineBehavior.Variable, fixedModifications).First();
             //Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             PeptideWithSetModifications pepWithSetMods = modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3).First();

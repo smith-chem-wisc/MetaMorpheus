@@ -121,7 +121,7 @@ namespace TaskLayer
                 allPsms[j] = new List<PsmParent>();
 
             Status("Loading proteins...");
-            IDictionary<string, HashSet<BaseModification>> allKnownModifications = GetDict(localizeableModifications);
+            var allKnownModifications = GetDict(localizeableModifications);
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant)).ToList();
 
 
@@ -196,6 +196,7 @@ namespace TaskLayer
 
                 if (ClassicSearch)
                 {
+                    Status("Getting MS2 scans...");
                     var listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                     classicSearchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
 

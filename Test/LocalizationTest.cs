@@ -21,7 +21,7 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-            Dictionary<int, HashSet<BaseModification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, HashSet<BaseModification>>();
+            Dictionary<int, List<Modification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<Modification>>();
             string accession = null;
             int?[] beginPositions = null;
             int?[] endPositions = null;
@@ -29,11 +29,13 @@ namespace Test
             string name = null;
             string fullName = null;
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, 0, false, false);
-            PeptideWithPossibleModifications pwpm = new PeptideWithPossibleModifications(1, 3, parentProteinForMatch, 0, null, allKnownFixedModifications);
-
-            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, "E", ModificationSites.Any, 21.981943, 0, null) };
+            PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("E", out motif);
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, 0, new List<double> { 21.981943 }, null, null) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptideWithSetModifications(variableModifications, 2, 1).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());

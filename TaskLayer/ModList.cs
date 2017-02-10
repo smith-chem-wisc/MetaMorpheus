@@ -13,7 +13,7 @@ namespace TaskLayer
 
         #region Private Fields
 
-        public readonly List<Modification> Mods;
+        public readonly List<ModificationWithLocation> Mods;
 
         private string FullFileName;
 

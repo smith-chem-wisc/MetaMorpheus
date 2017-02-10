@@ -37,8 +37,8 @@ namespace EngineLayer
             try
             {
                 UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-                UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-                UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+                UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
+                UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation).ToList();
             }
             catch (WebException)
             {
@@ -87,19 +87,18 @@ namespace EngineLayer
 
         public static IEnumerable<LocalMS2Scan> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
         {
+            myMSDataFile.LoadAllScansInMemory();
             foreach (var heh in myMSDataFile)
             {
                 var ms2scan = heh as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                 if (ms2scan != null)
                 {
-                    var uu = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber);
-                    double isolationMz = ms2scan.IsolationMz;
                     int? monoisotopicPrecursorChargehere = ms2scan.SelectedIonGuessChargeStateGuess;
                     int mc;
                     if (monoisotopicPrecursorChargehere.HasValue && monoisotopicPrecursorChargehere > 0)
                         mc = monoisotopicPrecursorChargehere.Value;
                     else
-                        mc = GuessCharge(uu.MassSpectrum.Extract(isolationMz - 2.1, isolationMz + 2.1).ToList());
+                        mc = GuessCharge(myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber).MassSpectrum.Extract(ms2scan.IsolationMz - 2.1, ms2scan.IsolationMz + 2.1).ToList());
                     yield return new LocalMS2Scan(ms2scan, mc);
                 }
             }
