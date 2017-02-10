@@ -28,7 +28,6 @@ namespace Test
             string[] bigPeptideTypes = null;
             string name = null;
             string fullName = null;
-            IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, 0, false, false);
