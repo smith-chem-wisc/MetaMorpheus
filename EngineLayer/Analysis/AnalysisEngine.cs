@@ -81,10 +81,19 @@ namespace EngineLayer.Analysis
             {
                 // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
                 var decoyPeptidesHere = new HashSet<PeptideWithSetModifications>(kvp.Value.Where(p => p.Protein.IsDecoy));
-
                 if (decoyPeptidesHere.Any())
                 {
                     var pepWithSetModsToRemove = new HashSet<PeptideWithSetModifications>(kvp.Value.Except(decoyPeptidesHere));
+
+                    foreach (var pepWithSetMods in pepWithSetModsToRemove)
+                        kvp.Value.Remove(pepWithSetMods);
+                }
+
+                // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
+                var contaminantPeptidesHere = new HashSet<PeptideWithSetModifications>(kvp.Value.Where(p => p.Protein.IsContaminant));
+                if (contaminantPeptidesHere.Any())
+                {
+                    var pepWithSetModsToRemove = new HashSet<PeptideWithSetModifications>(kvp.Value.Except(contaminantPeptidesHere));
 
                     foreach (var pepWithSetMods in pepWithSetModsToRemove)
                         kvp.Value.Remove(pepWithSetMods);
