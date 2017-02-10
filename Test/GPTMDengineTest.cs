@@ -22,7 +22,7 @@ namespace Test
             List<NewPsmWithFdr> allResultingIdentifications = null;
             ModificationMotif motifN;
             ModificationMotif.TryGetMotif("N", out motifN);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, 0, new List<double> { 21.981943 }, null, null) };
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, 0, new List<double> { 21.981943 }, null, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
@@ -34,7 +34,6 @@ namespace Test
 
             PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
             var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<Modification>>(), null, null, null, null, null, 0, false, false);
-            IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var modPep = parentProtein.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
