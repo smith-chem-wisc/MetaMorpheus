@@ -1,6 +1,6 @@
 ﻿using MassSpectrometry;
+using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,7 +23,7 @@ namespace EngineLayer
         #region Private Fields
 
         private static readonly string elementsLocation = Path.Combine(@"Data", @"elements.dat");
-        private static readonly string unimodLocation = Path.Combine(@"Data", @"unimod_tables.xml");
+        private static readonly string unimodLocation = Path.Combine(@"Data", @"unimod.xml");
         private static readonly string uniprotLocation = Path.Combine(@"Mods", @"ptmlist.txt");
 
         private static readonly double[] mms = new double[] { 1.0025, 2.005, 3.0075, 4.010 };
@@ -37,8 +37,8 @@ namespace EngineLayer
             try
             {
                 UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
-                UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation);
-                UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation);
+                UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
+                UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation).ToList();
             }
             catch (WebException)
             {
@@ -76,8 +76,8 @@ namespace EngineLayer
         #region Public Properties
 
         public static string MetaMorpheusVersion { get; private set; }
-        public static UsefulProteomicsDatabases.Generated.unimod UnimodDeserialized { get; private set; }
-        public static Dictionary<int, ChemicalFormulaModification> UniprotDeseralized { get; private set; }
+        public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
+        public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
 
         public static List<SearchMode> SearchModesKnown { get; private set; }
 
@@ -85,24 +85,20 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static IEnumerable<LocalMS2Scan> GetMs2Scans(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile)
+        public static IEnumerable<LocalMS2Scan> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
         {
             foreach (var heh in myMSDataFile)
             {
-                if (heh.MsnOrder == 2)
+                var ms2scan = heh as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
+                if (ms2scan != null)
                 {
-                    int kk;
-                    heh.TryGetPrecursorOneBasedScanNumber(out kk);
-                    var uu = myMSDataFile.GetOneBasedScan(kk);
-                    double isolationMz;
-                    heh.TryGetIsolationMZ(out isolationMz);
-                    int? monoisotopicPrecursorChargehere;
+                    int? monoisotopicPrecursorChargehere = ms2scan.SelectedIonGuessChargeStateGuess;
                     int mc;
-                    if (heh.TryGetSelectedIonGuessChargeStateGuess(out monoisotopicPrecursorChargehere) && monoisotopicPrecursorChargehere.HasValue)
+                    if (monoisotopicPrecursorChargehere.HasValue && monoisotopicPrecursorChargehere > 0)
                         mc = monoisotopicPrecursorChargehere.Value;
                     else
-                        mc = GuessCharge(uu.MassSpectrum.NewSpectrumExtract(isolationMz - 2.1, isolationMz + 2.1));
-                    yield return new LocalMS2Scan(heh, mc);
+                        mc = GuessCharge(myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber).MassSpectrum.Extract(ms2scan.IsolationMz - 2.1, ms2scan.IsolationMz + 2.1).ToList());
+                    yield return new LocalMS2Scan(ms2scan, mc);
                 }
             }
         }
@@ -154,18 +150,18 @@ namespace EngineLayer
             yield return new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
         }
 
-        private static int GuessCharge(IMzSpectrum<MzPeak> mzSpectrum)
+        private static int GuessCharge(List<IMzPeak> mzPeaks)
         {
             double tolHere = 0.01;
             int[] chargeCount = new int[4]; // charges 1,2,3,4
-            for (int i = 0; i < mzSpectrum.Count; i++)
-                for (int j = i + 1; j < mzSpectrum.Count; j++)
+            for (int i = 0; i < mzPeaks.Count; i++)
+                for (int j = i + 1; j < mzPeaks.Count; j++)
                 {
                     for (int charge = 1; charge <= 4; charge++)
                     {
                         for (int isotope = 0; isotope < 4; isotope++)
                         {
-                            if (Math.Abs(mzSpectrum.XArray[j] - mzSpectrum.XArray[i] - mms[isotope] / charge) < tolHere)
+                            if (Math.Abs(mzPeaks[j].X - mzPeaks[i].X - mms[isotope] / charge) < tolHere)
                             {
                                 chargeCount[charge - 1]++;
                             }

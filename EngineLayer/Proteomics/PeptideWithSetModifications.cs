@@ -12,7 +12,7 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public Dictionary<int, MetaMorpheusModification> allModsOneIsNterminus;
+        public Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
 
         #endregion Public Fields
 
@@ -21,18 +21,22 @@ namespace EngineLayer
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         private readonly PeptideWithPossibleModifications modPep;
-        private double monoisotopicMass = double.NaN;
-        
+        private double? monoisotopicMass;
+
         private string sequence;
 
         private PeptideFragmentMasses p;
+
+        private bool? hasChemicalFormulas;
+
+        private string sequenceWithChemicalFormulas;
 
         #endregion Private Fields
 
         #region Internal Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, MetaMorpheusModification> allModsOneIsNterminus)
-                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus)
+                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
@@ -46,16 +50,17 @@ namespace EngineLayer
         {
             get
             {
-                if (double.IsNaN(monoisotopicMass))
+                if (!monoisotopicMass.HasValue)
                 {
                     monoisotopicMass = waterMonoisotopicMass;
-                    monoisotopicMass += allModsOneIsNterminus.Select(b => b.Value.PrecursorMassShift).Sum();
+                    foreach (var mod in allModsOneIsNterminus.Values)
+                        monoisotopicMass += mod.monoisotopicMass;
                     monoisotopicMass += BaseSequence.Select(b => Residue.ResidueMonoisotopicMass[b]).Sum();
                 }
-                return monoisotopicMass;
+                return monoisotopicMass.Value;
             }
         }
-        
+
         public virtual string Sequence
         {
             get
@@ -65,23 +70,23 @@ namespace EngineLayer
                     var sbsequence = new StringBuilder();
 
                     // variable modification on peptide N-terminus
-                    MetaMorpheusModification pep_n_term_variable_mod;
+                    ModificationWithMass pep_n_term_variable_mod;
                     if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
-                        sbsequence.Append('[' + pep_n_term_variable_mod.Description + ']');
+                        sbsequence.Append('[' + pep_n_term_variable_mod.database + ":" + pep_n_term_variable_mod.id + ']');
 
                     for (int r = 0; r < Length; r++)
                     {
                         sbsequence.Append(this[r]);
                         // variable modification on this residue
-                        MetaMorpheusModification residue_variable_mod;
+                        ModificationWithMass residue_variable_mod;
                         if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
-                            sbsequence.Append('[' + residue_variable_mod.Description + ']');
+                            sbsequence.Append('[' + residue_variable_mod.database + ":" + residue_variable_mod.id + ']');
                     }
 
                     // variable modification on peptide C-terminus
-                    MetaMorpheusModification pep_c_term_variable_mod;
+                    ModificationWithMass pep_c_term_variable_mod;
                     if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
-                        sbsequence.Append('[' + pep_c_term_variable_mod.Description + ']');
+                        sbsequence.Append('[' + pep_c_term_variable_mod.database + ":" + pep_c_term_variable_mod.id + ']');
 
                     sequence = sbsequence.ToString();
                 }
@@ -111,28 +116,51 @@ namespace EngineLayer
         {
             get
             {
-                var sbsequence = new StringBuilder();
-
-                // variable modification on peptide N-terminus
-                MetaMorpheusModification pep_n_term_variable_mod;
-                if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
-                    sbsequence.Append('[' + pep_n_term_variable_mod.ChemicalFormula.Formula + ']');
-
-                for (int r = 0; r < Length; r++)
+                if (!hasChemicalFormulas.HasValue)
                 {
-                    sbsequence.Append(this[r]);
-                    // variable modification on this residue
-                    MetaMorpheusModification residue_variable_mod;
-                    if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
-                        sbsequence.Append('[' + residue_variable_mod.ChemicalFormula.Formula + ']');
+                    hasChemicalFormulas = true;
+                    var sbsequence = new StringBuilder();
+
+                    // variable modification on peptide N-terminus
+                    ModificationWithMass pep_n_term_variable_mod;
+                    if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                    {
+                        var jj = pep_n_term_variable_mod as ModificationWithMassAndCf;
+                        if (jj != null)
+                            sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
+                        else
+                            return null;
+                    }
+
+                    for (int r = 0; r < Length; r++)
+                    {
+                        sbsequence.Append(this[r]);
+                        // variable modification on this residue
+                        ModificationWithMass residue_variable_mod;
+                        if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
+                        {
+                            var jj = residue_variable_mod as ModificationWithMassAndCf;
+                            if (jj != null)
+                                sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
+                            else
+                                return null;
+                        }
+                    }
+
+                    // variable modification on peptide C-terminus
+                    ModificationWithMass pep_c_term_variable_mod;
+                    if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                    {
+                        var jj = pep_c_term_variable_mod as ModificationWithMassAndCf;
+                        if (jj != null)
+                            sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
+                        else
+                            return null;
+                    }
+
+                    sequenceWithChemicalFormulas = sbsequence.ToString();
                 }
-
-                // variable modification on peptide C-terminus
-                MetaMorpheusModification pep_c_term_variable_mod;
-                if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
-                    sbsequence.Append('[' + pep_c_term_variable_mod.ChemicalFormula.Formula + ']');
-
-                return sbsequence.ToString();
+                return sequenceWithChemicalFormulas;
             }
         }
 
@@ -142,15 +170,15 @@ namespace EngineLayer
 
         public PeptideWithSetModifications Localize(int j, double v)
         {
-            var vvv = new Dictionary<int, MetaMorpheusModification>(allModsOneIsNterminus);
-            MetaMorpheusModification existingMod;
+            var vvv = new Dictionary<int, ModificationWithMass>(allModsOneIsNterminus);
+            ModificationWithMass existingMod;
             double massInMs2OfExistingMod = 0;
             if (vvv.TryGetValue(j + 2, out existingMod))
             {
-                massInMs2OfExistingMod = existingMod.FragmentMassShift;
+                massInMs2OfExistingMod = existingMod.monoisotopicMass - existingMod.neutralLoss;
                 vvv.Remove(j + 2);
             }
-            vvv.Add(j + 2, new MetaMorpheusModification(v + massInMs2OfExistingMod));
+            vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, v + massInMs2OfExistingMod, null, 0, new List<double> { v + massInMs2OfExistingMod }, null, null));
             var hm = new PeptideWithSetModifications(modPep, vvv);
             return hm;
         }
@@ -245,39 +273,41 @@ namespace EngineLayer
             p.cumulativeNTerminalMass = new double[Length];
 
             // N-terminus
-            MetaMorpheusModification pep_n_term_variable_mod;
+            ModificationWithMass pep_n_term_variable_mod;
             if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
             {
-                monoisotopicMass += pep_n_term_variable_mod.PrecursorMassShift;
-                p.cumulativeNTerminalMass[0] = pep_n_term_variable_mod.FragmentMassShift;
+                p.cumulativeNTerminalMass[0] = pep_n_term_variable_mod.monoisotopicMass - pep_n_term_variable_mod.neutralLoss;
             }
 
             // Loop for cumulative n mass
             for (int r = 1; r < Length; r++)
             {
                 p.cumulativeNTerminalMass[r] = p.cumulativeNTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[r - 1]];
-                MetaMorpheusModification residue_variable_mod;
+                ModificationWithMass residue_variable_mod;
                 if (allModsOneIsNterminus.TryGetValue(r + 1, out residue_variable_mod))
-                    p.cumulativeNTerminalMass[r] += residue_variable_mod.FragmentMassShift;
+                {
+                    p.cumulativeNTerminalMass[r] += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLoss;
+                }
             }
 
             p.cumulativeCTerminalMass = new double[Length];
 
-            // variable modification on peptide C-terminus
-            MetaMorpheusModification pep_c_term_variable_mod;
+            // C-terminus
+            ModificationWithMass pep_c_term_variable_mod;
             if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
             {
-                monoisotopicMass += pep_c_term_variable_mod.PrecursorMassShift;
-                p.cumulativeCTerminalMass[0] = pep_c_term_variable_mod.FragmentMassShift;
+                p.cumulativeCTerminalMass[0] = pep_c_term_variable_mod.monoisotopicMass - pep_c_term_variable_mod.neutralLoss;
             }
 
             // Loop for cumulative c terminal mass
             for (int r = 1; r < Length; r++)
             {
                 p.cumulativeCTerminalMass[r] = p.cumulativeCTerminalMass[r - 1] + Residue.ResidueMonoisotopicMass[this[Length - r]];
-                MetaMorpheusModification residue_variable_mod;
+                ModificationWithMass residue_variable_mod;
                 if (allModsOneIsNterminus.TryGetValue(Length - r + 2, out residue_variable_mod))
-                    p.cumulativeCTerminalMass[r] += residue_variable_mod.FragmentMassShift;
+                {
+                    p.cumulativeCTerminalMass[r] += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLoss;
+                }
             }
 
             return p;

@@ -5,6 +5,8 @@ using EngineLayer.Gptmd;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
+using MzLibUtil;
+using Proteomics;
 using Spectra;
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -89,7 +92,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, string, string>>> Mods, List<Protein> proteinList, string outputFileName)
+        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> Mods, List<Protein> proteinList, string outputFileName)
         {
             var xmlWriterSettings = new XmlWriterSettings
             {
@@ -126,38 +129,49 @@ namespace TaskLayer
                         writer.WriteAttributeString("type", protein.BigPeptideTypes[i]);
                         writer.WriteStartElement("location");
                         writer.WriteStartElement("begin");
-                        writer.WriteAttributeString("position", protein.OneBasedBeginPositions[i].ToString(CultureInfo.InvariantCulture));
+                        writer.WriteAttributeString("position", protein.OneBasedBeginPositions[i].ToString());
                         writer.WriteEndElement();
                         writer.WriteStartElement("end");
-                        writer.WriteAttributeString("position", protein.OneBasedEndPositions[i].ToString(CultureInfo.InvariantCulture));
+                        writer.WriteAttributeString("position", protein.OneBasedEndPositions[i].ToString());
                         writer.WriteEndElement();
                         writer.WriteEndElement();
                         writer.WriteEndElement();
                     }
-
-                    IEnumerable<Tuple<int, string, string>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
-                        b => b.Value.Select(c => new Tuple<int, string, string>(b.Key, c.NameInXml, c.Database))
-                        );
-                    IEnumerable<Tuple<int, string, string>> FinalSortedMods;
-                    if (Mods.ContainsKey(protein.Accession))
-                        FinalSortedMods = SortedMods.Union(Mods[protein.Accession]).OrderBy(b => b.Item1);
-                    else
-                        FinalSortedMods = SortedMods.OrderBy(b => b.Item1);
-                    foreach (var ye in FinalSortedMods)
+                    foreach (var ye in protein.OneBasedPossibleLocalizedModifications.OrderBy(b => b.Key))
                     {
-                        writer.WriteStartElement("feature");
-                        writer.WriteAttributeString("type", "modified residue");
-                        writer.WriteAttributeString("description", ye.Item2);
-                        writer.WriteStartElement("db");
-                        writer.WriteString(ye.Item3);
-                        writer.WriteEndElement();
-                        writer.WriteStartElement("location");
-                        writer.WriteStartElement("position");
-                        writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
+                        foreach (var nice in ye.Value)
+                        {
+                            writer.WriteStartElement("feature");
+                            writer.WriteAttributeString("type", "modified residue");
+                            writer.WriteAttributeString("description", nice.id);
+                            //writer.WriteStartElement("db");
+                            //writer.WriteString(ye.Item3);
+                            //writer.WriteEndElement();
+                            writer.WriteStartElement("location");
+                            writer.WriteStartElement("position");
+                            writer.WriteAttributeString("position", ye.Key.ToString(CultureInfo.InvariantCulture));
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+
+                        }
                     }
+                    if (Mods.ContainsKey(protein.Accession))
+                        foreach (var ye in Mods[protein.Accession].OrderBy(b => b.Item1))
+                        {
+                            writer.WriteStartElement("feature");
+                            writer.WriteAttributeString("type", "modified residue");
+                            writer.WriteAttributeString("description", ye.Item2.id);
+                            //writer.WriteStartElement("db");
+                            //writer.WriteString(ye.Item3);
+                            //writer.WriteEndElement();
+                            writer.WriteStartElement("location");
+                            writer.WriteStartElement("position");
+                            writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                            writer.WriteEndElement();
+                        }
 
                     writer.WriteStartElement("sequence");
                     writer.WriteAttributeString("length", protein.Length.ToString(CultureInfo.InvariantCulture));
@@ -186,19 +200,15 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...");
-            List<MetaMorpheusModification> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).ToList();
-
-            Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
-            HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
             // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.PrecursorMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), PrecursorMassTolerance);
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.SelectMany(b => b.massesObserved).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), PrecursorMassTolerance);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
@@ -211,14 +221,16 @@ namespace TaskLayer
                 lp.Add(ProductType.Y);
 
             Status("Loading proteins...");
-            var proteinList = dbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
+            var allKnownModifications = GetDict(localizeableModifications);
+            Dictionary<string, Modification> um = null;
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
             AnalysisEngine analysisEngine;
             AnalysisResults analysisResults = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 Status("Loading spectra file...");
-                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
                 else

@@ -1,5 +1,5 @@
 ﻿using EngineLayer;
-
+using Proteomics;
 using System;
 using System.Collections.Generic;
 
@@ -18,7 +18,7 @@ namespace Test
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public override CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             throw new NotImplementedException();
         }

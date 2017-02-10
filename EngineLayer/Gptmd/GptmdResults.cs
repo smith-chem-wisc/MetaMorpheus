@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,7 +16,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, string, string>>> mods, int modsAdded) : base(s)
+        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> mods, int modsAdded) : base(s)
         {
             this.Mods = mods;
             this.modsAdded = modsAdded;
@@ -25,7 +26,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Properties
 
-        public Dictionary<string, HashSet<Tuple<int, string, string>>> Mods { get; private set; }
+        public Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> Mods { get; private set; }
 
         #endregion Public Properties
 

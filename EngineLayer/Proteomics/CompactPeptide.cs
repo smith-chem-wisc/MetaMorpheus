@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,7 +24,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public CompactPeptide(PeptideWithSetModifications yyy, List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             varMod1Type = 0;
             varMod1Loc = 0;

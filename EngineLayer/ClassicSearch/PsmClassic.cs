@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 
 namespace EngineLayer.ClassicSearch
@@ -30,7 +31,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public override CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             if (compactPeptide == null)
                 compactPeptide = new CompactPeptide(ps, variableModifications, localizeableModifications, fixedModifications);

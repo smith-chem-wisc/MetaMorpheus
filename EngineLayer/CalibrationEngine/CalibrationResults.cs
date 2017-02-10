@@ -21,7 +21,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
+        public CalibrationResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
             calibrationFunctions = new List<SeparateCalibrationFunction>();
@@ -36,7 +36,7 @@ namespace EngineLayer.Calibration
 
         #region Public Properties
 
-        public IMsDataFile<IMzSpectrum<MzPeak>> MyMSDataFile { get; private set; }
+        public IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> MyMSDataFile { get; private set; }
 
         #endregion Public Properties
 

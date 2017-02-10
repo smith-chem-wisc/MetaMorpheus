@@ -2,7 +2,7 @@
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using NUnit.Framework;
-
+using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -35,18 +35,18 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], null, "", "", 0, false, false));
-            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], null, "", "", 0, true, false));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, false, false));
+            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, true, false));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<MetaMorpheusModification>());
+                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MetaMorpheusModification>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -73,7 +73,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count; i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>());
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ModificationWithMass>());
             }
 
             // creates protein list
@@ -152,8 +152,8 @@ namespace Test
                         case "E": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0), hashSet, null, null, null))); break;
                         case "F": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0), hashSet, null, null, null))); break;
                         case "G": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0), hashSet, null, null, null))); break;
-                        //case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
-                        //case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0), hashSet, null, null, null))); break;
+                            //case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
+                            //case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0), hashSet, null, null, null))); break;
                     }
                 }
             }

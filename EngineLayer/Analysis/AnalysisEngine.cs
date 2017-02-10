@@ -1,4 +1,5 @@
 ﻿using MassSpectrometry;
+using MzLibUtil;
 using Proteomics;
 using Spectra;
 using System;
@@ -21,12 +22,12 @@ namespace EngineLayer.Analysis
         private readonly int maxModIsoforms;
         private readonly PsmParent[][] newPsms;
         private readonly List<Protein> proteinList;
-        private readonly List<MetaMorpheusModification> variableModifications;
-        private readonly List<MetaMorpheusModification> fixedModifications;
-        private readonly List<MetaMorpheusModification> localizeableModifications;
+        private readonly List<ModificationWithMass> variableModifications;
+        private readonly List<ModificationWithMass> fixedModifications;
+        private readonly List<ModificationWithMass> localizeableModifications;
         private readonly Protease protease;
         private readonly List<SearchMode> searchModes;
-        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
         private readonly Action<BinTreeStructure, string> writeHistogramPeaksAction;
         private readonly Action<List<NewPsmWithFdr>, string> writePsmsAction;
@@ -40,7 +41,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
         {
             this.doParsimony = doParsimony;
             this.doHistogramAnalysis = doHistogramAnalysis;
@@ -203,8 +204,8 @@ namespace EngineLayer.Analysis
                         {
                             HashSet<Protein> proteinsWithThisBaseSeq;
                             peptideBaseSeqProteinListMatch.TryGetValue(newBaseSeq, out proteinsWithThisBaseSeq);
-                            
-                            foreach(var protein in proteinsWithThisBaseSeq)
+
+                            foreach (var protein in proteinsWithThisBaseSeq)
                             {
                                 HashSet<CompactPeptide> t;
                                 proteinToPeptidesMatching.TryGetValue(protein, out t);
@@ -728,12 +729,13 @@ namespace EngineLayer.Analysis
             {
                 var ok = new HashSet<string>();
                 var okformula = new HashSet<string>();
-                foreach (var hm in UnimodDeserialized.modifications)
+                foreach (var hm in UnimodDeserialized)
                 {
-                    if (Math.Abs(hm.mono_mass - bin.MassShift) <= v)
+                    var theMod = hm as ModificationWithMassAndCf;
+                    if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
                     {
-                        ok.Add(hm.full_name);
-                        okformula.Add(hm.composition);
+                        ok.Add(hm.id);
+                        okformula.Add(theMod.chemicalFormula.Formula);
                     }
                 }
                 bin.UnimodId = string.Join(" or ", ok);
@@ -748,10 +750,12 @@ namespace EngineLayer.Analysis
                 var ok = new HashSet<string>();
                 foreach (var hm in UniprotDeseralized)
                 {
-                    if (Math.Abs(hm.Value.MonoisotopicMass - bin.MassShift) <= v)
-                    {
-                        ok.Add(hm.Value.NameAndSites);
-                    }
+                    var theMod = hm as ModificationWithMass;
+                    if (theMod != null)
+                        if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
+                        {
+                            ok.Add(hm.id);
+                        }
                 }
                 bin.uniprotID = string.Join(" or ", ok);
             }
