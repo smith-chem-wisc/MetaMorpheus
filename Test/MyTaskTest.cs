@@ -2,7 +2,6 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -33,6 +32,7 @@ namespace Test
             SearchTask task3 = new SearchTask();
             task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("m.txt")));
             task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("glyco.txt")));
+            task3.DoParsimony = true;
 
             SearchTask task4 = new SearchTask();
             task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("m.txt")));

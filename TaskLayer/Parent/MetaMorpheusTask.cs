@@ -6,10 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 namespace TaskLayer
 {
@@ -22,6 +20,7 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask : MyEngine
     {
+
         #region Public Fields
 
         public List<string> rawDataFilenameList;
@@ -267,32 +266,6 @@ namespace TaskLayer
                 yield return new ModList(modFile);
         }
 
-        private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
-        {
-            var modifications_in_database = new HashSet<string>();
-            foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
-                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
-                {
-                    Stream uniprotXmlFileStream = stream;
-                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
-                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
-                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
-                        while (xml.ReadToFollowing("feature"))
-                            if (xml.GetAttribute("type") == "modified residue")
-                            {
-                                string description = xml.GetAttribute("description");
-                                if (!description.Contains("variant"))
-                                {
-                                    int semicolon_index = description.IndexOf(';');
-                                    if (semicolon_index >= 0)
-                                        description = description.Substring(0, semicolon_index);
-                                    modifications_in_database.Add(description);
-                                }
-                            }
-                }
-            return modifications_in_database;
-        }
-
         private void finishedSingleTask()
         {
             FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
@@ -304,5 +277,6 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
+
     }
 }
