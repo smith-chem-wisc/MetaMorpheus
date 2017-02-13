@@ -19,6 +19,9 @@ namespace EngineLayer
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+        private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
 
         private readonly PeptideWithPossibleModifications modPep;
         private double monoisotopicMass = double.NaN;
@@ -160,15 +163,25 @@ namespace EngineLayer
             if (p == null)
                 p = ComputeFragmentMasses();
 
-            double[] products1 = null;
-            double[] products2 = null;
-            if (productTypes.Contains(ProductType.B))
-                products1 = new double[Length - 2];
-            if (productTypes.Contains(ProductType.Y))
-                products2 = new double[Length - 1];
+            double[] productsB = null;
+            double[] productsY = null;
+            double[] productsC = null;
+            double[] productsZ = null;
 
-            int i1 = 0;
-            int i2 = 0;
+            if (productTypes.Contains(ProductType.B))
+                productsB = new double[Length - 2];
+            if (productTypes.Contains(ProductType.Y))
+                productsY = new double[Length - 1];
+            if (productTypes.Contains(ProductType.C))
+                productsC = new double[Length - 1];
+            if (productTypes.Contains(ProductType.Zdot))
+                productsZ = new double[Length - 1];
+
+            int iB = 0;
+            int iY = 0;
+            int iC = 0;
+            int iZ = 0;
+
             for (int r = 1; r < Length; r++)
             {
                 foreach (ProductType product_type in productTypes)
@@ -179,47 +192,74 @@ namespace EngineLayer
                     {
                         switch (product_type)
                         {
+                            // p.cumulativeNTerminalMass[r] refers to a generic "middle" residue fragment; ion type masses are determined 
+                            // by adding/subtracting a constant value, depending on the fragment type
                             case ProductType.Adot:
                                 throw new NotImplementedException();
+
                             case ProductType.B:
-                                products1[i1] = p.cumulativeNTerminalMass[r];
-                                i1++;
+                                productsB[iB] = p.cumulativeNTerminalMass[r];
+                                iB++;
                                 break;
 
                             case ProductType.C:
-                                throw new NotImplementedException();
+                                productsC[iC] = p.cumulativeNTerminalMass[r] + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                                iC++;
+                                break;
 
                             case ProductType.X:
                                 throw new NotImplementedException();
+
                             case ProductType.Y:
-                                products2[i2] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
-                                i2++;
+                                productsY[iY] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
+                                iY++;
                                 break;
 
                             case ProductType.Zdot:
-                                throw new NotImplementedException();
+                                productsZ[iZ] = p.cumulativeCTerminalMass[r] + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                                iZ++;
+                                break;
                         }
                     }
                 }
             }
-            i1 = 0;
-            i2 = 0;
+            iB = 0;
+            iY = 0;
+            iC = 0;
+            iZ = 0;
+
             int len = (productTypes.Contains(ProductType.B) ? Length - 2 : 0) +
-                      (productTypes.Contains(ProductType.Y) ? Length - 1 : 0);
+                      (productTypes.Contains(ProductType.Y) ? Length - 1 : 0) +
+                      (productTypes.Contains(ProductType.C) ? Length - 1 : 0) +
+                      (productTypes.Contains(ProductType.Zdot) ? Length - 1 : 0);
+
             double[] products = new double[len];
+            if (productsB != null)
+                products = products.Concat(productsB).ToArray();
+            if (productsY != null)
+                products = products.Concat(productsY).ToArray();
+            if (productsC != null)
+                products = products.Concat(productsC).ToArray();
+            if (productsZ != null)
+                products = products.Concat(productsZ).ToArray();
+            Array.Sort(products);
+
+            /*
             for (int i = 0; i < len; i++)
             {
-                if (products1 != null && (products2 == null || (i1 != products1.Length && (i2 == products2.Length || products1[i1] <= products2[i2]))))
+                if (productsB != null && (productsY == null || (iB != productsB.Length && (iY == productsY.Length || productsB[iB] <= productsY[iY]))))
                 {
-                    products[i] = products1[i1];
-                    i1++;
+                    products[i] = productsB[iB];
+                    iB++;
                 }
                 else
                 {
-                    products[i] = products2[i2];
-                    i2++;
+                    products[i] = productsY[iY];
+                    iY++;
                 }
             }
+            */
+
             return products;
         }
 
