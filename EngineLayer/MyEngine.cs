@@ -14,12 +14,6 @@ namespace EngineLayer
     public abstract class MyEngine
     {
 
-        #region Internal Fields
-
-        internal readonly int Level;
-
-        #endregion Internal Fields
-
         #region Private Fields
 
         private static readonly string elementsLocation = Path.Combine(@"Data", @"elements.dat");
@@ -49,15 +43,6 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
-        #region Protected Constructors
-
-        protected MyEngine(int Level)
-        {
-            this.Level = Level;
-        }
-
-        #endregion Protected Constructors
 
         #region Public Events
 

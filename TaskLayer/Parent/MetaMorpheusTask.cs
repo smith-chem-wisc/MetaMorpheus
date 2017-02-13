@@ -6,10 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 namespace TaskLayer
 {
@@ -41,7 +39,7 @@ namespace TaskLayer
 
         #region Protected Constructors
 
-        protected MetaMorpheusTask() : base(1)
+        protected MetaMorpheusTask()
         {
         }
 
@@ -103,6 +101,10 @@ namespace TaskLayer
                 file.Write(ToString());
             }
             SucessfullyFinishedWritingFile(paramsFileName);
+#if !DEBUG
+            try
+            {
+#endif
             var heh = base.Run();
             var resultsFileName = Path.Combine(OutputFolder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
@@ -113,6 +115,24 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(resultsFileName);
             finishedSingleTask();
             return heh;
+#if !DEBUG
+        }
+            catch (Exception e)
+            {
+                var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                    file.Write("e: " + e);
+                    file.Write("e.Message: " + e.Message);
+                    file.Write("e.InnerException: " + e.InnerException);
+                    file.Write("e.Source: " + e.Source);
+                    file.Write("e.StackTrace: " + e.StackTrace);
+                    file.Write("e.TargetSite: " + e.TargetSite);
+                }
+                throw e;
+            }
+#endif
         }
 
         public override string ToString()
@@ -138,7 +158,6 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-
         protected internal IDictionary<string, IList<Modification>> GetDict(List<ModificationWithMass> localizeableModifications)
         {
             var dict = new Dictionary<string, IList<Modification>>();
@@ -152,6 +171,7 @@ namespace TaskLayer
             }
             return dict;
         }
+
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
@@ -244,32 +264,6 @@ namespace TaskLayer
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 yield return new ModList(modFile);
-        }
-
-        private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
-        {
-            var modifications_in_database = new HashSet<string>();
-            foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
-                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
-                {
-                    Stream uniprotXmlFileStream = stream;
-                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
-                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
-                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
-                        while (xml.ReadToFollowing("feature"))
-                            if (xml.GetAttribute("type") == "modified residue")
-                            {
-                                string description = xml.GetAttribute("description");
-                                if (!description.Contains("variant"))
-                                {
-                                    int semicolon_index = description.IndexOf(';');
-                                    if (semicolon_index >= 0)
-                                        description = description.Substring(0, semicolon_index);
-                                    modifications_in_database.Add(description);
-                                }
-                            }
-                }
-            return modifications_in_database;
         }
 
         private void finishedSingleTask()

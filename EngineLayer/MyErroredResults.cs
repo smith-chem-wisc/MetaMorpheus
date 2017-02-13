@@ -1,4 +1,6 @@
-﻿namespace EngineLayer
+﻿using System.Text;
+
+namespace EngineLayer
 {
     public class MyErroredResults : MyResults
     {
@@ -20,12 +22,13 @@
 
         #region Protected Properties
 
-        protected override string StringForOutput
+
+        public override string ToString()
         {
-            get
-            {
-                return "\t\t" + v;
-            }
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.Append(v);
+            return sb.ToString();
         }
 
         #endregion Protected Properties

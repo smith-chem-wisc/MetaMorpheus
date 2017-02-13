@@ -23,7 +23,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<NewPsmWithFdr> allIdentifications, bool isotopeErrors, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance) : base(2)
+        public GptmdEngine(List<NewPsmWithFdr> allIdentifications, bool isotopeErrors, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance)
         {
             this.allIdentifications = allIdentifications;
             this.isotopeErrors = isotopeErrors;

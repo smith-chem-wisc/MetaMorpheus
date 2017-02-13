@@ -32,15 +32,13 @@ namespace EngineLayer.Gptmd
 
         #region Protected Properties
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("\t\tModifications added = " + modsAdded);
-                sb.Append("\t\tProteins expanded = " + Mods.Count);
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.AppendLine("Modifications added = " + modsAdded);
+            sb.Append("Proteins expanded = " + Mods.Count);
+            return sb.ToString();
         }
 
         #endregion Protected Properties

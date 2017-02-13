@@ -46,7 +46,7 @@ namespace Test
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)

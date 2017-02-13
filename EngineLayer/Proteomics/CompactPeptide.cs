@@ -34,7 +34,7 @@ namespace EngineLayer
             varMod3Loc = 0;
             foreach (var kvpp in yyy.allModsOneIsNterminus)
             {
-                int twoBasedLoc = kvpp.Key;
+                int oneBasedLoc = kvpp.Key;
                 var mod = kvpp.Value;
                 // Variable
                 if (varMod1Type == 0)
@@ -43,7 +43,7 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod1Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (byte)twoBasedLoc;
+                        varMod1Loc = (byte)oneBasedLoc;
                     }
                     else if (fixedModifications.Contains(mod))
                     {
@@ -51,7 +51,7 @@ namespace EngineLayer
                     else
                     {
                         varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (byte)twoBasedLoc;
+                        varMod1Loc = (byte)oneBasedLoc;
                     }
                 }
                 else if (varMod2Type == 0)
@@ -60,7 +60,7 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod2Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (byte)twoBasedLoc;
+                        varMod2Loc = (byte)oneBasedLoc;
                     }
                     else if (fixedModifications.Contains(mod))
                     {
@@ -68,7 +68,7 @@ namespace EngineLayer
                     else
                     {
                         varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (byte)twoBasedLoc;
+                        varMod2Loc = (byte)oneBasedLoc;
                     }
                 }
                 else
@@ -77,7 +77,7 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod3Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (byte)twoBasedLoc;
+                        varMod3Loc = (byte)oneBasedLoc;
                     }
                     else if (fixedModifications.Contains(mod))
                     {
@@ -85,7 +85,7 @@ namespace EngineLayer
                     else
                     {
                         varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (byte)twoBasedLoc;
+                        varMod3Loc = (byte)oneBasedLoc;
                     }
                 }
             }
