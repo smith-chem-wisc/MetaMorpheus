@@ -22,7 +22,6 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask : MyEngine
     {
-
         #region Public Fields
 
         public List<string> rawDataFilenameList;
@@ -103,19 +102,22 @@ namespace TaskLayer
                 file.Write(ToString());
             }
             SucessfullyFinishedWritingFile(paramsFileName);
+#if !DEBUG
             try
             {
-                var heh = base.Run();
-                var resultsFileName = Path.Combine(OutputFolder, "results.txt");
-                using (StreamWriter file = new StreamWriter(resultsFileName))
-                {
-                    file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
-                    file.Write(heh.ToString());
-                }
-                SucessfullyFinishedWritingFile(resultsFileName);
-                finishedSingleTask();
-                return heh;
+#endif
+            var heh = base.Run();
+            var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+            using (StreamWriter file = new StreamWriter(resultsFileName))
+            {
+                file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                file.Write(heh.ToString());
             }
+            SucessfullyFinishedWritingFile(resultsFileName);
+            finishedSingleTask();
+            return heh;
+#if !DEBUG
+        }
             catch (Exception e)
             {
                 var resultsFileName = Path.Combine(OutputFolder, "results.txt");
@@ -131,6 +133,7 @@ namespace TaskLayer
                 }
                 throw e;
             }
+#endif
         }
 
         public override string ToString()
@@ -156,7 +159,6 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-
         protected internal IDictionary<string, IList<Modification>> GetDict(List<ModificationWithMass> localizeableModifications)
         {
             var dict = new Dictionary<string, IList<Modification>>();
@@ -170,6 +172,7 @@ namespace TaskLayer
             }
             return dict;
         }
+
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
@@ -301,6 +304,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

@@ -1,16 +1,16 @@
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace EngineLayer
 {
     public static class ProteinExtensions
     {
 
+        #region Public Methods
+
         public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior, IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
-            var k = GetListWithMass(protein.OneBasedPossibleLocalizedModifications).ToList();
             if (protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 // these are the 1-based residue indices the protease cleaves AFTER
@@ -84,18 +84,7 @@ namespace EngineLayer
             }
         }
 
-        private static IEnumerable<Tuple<int, List<ModificationWithMass>>> GetListWithMass(IDictionary<int, List<Modification>> oneBasedPossibleLocalizedModifications)
-        {
-            foreach (var hm in oneBasedPossibleLocalizedModifications)
-            {
-                List<ModificationWithMass> list = new List<ModificationWithMass>();
-                foreach (var ok in hm.Value)
-                {
-                    if (ok is ModificationWithMass)
-                        list.Add(ok as ModificationWithMass);
-                }
-                yield return new Tuple<int, List<ModificationWithMass>>(hm.Key, list);
-            }
-        }
+        #endregion Public Methods
+
     }
 }
