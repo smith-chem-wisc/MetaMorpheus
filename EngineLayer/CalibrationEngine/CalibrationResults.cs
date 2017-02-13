@@ -21,7 +21,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
+        public CalibrationResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
             calibrationFunctions = new List<SeparateCalibrationFunction>();
@@ -36,34 +36,32 @@ namespace EngineLayer.Calibration
 
         #region Public Properties
 
-        public IMsDataFile<IMzSpectrum<MzPeak>> MyMSDataFile { get; private set; }
+        public IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> MyMSDataFile { get; private set; }
 
         #endregion Public Properties
 
         #region Protected Properties
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            for (int i = 0; i < countList.Count; i++)
             {
-                var sb = new StringBuilder();
-                for (int i = 0; i < countList.Count; i++)
-                {
-                    sb.AppendLine("\t\tRound " + (i + 1));
-                    sb.AppendLine("\t\t\tTraining points: " + countList[i]);
-                    sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
-                    sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
-                    sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
-                    sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                sb.AppendLine("\t\tRound " + (i + 1));
+                sb.AppendLine("\t\t\tTraining points: " + countList[i]);
+                sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
+                sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
+                sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
 
-                    if (i < calibrationFunctions.Count)
-                    {
-                        sb.AppendLine("\t\t\tMs1Calibration function: " + calibrationFunctions[i].CalibrationFunction1.ToString());
-                        sb.AppendLine("\t\t\tMs2Calibration function: " + calibrationFunctions[i].CalibrationFunction2.ToString());
-                    }
+                if (i < calibrationFunctions.Count)
+                {
+                    sb.AppendLine("\t\t\tMs1Calibration function: " + calibrationFunctions[i].CalibrationFunction1.ToString());
+                    sb.AppendLine("\t\t\tMs2Calibration function: " + calibrationFunctions[i].CalibrationFunction2.ToString());
                 }
-                return sb.ToString();
             }
+            return sb.ToString();
         }
 
         #endregion Protected Properties

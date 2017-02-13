@@ -1,15 +1,13 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
 using MathNet.Numerics.Distributions;
-
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 namespace TaskLayer
 {
@@ -41,7 +39,7 @@ namespace TaskLayer
 
         #region Protected Constructors
 
-        protected MetaMorpheusTask() : base(1)
+        protected MetaMorpheusTask()
         {
         }
 
@@ -68,7 +66,7 @@ namespace TaskLayer
         public MyTask TaskType { get; internal set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-        
+
         public int MaxMissedCleavages { get; set; }
 
         public int MaxModificationIsoforms { get; set; }
@@ -107,6 +105,10 @@ namespace TaskLayer
                 file.Write(ToString());
             }
             SucessfullyFinishedWritingFile(paramsFileName);
+#if !DEBUG
+            try
+            {
+#endif
             var heh = base.Run();
             var resultsFileName = Path.Combine(OutputFolder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
@@ -117,6 +119,24 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(resultsFileName);
             finishedSingleTask();
             return heh;
+#if !DEBUG
+        }
+            catch (Exception e)
+            {
+                var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                    file.Write("e: " + e);
+                    file.Write("e.Message: " + e.Message);
+                    file.Write("e.InnerException: " + e.InnerException);
+                    file.Write("e.Source: " + e.Source);
+                    file.Write("e.StackTrace: " + e.StackTrace);
+                    file.Write("e.TargetSite: " + e.TargetSite);
+                }
+                throw e;
+            }
+#endif
         }
 
         public override string ToString()
@@ -144,20 +164,18 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal static void MatchXMLmodsToKnownMods(List<DbForTask> listOfDbs, List<MetaMorpheusModification> modsKnown, out Dictionary<string, List<MetaMorpheusModification>> modsToLocalize, out HashSet<string> modsInXMLtoTrim)
+        protected internal IDictionary<string, IList<Modification>> GetDict(List<ModificationWithMass> localizeableModifications)
         {
-            modsToLocalize = new Dictionary<string, List<MetaMorpheusModification>>();
-            var modsInXML = ReadXmlModifications(listOfDbs.Select(b => b.FileName).Where(r => (!r.Contains(".fasta"))));
-            modsInXMLtoTrim = new HashSet<string>(modsInXML);
-            foreach (var knownMod in modsKnown)
-                if (modsInXML.Contains(knownMod.NameInXml))
-                {
-                    if (modsToLocalize.ContainsKey(knownMod.NameInXml))
-                        modsToLocalize[knownMod.NameInXml].Add(knownMod);
-                    else
-                        modsToLocalize.Add(knownMod.NameInXml, new List<MetaMorpheusModification> { knownMod });
-                    modsInXMLtoTrim.Remove(knownMod.NameInXml);
-                }
+            var dict = new Dictionary<string, IList<Modification>>();
+            foreach (var nice in localizeableModifications)
+            {
+                IList<Modification> val;
+                if (dict.TryGetValue(nice.id, out val))
+                    val.Add(nice);
+                else
+                    dict.Add(nice.id, new List<Modification> { nice });
+            }
+            return dict;
         }
 
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
@@ -175,314 +193,6 @@ namespace TaskLayer
         #endregion Protected Internal Methods
 
         #region Protected Methods
-
-        protected IEnumerable<Protein> GetProteins(bool onTheFlyDecoys, IDictionary<string, List<MetaMorpheusModification>> allModifications, DbForTask dbForTask)
-        {
-            using (var stream = new FileStream(dbForTask.FileName, FileMode.Open))
-            {
-                Stream uniprotXmlFileStream = stream;
-                if (dbForTask.FileName.EndsWith(".gz"))
-                    uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
-
-                string[] nodes = new string[6];
-
-                string accession = null;
-                string name = null;
-                string full_name = null;
-                string sequence = null;
-                string feature_type = null;
-                string feature_description = null;
-                int oneBasedfeature_position = -1;
-                int oneBasedbeginPosition = -1;
-                int oneBasedendPosition = -1;
-                var oneBasedBeginPositions = new List<int>();
-                var oneBasedEndPositions = new List<int>();
-                var peptideTypes = new List<string>();
-                var oneBasedModifications = new Dictionary<int, List<MetaMorpheusModification>>();
-                int offset = 0;
-
-                // xml db
-                if (!dbForTask.FileName.EndsWith(".fasta"))
-                {
-                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
-                    {
-                        while (xml.Read())
-                        {
-                            switch (xml.NodeType)
-                            {
-                                case XmlNodeType.Element:
-                                    nodes[xml.Depth] = xml.Name;
-                                    switch (xml.Name)
-                                    {
-                                        case "accession":
-                                            if (accession == null)
-                                            {
-                                                accession = xml.ReadElementString();
-                                            }
-                                            break;
-
-                                        case "name":
-                                            if (xml.Depth == 2)
-                                            {
-                                                name = xml.ReadElementString();
-                                            }
-                                            break;
-
-                                        case "fullName":
-                                            if (full_name == null)
-                                            {
-                                                full_name = xml.ReadElementString();
-                                            }
-                                            break;
-
-                                        case "feature":
-                                            feature_type = xml.GetAttribute("type");
-                                            feature_description = xml.GetAttribute("description");
-                                            break;
-
-                                        case "position":
-                                            oneBasedfeature_position = int.Parse(xml.GetAttribute("position"));
-                                            break;
-
-                                        case "begin":
-                                            try
-                                            {
-                                                oneBasedbeginPosition = int.Parse(xml.GetAttribute("position"));
-                                            }
-                                            catch (ArgumentNullException)
-                                            {
-                                            }
-                                            break;
-
-                                        case "end":
-                                            try
-                                            {
-                                                oneBasedendPosition = int.Parse(xml.GetAttribute("position"));
-                                            }
-                                            catch (ArgumentNullException)
-                                            {
-                                            }
-                                            break;
-
-                                        case "sequence":
-                                            sequence = xml.ReadElementString().Replace("\n", null);
-                                            break;
-                                    }
-                                    break;
-
-                                case XmlNodeType.EndElement:
-                                    switch (xml.Name)
-                                    {
-                                        case "feature":
-                                            if (feature_type == "modified residue" && allModifications != null && !feature_description.Contains("variant") && allModifications.ContainsKey(feature_description))
-                                            {
-                                                List<MetaMorpheusModification> residue_modifications;
-                                                if (!oneBasedModifications.TryGetValue(oneBasedfeature_position, out residue_modifications))
-                                                {
-                                                    residue_modifications = new List<MetaMorpheusModification>();
-                                                    oneBasedModifications.Add(oneBasedfeature_position, residue_modifications);
-                                                }
-                                                int semicolon_index = feature_description.IndexOf(';');
-                                                if (semicolon_index >= 0)
-                                                {
-                                                    feature_description = feature_description.Substring(0, semicolon_index);
-                                                }
-                                                residue_modifications.AddRange(allModifications[feature_description]);
-                                            }
-                                            else if ((feature_type == "peptide" || feature_type == "propeptide" || feature_type == "chain") && oneBasedbeginPosition >= 0 && oneBasedendPosition >= 0)
-                                            {
-                                                oneBasedBeginPositions.Add(oneBasedbeginPosition);
-                                                oneBasedEndPositions.Add(oneBasedendPosition);
-                                                peptideTypes.Add(feature_type);
-                                            }
-                                            oneBasedbeginPosition = -1;
-                                            oneBasedendPosition = -1;
-
-                                            break;
-
-                                        case "entry":
-                                            if (accession != null && sequence != null)
-                                            {
-                                                var protein = new Protein(sequence, accession, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false, dbForTask.IsContaminant);
-
-                                                yield return protein;
-
-                                                offset += protein.Length;
-                                                if (onTheFlyDecoys)
-                                                {
-                                                    char[] sequence_array = sequence.ToCharArray();
-                                                    Dictionary<int, List<MetaMorpheusModification>> decoy_modifications = null;
-                                                    if (sequence.StartsWith("M", StringComparison.InvariantCulture))
-                                                    {
-                                                        // Do not include the initiator methionine in reversal!!!
-                                                        Array.Reverse(sequence_array, 1, sequence.Length - 1);
-                                                        if (oneBasedModifications != null)
-                                                        {
-                                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
-                                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
-                                                            {
-                                                                if (kvp.Key == 1)
-                                                                {
-                                                                    decoy_modifications.Add(1, kvp.Value);
-                                                                }
-                                                                else if (kvp.Key > 1)
-                                                                {
-                                                                    decoy_modifications.Add(sequence.Length - kvp.Key + 2, kvp.Value);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        Array.Reverse(sequence_array);
-                                                        if (oneBasedModifications != null)
-                                                        {
-                                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
-                                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
-                                                            {
-                                                                decoy_modifications.Add(sequence.Length - kvp.Key + 1, kvp.Value);
-                                                            }
-                                                        }
-                                                    }
-                                                    var reversed_sequence = new string(sequence_array);
-                                                    int[] decoybeginPositions = new int[oneBasedBeginPositions.Count];
-                                                    int[] decoyendPositions = new int[oneBasedEndPositions.Count];
-                                                    string[] decoyBigPeptideTypes = new string[oneBasedEndPositions.Count];
-                                                    for (int i = 0; i < decoybeginPositions.Length; i++)
-                                                    {
-                                                        decoybeginPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedEndPositions[i] + 1;
-                                                        decoyendPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedBeginPositions[i] + 1;
-                                                        decoyBigPeptideTypes[oneBasedBeginPositions.Count - i - 1] = peptideTypes[i];
-                                                    }
-                                                    var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true, dbForTask.IsContaminant);
-                                                    yield return decoy_protein;
-                                                    offset += protein.Length;
-                                                }
-                                            }
-                                            accession = null;
-                                            name = null;
-                                            full_name = null;
-                                            sequence = null;
-                                            feature_type = null;
-                                            feature_description = null;
-                                            oneBasedfeature_position = -1;
-                                            oneBasedModifications = new Dictionary<int, List<MetaMorpheusModification>>();
-
-                                            oneBasedBeginPositions = new List<int>();
-                                            oneBasedEndPositions = new List<int>();
-                                            peptideTypes = new List<string>();
-                                            break;
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                }
-
-                // fasta db
-                else
-                {
-                    StreamReader fasta = new StreamReader(stream);
-
-                    while (true)
-                    {
-                        string line = fasta.ReadLine();
-
-                        if (line.StartsWith(">"))
-                        {
-                            // fasta protein only has accession, fullname, sequence (no mods)
-                            string[] delimiters = { ">", "|", " OS=" };
-                            string[] output = line.Split(delimiters, StringSplitOptions.None);
-                            if (output.Length > 4)
-                            {
-                                accession = output[2];
-                                name = accession;
-                                full_name = output[3];
-                            }
-                            else
-                            {
-                                // can't read protein description
-                                full_name = line.Substring(1);
-                                accession = line.Substring(1);
-                            }
-
-                            // new protein
-                            sequence = "";
-                        }
-                        else
-                        {
-                            sequence += line.Trim();
-                        }
-
-                        if (fasta.Peek() == '>' || fasta.Peek() == -1)
-                        {
-                            if (accession != null && sequence != null)
-                            {
-                                var protein = new Protein(sequence, accession, oneBasedModifications, oneBasedBeginPositions.ToArray(), oneBasedEndPositions.ToArray(), peptideTypes.ToArray(), name, full_name, offset, false, dbForTask.IsContaminant);
-                                yield return protein;
-
-                                if (onTheFlyDecoys)
-                                {
-                                    char[] sequence_array = sequence.ToCharArray();
-                                    Dictionary<int, List<MetaMorpheusModification>> decoy_modifications = null;
-                                    if (sequence.StartsWith("M", StringComparison.InvariantCulture))
-                                    {
-                                        // Do not include the initiator methionine in reversal!!!
-                                        Array.Reverse(sequence_array, 1, sequence.Length - 1);
-                                        if (oneBasedModifications != null)
-                                        {
-                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
-                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
-                                            {
-                                                if (kvp.Key == 1)
-                                                {
-                                                    decoy_modifications.Add(1, kvp.Value);
-                                                }
-                                                else if (kvp.Key > 1)
-                                                {
-                                                    decoy_modifications.Add(sequence.Length - kvp.Key + 2, kvp.Value);
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Array.Reverse(sequence_array);
-                                        if (oneBasedModifications != null)
-                                        {
-                                            decoy_modifications = new Dictionary<int, List<MetaMorpheusModification>>(oneBasedModifications.Count);
-                                            foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in oneBasedModifications)
-                                            {
-                                                decoy_modifications.Add(sequence.Length - kvp.Key + 1, kvp.Value);
-                                            }
-                                        }
-                                    }
-                                    var reversed_sequence = new string(sequence_array);
-                                    int[] decoybeginPositions = new int[oneBasedBeginPositions.Count];
-                                    int[] decoyendPositions = new int[oneBasedEndPositions.Count];
-                                    string[] decoyBigPeptideTypes = new string[oneBasedEndPositions.Count];
-                                    for (int i = 0; i < decoybeginPositions.Length; i++)
-                                    {
-                                        decoybeginPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedEndPositions[i] + 1;
-                                        decoyendPositions[oneBasedBeginPositions.Count - i - 1] = sequence.Length - oneBasedBeginPositions[i] + 1;
-                                        decoyBigPeptideTypes[oneBasedBeginPositions.Count - i - 1] = peptideTypes[i];
-                                    }
-                                    var decoy_protein = new Protein(reversed_sequence, "DECOY_" + accession, decoy_modifications, decoybeginPositions, decoyendPositions, decoyBigPeptideTypes, name, full_name, offset, true, dbForTask.IsContaminant);
-                                    yield return decoy_protein;
-                                    offset += protein.Length;
-                                }
-                            }
-                        }
-
-                        // no input left
-                        if (fasta.Peek() == -1)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
 
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName)
         {
@@ -560,32 +270,6 @@ namespace TaskLayer
         {
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 yield return new ModList(modFile);
-        }
-
-        private static HashSet<string> ReadXmlModifications(IEnumerable<string> uniProtXmlProteomeDatabaseFilepaths)
-        {
-            var modifications_in_database = new HashSet<string>();
-            foreach (var uniProtXmlProteomeDatabaseFilepath in uniProtXmlProteomeDatabaseFilepaths)
-                using (var stream = new FileStream(uniProtXmlProteomeDatabaseFilepath, FileMode.Open))
-                {
-                    Stream uniprotXmlFileStream = stream;
-                    if (uniProtXmlProteomeDatabaseFilepath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase))
-                        uniprotXmlFileStream = new GZipStream(stream, CompressionMode.Decompress);
-                    using (XmlReader xml = XmlReader.Create(uniprotXmlFileStream))
-                        while (xml.ReadToFollowing("feature"))
-                            if (xml.GetAttribute("type") == "modified residue")
-                            {
-                                string description = xml.GetAttribute("description");
-                                if (!description.Contains("variant"))
-                                {
-                                    int semicolon_index = description.IndexOf(';');
-                                    if (semicolon_index >= 0)
-                                        description = description.Substring(0, semicolon_index);
-                                    modifications_in_database.Add(description);
-                                }
-                            }
-                }
-            return modifications_in_database;
         }
 
         private void finishedSingleTask()

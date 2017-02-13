@@ -203,20 +203,6 @@ PP   Anywhere.
 MM   19.989829
 CF   C-1 O2
 //
-ID   Magnesium Adduct to D
-FT   MOD_RES
-TG   Aspartate
-PP   Anywhere.
-MM   21.969392
-CF   H-2 Mg1
-//
-ID   Magnesium Adduct to E
-FT   MOD_RES
-TG   Glutamate
-PP   Anywhere.
-MM   21.969392
-CF   H-2 Mg1
-//
 ID   Sodium Adduct to D
 FT   MOD_RES
 TG   Aspartate

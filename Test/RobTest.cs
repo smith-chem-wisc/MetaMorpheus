@@ -2,7 +2,7 @@
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using NUnit.Framework;
-
+using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -45,11 +45,11 @@ namespace Test
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<MetaMorpheusModification>());
+                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptideWithSetModifications(new List<MetaMorpheusModification>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -76,7 +76,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count; i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>(), new List<MetaMorpheusModification>());
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ModificationWithMass>());
             }
 
             // creates protein list

@@ -20,7 +20,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<MetaMorpheusTask> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList) : base(0)
+        public EverythingRunnerEngine(List<MetaMorpheusTask> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;

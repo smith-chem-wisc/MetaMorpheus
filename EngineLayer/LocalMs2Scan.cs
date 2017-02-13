@@ -1,30 +1,33 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using Spectra;
-using System;
 
 namespace EngineLayer
 {
     public class LocalMS2Scan
     {
 
+        #region Internal Fields
+
+        internal readonly double MonoisotopicPrecursorMZ;
+
+        #endregion Internal Fields
+
         #region Public Constructors
 
-        public LocalMS2Scan(IMsDataScan<IMzSpectrum<MzPeak>> b, int charge)
+        public LocalMS2Scan(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> b, int charge)
         {
             TheScan = b;
-            b.TryGetSelectedIonGuessMonoisotopicMZ(out MonoisotopicPrecursorMZ);
             MonoisotopicPrecursorCharge = charge;
+            MonoisotopicPrecursorMZ = TheScan.SelectedIonGuessMonoisotopicMZ;
             PrecursorMass = MonoisotopicPrecursorMZ.ToMass(MonoisotopicPrecursorCharge);
 
             OneBasedScanNumber = b.OneBasedScanNumber;
 
             RetentionTime = b.RetentionTime;
 
-            NumPeaks = b.MassSpectrum.Count;
+            NumPeaks = b.MassSpectrum.Size;
 
-            double monoisotopicPrecursorIntensityhere;
-            b.TryGetSelectedIonGuessMonoisotopicIntensity(out monoisotopicPrecursorIntensityhere);
+            double monoisotopicPrecursorIntensityhere = TheScan.SelectedIonGuessMonoisotopicIntensity;
             MonoisotopicPrecursorIntensity = monoisotopicPrecursorIntensityhere;
 
             TotalIonCurrent = b.TotalIonCurrent;
@@ -45,8 +48,7 @@ namespace EngineLayer
 
         #region Internal Properties
 
-        internal IMsDataScan<IMzSpectrum<MzPeak>> TheScan { get; private set; }
-        internal readonly double MonoisotopicPrecursorMZ;
+        internal IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> TheScan { get; private set; }
         internal int OneBasedScanNumber { get; private set; }
         internal double RetentionTime { get; private set; }
         internal int MonoisotopicPrecursorCharge { get; private set; }

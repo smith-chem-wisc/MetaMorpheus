@@ -7,9 +7,8 @@
 Releases are here: [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 
 # MetaMorpheus
-A bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery. This program integrates
-features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTMD](https://github.com/smith-chem-wisc/gptmd) in a single tool.
-
+A bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery. This program combines
+features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
 
 ## Expanded Functionality
 MetaMorpheus adds two major components to the original Morpheus functionality
@@ -29,7 +28,20 @@ Some proteins are present in biological samples as subsequences of the complete 
 ### Histogram Peak Analysis
 The modification discovery component is enhanced by the automated peak analysis heuristic. Every database search result is analyzed, and for every freqeuntly occuring mass shift (determined by a peak-finding algorithm), an analysis is conducted. The results of the analysis are written in a separate file, and they include the total number of unique peptides associated with the mass shift, the fraction of decoys, mass match with any known entry in the unimod or uniport database, mass match to an amino acid addition/removal combination, mass match to a combination of higher frequency peaks, fraction of localizable targets, localization residues and/or termini, and presence of any modifications in the matched peptides. All of this data can then be used to determine the nature of the peak, and the characteristics of the corresponding modificaiton. 
 
-###General Requirements
+### Protein Parsimony
+Checking the "Aggregate Proteins" button in the MetaMorpheus "Add Search Task" window constructs the most concise possible list of proteins that could account for all observed peptides ("maximum parsimony"). Peptides are assigned to proteins by the following rules:
+* All peptides that could be assigned to a decoy protein are removed from any target protein associations (i.e., they are only assigned to decoy protein(s)).
+* A peptide that can only be assigned to one protein is a "unique" peptide; this protein is added and all peptides that could be assigned to that protein are assigned to that protein.
+* The remaining unaccounted-for peptides are assigned by the "greedy algorithm", which iteratively chooses a protein by how many peptides it can account for. For instance, if a protein can account for 4 unaccounted-for peptides, this is superior to a protein that would only account for 2 peptides.  If two proteins have the same number of unaccounted-for peptides in the given iteration, the protein with the most total peptides is added. The loop continues until all peptides are accounted for.
+* Any protein that is indistinguishable (i.e., has the same set of peptides) from a protein in the resulting parsimonious list is added to that protein's group.
+* Protein groups are scored by summing the scores of all peptides below 1% FDR belonging to that group (ignoring duplicate base sequences and PTMs). Peptides below 1% FDR are not displayed in the protein groups list.
+
+### G-PTM-D
+
+Indistinguishable peptides, i.e. peptides that have ambuguous protein assignments, are not assigned localizeable modifications by the G-PTM-D procedure. 
+
+### Requirements
+
 The following files must be present in the folder with the executable. If not, they are automatically downloaded (to update a file to a newer version, delete it, and the application will download a new version). This is the only network usage by the application. 
 
 * uniprot.xml: A UniProt reference database in .xml format
@@ -42,10 +54,10 @@ The following files must be present in the folder with the executable. If not, t
 
 * for thermo .RAW files: [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader)
 
-###System Requirements and Usage
-- 8 GB of RAM is recommended
+### System Requirements and Usage
+- X GB of RAM is recommended
 
-###References
+### References
 
 * [Global Post-translational Modification Discovery--J. Proteome Res., 2016 Just Accepted](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
 

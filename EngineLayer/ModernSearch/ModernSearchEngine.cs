@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using Spectra;
 using System;
 using System.Collections.Concurrent;
@@ -24,7 +25,7 @@ namespace EngineLayer.ModernSearch
 
         private readonly float[] keys;
 
-        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile;
+        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile;
 
         private readonly List<CompactPeptide> peptideIndex;
 
@@ -34,7 +35,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes)
         {
             this.myMSDataFile = myMSDataFile;
             this.peptideIndex = peptideIndex;
@@ -180,7 +181,7 @@ namespace EngineLayer.ModernSearch
             return false;
         }
 
-        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, double[] peptideScores)
+        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
         {
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {

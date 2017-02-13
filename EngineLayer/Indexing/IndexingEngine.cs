@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +21,9 @@ namespace EngineLayer.Indexing
 
         private readonly Protease protease;
 
-        private readonly List<MetaMorpheusModification> fixedModifications;
-        private readonly List<MetaMorpheusModification> variableModifications;
-        private readonly List<MetaMorpheusModification> localizeableModifications;
+        private readonly List<ModificationWithMass> fixedModifications;
+        private readonly List<ModificationWithMass> variableModifications;
+        private readonly List<ModificationWithMass> localizeableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
@@ -31,7 +32,7 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -89,7 +90,7 @@ namespace EngineLayer.Indexing
                         if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
                             continue;
 
-                        if (peptide.OneBasedPossibleLocalizedModifications.Count == 0)
+                        if (peptide.numLocMods == 0)
                         {
                             lock (level3_observed)
                             {
@@ -101,10 +102,10 @@ namespace EngineLayer.Indexing
                             }
                         }
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
+                            if (peptide.numLocMods > 0)
                             {
                                 lock (level4_observed)
                                 {

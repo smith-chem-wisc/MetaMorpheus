@@ -1,6 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-
+using MzLibUtil;
 using Spectra;
 using System.Collections.Generic;
 using System.Globalization;
@@ -20,7 +20,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PsmWithMultiplePossiblePeptides(PsmParent newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile, List<ProductType> lp)
+        public PsmWithMultiplePossiblePeptides(PsmParent newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, List<ProductType> lp)
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
@@ -29,7 +29,7 @@ namespace EngineLayer
 
             var representative = peptidesWithSetModifications.First();
 
-            IMsDataScan<IMzSpectrum<MzPeak>> theScan;
+            IMsDataScan<IMzSpectrum<IMzPeak>> theScan;
             if (myMsDataFile != null && newPsm.matchedIonsList == null)
             {
                 theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
@@ -179,7 +179,7 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal static double MatchIons(IMsDataScan<IMzSpectrum<MzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesList)
+        internal static double MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesList)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)

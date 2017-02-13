@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -188,7 +189,7 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void ScoreThisProteinGroup(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public void ScoreThisProteinGroup(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             // find the best psm per base sequence (peptide FDR must be <1%) for scoring
             Dictionary<string, NewPsmWithFdr> peptideBaseSeqToBestPsmMatching = new Dictionary<string, NewPsmWithFdr>();

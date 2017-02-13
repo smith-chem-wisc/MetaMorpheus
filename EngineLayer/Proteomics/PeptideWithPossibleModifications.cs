@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,30 +8,30 @@ namespace EngineLayer
     public class PeptideWithPossibleModifications : Peptide
     {
 
-        private readonly Dictionary<int, MetaMorpheusModification> thisDictionaryOfFixedMods;
+        private readonly Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods;
         #region Public Constructors
 
-        public PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<MetaMorpheusModification> allKnownFixedModifications)
+        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications)
             : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
         {
-            OneBasedPossibleLocalizedModifications = Protein.OneBasedPossibleLocalizedModifications.Where(ok => ok.Key >= OneBasedStartResidueInProtein && ok.Key <= OneBasedEndResidueInProtein).ToDictionary(ok => ok.Key - OneBasedStartResidueInProtein + 1, ok => ok.Value);
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
             thisDictionaryOfFixedMods = AddFixedMods(allKnownFixedModifications);
+            this.numLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public Dictionary<int, List<MetaMorpheusModification>> OneBasedPossibleLocalizedModifications { get; private set; }
         public int MissedCleavages { get; private set; }
+        public int numLocMods { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public IEnumerable<PeptideWithSetModifications> GetPeptideWithSetModifications(List<MetaMorpheusModification> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide)
+        public IEnumerable<PeptideWithSetModifications> GetPeptidesWithSetModifications(List<ModificationWithMass> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide)
         {
             var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsCollection>(Length + 4);
 
@@ -40,22 +41,17 @@ namespace EngineLayer
             var pep_c_term_variable_mods = new UniqueModificationsCollection();
             two_based_possible_variable_and_localizeable_modifications.Add(Length + 2, pep_c_term_variable_mods);
 
-            foreach (MetaMorpheusModification variable_modification in variableModifications)
+            foreach (ModificationWithMass variable_modification in variableModifications)
             {
-                if (variable_modification.ThisModificationType == ModificationType.ProteinNTerminus && (OneBasedStartResidueInProtein == 1 || (OneBasedStartResidueInProtein == 2 && Protein[0] == 'M'))
-                    && (variable_modification.AminoAcid == char.MinValue || this[0] == variable_modification.AminoAcid))
-                {
+                // Check if can be a n-term mod
+                if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length)
+                    && (variable_modification.position == ModificationSites.NProt || variable_modification.position == ModificationSites.NPep))
                     pep_n_term_variable_mods.Add(variable_modification);
-                }
-
-                if (variable_modification.ThisModificationType == ModificationType.PeptideNTerminus && (variable_modification.AminoAcid == char.MinValue || this[0] == variable_modification.AminoAcid))
-                {
-                    pep_n_term_variable_mods.Add(variable_modification);
-                }
 
                 for (int r = 0; r < Length; r++)
                 {
-                    if (variable_modification.ThisModificationType == ModificationType.AminoAcidResidue && this[r] == variable_modification.AminoAcid)
+                    if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, r + 1, this.Length, this.OneBasedStartResidueInProtein + r, this.Protein.Length)
+                        && variable_modification.position == ModificationSites.Any)
                     {
                         UniqueModificationsCollection residue_variable_mods;
                         if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
@@ -65,85 +61,61 @@ namespace EngineLayer
                             two_based_possible_variable_and_localizeable_modifications.Add(r + 2, residue_variable_mods);
                         }
                         else
-                        {
                             residue_variable_mods.Add(variable_modification);
-                        }
                     }
                 }
-
-                if (variable_modification.ThisModificationType == ModificationType.PeptideCTerminus && (variable_modification.AminoAcid == char.MinValue || this[Length - 1] == variable_modification.AminoAcid))
-                {
+                // Check if can be a c-term mod
+                if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1, this.Protein.Length)
+                    && (variable_modification.position == ModificationSites.ProtC || variable_modification.position == ModificationSites.PepC))
                     pep_c_term_variable_mods.Add(variable_modification);
-                }
-
-                if (variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && (OneBasedEndResidueInProtein == Protein.Length)
-                    && (variable_modification.AminoAcid == char.MinValue || this[Length - 1] == variable_modification.AminoAcid))
-                {
-                    pep_c_term_variable_mods.Add(variable_modification);
-                }
             }
 
             // LOCALIZED MODS
-            if (OneBasedPossibleLocalizedModifications != null)
+            foreach (var kvp in this.Protein.OneBasedPossibleLocalizedModifications)
             {
-                foreach (KeyValuePair<int, List<MetaMorpheusModification>> kvp in OneBasedPossibleLocalizedModifications)
+                if (kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein)
                 {
-                    foreach (MetaMorpheusModification variable_modification in kvp.Value)
+                    int locInPeptide = kvp.Key - OneBasedStartResidueInProtein + 1;
+                    foreach (Modification modMaybeWithMass in kvp.Value)
                     {
-                        if (((variable_modification.ThisModificationType == ModificationType.ProteinNTerminus && !Protein.IsDecoy) ||
-                            (variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && Protein.IsDecoy))
-                            && (OneBasedStartResidueInProtein == 1 || (OneBasedStartResidueInProtein == 2 && Protein[0] == 'M'))
-                            && kvp.Key == 1)
+                        ModificationWithMass variable_modification = modMaybeWithMass as ModificationWithMass;
+                        if (variable_modification != null)
                         {
-                            pep_n_term_variable_mods.Add(variable_modification);
-                        }
+                            // Check if can be a n-term mod
+                            if (locInPeptide == 1
+                                && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length)
+                                && (variable_modification.position == ModificationSites.NProt || variable_modification.position == ModificationSites.NPep))
+                                pep_n_term_variable_mods.Add(variable_modification);
 
-                        if (((variable_modification.ThisModificationType == ModificationType.PeptideNTerminus && !Protein.IsDecoy) ||
-                            (variable_modification.ThisModificationType == ModificationType.PeptideCTerminus && Protein.IsDecoy))
-                            && kvp.Key == 1)
-                        {
-                            pep_n_term_variable_mods.Add(variable_modification);
-                        }
-
-                        for (int r = 1; r <= Length; r++)
-                        {
-                            if (variable_modification.ThisModificationType == ModificationType.AminoAcidResidue
-                                && kvp.Key == r)
+                            for (int r = 0; r < Length; r++)
                             {
-                                UniqueModificationsCollection residue_variable_mods;
-                                if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 1, out residue_variable_mods))
+                                if (locInPeptide == r + 1
+                                    && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, r + 1, this.Length, this.OneBasedStartResidueInProtein + r, this.Protein.Length)
+                                    && variable_modification.position == ModificationSites.Any)
                                 {
-                                    residue_variable_mods = new UniqueModificationsCollection();
-                                    residue_variable_mods.Add(variable_modification);
-                                    two_based_possible_variable_and_localizeable_modifications.Add(r + 1, residue_variable_mods);
-                                }
-                                else
-                                {
-                                    residue_variable_mods.Add(variable_modification);
+                                    UniqueModificationsCollection residue_variable_mods;
+                                    if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
+                                    {
+                                        residue_variable_mods = new UniqueModificationsCollection();
+                                        residue_variable_mods.Add(variable_modification);
+                                        two_based_possible_variable_and_localizeable_modifications.Add(r + 2, residue_variable_mods);
+                                    }
+                                    else
+                                        residue_variable_mods.Add(variable_modification);
                                 }
                             }
-                        }
-
-                        if (((variable_modification.ThisModificationType == ModificationType.PeptideCTerminus && !Protein.IsDecoy) ||
-                            (variable_modification.ThisModificationType == ModificationType.PeptideNTerminus && Protein.IsDecoy))
-                            && kvp.Key == Length)
-                        {
-                            pep_c_term_variable_mods.Add(variable_modification);
-                        }
-
-                        if (((variable_modification.ThisModificationType == ModificationType.ProteinCTerminus && !Protein.IsDecoy) ||
-                            (variable_modification.ThisModificationType == ModificationType.ProteinNTerminus && Protein.IsDecoy))
-                            && (OneBasedEndResidueInProtein == Protein.Length)
-                            && kvp.Key == Length)
-                        {
-                            pep_c_term_variable_mods.Add(variable_modification);
+                            // Check if can be a c-term mod
+                            if (locInPeptide == Length
+                                && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1, this.Protein.Length)
+                                && (variable_modification.position == ModificationSites.ProtC || variable_modification.position == ModificationSites.PepC))
+                                pep_c_term_variable_mods.Add(variable_modification);
                         }
                     }
                 }
             }
 
             int variable_modification_isoforms = 0;
-            foreach (Dictionary<int, MetaMorpheusModification> kvp in GetVariableModificationPatterns(two_based_possible_variable_and_localizeable_modifications, maxModsForPeptide))
+            foreach (Dictionary<int, ModificationWithMass> kvp in GetVariableModificationPatterns(two_based_possible_variable_and_localizeable_modifications, maxModsForPeptide))
             {
                 foreach (var ok in thisDictionaryOfFixedMods)
                     if (!kvp.ContainsKey(ok.Key))
@@ -159,7 +131,7 @@ namespace EngineLayer
 
         #region Protected Methods
 
-        protected IEnumerable<Dictionary<int, MetaMorpheusModification>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsCollection> possibleVariableModifications, int maxModsForPeptide)
+        protected IEnumerable<Dictionary<int, ModificationWithMass>> GetVariableModificationPatterns(Dictionary<int, UniqueModificationsCollection> possibleVariableModifications, int maxModsForPeptide)
         {
             if (possibleVariableModifications.Count == 0)
             {
@@ -227,9 +199,9 @@ namespace EngineLayer
             }
         }
 
-        private static Dictionary<int, MetaMorpheusModification> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications)
+        private static Dictionary<int, ModificationWithMass> GetNewVariableModificationPattern(int[] variableModificationArray, IEnumerable<KeyValuePair<int, UniqueModificationsCollection>> possibleVariableModifications)
         {
-            var modification_pattern = new Dictionary<int, MetaMorpheusModification>();
+            var modification_pattern = new Dictionary<int, ModificationWithMass>();
 
             foreach (KeyValuePair<int, UniqueModificationsCollection> kvp in possibleVariableModifications)
             {
@@ -242,33 +214,27 @@ namespace EngineLayer
             return modification_pattern;
         }
 
-        private Dictionary<int, MetaMorpheusModification> AddFixedMods(IEnumerable<MetaMorpheusModification> allKnownFixedModifications)
+        private Dictionary<int, ModificationWithMass> AddFixedMods(IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
-            var allModsOneIsNterminus = new Dictionary<int, MetaMorpheusModification>(Length + 3);
-            foreach (MetaMorpheusModification mod in allKnownFixedModifications)
+            var allModsOneIsNterminus = new Dictionary<int, ModificationWithMass>(Length + 3);
+            foreach (ModificationWithMass mod in allKnownFixedModifications)
             {
-                switch (mod.ThisModificationType)
+                switch (mod.position)
                 {
-                    case ModificationType.ProteinNTerminus:
-                        if ((OneBasedStartResidueInProtein == 1 || OneBasedStartResidueInProtein == 2) && (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[0])))
+                    case ModificationSites.NProt:
+                    case ModificationSites.NPep:
+                        if (Gptmd.GptmdEngine.ModFits(mod, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length))
                             allModsOneIsNterminus[1] = mod;
                         break;
-                    case ModificationType.PeptideNTerminus:
-                        if (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[0]))
-                            allModsOneIsNterminus[1] = mod;
-                        break;
-                    case ModificationType.AminoAcidResidue:
+                    case ModificationSites.Any:
                         for (int i = 2; i <= Length + 1; i++)
-                            if (mod.AminoAcid.Equals(this[i - 2]) || mod.AminoAcid.Equals('\0'))
+                            if (Gptmd.GptmdEngine.ModFits(mod, this.Protein.BaseSequence, i - 1, this.Length, this.OneBasedStartResidueInProtein + i - 2, this.Protein.Length))
                                 allModsOneIsNterminus[i] = mod;
                         break;
-                    case ModificationType.PeptideCTerminus:
-                        if (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[Length - 1]))
-                            allModsOneIsNterminus[Length + 2] = mod;
-                        break;
-                    case ModificationType.ProteinCTerminus:
-                        if (OneBasedEndResidueInProtein == Protein.Length && (mod.AminoAcid.Equals('\0') || mod.AminoAcid.Equals(this[Length - 1])))
-                            allModsOneIsNterminus[Length + 2] = mod;
+                    case ModificationSites.PepC:
+                    case ModificationSites.ProtC:
+                        if (Gptmd.GptmdEngine.ModFits(mod, this.Protein.BaseSequence, this.Length, this.Length, this.OneBasedStartResidueInProtein + this.Length - 1, this.Protein.Length))
+                            allModsOneIsNterminus[this.Length + 2] = mod;
                         break;
                 }
             }
@@ -279,16 +245,16 @@ namespace EngineLayer
 
         #region Protected Classes
 
-        protected class UniqueModificationsCollection : List<MetaMorpheusModification>
+        protected class UniqueModificationsCollection : List<ModificationWithMass>
         {
 
             #region Internal Methods
 
-            internal new void Add(MetaMorpheusModification mod)
+            internal new void Add(ModificationWithMass mod)
             {
-                foreach (MetaMorpheusModification modHere in this)
+                foreach (ModificationWithMass modHere in this)
                 {
-                    if (Math.Abs(modHere.PrecursorMassShift - mod.PrecursorMassShift) < 0.001)
+                    if (Math.Abs(modHere.monoisotopicMass - mod.monoisotopicMass) < 0.001 && Math.Abs(modHere.neutralLoss - mod.neutralLoss) < 0.001)
                     {
                         return;
                     }

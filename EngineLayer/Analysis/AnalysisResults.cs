@@ -26,30 +26,28 @@ namespace EngineLayer.Analysis
 
         #region Protected Properties
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
+
+            var check = ProteinGroups.Where(s => s != null);
+            if (check.Any())
             {
-                var sb = new StringBuilder();
-                sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
-
-                var check = ProteinGroups.Where(s => s != null);
-                if (check.Any())
+                var numProteinsList = new List<int>();
+                for (int i = 0; i < ProteinGroups.Length; i++)
                 {
-                    var numProteinsList = new List<int>(); 
-                    for(int i = 0; i < ProteinGroups.Length; i++)
-                    {
-                        if (ProteinGroups[i] == null)
-                            numProteinsList.Add(0);
-                        else
-                            numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
-                    }
-
-                    sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", numProteinsList));
+                    if (ProteinGroups[i] == null)
+                        numProteinsList.Add(0);
+                    else
+                        numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
                 }
 
-                return sb.ToString();
+                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", numProteinsList));
             }
+
+            return sb.ToString();
         }
 
         #endregion Protected Properties

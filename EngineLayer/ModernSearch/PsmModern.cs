@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics;
+using System.Collections.Generic;
 
 namespace EngineLayer.ModernSearch
 {
@@ -22,7 +23,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public override CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             return compactPeptide;
         }

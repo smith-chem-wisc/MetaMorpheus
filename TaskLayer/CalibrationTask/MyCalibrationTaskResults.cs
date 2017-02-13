@@ -14,14 +14,12 @@ namespace TaskLayer
         #endregion Public Constructors
 
         #region Protected Properties
-
-        protected override string StringForOutput
+        
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            return sb.ToString();
         }
 
         #endregion Protected Properties
