@@ -76,7 +76,7 @@ namespace TaskLayer
 
         protected override MyResults RunSpecific()
         {
-            MyTaskResults myTaskResults = new MyCalibrationTaskResults(this);
+            var myTaskResults = new MyCalibrationTaskResults(this);
             myTaskResults.newSpectra = new List<string>();
             var currentRawFileList = rawDataFilenameList;
 
@@ -91,15 +91,14 @@ namespace TaskLayer
             allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...");
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b=>b is ModificationWithMass).Select(b=>b as ModificationWithMass).ToList();
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
             List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
             List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
 
             Status("Loading proteins...");
-           var allKnownModifications = GetDict(localizeableModifications);
+            var allKnownModifications = GetDict(localizeableModifications);
             Dictionary<string, Modification> um;
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
-
 
             List<ProductType> lp = new List<ProductType>();
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
@@ -119,7 +118,7 @@ namespace TaskLayer
                 var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
                 var origDataFileName = currentRawFileList[spectraFileIndex];
                 LocalMS2Scan[] listOfSortedms2Scans;
-                IMsDataFile < IMsDataScan < IMzSpectrum < IMzPeak >>> myMsDataFile;
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 lock (myTaskResults)
                 {
                     StartingDataFile(origDataFileName);

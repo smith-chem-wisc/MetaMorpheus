@@ -41,7 +41,7 @@ namespace TaskLayer
 
         #region Protected Constructors
 
-        protected MetaMorpheusTask() : base(1)
+        protected MetaMorpheusTask()
         {
         }
 
@@ -103,16 +103,34 @@ namespace TaskLayer
                 file.Write(ToString());
             }
             SucessfullyFinishedWritingFile(paramsFileName);
-            var heh = base.Run();
-            var resultsFileName = Path.Combine(OutputFolder, "results.txt");
-            using (StreamWriter file = new StreamWriter(resultsFileName))
+            try
             {
-                file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
-                file.Write(heh.ToString());
+                var heh = base.Run();
+                var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                    file.Write(heh.ToString());
+                }
+                SucessfullyFinishedWritingFile(resultsFileName);
+                finishedSingleTask();
+                return heh;
             }
-            SucessfullyFinishedWritingFile(resultsFileName);
-            finishedSingleTask();
-            return heh;
+            catch (Exception e)
+            {
+                var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+                using (StreamWriter file = new StreamWriter(resultsFileName))
+                {
+                    file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                    file.Write("e: " + e);
+                    file.Write("e.Message: " + e.Message);
+                    file.Write("e.InnerException: " + e.InnerException);
+                    file.Write("e.Source: " + e.Source);
+                    file.Write("e.StackTrace: " + e.StackTrace);
+                    file.Write("e.TargetSite: " + e.TargetSite);
+                }
+                throw e;
+            }
         }
 
         public override string ToString()

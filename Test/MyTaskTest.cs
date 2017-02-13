@@ -54,14 +54,14 @@ namespace Test
             Assert.AreEqual(2, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
-            var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
 
             Assert.AreEqual(2, setList1.Count);
 
             PeptideWithSetModifications pepWithSetMods1 = setList1[0];
 
             PeptideWithPossibleModifications modPep2 = digestedList[1];
-            var setList2 = modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList2 = modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
 
             Assert.AreEqual(1, setList2.Count);
 
@@ -75,7 +75,7 @@ namespace Test
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
-            var setList3 = modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
             Assert.AreEqual(4, setList3.Count);
             Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
 
