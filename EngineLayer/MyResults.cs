@@ -22,10 +22,7 @@ namespace EngineLayer
         #endregion Protected Constructors
 
         #region Protected Properties
-
         protected MyEngine MyEngine { get; private set; }
-
-        protected abstract string StringForOutput { get; }
 
         #endregion Protected Properties
 
@@ -34,22 +31,8 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            if (MyEngine.Level <= 1)
-            {
-                sb.AppendLine(GetType().Name + ":");
-                var ok = StringForOutput;
-                if (!string.IsNullOrEmpty(ok))
-                    sb.AppendLine(ok);
-                sb.AppendLine("\tTime to run: " + Time);
-            }
-            else
-            {
-                sb.AppendLine("\t" + GetType().Name + ":");
-                var ok = StringForOutput;
-                if (!string.IsNullOrEmpty(ok))
-                    sb.AppendLine(ok);
-                sb.Append("\t\tTime to run: " + Time);
-            }
+            sb.AppendLine(GetType().Name);
+            sb.Append("Time to run: " + Time);
             return sb.ToString();
         }
 

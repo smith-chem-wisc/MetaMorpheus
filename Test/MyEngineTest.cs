@@ -28,7 +28,7 @@ namespace Test
 
             #region Public Constructors
 
-            public TestEngine(int level) : base(level)
+            public TestEngine(int level)
             {
             }
 
@@ -58,14 +58,12 @@ namespace Test
 
                 #region Protected Properties
 
-                protected override string StringForOutput
+                public override string ToString()
                 {
-                    get
-                    {
-                        var sb = new StringBuilder();
-                        sb.Append("String for the TestResults results class");
-                        return sb.ToString();
-                    }
+                    var sb = new StringBuilder();
+                    sb.AppendLine(base.ToString());
+                    sb.Append("String for the TestResults results class");
+                    return sb.ToString();
                 }
 
                 #endregion Protected Properties

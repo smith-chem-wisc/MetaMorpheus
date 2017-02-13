@@ -24,15 +24,13 @@ namespace EngineLayer.Indexing
 
         #region Protected Properties
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
-                sb.Append("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
+            sb.Append("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
+            return sb.ToString();
         }
 
         #endregion Protected Properties
