@@ -2,7 +2,7 @@ Custom Modifications
 ID   Met loss + Acetylation at N-terminus
 FT   MOD_RES
 TG   Methionine
-PP   Peptide N-terminal.
+PP   N-terminal.
 MM   -89.02992
 CF   H-7 C-3 N-1 S-1
 //
@@ -28,13 +28,6 @@ PP   Anywhere.
 MM   -30.010565
 CF   H-2 C-1 O-1
 //
-ID   Water loss from E at peptide N-Term
-FT   MOD_RES
-TG   Glutamate
-PP   Peptide N-terminal.
-MM   -18.010565
-CF   H-2 O-1
-//
 ID   Water loss from D
 FT   MOD_RES
 TG   Aspartate
@@ -42,24 +35,10 @@ PP   Anywhere.
 MM   -18.010565
 CF   H-2 O-1
 //
-ID   Ammonia loss from peptide N-term Q
-FT   MOD_RES
-TG   Glutamine
-PP   Peptide N-terminal.
-MM   -17.02655
-CF   H-3 N-1
-//
 ID   Ammonia loss from N
 FT   MOD_RES
 TG   Asparagine
 PP   Anywhere.
-MM   -17.02655
-CF   H-3 N-1
-//
-ID   Ammonia loss from peptide N-term C
-FT   MOD_RES
-TG   Cysteine
-PP   Peptide N-terminal.
 MM   -17.02655
 CF   H-3 N-1
 //
@@ -91,13 +70,6 @@ PP   Anywhere.
 MM   3.994915
 CF   C-1 O1
 //
-ID   Carbon Adduct at peptide n terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   12
-CF   C1
-//
 ID   Proline Oxidation to pyroglutamic acid
 FT   MOD_RES
 TG   Proline
@@ -111,13 +83,6 @@ TG   Tryptophan
 PP   Anywhere.
 MM   13.979265
 CF   H-2 O1
-//
-ID   Methylation of any N terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   14.015650
-CF   H2 C
 //
 ID   Methylation of H
 FT   MOD_RES
@@ -203,36 +168,6 @@ PP   Anywhere.
 MM   19.989829
 CF   C-1 O2
 //
-ID   Sodium Adduct to D
-FT   MOD_RES
-TG   Aspartate
-PP   Anywhere.
-MM   21.981943
-AL   5.987028
-CF   H-1 Na1
-//
-ID   Sodium Adduct to E
-FT   MOD_RES
-TG   Glutamate
-PP   Anywhere.
-MM   21.981943
-AL   5.987028
-CF   H-1 Na1
-//
-ID   Acetaldehyde of peptide N-Terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   26.01565
-CF   H2 C2
-//
-ID   Formylation of peptide N-terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   27.994915
-CF   C1 O1
-//
 ID   DiMethylation of K
 FT   MOD_RES
 TG   Lysine
@@ -261,20 +196,6 @@ PP   Anywhere.
 MM   31.989829
 CF   O2
 //
-ID   Calcium Adduct to D
-FT   MOD_RES
-TG   Aspartate
-PP   Anywhere.
-MM   37.946941
-CF   H-2 Ca1
-//
-ID   Calcium Adduct to E
-FT   MOD_RES
-TG   Glutamate
-PP   Anywhere.
-MM   37.946941
-CF   H-2 Ca1
-//
 ID   Acetylation of Lysine
 FT   MOD_RES
 TG   Lysine
@@ -297,13 +218,6 @@ PP   Anywhere.
 MM   42.046950
 CF   H6 C3
 //
-ID   Carbamylation of any N-terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   43.005814
-CF   H1 C1 N1 O1
-//
 ID   Trioxidation of C
 FT   MOD_RES
 TG   Cysteine
@@ -318,34 +232,6 @@ TG   Lysine
 PP   Anywhere.
 MM   57.021464
 CF   H3 C2 N1 O1
-//
-ID   Carbamidomethylation of any N-terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   57.021464
-CF   H3 C2 N1 O1
-//
-ID   Carboxymethyl at any N-Terminus
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   58.005479
-CF   H2 C2 O2
-//
-ID   Zinc Adduct to D
-FT   MOD_RES
-TG   Aspartate
-PP   Anywhere.
-MM   61.913495
-CF   H-2 Zn1
-//
-ID   Zinc Adduct to E
-FT   MOD_RES
-TG   Glutamate
-PP   Anywhere.
-MM   61.913495
-CF   H-2 Zn1
 //
 ID   Sulfonation of S
 FT   MOD_RES
@@ -416,20 +302,6 @@ PP   Anywhere.
 MM   79.966331
 CF   H1 O3 P1
 //
-ID   Addition of Lysine
-FT   MOD_RES
-TG   Any
-PP   Peptide C-terminal.
-MM   128.09496
-CF   C6 H12 N2 O1
-//
-ID   Addition of Lysine
-FT   MOD_RES
-TG   Any
-PP   Peptide N-terminal.
-MM   128.09496
-CF   C6 H12 N2 O1
-//
 ID   Acetylation+Methionine
 FT   MOD_RES
 TG   Any
@@ -441,140 +313,51 @@ ID   Farnesylation
 FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
+FM   0 or 204.187801
 MM   204.187801
 OM   147.166337
 CF   H24 C15
-//
-ID   Labile Farnesylation
-FT   MOD_RES
-TG   Cysteine
-PP   Anywhere.
-FM   0
-MM   204.187801
-OM   147.166337
-CF   H24 C15
-//
-ID   Labile Myristoylation
-FT   MOD_RES
-TG   Glycine
-PP   N-terminal.
-FM   0
-MM   210.198366
-CF   H26 C14 O1
-//
-ID   Labile Myristoylation
-FT   MOD_RES
-TG   Lysine
-PP   Anywhere.
-FM   0
-MM   210.198366
-CF   H26 C14 O1
-//
-ID   Labile Myristoylation
-FT   MOD_RES
-TG   Cysteine
-PP   Anywhere.
-FM   0
-MM   210.198366
-OM   153.176902
-CF   H26 C14 O1
 //
 ID   Myristoylation
 FT   MOD_RES
 TG   Glycine
 PP   N-terminal.
+FM   0 or 210.198366
 MM   210.198366
 CF   H26 C14 O1
 //
 ID   Myristoylation
 FT   MOD_RES
-TG   Lysine
+TG   K
 PP   Anywhere.
+FM   0 or 210.198366
 MM   210.198366
 CF   H26 C14 O1
 //
-ID   Myristoylation
+ID   Myristoylation of C
 FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
+FM   0 or 210.198366
 MM   210.198366
 OM   153.176902
 CF   H26 C14 O1
 //
-ID   Palmitoylation
+ID   Palmitoylation of C
 FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
-MM   238.229666
+FM   0 or 238.229666
 OM   181.208202
-CF   H30 C16 O1
-//
-ID   Palmitoylation
-FT   MOD_RES
-TG   Lysine
-PP   Anywhere.
 MM   238.229666
 CF   H30 C16 O1
 //
 ID   Palmitoylation
 FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Palmitoylation
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Palmitoylation
-FT   MOD_RES
-TG   Any
-PP   N-terminal.
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Labile Palmitoylation
-FT   MOD_RES
-TG   Cysteine
+TG   K or S or T
 OM   181.208202
 PP   Anywhere.
-FM   0
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Labile Palmitoylation
-FT   MOD_RES
-TG   Lysine
-PP   Anywhere.
-FM   0
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Labile Palmitoylation
-FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-FM   0
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Labile Palmitoylation
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-FM   0
-MM   238.229666
-CF   H30 C16 O1
-//
-ID   Labile Palmitoylation
-FT   MOD_RES
-TG   Any
-PP   N-terminal.
-FM   0
+FM   0 or 238.229666
 MM   238.229666
 CF   H30 C16 O1
 //

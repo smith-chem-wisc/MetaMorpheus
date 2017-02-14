@@ -8,6 +8,16 @@
         Title="MetaMorpheus Not a release" Height="730" Width="1024"
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinWidth="600">
     <StackPanel Margin="5">
+        <Menu x:Name="menu">
+            <MenuItem Header="Databases">
+                <MenuItem Header="External Databases" />
+                <MenuItem Header="Custom Modification Databases" />
+            </MenuItem>
+            <MenuItem Header="Help">
+                <MenuItem Header="View Help"/>
+                <MenuItem Header="About MetaMorpheus"/>
+            </MenuItem>
+        </Menu>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
@@ -86,7 +96,7 @@
             <Border BorderBrush="Black" BorderThickness="2" Grid.Row="1" Margin="5">
                 <StackPanel x:Name="OutputFilesStackPanel" Margin="5">
                     <Label x:Name="outputFilesLabel" Content="Output Files" HorizontalAlignment="Center" />
-                    <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
+                    <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
                         <DataGrid.Resources>
                             <Style TargetType="DataGridCell">
                                 <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />

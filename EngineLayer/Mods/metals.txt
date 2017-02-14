@@ -1,0 +1,23 @@
+Metals
+ID   Sodium
+FT   MOD_RES
+TG   D or E
+PP   Anywhere.
+MM   21.981943
+AL   5.987028
+CF   H-1 Na1
+//
+ID   Calcium
+FT   MOD_RES
+TG   D or E
+PP   Anywhere.
+MM   37.946941
+CF   H-2 Ca1
+//
+ID   Zinc
+FT   MOD_RES
+TG   D or E
+PP   Anywhere.
+MM   61.913495
+CF   H-2 Zn1
+//

@@ -2,8 +2,6 @@
 using EngineLayer;
 using IO.MzML;
 using MassSpectrometry;
-
-using Spectra;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,6 +80,35 @@ namespace Test
             Scans.Add(new TestScanWithPrecursor(2, 2, MassSpectrum2, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1));
         }
 
+        public TestDataFile(PeptideWithSetModifications pepWithSetMods, string v)
+        {
+            if (v.Equals("quadratic"))
+            {
+                // Add three ms1 peaks with charge 2, exact
+                var MassSpectrum1 = new MzmlMzSpectrum(new double[] { pepWithSetMods.MonoisotopicMass.ToMz(2), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(2), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(2) }, new double[] { 1, 1, 1 }, false);
+
+                List<double> mz2 = new List<double>();
+                List<double> intensities2 = new List<double>();
+                foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+                {
+                    var t1 = aok.ToMz(1);
+                    var c = 0.0000001;
+                    mz2.Add(t1 + c * Math.Pow(t1, 2));
+
+                    Console.WriteLine("orig: " + aok.ToMz(1) + " new: " + (t1 + c * Math.Pow(t1, 2)));
+
+                    var t2 = (aok + 1.003).ToMz(1);
+                    mz2.Add(t2 + c * Math.Pow(t2, 2));
+                    intensities2.Add(1);
+                    intensities2.Add(1);
+                }
+                var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
+
+                Scans = new List<TestScan> { new TestScan(1, 1, MassSpectrum1, 1) ,
+                                             new TestScanWithPrecursor(2, 2, MassSpectrum2, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1)};
+            }
+        }
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -111,9 +138,6 @@ namespace Test
         }
 
         #endregion Public Properties
-
-        #region Public Methods
-
 
         //public IEnumerator<IMsDataScan<IMzSpectrum<IMzPeak>, IMzPeak>> GetEnumerator()
         //{
@@ -170,6 +194,8 @@ namespace Test
         //    throw new NotImplementedException();
         //}
 
+        #region Public Methods
+
         public TestScan GetOneBasedScan(int oneBasedScanNumber)
         {
             return Scans[oneBasedScanNumber - 1];
@@ -182,7 +208,6 @@ namespace Test
 
         public void LoadAllScansInMemory()
         {
-
         }
 
         public IEnumerator<TestScan> GetEnumerator()

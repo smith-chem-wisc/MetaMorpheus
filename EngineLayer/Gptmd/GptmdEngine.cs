@@ -1,6 +1,5 @@
 ﻿using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +32,36 @@ namespace EngineLayer.Gptmd
         }
 
         #endregion Public Constructors
+
+        #region Public Methods
+
+        public static bool ModFits(ModificationWithMass attemptToLocalize, string proteinBaseSequence, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, int proteinLength)
+        {
+            var motif = attemptToLocalize.motif.Motif;
+            // First find the capital letter...
+            var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
+
+            var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
+            var indexUp = 0;
+            // Look up starting at and including the capital letter
+            while (indexUp < motif.Length)
+            {
+                if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= proteinLength || (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(proteinBaseSequence[indexUp + proteinToMotifOffset])))
+                    return false;
+                indexUp++;
+            }
+            if (attemptToLocalize.position == ModificationSites.NProt && (proteinOneBasedIndex > 2))
+                return false;
+            if (attemptToLocalize.position == ModificationSites.NPep && peptideOneBasedIndex > 1)
+                return false;
+            if (attemptToLocalize.position == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
+                return false;
+            if (attemptToLocalize.position == ModificationSites.ProtC && proteinOneBasedIndex < proteinLength)
+                return false;
+            return true;
+        }
+
+        #endregion Public Methods
 
         #region Protected Methods
 
@@ -77,34 +106,7 @@ namespace EngineLayer.Gptmd
 
         #endregion Protected Methods
 
-
         #region Private Methods
-
-        public static bool ModFits(ModificationWithMass attemptToLocalize, string proteinBaseSequence, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, int proteinLength)
-        {
-            var motif = attemptToLocalize.motif.Motif;
-            // First find the capital letter...
-            var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
-
-            var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
-            var indexUp = 0;
-            // Look up starting at and including the capital letter
-            while (indexUp < motif.Length)
-            {
-                if (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(proteinBaseSequence[indexUp + proteinToMotifOffset]))
-                    return false;
-                indexUp++;
-            }
-            if (attemptToLocalize.position == ModificationSites.NProt && (proteinOneBasedIndex > 2))
-                return false;
-            if (attemptToLocalize.position == ModificationSites.NPep && peptideOneBasedIndex > 1)
-                return false;
-            if (attemptToLocalize.position == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
-                return false;
-            if (attemptToLocalize.position == ModificationSites.ProtC && proteinOneBasedIndex < proteinLength)
-                return false;
-            return true;
-        }
 
         private static IEnumerable<ModificationWithMass> GetMod(double scanPrecursorMass, double peptideMonoisotopicMass, bool isotopeErrors, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance)
         {

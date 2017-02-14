@@ -52,6 +52,21 @@ namespace Test
             Assert.IsTrue(res is CalibrationResults);
         }
 
+        [Test]
+        public static void TestQuadratic()
+        {
+            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, 0, false, false).Digest(new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null), 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
+
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
+
+            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.1);
+
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new TestParentSpectrumMatch(2, 2), new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y }));
+            thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
+
+            var res = new CalibrationEngine(myMsDataFile, 0, fragmentTolerance, new List<NewPsmWithFdr> { thePsmwithfdr }, 3, 2, 10, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y).Run();
+            Assert.IsTrue(res is CalibrationResults);
+        }
         #endregion Public Methods
 
     }

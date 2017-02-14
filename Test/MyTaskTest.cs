@@ -22,9 +22,11 @@ namespace Test
         {
             #region Setup tasks
 
-            ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                modListObservableCollection.Add(new ModList(modFile));
+            {
+                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadMods(modFile).ToList();
+                MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
+            }
 
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();

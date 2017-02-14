@@ -49,6 +49,8 @@ namespace TaskLayer
             ListOfModListsGptmd = new List<ModList> {
                 AllModLists.First(b => b.FileName.EndsWith("m.txt")),
                 AllModLists.First(b => b.FileName.EndsWith("glyco.txt")),
+                AllModLists.First(b => b.FileName.EndsWith("metals.txt")),
+                AllModLists.First(b => b.FileName.EndsWith("pt.txt"))
             };
 
             TaskType = MyTask.Gptmd;

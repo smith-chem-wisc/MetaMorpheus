@@ -17,10 +17,10 @@ namespace TaskLayer
 
         private string FullFileName;
 
-        public ModList(string modFile)
+        public ModList(string modFile, List<ModificationWithLocation> Mods)
         {
             this.FullFileName = modFile;
-            this.Mods = UsefulProteomicsDatabases.PtmListLoader.ReadMods(modFile).ToList();
+            this.Mods = Mods;
         }
 
         #endregion Private Fields

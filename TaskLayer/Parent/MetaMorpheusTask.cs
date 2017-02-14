@@ -28,15 +28,6 @@ namespace TaskLayer
 
         #endregion Public Fields
 
-        #region Public Constructors
-
-        static MetaMorpheusTask()
-        {
-            AllModLists = LoadMods().ToList();
-        }
-
-        #endregion Public Constructors
-
         #region Protected Constructors
 
         protected MetaMorpheusTask()
@@ -133,6 +124,13 @@ namespace TaskLayer
                 throw e;
             }
 #endif
+        }
+
+        public static void AddModList(ModList modList)
+        {
+            if (AllModLists == null)
+                AllModLists = new List<ModList>();
+            AllModLists.Add(modList);
         }
 
         public override string ToString()
@@ -259,12 +257,6 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
-
-        private static IEnumerable<ModList> LoadMods()
-        {
-            foreach (var modFile in Directory.GetFiles(@"Mods"))
-                yield return new ModList(modFile);
-        }
 
         private void finishedSingleTask()
         {
