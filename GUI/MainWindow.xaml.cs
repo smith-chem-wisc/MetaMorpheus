@@ -54,6 +54,12 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
 
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
+            {
+                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadMods(modFile).ToList();
+                MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
+            }
+
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MetaMorpheusTask.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             MetaMorpheusTask.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;

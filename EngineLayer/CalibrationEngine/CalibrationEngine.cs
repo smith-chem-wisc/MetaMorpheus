@@ -238,45 +238,77 @@ namespace EngineLayer.Calibration
             {
                 foreach (var transform in transforms)
                 {
-                    var ms1regressorLinear = new LinearCalibrationFunctionMathNet(transform);
-                    var ms2regressorLinear = new LinearCalibrationFunctionMathNet(transform);
-                    ms1regressorLinear.Train(trainList1);
-                    ms2regressorLinear.Train(trainList2);
-                    var MS1mse = ms1regressorLinear.getMSE(testList1);
-                    var MS2mse = ms2regressorLinear.getMSE(testList2);
-                    if (MS1mse < bestMS1MSE)
+                    Console.WriteLine("trying linear!");
+                    try
                     {
-                        bestMS1MSE = MS1mse;
-                        bestMS1predictor = ms1regressorLinear;
+                        var ms1regressorLinear = new LinearCalibrationFunctionMathNet(transform);
+                        ms1regressorLinear.Train(trainList1);
+                        var MS1mse = ms1regressorLinear.getMSE(testList1);
+                        if (MS1mse < bestMS1MSE)
+                        {
+                            bestMS1MSE = MS1mse;
+                            bestMS1predictor = ms1regressorLinear;
+                        }
                     }
-                    if (MS2mse < bestMS2MSE)
+                    catch
                     {
-                        bestMS2MSE = MS2mse;
-                        bestMS2predictor = ms2regressorLinear;
+                        Console.WriteLine("errored!");
+                    }
+
+                    try
+                    {
+                        var ms2regressorLinear = new LinearCalibrationFunctionMathNet(transform);
+                        ms2regressorLinear.Train(trainList2);
+                        var MS2mse = ms2regressorLinear.getMSE(testList2);
+                        if (MS2mse < bestMS2MSE)
+                        {
+                            bestMS2MSE = MS2mse;
+                            bestMS2predictor = ms2regressorLinear;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine("errored!");
                     }
                 }
                 foreach (var transform in transforms)
                 {
-                    var ms1regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
-                    var ms2regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
-                    ms1regressorQuadratic.Train(trainList1);
-                    ms2regressorQuadratic.Train(trainList2);
-                    var MS1mse = ms1regressorQuadratic.getMSE(testList1);
-                    var MS2mse = ms2regressorQuadratic.getMSE(testList2);
-                    if (MS1mse < bestMS1MSE)
+                    Console.WriteLine("trying quadratic!");
+                    try
                     {
-                        bestMS1MSE = MS1mse;
-                        bestMS1predictor = ms1regressorQuadratic;
+                        var ms1regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
+                        ms1regressorQuadratic.Train(trainList1);
+                        var MS1mse = ms1regressorQuadratic.getMSE(testList1);
+                        if (MS1mse < bestMS1MSE)
+                        {
+                            bestMS1MSE = MS1mse;
+                            bestMS1predictor = ms1regressorQuadratic;
+                        }
                     }
-                    if (MS2mse < bestMS2MSE)
+                    catch
                     {
-                        bestMS2MSE = MS2mse;
-                        bestMS2predictor = ms2regressorQuadratic;
+                        Console.WriteLine("errored!");
+                    }
+                    try
+                    {
+                        var ms2regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
+                        ms2regressorQuadratic.Train(trainList2);
+                        var MS2mse = ms2regressorQuadratic.getMSE(testList2);
+                        if (MS2mse < bestMS2MSE)
+                        {
+                            bestMS2MSE = MS2mse;
+                            bestMS2predictor = ms2regressorQuadratic;
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine("errored!");
                     }
                 }
             }
             catch (ArgumentException)
             {
+                Console.WriteLine("Errored!");
             }
 
             CalibrationFunction bestCf = new SeparateCalibrationFunction(bestMS1predictor, bestMS2predictor);
