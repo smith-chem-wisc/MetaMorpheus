@@ -401,9 +401,9 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                addSearchTaskButton.IsEnabled = false;
-                addCalibrateTaskButton.IsEnabled = false;
-                addGPTMDTaskButton.IsEnabled = false;
+                proteinDatabasesGroupBox.IsEnabled = false;
+                datafilesGroupBox.IsEnabled = false;
+                tasksGroupBox.IsEnabled = false;
 
                 statusLabel.Content = "Starting all tasks...";
                 outProgressBar.IsIndeterminate = true;
@@ -420,9 +420,9 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                addSearchTaskButton.IsEnabled = true;
-                addCalibrateTaskButton.IsEnabled = true;
-                addGPTMDTaskButton.IsEnabled = true;
+                proteinDatabasesGroupBox.IsEnabled = true;
+                datafilesGroupBox.IsEnabled = true;
+                tasksGroupBox.IsEnabled = true;
 
                 statusLabel.Content = "Finished all tasks!";
                 outProgressBar.IsIndeterminate = false;

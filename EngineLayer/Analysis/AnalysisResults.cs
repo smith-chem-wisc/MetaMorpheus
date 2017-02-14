@@ -24,13 +24,13 @@ namespace EngineLayer.Analysis
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
+            sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
 
             var check = ProteinGroups.Where(s => s != null);
             if (check.Any())
@@ -44,13 +44,13 @@ namespace EngineLayer.Analysis
                         numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
                 }
 
-                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", numProteinsList));
+                sb.Append("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));
             }
 
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

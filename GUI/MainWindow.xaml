@@ -28,7 +28,7 @@
                     <RowDefinition Height="1*" />
                     <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
-                <GroupBox Header="Protein Databases">
+                <GroupBox Header="Protein Databases" Name="proteinDatabasesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -47,7 +47,7 @@
                         </StackPanel>
                     </Grid>
                 </GroupBox>
-                <GroupBox Header="Datafiles" Grid.Row="1">
+                <GroupBox Header="Datafiles" Grid.Row="1"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -122,7 +122,7 @@
                     <RowDefinition Height="1*" />
                     <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
-                <GroupBox Header="Tasks">
+                <GroupBox Header="Tasks" Name="tasksGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20" />
@@ -183,7 +183,6 @@
                 <GroupBox Header="Status" Grid.Row="1">
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Top">
-                            <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
                             <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
                         </StackPanel>
                         <ProgressBar x:Name="outProgressBar" DockPanel.Dock="Top" Height="20"/>
