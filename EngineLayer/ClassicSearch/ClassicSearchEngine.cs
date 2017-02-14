@@ -1,6 +1,5 @@
 ﻿using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -98,8 +97,7 @@ namespace EngineLayer.ClassicSearch
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-
-                        if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
+                        if (peptide.Length <= 1)
                             continue;
 
                         if (peptide.numLocMods == 0)

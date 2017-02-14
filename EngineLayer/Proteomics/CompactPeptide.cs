@@ -13,11 +13,11 @@ namespace EngineLayer
 
         public readonly byte[] BaseSequence;
         public readonly ushort varMod1Type;
-        public readonly byte varMod1Loc;
+        public readonly ushort varMod1Loc;
         public readonly ushort varMod2Type;
-        public readonly byte varMod2Loc;
+        public readonly ushort varMod2Loc;
         public readonly ushort varMod3Type;
-        public readonly byte varMod3Loc;
+        public readonly ushort varMod3Loc;
         public float MonoisotopicMassIncludingFixedMods;
 
         #endregion Public Fields
@@ -43,7 +43,7 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod1Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (byte)oneBasedLoc;
+                        varMod1Loc = (ushort)oneBasedLoc;
                     }
                     else if (fixedModifications.Contains(mod))
                     {
@@ -51,7 +51,7 @@ namespace EngineLayer
                     else
                     {
                         varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (byte)oneBasedLoc;
+                        varMod1Loc = (ushort)oneBasedLoc;
                     }
                 }
                 else if (varMod2Type == 0)
@@ -60,7 +60,7 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod2Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (byte)oneBasedLoc;
+                        varMod2Loc = (ushort)oneBasedLoc;
                     }
                     else if (fixedModifications.Contains(mod))
                     {
@@ -68,7 +68,7 @@ namespace EngineLayer
                     else
                     {
                         varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (byte)oneBasedLoc;
+                        varMod2Loc = (ushort)oneBasedLoc;
                     }
                 }
                 else
@@ -77,7 +77,7 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod3Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (byte)oneBasedLoc;
+                        varMod3Loc = (ushort)oneBasedLoc;
                     }
                     else if (fixedModifications.Contains(mod))
                     {
@@ -85,7 +85,7 @@ namespace EngineLayer
                     else
                     {
                         varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (byte)oneBasedLoc;
+                        varMod3Loc = (ushort)oneBasedLoc;
                     }
                 }
             }
