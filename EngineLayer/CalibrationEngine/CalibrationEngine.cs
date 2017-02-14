@@ -130,6 +130,8 @@ namespace EngineLayer.Calibration
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
+                if (SequenceWithChemicalFormulas == null)
+                    continue;
                 int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
@@ -434,10 +436,8 @@ namespace EngineLayer.Calibration
                     {
                         break;
                     }
-                    if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
-                    {
-                    }
-                    else if (trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
+                    if ((trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
+                        || trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
                     {
                     }
                     else

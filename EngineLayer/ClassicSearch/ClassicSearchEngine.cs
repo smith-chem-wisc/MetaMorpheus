@@ -15,7 +15,6 @@ namespace EngineLayer.ClassicSearch
 
         private const int max_mods_for_peptide = 3;
 
-        private const double tolForModificationMassDiffMatch = 0.003;
         private readonly int maximumMissedCleavages;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<SearchMode> searchModes;

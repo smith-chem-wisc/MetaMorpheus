@@ -2,19 +2,18 @@
 
 namespace TaskLayer
 {
-    internal class MyGPTMDTaskResults : MyTaskResults
+    internal class MyGptmdTaskResults : MyTaskResults
     {
 
         #region Public Constructors
 
-        public MyGPTMDTaskResults(MetaMorpheusTask s) : base(s)
+        public MyGptmdTaskResults(MetaMorpheusTask s) : base(s)
         {
         }
 
         #endregion Public Constructors
 
-        #region Protected Properties
-
+        #region Public Methods
 
         public override string ToString()
         {
@@ -23,7 +22,7 @@ namespace TaskLayer
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

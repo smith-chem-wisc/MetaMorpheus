@@ -1,5 +1,6 @@
 ﻿using Proteomics;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -104,7 +105,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // number of proteins in group
-            sb.Append("" + Proteins.Count());
+            sb.Append("" + Proteins.Count);
             sb.Append("\t");
 
             // list of unique peptides
@@ -138,11 +139,11 @@ namespace EngineLayer
             sb.Append("\t");
 
             // number of peptides
-            sb.Append("" + StrictPeptideList.Count());
+            sb.Append("" + StrictPeptideList.Count);
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + StrictUniquePeptideList.Count());
+            sb.Append("" + StrictUniquePeptideList.Count);
             sb.Append("\t");
 
             // sequence coverage percent
@@ -163,7 +164,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // number of PSMs for listed peptides
-            sb.Append("" + AllPsmsForStrictPeptideSequences.Count());
+            sb.Append("" + AllPsmsForStrictPeptideSequences.Count);
             sb.Append("\t");
 
             // summed metamorpheus score
@@ -209,7 +210,6 @@ namespace EngineLayer
                             peptideBaseSeqToBestPsmMatching[baseSeq] = psm;
                         }
                     }
-
                     else
                     {
                         peptideBaseSeqToBestPsmMatching.Add(baseSeq, psm);
@@ -253,11 +253,11 @@ namespace EngineLayer
                         AllPsmsForStrictPeptideSequences.Add(psm);
                     }
                 }
-                
+
                 // TODO**: StrictPeptideWithSetModsList
-                foreach(var pep in TotalPeptideWithSetModsList)
+                foreach (var pep in TotalPeptideWithSetModsList)
                 {
-                    if(pep.BaseSequence.Equals(strictPepBaseSeq))
+                    if (pep.BaseSequence.Equals(strictPepBaseSeq))
                     {
                         StrictPeptideWithSetModsList.Add(pep);
                     }
@@ -298,7 +298,7 @@ namespace EngineLayer
                 double sequenceCoverageHere = (double)coveredResidues.Count / protein.Length;
                 sequenceCoveragePercent.Add(sequenceCoverageHere);
 
-                var sequenceCoverageDisplay = protein.BaseSequence.ToLower();
+                var sequenceCoverageDisplay = protein.BaseSequence.ToLower(CultureInfo.InvariantCulture);
                 var coverageArray = sequenceCoverageDisplay.ToCharArray();
                 foreach (var residue in coveredResidues)
                 {
@@ -313,7 +313,7 @@ namespace EngineLayer
 
         public void MergeProteinGroupWith(ProteinGroup other)
         {
-            foreach(var protein in other.Proteins)
+            foreach (var protein in other.Proteins)
             {
                 this.Proteins.Add(protein);
             }

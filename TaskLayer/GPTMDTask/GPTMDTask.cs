@@ -7,7 +7,6 @@ using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -155,7 +154,6 @@ namespace TaskLayer
                             writer.WriteEndElement();
                             writer.WriteEndElement();
                             writer.WriteEndElement();
-
                         }
                     }
                     if (Mods.ContainsKey(protein.Accession))
@@ -194,7 +192,7 @@ namespace TaskLayer
 
         protected override MyResults RunSpecific()
         {
-            MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
+            MyTaskResults myGPTMDresults = new MyGptmdTaskResults(this);
             myGPTMDresults.newDatabases = new List<DbForTask>();
 
             var currentRawFileList = rawDataFilenameList;
@@ -202,10 +200,10 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...");
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            List<ModificationWithMass> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
 
@@ -228,7 +226,8 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
             AnalysisEngine analysisEngine;
             AnalysisResults analysisResults = null;
-            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            var numRawFiles = currentRawFileList.Count;
+            for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 Status("Loading spectra file...");
@@ -253,7 +252,7 @@ namespace TaskLayer
                 //output(analysisResults.ToString());
             }
 
-            if (currentRawFileList.Count > 1)
+            if (numRawFiles > 1)
             {
                 analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
                 analysisResults = (AnalysisResults)analysisEngine.Run();

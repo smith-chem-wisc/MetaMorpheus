@@ -186,7 +186,7 @@ namespace EngineLayer
         public double[] FastSortedProductMasses(List<ProductType> productTypes)
         {
             if (p == null)
-                p = ComputeFragmentMasses();
+                ComputeFragmentMasses();
 
             double[] products1 = null;
             double[] products2 = null;
@@ -266,9 +266,9 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private PeptideFragmentMasses ComputeFragmentMasses()
+        private void ComputeFragmentMasses()
         {
-            var p = new PeptideFragmentMasses();
+            p = new PeptideFragmentMasses();
 
             p.cumulativeNTerminalMass = new double[Length];
 
@@ -309,8 +309,6 @@ namespace EngineLayer
                     p.cumulativeCTerminalMass[r] += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLoss;
                 }
             }
-
-            return p;
         }
 
         #endregion Private Methods

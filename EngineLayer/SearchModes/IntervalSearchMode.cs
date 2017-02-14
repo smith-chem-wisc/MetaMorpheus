@@ -1,5 +1,4 @@
 ﻿using MzLibUtil;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -42,12 +41,10 @@ namespace EngineLayer
                 return 0;
             index = ~index;
             // Two options: either it's the index of the first element greater than diff, or len if diff greater than all
-            if (index < means.Length)
-                if (intervals[index].Contains(diff))
-                    return 0;
-            if (index > 0)
-                if (intervals[index - 1].Contains(diff))
-                    return 0;
+            if (index < means.Length && intervals[index].Contains(diff))
+                return 0;
+            if (index > 0 && intervals[index - 1].Contains(diff))
+                return 0;
             return -1;
         }
 

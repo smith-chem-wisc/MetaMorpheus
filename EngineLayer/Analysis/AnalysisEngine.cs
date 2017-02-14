@@ -408,7 +408,7 @@ namespace EngineLayer.Analysis
                         proteinGroup.TotalPsmList.Add(psm);
 
                     // build PeptideWithSetMod list to calc sequence coverage
-                    HashSet<PeptideWithSetModifications> peptidesWithSetMods = null;
+                    HashSet<PeptideWithSetModifications> peptidesWithSetMods;
                     compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out peptidesWithSetMods);
                     foreach (var pep in peptidesWithSetMods)
                     {
@@ -609,9 +609,12 @@ namespace EngineLayer.Analysis
                 foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
                 {
                     var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsList;
-                    if (ya.ContainsKey(ProductType.B) && ya.ContainsKey(ProductType.Y) && ya[ProductType.B].Any(b => b > 0) && ya[ProductType.Y].Any(b => b > 0))
-                        if (ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.PeptideMonoisotopicMass)
-                            bin.Overlapping++;
+                    if (ya.ContainsKey(ProductType.B)
+                        && ya.ContainsKey(ProductType.Y)
+                        && ya[ProductType.B].Any(b => b > 0)
+                        && ya[ProductType.Y].Any(b => b > 0)
+                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.PeptideMonoisotopicMass)
+                        bin.Overlapping++;
                 }
             }
         }
@@ -620,7 +623,9 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
             {
-                bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                if (numTarget > 0)
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / numTarget;
             }
         }
 
@@ -748,11 +753,8 @@ namespace EngineLayer.Analysis
                 foreach (var hm in UniprotDeseralized)
                 {
                     var theMod = hm as ModificationWithMass;
-                    if (theMod != null)
-                        if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
-                        {
-                            ok.Add(hm.id);
-                        }
+                    if (theMod != null && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
+                        ok.Add(hm.id);
                 }
                 bin.uniprotID = string.Join(" or ", ok);
             }
