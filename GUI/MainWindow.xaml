@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen">
-    <StackPanel Margin="5">
-        <Menu x:Name="menu">
+        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="650" Height="500" Width="700">
+    <DockPanel>
+        <Menu x:Name="menu" DockPanel.Dock="Top">
             <MenuItem Header="Databases">
                 <MenuItem Header="External Databases" />
                 <MenuItem Header="Custom Modification Databases" />
@@ -17,19 +17,23 @@
                 <MenuItem Header="About MetaMorpheus"/>
             </MenuItem>
         </Menu>
-        <Grid Background="Azure">
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="1*" />
-                <RowDefinition Height="2*" />
-            </Grid.RowDefinitions>
-            <StackPanel>
-                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
-                    <StackPanel Margin="5" x:Name="XMLdbPanel">
-                        <Label x:Name="xmlLabel" Content="Protein Databases" HorizontalAlignment="Center" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+                <GroupBox Header="Protein Databases">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
                         <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridCell">
@@ -37,16 +41,19 @@
                                 </Style>
                             </DataGrid.Resources>
                         </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="AddXML" Content="Add" Click="AddXML_Click" />
                             <Button x:Name="ClearXML" Content="Clear" Click="ClearXML_Click" />
                         </StackPanel>
-                    </StackPanel>
-                </Border>
-                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
-                    <StackPanel x:Name="DatafilesStackPanel" Margin="5">
-                        <Label x:Name="DatafilesLabel" Content="Datafiles" HorizontalAlignment="Center" />
-                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Datafiles" Grid.Row="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
+                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
@@ -85,40 +92,50 @@
                                 </ResourceDictionary>
                             </DataGrid.Resources>
                         </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="AddRaw" Content="Add" Click="AddRaw_Click" />
                             <Button x:Name="ClearRaw" Content="Clear" Click="ClearRaw_Click" />
                         </StackPanel>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-            <Border BorderBrush="Black" BorderThickness="2" Grid.Row="1" Margin="5">
-                <StackPanel x:Name="OutputFilesStackPanel" Margin="5">
-                    <Label x:Name="outputFilesLabel" Content="Output Files" HorizontalAlignment="Center" />
-                    <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
-                        <DataGrid.Resources>
-                            <Style TargetType="DataGridCell">
-                                <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
-                            </Style>
-                        </DataGrid.Resources>
-                    </DataGrid>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="ClearOutput" Content="Clear" Click="ClearOutput_Click" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-            <StackPanel x:Name="RightPanel"  Grid.Column="1">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button x:Name="addSearchTaskButton" Content="Add Search Task" Click="addSearchTaskButton_Click" />
-                    <Button x:Name="addCalibrateTaskButton" Content="Add Calibrate Task" Click="addCalibrateTaskButton_Click" />
-                    <Button x:Name="addGPTMDTaskButton" Content="Add GPTMD Task" Click="addGPTMDTaskButton_Click" />
-                </StackPanel>
-                <Border BorderBrush="Black" BorderThickness="2" Margin="5">
-                    <StackPanel  x:Name="tasksPanel" Margin="5">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Label x:Name="labelTasks" Content="Tasks" HorizontalAlignment="Center" />
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Output Files" Grid.Row="2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
+                        <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridCell">
+                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
+                                </Style>
+                            </DataGrid.Resources>
+                        </DataGrid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+                            <Button x:Name="ClearOutput" Content="Clear" Click="ClearOutput_Click" />
                         </StackPanel>
-                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick" IsReadOnly="True">
+                    </Grid>
+                </GroupBox>
+            </Grid>
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+                <GroupBox Header="Tasks">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="20" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="20" />
+                            <RowDefinition Height="40" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="addSearchTaskButton" Content="Add Search Task" Click="addSearchTaskButton_Click" />
+                            <Button x:Name="addCalibrateTaskButton" Content="Add Calibrate Task" Click="addCalibrateTaskButton_Click" />
+                            <Button x:Name="addGPTMDTaskButton" Content="Add GPTMD Task" Click="addGPTMDTaskButton_Click" />
+                        </StackPanel>
+                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick" IsReadOnly="True" Grid.Row="1">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
@@ -156,31 +173,30 @@
                                 </ResourceDictionary>
                             </DataGrid.Resources>
                         </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                         </StackPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" Margin="10" FontSize="24" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-
-            <Border BorderBrush="Black" BorderThickness="2" Margin="5" Grid.Column="1"  Grid.Row="1">
-                <StackPanel  Margin="5">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
-                        <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
-                    </StackPanel>
-                    <ProgressBar x:Name="outProgressBar" />
-                    <RichTextBox x:Name="outRichTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
-                        <RichTextBox.Resources>
-                            <Style TargetType="{x:Type Paragraph}">
-                                <Setter Property="Margin" Value="0" />
-                            </Style>
-                        </RichTextBox.Resources>
-                    </RichTextBox>
-                </StackPanel>
-            </Border>
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3"/>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Header="Status" Grid.Row="1">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Top">
+                            <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
+                            <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <ProgressBar x:Name="outProgressBar" DockPanel.Dock="Top" Height="20"/>
+                        <RichTextBox x:Name="outRichTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
+                            <RichTextBox.Resources>
+                                <Style TargetType="{x:Type Paragraph}">
+                                    <Setter Property="Margin" Value="0" />
+                                </Style>
+                            </RichTextBox.Resources>
+                        </RichTextBox>
+                    </DockPanel>
+                </GroupBox>
+            </Grid>
         </Grid>
-    </StackPanel>
+    </DockPanel>
 </Window>
