@@ -7,7 +7,6 @@ using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -93,9 +92,9 @@ namespace TaskLayer
             allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...");
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
 
             Status("Loading proteins...");
             var allKnownModifications = GetDict(localizeableModifications);

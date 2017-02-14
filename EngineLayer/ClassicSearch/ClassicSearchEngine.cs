@@ -1,6 +1,5 @@
 ﻿using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,7 +15,6 @@ namespace EngineLayer.ClassicSearch
 
         private const int max_mods_for_peptide = 3;
 
-        private const double tolForModificationMassDiffMatch = 0.003;
         private readonly int maximumMissedCleavages;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<SearchMode> searchModes;
@@ -98,8 +96,7 @@ namespace EngineLayer.ClassicSearch
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-
-                        if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
+                        if (peptide.Length <= 1)
                             continue;
 
                         if (peptide.numLocMods == 0)

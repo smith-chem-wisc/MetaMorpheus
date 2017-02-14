@@ -4,7 +4,6 @@ using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using TaskLayer;
@@ -22,9 +21,11 @@ namespace Test
         {
             #region Setup tasks
 
-            ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                modListObservableCollection.Add(new ModList(modFile));
+            {
+                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadMods(modFile).ToList();
+                MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
+            }
 
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();
@@ -42,8 +43,8 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = task1.ListOfModListsVariable.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
-            List<ModificationWithMass> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => b.Mods).Where(b => b is ModificationWithMass).Select(b => b as ModificationWithMass).ToList();
+            List<ModificationWithMass> variableModifications = task1.ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
             //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
             // Generate data for files

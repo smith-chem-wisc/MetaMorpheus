@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,8 +13,6 @@ namespace EngineLayer.ModernSearch
     {
 
         #region Private Fields
-
-        private const double tolForModificationMassDiffMatch = 0.003;
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 

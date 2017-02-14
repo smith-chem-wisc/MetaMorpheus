@@ -1,5 +1,4 @@
 ﻿using MassSpectrometry;
-using Spectra;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,12 +9,12 @@ namespace EngineLayer.Calibration
 
         #region Private Fields
 
-        private List<int> numMs1MassChargeCombinationsConsideredList;
-        private List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
-        private List<int> numMs2MassChargeCombinationsConsideredList;
-        private List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
-        private List<int> countList;
-        private List<SeparateCalibrationFunction> calibrationFunctions;
+        private readonly List<int> numMs1MassChargeCombinationsConsideredList;
+        private readonly List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
+        private readonly List<int> numMs2MassChargeCombinationsConsideredList;
+        private readonly List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
+        private readonly List<int> countList;
+        private readonly List<SeparateCalibrationFunction> calibrationFunctions;
 
         #endregion Private Fields
 
@@ -40,7 +39,7 @@ namespace EngineLayer.Calibration
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
         public override string ToString()
         {
@@ -64,7 +63,7 @@ namespace EngineLayer.Calibration
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
         #region Internal Methods
 

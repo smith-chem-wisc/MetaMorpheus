@@ -54,6 +54,12 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
             EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
 
+            foreach (var modFile in Directory.GetFiles(@"Mods"))
+            {
+                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadMods(modFile).ToList();
+                MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
+            }
+
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MetaMorpheusTask.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
             MetaMorpheusTask.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
@@ -233,24 +239,25 @@ namespace MetaMorpheusGUI
         private void Window_Drop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (var rawDataFromDragged in files)
-            {
-                var theExtension = Path.GetExtension(rawDataFromDragged).ToLowerInvariant();
-                switch (theExtension)
+            if (files != null)
+                foreach (var rawDataFromDragged in files)
                 {
-                    case ".raw":
-                    case ".mzml":
-                        rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromDragged));
-                        break;
+                    var theExtension = Path.GetExtension(rawDataFromDragged).ToLowerInvariant();
+                    switch (theExtension)
+                    {
+                        case ".raw":
+                        case ".mzml":
+                            rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromDragged));
+                            break;
 
-                    case ".xml":
-                    case ".fasta":
-                    case ".gz":
-                        proteinDbObservableCollection.Add(new ProteinDbForDataGrid(rawDataFromDragged));
-                        break;
+                        case ".xml":
+                        case ".fasta":
+                        case ".gz":
+                            proteinDbObservableCollection.Add(new ProteinDbForDataGrid(rawDataFromDragged));
+                            break;
+                    }
+                    dataGridDatafiles.Items.Refresh();
                 }
-                dataGridDatafiles.Items.Refresh();
-            }
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -315,7 +322,7 @@ namespace MetaMorpheusGUI
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GPTMDTaskWindow();
+            var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
@@ -342,7 +349,7 @@ namespace MetaMorpheusGUI
                         break;
 
                     case MyTask.Gptmd:
-                        var gptmddialog = new GPTMDTaskWindow(ok.metaMorpheusTask as GptmdTask);
+                        var gptmddialog = new GptmdTaskWindow(ok.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
                         break;
 

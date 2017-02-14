@@ -133,6 +133,7 @@ namespace EngineLayer
             yield return new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
             yield return new OpenSearchMode();
             yield return new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
+            yield return new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
         }
 
         private static int GuessCharge(List<IMzPeak> mzPeaks)

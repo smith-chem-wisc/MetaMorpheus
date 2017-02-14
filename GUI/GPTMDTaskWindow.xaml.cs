@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using MzLibUtil;
-using Spectra;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -13,9 +12,9 @@ using TaskLayer;
 namespace MetaMorpheusGUI
 {
     /// <summary>
-    /// Interaction logic for GPTMDTaskWindow.xaml
+    /// Interaction logic for GptmdTaskWindow.xaml
     /// </summary>
-    public partial class GPTMDTaskWindow : Window
+    public partial class GptmdTaskWindow : Window
     {
 
         #region Private Fields
@@ -27,7 +26,7 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public GPTMDTaskWindow()
+        public GptmdTaskWindow()
         {
             InitializeComponent();
             PopulateChoices();
@@ -38,7 +37,7 @@ namespace MetaMorpheusGUI
             this.saveButton.Content = "Add the GPTMD Task";
         }
 
-        public GPTMDTaskWindow(GptmdTask myGPTMDtask)
+        public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
             InitializeComponent();
             PopulateChoices();
@@ -138,7 +137,6 @@ namespace MetaMorpheusGUI
             TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();
             TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.ModList).ToList();
             TheTask.ListOfModListsGptmd = ModFileListInWindow.Where(b => b.Gptmd).Select(b => b.ModList).ToList();
-
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
