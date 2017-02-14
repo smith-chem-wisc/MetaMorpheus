@@ -17,20 +17,20 @@
                 <MenuItem Header="About MetaMorpheus"/>
             </MenuItem>
         </Menu>
-        <Grid>
+        <Grid Background="Azure">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="1*" />
-                <RowDefinition Height="1*" />
+                <RowDefinition Height="2*" />
             </Grid.RowDefinitions>
             <StackPanel>
                 <Border BorderBrush="Black" BorderThickness="2" Margin="5">
                     <StackPanel Margin="5" x:Name="XMLdbPanel">
                         <Label x:Name="xmlLabel" Content="Protein Databases" HorizontalAlignment="Center" />
-                        <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="100">
+                        <DataGrid x:Name="dataGridXMLs" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridCell">
                                     <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
@@ -46,7 +46,7 @@
                 <Border BorderBrush="Black" BorderThickness="2" Margin="5">
                     <StackPanel x:Name="DatafilesStackPanel" Margin="5">
                         <Label x:Name="DatafilesLabel" Content="Datafiles" HorizontalAlignment="Center" />
-                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False" Height="150">
+                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
@@ -171,8 +171,8 @@
                         <Label x:Name="labelStatus" Content="Status:" HorizontalAlignment="Center" />
                         <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
                     </StackPanel>
-                    <ProgressBar x:Name="outProgressBar" Height="15" />
-                    <RichTextBox x:Name="outRichTextBox" Height="200" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
+                    <ProgressBar x:Name="outProgressBar" />
+                    <RichTextBox x:Name="outRichTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
                         <RichTextBox.Resources>
                             <Style TargetType="{x:Type Paragraph}">
                                 <Setter Property="Margin" Value="0" />
