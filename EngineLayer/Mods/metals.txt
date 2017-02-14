@@ -4,7 +4,6 @@ FT   MOD_RES
 TG   D or E
 PP   Anywhere.
 MM   21.981943
-AL   5.987028
 CF   H-1 Na1
 //
 ID   Calcium
