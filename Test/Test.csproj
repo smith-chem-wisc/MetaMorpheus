@@ -102,6 +102,7 @@
     <Compile Include="MyTaskTest.cs" />
     <Compile Include="RobTest.cs" />
     <Compile Include="CalibrationEngineTest.cs" />
+    <Compile Include="ModFitsTest.cs" />
     <Compile Include="SearchModesTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
