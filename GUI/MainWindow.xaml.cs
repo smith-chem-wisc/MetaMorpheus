@@ -322,7 +322,7 @@ namespace MetaMorpheusGUI
 
         private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new GPTMDTaskWindow();
+            var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
@@ -349,7 +349,7 @@ namespace MetaMorpheusGUI
                         break;
 
                     case MyTask.Gptmd:
-                        var gptmddialog = new GPTMDTaskWindow(ok.metaMorpheusTask as GptmdTask);
+                        var gptmddialog = new GptmdTaskWindow(ok.metaMorpheusTask as GptmdTask);
                         gptmddialog.ShowDialog();
                         break;
 

@@ -4,14 +4,11 @@ using TaskLayer;
 
 namespace MetaMorpheusCommandLine
 {
-    internal class Program
+    internal static class Program
     {
 
         #region Private Fields
 
-        private const string elementsLocation = @"elements.dat";
-        private const string unimodLocation = @"unimod_tables.xml";
-        private const string uniprotLocation = @"ptmlist.txt";
         private static bool inProgress;
 
         #endregion Private Fields

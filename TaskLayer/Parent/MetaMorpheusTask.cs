@@ -82,6 +82,13 @@ namespace TaskLayer
 
         #region Public Methods
 
+        public static void AddModList(ModList modList)
+        {
+            if (AllModLists == null)
+                AllModLists = new List<ModList>();
+            AllModLists.Add(modList);
+        }
+
         public new MyResults Run()
         {
             startingSingleTask();
@@ -121,18 +128,10 @@ namespace TaskLayer
                     file.Write("e.StackTrace: " + e.StackTrace);
                     file.Write("e.TargetSite: " + e.TargetSite);
                 }
-                throw e;
+                throw;
             }
 #endif
         }
-
-        public static void AddModList(ModList modList)
-        {
-            if (AllModLists == null)
-                AllModLists = new List<ModList>();
-            AllModLists.Add(modList);
-        }
-
         public override string ToString()
         {
             var sb = new StringBuilder();

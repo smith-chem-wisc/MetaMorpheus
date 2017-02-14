@@ -436,10 +436,8 @@ namespace EngineLayer.Calibration
                     {
                         break;
                     }
-                    if (trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
-                    {
-                    }
-                    else if (trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
+                    if ((trainingPointsToAverage.Count == 1 && originalIntensities[0] < 0.65)
+                        || trainingPointsToAverage.Count < Math.Min(minMS1isotopicPeaksNeededForConfirmedIdentification, originalIntensities.Count()))
                     {
                     }
                     else

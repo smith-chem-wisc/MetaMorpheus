@@ -110,8 +110,8 @@
     <Compile Include="ForDisplayingInDataGrids\ModListForGptmdTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForSearchTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\SearchModeForDataGrid.cs" />
-    <Compile Include="GPTMDTaskWindow.xaml.cs">
-      <DependentUpon>GPTMDTaskWindow.xaml</DependentUpon>
+    <Compile Include="GptmdTaskWindow.xaml.cs">
+      <DependentUpon>GptmdTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\MetaMorpheusTaskForDataGrid.cs" />
@@ -123,7 +123,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="GPTMDTaskWindow.xaml">
+    <Page Include="GptmdTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

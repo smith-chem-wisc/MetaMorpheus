@@ -45,10 +45,7 @@ namespace EngineLayer
                         varMod1Type = (ushort)(variableModifications.IndexOf(mod) + 1);
                         varMod1Loc = (ushort)oneBasedLoc;
                     }
-                    else if (fixedModifications.Contains(mod))
-                    {
-                    }
-                    else
+                    else if (!fixedModifications.Contains(mod))
                     {
                         varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
                         varMod1Loc = (ushort)oneBasedLoc;
@@ -62,10 +59,7 @@ namespace EngineLayer
                         varMod2Type = (ushort)(variableModifications.IndexOf(mod) + 1);
                         varMod2Loc = (ushort)oneBasedLoc;
                     }
-                    else if (fixedModifications.Contains(mod))
-                    {
-                    }
-                    else
+                    else if (!fixedModifications.Contains(mod))
                     {
                         varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
                         varMod2Loc = (ushort)oneBasedLoc;
@@ -79,10 +73,7 @@ namespace EngineLayer
                         varMod3Type = (ushort)(variableModifications.IndexOf(mod) + 1);
                         varMod3Loc = (ushort)oneBasedLoc;
                     }
-                    else if (fixedModifications.Contains(mod))
-                    {
-                    }
-                    else
+                    else if (!fixedModifications.Contains(mod))
                     {
                         varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
                         varMod3Loc = (ushort)oneBasedLoc;
