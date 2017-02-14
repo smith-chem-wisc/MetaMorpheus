@@ -1,7 +1,6 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -490,8 +489,6 @@ namespace EngineLayer.Analysis
                         // var sortedProteinGroups =
                         proteinGroup.StrictRazorPeptideList.Add(peptide);
                     }
-
-
                 }
 
                 // calculate sequence coverage for each protein in the group
@@ -664,7 +661,7 @@ namespace EngineLayer.Analysis
                     for (int i = 0; i < hehe.Item2.Count(); i++)
                     {
                         char ye = hehe.Item2[i];
-                        if (ye.Equals('('))
+                        if (ye.Equals('['))
                         {
                             inModLevel++;
                             if (inModLevel == 1)
@@ -672,7 +669,7 @@ namespace EngineLayer.Analysis
                                 continue;
                             }
                         }
-                        else if (ye.Equals(')'))
+                        else if (ye.Equals(']'))
                         {
                             inModLevel--;
                             if (inModLevel == 0)
