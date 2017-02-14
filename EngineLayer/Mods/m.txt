@@ -196,19 +196,18 @@ PP   Anywhere.
 MM   31.989829
 CF   O2
 //
-ID   Acetylation of Lysine
+ID   Acetylation
 FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   42.010565
 CF   H2 C2 O1
 //
-ID   Acetylation of protein N-terminus
+ID   Acetylation
 FT   MOD_RES
 TG   Any
 PP   N-terminal.
 MM   42.010565
-AL   26.01565
 CF   H2 C2 O1
 //
 ID   TriMethylation of K

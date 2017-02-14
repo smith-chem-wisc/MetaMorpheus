@@ -167,6 +167,7 @@
     </Content>
     <Content Include="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SonarQubeExclude>true</SonarQubeExclude>
     </Content>
     <Content Include="Mods\f.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
