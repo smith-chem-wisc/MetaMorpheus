@@ -620,7 +620,9 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in myTreeStructure.FinalBins)
             {
-                bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                if (numTarget > 0)
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / numTarget;
             }
         }
 

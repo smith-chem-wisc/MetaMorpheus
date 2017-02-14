@@ -5,8 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Height="730" Width="1024"
-        Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinWidth="600">
+        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen">
     <StackPanel Margin="5">
         <Menu x:Name="menu">
             <MenuItem Header="Databases">

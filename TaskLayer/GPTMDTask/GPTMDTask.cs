@@ -7,7 +7,6 @@ using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -155,7 +154,6 @@ namespace TaskLayer
                             writer.WriteEndElement();
                             writer.WriteEndElement();
                             writer.WriteEndElement();
-
                         }
                     }
                     if (Mods.ContainsKey(protein.Accession))
@@ -228,7 +226,8 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
             AnalysisEngine analysisEngine;
             AnalysisResults analysisResults = null;
-            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            var numRawFiles = currentRawFileList.Count;
+            for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 Status("Loading spectra file...");
@@ -253,7 +252,7 @@ namespace TaskLayer
                 //output(analysisResults.ToString());
             }
 
-            if (currentRawFileList.Count > 1)
+            if (numRawFiles > 1)
             {
                 analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
                 analysisResults = (AnalysisResults)analysisEngine.Run();

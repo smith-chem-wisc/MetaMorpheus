@@ -130,6 +130,8 @@ namespace EngineLayer.Calibration
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
+                if (SequenceWithChemicalFormulas == null)
+                    continue;
                 int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
