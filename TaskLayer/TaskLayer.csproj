@@ -95,7 +95,7 @@
     <Compile Include="CalibrationTask\MyCalibrationTaskResults.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
     <Compile Include="EverythingRunner\XmlForTaskListEventArgs.cs" />
-    <Compile Include="GPTMDTask\MyGptmdTaskResults.cs" />
+    <Compile Include="GPTMDTask\MyGPTMDTaskResults.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
     <Compile Include="CalibrationTask\CalibrationTask.cs" />
     <Compile Include="GPTMDTask\GPTMDTask.cs" />
