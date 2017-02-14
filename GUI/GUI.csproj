@@ -110,7 +110,7 @@
     <Compile Include="ForDisplayingInDataGrids\ModListForGptmdTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForSearchTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\SearchModeForDataGrid.cs" />
-    <Compile Include="GptmdTaskWindow.xaml.cs">
+    <Compile Include="GPTMDTaskWindow.xaml.cs">
       <DependentUpon>GptmdTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
