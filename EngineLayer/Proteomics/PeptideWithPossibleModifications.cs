@@ -8,8 +8,13 @@ namespace EngineLayer
     public class PeptideWithPossibleModifications : Peptide
     {
 
+        #region Private Fields
+
         private readonly Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods;
-        #region Public Constructors
+
+        #endregion Private Fields
+
+        #region Internal Constructors
 
         internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications)
             : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
@@ -20,7 +25,7 @@ namespace EngineLayer
             this.numLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
 
-        #endregion Public Constructors
+        #endregion Internal Constructors
 
         #region Public Properties
 
@@ -44,13 +49,13 @@ namespace EngineLayer
             foreach (ModificationWithMass variable_modification in variableModifications)
             {
                 // Check if can be a n-term mod
-                if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length)
+                if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, 1, this.Length, this.OneBasedStartResidueInProtein)
                     && (variable_modification.position == ModificationSites.NProt || variable_modification.position == ModificationSites.NPep))
                     pep_n_term_variable_mods.Add(variable_modification);
 
                 for (int r = 0; r < Length; r++)
                 {
-                    if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, r + 1, this.Length, this.OneBasedStartResidueInProtein + r, this.Protein.Length)
+                    if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                         && variable_modification.position == ModificationSites.Any)
                     {
                         UniqueModificationsCollection residue_variable_mods;
@@ -65,7 +70,7 @@ namespace EngineLayer
                     }
                 }
                 // Check if can be a c-term mod
-                if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1, this.Protein.Length)
+                if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1)
                     && (variable_modification.position == ModificationSites.ProtC || variable_modification.position == ModificationSites.PepC))
                     pep_c_term_variable_mods.Add(variable_modification);
             }
@@ -83,14 +88,14 @@ namespace EngineLayer
                         {
                             // Check if can be a n-term mod
                             if (locInPeptide == 1
-                                && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length)
+                                && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, 1, this.Length, this.OneBasedStartResidueInProtein)
                                 && (variable_modification.position == ModificationSites.NProt || variable_modification.position == ModificationSites.NPep))
                                 pep_n_term_variable_mods.Add(variable_modification);
 
                             for (int r = 0; r < Length; r++)
                             {
                                 if (locInPeptide == r + 1
-                                    && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, r + 1, this.Length, this.OneBasedStartResidueInProtein + r, this.Protein.Length)
+                                    && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                                     && variable_modification.position == ModificationSites.Any)
                                 {
                                     UniqueModificationsCollection residue_variable_mods;
@@ -106,7 +111,7 @@ namespace EngineLayer
                             }
                             // Check if can be a c-term mod
                             if (locInPeptide == Length
-                                && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein.BaseSequence, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1, this.Protein.Length)
+                                && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1)
                                 && (variable_modification.position == ModificationSites.ProtC || variable_modification.position == ModificationSites.PepC))
                                 pep_c_term_variable_mods.Add(variable_modification);
                         }
@@ -216,29 +221,31 @@ namespace EngineLayer
 
         private Dictionary<int, ModificationWithMass> AddFixedMods(IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
-            var allModsOneIsNterminus = new Dictionary<int, ModificationWithMass>(Length + 3);
+            var fixedModsOneIsNterminus = new Dictionary<int, ModificationWithMass>(Length + 3);
             foreach (ModificationWithMass mod in allKnownFixedModifications)
             {
                 switch (mod.position)
                 {
                     case ModificationSites.NProt:
                     case ModificationSites.NPep:
-                        if (Gptmd.GptmdEngine.ModFits(mod, this.Protein.BaseSequence, 1, this.Length, this.OneBasedStartResidueInProtein, this.Protein.Length))
-                            allModsOneIsNterminus[1] = mod;
+                        if (Gptmd.GptmdEngine.ModFits(mod, this.Protein, 1, this.Length, this.OneBasedStartResidueInProtein))
+                            fixedModsOneIsNterminus[1] = mod;
                         break;
+
                     case ModificationSites.Any:
                         for (int i = 2; i <= Length + 1; i++)
-                            if (Gptmd.GptmdEngine.ModFits(mod, this.Protein.BaseSequence, i - 1, this.Length, this.OneBasedStartResidueInProtein + i - 2, this.Protein.Length))
-                                allModsOneIsNterminus[i] = mod;
+                            if (Gptmd.GptmdEngine.ModFits(mod, this.Protein, i - 1, this.Length, this.OneBasedStartResidueInProtein + i - 2))
+                                fixedModsOneIsNterminus[i] = mod;
                         break;
+
                     case ModificationSites.PepC:
                     case ModificationSites.ProtC:
-                        if (Gptmd.GptmdEngine.ModFits(mod, this.Protein.BaseSequence, this.Length, this.Length, this.OneBasedStartResidueInProtein + this.Length - 1, this.Protein.Length))
-                            allModsOneIsNterminus[this.Length + 2] = mod;
+                        if (Gptmd.GptmdEngine.ModFits(mod, this.Protein, this.Length, this.Length, this.OneBasedStartResidueInProtein + this.Length - 1))
+                            fixedModsOneIsNterminus[this.Length + 2] = mod;
                         break;
                 }
             }
-            return allModsOneIsNterminus;
+            return fixedModsOneIsNterminus;
         }
 
         #endregion Private Methods

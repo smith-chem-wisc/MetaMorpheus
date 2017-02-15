@@ -214,6 +214,7 @@ namespace TaskLayer
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
             allPsms[0] = new List<PsmParent>();
 
+            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             List<ProductType> lp = new List<ProductType>();
             if (BIons)
                 lp.Add(ProductType.B);
@@ -221,10 +222,9 @@ namespace TaskLayer
                 lp.Add(ProductType.Y);
 
             Status("Loading proteins...");
-            var allKnownModifications = GetDict(localizeableModifications);
             Dictionary<string, Modification> um = null;
-            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
-            AnalysisEngine analysisEngine;
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, GetDict(localizeableModifications), b.IsContaminant, out um)).ToList();
+
             AnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
             for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
@@ -239,30 +239,23 @@ namespace TaskLayer
                 Status("Opening spectra file...");
                 myMsDataFile.Open();
 
-                var listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
-
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
-
-                var searchResults = (ClassicSearchResults)searchEngine.Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp).Run();
+                myGPTMDresults.AddResultText(searchResults);
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
-                analysisResults = (AnalysisResults)analysisEngine.Run();
-                //output(analysisResults.ToString());
+                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior).Run();
+                myGPTMDresults.AddResultText(analysisResults);
             }
 
             if (numRawFiles > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
-                analysisResults = (AnalysisResults)analysisEngine.Run();
-                //output(analysisResults.ToString());
+                analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior).Run();
+                myGPTMDresults.AddResultText(analysisResults);
             }
 
-            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance);
-            var gptmdResults = (GptmdResults)gptmdEngine.Run();
-
-            //output(gptmdResults.ToString());
+            var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance).Run();
+            myGPTMDresults.AddResultText(gptmdResults);
 
             string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
@@ -270,7 +263,6 @@ namespace TaskLayer
 
             SucessfullyFinishedWritingFile(outputXMLdbFullName);
 
-            // TODO: Fix so not always outputting a contaminant
             myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
 
             return myGPTMDresults;

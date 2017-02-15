@@ -119,7 +119,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                outRichTextBox.AppendText(e.ToString() + Environment.NewLine);
+                outRichTextBox.AppendText(e.ToString());
                 outRichTextBox.ScrollToEnd();
             }
         }
