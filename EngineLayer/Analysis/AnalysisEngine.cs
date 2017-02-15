@@ -556,7 +556,7 @@ namespace EngineLayer.Analysis
             {
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications))
+                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior, fixedModifications))
                     {
                         if (peptideWithPossibleModifications.Length <= 1)
                             continue;
