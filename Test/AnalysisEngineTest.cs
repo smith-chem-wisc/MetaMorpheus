@@ -5,7 +5,6 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,8 +49,8 @@ namespace Test
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
             newPsms[0] = new PsmParent[] { new PsmModern(compactPeptide1, null,1, 1, 1, 2, 1, 1, 1, 1, 3,0),
-                                                     new PsmModern(compactPeptide2, null, 2,2,2+132.040,3,2,2,2,2,2,0),
-                                                     new PsmModern(compactPeptide3, null, 3,3,3,4,3,3,3,3,3,0) };
+                                           new PsmModern(compactPeptide2, null, 2,2,2+132.040,3,2,2,2,2,2,0),
+                                           new PsmModern(compactPeptide3, null, 3,3,3,4,3,3,3,3,3,0) };
 
             compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);
@@ -61,12 +60,11 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
 
-
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<ProteinGroup>, string> action3 = null;
             Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
             bool doParsimony = false;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable);
 
             engine.Run();
         }

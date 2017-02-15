@@ -138,8 +138,9 @@ namespace TaskLayer
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
 
+                InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN);
+                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
