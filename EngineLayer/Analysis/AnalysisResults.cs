@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,33 +8,37 @@ namespace EngineLayer.Analysis
     public class AnalysisResults : MyResults
     {
 
+        #region Private Fields
+
+        private string output;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
-        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFdr>[] allResultingIdentifications, List<ProteinGroup>[] proteinGroups) : base(s)
+        public AnalysisResults(AnalysisEngine s) : base(s)
         {
-            this.AllResultingIdentifications = allResultingIdentifications;
-            this.ProteinGroups = proteinGroups;
+            output = "";
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<NewPsmWithFdr>[] AllResultingIdentifications { get; private set; }
-        public List<ProteinGroup>[] ProteinGroups { get; private set; }
+        public List<NewPsmWithFdr>[] AllResultingIdentifications { get; set; }
+        public List<ProteinGroup>[] ProteinGroups { get; set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(base.ToString());
-            sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
+            sb.Append(base.ToString());
+            sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
 
-            var check = ProteinGroups.Where(s => s != null);
-            if (check.Any())
+            if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
             {
                 var numProteinsList = new List<int>();
                 for (int i = 0; i < ProteinGroups.Length; i++)
@@ -44,13 +49,23 @@ namespace EngineLayer.Analysis
                         numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
                 }
 
-                sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", numProteinsList));
+                sb.AppendLine("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));
             }
+            sb.Append(output);
 
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
+
+        #region Internal Methods
+
+        internal void AddText(string v)
+        {
+            output += v + Environment.NewLine;
+        }
+
+        #endregion Internal Methods
 
     }
 }

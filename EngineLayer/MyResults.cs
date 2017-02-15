@@ -22,6 +22,7 @@ namespace EngineLayer
         #endregion Protected Constructors
 
         #region Protected Properties
+
         protected MyEngine MyEngine { get; private set; }
 
         #endregion Protected Properties
@@ -32,7 +33,7 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(GetType().Name);
-            sb.Append("Time to run: " + Time);
+            sb.AppendLine("Time to run: " + Time);
             return sb.ToString();
         }
 
