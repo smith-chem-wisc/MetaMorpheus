@@ -141,6 +141,13 @@ namespace EngineLayer.ClassicSearch
                                 foreach (Tuple<LocalMS2Scan, int> theTuple in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var scan = theTuple.Item1;
+
+
+                                    //if(scan.TheScan.DissociationType == MassSpectrometry.DissociationType.ETD)
+                                    //{
+                                    //
+                                    //}
+
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
                                     var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)

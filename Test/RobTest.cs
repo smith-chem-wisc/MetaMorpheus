@@ -281,8 +281,11 @@ namespace Test
             double[] testY;
             YfragmentMasses.TryGetValue(peptides.First(), out testY);
 
-            double[] testBY;
-            BYfragmentMasses.TryGetValue(peptides.First(), out testBY);
+            double[] testC;
+            CfragmentMasses.TryGetValue(peptides.First(), out testC);
+
+            double[] testZ;
+            ZdotfragmentMasses.TryGetValue(peptides.First(), out testZ);
         }
 
         #endregion Public Methods
