@@ -140,18 +140,14 @@ namespace EngineLayer.Analysis
                 {
                     lookingAtP = p[currentDown];
                     if (lookingAtP > thisP)
-                    {
                         return distDown;
-                    }
                     currentDown--;
                 }
                 else
                 {
                     lookingAtP = p[currentUp];
                     if (lookingAtP > thisP)
-                    {
                         return distUp;
-                    }
                     currentUp++;
                 }
             }
@@ -160,7 +156,6 @@ namespace EngineLayer.Analysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-            {
                 foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
                 {
                     var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsList;
@@ -171,7 +166,6 @@ namespace EngineLayer.Analysis
                         && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.PeptideMonoisotopicMass)
                         bin.Overlapping++;
                 }
-            }
         }
 
         private void IdentifyFracWithSingle()
@@ -193,18 +187,12 @@ namespace EngineLayer.Analysis
                 {
                     var chars = new HashSet<char>();
                     for (int i = 0; i < hehe.Item1.Count(); i++)
-                    {
                         chars.Add(hehe.Item1[i]);
-                    }
                     foreach (var ch in chars)
-                    {
                         if (bin.AAsInCommon.ContainsKey(ch))
-                        {
                             bin.AAsInCommon[ch]++;
-                        }
                         else
                             bin.AAsInCommon.Add(ch, 1);
-                    }
                 }
             }
         }
@@ -225,9 +213,7 @@ namespace EngineLayer.Analysis
                         {
                             inModLevel++;
                             if (inModLevel == 1)
-                            {
                                 continue;
-                            }
                         }
                         else if (ye.Equals(']'))
                         {
@@ -243,9 +229,7 @@ namespace EngineLayer.Analysis
                             continue;
                         }
                         if (inModLevel > 0)
-                        {
                             currentMod += ye;
-                        }
                     }
                 }
             }
@@ -262,15 +246,11 @@ namespace EngineLayer.Analysis
                     if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
-                        {
                             if (bestScore - hehe.Item3.thisPSM.LocalizedScores[i] < 0.5)
-                            {
                                 if (bin.residueCount.ContainsKey(hehe.Item1[i]))
                                     bin.residueCount[hehe.Item1[i]]++;
                                 else
                                     bin.residueCount.Add(hehe.Item1[i], 1);
-                            }
-                        }
                         if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores[0] < 0.5)
                             bin.NlocCount++;
                         if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores.Last() < 0.5)
@@ -328,12 +308,8 @@ namespace EngineLayer.Analysis
             {
                 var okk = new HashSet<string>();
                 foreach (var hm in ok)
-                {
                     if (Math.Abs(hm.Item1 + hm.Item2 - bin.MassShift) <= v && bin.CountTarget < hm.Item3)
-                    {
                         okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
-                    }
-                }
                 bin.combos = string.Join(" or ", okk);
             }
         }
@@ -349,26 +325,18 @@ namespace EngineLayer.Analysis
                     if (Residue.TryGetResidue(c, out residue))
                     {
                         if (Math.Abs(residue.MonoisotopicMass - bin.MassShift) <= v)
-                        {
                             ok.Add("Add " + residue.Name);
-                        }
                         if (Math.Abs(residue.MonoisotopicMass + bin.MassShift) <= v)
-                        {
                             ok.Add("Remove " + residue.Name);
-                        }
                         for (char cc = 'A'; cc <= 'Z'; cc++)
                         {
                             Residue residueCC;
                             if (Residue.TryGetResidue(cc, out residueCC))
                             {
                                 if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - bin.MassShift) <= v)
-                                {
                                     ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
-                                }
                                 if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + bin.MassShift) <= v)
-                                {
                                     ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
-                                }
                             }
                         }
                     }
@@ -397,12 +365,8 @@ namespace EngineLayer.Analysis
             {
                 bin.Mine = "";
                 foreach (MyInfo myInfo in myInfos)
-                {
                     if (Math.Abs(myInfo.MassShift - bin.MassShift) <= v)
-                    {
                         bin.Mine = myInfo.infostring;
-                    }
-                }
             }
         }
 
