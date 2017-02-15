@@ -72,11 +72,8 @@ namespace EngineLayer.Gptmd
             int modsAdded = 0;
             foreach (var ye in allIdentifications.Where(b => b.qValueNotch <= 0.01 && !b.IsDecoy))
             {
-                var theDict = ye.thisPSM.peptidesWithSetModifications;
-                // Only add to non-ambiguous peptides
-                if (theDict.Count == 1)
+                foreach (var peptide in ye.thisPSM.peptidesWithSetModifications)
                 {
-                    var peptide = theDict.First();
                     var baseSequence = ye.thisPSM.BaseSequence;
                     foreach (ModificationWithMass mod in GetMod(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))
                     {

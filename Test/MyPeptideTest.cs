@@ -140,6 +140,45 @@ namespace Test
             Assert.AreEqual(1, ok2.NumMods);
             Assert.IsTrue(ok2.allModsOneIsNterminus.ContainsKey(3));
         }
+
+
+        [Test]
+        public static void TestDigestDecoy()
+        {
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("Abcdefg", out motif);
+            Modification mod = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, double.NaN, null, null, null);
+            IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
+            {
+                {2, new List<Modification> {mod } },
+                {8, new List<Modification> {mod } }
+            };
+            var prot = new Protein("MNNNNKRRRRR", null, modDict, new int?[0], new int?[0], new string[0], null, null, 0, true, false);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var ye1 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye2 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
+            var ok1 = ye1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
+            var ok2 = ye2.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
+
+            Assert.AreEqual(1, ok1.NumMods);
+            Assert.IsTrue(ok1.allModsOneIsNterminus.ContainsKey(3));
+            Assert.AreEqual(1, ok2.NumMods);
+            Assert.IsTrue(ok2.allModsOneIsNterminus.ContainsKey(3));
+
+
+             prot = new Protein("MNNNNKRRRRR", null, modDict, new int?[0], new int?[0], new string[0], null, null, 0, false, false);
+             ye1 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+             ye2 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
+             ok1 = ye1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
+             ok2 = ye2.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
+
+            Assert.AreEqual(0, ok1.NumMods);
+            Assert.IsFalse(ok1.allModsOneIsNterminus.Any());
+            Assert.AreEqual(0, ok2.NumMods);
+            Assert.IsFalse(ok2.allModsOneIsNterminus.Any());
+
+
+        }
         #endregion Public Methods
 
     }
