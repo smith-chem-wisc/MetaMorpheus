@@ -233,6 +233,58 @@ namespace Test
                     Assert.That(coverage <= 1.0);
         }
 
+
+        [Test]
+        public static void TestFragments()
+        {
+            // creates some test proteins, digest, and fragment
+            string[] sequences = { "GLSDGEWQQVLNVWGK" }; // just one peptide
+            
+            var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var peptides = new HashSet<PeptideWithSetModifications>();
+
+            var p = new List<Protein>();
+            for (int i = 0; i < sequences.Length; i++)
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, false, false));
+            
+            foreach (var protein in p)
+            {
+                var digestedProtein = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+
+                foreach (var pepWithPossibleMods in digestedProtein)
+                {
+                    var pepWithSetMods = pepWithPossibleMods.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+
+                    foreach (var peptide in pepWithSetMods)
+                        peptides.Add(peptide);
+                }
+            }
+
+            var CfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var ZdotfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var BfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var YfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var BYfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+
+            foreach (var peptide in peptides)
+            {
+                CfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }));
+            }
+
+            double[] testB;
+            BfragmentMasses.TryGetValue(peptides.First(), out testB);
+
+            double[] testY;
+            YfragmentMasses.TryGetValue(peptides.First(), out testY);
+
+            double[] testBY;
+            BYfragmentMasses.TryGetValue(peptides.First(), out testBY);
+        }
+
         #endregion Public Methods
 
     }

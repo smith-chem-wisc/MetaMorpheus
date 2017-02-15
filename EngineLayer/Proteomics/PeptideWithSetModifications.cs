@@ -261,7 +261,7 @@ namespace EngineLayer
                       (productTypes.Contains(ProductType.C) ? Length - 1 : 0) +
                       (productTypes.Contains(ProductType.Zdot) ? Length - 1 : 0);
 
-            double[] products = new double[len];
+            double[] products = new double[0];
             if (productsB != null)
                 products = products.Concat(productsB).ToArray();
             if (productsY != null)

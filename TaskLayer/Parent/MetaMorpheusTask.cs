@@ -151,9 +151,9 @@ namespace TaskLayer
             sb.AppendLine("output_folder: " + OutputFolder);
             sb.AppendLine("protease: " + Protease);
             sb.AppendLine("bIons: " + BIons);
-            sb.Append("yIons: " + YIons);
+            sb.AppendLine("yIons: " + YIons);
             sb.AppendLine("cIons: " + CIons);
-            sb.Append("zdotIons: " + ZdotIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
             return sb.ToString();
         }
 
