@@ -96,8 +96,6 @@ namespace TaskLayer
 
         public static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
-            foreach (var ok in type.Assembly.GetTypes().Where(t => t.IsSubclassOf(type)))
-                yield return ok;
             yield return type;
         }
 
