@@ -35,7 +35,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Methods
 
-        public static bool ModFits(ModificationWithMass attemptToLocalize, string proteinBaseSequence, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex, int proteinLength)
+        public static bool ModFits(ModificationWithMass attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
             var motif = attemptToLocalize.motif.Motif;
             // First find the capital letter...
@@ -46,7 +46,7 @@ namespace EngineLayer.Gptmd
             // Look up starting at and including the capital letter
             while (indexUp < motif.Length)
             {
-                if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= proteinLength || (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(proteinBaseSequence[indexUp + proteinToMotifOffset])))
+                if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
                     return false;
                 indexUp++;
             }
@@ -56,7 +56,7 @@ namespace EngineLayer.Gptmd
                 return false;
             if (attemptToLocalize.position == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
                 return false;
-            if (attemptToLocalize.position == ModificationSites.ProtC && proteinOneBasedIndex < proteinLength)
+            if (attemptToLocalize.position == ModificationSites.ProtC && proteinOneBasedIndex < protein.Length)
                 return false;
             return true;
         }
@@ -80,13 +80,11 @@ namespace EngineLayer.Gptmd
                     var baseSequence = ye.thisPSM.BaseSequence;
                     foreach (ModificationWithMass mod in GetMod(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))
                     {
-                        int proteinLength = peptide.Protein.Length;
                         var proteinAcession = peptide.Protein.Accession;
                         for (int i = 0; i < baseSequence.Length; i++)
                         {
                             int indexInProtein = peptide.OneBasedStartResidueInProtein + i;
-
-                            if (ModFits(mod, peptide.Protein.BaseSequence, i + 1, baseSequence.Length, indexInProtein, proteinLength))
+                            if (ModFits(mod, peptide.Protein, i + 1, baseSequence.Length, indexInProtein))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
                                     Mods[proteinAcession] = new HashSet<Tuple<int, ModificationWithMass>>();

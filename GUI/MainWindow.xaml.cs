@@ -41,13 +41,6 @@ namespace MetaMorpheusGUI
             tasksDataGrid.DataContext = taskEngineObservableCollection;
             outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
-            //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-mouse-reviewed-1-23-2017.xml"));
-            //proteinDbObservableCollection.Add(new XMLdb(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\uniprot-human-reviewed-1-23-2017.xml"));
-
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Downloads\small.pwiz.1.1.mzML"));
-
-            //rawDataObservableCollection.Add(new RawData(@"C:\Users\stepa\Data\CalibrationPaperData\OrigData\Mouse\2017-01-30-19-07-49\Task1Calibrate\04-30-13_CAST_Frac5_4uL-Calibrated.mzML"));
-
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
 
@@ -126,7 +119,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                outRichTextBox.AppendText(e.ToString() + Environment.NewLine);
+                outRichTextBox.AppendText(e.ToString());
                 outRichTextBox.ScrollToEnd();
             }
         }
@@ -408,13 +401,9 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                //TODO: Check those
-                XMLdbPanel.IsEnabled = false;
-                DatafilesStackPanel.IsEnabled = false;
-                addSearchTaskButton.IsEnabled = false;
-                addCalibrateTaskButton.IsEnabled = false;
-                addGPTMDTaskButton.IsEnabled = false;
-                tasksPanel.IsEnabled = false;
+                proteinDatabasesGroupBox.IsEnabled = false;
+                datafilesGroupBox.IsEnabled = false;
+                tasksGroupBox.IsEnabled = false;
 
                 statusLabel.Content = "Starting all tasks...";
                 outProgressBar.IsIndeterminate = true;
@@ -431,13 +420,9 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                //TODO: Check those
-                XMLdbPanel.IsEnabled = true;
-                DatafilesStackPanel.IsEnabled = true;
-                addSearchTaskButton.IsEnabled = true;
-                addCalibrateTaskButton.IsEnabled = true;
-                addGPTMDTaskButton.IsEnabled = true;
-                tasksPanel.IsEnabled = true;
+                proteinDatabasesGroupBox.IsEnabled = true;
+                datafilesGroupBox.IsEnabled = true;
+                tasksGroupBox.IsEnabled = true;
 
                 statusLabel.Content = "Finished all tasks!";
                 outProgressBar.IsIndeterminate = false;
