@@ -134,6 +134,7 @@ namespace TaskLayer
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
+                myTaskResults.AddResultText(searchResults);
 
                 for (int i = 0; i < searchModes.Count; i++)
                     allPsms[i].AddRange(searchResults.OuterPsms[i]);
@@ -143,6 +144,7 @@ namespace TaskLayer
                 var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
+                myTaskResults.AddResultText(analysisResults);
 
                 var identifications = analysisResults.AllResultingIdentifications[0];
 
@@ -171,6 +173,7 @@ namespace TaskLayer
                 var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration);
 
                 var result = a.Run();
+                myTaskResults.AddResultText(result);
 
                 if (result is MyErroredResults)
                 {

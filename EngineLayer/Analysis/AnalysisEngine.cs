@@ -532,11 +532,13 @@ namespace EngineLayer.Analysis
 
         protected override MyResults RunSpecific()
         {
+            AnalysisResults myAnalysisResults = new AnalysisResults(this);
             Status("Running analysis engine!");
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
             #region Match Seqeunces to PeptideWithSetModifications
 
+            myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             Status("Adding observed peptides to dictionary...");
             foreach (var psmListForAspecificSerchMode in newPsms)
                 if (psmListForAspecificSerchMode != null)
@@ -547,6 +549,7 @@ namespace EngineLayer.Analysis
                             if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                                 compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                         }
+            myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             int totalProteins = proteinList.Count;
             int proteinsSeen = 0;
             int old_progress = 0;
@@ -644,7 +647,10 @@ namespace EngineLayer.Analysis
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }
             }
-            return new AnalysisResults(this, allResultingIdentifications, proteinGroups);
+
+            myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
+            myAnalysisResults.ProteinGroups = proteinGroups;
+            return myAnalysisResults;
         }
 
         #endregion Protected Methods
