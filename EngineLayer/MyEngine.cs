@@ -184,11 +184,8 @@ namespace EngineLayer
             }
             doubleRanges.Add(new DoubleRange(prevGoodMin, double.PositiveInfinity));
 
-            var nice = doubleRanges.Last();
-
             doubleRanges = doubleRanges.Where(b => b.Minimum <= doubleRange.Maximum && b.Maximum >= doubleRange.Minimum).Select(b => new DoubleRange(Math.Max(doubleRange.Minimum, b.Minimum), Math.Min(doubleRange.Maximum, b.Maximum))).ToList();
 
-            var nice2 = doubleRanges.Last();
             yield return new IntervalSearchMode("Exclude AAs", doubleRanges);
         }
 
