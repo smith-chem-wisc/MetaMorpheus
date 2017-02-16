@@ -162,7 +162,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).IsMySelected = true;
+                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).InProgress = true;
                 statusLabel.Content = "Running " + s.TheTask.TaskType + " task";
                 outProgressBar.IsIndeterminate = true;
 
@@ -180,7 +180,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).IsMySelected = false;
+                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).InProgress = false;
                 statusLabel.Content = "Finished " + s.TheTask.TaskType + " task";
                 outProgressBar.Value = 100;
 

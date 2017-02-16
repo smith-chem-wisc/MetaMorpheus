@@ -39,6 +39,8 @@ namespace TaskLayer
 
             TaskType = MyTask.Calibrate;
             MaxNumPeaksPerScan = 400;
+
+            MaxDegreeOfParallelism = -1;
         }
 
         #endregion Public Constructors
@@ -50,6 +52,7 @@ namespace TaskLayer
         public List<ModList> ListOfModListsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
+        public int MaxDegreeOfParallelism { get; set; }
 
         #endregion Public Properties
 
@@ -112,13 +115,17 @@ namespace TaskLayer
                 lp.Add(ProductType.Y);
             }
 
-            Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
+            object lock1 = new object();
+            object lock2 = new object();
+            ParallelOptions parallelOptions = new ParallelOptions();
+            parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
+            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
                 var origDataFileName = currentRawFileList[spectraFileIndex];
                 LocalMS2Scan[] listOfSortedms2Scans;
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-                lock (myTaskResults)
+                lock (lock1) // Lock because reading is sequential
                 {
                     StartingDataFile(origDataFileName);
                     Status("Loading spectra file " + origDataFileName + "...");
@@ -183,7 +190,7 @@ namespace TaskLayer
                 {
                     Status("Creating _indexedmzMLConnection, putting data in it, and writing!");
                     var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
-                    lock (myTaskResults)
+                    lock (lock2) // Lock because writing is sequential
                     {
                         MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(((CalibrationResults)result).MyMSDataFile, path);
 
