@@ -18,9 +18,9 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> nonOverlappingDoubleRanges) : base(fileNameAddition)
+        public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
         {
-            intervals = nonOverlappingDoubleRanges.OrderBy(b => b.Mean).ToList();
+            intervals = doubleRanges.OrderBy(b => b.Mean).ToList();
             means = intervals.Select(b => b.Mean).ToArray();
         }
 

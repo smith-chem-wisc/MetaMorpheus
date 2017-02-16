@@ -1,5 +1,4 @@
 ﻿using MzLibUtil;
-using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -25,8 +24,7 @@ namespace EngineLayer
 
         public DotSearchMode(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
-            HashSet<double> hs = new HashSet<double>(acceptableMassShifts.Select(b => Math.Round(b, 5)));
-            this.acceptableSortedMassShifts = hs.OrderBy(b => b).ToList();
+            this.acceptableSortedMassShifts = acceptableMassShifts.OrderBy(b => b).ToList();
             this.tol = tol;
             this.NumNotches = acceptableSortedMassShifts.Count;
         }
