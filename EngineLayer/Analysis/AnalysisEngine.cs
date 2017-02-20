@@ -72,6 +72,8 @@ namespace EngineLayer.Analysis
         {
             Status("Applying protein parsimony...");
 
+            Status("Check1");
+
             var uniquePeptides = new HashSet<CompactPeptide>();
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -167,6 +169,8 @@ namespace EngineLayer.Analysis
                 }
             }
 
+            Status("Check2");
+
             // dictionary associates proteins w/ unused base seqs
             var algDictionary = new Dictionary<Protein, HashSet<string>>();
             foreach(var kvp in proteinToPeptidesMatching)
@@ -176,6 +180,8 @@ namespace EngineLayer.Analysis
                 if(newPeptideBaseSeqs.Count != 0)
                     algDictionary.Add(kvp.Key, newPeptideBaseSeqs);
             }
+
+            Status("Check3");
 
             while (algDictionary.Any())
             {
@@ -237,6 +243,8 @@ namespace EngineLayer.Analysis
                 algDictionary = algDictionary.Where(kvp => kvp.Value.Count != 0).ToDictionary(x => x.Key, x => x.Value);
             }
 
+            Status("Check4");
+
             // build protein group after parsimony (each group only has 1 protein at this point)
             proteinGroups = new List<ProteinGroup>();
             foreach (var kvp in parsimonyDict)
@@ -244,6 +252,8 @@ namespace EngineLayer.Analysis
                 var uniquePeptidesHere = new HashSet<CompactPeptide>(kvp.Value.Intersect(uniquePeptides));
                 proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, kvp.Value, uniquePeptidesHere));
             }
+
+            Status("Check5");
 
             // grab indistinguishable proteins ("if" conditions are to narrow search space)
             foreach (var proteinGroup in proteinGroups)
@@ -270,6 +280,8 @@ namespace EngineLayer.Analysis
                     }
                 }
             }
+
+            Status("Check6");
 
             // build protein list for each peptide after parsimony has been applied (helps make return dictionary)
             var peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
