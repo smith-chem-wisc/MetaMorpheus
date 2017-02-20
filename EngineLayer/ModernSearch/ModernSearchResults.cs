@@ -21,15 +21,16 @@ namespace EngineLayer.ModernSearch
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(base.ToString());
+            sb.Append(base.ToString());
             return sb.ToString();
         }
-        #endregion Protected Properties
+
+        #endregion Public Methods
 
     }
 }

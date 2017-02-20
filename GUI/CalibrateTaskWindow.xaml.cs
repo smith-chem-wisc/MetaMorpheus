@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using MzLibUtil;
-using Spectra;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -71,6 +70,7 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString(CultureInfo.InvariantCulture);
             zdotCheckBox.IsChecked = task.ZdotIons;
             cCheckBox.IsChecked = task.CIons;
 
@@ -131,6 +131,8 @@ namespace MetaMorpheusGUI
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+
+            TheTask.MaxDegreeOfParallelism = int.Parse(maxDegreesOfParallelism.Text);
 
             DialogResult = true;
         }

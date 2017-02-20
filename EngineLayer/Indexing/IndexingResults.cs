@@ -5,6 +5,7 @@ namespace EngineLayer.Indexing
 {
     public class IndexingResults : MyResults
     {
+
         #region Public Constructors
 
         public IndexingResults(List<CompactPeptide> peptideIndex, Dictionary<float, List<int>> fragmentIndexDict, IndexingEngine indexParams) : base(indexParams)
@@ -22,17 +23,18 @@ namespace EngineLayer.Indexing
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(base.ToString());
+            sb.Append(base.ToString());
             sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
-            sb.Append("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
+            sb.AppendLine("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
+
     }
 }
