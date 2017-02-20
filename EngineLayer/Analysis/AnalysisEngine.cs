@@ -201,12 +201,13 @@ namespace EngineLayer.Analysis
 
                         if (proteinsWithTheseBaseSeqs.Count > 1)
                         {
-                            var dict = new Dictionary<Protein, HashSet<CompactPeptide>>();
+                            var dict = new Dictionary<Protein, HashSet<string>>();
                             foreach(var protein in proteinsWithTheseBaseSeqs)
                             {
                                 HashSet<CompactPeptide> t;
                                 proteinToPeptidesMatching.TryGetValue(protein, out t);
-                                dict.Add(protein, t);
+                                var seqs = new HashSet<string>(t.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+                                dict.Add(protein, seqs);
                             }
 
                             bestProtein = dict.OrderByDescending(kvp => kvp.Value.Count).First().Key;
