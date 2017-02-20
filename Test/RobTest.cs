@@ -164,7 +164,7 @@ namespace Test
             ae.ScoreProteinGroups(proteinGroups, psms);
             ae.DoProteinFdr(proteinGroups);
 
-            
+            /*
             // prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
             System.Console.WriteLine("----Initial Dictionary----");
@@ -208,7 +208,7 @@ namespace Test
             {
                 System.Console.WriteLine(proteinGroup);
             }
-            
+            */
 
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 8);
