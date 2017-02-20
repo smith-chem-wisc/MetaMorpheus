@@ -180,23 +180,23 @@ namespace EngineLayer.Analysis
             while (algDictionary.Any())
             {
                 // sorts protein list by number of unaccounted-for peptide base sequences
-                var temp = algDictionary.OrderByDescending(kvp => kvp.Value.Count).ToList();
-                Protein bestProtein = temp.First().Key;
+                var proteinsByNewSeqCount = algDictionary.OrderByDescending(kvp => kvp.Value.Count).ToList();
+                Protein bestProtein = proteinsByNewSeqCount.First().Key;
                 HashSet<string> newSeqs;
                 algDictionary.TryGetValue(bestProtein, out newSeqs);
                 newSeqs = new HashSet<string>(newSeqs);
 
                 // may need to select different protein
-                if (temp.Count > 1)
+                if (proteinsByNewSeqCount.Count > 1)
                 {
-                    if (temp[0].Value.Count == temp[1].Value.Count)
+                    if (proteinsByNewSeqCount[0].Value.Count == proteinsByNewSeqCount[1].Value.Count)
                     {
                         var proteinsWithTheseBaseSeqs = new HashSet<Protein>();
-                        var temp1 = algDictionary.Where(kvp => kvp.Value.Count == newSeqs.Count);
-                        foreach (var t in temp1)
+                        var tempDict = algDictionary.Where(kvp => kvp.Value.Count == newSeqs.Count);
+                        foreach (var kvp in tempDict)
                         {
-                            if (newSeqs.IsSubsetOf(t.Value))
-                                proteinsWithTheseBaseSeqs.Add(t.Key);
+                            if (newSeqs.IsSubsetOf(kvp.Value))
+                                proteinsWithTheseBaseSeqs.Add(kvp.Key);
                         }
 
                         if (proteinsWithTheseBaseSeqs.Count > 1)
