@@ -313,10 +313,7 @@ namespace EngineLayer
 
         public void MergeProteinGroupWith(ProteinGroup other)
         {
-            foreach (var protein in other.Proteins)
-            {
-                this.Proteins.Add(protein);
-            }
+            this.Proteins.UnionWith(other.Proteins);
             other.proteinGroupScore = 0;
         }
 

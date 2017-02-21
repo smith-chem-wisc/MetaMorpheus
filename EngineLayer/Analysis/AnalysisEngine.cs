@@ -380,21 +380,25 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            /*
-            // TODO**
-            // merge indistinguishable protein groups after scoring
-            var pg = proteinGroups.OrderByDescending(p => p.proteinGroupScore).ToArray();
-            for(int i = 0; i < (pg.Length - 1); i++)
+            // merge protein groups that are indistinguishable after scoring
+            var pg = proteinGroups.OrderByDescending(p => p.proteinGroupScore).ToList();
+            for (int i = 0; i < (pg.Count - 1); i++)
             {
-                if (pg[i].proteinGroupScore == pg[i + 1].proteinGroupScore)
+                if (pg[i].proteinGroupScore == pg[i + 1].proteinGroupScore && pg[i].proteinGroupScore != 0)
                 {
-                    if (pg[i].StrictPeptideList.SetEquals(pg[i + 1].StrictPeptideList))
+                    // get all protein groups with the exact same score
+                    var pgsWithThisScore = pg.Where(p => p.proteinGroupScore == pg[i].proteinGroupScore).ToList();
+
+                    // check to make sure they have the same peptides, then merge them
+                    foreach(var p in pgsWithThisScore)
                     {
-                        pg[i].MergeProteinGroupWith(pg[i + 1]);
+                        if(p != pg[i] && p.StrictPeptideList.SetEquals(pg[i].StrictPeptideList))
+                        {
+                            pg[i].MergeProteinGroupWith(p);
+                        }
                     }
                 }
             }
-            */
 
             foreach (var proteinGroup in proteinGroups)
             {
