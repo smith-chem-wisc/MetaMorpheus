@@ -23,6 +23,18 @@
         <StackPanel Margin="5">
             <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys" />
             <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
+            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require >1 peptides to ID protein" >
+                <CheckBox.Style>
+                    <Style TargetType="CheckBox">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked,ElementName=checkBoxParsimony}" Value="False">
+                                <Setter Property="IsEnabled" Value="False"/>
+                                <Setter Property="IsChecked" Value="False"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </CheckBox.Style>
+            </CheckBox>
             <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
         </StackPanel>
         <StackPanel Margin="5">

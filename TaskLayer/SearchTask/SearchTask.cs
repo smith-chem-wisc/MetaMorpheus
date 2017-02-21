@@ -33,7 +33,8 @@ namespace TaskLayer
         {
             // Set default values here:
             ClassicSearch = true;
-            DoParsimony = false;
+            DoParsimony = true;
+            NoOneHitWonders = true;
             SearchDecoy = true;
             DoHistogramAnalysis = false;
             MaxMissedCleavages = 2;
@@ -65,6 +66,7 @@ namespace TaskLayer
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
+        public bool NoOneHitWonders { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchDecoy { get; set; }
         public List<SearchMode> SearchModes { get; set; }
