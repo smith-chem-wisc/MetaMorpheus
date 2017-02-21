@@ -14,12 +14,12 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public LocalMS2Scan(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> b, int charge)
+        public LocalMS2Scan(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> b)
         {
             TheScan = b;
-            MonoisotopicPrecursorCharge = charge;
-            MonoisotopicPrecursorMZ = TheScan.SelectedIonGuessMonoisotopicMZ;
-            PrecursorMass = MonoisotopicPrecursorMZ.ToMass(MonoisotopicPrecursorCharge);
+            PrecursorCharge = b.SelectedIonGuessChargeStateGuess.Value;
+            MonoisotopicPrecursorMZ = TheScan.SelectedIonGuessMonoisotopicMZ.Value;
+            MonoisotopicPrecursorMass = MonoisotopicPrecursorMZ.ToMass(PrecursorCharge);
 
             OneBasedScanNumber = b.OneBasedScanNumber;
 
@@ -27,22 +27,21 @@ namespace EngineLayer
 
             NumPeaks = b.MassSpectrum.Size;
 
-            double monoisotopicPrecursorIntensityhere = TheScan.SelectedIonGuessMonoisotopicIntensity;
-            MonoisotopicPrecursorIntensity = monoisotopicPrecursorIntensityhere;
+            MonoisotopicPrecursorIntensity = TheScan.SelectedIonGuessMonoisotopicIntensity.Value;
 
             TotalIonCurrent = b.TotalIonCurrent;
         }
 
         public LocalMS2Scan(double precursorMass)
         {
-            this.PrecursorMass = precursorMass;
+            this.MonoisotopicPrecursorMass = precursorMass;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public double PrecursorMass { get; private set; }
+        public double MonoisotopicPrecursorMass { get; private set; }
 
         #endregion Public Properties
 
@@ -51,7 +50,7 @@ namespace EngineLayer
         internal IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> TheScan { get; private set; }
         internal int OneBasedScanNumber { get; private set; }
         internal double RetentionTime { get; private set; }
-        internal int MonoisotopicPrecursorCharge { get; private set; }
+        internal int PrecursorCharge { get; private set; }
         internal int NumPeaks { get; private set; }
         internal double MonoisotopicPrecursorIntensity { get; private set; }
         internal double TotalIonCurrent { get; private set; }

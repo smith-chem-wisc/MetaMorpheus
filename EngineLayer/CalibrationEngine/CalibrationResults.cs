@@ -14,7 +14,8 @@ namespace EngineLayer.Calibration
         private readonly List<int> numMs2MassChargeCombinationsConsideredList;
         private readonly List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
         private readonly List<int> countList;
-        private readonly List<SeparateCalibrationFunction> calibrationFunctions;
+        private readonly List<CalibrationFunction> ms1calibrationFunctions;
+        private readonly List<CalibrationFunction> ms2calibrationFunctions;
 
         #endregion Private Fields
 
@@ -23,7 +24,8 @@ namespace EngineLayer.Calibration
         public CalibrationResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
-            calibrationFunctions = new List<SeparateCalibrationFunction>();
+            ms1calibrationFunctions = new List<CalibrationFunction>();
+            ms2calibrationFunctions = new List<CalibrationFunction>();
             numMs1MassChargeCombinationsConsideredList = new List<int>();
             numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList = new List<int>();
             numMs2MassChargeCombinationsConsideredList = new List<int>();
@@ -54,10 +56,10 @@ namespace EngineLayer.Calibration
                 sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
                 sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
 
-                if (i < calibrationFunctions.Count)
+                if (i < ms1calibrationFunctions.Count)
                 {
-                    sb.AppendLine("\t\t\tMs1Calibration function: " + calibrationFunctions[i].CalibrationFunction1.ToString());
-                    sb.AppendLine("\t\t\tMs2Calibration function: " + calibrationFunctions[i].CalibrationFunction2.ToString());
+                    sb.AppendLine("\t\t\tMs1Calibration function: " + ms1calibrationFunctions[i].ToString());
+                    sb.AppendLine("\t\t\tMs2Calibration function: " + ms2calibrationFunctions[i].ToString());
                 }
             }
             return sb.ToString();
@@ -67,18 +69,19 @@ namespace EngineLayer.Calibration
 
         #region Internal Methods
 
-        internal void Add(int numMs1MassChargeCombinationsConsidered, int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, int count, int numMs2MassChargeCombinationsConsidered, int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+        internal void Add(DataPointAquisitionResults res)
         {
-            numMs1MassChargeCombinationsConsideredList.Add(numMs1MassChargeCombinationsConsidered);
-            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-            numMs2MassChargeCombinationsConsideredList.Add(numMs2MassChargeCombinationsConsidered);
-            numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-            countList.Add(count);
+            numMs1MassChargeCombinationsConsideredList.Add(res.numMs1MassChargeCombinationsConsidered);
+            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(res.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            numMs2MassChargeCombinationsConsideredList.Add(res.numMs2MassChargeCombinationsConsidered);
+            numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(res.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            countList.Add(res.Count);
         }
 
-        internal void Add(CalibrationFunction combinedCalibration)
+        internal void Add(CalibrationFunction ms1calib, CalibrationFunction ms2calib)
         {
-            calibrationFunctions.Add((SeparateCalibrationFunction)combinedCalibration);
+            ms1calibrationFunctions.Add(ms1calib);
+            ms2calibrationFunctions.Add(ms2calib);
         }
 
         #endregion Internal Methods

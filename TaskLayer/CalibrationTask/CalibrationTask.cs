@@ -17,6 +17,7 @@ using UsefulProteomicsDatabases;
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
+
     {
 
         #region Public Constructors
@@ -76,6 +77,40 @@ namespace TaskLayer
 
         #endregion Protected Properties
 
+        #region Protected Internal Methods
+
+        protected internal void WriteMs1DataPoints(List<LabeledMs1DataPoint> items, string outputFolder, string fileName)
+        {
+            var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeaderForMs1);
+                foreach (var dp in items)
+                {
+                    output.Write(string.Join("\t", dp.inputs));
+                    output.WriteLine("\t" + dp.label);
+                }
+            }
+            SucessfullyFinishedWritingFile(writtenFile);
+        }
+
+        protected internal void WriteMs2DataPoints(List<LabeledMs2DataPoint> items, string outputFolder, string fileName)
+        {
+            var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeaderForMs1);
+                foreach (var dp in items)
+                {
+                    output.Write(string.Join("\t", dp.inputs));
+                    output.WriteLine("\t" + dp.label);
+                }
+            }
+            SucessfullyFinishedWritingFile(writtenFile);
+        }
+
+        #endregion Protected Internal Methods
+
         #region Protected Methods
 
         protected override MyResults RunSpecific()
@@ -100,9 +135,8 @@ namespace TaskLayer
             List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
 
             Status("Loading proteins...");
-            var allKnownModifications = GetDict(localizeableModifications);
             Dictionary<string, Modification> um;
-            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, allKnownModifications, b.IsContaminant, out um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
             List<ProductType> lp = new List<ProductType>();
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
@@ -142,15 +176,14 @@ namespace TaskLayer
                     StartingDataFile(origDataFileName);
                     Status("Loading spectra file " + origDataFileName + "...");
                     if (Path.GetExtension(origDataFileName).Equals(".mzML"))
-                        myMsDataFile = new Mzml(origDataFileName, MaxNumPeaksPerScan);
+                        myMsDataFile = Mzml.LoadAllStaticData(origDataFileName);
                     else
-                        myMsDataFile = new ThermoRawFile(origDataFileName, MaxNumPeaksPerScan);
+                        myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFileName);
                     Status("Opening spectra file " + origDataFileName + "...");
-                    myMsDataFile.Open();
-                    listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+                    listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 }
 
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
+                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
 
                 var searchResults = (ClassicSearchResults)searchEngine.Run();
                 myTaskResults.AddResultText(searchResults);
@@ -167,19 +200,15 @@ namespace TaskLayer
 
                 var identifications = analysisResults.AllResultingIdentifications[0];
 
-                myMsDataFile.Close();
-
                 //Now can calibrate!!!
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFileForCalibration;
                 if (Path.GetExtension(origDataFileName).Equals(".mzML"))
                 {
-                    myMsDataFileForCalibration = new Mzml(origDataFileName);
-                    myMsDataFileForCalibration.Open();
+                    myMsDataFileForCalibration = Mzml.LoadAllStaticData(origDataFileName);
                 }
                 else
                 {
-                    myMsDataFileForCalibration = new ThermoRawFile(origDataFileName);
-                    myMsDataFileForCalibration.Open();
+                    myMsDataFileForCalibration = ThermoStaticData.LoadAllStaticData(origDataFileName);
                 }
                 int randomSeed = 1;
 
@@ -189,7 +218,7 @@ namespace TaskLayer
 
                 // TODO: fix the tolerance calculation below
 
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration);
+                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s));
 
                 var result = a.Run();
                 myTaskResults.AddResultText(result);

@@ -45,7 +45,7 @@ namespace EngineLayer.ClassicSearch
         public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
+            this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.MonoisotopicPrecursorMass).ToArray();
             this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
@@ -149,7 +149,7 @@ namespace EngineLayer.ClassicSearch
                                     //}
 
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.PrecursorMass, scan.OneBasedScanNumber, scan.MonoisotopicPrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
+                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)
                                     {
                                         PsmClassic current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
@@ -197,7 +197,7 @@ namespace EngineLayer.ClassicSearch
                 if (scanIndex < arrayOfSortedMS2Scans.Length)
                 {
                     var scan = arrayOfSortedMS2Scans[scanIndex];
-                    while (scan.PrecursorMass <= ye.Maximum)
+                    while (scan.MonoisotopicPrecursorMass <= ye.Maximum)
                     {
                         yield return new Tuple<LocalMS2Scan, int>(scan, theTuple.Item2);
                         scanIndex++;

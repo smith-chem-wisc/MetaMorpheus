@@ -301,6 +301,13 @@ PP   Anywhere.
 MM   79.966331
 CF   H1 O3 P1
 //
+ID   GG of K
+FT   MOD_RES
+TG   Lysine
+PP   Anywhere.
+MM   114.042927
+CF   H6 C4 N2 O2
+//
 ID   Acetylation+Methionine
 FT   MOD_RES
 TG   Any

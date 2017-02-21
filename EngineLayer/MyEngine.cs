@@ -20,8 +20,6 @@ namespace EngineLayer
         private static readonly string unimodLocation = Path.Combine(@"Data", @"unimod.xml");
         private static readonly string uniprotLocation = Path.Combine(@"Mods", @"ptmlist.txt");
 
-        private static readonly double[] mms = new double[] { 1.0025, 2.005, 3.0075, 4.010 };
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -77,13 +75,14 @@ namespace EngineLayer
                 var ms2scan = heh as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                 if (ms2scan != null)
                 {
-                    int? monoisotopicPrecursorChargehere = ms2scan.SelectedIonGuessChargeStateGuess;
-                    int mc;
-                    if (monoisotopicPrecursorChargehere.HasValue && monoisotopicPrecursorChargehere > 0)
-                        mc = monoisotopicPrecursorChargehere.Value;
-                    else
-                        mc = GuessCharge(myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber).MassSpectrum.Extract(ms2scan.IsolationMz - 2.1, ms2scan.IsolationMz + 2.1).ToList());
-                    yield return new LocalMS2Scan(ms2scan, mc);
+                    var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber);
+                    if (!ms2scan.SelectedIonGuessChargeStateGuess.HasValue)
+                        ms2scan.RecomputeChargeState(precursorSpectrum.MassSpectrum, 0.01, 4);
+                    if (!ms2scan.SelectedIonGuessIntensity.HasValue || !ms2scan.SelectedIonGuessMZ.HasValue)
+                        ms2scan.RecomputeSelectedPeak(precursorSpectrum.MassSpectrum);
+                    if (!ms2scan.SelectedIonGuessMonoisotopicIntensity.HasValue || !ms2scan.SelectedIonGuessMonoisotopicMZ.HasValue)
+                        ms2scan.RecomputeMonoisotopicPeak(precursorSpectrum.MassSpectrum, 0.01, 0.3);
+                    yield return new LocalMS2Scan(ms2scan);
                 }
             }
         }
@@ -127,6 +126,7 @@ namespace EngineLayer
 
         private static IEnumerable<SearchMode> LoadSearchModesFromFile()
         {
+            yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(5);
             yield return new SingleAbsoluteAroundZeroSearchMode(0.05);
             yield return new DotSearchMode(new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5));
@@ -187,27 +187,6 @@ namespace EngineLayer
             doubleRanges = doubleRanges.Where(b => b.Minimum <= doubleRange.Maximum && b.Maximum >= doubleRange.Minimum).Select(b => new DoubleRange(Math.Max(doubleRange.Minimum, b.Minimum), Math.Min(doubleRange.Maximum, b.Maximum))).ToList();
 
             yield return new IntervalSearchMode("Exclude AAs", doubleRanges);
-        }
-
-        private static int GuessCharge(List<IMzPeak> mzPeaks)
-        {
-            double tolHere = 0.01;
-            int[] chargeCount = new int[4]; // charges 1,2,3,4
-            for (int i = 0; i < mzPeaks.Count; i++)
-                for (int j = i + 1; j < mzPeaks.Count; j++)
-                {
-                    for (int charge = 1; charge <= 4; charge++)
-                    {
-                        for (int isotope = 0; isotope < 4; isotope++)
-                        {
-                            if (Math.Abs(mzPeaks[j].X - mzPeaks[i].X - mms[isotope] / charge) < tolHere)
-                            {
-                                chargeCount[charge - 1]++;
-                            }
-                        }
-                    }
-                }
-            return Array.IndexOf(chargeCount, chargeCount.Max()) + 1;
         }
 
         private void startingSingleEngine()

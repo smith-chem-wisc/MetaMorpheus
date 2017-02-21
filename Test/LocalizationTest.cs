@@ -1,12 +1,9 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
-using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Spectra;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -30,7 +27,7 @@ namespace Test
             string fullName = null;
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            Protein parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, 0, false, false);
+            Protein parentProteinForMatch = new Protein("MEK", accession, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, false, false, null);
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
@@ -67,8 +64,6 @@ namespace Test
             Assert.AreEqual(0, newPsm.matchedIonsList[ProductType.B].Count(b => b > 0));
             Assert.AreEqual(1, newPsm.matchedIonsList[ProductType.Y].Count(b => b > 0));
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
-
-
         }
 
         #endregion Public Methods

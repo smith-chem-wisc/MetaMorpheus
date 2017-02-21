@@ -583,7 +583,7 @@ namespace EngineLayer.Analysis
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
-                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).FirstOrDefault(), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
+                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
                     }
 
                     if (doParsimony)

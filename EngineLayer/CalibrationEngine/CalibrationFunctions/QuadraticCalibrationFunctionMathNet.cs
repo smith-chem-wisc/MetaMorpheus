@@ -50,7 +50,7 @@ namespace EngineLayer.Calibration
             return f(ExpandFeatures(transform.Transform(t)));
         }
 
-        internal void Train(IEnumerable<LabeledDataPoint> trainingList)
+        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
             double[][] ok = new double[trainingList.Count()][];
             int k = 0;
@@ -59,7 +59,7 @@ namespace EngineLayer.Calibration
                 ok[k] = ExpandFeatures(transform.Transform(p.inputs));
                 k++;
             }
-            var ok2 = trainingList.Select(b => b.output).ToArray();
+            var ok2 = trainingList.Select(b => b.label).ToArray();
 
             var ye = new Func<double[], double>[numFeaturesExpanded + 1];
             ye[0] = a => 1;
