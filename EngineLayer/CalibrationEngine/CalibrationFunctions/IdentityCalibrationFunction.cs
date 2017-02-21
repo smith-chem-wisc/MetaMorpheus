@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace EngineLayer.Calibration
 {
@@ -21,6 +22,10 @@ namespace EngineLayer.Calibration
         internal override double Predict(double[] t)
         {
             return 0;
+        }
+
+        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        {
         }
 
         #endregion Internal Methods

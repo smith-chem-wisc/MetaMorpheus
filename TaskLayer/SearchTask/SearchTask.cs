@@ -110,7 +110,7 @@ namespace TaskLayer
 
             Status("Loading proteins...");
             Dictionary<string, Modification> um;
-            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, GetDict(localizeableModifications), b.IsContaminant, out um)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
             List<CompactPeptide> peptideIndex = null;
             float[] keys = null;
@@ -171,15 +171,14 @@ namespace TaskLayer
                 Status("Loading spectra file...");
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
+                    myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, MaxNumPeaksPerScan);
+                    myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 Status("Opening spectra file...");
-                myMsDataFile.Open();
 
                 if (ClassicSearch)
                 {
-                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp).Run();
+                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp).Run();
                     mySearchTaskResults.AddResultText(classicSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);
@@ -188,7 +187,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    var modernSearchResults = (ModernSearchResults)new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance, SearchModes).Run();
+                    var modernSearchResults = (ModernSearchResults)new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, ProductMassTolerance, SearchModes, origDataFile).Run();
                     mySearchTaskResults.AddResultText(modernSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.NewPsms[i]);

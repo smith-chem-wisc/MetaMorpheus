@@ -42,6 +42,14 @@ namespace EngineLayer
             }
         }
 
+        public virtual char NextAminoAcid
+        {
+            get
+            {
+                return OneBasedEndResidueInProtein < Protein.Length ? Protein[OneBasedEndResidueInProtein] : '-';
+            }
+        }
+
         public string BaseSequence
         {
             get

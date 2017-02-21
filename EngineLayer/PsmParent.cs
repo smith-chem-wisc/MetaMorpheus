@@ -1,6 +1,7 @@
 ﻿using Proteomics;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -60,7 +61,7 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
 
-            sb.Append(fileName + '\t');
+            sb.Append(Path.GetFileNameWithoutExtension(fileName) + '\t');
             sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');

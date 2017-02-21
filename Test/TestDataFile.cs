@@ -9,12 +9,12 @@ using System.Linq;
 
 namespace Test
 {
-    internal class TestDataFile : IMsDataFile<TestScan>
+    internal class TestDataFile : IMsDataFile<IMzmlScan>
     {
 
         #region Private Fields
 
-        private readonly List<TestScan> Scans;
+        private readonly List<IMzmlScan> Scans;
 
         #endregion Private Fields
 
@@ -26,16 +26,17 @@ namespace Test
             var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
-            Scans = new List<TestScan> { new TestScan(1, 1, MassSpectrum1, 1) };
+            Scans = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1) };
             var mz2 = new double[] { 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 };
             var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1 };
             var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
-            Scans.Add(new TestScanWithPrecursor(2, 2, MassSpectrum2, 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, 1));
+            Scans.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 402.18629720155.ToMz(2), 2, 1, 402.18629720155.ToMz(2), 2, DissociationType.HCD, 1, 402.18629720155.ToMz(2), 1));
         }
 
         public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss)
         {
-            Scans = new List<TestScan>();
+            Scans = new List<IMzmlScan>();
             for (int i = 0; i < pepWithSetModss.Count; i++)
             {
                 var pepWithSetMods = pepWithSetModss[i];
@@ -43,7 +44,7 @@ namespace Test
                 var intensities1 = new double[] { 1, 1, 1 };
                 var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
-                Scans.Add(new TestScan(2 * i + 1, 2 * i, MassSpectrum1, 2 * i));
+                Scans.Add(new MzmlScan(2 * i + 1, MassSpectrum1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Orbitrap, 1000, 1));
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
@@ -55,7 +56,7 @@ namespace Test
                     intensities2.Add(1);
                 }
                 var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
-                Scans.Add(new TestScanWithPrecursor(2 * i + 2, 2 * i + 1, MassSpectrum2, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2 * i + 1, 2 * i + 1));
+                Scans.Add(new MzmlScanWithPrecursor(2 * i + 2, MassSpectrum2, 2, true, Polarity.Positive, 2 * i + 1, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 2 * i + 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1));
             }
         }
 
@@ -65,7 +66,7 @@ namespace Test
             var intensities1 = new double[] { 1, 1, 1 };
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
-            Scans = new List<TestScan> { new TestScan(1, 1, MassSpectrum1, 1) };
+            Scans = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1) };
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
@@ -77,7 +78,7 @@ namespace Test
                 intensities2.Add(1);
             }
             var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
-            Scans.Add(new TestScanWithPrecursor(2, 2, MassSpectrum2, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1));
+            Scans.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1));
         }
 
         public TestDataFile(PeptideWithSetModifications pepWithSetMods, string v)
@@ -104,8 +105,8 @@ namespace Test
                 }
                 var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
 
-                Scans = new List<TestScan> { new TestScan(1, 1, MassSpectrum1, 1) ,
-                                             new TestScanWithPrecursor(2, 2, MassSpectrum2, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1)};
+                Scans = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000,1),
+                new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 1, pepWithSetMods.MonoisotopicMass.ToMz(2),1) };
             }
         }
 
@@ -196,7 +197,7 @@ namespace Test
 
         #region Public Methods
 
-        public TestScan GetOneBasedScan(int oneBasedScanNumber)
+        public IMzmlScan GetOneBasedScan(int oneBasedScanNumber)
         {
             return Scans[oneBasedScanNumber - 1];
         }
@@ -210,7 +211,7 @@ namespace Test
         {
         }
 
-        public IEnumerator<TestScan> GetEnumerator()
+        public IEnumerator<IMzmlScan> GetEnumerator()
         {
             return Scans.GetEnumerator();
         }
@@ -231,6 +232,11 @@ namespace Test
         }
 
         public void Open()
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerable<IMzmlScan> IMsDataFile<IMzmlScan>.GetMsScansInTimeRange(double firstRT, double lastRT)
         {
             throw new NotImplementedException();
         }
