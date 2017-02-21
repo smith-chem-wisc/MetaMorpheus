@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Spectra;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -134,6 +133,8 @@ namespace EngineLayer
                 sb.Append("Protein FullName" + '\t');
                 sb.Append("Peptide Description" + '\t');
                 sb.Append("Start and End ResidueInProtein" + '\t');
+                sb.Append("PreviousAminoAcid" + '\t');
+                sb.Append("NextAminoAcid" + '\t');
                 sb.Append("BaseSequence" + '\t');
                 sb.Append("FullSequence" + '\t');
                 sb.Append("numMods" + '\t');
@@ -159,6 +160,8 @@ namespace EngineLayer
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.FullName)) + "\t");
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.PeptideDescription)) + "\t");
             sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.PreviousAminoAcid)) + "\t");
+            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.NextAminoAcid)) + "\t");
             sb.Append(BaseSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(NumMods.ToString(CultureInfo.InvariantCulture) + '\t');

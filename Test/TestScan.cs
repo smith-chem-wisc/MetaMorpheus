@@ -1,8 +1,7 @@
-﻿using MassSpectrometry;
-using Spectra;
-using System;
+﻿using IO.MzML;
+using MassSpectrometry;
 using MzLibUtil;
-using IO.MzML;
+using System;
 
 namespace Test
 {
@@ -32,7 +31,7 @@ namespace Test
             }
         }
 
-        public double InjectionTime { get; protected set; }
+        public double? InjectionTime { get; protected set; }
 
         public bool IsCentroid
         {
@@ -89,7 +88,6 @@ namespace Test
                 return MassSpectrum.SumOfAllY;
             }
         }
-        
 
         IMzSpectrum<IMzPeak> IMsDataScan<IMzSpectrum<IMzPeak>>.MassSpectrum
         {

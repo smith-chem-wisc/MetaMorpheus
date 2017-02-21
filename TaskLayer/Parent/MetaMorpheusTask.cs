@@ -132,6 +132,7 @@ namespace TaskLayer
             }
 #endif
         }
+
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -155,10 +156,11 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal IDictionary<string, IList<Modification>> GetDict(List<ModificationWithMass> localizeableModifications)
+        protected internal IDictionary<string, IList<Modification>> GetDict<T>(IEnumerable<T> mods)
+            where T : Modification
         {
             var dict = new Dictionary<string, IList<Modification>>();
-            foreach (var nice in localizeableModifications)
+            foreach (var nice in mods)
             {
                 IList<Modification> val;
                 if (dict.TryGetValue(nice.id, out val))
