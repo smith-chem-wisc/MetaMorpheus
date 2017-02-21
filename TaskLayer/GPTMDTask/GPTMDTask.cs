@@ -256,13 +256,21 @@ namespace TaskLayer
             var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance).Run();
             myGPTMDresults.AddResultText(gptmdResults);
 
-            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
-            WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
+            WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
             SucessfullyFinishedWritingFile(outputXMLdbFullName);
 
             myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+
+            string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+
+            WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+
+            SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants);
+
+            myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
 
             return myGPTMDresults;
         }
