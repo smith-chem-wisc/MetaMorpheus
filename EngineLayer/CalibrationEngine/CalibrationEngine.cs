@@ -217,20 +217,37 @@ namespace EngineLayer.Calibration
             transforms.Add(new TransformFunction(b => new double[] { b[1] }, 1));
             transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[2]) }, 1));
             transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]) }, 1));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[4]) }, 1));
 
             transforms.Add(new TransformFunction(b => new double[] { b[0], b[1] }, 2));
             transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[2]) }, 2));
             transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[3]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[4]) }, 2));
             transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[2]) }, 2));
             transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[4]) }, 2));
             transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[2]), Math.Log(b[3]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[2]), Math.Log(b[4]) }, 2));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[4]) }, 2));
 
             transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]) }, 3));
             transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[3]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[4]) }, 3));
             transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[2]), Math.Log(b[3]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[2]), Math.Log(b[4]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[3]), Math.Log(b[4]) }, 3));
             transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[2]), Math.Log(b[3]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[2]), Math.Log(b[4]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[4]) }, 3));
+            transforms.Add(new TransformFunction(b => new double[] { Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 3));
 
             transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]), Math.Log(b[3]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]), Math.Log(b[4]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[3]), Math.Log(b[4]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[0], Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 4));
+            transforms.Add(new TransformFunction(b => new double[] { b[1], Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 4));
+
+            transforms.Add(new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 5));
 
             foreach (var transform in transforms)
             {
@@ -324,23 +341,23 @@ namespace EngineLayer.Calibration
                         theScan.RecomputeSelectedPeak(precursorScan.MassSpectrum);
                     double precursorMZ = theScan.SelectedIonGuessMZ.Value;
                     double precursorIntensity = theScan.SelectedIonGuessIntensity.Value;
-                    double newSelectedMZ = precursorMZ - bestCf.Item2.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent });
+                    double newSelectedMZ = precursorMZ - bestCf.Item1.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.Value });
 
                     if (!theScan.SelectedIonGuessMonoisotopicMZ.HasValue || !theScan.SelectedIonGuessMonoisotopicIntensity.HasValue)
                         theScan.RecomputeMonoisotopicPeak(precursorScan.MassSpectrum, 0.01, 0.3);
                     double monoisotopicMZ = theScan.SelectedIonGuessMonoisotopicMZ.Value;
                     double monoisotopicIntensity = theScan.SelectedIonGuessMonoisotopicIntensity.Value;
 
-                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Item2.Predict(new double[] { monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent });
+                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Item1.Predict(new double[] { monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.Value });
 
                     double IsolationMZ = theScan.IsolationMz;
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, IsolationMZ });
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime.Value, IsolationMZ });
 
                     theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
                 }
                 else
                 {
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent });
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime.Value });
                     a.TransformByApplyingFunctionToSpectra(theFunc);
                 }
             }
