@@ -77,7 +77,7 @@ namespace EngineLayer
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber);
                     if (!ms2scan.SelectedIonGuessChargeStateGuess.HasValue)
-                        ms2scan.RecomputeChargeState(precursorSpectrum.MassSpectrum, 0.01, 4);
+                        ms2scan.RecomputeChargeState(precursorSpectrum.MassSpectrum, 0.01, 10);
                     if (!ms2scan.SelectedIonGuessIntensity.HasValue || !ms2scan.SelectedIonGuessMZ.HasValue)
                         ms2scan.RecomputeSelectedPeak(precursorSpectrum.MassSpectrum);
                     if (!ms2scan.SelectedIonGuessMonoisotopicIntensity.HasValue || !ms2scan.SelectedIonGuessMonoisotopicMZ.HasValue)
