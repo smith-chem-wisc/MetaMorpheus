@@ -33,8 +33,8 @@ namespace TaskLayer
         {
             // Set default values here:
             ClassicSearch = true;
-            DoParsimony = true;
-            NoOneHitWonders = true;
+            DoParsimony = false;
+            NoOneHitWonders = false;
             SearchDecoy = true;
             DoHistogramAnalysis = false;
             MaxMissedCleavages = 2;
