@@ -1,7 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
 using MathNet.Numerics.Distributions;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -155,21 +154,6 @@ namespace TaskLayer
         #endregion Public Methods
 
         #region Protected Internal Methods
-
-        protected internal IDictionary<string, IList<Modification>> GetDict<T>(IEnumerable<T> mods)
-            where T : Modification
-        {
-            var dict = new Dictionary<string, IList<Modification>>();
-            foreach (var nice in mods)
-            {
-                IList<Modification> val;
-                if (dict.TryGetValue(nice.id, out val))
-                    val.Add(nice);
-                else
-                    dict.Add(nice.id, new List<Modification> { nice });
-            }
-            return dict;
-        }
 
         protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
         {

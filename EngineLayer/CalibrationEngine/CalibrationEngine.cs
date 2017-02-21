@@ -348,7 +348,6 @@ namespace EngineLayer.Calibration
 
         private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
         {
-            var scores = new List<int>();
             var theIndex = -1;
             if (direction == 1)
                 theIndex = ms2spectrumIndex;
@@ -367,7 +366,6 @@ namespace EngineLayer.Calibration
                     continue;
                 }
                 addedAscan = false;
-                var myCandidatePointsForThisMS1scan = new List<LabeledMs1DataPoint>();
                 var fullMS1scan = myMsDataFile.GetOneBasedScan(theIndex);
                 double ms1RetentionTime = fullMS1scan.RetentionTime;
                 var scanWindowRange = fullMS1scan.ScanWindowRange;
