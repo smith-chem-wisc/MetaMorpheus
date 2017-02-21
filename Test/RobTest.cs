@@ -36,10 +36,10 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, false, false));
-            p.Add(new Protein("-----F----*", "D1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, true, false));
-            p.Add(new Protein("-----F----**", "C1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, false, true));
-            p.Add(new Protein("----E----**", "C2", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, false, true));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            p.Add(new Protein("-----F----*", "D1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
+            p.Add(new Protein("-----F----**", "C1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
+            p.Add(new Protein("----E----**", "C2", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -245,7 +245,7 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", 0, false, false));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
             
             foreach (var protein in p)
             {
