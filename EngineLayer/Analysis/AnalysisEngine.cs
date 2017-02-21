@@ -31,6 +31,7 @@ namespace EngineLayer.Analysis
         private readonly Action<List<NewPsmWithFdr>, string> writePsmsAction;
         private readonly Action<List<ProteinGroup>, string> writeProteinGroupsAction;
         private readonly bool doParsimony;
+        private readonly bool noOneHitWonders;
         private readonly bool doHistogramAnalysis;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
@@ -40,9 +41,10 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior)
         {
             this.doParsimony = doParsimony;
+            this.noOneHitWonders = noOneHitWonders;
             this.doHistogramAnalysis = doHistogramAnalysis;
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -362,6 +364,10 @@ namespace EngineLayer.Analysis
             {
                 // score the group (scoring algorithm defined in the ProteinGroup class)
                 proteinGroup.ScoreThisProteinGroup(variableModifications, localizeableModifications, fixedModifications);
+
+                // remove one hit wonders if option enabled
+                if (noOneHitWonders && !proteinGroup.isDecoy && !proteinGroup.isContaminant && proteinGroup.StrictPeptideList.Count == 1)
+                    proteinGroup.proteinGroupScore = 0;
 
                 // for finding razor peptides later
                 foreach (var peptide in proteinGroup.StrictPeptideList)

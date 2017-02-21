@@ -220,7 +220,7 @@ namespace EngineLayer
                     {
                         switch (product_type)
                         {
-                            // p.cumulativeNTerminalMass[r] refers to a generic "middle" residue fragment; ion type masses are determined 
+                            // p.cumulativeNTerminalMass[r] refers to a generic fragment; ion type masses are determined 
                             // by adding/subtracting a constant value, depending on the fragment type
                             case ProductType.Adot:
                                 throw new NotImplementedException();
@@ -270,7 +270,12 @@ namespace EngineLayer
                 products = products.Concat(productsC).ToArray();
             if (productsZ != null)
                 products = products.Concat(productsZ).ToArray();
-            Array.Sort(products);
+
+            var temp = products.Where(p => !double.IsNaN(p)).ToArray();
+            Array.Sort(temp);
+            var temp2 = products.Where(p => double.IsNaN(p));
+            products = temp.Concat(temp2).ToArray();
+            
 
             /*
             for (int i = 0; i < len; i++)

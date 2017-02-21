@@ -12,6 +12,7 @@ namespace EngineLayer
         #region Public Fields
 
         public readonly bool isDecoy;
+        public readonly bool isContaminant;
 
         #endregion Public Fields
 
@@ -42,6 +43,8 @@ namespace EngineLayer
             {
                 if (protein.IsDecoy)
                     isDecoy = true;
+                if (protein.IsContaminant)
+                    isContaminant = true;
             }
         }
 
@@ -73,7 +76,7 @@ namespace EngineLayer
             }
         }
 
-        public double proteinGroupScore { get; private set; }
+        public double proteinGroupScore { get; set; }
         public HashSet<Protein> Proteins { get; set; }
         public HashSet<CompactPeptide> TotalPeptideList { get; set; }
         public HashSet<NewPsmWithFdr> TotalPsmList { get; set; }

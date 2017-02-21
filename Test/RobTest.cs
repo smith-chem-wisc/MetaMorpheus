@@ -118,7 +118,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable);
             dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -216,16 +216,16 @@ namespace Test
             Assert.That(parsimonyBaseSequences.Contains("--C-------"));
             Assert.That(parsimonyBaseSequences.Contains("-B-D---HHH--"));
             Assert.That(parsimonyBaseSequences.Contains("-----F----*"));  // decoy
-            Assert.That(parsimonyBaseSequences.Contains("----E----**")); // contaminant
+            Assert.That(parsimonyBaseSequences.Contains("----E----**"));  // contaminant
             Assert.That(parsimonyBaseSequences.Contains("-B------I-"));
             Assert.That(parsimonyBaseSequences.Contains("----EFG---"));
             Assert.That(parsimonyBaseSequences.Contains("----EFG--J"));
             Assert.That(parsimonyBaseSequences.Count == 8);
 
             // protein group tests
-            Assert.That(proteinGroups.Count == 7);
-            //Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 2);
-            //Assert.That(proteinGroups.First().proteinGroupScore == 19);
+            Assert.That(proteinGroups.Count == 5);
+            Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 3);
+            Assert.That(proteinGroups.First().proteinGroupScore == 19);
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
@@ -274,18 +274,17 @@ namespace Test
                 YfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Y }));
                 BYfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
-
             double[] testB;
-            BfragmentMasses.TryGetValue(peptides.First(), out testB);
+            Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
 
             double[] testY;
-            YfragmentMasses.TryGetValue(peptides.First(), out testY);
+            Assert.That(YfragmentMasses.TryGetValue(peptides.First(), out testY));
 
             double[] testC;
-            CfragmentMasses.TryGetValue(peptides.First(), out testC);
+            Assert.That(CfragmentMasses.TryGetValue(peptides.First(), out testC));
 
             double[] testZ;
-            ZdotfragmentMasses.TryGetValue(peptides.First(), out testZ);
+            Assert.That(ZdotfragmentMasses.TryGetValue(peptides.First(), out testZ));
         }
 
         #endregion Public Methods
