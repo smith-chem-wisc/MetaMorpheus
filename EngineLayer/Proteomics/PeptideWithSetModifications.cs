@@ -22,6 +22,8 @@ namespace EngineLayer
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+        private static readonly double protonMass = Constants.ProtonMass;
+        private static readonly double electronMass = Constants.ElectronMass;
 
         private readonly PeptideWithPossibleModifications modPep;
         private double? monoisotopicMass;
@@ -244,7 +246,7 @@ namespace EngineLayer
                                 break;
 
                             case ProductType.Zdot:
-                                productsZ[iZ] = p.cumulativeCTerminalMass[r] + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                                productsZ[iZ] = p.cumulativeCTerminalMass[r] + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass - hydrogenAtomMonoisotopicMass + protonMass + electronMass;
                                 iZ++;
                                 break;
                         }
@@ -256,45 +258,20 @@ namespace EngineLayer
             iC = 0;
             iZ = 0;
 
-            /*
-            int len = (productTypes.Contains(ProductType.B) ? Length - 2 : 0) +
-                      (productTypes.Contains(ProductType.Y) ? Length - 1 : 0) +
-                      (productTypes.Contains(ProductType.C) ? Length - 1 : 0) +
-                      (productTypes.Contains(ProductType.Zdot) ? Length - 1 : 0);
-            */
+            IEnumerable<double> enumProducts = new double[0];
 
-            double[] products = new double[0];
             if (productsB != null)
-                products = products.Concat(productsB).ToArray();
+                enumProducts = enumProducts.Concat(productsB);
             if (productsY != null)
-                products = products.Concat(productsY).ToArray();
+                enumProducts = enumProducts.Concat(productsY);
             if (productsC != null)
-                products = products.Concat(productsC).ToArray();
+                enumProducts = enumProducts.Concat(productsC);
             if (productsZ != null)
-                products = products.Concat(productsZ).ToArray();
+                enumProducts = enumProducts.Concat(productsZ);
 
-            var temp = products.Where(p => !double.IsNaN(p)).ToArray();
-            Array.Sort(temp);
-            var temp2 = products.Where(p => double.IsNaN(p));
-            products = temp.Concat(temp2).ToArray();
+            double[] products = enumProducts.Where(f => !double.IsNaN(f)).ToArray();
+            Array.Sort(products);
             
-
-            /*
-            for (int i = 0; i < len; i++)
-            {
-                if (productsB != null && (productsY == null || (iB != productsB.Length && (iY == productsY.Length || productsB[iB] <= productsY[iY]))))
-                {
-                    products[i] = productsB[iB];
-                    iB++;
-                }
-                else
-                {
-                    products[i] = productsY[iY];
-                    iY++;
-                }
-            }
-            */
-
             return products;
         }
 
