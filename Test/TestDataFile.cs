@@ -78,7 +78,10 @@ namespace Test
                 intensities2.Add(1);
             }
             var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
-            Scans.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1));
+            var scan2 = new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1);
+            scan2.ComputeSelectedPeakIntensity(MassSpectrum1);
+            scan2.ComputeMonoisotopicPeakIntensity(MassSpectrum1);
+            Scans.Add(scan2);
         }
 
         public TestDataFile(PeptideWithSetModifications pepWithSetMods, string v)
@@ -105,8 +108,11 @@ namespace Test
                 }
                 var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
 
+                var scan2 = new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1);
+                scan2.ComputeSelectedPeakIntensity(MassSpectrum1);
+                scan2.ComputeMonoisotopicPeakIntensity(MassSpectrum1);
                 Scans = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000,1),
-                new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 1, pepWithSetMods.MonoisotopicMass.ToMz(2),1) };
+               scan2 };
             }
         }
 

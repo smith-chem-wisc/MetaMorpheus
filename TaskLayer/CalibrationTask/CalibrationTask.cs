@@ -201,15 +201,6 @@ namespace TaskLayer
                 var identifications = analysisResults.AllResultingIdentifications[0];
 
                 //Now can calibrate!!!
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFileForCalibration;
-                if (Path.GetExtension(origDataFileName).Equals(".mzML"))
-                {
-                    myMsDataFileForCalibration = Mzml.LoadAllStaticData(origDataFileName);
-                }
-                else
-                {
-                    myMsDataFileForCalibration = ThermoStaticData.LoadAllStaticData(origDataFileName);
-                }
                 int randomSeed = 1;
 
                 int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
@@ -218,7 +209,7 @@ namespace TaskLayer
 
                 // TODO: fix the tolerance calculation below
 
-                var a = new CalibrationEngine(myMsDataFileForCalibration, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s));
+                var a = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s));
 
                 var result = a.Run();
                 myTaskResults.AddResultText(result);

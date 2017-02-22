@@ -337,14 +337,10 @@ namespace EngineLayer.Calibration
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
-                    if (!theScan.SelectedIonGuessMZ.HasValue || !theScan.SelectedIonGuessIntensity.HasValue)
-                        theScan.RecomputeSelectedPeak(precursorScan.MassSpectrum);
                     double precursorMZ = theScan.SelectedIonGuessMZ.Value;
                     double precursorIntensity = theScan.SelectedIonGuessIntensity.Value;
                     double newSelectedMZ = precursorMZ - bestCf.Item1.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.Value });
 
-                    if (!theScan.SelectedIonGuessMonoisotopicMZ.HasValue || !theScan.SelectedIonGuessMonoisotopicIntensity.HasValue)
-                        theScan.RecomputeMonoisotopicPeak(precursorScan.MassSpectrum, 0.01, 0.3);
                     double monoisotopicMZ = theScan.SelectedIonGuessMonoisotopicMZ.Value;
                     double monoisotopicIntensity = theScan.SelectedIonGuessMonoisotopicIntensity.Value;
 
