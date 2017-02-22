@@ -197,7 +197,7 @@ namespace EngineLayer
 
             int theoreticalIndex = 0;
             double nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[0];
-            double nextTheoreticalMZ = nextTheoreticalMass + Constants.ProtonMass;
+            double nextTheoreticalMZ = nextTheoreticalMass + Constants.protonMass;
 
             double currentExperimentalMZ;
             for (int i = 0; i < num_experimental_peaks; i++)
@@ -219,7 +219,7 @@ namespace EngineLayer
                 if (theoreticalIndex == TotalProductsHere)
                     break;
                 nextTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[theoreticalIndex];
-                nextTheoreticalMZ = nextTheoreticalMass + Constants.ProtonMass;
+                nextTheoreticalMZ = nextTheoreticalMass + Constants.protonMass;
             }
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }

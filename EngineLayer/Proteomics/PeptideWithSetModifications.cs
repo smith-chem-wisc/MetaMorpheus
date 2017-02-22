@@ -22,9 +22,8 @@ namespace EngineLayer
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-        private static readonly double protonMass = Constants.ProtonMass;
-        //private static readonly double electronMass = Constants.ElectronMass;
-        private static readonly double electronMass = 0;
+        private static readonly double protonMass = Constants.protonMass;
+        private static readonly double electronMass = Constants.electronMass;
 
         private readonly PeptideWithPossibleModifications modPep;
         private double? monoisotopicMass;
