@@ -20,11 +20,31 @@
                 <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
             </Label>
         </Grid>
-        <StackPanel Margin="5">
-            <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys" />
-            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
-            <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
-        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="5*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Margin="5">
+                <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys" />
+                <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
+                <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+            </StackPanel>
+            <StackPanel Margin="0,19,44,0" HorizontalAlignment="Right" VerticalAlignment="Top"  Grid.Column="1">
+                <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" Margin="-75,0,75,0" VerticalAlignment="Top" Height="16" >
+                    <CheckBox.Style>
+                        <Style TargetType="{x:Type CheckBox}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=checkBoxParsimony}" Value="False">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                    <Setter Property="IsChecked" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </CheckBox.Style>
+                </CheckBox>
+            </StackPanel>
+        </Grid>
         <StackPanel Margin="5">
             <Label x:Name="allowedPrecursorMassDiffsLabel" Content="Allowed precursor mass diffs:" />
             <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
@@ -66,6 +86,10 @@
                     <Label x:Name="label4" Content="Ions to search" />
                     <CheckBox x:Name="bCheckBox" Content="b ions" />
                     <CheckBox x:Name="yCheckBox" Content="y ions" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
+                    <CheckBox x:Name="cCheckBox" Content="c ions" />
+                    <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
                 </StackPanel>
             </StackPanel>
         </Grid>

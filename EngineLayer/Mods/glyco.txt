@@ -1,97 +1,488 @@
 Glycans
-ID   HexNAc
+ID   Labile NeuAc(1)
 FT   MOD_RES
-TG   Asparagine
+TG   N or S or T
+PP   Anywhere.
+FM   0
+MM   291.09542
+CF   C1 O1 N1 H1
+//
+ID   Labile HexNAc(1)
+FT   MOD_RES
+TG   N or S or T
 PP   Anywhere.
 FM   0
 MM   203.079373
-CF   C8 O5 N1 H13
+CF   C1 O1 N1 H1
 //
-ID   HexNAc
+ID   Labile Hex(1)
 FT   MOD_RES
-TG   Serine
+TG   N or S or T
 PP   Anywhere.
 FM   0
+MM   162.052824
+CF   C1 O1 N1 H1
+//
+ID   Labile Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+FM   0
+MM   146.057909
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(4)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   3704.312144
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(3)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   3413.216724
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   3122.121304
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)Fuc(1)NeuAc(3)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   3048.084527
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2831.025884
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)Fuc(1)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2756.989107
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)Fuc(2)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2611.951596
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2610.931198
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(5)Fuc(1)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2553.909734
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(7)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2539.930464
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2465.893687
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(7)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2393.872555
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(5)Fuc(1)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2391.85691
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)Fuc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2320.856176
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2319.835778
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(5)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2245.799001
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(4)NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2204.772452
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(6)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2174.798267
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(6)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2141.788039
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(5)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   2100.76149
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(6)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1995.73013
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(5)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1971.718894
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(5)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1954.703581
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(5)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1938.708666
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(4)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1897.682117
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(6)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1850.692619
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(5)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1809.66607
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(5)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1792.650757
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(4)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1768.639521
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(4)Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1735.629293
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(6)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1704.63471
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(5)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1663.608161
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(5)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1647.613246
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(4)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1622.581612
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(4)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1606.586697
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(4)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1589.571384
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(3)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1581.555063
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(3)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1565.560148
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(5)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1501.555337
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(4)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1444.533873
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(3)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1419.502239
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(3)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1403.507324
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(6)HexNAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1378.47569
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(4)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1298.475964
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(3)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1257.449415
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(3)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1241.4545
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(5)HexNAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1216.422866
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(3)HexNAc(3)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1095.396591
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(4)HexNAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   1054.370042
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(1)HexNAc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   656.227617
+CF   C1 O1 N1 H1
+//
+ID   Localized NeuAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   582.19084
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(1)HexNAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   568.21157
+CF   C1 O1 N1 H1
+//
+ID   Localized HexNAc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   494.174793
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   453.148244
+CF   C1 O1 N1 H1
+//
+ID   Localized Fuc(1)NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   437.153329
+CF   C1 O1 N1 H1
+//
+ID   Localized HexNAc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   406.158746
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(1)HexNAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   365.132197
+CF   C1 O1 N1 H1
+//
+ID   Localized HexNAc(1)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   349.137282
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   324.105648
+CF   C1 O1 N1 H1
+//
+ID   Localized Hex(1)Fuc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   308.110733
+CF   C1 O1 N1 H1
+//
+ID   Localized Fuc(2)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   292.115818
+CF   C1 O1 N1 H1
+//
+ID   Localized NeuAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
+MM   291.09542
+CF   C1 O1 N1 H1
+//
+ID   Localized HexNAc(1)
+FT   MOD_RES
+TG   N or S or T
+PP   Anywhere.
 MM   203.079373
-CF   C8 O5 N1 H13
+CF   C1 O1 N1 H1
 //
-ID   HexNAc
+ID   Localized Hex(1)
 FT   MOD_RES
-TG   Threonine
+TG   N or S or T
 PP   Anywhere.
-FM   0
-MM   203.079373
-CF   C8 O5 N1 H13
-//
-ID   Hexose
-FT   MOD_RES
-TG   Asparagine
-PP   Anywhere.
-FM   0
 MM   162.052824
-CF   C6 O5 H10
+CF   C1 O1 N1 H1
 //
-ID   Hexose
+ID   Localized Fuc(1)
 FT   MOD_RES
-TG   Serine
+TG   N or S or T
 PP   Anywhere.
-FM   0
-MM   162.052824
-CF   C6 O5 H10
-//
-ID   Hexose
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-FM   0
-MM   162.052824
-CF   C6 O5 H10
-//
-ID   Fucose
-FT   MOD_RES
-TG   Asparagine
-PP   Anywhere.
-FM   0
 MM   146.057909
-CF   C6 H10 O4
-//
-ID   Fucose
-FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-FM   0
-MM   146.057909
-CF   C6 H10 O4
-//
-ID   Fucose
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-FM   0
-MM   146.057909
-CF   C6 H10 O4
-//
-ID   HexNAc2
-FT   MOD_RES
-TG   Asparagine
-PP   Anywhere.
-FM   0
-MM   406.158745 
-CF   C16 O10 N2 H26
-//
-ID   HexNAc2
-FT   MOD_RES
-TG   Serine
-PP   Anywhere.
-FM   0
-MM   406.158745 
-CF   C16 O10 N2 H26
-//
-ID   HexNAc2
-FT   MOD_RES
-TG   Threonine
-PP   Anywhere.
-FM   0
-MM   406.158745 
-CF   C16 O10 N2 H26
+CF   C1 O1 N1 H1
 //

@@ -46,7 +46,10 @@ namespace EngineLayer.Analysis
                     if (ProteinGroups[i] == null)
                         numProteinsList.Add(0);
                     else
-                        numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
+                    {
+                        int j = ProteinGroups[i].FindIndex(c => (c.QValue >= 0.01));
+                        numProteinsList.Add(j);
+                    }
                 }
 
                 sb.AppendLine("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));

@@ -24,10 +24,11 @@ namespace Test
                                    "-B-D---HHH--", // 4: D should go to 4, not 3 (3 is subset)
                                    "-B--E-----",   // 5: subsumable
                                    "----EFG---",   // 6: indistinguishable from 8 (J will not be a "detected" PSM)
-                                   "-----F----",   // 7: only pep shared w/ decoy
-                                   "--------I-",   // 8: HI should go to 9, not 8
-                                   "-B------I-",   // 9: HI should go to 9, not 8
-                                   "----EFG--J" }; // 10: indistinguishable from 6 (J will not be a "detected" PSM)
+                                   "-----F----",   // 7: lone pep shared w/ decoy
+                                   "--------I-",   // 8: I should go to 9, not 8
+                                   "-B------I-",   // 9: I should go to 9, not 8
+                                   "----EFG--J"    // 10: indistinguishable from 6 (J will not be a "detected" PSM)
+                                   };
 
             IEnumerable<string> sequencesInducingCleavage = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "-" };
             var protease = new Protease("test", sequencesInducingCleavage, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
@@ -36,7 +37,9 @@ namespace Test
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
-            p.Add(new Protein("-----F----*", "D", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
+            p.Add(new Protein("-----F----*", "D1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
+            p.Add(new Protein("-----F----**", "C1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
+            p.Add(new Protein("----E----**", "C2", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -115,7 +118,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable);
             dictionary = ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -148,18 +151,18 @@ namespace Test
                         case "A": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), hashSet, null, null, null))); break;
                         case "B": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0), hashSet, null, null, null))); break;
                         case "C": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0), hashSet, null, null, null))); break;
-                        //case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0), hashSet, null, null, null))); break;
+                        case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0), hashSet, null, null, null))); break;
                         case "E": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0), hashSet, null, null, null))); break;
                         case "F": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0), hashSet, null, null, null))); break;
                         case "G": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0), hashSet, null, null, null))); break;
-                            //case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
-                            //case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0), hashSet, null, null, null))); break;
+                        case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
+                        case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0), hashSet, null, null, null))); break;
                     }
                 }
             }
 
             ae.ScoreProteinGroups(proteinGroups, psms);
-            ae.DoProteinFdr(proteinGroups);
+            proteinGroups = ae.DoProteinFdr(proteinGroups);
 
             /*
             // prints initial dictionary
@@ -206,27 +209,83 @@ namespace Test
                 System.Console.WriteLine(proteinGroup);
             }
             */
+            
 
             // check that correct proteins are in parsimony list
-            Assert.That(parsimonyProteinList.Count == 7);
+            Assert.That(parsimonyProteinList.Count == 8);
             Assert.That(parsimonyBaseSequences.Contains("AB--------"));
             Assert.That(parsimonyBaseSequences.Contains("--C-------"));
             Assert.That(parsimonyBaseSequences.Contains("-B-D---HHH--"));
-            Assert.That(parsimonyBaseSequences.Contains("----EFG---"));
-            Assert.That(parsimonyBaseSequences.Contains("-----F----*"));
+            Assert.That(parsimonyBaseSequences.Contains("-----F----*"));  // decoy
+            Assert.That(parsimonyBaseSequences.Contains("----E----**"));  // contaminant
             Assert.That(parsimonyBaseSequences.Contains("-B------I-"));
+            Assert.That(parsimonyBaseSequences.Contains("----EFG---"));
             Assert.That(parsimonyBaseSequences.Contains("----EFG--J"));
-            Assert.That(parsimonyBaseSequences.Count == 7);
+            Assert.That(parsimonyBaseSequences.Count == 8);
 
             // protein group tests
-            Assert.That(proteinGroups.Count == 6);
-            Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 2);
+            Assert.That(proteinGroups.Count == 5);
+            Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 3);
             Assert.That(proteinGroups.First().proteinGroupScore == 19);
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
                 foreach (var coverage in proteinGroup.sequenceCoveragePercent)
                     Assert.That(coverage <= 1.0);
+        }
+
+
+        [Test]
+        public static void TestFragments()
+        {
+            // creates some test proteins, digest, and fragment
+            string[] sequences = { "GLSDGEWQQVLNVWGK" }; // just one peptide
+            
+            var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var peptides = new HashSet<PeptideWithSetModifications>();
+
+            var p = new List<Protein>();
+            for (int i = 0; i < sequences.Length; i++)
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            
+            foreach (var protein in p)
+            {
+                var digestedProtein = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+
+                foreach (var pepWithPossibleMods in digestedProtein)
+                {
+                    var pepWithSetMods = pepWithPossibleMods.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+
+                    foreach (var peptide in pepWithSetMods)
+                        peptides.Add(peptide);
+                }
+            }
+
+            var CfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var ZdotfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var BfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var YfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+            var BYfragmentMasses = new Dictionary<PeptideWithSetModifications, double[]>();
+
+            foreach (var peptide in peptides)
+            {
+                CfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }));
+            }
+            double[] testB;
+            Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
+
+            double[] testY;
+            Assert.That(YfragmentMasses.TryGetValue(peptides.First(), out testY));
+
+            double[] testC;
+            Assert.That(CfragmentMasses.TryGetValue(peptides.First(), out testC));
+
+            double[] testZ;
+            Assert.That(ZdotfragmentMasses.TryGetValue(peptides.First(), out testZ));
         }
 
         #endregion Public Methods
