@@ -365,10 +365,6 @@ namespace EngineLayer.Analysis
                 // score the group (scoring algorithm defined in the ProteinGroup class)
                 proteinGroup.ScoreThisProteinGroup(variableModifications, localizeableModifications, fixedModifications);
 
-                // remove one hit wonders if option enabled
-                if (noOneHitWonders && !proteinGroup.isDecoy && !proteinGroup.isContaminant && proteinGroup.StrictPeptideList.Count == 1)
-                    proteinGroup.proteinGroupScore = 0;
-
                 // for finding razor peptides later
                 foreach (var peptide in proteinGroup.StrictPeptideList)
                 {
@@ -452,6 +448,7 @@ namespace EngineLayer.Analysis
 
             // order protein groups by score
             var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.proteinGroupScore).ToList();
+            List<ProteinGroup> proteinGroupsToRemove = new List<ProteinGroup>();
 
             // do fdr
             int cumulativeTarget = 0;
@@ -470,8 +467,17 @@ namespace EngineLayer.Analysis
                 proteinGroup.cumulativeTarget = cumulativeTarget;
                 proteinGroup.cumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
+
+                // remove one hit wonders if option enabled
+                if (noOneHitWonders && !proteinGroup.isDecoy && !proteinGroup.isContaminant && proteinGroup.StrictPeptideList.Count == 1)
+                    proteinGroupsToRemove.Add(proteinGroup);
             }
 
+            foreach(var pg in proteinGroupsToRemove)
+            {
+                sortedProteinGroups.Remove(pg);
+            }
+            
             return sortedProteinGroups;
         }
 
