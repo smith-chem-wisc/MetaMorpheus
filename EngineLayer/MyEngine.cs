@@ -77,11 +77,20 @@ namespace EngineLayer
                 {
                     var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber);
                     if (!ms2scan.SelectedIonGuessChargeStateGuess.HasValue)
-                        ms2scan.RecomputeChargeState(precursorSpectrum.MassSpectrum, 0.01, 4);
-                    if (!ms2scan.SelectedIonGuessIntensity.HasValue || !ms2scan.SelectedIonGuessMZ.HasValue)
+                        ms2scan.RecomputeChargeState(precursorSpectrum.MassSpectrum, 0.01, 10);
+
+                    if (!ms2scan.SelectedIonGuessIntensity.HasValue && !ms2scan.SelectedIonGuessMZ.HasValue)
                         ms2scan.RecomputeSelectedPeak(precursorSpectrum.MassSpectrum);
-                    if (!ms2scan.SelectedIonGuessMonoisotopicIntensity.HasValue || !ms2scan.SelectedIonGuessMonoisotopicMZ.HasValue)
+
+                    if (!ms2scan.SelectedIonGuessIntensity.HasValue)
+                        ms2scan.ComputeSelectedPeakIntensity(precursorSpectrum.MassSpectrum);
+
+                    if (!ms2scan.SelectedIonGuessMonoisotopicIntensity.HasValue && !ms2scan.SelectedIonGuessMonoisotopicMZ.HasValue)
                         ms2scan.RecomputeMonoisotopicPeak(precursorSpectrum.MassSpectrum, 0.01, 0.3);
+
+                    if (!ms2scan.SelectedIonGuessMonoisotopicIntensity.HasValue)
+                        ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+
                     yield return new LocalMS2Scan(ms2scan);
                 }
             }
