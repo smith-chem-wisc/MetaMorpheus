@@ -66,8 +66,7 @@ namespace Test
             Assert.IsNaN(pep2.MonoisotopicMass);
             var cool = pep2.FastSortedProductMasses(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);
-            Assert.IsNaN(cool[1]);
-            Assert.IsNaN(cool[2]);
+            Assert.IsTrue(cool.Length == 1);
         }
 
         [Test]

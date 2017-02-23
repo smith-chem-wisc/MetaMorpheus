@@ -71,6 +71,8 @@ namespace MetaMorpheusGUI
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString(CultureInfo.InvariantCulture);
+            zdotCheckBox.IsChecked = task.ZdotIons;
+            cCheckBox.IsChecked = task.CIons;
 
             foreach (var modList in task.ListOfModListsFixed)
                 ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
@@ -117,6 +119,8 @@ namespace MetaMorpheusGUI
 
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
+            TheTask.CIons = cCheckBox.IsChecked.Value;
+            TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
 
             TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
             TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();

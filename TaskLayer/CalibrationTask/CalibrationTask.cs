@@ -33,6 +33,8 @@ namespace TaskLayer
             PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             BIons = true;
             YIons = true;
+            CIons = false;
+            ZdotIons = false;
 
             ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
             ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
@@ -148,6 +150,16 @@ namespace TaskLayer
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.y;
                 lp.Add(ProductType.Y);
             }
+            if (CIons)
+            {
+                fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.c;
+                lp.Add(ProductType.C);
+            }
+            if (ZdotIons)
+            {
+                fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.zdot;
+                lp.Add(ProductType.Zdot);
+            }
 
             object lock1 = new object();
             object lock2 = new object();
@@ -181,7 +193,7 @@ namespace TaskLayer
 
                 InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
                 // Run analysis on single file results
-                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
+                var analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
                 myTaskResults.AddResultText(analysisResults);

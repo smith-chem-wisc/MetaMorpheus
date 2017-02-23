@@ -99,6 +99,7 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.ClassicSearch;
             modernSearchRadioButton.IsChecked = !task.ClassicSearch;
             checkBoxParsimony.IsChecked = task.DoParsimony;
+            checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -109,6 +110,8 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
+            cCheckBox.IsChecked = task.CIons;
+            zdotCheckBox.IsChecked = task.ZdotIons;
 
             foreach (var modList in task.ListOfModListsFixed)
                 ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
@@ -134,6 +137,7 @@ namespace MetaMorpheusGUI
         {
             TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
+            TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
@@ -143,6 +147,8 @@ namespace MetaMorpheusGUI
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
+            TheTask.CIons = cCheckBox.IsChecked.Value;
+            TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
 
             TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
             TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();

@@ -186,7 +186,7 @@ namespace EngineLayer.ModernSearch
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
                 var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.ProtonMass;
+                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
