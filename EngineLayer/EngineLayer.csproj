@@ -102,6 +102,8 @@
     <Compile Include="CalibrationEngine\LabeledMs2DataPoint.cs" />
     <Compile Include="CalibrationEngine\LabeledMs1DataPoint.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
+    <Compile Include="CalibrationEngine\RandomForestCalibrationFunction.cs" />
+    <Compile Include="CalibrationEngine\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="MyErroredResults.cs" />

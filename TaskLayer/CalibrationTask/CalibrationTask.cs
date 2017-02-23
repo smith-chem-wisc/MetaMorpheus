@@ -202,6 +202,18 @@ namespace TaskLayer
                 var result = a.Run();
                 myTaskResults.AddResultText(result);
 
+                //// TEST STUFF
+
+                //var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                //var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
+                //var searchResultsTest = (ClassicSearchResults)searchEngineTest.Run();
+                //myTaskResults.AddResultText(searchResultsTest);
+                //var analysisEngineTest = new AnalysisEngine(searchResultsTest.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test"), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
+                //var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();
+                //myTaskResults.AddResultText(analysisResultsTest);
+
+                ////
+
                 if (result is MyErroredResults)
                 {
                     Warn(a.ToString());

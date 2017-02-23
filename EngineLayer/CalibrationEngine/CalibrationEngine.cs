@@ -64,48 +64,125 @@ namespace EngineLayer.Calibration
         protected override MyResults RunSpecific()
         {
             Status("Calibrating ");
-
             var trainingPointCounts = new List<int>();
-            var goodResult = new CalibrationResults(myMsDataFile, this);
-            for (int calibrationRound = 1; ; calibrationRound++)
+            var result = new CalibrationResults(myMsDataFile, this);
+            DataPointAquisitionResults dataPointAcquisitionResult = null;
+            for (int smoothCalibrationRound = 1; ; smoothCalibrationRound++)
             {
-                Status("Getting Training Points");
-                DataPointAquisitionResults res = GetDataPoints();
-
-                ms1ListAction(res.ms1List, calibrationRound.ToString());
-                ms2ListAction(res.ms2List, calibrationRound.ToString());
-
-                goodResult.Add(res);
-
-                if (calibrationRound >= 2 && res.Count <= trainingPointCounts[calibrationRound - 2])
+                Status("smoothCalibrationRound " + smoothCalibrationRound);
+                dataPointAcquisitionResult = GetDataPoints();
+                ms1ListAction(dataPointAcquisitionResult.ms1List, "sc" + smoothCalibrationRound.ToString());
+                ms2ListAction(dataPointAcquisitionResult.ms2List, "sc" + smoothCalibrationRound.ToString());
+                result.Add(dataPointAcquisitionResult);
+                if (smoothCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[smoothCalibrationRound - 2])
                     break;
-
-                trainingPointCounts.Add(res.Count);
-
-                if (res.ms2List.Count == 0)
-                {
-                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + goodResult.ToString());
-                }
-
-                if (res.ms1List.Count == 0)
-                {
-                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + goodResult.ToString());
-                }
-
-                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = Calibrate(res);
-
-                goodResult.Add(combinedCalibration.Item1, combinedCalibration.Item2);
-
-                if (combinedCalibration == null)
-                    return new MyErroredResults(this, "Could not calibrate");
+                trainingPointCounts.Add(dataPointAcquisitionResult.Count);
+                if (dataPointAcquisitionResult.ms2List.Count == 0)
+                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + result.ToString());
+                if (dataPointAcquisitionResult.ms1List.Count == 0)
+                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + result.ToString());
+                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateSmooth(dataPointAcquisitionResult);
+                result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
+            }
+            trainingPointCounts = new List<int>();
+            for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
+            {
+                Status("forestCalibrationRound " + forestCalibrationRound);
+                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
+                result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
+                dataPointAcquisitionResult = GetDataPoints();
+                ms1ListAction(dataPointAcquisitionResult.ms1List, "fc" + forestCalibrationRound.ToString());
+                ms2ListAction(dataPointAcquisitionResult.ms2List, "fc" + forestCalibrationRound.ToString());
+                result.Add(dataPointAcquisitionResult);
+                if (forestCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[forestCalibrationRound - 2])
+                    break;
+                trainingPointCounts.Add(dataPointAcquisitionResult.Count);
+                if (dataPointAcquisitionResult.ms2List.Count == 0)
+                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + result.ToString());
+                if (dataPointAcquisitionResult.ms1List.Count == 0)
+                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + result.ToString());
             }
 
-            return goodResult;
+            return result;
         }
 
         #endregion Protected Methods
 
         #region Private Methods
+
+        private Tuple<CalibrationFunction, CalibrationFunction> CalibrateRF(DataPointAquisitionResults res)
+        {
+            var rnd = new Random(randomSeed);
+
+            var shuffledMs1TrainingPoints = res.ms1List.OrderBy(item => rnd.Next()).ToList();
+            var shuffledMs2TrainingPoints = res.ms2List.OrderBy(item => rnd.Next()).ToList();
+
+            var trainList1 = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).ToList();
+            var testList1 = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).ToList();
+            var trainList2 = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
+            var testList2 = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
+
+            CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
+            CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
+            double bestMS1MSE = bestMS1predictor.getMSE(testList1);
+            double bestMS2MSE = bestMS2predictor.getMSE(testList2);
+            List<bool[]> boolStuffms1 = new List<bool[]>
+            {
+                new bool[] {true, true, false, false, false},
+                new bool[] {true, true, true, true, true},
+            };
+            foreach (var boolStuff in boolStuffms1)
+            {
+                try
+                {
+                    var ms1regressorRF = new RandomForestCalibrationFunction(30, 10, boolStuff);
+                    ms1regressorRF.Train(trainList1);
+                    var MS1mse = ms1regressorRF.getMSE(testList1);
+                    if (MS1mse < bestMS1MSE)
+                    {
+                        bestMS1MSE = MS1mse;
+                        bestMS1predictor = ms1regressorRF;
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("errored!");
+                }
+            }
+
+            List<bool[]> boolStuffms2 = new List<bool[]>
+            {
+                new bool[] {true, true, false, false, false,false},
+                new bool[] {true, true, true, true, true,false},
+                new bool[] {true, true, true, true, true,true},
+            };
+            foreach (var boolStuff in boolStuffms2)
+            {
+                try
+                {
+                    var ms2regressorRF = new RandomForestCalibrationFunction(30, 10, boolStuff);
+                    ms2regressorRF.Train(trainList2);
+                    var MS2mse = ms2regressorRF.getMSE(testList2);
+                    if (MS2mse < bestMS2MSE)
+                    {
+                        bestMS2MSE = MS2mse;
+                        bestMS2predictor = ms2regressorRF;
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("errored!");
+                }
+            }
+
+            Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
+
+            Status("Calibrating Spectra");
+
+            CalibrateSpectra(bestCf);
+
+            return bestCf;
+        }
 
         private DataPointAquisitionResults GetDataPoints()
         {
@@ -137,13 +214,19 @@ namespace EngineLayer.Calibration
                 // Each identification has an MS2 spectrum attached to it.
                 int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
 
-                // Get the peptide, don't forget to add the modifications!!!!
-                var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null)
-                    continue;
-                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
+                //// Get the peptide, don't forget to add the modifications!!!!
+                //var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
+                //if (SequenceWithChemicalFormulas == null)
+                //    continue;
+                //Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
-                Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
+                // Get the peptide, don't forget to add the modifications!!!!
+                var seq = identification.thisPSM.FullSequence;
+                if (identification.thisPSM.NumMods > 0)
+                    continue;
+                Proteomics.Peptide coolPeptide = new Proteomics.Peptide(seq);
+
+                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
                 numMs2MassChargeCombinationsConsidered = 0;
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
@@ -176,7 +259,7 @@ namespace EngineLayer.Calibration
             return res;
         }
 
-        private Tuple<CalibrationFunction, CalibrationFunction> Calibrate(DataPointAquisitionResults res)
+        private Tuple<CalibrationFunction, CalibrationFunction> CalibrateSmooth(DataPointAquisitionResults res)
         {
             var rnd = new Random(randomSeed);
 
@@ -284,40 +367,39 @@ namespace EngineLayer.Calibration
                     Console.WriteLine("errored!");
                 }
             }
-            foreach (var transform in transforms)
-            {
-                Console.WriteLine("trying quadratic!");
-                try
-                {
-                    var ms1regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
-                    ms1regressorQuadratic.Train(trainList1);
-                    var MS1mse = ms1regressorQuadratic.getMSE(testList1);
-                    if (MS1mse < bestMS1MSE)
-                    {
-                        bestMS1MSE = MS1mse;
-                        bestMS1predictor = ms1regressorQuadratic;
-                    }
-                }
-                catch
-                {
-                    Console.WriteLine("errored!");
-                }
-                try
-                {
-                    var ms2regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
-                    ms2regressorQuadratic.Train(trainList2);
-                    var MS2mse = ms2regressorQuadratic.getMSE(testList2);
-                    if (MS2mse < bestMS2MSE)
-                    {
-                        bestMS2MSE = MS2mse;
-                        bestMS2predictor = ms2regressorQuadratic;
-                    }
-                }
-                catch
-                {
-                    Console.WriteLine("errored!");
-                }
-            }
+            //foreach (var transform in transforms)
+            //{
+            //    Console.WriteLine("trying quadratic!");
+            //    try
+            //    {
+            //        var ms1regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
+            //        ms1regressorQuadratic.Train(trainList1);
+            //        var MS1mse = ms1regressorQuadratic.getMSE(testList1);
+            //        if (MS1mse < bestMS1MSE)
+            //        {
+            //            bestMS1MSE = MS1mse;
+            //            bestMS1predictor = ms1regressorQuadratic;
+            //        }
+            //    }
+            //    catch
+            //    {
+            //        Console.WriteLine("errored!");
+            //    }
+            //    try
+            //    {
+            //        var ms2regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
+            //        ms2regressorQuadratic.Train(trainList2);
+            //        var MS2mse = ms2regressorQuadratic.getMSE(testList2);
+            //        if (MS2mse < bestMS2MSE)
+            //        {
+            //            bestMS2MSE = MS2mse;
+            //            bestMS2predictor = ms2regressorQuadratic;
+            //        }
+            //    }
+            //    catch
+            //    {
+            //        Console.WriteLine("errored!");
+            //    }
 
             Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
 
@@ -339,21 +421,21 @@ namespace EngineLayer.Calibration
 
                     double precursorMZ = theScan.SelectedIonGuessMZ.Value;
                     double precursorIntensity = theScan.SelectedIonGuessIntensity.Value;
-                    double newSelectedMZ = precursorMZ - bestCf.Item1.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.Value });
+                    double newSelectedMZ = precursorMZ - bestCf.Item1.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.HasValue ? precursorScan.InjectionTime.Value : double.NaN });
 
                     double monoisotopicMZ = theScan.SelectedIonGuessMonoisotopicMZ.Value;
                     double monoisotopicIntensity = theScan.SelectedIonGuessMonoisotopicIntensity.Value;
 
-                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Item1.Predict(new double[] { monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.Value });
+                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Item1.Predict(new double[] { monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime.HasValue ? precursorScan.InjectionTime.Value : double.NaN });
 
                     double IsolationMZ = theScan.IsolationMz;
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime.Value, IsolationMZ });
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime.HasValue ? a.InjectionTime.Value : double.NaN, IsolationMZ });
 
                     theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
                 }
                 else
                 {
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime.Value });
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime.HasValue ? a.InjectionTime.Value : double.NaN });
                     a.TransformByApplyingFunctionToSpectra(theFunc);
                 }
             }
