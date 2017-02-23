@@ -80,6 +80,8 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
+            cCheckBox.IsChecked = task.CIons;
+            zdotCheckBox.IsChecked = task.ZdotIons;
 
             foreach (var modList in task.ListOfModListsFixed)
                 ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
@@ -129,6 +131,8 @@ namespace MetaMorpheusGUI
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
+            TheTask.CIons = cCheckBox.IsChecked.Value;
+            TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
 
             TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
             TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();

@@ -51,6 +51,10 @@
                     <CheckBox x:Name="bCheckBox" Content="b ions" />
                     <CheckBox x:Name="yCheckBox" Content="y ions" />
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="89,10,-69,10">
+                    <CheckBox x:Name="cCheckBox" Content="c ions" />
+                    <CheckBox x:Name="zdotCheckBox" Content="zdot ions" />
+                </StackPanel>
             </StackPanel>
         </Grid>
         <DataGrid x:Name="modificationsDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single">

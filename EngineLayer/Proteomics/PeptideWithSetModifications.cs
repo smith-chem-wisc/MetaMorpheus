@@ -19,6 +19,11 @@ namespace EngineLayer
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+        private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+        private static readonly double protonMass = Constants.protonMass;
+        private static readonly double electronMass = Constants.electronMass;
 
         private readonly PeptideWithPossibleModifications modPep;
         private double? monoisotopicMass;
@@ -188,15 +193,25 @@ namespace EngineLayer
             if (p == null)
                 ComputeFragmentMasses();
 
-            double[] products1 = null;
-            double[] products2 = null;
-            if (productTypes.Contains(ProductType.B))
-                products1 = new double[Length - 2];
-            if (productTypes.Contains(ProductType.Y))
-                products2 = new double[Length - 1];
+            double[] productsB = null;
+            double[] productsY = null;
+            double[] productsC = null;
+            double[] productsZ = null;
 
-            int i1 = 0;
-            int i2 = 0;
+            if (productTypes.Contains(ProductType.B))
+                productsB = new double[Length - 2];
+            if (productTypes.Contains(ProductType.Y))
+                productsY = new double[Length - 1];
+            if (productTypes.Contains(ProductType.C))
+                productsC = new double[Length - 1];
+            if (productTypes.Contains(ProductType.Zdot))
+                productsZ = new double[Length - 1];
+
+            int iB = 0;
+            int iY = 0;
+            int iC = 0;
+            int iZ = 0;
+
             for (int r = 1; r < Length; r++)
             {
                 foreach (ProductType product_type in productTypes)
@@ -207,47 +222,56 @@ namespace EngineLayer
                     {
                         switch (product_type)
                         {
+                            // p.cumulativeNTerminalMass[r] refers to a generic fragment; ion type masses are determined 
+                            // by adding/subtracting a constant value, depending on the fragment type
                             case ProductType.Adot:
                                 throw new NotImplementedException();
+
                             case ProductType.B:
-                                products1[i1] = p.cumulativeNTerminalMass[r];
-                                i1++;
+                                productsB[iB] = p.cumulativeNTerminalMass[r];
+                                iB++;
                                 break;
 
                             case ProductType.C:
-                                throw new NotImplementedException();
+                                productsC[iC] = p.cumulativeNTerminalMass[r] + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                                iC++;
+                                break;
 
                             case ProductType.X:
                                 throw new NotImplementedException();
+
                             case ProductType.Y:
-                                products2[i2] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
-                                i2++;
+                                productsY[iY] = p.cumulativeCTerminalMass[r] + waterMonoisotopicMass;
+                                iY++;
                                 break;
 
                             case ProductType.Zdot:
-                                throw new NotImplementedException();
+                                productsZ[iZ] = p.cumulativeCTerminalMass[r] + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass - hydrogenAtomMonoisotopicMass + protonMass + electronMass;
+                                iZ++;
+                                break;
                         }
                     }
                 }
             }
-            i1 = 0;
-            i2 = 0;
-            int len = (productTypes.Contains(ProductType.B) ? Length - 2 : 0) +
-                      (productTypes.Contains(ProductType.Y) ? Length - 1 : 0);
-            double[] products = new double[len];
-            for (int i = 0; i < len; i++)
-            {
-                if (products1 != null && (products2 == null || (i1 != products1.Length && (i2 == products2.Length || products1[i1] <= products2[i2]))))
-                {
-                    products[i] = products1[i1];
-                    i1++;
-                }
-                else
-                {
-                    products[i] = products2[i2];
-                    i2++;
-                }
-            }
+            iB = 0;
+            iY = 0;
+            iC = 0;
+            iZ = 0;
+
+            IEnumerable<double> enumProducts = new double[0];
+
+            if (productsB != null)
+                enumProducts = enumProducts.Concat(productsB);
+            if (productsY != null)
+                enumProducts = enumProducts.Concat(productsY);
+            if (productsC != null)
+                enumProducts = enumProducts.Concat(productsC);
+            if (productsZ != null)
+                enumProducts = enumProducts.Concat(productsZ);
+
+            double[] products = enumProducts.Where(f => !double.IsNaN(f)).ToArray();
+            Array.Sort(products);
+            
             return products;
         }
 

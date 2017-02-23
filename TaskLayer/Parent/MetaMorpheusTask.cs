@@ -55,8 +55,6 @@ namespace TaskLayer
 
         public MyTask TaskType { get; internal set; }
 
-        public bool BIons { get; set; }
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
@@ -67,7 +65,13 @@ namespace TaskLayer
 
         public Protease Protease { get; set; }
 
+        public bool BIons { get; set; }
+
         public bool YIons { get; set; }
+
+        public bool ZdotIons { get; set; }
+
+        public bool CIons { get; set; }
 
         public int MaxNumPeaksPerScan { get; set; }
 
@@ -147,7 +151,9 @@ namespace TaskLayer
             sb.AppendLine("output_folder: " + OutputFolder);
             sb.AppendLine("protease: " + Protease);
             sb.AppendLine("bIons: " + BIons);
-            sb.Append("yIons: " + YIons);
+            sb.AppendLine("yIons: " + YIons);
+            sb.AppendLine("cIons: " + CIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
             return sb.ToString();
         }
 
