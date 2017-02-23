@@ -197,24 +197,40 @@ namespace TaskLayer
 
                 // TODO: fix the tolerance calculation below
 
-                var a = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s));
+                var a = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), false);
 
-                var result = a.Run();
-                myTaskResults.AddResultText(result);
+                var resultBeforeFC = a.Run();
+                myTaskResults.AddResultText(resultBeforeFC);
 
-                //// TEST STUFF
+                // TEST STUFF
 
-                //var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
-                //var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
-                //var searchResultsTest = (ClassicSearchResults)searchEngineTest.Run();
-                //myTaskResults.AddResultText(searchResultsTest);
-                //var analysisEngineTest = new AnalysisEngine(searchResultsTest.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test"), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
-                //var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();
-                //myTaskResults.AddResultText(analysisResultsTest);
+                var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
+                var searchResultsTest = (ClassicSearchResults)searchEngineTest.Run();
+                myTaskResults.AddResultText(searchResultsTest);
+                var analysisEngineTest = new AnalysisEngine(searchResultsTest.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test"), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
+                var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();
+                myTaskResults.AddResultText(analysisResultsTest);
 
-                ////
+                //
 
-                if (result is MyErroredResults)
+                var resultAfterFC = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0], minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s+"after"), true).Run();
+                myTaskResults.AddResultText(resultAfterFC);
+
+                // TEST STUFF
+
+                var listOfSortedms2ScansTest2 = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                var searchEngineTest2 = new ClassicSearchEngine(listOfSortedms2ScansTest2, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
+                var searchResultsTest2 = (ClassicSearchResults)searchEngineTest2.Run();
+                myTaskResults.AddResultText(searchResultsTest2);
+                var analysisEngineTest2 = new AnalysisEngine(searchResultsTest2.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test2"), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "test2"), null, false, MaxMissedCleavages, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior);
+                var analysisResultsTest2 = (AnalysisResults)analysisEngineTest2.Run();
+                myTaskResults.AddResultText(analysisResultsTest2);
+
+                //
+
+
+                if (resultBeforeFC is MyErroredResults)
                 {
                     Warn(a.ToString());
                 }
@@ -224,7 +240,7 @@ namespace TaskLayer
                     var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                     lock (lock2) // Lock because writing is sequential
                     {
-                        MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(((CalibrationResults)result).MyMSDataFile, path);
+                        MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(myMsDataFile, path);
 
                         SucessfullyFinishedWritingFile(path);
 

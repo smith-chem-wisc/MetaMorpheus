@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using MathNet.Numerics.Statistics;
 
 namespace EngineLayer.Analysis
 {
@@ -120,6 +121,7 @@ namespace EngineLayer.Analysis
             OverlappingIonSequences();
 
             IdentifyFracWithSingle();
+            IdentifyMedianLength();
         }
 
         #endregion Internal Methods
@@ -175,6 +177,16 @@ namespace EngineLayer.Analysis
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
                     bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / numTarget;
+            }
+        }
+
+        private void IdentifyMedianLength()
+        {
+            foreach (Bin bin in FinalBins)
+            {
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                if (numTarget > 0)
+                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.thisPSM.BaseSequence.Length));
             }
         }
 

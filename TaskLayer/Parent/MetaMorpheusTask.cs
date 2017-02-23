@@ -193,7 +193,7 @@ namespace TaskLayer
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tFracWithSingle\tOverlappingFrac\tUniprot");
+                output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tFracWithSingle\tOverlappingFrac\tMedianLength\tUniprot");
                 foreach (Bin bin in myTreeStructure.FinalBins.OrderByDescending(b => b.Count))
                 {
                     output.WriteLine(bin.MassShift.ToString("F3", CultureInfo.InvariantCulture)
@@ -218,6 +218,7 @@ namespace TaskLayer
                         + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.FracWithSingle).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + ((double)bin.Overlapping / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.MedianLength).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + bin.uniprotID);
                 }
             }

@@ -37,12 +37,13 @@ namespace EngineLayer.Calibration
         private int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
         private int numFragmentsIdentified;
+        private readonly bool doFC;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, int randomSeed, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, int randomSeed, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC)
         {
             this.myMsDataFile = myMSDataFile;
             this.randomSeed = randomSeed;
@@ -55,6 +56,7 @@ namespace EngineLayer.Calibration
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
+            this.doFC = doFC;
         }
 
         #endregion Public Constructors
@@ -71,8 +73,8 @@ namespace EngineLayer.Calibration
             {
                 Status("smoothCalibrationRound " + smoothCalibrationRound);
                 dataPointAcquisitionResult = GetDataPoints();
-                ms1ListAction(dataPointAcquisitionResult.ms1List, "sc" + smoothCalibrationRound.ToString());
-                ms2ListAction(dataPointAcquisitionResult.ms2List, "sc" + smoothCalibrationRound.ToString());
+                ms1ListAction(dataPointAcquisitionResult.ms1List, "beforesc" + smoothCalibrationRound.ToString());
+                ms2ListAction(dataPointAcquisitionResult.ms2List, "beforesc" + smoothCalibrationRound.ToString());
                 result.Add(dataPointAcquisitionResult);
                 if (smoothCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[smoothCalibrationRound - 2])
                     break;
@@ -84,23 +86,26 @@ namespace EngineLayer.Calibration
                 Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateSmooth(dataPointAcquisitionResult);
                 result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
             }
-            trainingPointCounts = new List<int>();
-            for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
+            if (doFC)
             {
-                Status("forestCalibrationRound " + forestCalibrationRound);
-                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
-                result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
-                dataPointAcquisitionResult = GetDataPoints();
-                ms1ListAction(dataPointAcquisitionResult.ms1List, "fc" + forestCalibrationRound.ToString());
-                ms2ListAction(dataPointAcquisitionResult.ms2List, "fc" + forestCalibrationRound.ToString());
-                result.Add(dataPointAcquisitionResult);
-                if (forestCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[forestCalibrationRound - 2])
-                    break;
-                trainingPointCounts.Add(dataPointAcquisitionResult.Count);
-                if (dataPointAcquisitionResult.ms2List.Count == 0)
-                    return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + result.ToString());
-                if (dataPointAcquisitionResult.ms1List.Count == 0)
-                    return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + result.ToString());
+                trainingPointCounts = new List<int>();
+                for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
+                {
+                    Status("forestCalibrationRound " + forestCalibrationRound);
+                    Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
+                    result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
+                    dataPointAcquisitionResult = GetDataPoints();
+                    ms1ListAction(dataPointAcquisitionResult.ms1List, "afterfc" + forestCalibrationRound.ToString());
+                    ms2ListAction(dataPointAcquisitionResult.ms2List, "afterfc" + forestCalibrationRound.ToString());
+                    result.Add(dataPointAcquisitionResult);
+                    if (forestCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[forestCalibrationRound - 2])
+                        break;
+                    trainingPointCounts.Add(dataPointAcquisitionResult.Count);
+                    if (dataPointAcquisitionResult.ms2List.Count == 0)
+                        return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + result.ToString());
+                    if (dataPointAcquisitionResult.ms1List.Count == 0)
+                        return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + result.ToString());
+                }
             }
 
             return result;
@@ -135,7 +140,7 @@ namespace EngineLayer.Calibration
             {
                 try
                 {
-                    var ms1regressorRF = new RandomForestCalibrationFunction(30, 10, boolStuff);
+                    var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
                     ms1regressorRF.Train(trainList1);
                     var MS1mse = ms1regressorRF.getMSE(testList1);
                     if (MS1mse < bestMS1MSE)
@@ -160,7 +165,7 @@ namespace EngineLayer.Calibration
             {
                 try
                 {
-                    var ms2regressorRF = new RandomForestCalibrationFunction(30, 10, boolStuff);
+                    var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
                     ms2regressorRF.Train(trainList2);
                     var MS2mse = ms2regressorRF.getMSE(testList2);
                     if (MS2mse < bestMS2MSE)
@@ -417,6 +422,7 @@ namespace EngineLayer.Calibration
                 var theScan = a as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                 if (theScan != null)
                 {
+
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
                     double precursorMZ = theScan.SelectedIonGuessMZ.Value;

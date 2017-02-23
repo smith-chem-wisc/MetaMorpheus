@@ -1,0 +1,8 @@
+﻿New Fixed modifications
+ID   NewFixed 
+FT   MOD_RES
+TG   Cysteine
+PP   Anywhere.
+MM   128.094963
+CF   H12 C6 N2 O  
+//
