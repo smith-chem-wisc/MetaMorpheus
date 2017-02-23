@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using MassSpectrometry;
+using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using NUnit.Framework;
@@ -209,7 +210,7 @@ namespace Test
                 System.Console.WriteLine(proteinGroup);
             }
             */
-            
+
 
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 8);
@@ -234,20 +235,19 @@ namespace Test
                     Assert.That(coverage <= 1.0);
         }
 
-
         [Test]
         public static void TestFragments()
         {
             // creates some test proteins, digest, and fragment
             string[] sequences = { "GLSDGEWQQVLNVWGK" }; // just one peptide
-            
+
             var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var peptides = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
-            
+
             foreach (var protein in p)
             {
                 var digestedProtein = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
@@ -286,6 +286,34 @@ namespace Test
 
             double[] testZ;
             Assert.That(ZdotfragmentMasses.TryGetValue(peptides.First(), out testZ));
+        }
+
+        [Test]
+        public static void TestQuantification()
+        {
+            double mass = 2910.52664 + 3 * 1.007;
+            int charge = 2;
+            double intensity = 1000.0;
+            double rt = 20.0;
+
+            // creates some test proteins, digest, and fragment
+            string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
+            var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var prot = (new Protein(sequence, "", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            var digestedProtein = prot.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+            var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
+
+            var psms = new List<NewPsmWithFdr>();
+
+            var psm = new PsmClassic(peptide, null, rt, intensity, mass, 0, charge, 1, 0, mass / charge, 0, 0);
+            var t = new PsmWithMultiplePossiblePeptides(psm, new HashSet<PeptideWithSetModifications> { peptide }, null, null, null);
+            psms.Add(new NewPsmWithFdr(t));
+
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable);
+            ae.Quantify(psms, null);
+
+            Assert.That(psms.First().thisPSM.newPsm.integratedMs1Intensity == 1000.0);
         }
 
         #endregion Public Methods

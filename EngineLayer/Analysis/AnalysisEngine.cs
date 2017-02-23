@@ -481,6 +481,37 @@ namespace EngineLayer.Analysis
             return sortedProteinGroups;
         }
 
+        public void Quantify(List<NewPsmWithFdr> psms, List<ProteinGroup> pgs)
+        {
+            double peakRtWindow = 0.01;
+            double massTolerance = 0.000010;
+            double mz;
+
+            foreach(var p in psms)
+            {
+                mz = p.thisPSM.newPsm.scanPrecursorMZ;
+                double rt = p.thisPSM.newPsm.scanRetentionTime;
+                double mzTol = massTolerance / p.thisPSM.newPsm.scanPrecursorCharge;
+                double integratedMs1Intensity = 0;
+
+                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - peakRtWindow, rt + peakRtWindow).ToList();
+                var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
+
+                foreach(var spectrum in ms1SpectraInThisWindow)
+                {
+                    var i = spectrum.MassSpectrum.Where(s => (s.Mz < mz + mzTol) && (s.Mz > mz - mzTol)).ToList();
+                    integratedMs1Intensity += i.Sum(s => s.Intensity);
+                }
+                
+                p.thisPSM.newPsm.integratedMs1Intensity = integratedMs1Intensity;
+            }
+
+            if(pgs != null)
+            {
+
+            }
+        }
+
         #endregion Public Methods
 
         #region Protected Methods
@@ -597,6 +628,11 @@ namespace EngineLayer.Analysis
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
+                    }
+
+                    if(false)
+                    {
+                        Quantify(orderedPsmsWithFDR, proteinGroups[j]);
                     }
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
