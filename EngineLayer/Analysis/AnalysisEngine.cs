@@ -73,7 +73,7 @@ namespace EngineLayer.Analysis
         public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             Status("Applying protein parsimony...");
-            
+
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -169,7 +169,7 @@ namespace EngineLayer.Analysis
                 var newPeptideBaseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
                 algDictionary.Add(kvp.Key, newPeptideBaseSeqs);
             }
-            
+
             int numNewSeqs;
             while (true)
             {
@@ -185,7 +185,7 @@ namespace EngineLayer.Analysis
                 HashSet<string> newSeqs;
                 algDictionary.TryGetValue(bestProtein, out newSeqs);
                 newSeqs = new HashSet<string>(newSeqs);
-                
+
                 // may need to select different protein
                 if (list.Count > 1)
                 {
@@ -392,9 +392,9 @@ namespace EngineLayer.Analysis
                     var pgsWithThisScore = pg.Where(p => p.proteinGroupScore == pg[i].proteinGroupScore).ToList();
 
                     // check to make sure they have the same peptides, then merge them
-                    foreach(var p in pgsWithThisScore)
+                    foreach (var p in pgsWithThisScore)
                     {
-                        if(p != pg[i] && p.StrictPeptideList.SetEquals(pg[i].StrictPeptideList))
+                        if (p != pg[i] && p.StrictPeptideList.SetEquals(pg[i].StrictPeptideList))
                         {
                             pg[i].MergeProteinGroupWith(p);
                         }
@@ -473,35 +473,43 @@ namespace EngineLayer.Analysis
                     proteinGroupsToRemove.Add(proteinGroup);
             }
 
-            foreach(var pg in proteinGroupsToRemove)
+            foreach (var pg in proteinGroupsToRemove)
             {
                 sortedProteinGroups.Remove(pg);
             }
-            
+
             return sortedProteinGroups;
         }
 
         public void Quantify(List<NewPsmWithFdr> psms, double rtWindow, double massTolerance)
         {
-            foreach(var p in psms)
+            foreach (var p in psms)
             {
+                // get parent MS1 scan
+                var parentScan = myMsDataFile.GetOneBasedScan(p.thisPSM.newPsm.precursorScanNumber);
+
+                // get parent MS1 RT
+                var rt = parentScan.RetentionTime;
+
                 double mz = p.thisPSM.newPsm.scanPrecursorMZ;
-                double rt = p.thisPSM.newPsm.scanRetentionTime;
                 double mzTol = massTolerance / p.thisPSM.newPsm.scanPrecursorCharge;
                 double apexMs1Intensity = double.NaN;
-
+                
                 var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - (rtWindow / 2), rt + (rtWindow / 2)).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
 
-                foreach(var spectrum in ms1SpectraInThisWindow)
+                foreach (var spectrum in ms1SpectraInThisWindow)
                 {
                     var i = spectrum.MassSpectrum.Where(s => (s.Mz < mz + mzTol) && (s.Mz > mz - mzTol)).ToList();
-                    double maxIntensityHere = i.Max(s => s.Intensity);
+                    double maxIntensityHere = 0;
+                    
+                    if(i.Any())
+                        maxIntensityHere= i.Max(s => s.Intensity);
 
                     if (double.IsNaN(apexMs1Intensity) || apexMs1Intensity < maxIntensityHere)
                         apexMs1Intensity = maxIntensityHere;
                 }
-                
+
                 p.thisPSM.newPsm.apexIntensity = apexMs1Intensity;
             }
         }
@@ -624,9 +632,10 @@ namespace EngineLayer.Analysis
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 
-                    if(false)
+                    if (true)
                     {
-                        //Quantify(orderedPsmsWithFDR, proteinGroups[j]);
+                        Status("Quantifying peptides...");
+                        Quantify(orderedPsmsWithFDR, 0.1, 0.000010);
                     }
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;

@@ -22,6 +22,7 @@ namespace EngineLayer
             MonoisotopicPrecursorMass = MonoisotopicPrecursorMZ.ToMass(PrecursorCharge);
 
             OneBasedScanNumber = b.OneBasedScanNumber;
+            OneBasedPrecursorScanNumber = b.OneBasedPrecursorScanNumber;
 
             RetentionTime = b.RetentionTime;
 
@@ -49,6 +50,7 @@ namespace EngineLayer
 
         internal IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> TheScan { get; private set; }
         internal int OneBasedScanNumber { get; private set; }
+        internal int OneBasedPrecursorScanNumber { get; private set; }
         internal double RetentionTime { get; private set; }
         internal int PrecursorCharge { get; private set; }
         internal int NumPeaks { get; private set; }

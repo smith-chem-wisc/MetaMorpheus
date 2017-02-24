@@ -149,7 +149,7 @@ namespace EngineLayer.ClassicSearch
                                     //}
 
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
-                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
+                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)
                                     {
                                         PsmClassic current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];

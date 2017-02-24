@@ -118,7 +118,7 @@ namespace Test
         public TestDataFile(PeptideWithSetModifications pepWithSetMods, int charge, double intensity, double rt) : base(2)
         {
             var mz1 = new double[] { pepWithSetMods.MonoisotopicMass.ToMz(charge), (pepWithSetMods.MonoisotopicMass + 1.003).ToMz(charge), (pepWithSetMods.MonoisotopicMass + 2.005).ToMz(charge) };
-            var intensities1 = new double[] { intensity, 1, intensity / 10 };
+            var intensities1 = new double[] { intensity, intensity * 10, intensity / 10 };
             var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
             var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, rt, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1) };
