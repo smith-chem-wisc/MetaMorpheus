@@ -214,7 +214,7 @@ namespace TaskLayer
                 var resultBeforeFC = a.Run();
                 myTaskResults.AddResultText(resultBeforeFC);
 
-                // TEST STUFF
+                // Second search round
 
                 var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
@@ -229,7 +229,7 @@ namespace TaskLayer
                 var resultAfterFC = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0], minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), true).Run();
                 myTaskResults.AddResultText(resultAfterFC);
 
-                // TEST STUFF
+                // Final search round - not required
 
                 var listOfSortedms2ScansTest2 = GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 var searchEngineTest2 = new ClassicSearchEngine(listOfSortedms2ScansTest2, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp);
