@@ -1,4 +1,5 @@
 ﻿using MassSpectrometry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
@@ -291,8 +292,9 @@ namespace Test
         [Test]
         public static void TestQuantification()
         {
-            double mass = 2910.52664 + 3 * 1.007;
-            int charge = 2;
+            int charge = 3;
+            double mass = 2910.52664 + charge * Constants.protonMass;
+            double mz = mass / charge;
             double intensity = 1000.0;
             double rt = 20.0;
 
@@ -306,14 +308,14 @@ namespace Test
 
             var psms = new List<NewPsmWithFdr>();
 
-            var psm = new PsmClassic(peptide, null, rt, intensity, mass, 0, charge, 1, 0, mass / charge, 0, 0);
+            var psm = new PsmClassic(peptide, null, rt, intensity, mass, 0, charge, 1, 0, mz, 0, 0);
             var t = new PsmWithMultiplePossiblePeptides(psm, new HashSet<PeptideWithSetModifications> { peptide }, null, null, null);
             psms.Add(new NewPsmWithFdr(t));
 
             AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable);
-            ae.Quantify(psms, null);
+            ae.Quantify(psms, 0.01, 0.000010);
 
-            Assert.That(psms.First().thisPSM.newPsm.integratedMs1Intensity == 1000.0);
+            Assert.That(psms.First().thisPSM.newPsm.apexIntensity == 1000.0);
         }
 
         #endregion Public Methods

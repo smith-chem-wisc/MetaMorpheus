@@ -22,7 +22,7 @@ namespace EngineLayer
         public readonly double scanPrecursorMZ;
         public readonly double scanPrecursorMass;
         public readonly double score;
-        public double integratedMs1Intensity;
+        public double apexIntensity;
 
         public Dictionary<ProductType, double[]> matchedIonsList;
         public List<double> LocalizedScores;

@@ -481,34 +481,28 @@ namespace EngineLayer.Analysis
             return sortedProteinGroups;
         }
 
-        public void Quantify(List<NewPsmWithFdr> psms, List<ProteinGroup> pgs)
+        public void Quantify(List<NewPsmWithFdr> psms, double rtWindow, double massTolerance)
         {
-            double peakRtWindow = 0.01;
-            double massTolerance = 0.000010;
-            double mz;
-
             foreach(var p in psms)
             {
-                mz = p.thisPSM.newPsm.scanPrecursorMZ;
+                double mz = p.thisPSM.newPsm.scanPrecursorMZ;
                 double rt = p.thisPSM.newPsm.scanRetentionTime;
                 double mzTol = massTolerance / p.thisPSM.newPsm.scanPrecursorCharge;
-                double integratedMs1Intensity = 0;
+                double apexMs1Intensity = double.NaN;
 
-                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - peakRtWindow, rt + peakRtWindow).ToList();
+                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - (rtWindow / 2), rt + (rtWindow / 2)).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
 
                 foreach(var spectrum in ms1SpectraInThisWindow)
                 {
                     var i = spectrum.MassSpectrum.Where(s => (s.Mz < mz + mzTol) && (s.Mz > mz - mzTol)).ToList();
-                    integratedMs1Intensity += i.Sum(s => s.Intensity);
+                    double maxIntensityHere = i.Max(s => s.Intensity);
+
+                    if (double.IsNaN(apexMs1Intensity) || apexMs1Intensity < maxIntensityHere)
+                        apexMs1Intensity = maxIntensityHere;
                 }
                 
-                p.thisPSM.newPsm.integratedMs1Intensity = integratedMs1Intensity;
-            }
-
-            if(pgs != null)
-            {
-
+                p.thisPSM.newPsm.apexIntensity = apexMs1Intensity;
             }
         }
 
@@ -632,7 +626,7 @@ namespace EngineLayer.Analysis
 
                     if(false)
                     {
-                        Quantify(orderedPsmsWithFDR, proteinGroups[j]);
+                        //Quantify(orderedPsmsWithFDR, proteinGroups[j]);
                     }
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
