@@ -489,26 +489,62 @@ namespace EngineLayer.Analysis
         {
             foreach (var psm in psms)
             {
+                // calculate apex intensity
                 var rt = psm.thisPSM.newPsm.scanRetentionTime;
                 double theoreticalMz = Chemistry.ClassExtensions.ToMz(psm.thisPSM.PeptideMonoisotopicMass, psm.thisPSM.newPsm.scanPrecursorCharge);
 
                 double mzTol = ((ppmTolerance / 1000000) * psm.thisPSM.PeptideMonoisotopicMass) / psm.thisPSM.newPsm.scanPrecursorCharge;
-                
+
                 var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - rtTolerance, rt + rtTolerance).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
                 var intensities = new List<double>();
+                var retentionTimes = new List<double>();
 
                 foreach (var spectrum in ms1SpectraInThisWindow)
                 {
                     var i = spectrum.MassSpectrum.Where(s => ((s.Mz > (theoreticalMz - mzTol)) && s.Mz < (theoreticalMz + mzTol))).ToList();
-                    foreach (var v in i)
-                        intensities.Add(v.Intensity);
+                    foreach (var p in i)
+                    {
+                        intensities.Add(p.Intensity);
+                        retentionTimes.Add(spectrum.RetentionTime);
+                    }
                 }
 
-                if (intensities.Any())
-                    psm.thisPSM.newPsm.apexIntensity = intensities.Max();
-                else
-                    psm.thisPSM.newPsm.apexIntensity = 0;
+                double apexIntensity = intensities.Max();
+                psm.thisPSM.newPsm.apexIntensity = apexIntensity;
+
+                // calculate full width half max (peak quality)
+                int apexIntensityIndex = intensities.IndexOf(apexIntensity);
+                double leftHalfMax = double.NaN;
+                double rightHalfMax = double.NaN;
+                double fullWidthHalfMax = double.NaN;
+                
+                for (int i = apexIntensityIndex; i >= 0; i--)
+                {
+                    if (intensities[i] < (apexIntensity / 2))
+                    {
+                        leftHalfMax = (retentionTimes[i] + retentionTimes[i + 1]) / 2;
+                        break;
+                    }
+                }
+
+                for (int i = apexIntensityIndex; i < intensities.Count; i++)
+                {
+                    if (intensities[i] < (apexIntensity / 2))
+                    {
+                        rightHalfMax = (retentionTimes[i] + retentionTimes[i - 1]) / 2;
+                        break;
+                    }
+                }
+
+                if (!double.IsNaN(leftHalfMax) && !double.IsNaN(rightHalfMax))
+                {
+                    fullWidthHalfMax = rightHalfMax - leftHalfMax;
+                }
+
+                psm.thisPSM.newPsm.fullWidthHalfMax = fullWidthHalfMax;
+
+                // calculate SNR (TODO**)
             }
         }
 
@@ -625,7 +661,7 @@ namespace EngineLayer.Analysis
                             writeHistogramPeaksAction(myTreeStructure, searchModes[j].FileNameAddition);
                         }
                     }
-                    
+
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
