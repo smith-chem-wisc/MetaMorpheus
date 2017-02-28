@@ -137,6 +137,7 @@ namespace EngineLayer
         {
             yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(5);
+            yield return new SinglePpmAroundZeroSearchMode(20);
             yield return new SingleAbsoluteAroundZeroSearchMode(0.05);
             yield return new DotSearchMode("3mm", new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5));
             yield return new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });

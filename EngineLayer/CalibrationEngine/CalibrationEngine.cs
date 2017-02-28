@@ -26,6 +26,7 @@ namespace EngineLayer.Calibration
         private readonly FragmentTypes fragmentTypesForCalibration;
         private readonly Action<List<LabeledMs1DataPoint>, string> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
+        private readonly bool doFC;
         private List<NewPsmWithFdr> identifications;
         private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
@@ -37,7 +38,6 @@ namespace EngineLayer.Calibration
         private int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
         private int numFragmentsIdentified;
-        private readonly bool doFC;
 
         #endregion Private Fields
 
@@ -117,7 +117,7 @@ namespace EngineLayer.Calibration
 
         private Tuple<CalibrationFunction, CalibrationFunction> CalibrateRF(DataPointAquisitionResults res)
         {
-            var rnd = new Random(randomSeed);
+            var rnd = new Random();
 
             var shuffledMs1TrainingPoints = res.ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.ms2List.OrderBy(item => rnd.Next()).ToList();
@@ -266,7 +266,7 @@ namespace EngineLayer.Calibration
 
         private Tuple<CalibrationFunction, CalibrationFunction> CalibrateSmooth(DataPointAquisitionResults res)
         {
-            var rnd = new Random(randomSeed);
+            var rnd = new Random();
 
             var shuffledMs1TrainingPoints = res.ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.ms2List.OrderBy(item => rnd.Next()).ToList();
@@ -422,7 +422,6 @@ namespace EngineLayer.Calibration
                 var theScan = a as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                 if (theScan != null)
                 {
-
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
                     double precursorMZ = theScan.SelectedIonGuessMZ.Value;

@@ -1,9 +1,9 @@
-﻿using Proteomics;
+﻿using MathNet.Numerics.Statistics;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using MathNet.Numerics.Statistics;
 
 namespace EngineLayer.Analysis
 {
@@ -311,6 +311,8 @@ namespace EngineLayer.Analysis
         {
             double totalTargetCount = FinalBins.Select(b => b.CountTarget).Sum();
             var ok = new HashSet<Tuple<double, double, double>>();
+
+            // For every non-zero bin
             foreach (var bin in FinalBins.Where(b => Math.Abs(b.MassShift) > v))
                 foreach (var bin2 in FinalBins.Where(b => Math.Abs(b.MassShift) > v))
                     if (bin.CountTarget * bin2.CountTarget >= totalTargetCount)
@@ -369,7 +371,7 @@ namespace EngineLayer.Analysis
             myInfos.Add(new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"));
             myInfos.Add(new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."));
             myInfos.Add(new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"));
-            myInfos.Add(new MyInfo(-79.966331, "neg Phosphorylation. Probably real thing does not have it, but somehow matched! Might want to exclude."));
+            myInfos.Add(new MyInfo(-79.966331, "neg Phosphorylation."));
             myInfos.Add(new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"));
             myInfos.Add(new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"));
             myInfos.Add(new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"));

@@ -7,6 +7,7 @@ namespace EngineLayer.Calibration
 {
     internal class RandomForestCalibrationFunction : CalibrationFunction
     {
+
         #region Private Fields
 
         private readonly RegressionTree[] RegressionTrees;
@@ -39,8 +40,10 @@ namespace EngineLayer.Calibration
 
         internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
-            var rand = new Random(1);
+            var rand = new Random();
             List<LabeledDataPoint> trainingListHere = trainingList.ToList();
+            Console.WriteLine("All point average = " + trainingListHere.Select(b => b.label).Average());
+            Console.WriteLine("trainingListHere.Count = " + trainingListHere.Count);
             Parallel.For(0, RegressionTrees.Length, i =>
             {
                 List<LabeledDataPoint> subsampledTrainingPoints = new List<LabeledDataPoint>();
@@ -59,5 +62,6 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
+
     }
 }
