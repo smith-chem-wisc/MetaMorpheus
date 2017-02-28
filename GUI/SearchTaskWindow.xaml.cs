@@ -100,6 +100,9 @@ namespace MetaMorpheusGUI
             modernSearchRadioButton.IsChecked = !task.ClassicSearch;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
+            checkBoxQuantification.IsChecked = task.Quantify;
+            quantRtTolerance.Text = task.QuantifyRtTol.ToString(CultureInfo.InvariantCulture);
+            quantPpmTolerance.Text = task.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -138,6 +141,9 @@ namespace MetaMorpheusGUI
             TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
+            TheTask.Quantify = checkBoxQuantification.IsChecked.Value;
+            TheTask.QuantifyRtTol = double.Parse(quantRtTolerance.Text, CultureInfo.InvariantCulture);
+            TheTask.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;

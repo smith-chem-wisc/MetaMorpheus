@@ -29,20 +29,16 @@
                 <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys" />
                 <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
                 <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+                <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides" />
             </StackPanel>
-            <StackPanel Margin="0,19,44,0" HorizontalAlignment="Right" VerticalAlignment="Top"  Grid.Column="1">
-                <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" Margin="-75,0,75,0" VerticalAlignment="Top" Height="16" >
-                    <CheckBox.Style>
-                        <Style TargetType="{x:Type CheckBox}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=checkBoxParsimony}" Value="False">
-                                    <Setter Property="IsEnabled" Value="False" />
-                                    <Setter Property="IsChecked" Value="False"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </CheckBox.Style>
-                </CheckBox>
+            <StackPanel Margin="0,20,0,0" VerticalAlignment="Top"  Grid.Column="1">
+                <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" Margin="0,0,0,0" VerticalAlignment="Top" Height="16" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+                <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
+                    <Label x:Name="quantRtLabel" Content="RT Window (min)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                    <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                    <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                </StackPanel>
             </StackPanel>
         </Grid>
         <StackPanel Margin="5">
