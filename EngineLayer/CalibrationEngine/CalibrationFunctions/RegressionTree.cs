@@ -60,13 +60,13 @@ namespace EngineLayer.Calibration
             }
             var bestSumSquaredErrors = trainingPoints.Select(b => Math.Pow(averageOutputs - b.label, 2)).Sum();
 
-            if (level == 0)
-            {
-                Console.WriteLine("useFeature = " + string.Join(",", useFeature));
-                Console.WriteLine("averageOutputs = " + averageOutputs);
-                Console.WriteLine("trainingPoints.Count = " + trainingPoints.Count);
-                Console.WriteLine("bestSumSquaredErrors = " + bestSumSquaredErrors);
-            }
+            //if (level == 0)
+            //{
+            //    Console.WriteLine("useFeature = " + string.Join(",", useFeature));
+            //    Console.WriteLine("averageOutputs = " + averageOutputs);
+            //    Console.WriteLine("trainingPoints.Count = " + trainingPoints.Count);
+            //    Console.WriteLine("bestSumSquaredErrors = " + bestSumSquaredErrors);
+            //}
             var prunedTrainingPoints = trainingPoints;
 
             // For every variable, try to find the best split
@@ -89,27 +89,27 @@ namespace EngineLayer.Calibration
 
                         var sumSquaredErrors = prunedTrainingPoints.TakeWhile(b => b.inputs[i] < quantile).Select(b => Math.Pow(averageFirst - b.label, 2)).Sum() +
                                                prunedTrainingPoints.SkipWhile(b => b.inputs[i] < quantile).Select(b => Math.Pow(averageLast - b.label, 2)).Sum();
-                        if (level == 0)
-                        {
-                            Console.WriteLine("  j = " + j);
-                            Console.WriteLine("   quantile = " + quantile);
-                            Console.WriteLine("   averageFirst = " + averageFirst);
-                            Console.WriteLine("   averageLast = " + averageLast);
-                            Console.WriteLine("   sumSquaredErrors = " + sumSquaredErrors);
-                        }
+                        //if (level == 0)
+                        //{
+                        //    Console.WriteLine("  j = " + j);
+                        //    Console.WriteLine("   quantile = " + quantile);
+                        //    Console.WriteLine("   averageFirst = " + averageFirst);
+                        //    Console.WriteLine("   averageLast = " + averageLast);
+                        //    Console.WriteLine("   sumSquaredErrors = " + sumSquaredErrors);
+                        //}
 
                         if (sumSquaredErrors < bestSumSquaredErrors)
                         {
                             bestSumSquaredErrors = sumSquaredErrors;
                             bestValue = quantile;
                             bestI = i;
-                            if (level == 0)
-                            {
-                                Console.WriteLine("  replacing!");
-                                Console.WriteLine("   bestI = " + bestI);
-                                Console.WriteLine("   bestSumSquaredErrors = " + bestSumSquaredErrors);
-                                Console.WriteLine("   bestValue = " + bestValue);
-                            }
+                            //if (level == 0)
+                            //{
+                            //    Console.WriteLine("  replacing!");
+                            //    Console.WriteLine("   bestI = " + bestI);
+                            //    Console.WriteLine("   bestSumSquaredErrors = " + bestSumSquaredErrors);
+                            //    Console.WriteLine("   bestValue = " + bestValue);
+                            //}
                         }
                     }
                 }
