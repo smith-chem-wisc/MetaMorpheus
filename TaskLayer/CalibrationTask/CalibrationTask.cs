@@ -201,7 +201,6 @@ namespace TaskLayer
                 var identifications = analysisResults.AllResultingIdentifications[0];
 
                 //Now can calibrate!!!
-                int randomSeed = 1;
 
                 int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
                 int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
@@ -209,7 +208,7 @@ namespace TaskLayer
 
                 // TODO: fix the tolerance calculation below
 
-                var a = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), false);
+                var a = new CalibrationEngine(myMsDataFile, ProductMassTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s), false);
 
                 var resultBeforeFC = a.Run();
                 myTaskResults.AddResultText(resultBeforeFC);
@@ -226,7 +225,7 @@ namespace TaskLayer
 
                 //
 
-                var resultAfterFC = new CalibrationEngine(myMsDataFile, randomSeed, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0], minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), true).Run();
+                var resultAfterFC = new CalibrationEngine(myMsDataFile, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0], minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after"), true).Run();
                 myTaskResults.AddResultText(resultAfterFC);
 
                 // Final search round - not required
@@ -240,7 +239,6 @@ namespace TaskLayer
                 myTaskResults.AddResultText(analysisResultsTest2);
 
                 //
-
 
                 if (resultBeforeFC is MyErroredResults)
                 {
