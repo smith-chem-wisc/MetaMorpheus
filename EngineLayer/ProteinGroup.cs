@@ -68,7 +68,7 @@ namespace EngineLayer
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
-                sb.Append("Decoy?" + '\t');
+                sb.Append("Decoy/Contaminant/Target" + '\t');
                 sb.Append("Cumulative Target" + '\t');
                 sb.Append("Cumulative Decoy" + '\t');
                 sb.Append("Q-Value (%)");
@@ -175,7 +175,12 @@ namespace EngineLayer
             sb.Append("\t");
 
             // isDecoy
-            sb.Append(isDecoy);
+            if (isDecoy)
+                sb.Append("D");
+            else if (isContaminant)
+                sb.Append("C");
+            else
+                sb.Append("T");
             sb.Append("\t");
 
             // cumulative target
