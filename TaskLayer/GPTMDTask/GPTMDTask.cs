@@ -126,6 +126,22 @@ namespace TaskLayer
                     writer.WriteEndElement();
                     writer.WriteEndElement();
 
+                    foreach (var goTerm in protein.GoTerms)
+                    {
+                        string aspect_string;
+                        if (goTerm.Aspect == Aspect.biologicalProcess) aspect_string = "P:";
+                        else if (goTerm.Aspect == Aspect.molecularFunction) aspect_string = "F:";
+                        else if (goTerm.Aspect == Aspect.cellularComponent) aspect_string = "B:";
+                        else continue;
+                        writer.WriteStartElement("dbReference");
+                        writer.WriteAttributeString("type", "GO");
+                        writer.WriteAttributeString("id", "GO:" + goTerm.Id);
+                        writer.WriteStartElement("property");
+                        writer.WriteAttributeString("type", "term");
+                        writer.WriteAttributeString("value", aspect_string + goTerm.Description);
+                        writer.WriteEndElement();
+                        writer.WriteEndElement();
+                    }
                     foreach (var proteolysisProduct in protein.ProteolysisProducts)
                     {
                         writer.WriteStartElement("feature");
