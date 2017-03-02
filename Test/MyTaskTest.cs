@@ -48,7 +48,8 @@ namespace Test
             //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
             // Generate data for files
-            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null);
+            List<GoTerm> goTerms = new List<GoTerm> { new GoTerm("id1", "description1", Aspect.cellularComponent), new GoTerm("id2", "description2", Aspect.molecularFunction), new GoTerm("id3", "description3", Aspect.biologicalProcess) };
+            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, goTerms);
 
             var digestedList = ParentProtein.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
@@ -72,7 +73,7 @@ namespace Test
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, 0, new List<double> { 21.981943 }, null, "") });
-            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, null);
+            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, goTerms);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
@@ -82,13 +83,13 @@ namespace Test
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
 
-            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new Dictionary<int, List<Modification>>(), new int?[] { 4 }, new int?[] { 8 }, new string[] { "chain" }, null, null, false, false, null);
+            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new Dictionary<int, List<Modification>>(), new int?[] { 4 }, new int?[] { 8 }, new string[] { "chain" }, null, null, false, false, goTerms);
 
             #region Write the files
 
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName);
-            string xmlName = "okk.xml";
+            string xmlName = @"okk.xml";
             GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
             #endregion Write the files
