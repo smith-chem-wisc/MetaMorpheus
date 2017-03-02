@@ -202,7 +202,7 @@ namespace TaskLayer
                 output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tNtermLocFrac\tCtermLocFrac\tFracWithSingle\tOverlappingFrac\tMedianLength\tUniprot");
                 foreach (Bin bin in myTreeStructure.FinalBins.OrderByDescending(b => b.Count))
                 {
-                    output.WriteLine(bin.MassShift.ToString("F3", CultureInfo.InvariantCulture)
+                    output.WriteLine(bin.MassShift.ToString("F4", CultureInfo.InvariantCulture)
                         + "\t" + bin.Count.ToString(CultureInfo.InvariantCulture)
                         + "\t" + bin.CountDecoy.ToString(CultureInfo.InvariantCulture)
                         + "\t" + bin.CountTarget.ToString(CultureInfo.InvariantCulture)
