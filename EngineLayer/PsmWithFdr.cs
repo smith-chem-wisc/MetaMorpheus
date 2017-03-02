@@ -69,10 +69,10 @@ namespace EngineLayer
             sb.Append(thisPSM.ToString() + '\t');
             sb.Append(cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(qValue.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(qValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(qValueNotch.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append(qValueNotch.ToString("F6", CultureInfo.InvariantCulture));
 
             return sb.ToString();
         }

@@ -53,6 +53,14 @@ namespace Test
             }
         }
 
+        public double[,] NoiseData
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public int OneBasedScanNumber { get; protected set; }
 
         public Polarity Polarity
@@ -100,6 +108,21 @@ namespace Test
         #endregion Public Properties
 
         #region Public Methods
+
+        public byte[] Get64BitNoiseDataBaseline()
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] Get64BitNoiseDataMass()
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] Get64BitNoiseDataNoise()
+        {
+            throw new NotImplementedException();
+        }
 
         public void TransformByApplyingFunctionToSpectra(Func<IMzPeak, double> convertorForSpectrum)
         {
