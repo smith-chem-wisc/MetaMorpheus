@@ -25,9 +25,9 @@
             </Grid.ColumnDefinitions>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2*"/>
                 </Grid.RowDefinitions>
                 <GroupBox Header="Protein Databases" Name="proteinDatabasesGroupBox">
                     <Grid>
@@ -48,7 +48,13 @@
                         </StackPanel>
                     </Grid>
                 </GroupBox>
-                <GroupBox Header="Datafiles" Grid.Row="1"  Name="datafilesGroupBox">
+                <GridSplitter Grid.Row="1"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Stretch"
+                        Background="Silver"
+                        Height="5"
+                        />
+                <GroupBox Header="Datafiles" Grid.Row="2"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -99,24 +105,6 @@
                         </StackPanel>
                     </Grid>
                 </GroupBox>
-                <GroupBox Header="Output Files" Grid.Row="2">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="20" />
-                        </Grid.RowDefinitions>
-                        <DataGrid x:Name="outputFilesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserReorderColumns="False">
-                            <DataGrid.Resources>
-                                <Style TargetType="DataGridCell">
-                                    <EventSetter Event="MouseDoubleClick" Handler="Row_DoubleClick" />
-                                </Style>
-                            </DataGrid.Resources>
-                        </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
-                            <Button x:Name="ClearOutput" Content="Clear" Click="ClearOutput_Click" />
-                        </StackPanel>
-                    </Grid>
-                </GroupBox>
             </Grid>
             <GridSplitter Grid.Column="1"
                         HorizontalAlignment="Center"
@@ -126,8 +114,9 @@
                         />
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1*"/>
                 </Grid.RowDefinitions>
                 <GroupBox Header="Tasks" Name="tasksGroupBox">
                     <Grid>
@@ -187,7 +176,13 @@
                         <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3"/>
                     </Grid>
                 </GroupBox>
-                <GroupBox Header="Status" Grid.Row="1">
+                <GridSplitter Grid.Row="1"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Stretch"
+                        Background="Silver"
+                        Height="5"
+                        />
+                <GroupBox Header="Status" Grid.Row="2">
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Top">
                             <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />

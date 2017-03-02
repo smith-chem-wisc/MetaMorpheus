@@ -39,7 +39,6 @@ namespace MetaMorpheusGUI
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksDataGrid.DataContext = taskEngineObservableCollection;
-            outputFilesDataGrid.DataContext = finishedFileObservableCollection;
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
@@ -193,7 +192,6 @@ namespace MetaMorpheusGUI
         private void AddFinishedFile(string filepath)
         {
             finishedFileObservableCollection.Add(new FinishedFileForDataGrid(filepath));
-            outputFilesDataGrid.Items.Refresh();
         }
 
         private void ClearRaw_Click(object sender, RoutedEventArgs e)
