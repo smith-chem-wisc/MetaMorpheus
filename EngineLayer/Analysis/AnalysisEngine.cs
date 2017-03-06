@@ -518,20 +518,22 @@ namespace EngineLayer.Analysis
                 double rightHalfMax = double.NaN;
                 double fullWidthHalfMax = double.NaN;
                 
+                // left width half max
                 for (int i = apexIntensityIndex; i >= 0; i--)
                 {
                     if (intensities[i] < (apexIntensity / 2))
                     {
-                        leftHalfMax = (retentionTimes[i] + retentionTimes[i + 1]) / 2;
+                        leftHalfMax = retentionTimes[i];
                         break;
                     }
                 }
 
+                // right width half max
                 for (int i = apexIntensityIndex; i < intensities.Count; i++)
                 {
                     if (intensities[i] < (apexIntensity / 2))
                     {
-                        rightHalfMax = (retentionTimes[i] + retentionTimes[i - 1]) / 2;
+                        rightHalfMax = retentionTimes[i];
                         break;
                     }
                 }
