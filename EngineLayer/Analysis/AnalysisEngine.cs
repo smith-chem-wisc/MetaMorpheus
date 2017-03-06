@@ -33,6 +33,9 @@ namespace EngineLayer.Analysis
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
         private readonly bool doHistogramAnalysis;
+        private readonly bool quantify;
+        private readonly double quantifyRtTol;
+        private readonly double quantifyPpmTol;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
@@ -41,7 +44,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -64,6 +67,9 @@ namespace EngineLayer.Analysis
             this.lp = lp;
             this.binTol = binTol;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
+            this.quantify = Quantify;
+            this.quantifyRtTol = QuantifyRtTol;
+            this.quantifyPpmTol = QuantifyPpmTol;
         }
 
         #endregion Public Constructors
@@ -72,8 +78,6 @@ namespace EngineLayer.Analysis
 
         public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
-            Status("Applying protein parsimony...");
-            
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -169,7 +173,7 @@ namespace EngineLayer.Analysis
                 var newPeptideBaseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
                 algDictionary.Add(kvp.Key, newPeptideBaseSeqs);
             }
-            
+
             int numNewSeqs;
             while (true)
             {
@@ -185,7 +189,7 @@ namespace EngineLayer.Analysis
                 HashSet<string> newSeqs;
                 algDictionary.TryGetValue(bestProtein, out newSeqs);
                 newSeqs = new HashSet<string>(newSeqs);
-                
+
                 // may need to select different protein
                 if (list.Count > 1)
                 {
@@ -392,9 +396,9 @@ namespace EngineLayer.Analysis
                     var pgsWithThisScore = pg.Where(p => p.proteinGroupScore == pg[i].proteinGroupScore).ToList();
 
                     // check to make sure they have the same peptides, then merge them
-                    foreach(var p in pgsWithThisScore)
+                    foreach (var p in pgsWithThisScore)
                     {
-                        if(p != pg[i] && p.StrictPeptideList.SetEquals(pg[i].StrictPeptideList))
+                        if (p != pg[i] && p.StrictPeptideList.SetEquals(pg[i].StrictPeptideList))
                         {
                             pg[i].MergeProteinGroupWith(p);
                         }
@@ -473,12 +477,76 @@ namespace EngineLayer.Analysis
                     proteinGroupsToRemove.Add(proteinGroup);
             }
 
-            foreach(var pg in proteinGroupsToRemove)
+            foreach (var pg in proteinGroupsToRemove)
             {
                 sortedProteinGroups.Remove(pg);
             }
-            
+
             return sortedProteinGroups;
+        }
+
+        public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
+        {
+            foreach (var psm in psms)
+            {
+                // calculate apex intensity
+                var rt = psm.thisPSM.newPsm.scanRetentionTime;
+                double theoreticalMz = Chemistry.ClassExtensions.ToMz(psm.thisPSM.PeptideMonoisotopicMass, psm.thisPSM.newPsm.scanPrecursorCharge);
+                double mzTol = ((ppmTolerance / 1000000) * Chemistry.ClassExtensions.ToMass(theoreticalMz, psm.thisPSM.newPsm.scanPrecursorCharge) / psm.thisPSM.newPsm.scanPrecursorCharge);
+
+                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - rtTolerance, rt + rtTolerance).ToList();
+                var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
+                var intensities = new List<double>();
+                var retentionTimes = new List<double>();
+
+                foreach (var spectrum in ms1SpectraInThisWindow)
+                {
+                    var i = spectrum.MassSpectrum.Where(s => ((s.Mz > (theoreticalMz - mzTol)) && s.Mz < (theoreticalMz + mzTol))).ToList();
+                    foreach (var p in i)
+                    {
+                        intensities.Add(p.Intensity);
+                        retentionTimes.Add(spectrum.RetentionTime);
+                    }
+                }
+
+                double apexIntensity = intensities.Max();
+                psm.thisPSM.newPsm.apexIntensity = apexIntensity;
+
+                // calculate full width half max (peak quality)
+                int apexIntensityIndex = intensities.IndexOf(apexIntensity);
+                double leftHalfMax = double.NaN;
+                double rightHalfMax = double.NaN;
+                double fullWidthHalfMax = double.NaN;
+                
+                // left width half max
+                for (int i = apexIntensityIndex; i >= 0; i--)
+                {
+                    if (intensities[i] < (apexIntensity / 2))
+                    {
+                        leftHalfMax = retentionTimes[i];
+                        break;
+                    }
+                }
+
+                // right width half max
+                for (int i = apexIntensityIndex; i < intensities.Count; i++)
+                {
+                    if (intensities[i] < (apexIntensity / 2))
+                    {
+                        rightHalfMax = retentionTimes[i];
+                        break;
+                    }
+                }
+
+                if (!double.IsNaN(leftHalfMax) && !double.IsNaN(rightHalfMax))
+                {
+                    fullWidthHalfMax = rightHalfMax - leftHalfMax;
+                }
+
+                psm.thisPSM.newPsm.fullWidthHalfMax = fullWidthHalfMax;
+
+                // calculate SNR (TODO**)
+            }
         }
 
         #endregion Public Methods
@@ -549,6 +617,7 @@ namespace EngineLayer.Analysis
             List<ProteinGroup>[] proteinGroups = null;
             if (doParsimony)
             {
+                Status("Applying protein parsimony...");
                 proteinGroups = new List<ProteinGroup>[searchModes.Count];
                 // TODO**: make this faster (only apply parsimony once but make multiple instances of the same ProteinGroups
                 for (int i = 0; i < searchModes.Count; i++)
@@ -573,6 +642,13 @@ namespace EngineLayer.Analysis
 
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
+
+                    if (quantify)
+                    {
+                        Status("Quantifying peptides...");
+                        RunQuantification(orderedPsmsWithFDR, quantifyRtTol, quantifyPpmTol);
+                    }
+
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
                     if (doHistogramAnalysis)
@@ -586,10 +662,14 @@ namespace EngineLayer.Analysis
                             writeHistogramPeaksAction(myTreeStructure, searchModes[j].FileNameAddition);
                         }
                     }
+
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
-                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
+                        if(quantify)
+                            writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.ToList().OrderByDescending(p => p.newPsm.apexIntensity).FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
+                        else
+                            writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
                     }
 
                     if (doParsimony)

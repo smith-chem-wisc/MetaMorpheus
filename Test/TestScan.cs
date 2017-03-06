@@ -105,6 +105,23 @@ namespace Test
             }
         }
 
+        public byte[] Get64BitNoiseDataBaseline()
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] Get64BitNoiseDataMass()
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] Get64BitNoiseDataNoise()
+        {
+            throw new NotImplementedException();
+        }
+
+
+
         #endregion Public Properties
 
         #region Public Methods
