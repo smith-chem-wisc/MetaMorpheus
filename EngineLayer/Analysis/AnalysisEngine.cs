@@ -33,9 +33,9 @@ namespace EngineLayer.Analysis
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
         private readonly bool doHistogramAnalysis;
-        private readonly bool Quantify;
-        private readonly double QuantifyRtTol;
-        private readonly double QuantifyPpmTol;
+        private readonly bool quantify;
+        private readonly double quantifyRtTol;
+        private readonly double quantifyPpmTol;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
@@ -67,9 +67,9 @@ namespace EngineLayer.Analysis
             this.lp = lp;
             this.binTol = binTol;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
-            this.Quantify = Quantify;
-            this.QuantifyRtTol = QuantifyRtTol;
-            this.QuantifyPpmTol = QuantifyPpmTol;
+            this.quantify = Quantify;
+            this.quantifyRtTol = QuantifyRtTol;
+            this.quantifyPpmTol = QuantifyPpmTol;
         }
 
         #endregion Public Constructors
@@ -492,8 +492,7 @@ namespace EngineLayer.Analysis
                 // calculate apex intensity
                 var rt = psm.thisPSM.newPsm.scanRetentionTime;
                 double theoreticalMz = Chemistry.ClassExtensions.ToMz(psm.thisPSM.PeptideMonoisotopicMass, psm.thisPSM.newPsm.scanPrecursorCharge);
-
-                double mzTol = ((ppmTolerance / 1000000) * psm.thisPSM.PeptideMonoisotopicMass) / psm.thisPSM.newPsm.scanPrecursorCharge;
+                double mzTol = ((ppmTolerance / 1000000) * Chemistry.ClassExtensions.ToMass(theoreticalMz, psm.thisPSM.newPsm.scanPrecursorCharge) / psm.thisPSM.newPsm.scanPrecursorCharge);
 
                 var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - rtTolerance, rt + rtTolerance).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
@@ -642,10 +641,10 @@ namespace EngineLayer.Analysis
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
 
-                    if (Quantify)
+                    if (quantify)
                     {
                         Status("Quantifying peptides...");
-                        RunQuantification(orderedPsmsWithFDR, QuantifyRtTol, QuantifyPpmTol);
+                        RunQuantification(orderedPsmsWithFDR, quantifyRtTol, quantifyPpmTol);
                     }
 
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
@@ -665,7 +664,7 @@ namespace EngineLayer.Analysis
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
-                        if(Quantify)
+                        if(quantify)
                             writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.ToList().OrderByDescending(p => p.newPsm.apexIntensity).FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
                         else
                             writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
