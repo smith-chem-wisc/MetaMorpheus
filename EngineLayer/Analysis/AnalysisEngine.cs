@@ -492,7 +492,8 @@ namespace EngineLayer.Analysis
                 // calculate apex intensity
                 var rt = psm.thisPSM.newPsm.scanRetentionTime;
                 double theoreticalMz = Chemistry.ClassExtensions.ToMz(psm.thisPSM.PeptideMonoisotopicMass, psm.thisPSM.newPsm.scanPrecursorCharge);
-                double mzTol = ((ppmTolerance / 1000000) * Chemistry.ClassExtensions.ToMass(theoreticalMz, psm.thisPSM.newPsm.scanPrecursorCharge) / psm.thisPSM.newPsm.scanPrecursorCharge);
+
+                double mzTol = ((ppmTolerance / 1e6) * psm.thisPSM.PeptideMonoisotopicMass) / psm.thisPSM.newPsm.scanPrecursorCharge;
 
                 var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - rtTolerance, rt + rtTolerance).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();

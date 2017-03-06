@@ -126,21 +126,6 @@ namespace Test
 
         #region Public Methods
 
-        public byte[] Get64BitNoiseDataBaseline()
-        {
-            throw new NotImplementedException();
-        }
-
-        public byte[] Get64BitNoiseDataMass()
-        {
-            throw new NotImplementedException();
-        }
-
-        public byte[] Get64BitNoiseDataNoise()
-        {
-            throw new NotImplementedException();
-        }
-
         public void TransformByApplyingFunctionToSpectra(Func<IMzPeak, double> convertorForSpectrum)
         {
             MassSpectrum.ReplaceXbyApplyingFunction(convertorForSpectrum);
