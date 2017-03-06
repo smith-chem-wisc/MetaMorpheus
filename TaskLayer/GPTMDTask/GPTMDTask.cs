@@ -126,16 +126,16 @@ namespace TaskLayer
                     writer.WriteEndElement();
                     writer.WriteEndElement();
 
-                    for (int i = 0; i < protein.BigPeptideTypes.Count(); i++)
+                    foreach (var proteolysisProduct in protein.ProteolysisProducts)
                     {
                         writer.WriteStartElement("feature");
-                        writer.WriteAttributeString("type", protein.BigPeptideTypes[i]);
+                        writer.WriteAttributeString("type", proteolysisProduct.Type);
                         writer.WriteStartElement("location");
                         writer.WriteStartElement("begin");
-                        writer.WriteAttributeString("position", protein.OneBasedBeginPositions[i].ToString());
+                        writer.WriteAttributeString("position", proteolysisProduct.OneBasedBeginPosition.ToString());
                         writer.WriteEndElement();
                         writer.WriteStartElement("end");
-                        writer.WriteAttributeString("position", protein.OneBasedEndPositions[i].ToString());
+                        writer.WriteAttributeString("position", proteolysisProduct.OneBasedEndPosition.ToString());
                         writer.WriteEndElement();
                         writer.WriteEndElement();
                         writer.WriteEndElement();
@@ -147,9 +147,6 @@ namespace TaskLayer
                             writer.WriteStartElement("feature");
                             writer.WriteAttributeString("type", "modified residue");
                             writer.WriteAttributeString("description", nice.id);
-                            //writer.WriteStartElement("db");
-                            //writer.WriteString(ye.Item3);
-                            //writer.WriteEndElement();
                             writer.WriteStartElement("location");
                             writer.WriteStartElement("position");
                             writer.WriteAttributeString("position", ye.Key.ToString(CultureInfo.InvariantCulture));
@@ -164,9 +161,6 @@ namespace TaskLayer
                             writer.WriteStartElement("feature");
                             writer.WriteAttributeString("type", "modified residue");
                             writer.WriteAttributeString("description", ye.Item2.id);
-                            //writer.WriteStartElement("db");
-                            //writer.WriteString(ye.Item3);
-                            //writer.WriteEndElement();
                             writer.WriteStartElement("location");
                             writer.WriteStartElement("position");
                             writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
