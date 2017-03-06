@@ -316,6 +316,7 @@ namespace Test
             ae.RunQuantification(psms, 0.2, 10);
 
             Assert.That(psms.First().thisPSM.newPsm.apexIntensity == 1000.0);
+            Assert.That(double.IsNaN(psms.First().thisPSM.newPsm.fullWidthHalfMax));
         }
 
         #endregion Public Methods
