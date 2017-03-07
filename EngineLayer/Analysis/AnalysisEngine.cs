@@ -512,25 +512,20 @@ namespace EngineLayer.Analysis
                 // calculate apex intensity
                 var rt1 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Min();
                 var rt2 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Max();
-
-                //var rt = psm.thisPSM.newPsm.scanRetentionTime;
+                
                 double theoreticalMz = Chemistry.ClassExtensions.ToMz(kvp.Value.First().thisPSM.PeptideMonoisotopicMass, kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge);
 
                 double mzTol = ((ppmTolerance / 1e6) * kvp.Value.First().thisPSM.PeptideMonoisotopicMass) / kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge;
 
-                List <IMsDataScan<IMzSpectrum<IMzPeak>>> spectraInThisWindow;
-                if(kvp.Value.Count == 1)
-                    spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt1 + rtTolerance).ToList();
-                else
-                    spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt2 + rtTolerance).ToList();
-
+                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt2 + rtTolerance).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
+
                 var intensities = new List<double>();
                 var retentionTimes = new List<double>();
 
                 foreach (var spectrum in ms1SpectraInThisWindow)
                 {
-                    var i = spectrum.MassSpectrum.Where(s => ((s.Mz > (theoreticalMz - mzTol)) && s.Mz < (theoreticalMz + mzTol))).ToList();
+                    var i = spectrum.MassSpectrum.Where(s => (Math.Abs(s.Mz - theoreticalMz) < mzTol)).ToList();
                     foreach (var p in i)
                     {
                         intensities.Add(p.Intensity);
@@ -538,13 +533,16 @@ namespace EngineLayer.Analysis
                     }
                 }
 
-                double apexIntensity = intensities.Max();
+                double apexIntensity = 0;
+                if(intensities.Any())
+                    apexIntensity = intensities.Max();
 
                 foreach(var p in kvp.Value)
                     p.thisPSM.newPsm.apexIntensity = apexIntensity;
 
                 // calculate full width half max (peak quality)
-                int apexIntensityIndex = intensities.IndexOf(apexIntensity);
+                var apexIntensityIndex = intensities.IndexOf(apexIntensity);
+
                 double leftHalfMax = double.NaN;
                 double rightHalfMax = double.NaN;
                 double fullWidthHalfMax = double.NaN;
@@ -560,12 +558,15 @@ namespace EngineLayer.Analysis
                 }
 
                 // right width half max
-                for (int i = apexIntensityIndex; i < intensities.Count; i++)
+                if (apexIntensityIndex >= 0)
                 {
-                    if (intensities[i] < (apexIntensity / 2))
+                    for (int i = apexIntensityIndex; i < intensities.Count; i++)
                     {
-                        rightHalfMax = retentionTimes[i];
-                        break;
+                        if (intensities[i] < (apexIntensity / 2))
+                        {
+                            rightHalfMax = retentionTimes[i];
+                            break;
+                        }
                     }
                 }
 
