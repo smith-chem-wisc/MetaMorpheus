@@ -25,9 +25,9 @@
             </Grid.ColumnDefinitions>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="1*" MinHeight="100"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="2*" MinHeight="100"/>
                 </Grid.RowDefinitions>
                 <GroupBox Header="Protein Databases" Name="proteinDatabasesGroupBox">
                     <Grid>
@@ -131,47 +131,43 @@
                             <Button x:Name="addCalibrateTaskButton" Content="Add Calibrate Task" Click="addCalibrateTaskButton_Click" />
                             <Button x:Name="addGPTMDTaskButton" Content="Add GPTMD Task" Click="addGPTMDTaskButton_Click" />
                         </StackPanel>
-                        <DataGrid x:Name="tasksDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" SelectionMode="Single" MouseDoubleClick="tasksDataGrid_MouseDoubleClick" IsReadOnly="True" Grid.Row="1">
-                            <DataGrid.Resources>
-                                <ResourceDictionary>
-                                    <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
-                                        <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black" />
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
-                                                <Setter Property="Foreground" Value="Blue" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                    <Style TargetType="{x:Type DataGridRow}">
-                                        <Setter Property="Background" Value="Transparent" />
-                                        <Setter Property="BorderBrush" Value="Transparent" />
-                                        <Setter Property="Foreground" Value="Black" />
-                                        <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Setter Property="BorderBrush" Value="Transparent" />
-                                                <Setter Property="Foreground" Value="Black" />
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding InProgress}" Value="True">
-                                                <Setter Property="Foreground" Value="Blue" />
-                                                <Setter Property="FontWeight" Value="Bold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ResourceDictionary>
-                            </DataGrid.Resources>
-                        </DataGrid>
+                        <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="tasksTreeView_MouseDoubleClick">
+                            <TreeView.Resources>
+                                <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="T " />
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"/>
+                                        <TextBlock Text="{Binding Status}" />
+                                    </StackPanel>
+                                </HierarchicalDataTemplate>
+                                <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="C " />
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"/>
+                                        <TextBlock Text="{Binding Status}" />
+                                    </StackPanel>
+                                </HierarchicalDataTemplate>
+                                <DataTemplate DataType="{x:Type local:OutputFileForTreeView}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="F " />
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                        <TextBlock Text="{Binding Status}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type local:PreRunTask}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="PreRunTask " />
+                                        <TextBlock Text="{Binding Task}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </TreeView.Resources>
+                        </TreeView>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
+                            <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
                         <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3"/>
                     </Grid>
@@ -182,20 +178,14 @@
                         Background="Silver"
                         Height="5"
                         />
-                <GroupBox Header="Status" Grid.Row="2">
-                    <DockPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Top">
-                            <Label x:Name="statusLabel" Content="Ready" HorizontalAlignment="Center" />
-                        </StackPanel>
-                        <ProgressBar x:Name="outProgressBar" DockPanel.Dock="Top" Height="20"/>
-                        <RichTextBox x:Name="outRichTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
-                            <RichTextBox.Resources>
-                                <Style TargetType="{x:Type Paragraph}">
-                                    <Setter Property="Margin" Value="0" />
-                                </Style>
-                            </RichTextBox.Resources>
-                        </RichTextBox>
-                    </DockPanel>
+                <GroupBox Header="Warnings" Grid.Row="2">
+                    <RichTextBox x:Name="outRichTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
+                        <RichTextBox.Resources>
+                            <Style TargetType="{x:Type Paragraph}">
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </RichTextBox.Resources>
+                    </RichTextBox>
                 </GroupBox>
             </Grid>
         </Grid>

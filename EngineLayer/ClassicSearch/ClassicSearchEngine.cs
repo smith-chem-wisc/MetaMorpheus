@@ -37,12 +37,13 @@ namespace EngineLayer.ClassicSearch
         private readonly string fileName;
 
         private readonly List<ProductType> lp;
+        private readonly List<string> nestedIds;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.MonoisotopicPrecursorMass).ToArray();
@@ -57,6 +58,7 @@ namespace EngineLayer.ClassicSearch
             this.protease = protease;
             this.fileName = fileName;
             this.lp = lp;
+            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -65,7 +67,7 @@ namespace EngineLayer.ClassicSearch
 
         protected override MyResults RunSpecific()
         {
-            Status("In classic search engine!");
+            Status("In classic search engine!", nestedIds);
 
             var searchResults = new ClassicSearchResults(this);
 
@@ -74,7 +76,7 @@ namespace EngineLayer.ClassicSearch
             var level3_observed = new HashSet<string>();
             var level4_observed = new HashSet<string>();
 
-            Status("Getting ms2 scans...");
+            Status("Getting ms2 scans...", nestedIds);
 
             var outerPsms = new PsmClassic[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
@@ -84,7 +86,7 @@ namespace EngineLayer.ClassicSearch
             int proteinsSeen = 0;
             int old_progress = 0;
 
-            Status("Starting classic search loop...");
+            Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var psms = new PsmClassic[searchModes.Count][];
@@ -141,7 +143,6 @@ namespace EngineLayer.ClassicSearch
                                 foreach (Tuple<LocalMS2Scan, int> theTuple in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var scan = theTuple.Item1;
-
 
                                     //if(scan.TheScan.DissociationType == MassSpectrometry.DissociationType.ETD)
                                     //{

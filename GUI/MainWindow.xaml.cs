@@ -22,7 +22,8 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
-        private readonly ObservableCollection<MetaMorpheusTaskForDataGrid> taskEngineObservableCollection = new ObservableCollection<MetaMorpheusTaskForDataGrid>();
+        private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
+        private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
 
         #endregion Private Fields
 
@@ -36,9 +37,12 @@ namespace MetaMorpheusGUI
                 "MetaMorpheus: Not a release version" :
                 "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
+            //proteinDbObservableCollection.Add(new ProteinDbForDataGrid(@"C:\Users\stepa\Data\CalibrationPaperData\uniprot-human-reviewed-2-13-2017.xml"));
             dataGridXMLs.DataContext = proteinDbObservableCollection;
+
+            //rawDataObservableCollection.Add(new RawDataForDataGrid(@"C:\Users\stepa\Data\CalibrationPaperData\Jurkat\2017-02-25-13-57-45\Task2Calibrate\120426_Jurkat_highLC_Frac28-Calibrated.mzML"));
             dataGridDatafiles.DataContext = rawDataObservableCollection;
-            tasksDataGrid.DataContext = taskEngineObservableCollection;
+            tasksTreeView.DataContext = staticTasksObservableCollection;
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
@@ -57,10 +61,11 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.FinishedWritingFileHandler += NewSuccessfullyFinishedWritingFile;
             MetaMorpheusTask.StartingDataFileHandler += MyTaskEngine_StartingDataFileHandler;
             MetaMorpheusTask.FinishedDataFileHandler += MyTaskEngine_FinishedDataFileHandler;
-            MyEngine.OutProgressHandler += NewoutProgressBar;
+            MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
+            MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
+
+            //MyEngine.OutProgressHandler += NewoutProgressBar;
             MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
-            MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
-            MyEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
 
             UpdateTaskGuiStuff();
         }
@@ -94,32 +99,6 @@ namespace MetaMorpheusGUI
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
                 huh.SetInProgress(true);
                 dataGridDatafiles.Items.Refresh();
-            }
-        }
-
-        private void MyEngine_startingSingleEngineHander(object sender, SingleEngineEventArgs e)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => MyEngine_startingSingleEngineHander(sender, e)));
-            }
-            else
-            {
-                statusLabel.Content = "Running " + e.myEngine.GetType().Name + " engine...";
-                outProgressBar.IsIndeterminate = true;
-            }
-        }
-
-        private void MyEngine_finishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => MyEngine_finishedSingleEngineHandler(sender, e)));
-            }
-            else
-            {
-                outRichTextBox.AppendText(e.ToString());
-                outRichTextBox.ScrollToEnd();
             }
         }
 
@@ -161,11 +140,11 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).InProgress = true;
-                statusLabel.Content = "Running " + s.TheTask.TaskType + " task";
-                outProgressBar.IsIndeterminate = true;
+                var theTask = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.TaskId));
+                theTask.InProgress = true;
+                theTask.IsIndeterminate = true;
+                theTask.Status = "Starting...";
 
-                tasksDataGrid.Items.Refresh();
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
             }
@@ -179,11 +158,12 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                taskEngineObservableCollection.First(b => b.metaMorpheusTask.Equals(s.TheTask)).InProgress = false;
-                statusLabel.Content = "Finished " + s.TheTask.TaskType + " task";
-                outProgressBar.Value = 100;
+                var theTask = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.TaskId));
+                theTask.InProgress = false;
+                theTask.IsIndeterminate = false;
+                theTask.Progress = 100;
+                theTask.Status = "Done!";
 
-                tasksDataGrid.Items.Refresh();
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
             }
@@ -263,7 +243,13 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-            EverythingRunnerEngine a = new EverythingRunnerEngine(taskEngineObservableCollection.Select(b => b.metaMorpheusTask).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
+            dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
+
+            for (int i = 0; i < staticTasksObservableCollection.Count; i++)
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
+            tasksTreeView.DataContext = dynamicTasksObservableCollection;
+
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run());
             t.IsBackground = true;
             t.Start();
@@ -271,17 +257,18 @@ namespace MetaMorpheusGUI
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
         {
-            taskEngineObservableCollection.Clear();
+            staticTasksObservableCollection.Clear();
             UpdateTaskGuiStuff();
         }
 
         private void UpdateTaskGuiStuff()
         {
-            if (taskEngineObservableCollection.Count == 0)
+            if (staticTasksObservableCollection.Count == 0)
             {
                 RunTasksButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = false;
                 ClearTasksButton.IsEnabled = false;
+                ResetTasksButton.IsEnabled = false;
             }
             else
             {
@@ -296,7 +283,7 @@ namespace MetaMorpheusGUI
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
+                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
                 UpdateTaskGuiStuff();
             }
         }
@@ -306,7 +293,7 @@ namespace MetaMorpheusGUI
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
+                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
                 UpdateTaskGuiStuff();
             }
         }
@@ -316,39 +303,45 @@ namespace MetaMorpheusGUI
             var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
             {
-                taskEngineObservableCollection.Add(new MetaMorpheusTaskForDataGrid(dialog.TheTask));
+                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
                 UpdateTaskGuiStuff();
             }
         }
 
         private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
         {
-            taskEngineObservableCollection.RemoveAt(taskEngineObservableCollection.Count - 1);
+            staticTasksObservableCollection.RemoveAt(staticTasksObservableCollection.Count - 1);
             UpdateTaskGuiStuff();
         }
 
-        private void tasksDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void NewCollectionHandler(object sender, StringEventArgs s)
         {
-            var a = sender as DataGrid;
-            var ok = (MetaMorpheusTaskForDataGrid)a.SelectedItem;
-            if (ok != null)
-                switch (ok.metaMorpheusTask.TaskType)
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewCollectionHandler(sender, s)));
+            }
+            else
+            {
+                // Find the task or the collection!!!
+
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+
+                for (int i = 1; i < s.nestedIDs.Count - 1; i++)
                 {
-                    case MyTask.Search:
-                        var searchDialog = new SearchTaskWindow(ok.metaMorpheusTask as SearchTask);
-                        searchDialog.ShowDialog();
-                        break;
-
-                    case MyTask.Gptmd:
-                        var gptmddialog = new GptmdTaskWindow(ok.metaMorpheusTask as GptmdTask);
-                        gptmddialog.ShowDialog();
-                        break;
-
-                    case MyTask.Calibrate:
-                        var calibratedialog = new CalibrateTaskWindow(ok.metaMorpheusTask as CalibrationTask);
-                        calibratedialog.ShowDialog();
-                        break;
+                    var hm = s.nestedIDs[i];
+                    try
+                    {
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                    catch
+                    {
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
                 }
+
+                theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(s.nestedIDs.Last(), s.s));
+            }
         }
 
         private void NewoutLabelStatus(object sender, StringEventArgs s)
@@ -359,24 +352,42 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                outProgressBar.IsIndeterminate = true;
-                statusLabel.Content = s.s;
+                // Find the task or the collection!!!
+
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+
+                foreach (var hm in s.nestedIDs.Skip(1))
+                {
+                    try
+                    {
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                    catch
+                    {
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                }
+
+                theEntityOnWhichToUpdateLabel.Status = s.s;
+
+                //outProgressBar.IsIndeterminate = true;
             }
         }
 
-        private void NewoutProgressBar(object sender, ProgressEventArgs s)
-        {
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(new Action(() => NewoutProgressBar(sender, s)));
-            }
-            else
-            {
-                outProgressBar.IsIndeterminate = false;
-                outProgressBar.Value = s.new_progress;
-                statusLabel.Content = s.v;
-            }
-        }
+        //private void NewoutProgressBar(object sender, ProgressEventArgs s)
+        //{
+        //    if (!Dispatcher.CheckAccess())
+        //    {
+        //        Dispatcher.BeginInvoke(new Action(() => NewoutProgressBar(sender, s)));
+        //    }
+        //    else
+        //    {
+        //        outProgressBar.IsIndeterminate = false;
+        //        outProgressBar.Value = s.new_progress;
+        //        statusLabel.Content = s.v;
+        //    }
+        //}
 
         private void NewRefreshBetweenTasks(object sender, EventArgs e)
         {
@@ -399,14 +410,26 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                proteinDatabasesGroupBox.IsEnabled = false;
-                datafilesGroupBox.IsEnabled = false;
-                tasksGroupBox.IsEnabled = false;
-
-                statusLabel.Content = "Starting all tasks...";
-                outProgressBar.IsIndeterminate = true;
+                //statusLabel.Content = "Starting all tasks...";
+                //outProgressBar.IsIndeterminate = true;
 
                 dataGridDatafiles.Items.Refresh();
+
+                ClearTasksButton.IsEnabled = false;
+                RemoveLastTaskButton.IsEnabled = false;
+                RunTasksButton.IsEnabled = false;
+
+                addCalibrateTaskButton.IsEnabled = false;
+                addGPTMDTaskButton.IsEnabled = false;
+                addSearchTaskButton.IsEnabled = false;
+
+                AddXML.IsEnabled = false;
+                ClearXML.IsEnabled = false;
+                AddRaw.IsEnabled = false;
+                ClearRaw.IsEnabled = false;
+
+                proteinDatabasesGroupBox.IsEnabled = false;
+                datafilesGroupBox.IsEnabled = false;
             }
         }
 
@@ -418,13 +441,11 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                proteinDatabasesGroupBox.IsEnabled = true;
-                datafilesGroupBox.IsEnabled = true;
-                tasksGroupBox.IsEnabled = true;
+                //statusLabel.Content = "Finished all tasks!";
+                //outProgressBar.IsIndeterminate = false;
+                //outProgressBar.Value = 100;
 
-                statusLabel.Content = "Finished all tasks!";
-                outProgressBar.IsIndeterminate = false;
-                outProgressBar.Value = 100;
+                ResetTasksButton.IsEnabled = true;
 
                 dataGridDatafiles.Items.Refresh();
             }
@@ -438,7 +459,17 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                AddFinishedFile(v.writtenFile);
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(v.nestedIDs[0]));
+
+                foreach (var hm in v.nestedIDs.Skip(1))
+                {
+                    try
+                    {
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                    catch { }
+                }
+                theEntityOnWhichToUpdateLabel.Children.Add(new OutputFileForTreeView(v.writtenFile));
             }
         }
 
@@ -450,6 +481,60 @@ namespace MetaMorpheusGUI
         private void ClearOutput_Click(object sender, RoutedEventArgs e)
         {
             finishedFileObservableCollection.Clear();
+        }
+
+        private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
+        {
+            tasksGroupBox.IsEnabled = true;
+            ClearTasksButton.IsEnabled = true;
+            RemoveLastTaskButton.IsEnabled = true;
+            RunTasksButton.IsEnabled = true;
+            addCalibrateTaskButton.IsEnabled = true;
+            addGPTMDTaskButton.IsEnabled = true;
+            addSearchTaskButton.IsEnabled = true;
+            ResetTasksButton.IsEnabled = false;
+
+            proteinDatabasesGroupBox.IsEnabled = true;
+            datafilesGroupBox.IsEnabled = true;
+
+            AddXML.IsEnabled = true;
+            ClearXML.IsEnabled = true;
+            AddRaw.IsEnabled = true;
+            ClearRaw.IsEnabled = true;
+
+            //statusLabel.Content = "Ready";
+
+            tasksTreeView.DataContext = staticTasksObservableCollection;
+        }
+
+        private void tasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var a = sender as TreeView;
+            var preRunTask = a.SelectedItem as PreRunTask;
+            if (preRunTask != null)
+                switch (preRunTask.metaMorpheusTask.TaskType)
+                {
+                    case MyTask.Search:
+                        var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
+                        searchDialog.ShowDialog();
+                        return;
+
+                    case MyTask.Gptmd:
+                        var gptmddialog = new GptmdTaskWindow(preRunTask.metaMorpheusTask as GptmdTask);
+                        gptmddialog.ShowDialog();
+                        return;
+
+                    case MyTask.Calibrate:
+                        var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
+                        calibratedialog.ShowDialog();
+                        return;
+                }
+
+            var inRunTask = a.SelectedItem as InRunTask;
+            if (inRunTask != null)
+            {
+                // Display the params (always) and the results (if done)
+            }
         }
 
         #endregion Private Methods

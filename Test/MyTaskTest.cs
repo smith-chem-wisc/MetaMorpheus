@@ -39,7 +39,11 @@ namespace Test
             task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("m.txt")));
             task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("glyco.txt")));
             task4.ClassicSearch = false;
-            List<MetaMorpheusTask> taskList = new List<MetaMorpheusTask> { task1, task2, task3, task4 };
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
+                new Tuple<string, MetaMorpheusTask>("task1", task1),
+                new Tuple<string, MetaMorpheusTask>("task2", task2),
+                new Tuple<string, MetaMorpheusTask>("task3", task3),
+                new Tuple<string, MetaMorpheusTask>("task4", task4),};
 
             #endregion Setup tasks
 

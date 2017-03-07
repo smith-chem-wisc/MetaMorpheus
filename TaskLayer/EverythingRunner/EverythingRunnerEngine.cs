@@ -12,7 +12,7 @@ namespace TaskLayer
 
         #region Private Fields
 
-        private readonly List<MetaMorpheusTask> taskList;
+        private readonly List<Tuple<string, MetaMorpheusTask>> taskList;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
 
@@ -20,7 +20,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<MetaMorpheusTask> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList)
+        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;
@@ -76,24 +76,13 @@ namespace TaskLayer
                     return new MyErroredResults(this, "Cannot proceed. No xml files selected.");
                 }
                 var ok = taskList[i];
-                string output_folder = null;
-                if (taskList.Count == 1)
-                {
-                    output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
-                }
-                else
-                {
-                    output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
-                    output_folder = Path.Combine(output_folder, "Task" + (i + 1) + ok.TaskType);
-                }
+                string outputFolderForThisTask = Path.Combine(longestDir, startTimeForAllFilenames);
+                outputFolderForThisTask = Path.Combine(outputFolderForThisTask, ok.Item1);
 
-                if (!Directory.Exists(output_folder))
-                    Directory.CreateDirectory(output_folder);
-                ok.OutputFolder = output_folder;
-                ok.dbFilenameList = currentXmlDbFilenameList;
-                ok.rawDataFilenameList = currentRawDataFilenameList;
+                if (!Directory.Exists(outputFolderForThisTask))
+                    Directory.CreateDirectory(outputFolderForThisTask);
 
-                var myTaskResults = (MyTaskResults)ok.Run();
+                var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, currentXmlDbFilenameList, currentRawDataFilenameList, ok.Item1);
                 if (myTaskResults.newDatabases != null)
                 {
                     currentXmlDbFilenameList = myTaskResults.newDatabases;
