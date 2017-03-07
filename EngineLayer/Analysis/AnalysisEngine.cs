@@ -487,15 +487,41 @@ namespace EngineLayer.Analysis
 
         public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
         {
+            var baseSeqToPsmMatching = new Dictionary<string, HashSet<NewPsmWithFdr>>();
+
             foreach (var psm in psms)
             {
+                if (!baseSeqToPsmMatching.ContainsKey(psm.thisPSM.FullSequence))
+                {
+                    var psmList = new HashSet<NewPsmWithFdr>();
+                    psmList.Add(psm);
+                    baseSeqToPsmMatching.Add(psm.thisPSM.FullSequence, psmList);
+                }
+                else
+                {
+                    HashSet<NewPsmWithFdr> psmList;
+                    baseSeqToPsmMatching.TryGetValue(psm.thisPSM.FullSequence, out psmList);
+                    psmList.Add(psm);
+                }
+            }
+
+            foreach (var kvp in baseSeqToPsmMatching)
+            {
                 // calculate apex intensity
-                var rt = psm.thisPSM.newPsm.scanRetentionTime;
-                double theoreticalMz = Chemistry.ClassExtensions.ToMz(psm.thisPSM.PeptideMonoisotopicMass, psm.thisPSM.newPsm.scanPrecursorCharge);
+                var rt1 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Min();
+                var rt2 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Max();
 
-                double mzTol = ((ppmTolerance / 1e6) * psm.thisPSM.PeptideMonoisotopicMass) / psm.thisPSM.newPsm.scanPrecursorCharge;
+                //var rt = psm.thisPSM.newPsm.scanRetentionTime;
+                double theoreticalMz = Chemistry.ClassExtensions.ToMz(kvp.Value.First().thisPSM.PeptideMonoisotopicMass, kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge);
 
-                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt - rtTolerance, rt + rtTolerance).ToList();
+                double mzTol = ((ppmTolerance / 1e6) * kvp.Value.First().thisPSM.PeptideMonoisotopicMass) / kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge;
+
+                List <IMsDataScan<IMzSpectrum<IMzPeak>>> spectraInThisWindow;
+                if(kvp.Value.Count == 1)
+                    spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt1 + rtTolerance).ToList();
+                else
+                    spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt2 + rtTolerance).ToList();
+
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
                 var intensities = new List<double>();
                 var retentionTimes = new List<double>();
@@ -511,14 +537,16 @@ namespace EngineLayer.Analysis
                 }
 
                 double apexIntensity = intensities.Max();
-                psm.thisPSM.newPsm.apexIntensity = apexIntensity;
+
+                foreach(var p in kvp.Value)
+                    p.thisPSM.newPsm.apexIntensity = apexIntensity;
 
                 // calculate full width half max (peak quality)
                 int apexIntensityIndex = intensities.IndexOf(apexIntensity);
                 double leftHalfMax = double.NaN;
                 double rightHalfMax = double.NaN;
                 double fullWidthHalfMax = double.NaN;
-                
+
                 // left width half max
                 for (int i = apexIntensityIndex; i >= 0; i--)
                 {
@@ -544,7 +572,8 @@ namespace EngineLayer.Analysis
                     fullWidthHalfMax = rightHalfMax - leftHalfMax;
                 }
 
-                psm.thisPSM.newPsm.fullWidthHalfMax = fullWidthHalfMax;
+                foreach (var p in kvp.Value)
+                    p.thisPSM.newPsm.fullWidthHalfMax = fullWidthHalfMax;
 
                 // calculate SNR (TODO**)
             }
@@ -667,7 +696,7 @@ namespace EngineLayer.Analysis
                     else
                     {
                         Status("Running FDR analysis on unique peptides...");
-                        if(quantify)
+                        if (quantify)
                             writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.ToList().OrderByDescending(p => p.newPsm.apexIntensity).FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
                         else
                             writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
