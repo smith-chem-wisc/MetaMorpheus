@@ -64,7 +64,7 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
 
-            //MyEngine.OutProgressHandler += NewoutProgressBar;
+            MyEngine.OutProgressHandler += NewoutProgressBar;
             MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
 
             UpdateTaskGuiStuff();
@@ -375,19 +375,36 @@ namespace MetaMorpheusGUI
             }
         }
 
-        //private void NewoutProgressBar(object sender, ProgressEventArgs s)
-        //{
-        //    if (!Dispatcher.CheckAccess())
-        //    {
-        //        Dispatcher.BeginInvoke(new Action(() => NewoutProgressBar(sender, s)));
-        //    }
-        //    else
-        //    {
-        //        outProgressBar.IsIndeterminate = false;
-        //        outProgressBar.Value = s.new_progress;
-        //        statusLabel.Content = s.v;
-        //    }
-        //}
+        private void NewoutProgressBar(object sender, ProgressEventArgs s)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => NewoutProgressBar(sender, s)));
+            }
+            else
+            {
+                // Find the task or the collection!!!
+
+                ForTreeView theEntityOnWhichToUpdateLabel = dynamicTasksObservableCollection.First(b => b.Id.Equals(s.nestedIDs[0]));
+
+                foreach (var hm in s.nestedIDs.Skip(1))
+                {
+                    try
+                    {
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                    catch
+                    {
+                        theEntityOnWhichToUpdateLabel.Children.Add(new CollectionForTreeView(hm, hm));
+                        theEntityOnWhichToUpdateLabel = theEntityOnWhichToUpdateLabel.Children.First(b => b.Id.Equals(hm));
+                    }
+                }
+
+                theEntityOnWhichToUpdateLabel.Status = s.v;
+                theEntityOnWhichToUpdateLabel.IsIndeterminate = false;
+                theEntityOnWhichToUpdateLabel.Progress = s.new_progress;
+            }
+        }
 
         private void NewRefreshBetweenTasks(object sender, EventArgs e)
         {
