@@ -87,7 +87,8 @@ namespace TaskLayer
                 var sb = new StringBuilder();
                 sb.AppendLine("classicSearch: " + ClassicSearch);
                 sb.AppendLine("doParsimony: " + DoParsimony);
-                sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
+                if(DoParsimony)
+                    sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
                 sb.AppendLine("quantify: " + Quantify);
                 if(Quantify)
                 {

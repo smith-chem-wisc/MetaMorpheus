@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Search Task" Width="550" Height="700" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="Search Task" Width="550" Height="750" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <StackPanel>
         <Label Content="Search Parameters:" Height="30" />
         <Grid>
