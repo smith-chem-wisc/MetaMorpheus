@@ -503,9 +503,9 @@ namespace MetaMorpheusGUI
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
             tasksGroupBox.IsEnabled = true;
-            ClearTasksButton.IsEnabled = false;
-            RemoveLastTaskButton.IsEnabled = false;
-            RunTasksButton.IsEnabled = false;
+            ClearTasksButton.IsEnabled = true;
+            RemoveLastTaskButton.IsEnabled = true;
+            RunTasksButton.IsEnabled = true;
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
