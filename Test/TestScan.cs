@@ -105,10 +105,6 @@ namespace Test
             }
         }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
         public byte[] Get64BitNoiseDataBaseline()
         {
             throw new NotImplementedException();
@@ -123,6 +119,12 @@ namespace Test
         {
             throw new NotImplementedException();
         }
+
+
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public void TransformByApplyingFunctionToSpectra(Func<IMzPeak, double> convertorForSpectrum)
         {

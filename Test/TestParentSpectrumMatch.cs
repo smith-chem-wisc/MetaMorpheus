@@ -10,7 +10,7 @@ namespace Test
 
         #region Public Constructors
 
-        public TestParentSpectrumMatch(int scanNumber, int scanPrecursorCharge) : base(null, double.NaN, double.NaN, double.NaN, scanNumber, scanPrecursorCharge, 0, double.NaN, double.NaN, double.NaN, 1)
+        public TestParentSpectrumMatch(int scanNumber, int scanPrecursorCharge) : base(null, double.NaN, double.NaN, double.NaN, scanNumber, 0, scanPrecursorCharge, 0, double.NaN, double.NaN, double.NaN, 1)
         {
         }
 

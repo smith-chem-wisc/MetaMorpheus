@@ -14,6 +14,7 @@ namespace EngineLayer
 
         public readonly string fileName;
         public readonly int scanNumber;
+        public readonly int precursorScanNumber;
         public readonly double scanRetentionTime;
         public readonly int scanExperimentalPeaks;
         public readonly double totalIonCurrent;
@@ -22,6 +23,8 @@ namespace EngineLayer
         public readonly double scanPrecursorMZ;
         public readonly double scanPrecursorMass;
         public readonly double score;
+        public double apexIntensity;
+        public double fullWidthHalfMax;
 
         public Dictionary<ProductType, double[]> matchedIonsList;
         public List<double> LocalizedScores;
@@ -36,10 +39,11 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
+        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int precursorScanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
         {
             this.fileName = fileName;
             this.scanNumber = scanNumber;
+            this.precursorScanNumber = precursorScanNumber;
             this.scanRetentionTime = scanRetentionTime;
             this.scanExperimentalPeaks = scanExperimentalPeaks;
             this.totalIonCurrent = totalIonCurrent;
@@ -72,6 +76,8 @@ namespace EngineLayer
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(apexIntensity.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(fullWidthHalfMax.ToString("F3", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
             foreach (var kvp in matchedIonsList)
@@ -112,6 +118,8 @@ namespace EngineLayer
             sb.Append("scanPrecursorMass" + '\t');
             sb.Append("score" + '\t');
             sb.Append("notch" + '\t');
+            sb.Append("apexIntensity" + '\t');
+            sb.Append("fullWidthHalfMax" + '\t');
 
             sb.Append("matched ions" + '\t');
             sb.Append("matched ion counts" + '\t');
