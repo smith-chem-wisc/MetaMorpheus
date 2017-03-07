@@ -503,9 +503,9 @@ namespace MetaMorpheusGUI
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
             tasksGroupBox.IsEnabled = true;
-            ClearTasksButton.IsEnabled = true;
-            RemoveLastTaskButton.IsEnabled = true;
-            RunTasksButton.IsEnabled = true;
+            ClearTasksButton.IsEnabled = false;
+            RemoveLastTaskButton.IsEnabled = false;
+            RunTasksButton.IsEnabled = false;
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
@@ -551,6 +551,12 @@ namespace MetaMorpheusGUI
             if (inRunTask != null)
             {
                 // Display the params (always) and the results (if done)
+            }
+
+            var fileThing = a.SelectedItem as OutputFileForTreeView;
+            if (fileThing != null)
+            {
+                System.Diagnostics.Process.Start(fileThing.Id);
             }
         }
 
