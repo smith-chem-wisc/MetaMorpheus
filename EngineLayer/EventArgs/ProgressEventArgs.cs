@@ -1,8 +1,8 @@
-﻿using System;
+﻿using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class ProgressEventArgs : EventArgs
+    public class ProgressEventArgs : MyRecursiveEventArgs
 
     {
 
@@ -15,7 +15,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProgressEventArgs(int newProgress, string v)
+        public ProgressEventArgs(int newProgress, string v, List<string> nestedIDs) : base(nestedIDs)
         {
             this.new_progress = newProgress;
             this.v = v;

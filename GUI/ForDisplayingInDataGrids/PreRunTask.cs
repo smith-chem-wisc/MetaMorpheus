@@ -2,7 +2,7 @@
 
 namespace MetaMorpheusGUI
 {
-    internal class MetaMorpheusTaskForDataGrid
+    internal class PreRunTask
     {
 
         #region Public Fields
@@ -13,19 +13,12 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public MetaMorpheusTaskForDataGrid(MetaMorpheusTask theTask)
+        public PreRunTask(MetaMorpheusTask theTask)
         {
             this.metaMorpheusTask = theTask;
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public string Task { get { return metaMorpheusTask.GetType().Name; } }
-        public bool InProgress { get; set; }
-
-        #endregion Public Properties
 
     }
 }

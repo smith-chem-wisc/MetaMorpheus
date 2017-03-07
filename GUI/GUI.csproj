@@ -105,6 +105,9 @@
     <Compile Include="CalibrateTaskWindow.xaml.cs">
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CollectionForTreeView.cs" />
+    <Compile Include="ForTreeView.cs" />
+    <Compile Include="OutputFileForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForGptmdTask.cs" />
@@ -114,11 +117,12 @@
       <DependentUpon>GptmdTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\RawDataForDataGrid.cs" />
-    <Compile Include="ForDisplayingInDataGrids\MetaMorpheusTaskForDataGrid.cs" />
+    <Compile Include="ForDisplayingInDataGrids\PreRunTask.cs" />
     <Compile Include="SearchTaskWindow.xaml.cs">
       <DependentUpon>SearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
+    <Compile Include="InRunTask.cs" />
     <Page Include="CalibrateTaskWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

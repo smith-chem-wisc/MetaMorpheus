@@ -31,7 +31,7 @@ namespace Test
             var listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl", new List<ProductType> { ProductType.B, ProductType.Y });
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "lawl", new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>());
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
@@ -61,7 +61,7 @@ namespace Test
 
             int maximumMissedCleavages = 2;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "UUU", new List<ProductType> { ProductType.B, ProductType.Y });
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, maximumVariableModificationIsoforms, "UUU", new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>());
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
@@ -89,14 +89,14 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk");
+            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
@@ -124,14 +124,14 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y });
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, initiatorMethionineBehavior, 2, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk");
+            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode

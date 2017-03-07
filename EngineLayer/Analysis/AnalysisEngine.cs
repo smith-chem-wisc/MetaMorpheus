@@ -38,6 +38,7 @@ namespace EngineLayer.Analysis
         private readonly double quantifyPpmTol;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
+        private readonly List<string> nestedIds;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
@@ -70,6 +71,7 @@ namespace EngineLayer.Analysis
             this.quantify = Quantify;
             this.quantifyRtTol = QuantifyRtTol;
             this.quantifyPpmTol = QuantifyPpmTol;
+            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -318,7 +320,7 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            Status("Finished Parsimony");
+            Status("Finished Parsimony", nestedIds);
 
             compactPeptideToProteinPeptideMatching = answer;
 
@@ -328,7 +330,7 @@ namespace EngineLayer.Analysis
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
         {
-            Status("Scoring protein groups...");
+            Status("Scoring protein groups...", nestedIds);
 
             Dictionary<CompactPeptide, HashSet<ProteinGroup>> peptideToProteinGroupMatching = new Dictionary<CompactPeptide, HashSet<ProteinGroup>>();
             HashSet<CompactPeptide> allRazorPeptides = new HashSet<CompactPeptide>();
@@ -448,7 +450,7 @@ namespace EngineLayer.Analysis
 
         public List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
         {
-            Status("Calculating protein FDR...");
+            Status("Calculating protein FDR...", nestedIds);
 
             // order protein groups by score
             var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.proteinGroupScore).ToList();
@@ -586,13 +588,13 @@ namespace EngineLayer.Analysis
         protected override MyResults RunSpecific()
         {
             AnalysisResults myAnalysisResults = new AnalysisResults(this);
-            Status("Running analysis engine!");
+            Status("Running analysis engine!", nestedIds);
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
             #region Match Seqeunces to PeptideWithSetModifications
 
             myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            Status("Adding observed peptides to dictionary...");
+            Status("Adding observed peptides to dictionary...", nestedIds);
             foreach (var psmListForAspecificSerchMode in newPsms)
                 if (psmListForAspecificSerchMode != null)
                     foreach (var psm in psmListForAspecificSerchMode)
@@ -607,7 +609,7 @@ namespace EngineLayer.Analysis
             int proteinsSeen = 0;
             int old_progress = 0;
             var obj = new object();
-            Status("Adding possible sources to peptide dictionary...");
+            Status("Adding possible sources to peptide dictionary...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
@@ -636,7 +638,7 @@ namespace EngineLayer.Analysis
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }
@@ -670,7 +672,7 @@ namespace EngineLayer.Analysis
 
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);
 
-                    Status("Running FDR analysis...");
+                    Status("Running FDR analysis...", nestedIds);
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
 
                     if (quantify)
@@ -686,7 +688,7 @@ namespace EngineLayer.Analysis
                         var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
                         if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                         {
-                            Status("Running histogram analysis...");
+                            Status("Running histogram analysis...", nestedIds);
                             var myTreeStructure = new BinTreeStructure();
                             myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTol);
                             writeHistogramPeaksAction(myTreeStructure, searchModes[j].FileNameAddition);

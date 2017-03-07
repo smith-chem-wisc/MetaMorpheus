@@ -4,19 +4,21 @@ namespace TaskLayer
 {
     public class SingleTaskEventArgs : EventArgs
     {
+
         #region Public Constructors
 
-        public SingleTaskEventArgs(MetaMorpheusTask theTask)
+        public SingleTaskEventArgs(string theTask)
         {
-            this.TheTask = theTask;
+            this.TaskId = theTask;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public MetaMorpheusTask TheTask { get; private set; }
+        public string TaskId { get; private set; }
 
         #endregion Public Properties
+
     }
 }
