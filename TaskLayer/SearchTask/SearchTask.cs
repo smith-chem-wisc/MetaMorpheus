@@ -133,7 +133,7 @@ namespace TaskLayer
             if (!ClassicSearch)
             {
                 Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MaxModificationIsoforms, lp);
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MaxModificationIsoforms, lp, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
                 Dictionary<float, List<int>> fragmentIndexDict;

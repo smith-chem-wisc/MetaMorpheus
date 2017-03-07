@@ -210,7 +210,7 @@ namespace EngineLayer.Calibration
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
+                    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Skip decoys, they are for sure not there!
                 if (identification.IsDecoy)

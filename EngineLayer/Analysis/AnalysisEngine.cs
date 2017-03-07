@@ -540,7 +540,7 @@ namespace EngineLayer.Analysis
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }

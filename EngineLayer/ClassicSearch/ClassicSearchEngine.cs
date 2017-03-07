@@ -176,7 +176,7 @@ namespace EngineLayer.ClassicSearch
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In classic search loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In classic search loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }

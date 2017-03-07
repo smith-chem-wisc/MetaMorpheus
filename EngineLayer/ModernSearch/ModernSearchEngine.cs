@@ -147,7 +147,7 @@ namespace EngineLayer.ModernSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }

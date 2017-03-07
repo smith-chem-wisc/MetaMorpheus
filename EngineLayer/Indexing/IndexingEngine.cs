@@ -27,12 +27,13 @@ namespace EngineLayer.Indexing
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
+        private readonly List<string> nestedIds;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -43,6 +44,7 @@ namespace EngineLayer.Indexing
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
+            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -159,7 +161,7 @@ namespace EngineLayer.Indexing
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }
