@@ -1,17 +1,19 @@
 ﻿using EngineLayer;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace TaskLayer
 {
-    public abstract class MyTaskResults : MyResults
+    public abstract class MyTaskResults
     {
 
         #region Public Fields
 
         public List<string> newSpectra;
         public List<DbForTask> newDatabases;
+        public TimeSpan Time;
 
         #endregion Public Fields
 
@@ -23,7 +25,7 @@ namespace TaskLayer
 
         #region Protected Constructors
 
-        protected MyTaskResults(MetaMorpheusTask s) : base(s)
+        protected MyTaskResults(MetaMorpheusTask s)
         {
             resultTexts = new List<string>();
         }

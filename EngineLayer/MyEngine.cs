@@ -61,7 +61,6 @@ namespace EngineLayer
         public static string MetaMorpheusVersion { get; private set; }
         public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
-
         public static List<SearchMode> SearchModesKnown { get; private set; }
 
         #endregion Public Properties
@@ -112,14 +111,14 @@ namespace EngineLayer
 
         #region Protected Methods
 
-        protected void Warn(string v)
+        protected void Warn(string v, List<string> nestedIds)
         {
-            WarnHandler?.Invoke(this, new StringEventArgs(v));
+            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
-        protected void Status(string v)
+        protected void Status(string v, List<string> nestedIds)
         {
-            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v));
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         protected void ReportProgress(ProgressEventArgs v)

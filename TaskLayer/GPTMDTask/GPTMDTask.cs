@@ -9,11 +9,9 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -93,109 +91,16 @@ namespace TaskLayer
 
         #endregion Protected Properties
 
-        #region Public Methods
-
-        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> Mods, List<Protein> proteinList, string outputFileName)
-        {
-            var xmlWriterSettings = new XmlWriterSettings
-            {
-                Indent = true,
-                IndentChars = "  "
-            };
-
-            using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
-            {
-                writer.WriteStartDocument();
-                writer.WriteStartElement("uniprot");
-
-                foreach (Protein protein in proteinList)
-                {
-                    writer.WriteStartElement("entry");
-                    writer.WriteStartElement("accession");
-                    writer.WriteString(protein.Accession);
-                    writer.WriteEndElement();
-                    writer.WriteStartElement("name");
-                    writer.WriteString(protein.Name);
-                    writer.WriteEndElement();
-
-                    writer.WriteStartElement("protein");
-                    writer.WriteStartElement("recommendedName");
-                    writer.WriteStartElement("fullName");
-                    writer.WriteString(protein.FullName);
-                    writer.WriteEndElement();
-                    writer.WriteEndElement();
-                    writer.WriteEndElement();
-
-                    foreach (var proteolysisProduct in protein.ProteolysisProducts)
-                    {
-                        writer.WriteStartElement("feature");
-                        writer.WriteAttributeString("type", proteolysisProduct.Type);
-                        writer.WriteStartElement("location");
-                        writer.WriteStartElement("begin");
-                        writer.WriteAttributeString("position", proteolysisProduct.OneBasedBeginPosition.ToString());
-                        writer.WriteEndElement();
-                        writer.WriteStartElement("end");
-                        writer.WriteAttributeString("position", proteolysisProduct.OneBasedEndPosition.ToString());
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                    }
-                    foreach (var ye in protein.OneBasedPossibleLocalizedModifications.OrderBy(b => b.Key))
-                    {
-                        foreach (var nice in ye.Value)
-                        {
-                            writer.WriteStartElement("feature");
-                            writer.WriteAttributeString("type", "modified residue");
-                            writer.WriteAttributeString("description", nice.id);
-                            writer.WriteStartElement("location");
-                            writer.WriteStartElement("position");
-                            writer.WriteAttributeString("position", ye.Key.ToString(CultureInfo.InvariantCulture));
-                            writer.WriteEndElement();
-                            writer.WriteEndElement();
-                            writer.WriteEndElement();
-                        }
-                    }
-                    if (Mods.ContainsKey(protein.Accession))
-                        foreach (var ye in Mods[protein.Accession].OrderBy(b => b.Item1))
-                        {
-                            writer.WriteStartElement("feature");
-                            writer.WriteAttributeString("type", "modified residue");
-                            writer.WriteAttributeString("description", ye.Item2.id);
-                            writer.WriteStartElement("location");
-                            writer.WriteStartElement("position");
-                            writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
-                            writer.WriteEndElement();
-                            writer.WriteEndElement();
-                            writer.WriteEndElement();
-                        }
-
-                    writer.WriteStartElement("sequence");
-                    writer.WriteAttributeString("length", protein.Length.ToString(CultureInfo.InvariantCulture));
-                    writer.WriteString(protein.BaseSequence);
-                    writer.WriteEndElement();
-
-                    writer.WriteEndElement();
-                }
-
-                writer.WriteEndElement();
-                writer.WriteEndDocument();
-            }
-        }
-
-        #endregion Public Methods
-
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawFileList, string taskId)
         {
             MyTaskResults myGPTMDresults = new MyGptmdTaskResults(this);
             myGPTMDresults.newDatabases = new List<DbForTask>();
 
-            var currentRawFileList = rawDataFilenameList;
-
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            Status("Loading modifications...");
+            Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
             List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
             List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
@@ -221,58 +126,58 @@ namespace TaskLayer
             if (ZdotIons)
                 lp.Add(ProductType.Zdot);
 
-            Status("Loading proteins...");
+            Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
-            var proteinList = dbFilenameList.SelectMany(b => ProteinDbLoader.LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
+            var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
             AnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
             for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                Status("Loading spectra file...");
+                Status("Loading spectra file...", new List<string> { taskId });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                Status("Opening spectra file...");
+                Status("Opening spectra file...", new List<string> { taskId });
 
-                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp).Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId }).Run();
                 myGPTMDresults.AddResultText(searchResults);
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior).Run();
+                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, origDataFile }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, origDataFile }), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }).Run();
                 myGPTMDresults.AddResultText(analysisResults);
             }
 
             if (numRawFiles > 1)
             {
-                analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior).Run();
+                analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s, new List<string> { taskId }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s, new List<string> { taskId }), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }).Run();
                 myGPTMDresults.AddResultText(analysisResults);
             }
 
             var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance).Run();
             myGPTMDresults.AddResultText(gptmdResults);
 
-            if (dbFilenameList.Any(b => !b.IsContaminant))
+            if (currentXmlDbFilenameList.Any(b => !b.IsContaminant))
             {
-                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", currentXmlDbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
-                WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullName);
+                SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
                 myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
             }
-            if (dbFilenameList.Any(b => b.IsContaminant))
+            if (currentXmlDbFilenameList.Any(b => b.IsContaminant))
             {
-                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", currentXmlDbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
-                WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
-                SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants);
+                SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
                 myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
             }

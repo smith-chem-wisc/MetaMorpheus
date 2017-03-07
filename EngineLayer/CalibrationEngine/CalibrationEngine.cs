@@ -26,6 +26,7 @@ namespace EngineLayer.Calibration
         private readonly Action<List<LabeledMs1DataPoint>, string> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
         private readonly bool doFC;
+        private readonly List<string> nestedIds;
         private List<NewPsmWithFdr> identifications;
         private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
@@ -42,7 +43,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC, List<string> nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.identifications = identifications;
@@ -55,6 +56,7 @@ namespace EngineLayer.Calibration
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
             this.doFC = doFC;
+            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -63,13 +65,13 @@ namespace EngineLayer.Calibration
 
         protected override MyResults RunSpecific()
         {
-            Status("Calibrating ");
+            Status("Calibrating ", nestedIds);
             var trainingPointCounts = new List<int>();
             var result = new CalibrationResults(myMsDataFile, this);
             DataPointAquisitionResults dataPointAcquisitionResult = null;
             for (int smoothCalibrationRound = 1; ; smoothCalibrationRound++)
             {
-                Status("smoothCalibrationRound " + smoothCalibrationRound);
+                Status("smoothCalibrationRound " + smoothCalibrationRound, nestedIds);
                 dataPointAcquisitionResult = GetDataPoints();
                 ms1ListAction(dataPointAcquisitionResult.ms1List, "beforesc" + smoothCalibrationRound.ToString());
                 ms2ListAction(dataPointAcquisitionResult.ms2List, "beforesc" + smoothCalibrationRound.ToString());
@@ -89,7 +91,7 @@ namespace EngineLayer.Calibration
                 trainingPointCounts = new List<int>();
                 for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
                 {
-                    Status("forestCalibrationRound " + forestCalibrationRound);
+                    Status("forestCalibrationRound " + forestCalibrationRound, nestedIds);
                     Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
                     result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
                     dataPointAcquisitionResult = GetDataPoints();
@@ -180,7 +182,7 @@ namespace EngineLayer.Calibration
 
             Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
 
-            Status("Calibrating Spectra");
+            Status("Calibrating Spectra", nestedIds);
 
             CalibrateSpectra(bestCf);
 
@@ -189,7 +191,7 @@ namespace EngineLayer.Calibration
 
         private DataPointAquisitionResults GetDataPoints()
         {
-            Status("Extracting data points:");
+            Status("Extracting data points:", nestedIds);
             // The final training point list
             DataPointAquisitionResults res = new DataPointAquisitionResults();
             res.ms1List = new List<LabeledMs1DataPoint>();
@@ -208,7 +210,7 @@ namespace EngineLayer.Calibration
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
-                    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications..."));
+                    ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Skip decoys, they are for sure not there!
                 if (identification.IsDecoy)
@@ -258,7 +260,7 @@ namespace EngineLayer.Calibration
                 res.numMs1MassChargeCombinationsConsidered += numMs1MassChargeCombinationsConsidered;
                 res.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
             }
-            Status("Number of training points: " + res.Count);
+            Status("Number of training points: " + res.Count, nestedIds);
             return res;
         }
 
@@ -406,7 +408,7 @@ namespace EngineLayer.Calibration
 
             Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
 
-            Status("Calibrating Spectra");
+            Status("Calibrating Spectra", nestedIds);
 
             CalibrateSpectra(bestCf);
 

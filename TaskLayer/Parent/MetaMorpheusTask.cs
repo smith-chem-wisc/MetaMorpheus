@@ -1,12 +1,15 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
 using MathNet.Numerics.Distributions;
+using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -17,23 +20,8 @@ namespace TaskLayer
         Calibrate
     }
 
-    public abstract class MetaMorpheusTask : MyEngine
+    public abstract class MetaMorpheusTask
     {
-
-        #region Public Fields
-
-        public List<string> rawDataFilenameList;
-        public List<DbForTask> dbFilenameList;
-
-        #endregion Public Fields
-
-        #region Protected Constructors
-
-        protected MetaMorpheusTask()
-        {
-        }
-
-        #endregion Protected Constructors
 
         #region Public Events
 
@@ -46,6 +34,12 @@ namespace TaskLayer
         public static event EventHandler<StringEventArgs> StartingDataFileHandler;
 
         public static event EventHandler<StringEventArgs> FinishedDataFileHandler;
+
+        public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
+
+        public static event EventHandler<StringEventArgs> WarnHandler;
+
+        public static event EventHandler<StringEventArgs> NewCollectionHandler;
 
         #endregion Public Events
 
@@ -60,8 +54,6 @@ namespace TaskLayer
         public int MaxMissedCleavages { get; set; }
 
         public int MaxModificationIsoforms { get; set; }
-
-        public string OutputFolder { get; set; }
 
         public Protease Protease { get; set; }
 
@@ -92,38 +84,42 @@ namespace TaskLayer
             AllModLists.Add(modList);
         }
 
-        public new MyResults Run()
+        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
-            startingSingleTask();
-            var paramsFileName = Path.Combine(OutputFolder, "params.txt");
+            startingSingleTask(taskId);
+            var paramsFileName = Path.Combine(output_folder, "params.txt");
             using (StreamWriter file = new StreamWriter(paramsFileName))
             {
-                file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
                 file.Write(ToString());
             }
-            SucessfullyFinishedWritingFile(paramsFileName);
+            SucessfullyFinishedWritingFile(paramsFileName, new List<string> { taskId });
 #if !DEBUG
             try
             {
 #endif
-            var heh = base.Run();
-            var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+            var myResults = RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
+            stopWatch.Stop();
+            myResults.Time = stopWatch.Elapsed;
+            var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
-                file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
-                file.Write(heh.ToString());
+                file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                file.Write(myResults.ToString());
             }
-            SucessfullyFinishedWritingFile(resultsFileName);
-            finishedSingleTask();
-            return heh;
+            SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
+            finishedSingleTask(taskId);
+            return myResults;
 #if !DEBUG
-        }
+            }
             catch (Exception e)
             {
-                var resultsFileName = Path.Combine(OutputFolder, "results.txt");
+                var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
-                    file.WriteLine(MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MetaMorpheusVersion);
+                    file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
                     file.Write("e.InnerException: " + e.InnerException);
@@ -142,13 +138,13 @@ namespace TaskLayer
             sb.AppendLine(SpecificTaskInfo);
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine("Spectra files:");
-            sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
+            //sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
             sb.AppendLine("XML files:");
-            sb.AppendLine(string.Join(Environment.NewLine, dbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
+            //sb.AppendLine(string.Join(Environment.NewLine, dbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
             sb.AppendLine("initiatorMethionineBehavior: " + InitiatorMethionineBehavior);
             sb.AppendLine("maxMissedCleavages: " + MaxMissedCleavages);
             sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("output_folder: " + OutputFolder);
+            //sb.AppendLine("output_folder: " + OutputFolder);
             sb.AppendLine("protease: " + Protease);
             sb.AppendLine("bIons: " + BIons);
             sb.AppendLine("yIons: " + YIons);
@@ -161,7 +157,7 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName)
+        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -170,14 +166,27 @@ namespace TaskLayer
                 for (int i = 0; i < items.Count; i++)
                     output.WriteLine(items[i]);
             }
-            SucessfullyFinishedWritingFile(writtenFile);
+            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
         #endregion Protected Internal Methods
 
         #region Protected Methods
 
-        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateDecoys, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
+        {
+            if (Path.GetExtension(fileName).Equals(".fasta"))
+            {
+                um = null;
+                return ProteinDbLoader.LoadProteinFasta(fileName, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression);
+            }
+            else
+                return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, null, out um);
+        }
+
+        protected abstract MyTaskResults RunSpecific(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId);
+
+        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (items != null)
             {
@@ -190,11 +199,11 @@ namespace TaskLayer
                         output.WriteLine(items[i]);
                 }
 
-                SucessfullyFinishedWritingFile(writtenFile);
+                SucessfullyFinishedWritingFile(writtenFile, nestedIds);
             }
         }
 
-        protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName)
+        protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -228,36 +237,51 @@ namespace TaskLayer
                         + "\t" + bin.uniprotID);
                 }
             }
-            SucessfullyFinishedWritingFile(writtenFile);
+            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        protected void SucessfullyFinishedWritingFile(string path)
+        protected void SucessfullyFinishedWritingFile(string path, List<string> nestedIDs)
         {
-            FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path));
+            FinishedWritingFileHandler?.Invoke(this, new SingleFileEventArgs(path, nestedIDs));
         }
 
-        protected void StartingDataFile(string v)
+        protected void StartingDataFile(string v, List<string> nestedIDs)
         {
-            StartingDataFileHandler?.Invoke(this, new StringEventArgs(v));
+            StartingDataFileHandler?.Invoke(this, new StringEventArgs(v, nestedIDs));
         }
 
-        protected void FinishedDataFile(string v)
+        protected void FinishedDataFile(string v, List<string> nestedIDs)
         {
-            FinishedDataFileHandler?.Invoke(this, new StringEventArgs(v));
+            FinishedDataFileHandler?.Invoke(this, new StringEventArgs(v, nestedIDs));
+        }
+
+        protected void Status(string v, List<string> nestedIds)
+        {
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+        }
+
+        protected void Warn(string v, List<string> nestedIds)
+        {
+            WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
+        }
+
+        protected void NewCollection(string v, List<string> nestedIds)
+        {
+            NewCollectionHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
         #endregion Protected Methods
 
         #region Private Methods
 
-        private void finishedSingleTask()
+        private void finishedSingleTask(string taskId)
         {
-            FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(this));
+            FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(taskId));
         }
 
-        private void startingSingleTask()
+        private void startingSingleTask(string taskId)
         {
-            StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(this));
+            StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(taskId));
         }
 
         #endregion Private Methods
