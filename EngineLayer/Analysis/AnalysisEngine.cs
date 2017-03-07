@@ -45,7 +45,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -649,7 +649,7 @@ namespace EngineLayer.Analysis
             List<ProteinGroup>[] proteinGroups = null;
             if (doParsimony)
             {
-                Status("Applying protein parsimony...");
+                Status("Applying protein parsimony...", nestedIds);
                 proteinGroups = new List<ProteinGroup>[searchModes.Count];
                 // TODO**: make this faster (only apply parsimony once but make multiple instances of the same ProteinGroups
                 for (int i = 0; i < searchModes.Count; i++)
@@ -677,7 +677,7 @@ namespace EngineLayer.Analysis
 
                     if (quantify)
                     {
-                        Status("Quantifying peptides...");
+                        Status("Quantifying peptides...", nestedIds);
                         RunQuantification(orderedPsmsWithFDR, quantifyRtTol, quantifyPpmTol);
                     }
 
@@ -697,7 +697,7 @@ namespace EngineLayer.Analysis
 
                     else
                     {
-                        Status("Running FDR analysis on unique peptides...");
+                        Status("Running FDR analysis on unique peptides...", nestedIds);
                         if (quantify)
                             writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.ToList().OrderByDescending(p => p.newPsm.apexIntensity).FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
                         else
