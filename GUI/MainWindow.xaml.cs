@@ -370,8 +370,7 @@ namespace MetaMorpheusGUI
                 }
 
                 theEntityOnWhichToUpdateLabel.Status = s.s;
-
-                //outProgressBar.IsIndeterminate = true;
+                theEntityOnWhichToUpdateLabel.IsIndeterminate = true;
             }
         }
 

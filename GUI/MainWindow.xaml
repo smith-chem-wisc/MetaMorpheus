@@ -158,8 +158,7 @@
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type local:PreRunTask}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="PreRunTask " />
-                                        <TextBlock Text="{Binding Task}" />
+                                        <TextBlock Text="{Binding DisplayName}" />
                                     </StackPanel>
                                 </DataTemplate>
                             </TreeView.Resources>

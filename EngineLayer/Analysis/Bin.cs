@@ -16,8 +16,10 @@ namespace EngineLayer.Analysis
         public string AA = "-";
         public string combos = "-";
         public Dictionary<char, int> residueCount;
-        public int NlocCount;
-        public int ClocCount;
+        public int pepNlocCount;
+        public int pepClocCount;
+        public int protNlocCount;
+        public int protClocCount;
         public Dictionary<string, Tuple<string, string, NewPsmWithFdr>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 

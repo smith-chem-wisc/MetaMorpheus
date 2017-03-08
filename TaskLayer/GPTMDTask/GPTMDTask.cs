@@ -132,24 +132,33 @@ namespace TaskLayer
 
             AnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
+
+            Status("Running G-PTM-D...", new List<string> { taskId });
+
             for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                Status("Loading spectra file...", new List<string> { taskId });
+
+                NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Searches", origDataFile });
+                StartingDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
+
+                Status("Loading spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                Status("Opening spectra file...", new List<string> { taskId });
+                Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
-                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId }).Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
                 myGPTMDresults.AddResultText(searchResults);
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, origDataFile }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, origDataFile }), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }).Run();
+                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), null, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
                 myGPTMDresults.AddResultText(analysisResults);
+                FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
+                Status("Done!", new List<string> { taskId, "Individual Searches", origDataFile });
             }
 
             if (numRawFiles > 1)
