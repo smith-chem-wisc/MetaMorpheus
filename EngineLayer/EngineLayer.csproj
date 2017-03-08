@@ -94,7 +94,6 @@
     <Compile Include="Analysis\BinTreeStructure.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\CalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\ConstantCalibrationFunction.cs" />
-    <Compile Include="CalibrationEngine\DataPoint.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\IdentityCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\LinearCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationEngine\DataPointAquisitionResults.cs" />
