@@ -277,10 +277,6 @@ namespace EngineLayer
             {
                 proteinGroupScore += psm.thisPSM.Score;
             }
-
-            //TODO**: give option to ignore protein groups with one peptide
-            //if (StrictPeptideList.Count == 1)
-            //    proteinGroupScore = 0;
         }
 
         public void CalculateSequenceCoverage()

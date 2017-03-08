@@ -54,7 +54,7 @@ namespace Test
             double totalIonCurrent = double.NaN;
             double scanPrecursorMZ = double.NaN;
             double score = double.NaN;
-            PsmParent newPsm = new PsmClassic(ps, fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, 2, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, 0);
+            PsmParent newPsm = new PsmClassic(ps, fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, 2, 1, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, 0);
 
             Assert.IsNull(newPsm.LocalizedScores);
             Assert.IsNull(newPsm.matchedIonsList);
