@@ -163,6 +163,9 @@ namespace TaskLayer
             object lock2 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
             parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
+
+            Status("Calibrating...", new List<string> { taskId });
+
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
