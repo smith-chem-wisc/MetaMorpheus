@@ -27,9 +27,9 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 2. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 
-3. Add, in order: 
+3. For all following tasks, have ptmlist.txt selected for localization, f.txt for fixed, and v.txt for variable. Add, in order: 
   * Combined 5 and 10 ppm precursor tolerance Search Task 
-  * Calibration Task, with ptmlist.txt selected for localization
+  * Calibration Task
   * Combined 5 and 10 ppm precursor tolerance Search Task
   * G-PTM-D Task with m.txt, metals.txt, pt.txt selected in the G-PTM-D column to add these plausible modifications to the augmented database
   * 5 ppm precursor tolerance Search Task with m.txt, metals.txt, pt.txt and ptmlist.txt selected for localization
