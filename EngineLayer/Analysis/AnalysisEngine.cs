@@ -1,6 +1,7 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Chemistry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -489,33 +490,66 @@ namespace EngineLayer.Analysis
 
         public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
         {
-            var baseSeqToPsmMatching = new Dictionary<string, HashSet<NewPsmWithFdr>>();
+            var fullSeqToPsmMatching = new Dictionary<string, List<NewPsmWithFdr>>();
+            int maxChargeState = 0;
+            int minChargeState = int.MaxValue;
 
             foreach (var psm in psms)
             {
-                if (!baseSeqToPsmMatching.ContainsKey(psm.thisPSM.FullSequence))
+                if (psm.qValue < 0.05 && !psm.IsDecoy)
                 {
-                    var psmList = new HashSet<NewPsmWithFdr>();
-                    psmList.Add(psm);
-                    baseSeqToPsmMatching.Add(psm.thisPSM.FullSequence, psmList);
-                }
-                else
-                {
-                    HashSet<NewPsmWithFdr> psmList;
-                    baseSeqToPsmMatching.TryGetValue(psm.thisPSM.FullSequence, out psmList);
-                    psmList.Add(psm);
+                    if (!fullSeqToPsmMatching.ContainsKey(psm.thisPSM.FullSequence))
+                    {
+                        var psmList = new List<NewPsmWithFdr>();
+                        psmList.Add(psm);
+                        fullSeqToPsmMatching.Add(psm.thisPSM.FullSequence, psmList);
+                    }
+                    else
+                    {
+                        List<NewPsmWithFdr> psmList;
+                        fullSeqToPsmMatching.TryGetValue(psm.thisPSM.FullSequence, out psmList);
+                        psmList.Add(psm);
+                    }
+
+                    if (maxChargeState < psm.thisPSM.newPsm.scanPrecursorCharge)
+                        maxChargeState = psm.thisPSM.newPsm.scanPrecursorCharge;
+                    if (minChargeState > psm.thisPSM.newPsm.scanPrecursorCharge)
+                        minChargeState = psm.thisPSM.newPsm.scanPrecursorCharge;
                 }
             }
 
-            foreach (var kvp in baseSeqToPsmMatching)
+            foreach (var kvp in fullSeqToPsmMatching)
             {
+                var pepWithFormula = new Proteomics.Peptide(kvp.Value.First().thisPSM.BaseSequence);
+                var pepIsotopicDistribution = IsotopicDistribution.GetDistribution(pepWithFormula.GetChemicalFormula());
+                var thisPeptidesMass = kvp.Value.First().thisPSM.PeptideMonoisotopicMass;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("C") / 92.764 , 0)) * 1.003355;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("H") / 8695.65, 0)) * 1.006277;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("N") / 271.739, 0)) * 0.997035;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("S") / 131.579, 0)) * 0.999386;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("O") / 2631.58, 0)) * 1.004217;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("S") / 23.31,   0)) * 1.995796;
+                thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("O") / 487.805, 0)) * 2.004245;
+
                 // calculate apex intensity
                 var rt1 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Min();
                 var rt2 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Max();
-                
-                double theoreticalMz = Chemistry.ClassExtensions.ToMz(kvp.Value.First().thisPSM.PeptideMonoisotopicMass, kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge);
+                var lowestObservedChargeState = minChargeState;
+                var highestObservedChargeState = maxChargeState;
+                var psmList = kvp.Value;
 
-                double mzTol = ((ppmTolerance / 1e6) * kvp.Value.First().thisPSM.PeptideMonoisotopicMass) / kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge;
+                int[] chargeStateList = new int[highestObservedChargeState - lowestObservedChargeState + 1];
+                double[] mzList = new double[highestObservedChargeState - lowestObservedChargeState + 1];
+                double[] mzTolList = new double[highestObservedChargeState - lowestObservedChargeState + 1];
+
+                int chargeState = lowestObservedChargeState;
+                for(int i = 0; i < chargeStateList.Length; i++)
+                {
+                    chargeStateList[i] = chargeState;
+                    mzList[i] = Chemistry.ClassExtensions.ToMz(thisPeptidesMass, chargeState);
+                    mzTolList[i] = ((ppmTolerance / 1e6) * thisPeptidesMass) / chargeState;
+                    chargeState++;
+                }
 
                 var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt2 + rtTolerance).ToList();
                 var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
@@ -525,10 +559,34 @@ namespace EngineLayer.Analysis
 
                 foreach (var spectrum in ms1SpectraInThisWindow)
                 {
-                    var i = spectrum.MassSpectrum.Where(s => (Math.Abs(s.Mz - theoreticalMz) < mzTol)).ToList();
-                    foreach (var p in i)
+                    var peaks = spectrum.MassSpectrum.ToList();
+                    var myPeaks = new List<IMzPeak>();
+
+                    foreach(var peak in peaks)
                     {
-                        intensities.Add(p.Intensity);
+                        for (int j = 0; j < chargeStateList.Length; j++)
+                        {
+                            if (Math.Abs(peak.Mz - mzList[j]) < mzTolList[j])
+                            {
+                                double heavierIsotopeMz = Chemistry.ClassExtensions.ToMz(thisPeptidesMass + 1.003355, chargeStateList[j]);
+
+                                for (int i = peaks.IndexOf(peak); i < peaks.Count; i++)
+                                {
+                                    if (peaks[i].Mz > heavierIsotopeMz + 2)
+                                        break;
+
+                                    if ((Math.Abs(peaks[i].Mz - heavierIsotopeMz) < mzTolList[j]) && peaks[i].Intensity > peak.Intensity * 0.2)
+                                    {
+                                        myPeaks.Add(peak);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    foreach (var peak in myPeaks)
+                    {
+                        intensities.Add(peak.Intensity);
                         retentionTimes.Add(spectrum.RetentionTime);
                     }
                 }
@@ -536,8 +594,11 @@ namespace EngineLayer.Analysis
                 double apexIntensity = 0;
                 if(intensities.Any())
                     apexIntensity = intensities.Max();
+                double apexRT = 0;
+                if (intensities.Any())
+                    apexRT = retentionTimes[intensities.IndexOf(apexIntensity)];
 
-                foreach(var p in kvp.Value)
+                foreach (var p in kvp.Value)
                     p.thisPSM.newPsm.apexIntensity = apexIntensity;
 
                 // calculate full width half max (peak quality)
@@ -576,7 +637,11 @@ namespace EngineLayer.Analysis
                 }
 
                 foreach (var p in kvp.Value)
-                    p.thisPSM.newPsm.fullWidthHalfMax = fullWidthHalfMax;
+                {
+                    p.thisPSM.newPsm.apexFullWidthHalfMax = fullWidthHalfMax;
+                    p.thisPSM.newPsm.apexRT = apexRT;
+                    p.thisPSM.newPsm.mostAbundantMass = thisPeptidesMass;
+                }
 
                 // calculate SNR (TODO**)
             }

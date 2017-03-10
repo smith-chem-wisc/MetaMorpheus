@@ -24,7 +24,9 @@ namespace EngineLayer
         public readonly double scanPrecursorMass;
         public readonly double score;
         public double apexIntensity;
-        public double fullWidthHalfMax;
+        public double apexFullWidthHalfMax;
+        public double apexRT;
+        public double mostAbundantMass;
 
         public Dictionary<ProductType, double[]> matchedIonsList;
         public List<double> LocalizedScores;
@@ -77,7 +79,9 @@ namespace EngineLayer
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(apexIntensity.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(fullWidthHalfMax.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(apexFullWidthHalfMax.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(apexRT.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(mostAbundantMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
             foreach (var kvp in matchedIonsList)
@@ -119,7 +123,9 @@ namespace EngineLayer
             sb.Append("score" + '\t');
             sb.Append("notch" + '\t');
             sb.Append("apexIntensity" + '\t');
-            sb.Append("fullWidthHalfMax" + '\t');
+            sb.Append("apexFullWidthHalfMax" + '\t');
+            sb.Append("apexRT" + '\t');
+            sb.Append("mostAbundantMass" + '\t');
 
             sb.Append("matched ions" + '\t');
             sb.Append("matched ion counts" + '\t');
