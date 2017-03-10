@@ -39,11 +39,13 @@ namespace EngineLayer.ClassicSearch
         private readonly List<ProductType> lp;
         private readonly List<string> nestedIds;
 
+        private readonly bool conserveMemory;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.MonoisotopicPrecursorMass).ToArray();
@@ -59,6 +61,7 @@ namespace EngineLayer.ClassicSearch
             this.fileName = fileName;
             this.lp = lp;
             this.nestedIds = nestedIds;
+            this.conserveMemory = conserveMemory;
         }
 
         #endregion Public Constructors
@@ -101,7 +104,7 @@ namespace EngineLayer.ClassicSearch
                         if (peptide.Length <= 1)
                             continue;
 
-                        if (peptide.numLocMods == 0)
+                        if (peptide.numLocMods == 0 && !conserveMemory)
                         {
                             var hc = peptide.BaseLeucineSequence;
                             var observed = level3_observed.Contains(hc);
@@ -119,7 +122,7 @@ namespace EngineLayer.ClassicSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.numLocMods > 0)
+                            if (peptide.numLocMods > 0 && !conserveMemory)
                             {
                                 var hc = yyy.Sequence;
                                 var observed = level4_observed.Contains(hc);

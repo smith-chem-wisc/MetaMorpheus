@@ -37,7 +37,8 @@ namespace TaskLayer
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(base.ToString());
+            sb.AppendLine(GetType().Name);
+            sb.AppendLine("Time to run: " + Time);
             if (newSpectra != null && newSpectra.Any())
                 sb.AppendLine("New spectra: " + string.Join(", ", newSpectra));
             if (newDatabases != null && newDatabases.Any())

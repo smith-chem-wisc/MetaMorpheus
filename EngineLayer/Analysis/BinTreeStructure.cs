@@ -379,9 +379,9 @@ namespace EngineLayer.Analysis
             myInfos.Add(new MyInfo(0, "Exact match!"));
             myInfos.Add(new MyInfo(-48.128629, "Phosphorylation-Lysine: Probably reverse is the correct match"));
             myInfos.Add(new MyInfo(-76.134779, "Phosphorylation-Arginine: Probably reverse is the correct match"));
-            myInfos.Add(new MyInfo(1.003, "1 MM"));
+            myInfos.Add(new MyInfo(1.0025, "1 MM"));
             myInfos.Add(new MyInfo(2.005, "2 MM"));
-            myInfos.Add(new MyInfo(3.008, "3 MM"));
+            myInfos.Add(new MyInfo(3.0075, "3 MM"));
             myInfos.Add(new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"));
             myInfos.Add(new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."));
             myInfos.Add(new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"));
@@ -389,6 +389,8 @@ namespace EngineLayer.Analysis
             myInfos.Add(new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"));
             myInfos.Add(new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"));
             myInfos.Add(new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"));
+            myInfos.Add(new MyInfo(-105.02484, "Methionine loss then acetaldehyde"));
+
             foreach (Bin bin in FinalBins)
             {
                 bin.Mine = "";

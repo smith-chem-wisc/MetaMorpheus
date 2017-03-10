@@ -1,8 +1,8 @@
-﻿using MassSpectrometry;
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
+using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
@@ -38,10 +38,10 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
-            p.Add(new Protein("-----F----*", "D1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
-            p.Add(new Protein("-----F----**", "C1", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
-            p.Add(new Protein("----E----**", "C2", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            p.Add(new Protein("-----F----*", "D1", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
+            p.Add(new Protein("-----F----**", "C1", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
+            p.Add(new Protein("----E----**", "C2", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -212,7 +212,6 @@ namespace Test
             }
             */
 
-
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 8);
             Assert.That(parsimonyBaseSequences.Contains("AB--------"));
@@ -247,7 +246,7 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
 
             foreach (var protein in p)
             {
@@ -301,7 +300,7 @@ namespace Test
             // creates some test proteins, digest, and fragment
             string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
             var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var prot = (new Protein(sequence, "", new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            var prot = (new Protein(sequence, "", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
             var digestedProtein = prot.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);

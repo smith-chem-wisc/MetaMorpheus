@@ -8,6 +8,13 @@ namespace EngineLayer.Analysis
     public class AnalysisResults : MyResults
     {
 
+        #region Internal Fields
+
+        internal Dictionary<string, int>[] allModsOnPeptides;
+        internal Dictionary<string, int>[] allModsSeen;
+
+        #endregion Internal Fields
+
         #region Private Fields
 
         private string output;
@@ -54,6 +61,15 @@ namespace EngineLayer.Analysis
 
                 sb.AppendLine("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));
             }
+
+            for (int i = 0; i < allModsOnPeptides.Length; i++)
+            {
+                sb.AppendLine("Search mode " + i + " Mods seen:");
+                sb.AppendLine(string.Join(Environment.NewLine, allModsSeen[i].OrderBy(b => -b.Value).Select(b => b.Key + " : " + b.Value)));
+                sb.AppendLine("Search mode " + i + " Mods on proteins:");
+                sb.AppendLine(string.Join(Environment.NewLine, allModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => b.Key + " : " + b.Value)));
+            }
+
             sb.Append(output);
 
             return sb.ToString();

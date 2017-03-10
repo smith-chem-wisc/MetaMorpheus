@@ -33,7 +33,7 @@ namespace Test
             Assert.AreEqual(0, res.Mods.Count);
 
             PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
-            var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
+            var parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var modPep = parentProtein.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
@@ -70,7 +70,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             PsmParent newPsm = new TestParentSpectrumMatch(651.297638557 + 21.981943 + 15.994915);
-            var parentProtein = new Protein("NNNPPP", "accession", new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
+            var parentProtein = new Protein("NNNPPP", "accession", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
             var modPep = parentProtein.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
