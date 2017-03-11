@@ -1,0 +1,56 @@
+Stefan Custom List
+ID   Deamidation
+TG   N or Q
+PP   Anywhere.
+MM   0.984016
+CF   H-1 N-1 O1
+//
+ID   Ammonia loss
+FT   MOD_RES
+TG   Q or C
+PP   Peptide N-terminal.
+MM   -17.02655
+CF   H-3 N-1
+//
+ID   Sodium
+FT   MOD_RES
+TG   D or E
+PP   Anywhere.
+MM   21.981943
+CF   H-1 Na1
+//
+ID   Dioxidation
+FT   MOD_RES
+TG   W
+PP   Anywhere.
+MM   31.989829
+CF   O2
+//
+ID   Oxidation
+FT   MOD_RES
+TG   W
+PP   Anywhere.
+MM   15.994915
+CF   O1
+//
+ID   Oxidation of W to Kynurenine
+FT   MOD_RES
+TG   W
+PP   Anywhere.
+MM   3.994915
+CF   C-1 O1
+//
+ID   Water loss
+FT   MOD_RES
+TG   E
+PP   Peptide N-terminal.
+MM   -18.010565
+CF   H-2 O-1
+//
+ID   Carbon
+FT   MOD_RES
+TG   P
+PP   Peptide N-terminal.
+MM   12
+CF   C1
+//
