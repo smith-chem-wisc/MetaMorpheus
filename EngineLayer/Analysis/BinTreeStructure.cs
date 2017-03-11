@@ -218,6 +218,7 @@ namespace EngineLayer.Analysis
                 {
                     int inModLevel = 0;
                     string currentMod = "";
+                    HashSet<string> modsHere = new HashSet<string>();
                     for (int i = 0; i < hehe.Item2.Count(); i++)
                     {
                         char ye = hehe.Item2[i];
@@ -232,16 +233,21 @@ namespace EngineLayer.Analysis
                             inModLevel--;
                             if (inModLevel == 0)
                             {
-                                if (bin.modsInCommon.ContainsKey(currentMod))
-                                    bin.modsInCommon[currentMod]++;
-                                else
-                                    bin.modsInCommon.Add(currentMod, 1);
+                                if (!currentMod.StartsWith("f:"))
+                                    modsHere.Add(currentMod);
                                 currentMod = "";
                             }
                             continue;
                         }
                         if (inModLevel > 0)
                             currentMod += ye;
+                    }
+                    foreach (var modInHS in modsHere)
+                    {
+                        if (bin.modsInCommon.ContainsKey(modInHS))
+                            bin.modsInCommon[modInHS]++;
+                        else
+                            bin.modsInCommon.Add(modInHS, 1);
                     }
                 }
             }
@@ -264,9 +270,17 @@ namespace EngineLayer.Analysis
                                 else
                                     bin.residueCount.Add(hehe.Item1[i], 1);
                         if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores[0] < 0.5)
-                            bin.NlocCount++;
+                        {
+                            bin.pepNlocCount++;
+                            if (hehe.Item3.thisPSM.peptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                                bin.protNlocCount++;
+                        }
                         if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores.Last() < 0.5)
-                            bin.ClocCount++;
+                        {
+                            bin.pepClocCount++;
+                            if (hehe.Item3.thisPSM.peptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                                bin.protClocCount++;
+                        }
                     }
                 }
             }
