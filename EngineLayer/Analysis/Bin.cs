@@ -13,6 +13,7 @@ namespace EngineLayer.Analysis
         public string psimodID = "-";
         public string uniprotID = "-";
         public string UnimodFormulas = "-";
+        public string UnimodDiffs = "-";
         public string AA = "-";
         public string combos = "-";
         public Dictionary<char, int> residueCount;

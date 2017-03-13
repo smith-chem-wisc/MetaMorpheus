@@ -292,6 +292,7 @@ namespace EngineLayer.Analysis
             {
                 var ok = new HashSet<string>();
                 var okformula = new HashSet<string>();
+                var okDiff = new HashSet<double>();
                 foreach (var hm in MyEngine.UnimodDeserialized)
                 {
                     var theMod = hm as ModificationWithMassAndCf;
@@ -299,10 +300,12 @@ namespace EngineLayer.Analysis
                     {
                         ok.Add(hm.id);
                         okformula.Add(theMod.chemicalFormula.Formula);
+                        okDiff.Add(theMod.monoisotopicMass - bin.MassShift);
                     }
                 }
                 bin.UnimodId = string.Join(" or ", ok);
                 bin.UnimodFormulas = string.Join(" or ", okformula);
+                bin.UnimodDiffs = string.Join(" or ", okDiff);
             }
         }
 
