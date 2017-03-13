@@ -620,6 +620,31 @@ namespace EngineLayer.Analysis
                     //pep.thisPSM.newPsm.apexMZ = apexMZ;
                 }
             }
+
+            // TODO** error checking for peptides that use the same apex peak
+            // assign peptide with closest (ms2RT-apexRT) to apex, try to find other peaks
+            var v = new Dictionary<double, IGrouping<string, NewPsmWithFdr>>();
+            IGrouping<string, NewPsmWithFdr> v3;
+            var badMatchList = new List<IGrouping<string, NewPsmWithFdr>>();
+            foreach(var pepGrouping in fullSeqToPsmMatching)
+            {
+                if (v.TryGetValue(pepGrouping.First().thisPSM.newPsm.apexRT, out v3))
+                {
+                    badMatchList.Add(v3);
+                    badMatchList.Add(pepGrouping);
+                }
+                else
+                    v.Add(pepGrouping.First().thisPSM.newPsm.apexRT, pepGrouping);
+            }
+
+            foreach(var badMatch in badMatchList)
+            {
+                foreach(var pep in badMatch)
+                {
+                    pep.thisPSM.newPsm.apexIntensity = 0;
+                    pep.thisPSM.newPsm.apexRT = 0;
+                }
+            }
         }
 
         #endregion Public Methods
