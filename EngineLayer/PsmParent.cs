@@ -24,7 +24,7 @@ namespace EngineLayer
         public readonly double scanPrecursorMass;
         public readonly double score;
         public double apexIntensity;
-        public double apexFullWidthHalfMax;
+        public double apexMz;
         public double apexRT;
         public double mostAbundantMass;
 
@@ -79,7 +79,7 @@ namespace EngineLayer
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(apexIntensity.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(apexFullWidthHalfMax.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(apexMz.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(apexRT.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(mostAbundantMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
@@ -123,7 +123,7 @@ namespace EngineLayer
             sb.Append("score" + '\t');
             sb.Append("notch" + '\t');
             sb.Append("apexIntensity" + '\t');
-            sb.Append("apexFullWidthHalfMax" + '\t');
+            sb.Append("apexMz" + '\t');
             sb.Append("apexRT" + '\t');
             sb.Append("mostAbundantMass" + '\t');
 

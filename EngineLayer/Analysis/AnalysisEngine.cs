@@ -486,10 +486,11 @@ namespace EngineLayer.Analysis
 
         public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
         {
-            // key is rough m/z (m/z rounded to 2nd decimal), KVP is value; key of this is the peak, value is RT
+            // key is rough m/z (m/z rounded to 3rd decimal), KVP is value; key of this is the peak, value is scan it belongs to
             var roughMzToPeakMatching = new Dictionary<double, List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>>();
             //var peakToScanMatching = new Dictionary<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>();
             var fullSeqToPsmMatching = psms.GroupBy(p => p.thisPSM.FullSequence).ToList();
+            // FullSequence, mass, normalized abundance
             var thisPeptidesNormalizedIsotopicAbundances = new Dictionary<string, List<KeyValuePair<double, double>>>();
 
             var minChargeState = psms.Select(p => p.thisPSM.newPsm.scanPrecursorCharge).Min();
@@ -512,6 +513,7 @@ namespace EngineLayer.Analysis
                     // normalize abundances
                     abundances[i] = abundances[i] / maxAbundance;
 
+                    // add the mass of the modification(s)
                     masses[i] += modmass;
 
                     // add to isotopic list to check if abundance >20% normalized abundance
@@ -522,23 +524,14 @@ namespace EngineLayer.Analysis
                 thisPeptidesNormalizedIsotopicAbundances.Add(pepGrouping.First().thisPSM.FullSequence, temp);
 
                 var thisPeptidesMass = temp.Where(x => x.Value == 1).First().Key;
-
-                //var thisPeptidesMass = pepGrouping.First().thisPSM.PeptideMonoisotopicMass;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("C") / 92.764, 0)) * 1.003355;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("H") / 8695.65, 0)) * 1.006277;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("N") / 271.739, 0)) * 0.997035;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("S") / 131.579, 0)) * 0.999386;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("O") / 2631.58, 0)) * 1.004217;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("S") / 23.31, 0)) * 1.995796;
-                //thisPeptidesMass += ((int)Math.Round(pepWithFormula.ElementCountWithIsotopes("O") / 487.805, 0)) * 2.004245;
-
+                
                 foreach (var pep in pepGrouping)
                     pep.thisPSM.newPsm.mostAbundantMass = thisPeptidesMass;
 
                 foreach (var chargeState in chargeStates)
                 {
                     var t = Chemistry.ClassExtensions.ToMz(thisPeptidesMass, chargeState);
-                    var m = Math.Round(t, 3);
+                    var m = Math.Round(t, 2);
                     if (!roughMzToPeakMatching.ContainsKey(m))
                         roughMzToPeakMatching.Add(m, new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>());
                 }
@@ -553,8 +546,8 @@ namespace EngineLayer.Analysis
                     if (peak.Intensity > 5000)
                     {
                         List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> mzBin;
-                        double floorMz = Math.Floor(peak.Mz * 1000) / 1000;
-                        double ceilingMz = Math.Ceiling(peak.Mz * 1000) / 1000;
+                        double floorMz = Math.Floor(peak.Mz * 100) / 100;
+                        double ceilingMz = Math.Ceiling(peak.Mz * 100) / 100;
 
                         if (roughMzToPeakMatching.TryGetValue(floorMz, out mzBin))
                             mzBin.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(peak, scan));
@@ -578,12 +571,11 @@ namespace EngineLayer.Analysis
                 // find peaks within specified tolerances in the m/z bins
                 foreach (var chargeState in chargeStates)
                 {
-                    bool doneWithThisChargeState = false;
                     double theorMzHere = Chemistry.ClassExtensions.ToMz(pepGrouping.First().thisPSM.newPsm.mostAbundantMass, chargeState);
                     double mzTolHere = ((ppmTolerance / 1e6) * pepGrouping.First().thisPSM.newPsm.mostAbundantMass) / chargeState;
 
-                    double floorMz = Math.Floor(theorMzHere * 1000) / 1000;
-                    double ceilingMz = Math.Ceiling(theorMzHere * 1000) / 1000;
+                    double floorMz = Math.Floor(theorMzHere * 100) / 100;
+                    double ceilingMz = Math.Ceiling(theorMzHere * 100) / 100;
                     
                     IEnumerable<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> binPeaks = new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>();
                     List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> t;
@@ -597,24 +589,63 @@ namespace EngineLayer.Analysis
                         // check ppm tolerance
                         if (Math.Abs(peak.Key.Mz - theorMzHere) < mzTolHere)
                         {
+                            bool meetsRTWindow = false;
+
                             // check rt window tolerance
                             foreach (var pep in pepGrouping)
                             {
                                 if (Math.Abs(pep.thisPSM.newPsm.scanRetentionTime - peak.Value.RetentionTime) < rtTolerance)
                                 {
-                                    // TODO** check isotopic distribution
-                                    // TODO** check SNR
-                                    // peak has been verified - add it
+                                    meetsRTWindow = true;
+                                    break;
+                                }
+                            }
+
+                            // check isotopic distribution
+                            if (meetsRTWindow)
+                            {
+                                var isotopes = thisPeptidesNormalizedIsotopicAbundances[pepGrouping.First().thisPSM.FullSequence];
+                                var lowestMassIsotope = isotopes.Select(p => p.Key).Min();
+                                var highestMassIsotope = isotopes.Select(p => p.Key).Max();
+
+                                lowestMassIsotope = Chemistry.ClassExtensions.ToMz(lowestMassIsotope, chargeState);
+                                lowestMassIsotope -= (ppmTolerance / 1e6) * lowestMassIsotope;
+
+                                highestMassIsotope = Chemistry.ClassExtensions.ToMz(highestMassIsotope, chargeState);
+                                highestMassIsotope += (ppmTolerance / 1e6) * highestMassIsotope;
+                                
+                                var otherPeaksInThisScan = peak.Value.MassSpectrum.Where(p => p.Mz > lowestMassIsotope && p.Mz < highestMassIsotope).ToList();
+                                bool isotopeDistributionCheck = true;
+
+                                foreach (var isotope in isotopes)
+                                {
+                                    double theorIsotopeMz = Chemistry.ClassExtensions.ToMz(isotope.Key, chargeState);
+                                    double isotopeMzTol = ((ppmTolerance / 1e6) * isotope.Key) / chargeState;
+                                    bool thisIsotopeSeen = false;
+
+                                    foreach (var otherPeak in otherPeaksInThisScan)
+                                    {
+                                        if (Math.Abs(otherPeak.Mz - theorIsotopeMz) < isotopeMzTol)
+                                        {
+                                            thisIsotopeSeen = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!thisIsotopeSeen)
+                                        isotopeDistributionCheck = false;
+                                }
+
+                                if (isotopeDistributionCheck)
+                                {
                                     if (!verfiedPeaks.Contains(peak))
                                     {
                                         verfiedPeaks.Add(peak);
-                                        doneWithThisChargeState = true;
+                                        // done with this charge state, move on to the next one
                                         break;
                                     }
                                 }
                             }
-                            if (doneWithThisChargeState)
-                                break;
                         }
                     }
                 }
@@ -635,7 +666,7 @@ namespace EngineLayer.Analysis
                 {
                     pep.thisPSM.newPsm.apexIntensity = apexIntensity;
                     pep.thisPSM.newPsm.apexRT = apexRT;
-                    //pep.thisPSM.newPsm.apexMZ = apexMZ;
+                    pep.thisPSM.newPsm.apexMz = apexMZ;
                 }
             }
 
