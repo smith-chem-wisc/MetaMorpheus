@@ -79,7 +79,7 @@ namespace EngineLayer.Analysis
 
         #region Public Methods
 
-        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
+        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -218,11 +218,11 @@ namespace EngineLayer.Analysis
                         bestProtein = dict.OrderByDescending(kvp => kvp.Value.Count).First().Key;
                     }
                 }
-                
+
                 HashSet<CompactPeptide> l;
                 proteinToPeptidesMatching.TryGetValue(bestProtein, out l);
                 parsimonyDict.Add(bestProtein, l);
-                
+
                 // remove used peptides from their proteins
                 foreach (var newBaseSeq in newSeqs)
                 {
@@ -293,36 +293,17 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            // constructs return dictionary (only use parsimony proteins for the new PeptideWithSetModifications list)
-            var answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
             foreach (var kvp in parsimonyDict)
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    if (!answer.ContainsKey(peptide))
-                    {
-                        // find CompactPeptide's original (unparsimonious) peptide matches
-                        var oldPepsWithSetMods = compactPeptideToProteinPeptideMatching[peptide];
-
-                        // get the CompactPeptide's protein list after parsimony
-                        var proteinListHere = peptideProteinListMatch[peptide];
-
-                        // get the peptides that belong to the post-parsimony protein(s) only
-                        var newPeptides = new HashSet<PeptideWithSetModifications>(oldPepsWithSetMods.Where(p => proteinListHere.Contains(p.Protein)));
-
-                        answer.Add(peptide, newPeptides);
-                    }
+                    var proteinListHere = peptideProteinListMatch[peptide];
+                    var newList = compactPeptideToProteinPeptideMatching[peptide].Where(p => proteinListHere.Contains(p.Protein));
+                    compactPeptideToProteinPeptideMatching[peptide] = new HashSet<PeptideWithSetModifications>(newList);
                 }
             }
-            
+
             Status("Finished Parsimony", nestedIds);
-
-
-            compactPeptideToProteinPeptideMatching = answer;
-
-            // returns for test class (TODO**: remove)
-            return answer;
         }
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
@@ -586,59 +567,59 @@ namespace EngineLayer.Analysis
 
                     foreach (var peak in binPeaks)
                     {
-                        // check ppm tolerance
-                        if (Math.Abs(peak.Key.Mz - theorMzHere) < mzTolHere)
+                        if (!verfiedPeaks.Contains(peak))
                         {
-                            bool meetsRTWindow = false;
-
-                            // check rt window tolerance
-                            foreach (var pep in pepGrouping)
+                            // check ppm tolerance
+                            if (Math.Abs(peak.Key.Mz - theorMzHere) < mzTolHere)
                             {
-                                if (Math.Abs(pep.thisPSM.newPsm.scanRetentionTime - peak.Value.RetentionTime) < rtTolerance)
+                                bool meetsRTWindow = false;
+
+                                // check rt window tolerance
+                                foreach (var pep in pepGrouping)
                                 {
-                                    meetsRTWindow = true;
-                                    break;
-                                }
-                            }
-
-                            // check isotopic distribution
-                            if (meetsRTWindow)
-                            {
-                                var isotopes = thisPeptidesNormalizedIsotopicAbundances[pepGrouping.First().thisPSM.FullSequence];
-                                var lowestMassIsotope = isotopes.Select(p => p.Key).Min();
-                                var highestMassIsotope = isotopes.Select(p => p.Key).Max();
-
-                                lowestMassIsotope = Chemistry.ClassExtensions.ToMz(lowestMassIsotope, chargeState);
-                                lowestMassIsotope -= (ppmTolerance / 1e6) * lowestMassIsotope;
-
-                                highestMassIsotope = Chemistry.ClassExtensions.ToMz(highestMassIsotope, chargeState);
-                                highestMassIsotope += (ppmTolerance / 1e6) * highestMassIsotope;
-                                
-                                var otherPeaksInThisScan = peak.Value.MassSpectrum.Where(p => p.Mz > lowestMassIsotope && p.Mz < highestMassIsotope).ToList();
-                                bool isotopeDistributionCheck = true;
-
-                                foreach (var isotope in isotopes)
-                                {
-                                    double theorIsotopeMz = Chemistry.ClassExtensions.ToMz(isotope.Key, chargeState);
-                                    double isotopeMzTol = ((ppmTolerance / 1e6) * isotope.Key) / chargeState;
-                                    bool thisIsotopeSeen = false;
-
-                                    foreach (var otherPeak in otherPeaksInThisScan)
+                                    if (Math.Abs(pep.thisPSM.newPsm.scanRetentionTime - peak.Value.RetentionTime) < rtTolerance)
                                     {
-                                        if (Math.Abs(otherPeak.Mz - theorIsotopeMz) < isotopeMzTol)
+                                        meetsRTWindow = true;
+                                        break;
+                                    }
+                                }
+
+                                // check isotopic distribution
+                                if (meetsRTWindow)
+                                {
+                                    var isotopes = thisPeptidesNormalizedIsotopicAbundances[pepGrouping.First().thisPSM.FullSequence];
+                                    var lowestMassIsotope = isotopes.Select(p => p.Key).Min();
+                                    var highestMassIsotope = isotopes.Select(p => p.Key).Max();
+
+                                    lowestMassIsotope = Chemistry.ClassExtensions.ToMz(lowestMassIsotope, chargeState);
+                                    lowestMassIsotope -= (ppmTolerance / 1e6) * lowestMassIsotope;
+
+                                    highestMassIsotope = Chemistry.ClassExtensions.ToMz(highestMassIsotope, chargeState);
+                                    highestMassIsotope += (ppmTolerance / 1e6) * highestMassIsotope;
+
+                                    var otherPeaksInThisScan = peak.Value.MassSpectrum.Where(p => p.Mz > lowestMassIsotope && p.Mz < highestMassIsotope).ToList();
+                                    bool isotopeDistributionCheck = true;
+
+                                    foreach (var isotope in isotopes)
+                                    {
+                                        double theorIsotopeMz = Chemistry.ClassExtensions.ToMz(isotope.Key, chargeState);
+                                        double isotopeMzTol = ((ppmTolerance / 1e6) * isotope.Key) / chargeState;
+                                        bool thisIsotopeSeen = false;
+
+                                        foreach (var otherPeak in otherPeaksInThisScan)
                                         {
-                                            thisIsotopeSeen = true;
-                                            break;
+                                            if (Math.Abs(otherPeak.Mz - theorIsotopeMz) < isotopeMzTol)
+                                            {
+                                                thisIsotopeSeen = true;
+                                                break;
+                                            }
                                         }
+
+                                        if (!thisIsotopeSeen)
+                                            isotopeDistributionCheck = false;
                                     }
 
-                                    if (!thisIsotopeSeen)
-                                        isotopeDistributionCheck = false;
-                                }
-
-                                if (isotopeDistributionCheck)
-                                {
-                                    if (!verfiedPeaks.Contains(peak))
+                                    if (isotopeDistributionCheck)
                                     {
                                         verfiedPeaks.Add(peak);
                                         // done with this charge state, move on to the next one
