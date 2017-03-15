@@ -73,8 +73,8 @@ namespace EngineLayer.Calibration
             for (int i = 0; i < useFeature.Length; i++)
                 if (useFeature[i])
                 {
-                    if (level == 0)
-                        Console.WriteLine(" i = " + i);
+                    //if (level == 0)
+                    //    Console.WriteLine(" i = " + i);
                     prunedTrainingPoints.Sort(Comparer<LabeledDataPoint>.Create((x, y) => x.inputs[i].CompareTo(y.inputs[i])));
                     int num_splits = Math.Min(15, prunedTrainingPoints.Count - 1);
                     for (double j = 0; j < num_splits; j++)
