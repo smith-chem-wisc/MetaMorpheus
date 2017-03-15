@@ -42,8 +42,6 @@ namespace EngineLayer.Calibration
         {
             var rand = new Random();
             List<LabeledDataPoint> trainingListHere = trainingList.ToList();
-            //Console.WriteLine("All point average = " + trainingListHere.Select(b => b.label).Average());
-            //Console.WriteLine("trainingListHere.Count = " + trainingListHere.Count);
             Parallel.For(0, RegressionTrees.Length, i =>
             {
                 List<LabeledDataPoint> subsampledTrainingPoints = new List<LabeledDataPoint>();

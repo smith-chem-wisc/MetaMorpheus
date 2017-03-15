@@ -83,7 +83,7 @@ namespace Test
             Assert.AreEqual(1, digestedList.Count);
             var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
             Assert.AreEqual(4, setList3.Count);
-            Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
+            //Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
 
