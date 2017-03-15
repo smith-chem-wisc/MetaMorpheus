@@ -20,3 +20,10 @@ PP   Anywhere.
 MM   61.913495
 CF   H-2 Zn1
 //
+ID   Fe[III]
+FT   MOD_RES
+TG   D or E
+PP   Anywhere.
+MM   52.911464
+CF   H-3 Fe1
+//

@@ -393,6 +393,9 @@ namespace EngineLayer.Analysis
             myInfos.Add(new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"));
             myInfos.Add(new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"));
             myInfos.Add(new MyInfo(-105.02484, "Methionine loss then acetaldehyde"));
+            myInfos.Add(new MyInfo(52.911464, "Fe[III]"));
+            
+
 
             foreach (Bin bin in FinalBins)
             {
