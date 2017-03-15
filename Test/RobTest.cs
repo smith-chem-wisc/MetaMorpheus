@@ -316,7 +316,7 @@ namespace Test
 
             var q = psms.First().thisPSM.newPsm.apexIntensity;
 
-            //Assert.That(psms.First().thisPSM.newPsm.apexIntensity == 1000.0);
+            Assert.That(psms.First().thisPSM.newPsm.apexIntensity == 0);
         }
 
         #endregion Public Methods
