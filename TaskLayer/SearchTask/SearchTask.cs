@@ -75,6 +75,7 @@ namespace TaskLayer
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchDecoy { get; set; }
         public List<SearchMode> SearchModes { get; set; }
+        public bool ConserveMemory { get; set; }
 
         #endregion Public Properties
 
@@ -87,10 +88,10 @@ namespace TaskLayer
                 var sb = new StringBuilder();
                 sb.AppendLine("classicSearch: " + ClassicSearch);
                 sb.AppendLine("doParsimony: " + DoParsimony);
-                if(DoParsimony)
+                if (DoParsimony)
                     sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
                 sb.AppendLine("quantify: " + Quantify);
-                if(Quantify)
+                if (Quantify)
                 {
                     sb.AppendLine("quantify rt tolerance: " + QuantifyRtTol);
                     sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
@@ -200,7 +201,7 @@ namespace TaskLayer
 
                 if (ClassicSearch)
                 {
-                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
+                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
                     mySearchTaskResults.AddResultText(classicSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);

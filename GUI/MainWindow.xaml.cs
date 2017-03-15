@@ -52,7 +52,7 @@ namespace MetaMorpheusGUI
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
             {
-                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadMods(modFile).ToList();
+                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile).ToList();
                 MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
             }
 

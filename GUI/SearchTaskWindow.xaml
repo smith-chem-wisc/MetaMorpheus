@@ -26,6 +26,7 @@
                 <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
             <StackPanel Margin="5">
+                <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory in classic search (might be slow)" />
                 <CheckBox x:Name="checkBoxDecoy" Content="Generate Decoys" />
                 <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
                 <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />

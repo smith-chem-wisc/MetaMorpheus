@@ -106,7 +106,7 @@ namespace TaskLayer
             List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
             List<ModificationWithMass> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
 
-            IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
+            IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
             // Do not remove the zero!!! It's needed here
             SearchMode searchMode = new DotSearchMode("", gptmdModifications.SelectMany(b => b.massesObserved).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
@@ -150,7 +150,7 @@ namespace TaskLayer
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
-                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
                 myGPTMDresults.AddResultText(searchResults);
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
@@ -198,14 +198,18 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private IEnumerable<Tuple<double, double>> LoadCombos()
+        private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> allowedCombos)
         {
             using (StreamReader r = new StreamReader(Path.Combine("Data", @"combos.txt")))
             {
                 while (r.Peek() >= 0)
                 {
                     var line = r.ReadLine().Split(' ');
-                    yield return new Tuple<double, double>(double.Parse(line[0]), double.Parse(line[1]));
+                    var mass1 = double.Parse(line[0]);
+                    var mass2 = double.Parse(line[1]);
+                    if (allowedCombos.Any(b => b.massesObserved.Any(c => Math.Abs(c - mass1) < 1e-3)) &&
+                        allowedCombos.Any(b => b.massesObserved.Any(c => Math.Abs(c - mass2) < 1e-3)))
+                        yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
         }
