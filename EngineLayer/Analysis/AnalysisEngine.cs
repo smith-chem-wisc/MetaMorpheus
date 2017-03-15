@@ -755,6 +755,8 @@ namespace EngineLayer.Analysis
             }
 
             List<NewPsmWithFdr>[] allResultingIdentifications = new List<NewPsmWithFdr>[searchModes.Count];
+            Dictionary<string, int>[] allModsSeen = new Dictionary<string, int>[searchModes.Count];
+            Dictionary<string, int>[] allModsOnPeptides = new Dictionary<string, int>[searchModes.Count];
 
             for (int j = 0; j < searchModes.Count; j++)
             {
@@ -772,6 +774,35 @@ namespace EngineLayer.Analysis
 
                     Status("Running FDR analysis...", nestedIds);
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
+
+                    Status("Running modification analysis...", nestedIds);
+
+                    Dictionary<string, int> modsSeen = new Dictionary<string, int>();
+                    Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
+
+                    // For now analyze only psms with a single option
+                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01 && b.thisPSM.peptidesWithSetModifications.Count == 1)))
+                    {
+                        var singlePeptide = highConfidencePSM.thisPSM.peptidesWithSetModifications.First();
+                        var modsIdentified = singlePeptide.allModsOneIsNterminus;
+                        foreach (var modSeen in modsIdentified)
+                        {
+                            if (modsSeen.ContainsKey(modSeen.Value.id))
+                                modsSeen[modSeen.Value.id]++;
+                            else
+                                modsSeen.Add(modSeen.Value.id, 1);
+                        }
+                        var modsInProtein = singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein).SelectMany(b => b.Value);
+                        foreach (var modInProtein in modsInProtein)
+                        {
+                            if (modsOnPeptides.ContainsKey(modInProtein.id))
+                                modsOnPeptides[modInProtein.id]++;
+                            else
+                                modsOnPeptides.Add(modInProtein.id, 1);
+                        }
+                    }
+                    allModsSeen[j] = modsSeen;
+                    allModsOnPeptides[j] = modsOnPeptides;
 
                     if (quantify)
                     {
@@ -792,7 +823,6 @@ namespace EngineLayer.Analysis
                             writeHistogramPeaksAction(myTreeStructure, searchModes[j].FileNameAddition);
                         }
                     }
-
                     else
                     {
                         Status("Running FDR analysis on unique peptides...", nestedIds);
@@ -812,6 +842,8 @@ namespace EngineLayer.Analysis
 
             myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
             myAnalysisResults.ProteinGroups = proteinGroups;
+            myAnalysisResults.allModsSeen = allModsSeen;
+            myAnalysisResults.allModsOnPeptides = allModsOnPeptides;
             return myAnalysisResults;
         }
 

@@ -1,56 +1,226 @@
 Stefan Custom List
 ID   Deamidation
-TG   N or Q
+TG   N
 PP   Anywhere.
 MM   0.984016
+MT   Mod
 CF   H-1 N-1 O1
 //
 ID   Ammonia loss
-FT   MOD_RES
 TG   Q or C
 PP   Peptide N-terminal.
-MM   -17.02655
+MM   -17.026549
+MT   PeptideTermMod
 CF   H-3 N-1
 //
 ID   Sodium
-FT   MOD_RES
 TG   D or E
 PP   Anywhere.
 MM   21.981943
+MT   Metal
 CF   H-1 Na1
 //
 ID   Dioxidation
-FT   MOD_RES
 TG   W
 PP   Anywhere.
 MM   31.989829
+MT   Mod
 CF   O2
 //
 ID   Oxidation
-FT   MOD_RES
-TG   W
+TG   Y or W
 PP   Anywhere.
 MM   15.994915
+MT   Mod
 CF   O1
 //
+ID   Carbamidomethyl
+TG   K
+PP   Anywhere.
+MM   57.021464
+MT   Mod
+CF   H3 C2 N1 O1
+//
+ID   Phospho
+TG   S or T
+PP   Anywhere.
+MM   79.966331
+MT   Mod
+CF   H1 O3 P1
+//
+ID   Acetyl
+TG   X
+PP   N-terminal.
+MM   42.010565
+MT   ProteinTermMod
+CF   H2 C2 O1
+//
+ID   Acetald+26
+TG   X
+PP   Peptide N-terminal.
+MM   26.01565
+MT   PeptideTermMod
+CF   H2 C2
+//
+ID   Acetylation+Methionine
+TG   mX
+PP   N-terminal.
+MM   173.051055
+MT   ProteinTermMod
+CF   C7 H11 N1 O2 S
+//
+ID   Carboxymethyl+Methionine
+TG   mX
+PP   N-terminal.
+MM   189.045969
+MT   ProteinTermMod
+CF   C7 H11 N1 O3 S1
+//
+ID   Lysine not cleaved
+TG   Xk
+PP   Peptide C-terminal.
+MM   128.09496
+MT   PeptideTermMod
+CF   C6 H12 N2 O1
+//
+ID   Lysine not cleaved
+TG   kX
+PP   Peptide N-terminal.
+MM   128.09496
+MT   PeptideTermMod
+CF   C6 H12 N2 O1
+//
+ID   Arginine not cleaved
+TG   rX
+PP   Peptide N-terminal.
+MM   156.10111
+MT   PeptideTermMod
+CF   C6 H12 N4 O1
+//
+ID   Arginine not cleaved
+TG   Xr
+PP   Peptide C-terminal.
+MM   156.10111
+MT   PeptideTermMod
+CF   C6 H12 N4 O1
+//
+ID   Calcium
+TG   D or E
+PP   Anywhere.
+MM   37.946941
+MT   Metal
+CF   H-2 Ca1
+//
+ID   Water loss
+TG   E or D
+PP   Peptide N-terminal.
+MM   -18.010565
+MT   PeptideTermMod
+CF   H-2 O-1
+//
+ID   Proline Oxidation to pyroglutamic acid
+TG   P
+PP   Anywhere.
+MM   13.979265
+MT   Mod
+CF   H-2 O1
+//
+ID   Met loss + Acetylation
+TG   M
+PP   N-terminal.
+MM   -89.02992
+MT   ProteinTermMod
+CF   H-7 C-3 N-1 S-1
+//
+ID   Met loss + acetaldehyde
+TG   M
+PP   N-terminal.
+MM   -105.02484
+MT   ProteinTermMod
+CF   C-3 H-7 N-1 O-1 S-1
+//
 ID   Oxidation of W to Kynurenine
-FT   MOD_RES
 TG   W
 PP   Anywhere.
 MM   3.994915
+MT   Mod
 CF   C-1 O1
 //
-ID   Water loss
-FT   MOD_RES
-TG   E
+ID   Dehydroalanine from Cysteine
+TG   C
+PP   Anywhere.
+MM   -33.987721
+OM   -91.009185
+MT   Mod
+CF   H-2 S-1
+//
+ID   Formylation
+TG   X
 PP   Peptide N-terminal.
-MM   -18.010565
-CF   H-2 O-1
+MM   27.994915
+MT   PeptideTermMod
+CF   C1 O1
 //
 ID   Carbon
-FT   MOD_RES
 TG   P
 PP   Peptide N-terminal.
+MT   PeptideTermMod
 MM   12
 CF   C1
+//
+ID   Zinc
+TG   D or E
+PP   Anywhere.
+MM   61.913495
+MT   Metal
+CF   H-2 Zn1
+//
+ID   Carbamyl
+TG   X
+PP   Peptide N-terminal.
+MM   43.005814
+MT   PeptideTermMod
+CF   H1 C1 N1 O1
+//
+ID   Fe[III]
+TG   D or E
+PP   Anywhere.
+MM   52.911464
+MT   Metal
+CF   H-3 Fe1
+//
+ID   Fe[II]
+TG   D or E
+PP   Anywhere.
+MM   53.919289
+MT   Metal
+CF   H-2 Fe1
+//
+ID   Methyl
+TG   E or V
+PP   Anywhere.
+MM   14.015650
+MT   Mod
+CF   H2 C
+//
+ID   Oxidation and then loss of oxidized M side chain
+TG   M
+PP   Anywhere.
+MM   -32.00845
+MT   Mod
+CF   H-4 C-1 S-1 O1
+//
+ID   DiMethyl
+TG   A
+PP   Anywhere.
+MM   28.031300
+MT   Mod
+CF   H4 C2
+//
+ID   Tryptophan oxidation to hydroxykynurenin
+TG   W
+PP   Anywhere.
+MM   19.989829
+MT   Mod
+CF   C-1 O2
 //
