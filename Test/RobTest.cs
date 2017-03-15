@@ -313,9 +313,7 @@ namespace Test
 
             AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.RunQuantification(psms, 0.2, 10);
-
-            var q = psms.First().thisPSM.newPsm.apexIntensity;
-
+            
             Assert.That(psms.First().thisPSM.newPsm.apexIntensity == 0);
         }
 
