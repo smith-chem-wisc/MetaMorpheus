@@ -51,6 +51,11 @@ namespace EngineLayer
             }
         }
 
+        public override string ToString()
+        {
+            return FileNameAddition + " dot " + tol.ToString() + " " + string.Join(",", acceptableSortedMassShifts);
+        }
+
         #endregion Public Methods
 
     }
