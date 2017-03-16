@@ -193,6 +193,9 @@
     <Content Include="Mods\ptmlist.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Mods\tmt.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Mods\v.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
