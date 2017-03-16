@@ -2,10 +2,12 @@
 ID   TMT_tag_lysine
 TG   Lysine
 PP   Anywhere.
+MT   FixedTMT
 MM   229.1629321568
 //
 ID   TMT_tag_terminal
 TG   X
 PP   Peptide N-terminal.
+MT   FixedTMT
 MM   229.1629321568
 //

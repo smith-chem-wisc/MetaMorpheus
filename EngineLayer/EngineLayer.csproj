@@ -172,9 +172,6 @@
     <Content Include="Mods\f.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Mods\fNew.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Mods\glyco.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
