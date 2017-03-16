@@ -1,13 +1,11 @@
 Custom Modifications
 ID   Met loss + Acetylation at N-terminus
-FT   MOD_RES
 TG   Methionine
 PP   N-terminal.
 MM   -89.02992
 CF   H-7 C-3 N-1 S-1
 //
 ID   Dehydroalanine from Cysteine
-FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 MM   -33.987721
@@ -15,210 +13,180 @@ OM   -91.009
 CF   H-2 S-1
 //
 ID   oxidation and then loss of oxidized M side chain
-FT   MOD_RES
 TG   Methionine
 PP   Anywhere.
 MM   -32.00845
 CF   H-4 C-1 S-1 O1
 //
 ID   P oxidation
-FT   MOD_RES
 TG   Proline
 PP   Anywhere.
 MM   -30.010565
 CF   H-2 C-1 O-1
 //
 ID   Water loss from D
-FT   MOD_RES
 TG   Aspartate
 PP   Anywhere.
 MM   -18.010565
 CF   H-2 O-1
 //
 ID   Ammonia loss from N
-FT   MOD_RES
 TG   Asparagine
 PP   Anywhere.
 MM   -17.02655
 CF   H-3 N-1
 //
 ID   Loss of two hydrogens from N term M
-FT   MOD_RES
 TG   Methionine
 PP   N-terminal.
 MM   -2.016
 CF   H-2
 //
 ID   Deamidation of N
-FT   MOD_RES
 TG   Asparagine
 PP   Anywhere.
 MM   0.984016
 CF   H-1 N-1 O1
 //
 ID   Deamidation of Q
-FT   MOD_RES
 TG   Glutamine
 PP   Anywhere.
 MM   0.984016
 CF   H-1 N-1 O1
 //
 ID   Oxidation of W to Kynurenine
-FT   MOD_RES
 TG   Tryptophan
 PP   Anywhere.
 MM   3.994915
 CF   C-1 O1
 //
 ID   Proline Oxidation to pyroglutamic acid
-FT   MOD_RES
 TG   Proline
 PP   Anywhere.
 MM   13.979265
 CF   H-2 O1
 //
 ID   Tryptophan oxidation to oxolactone
-FT   MOD_RES
 TG   Tryptophan
 PP   Anywhere.
 MM   13.979265
 CF   H-2 O1
 //
 ID   Methylation of H
-FT   MOD_RES
 TG   Histidine
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Methylation of R
-FT   MOD_RES
 TG   Arginine
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Methylation of K
-FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Methylation of Q
-FT   MOD_RES
 TG   Glutamine
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Methylation of N
-FT   MOD_RES
 TG   Asparagine
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Methylation of S
-FT   MOD_RES
 TG   Serine
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Methylation of D
-FT   MOD_RES
 TG   Aspartate
 PP   Anywhere.
 MM   14.015650
 CF   H2 C
 //
 ID   Oxidation of W
-FT   MOD_RES
 TG   Tryptophan
 PP   Anywhere.
 MM   15.994915
 CF   O1
 //
 ID   Oxidation of P
-FT   MOD_RES
 TG   Proline
 PP   Anywhere.
 MM   15.994915
 CF   O1
 //
 ID   Oxidation of Y
-FT   MOD_RES
 TG   Tyrosine
 PP   Anywhere.
 MM   15.994915
 CF   O1
 //
 ID   Oxidation of F
-FT   MOD_RES
 TG   Phenylalanine
 PP   Anywhere.
 MM   15.994915
 CF   O1
 //
 ID   Tryptophan oxidation to hydroxykynurenin
-FT   MOD_RES
 TG   Tryptophan
 PP   Anywhere.
 MM   19.989829
 CF   C-1 O2
 //
 ID   DiMethylation of K
-FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   28.031300
 CF   H4 C2
 //
 ID   DiMethylation of R
-FT   MOD_RES
 TG   Arginine
 PP   Anywhere.
 MM   28.031300
 CF   H4 C2
 //
 ID   DiMethylation of N
-FT   MOD_RES
 TG   Asparagine
 PP   Anywhere.
 MM   28.031300
 CF   H4 C2
 //
 ID   Dioxidation of W
-FT   MOD_RES
 TG   Tryptophan
 PP   Anywhere.
 MM   31.989829
 CF   O2
 //
 ID   Acetylation
-FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   42.010565
 CF   H2 C2 O1
 //
 ID   Acetylation
-FT   MOD_RES
 TG   Any
 PP   N-terminal.
 MM   42.010565
 CF   H2 C2 O1
 //
 ID   TriMethylation of K
-FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   42.046950
 CF   H6 C3
 //
 ID   Trioxidation of C
-FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 MM   47.984744
@@ -226,14 +194,12 @@ OM   -9.03672
 CF   O3
 //
 ID   Carbamidomethylation of K
-FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   57.021464
 CF   H3 C2 N1 O1
 //
 ID   Sulfonation of S
-FT   MOD_RES
 TG   Serine
 PP   Anywhere.
 FM   0
@@ -241,7 +207,6 @@ MM   79.956815
 CF   O3 S1
 //
 ID   Sulfonation of T
-FT   MOD_RES
 TG   Threonine
 PP   Anywhere.
 FM   0
@@ -249,7 +214,6 @@ MM   79.956815
 CF   O3 S1
 //
 ID   Sulfonation of Y
-FT   MOD_RES
 TG   Tyrosine
 PP   Anywhere.
 FM   0
@@ -257,7 +221,6 @@ MM   79.956815
 CF   O3 S1
 //
 ID   Labile Phosphorylation of S
-FT   MOD_RES
 TG   Serine
 PP   Anywhere.
 FM   0
@@ -265,7 +228,6 @@ MM   79.966331
 CF   H1 O3 P1
 //
 ID   Labile Phosphorylation of T
-FT   MOD_RES
 TG   Threonine
 PP   Anywhere.
 FM   0
@@ -273,7 +235,6 @@ MM   79.966331
 CF   H1 O3 P1
 //
 ID   Labile Phosphorylation of Y
-FT   MOD_RES
 TG   Tyrosine
 PP   Anywhere.
 FM   0
@@ -281,42 +242,36 @@ MM   79.966331
 CF   H1 O3 P1
 //
 ID   Phosphorylation of S
-FT   MOD_RES
 TG   Serine
 PP   Anywhere.
 MM   79.966331
 CF   H1 O3 P1
 //
 ID   Phosphorylation of T
-FT   MOD_RES
 TG   Threonine
 PP   Anywhere.
 MM   79.966331
 CF   H1 O3 P1
 //
 ID   Phosphorylation of Y
-FT   MOD_RES
 TG   Tyrosine
 PP   Anywhere.
 MM   79.966331
 CF   H1 O3 P1
 //
 ID   GG of K
-FT   MOD_RES
 TG   Lysine
 PP   Anywhere.
 MM   114.042927
 CF   H6 C4 N2 O2
 //
 ID   Acetylation+Methionine
-FT   MOD_RES
 TG   Any
 PP   N-terminal.
 MM   173.051055
 CF   C7 H11 N1 O2 S
 //
 ID   Farnesylation
-FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 FM   0 or 204.187801
@@ -325,7 +280,6 @@ OM   147.166337
 CF   H24 C15
 //
 ID   Myristoylation
-FT   MOD_RES
 TG   Glycine
 PP   N-terminal.
 FM   0 or 210.198366
@@ -333,7 +287,6 @@ MM   210.198366
 CF   H26 C14 O1
 //
 ID   Myristoylation
-FT   MOD_RES
 TG   K
 PP   Anywhere.
 FM   0 or 210.198366
@@ -341,7 +294,6 @@ MM   210.198366
 CF   H26 C14 O1
 //
 ID   Myristoylation of C
-FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 FM   0 or 210.198366
@@ -350,7 +302,6 @@ OM   153.176902
 CF   H26 C14 O1
 //
 ID   Palmitoylation of C
-FT   MOD_RES
 TG   Cysteine
 PP   Anywhere.
 FM   0 or 238.229666
@@ -359,7 +310,6 @@ MM   238.229666
 CF   H30 C16 O1
 //
 ID   Palmitoylation
-FT   MOD_RES
 TG   K or S or T
 OM   181.208202
 PP   Anywhere.

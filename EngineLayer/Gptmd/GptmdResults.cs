@@ -1,6 +1,7 @@
 ﻿using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer.Gptmd
@@ -30,18 +31,20 @@ namespace EngineLayer.Gptmd
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
         public override string ToString()
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
             sb.AppendLine("Modifications added = " + modsAdded);
-            sb.Append("Proteins expanded = " + Mods.Count);
+            sb.AppendLine("Proteins expanded = " + Mods.Count);
+            sb.AppendLine("Mods added types and counts:");
+            sb.Append(string.Join(Environment.NewLine, Mods.SelectMany(b => b.Value).GroupBy(b => b.Item2).OrderBy(b => -b.Count()).Select(b => b.Key.id + " " + b.Count())));
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }
