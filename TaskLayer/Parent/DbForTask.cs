@@ -15,8 +15,8 @@
 
         #region Public Properties
 
-        public string FileName { get; private set; }
-        public bool IsContaminant { get; private set; }
+        public string FileName { get; }
+        public bool IsContaminant { get; }
 
         #endregion Public Properties
 
