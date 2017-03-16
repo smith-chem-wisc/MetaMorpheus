@@ -1,6 +1,7 @@
 ﻿using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using Chemistry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -78,7 +79,7 @@ namespace EngineLayer.Analysis
 
         #region Public Methods
 
-        public Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
+        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -184,20 +185,20 @@ namespace EngineLayer.Analysis
                 if (numNewSeqs == 0)
                     break;
 
-                // sorts protein list by number of unaccounted-for peptide base sequences
-                var list = algDictionary.Where(p => p.Value.Count == numNewSeqs).ToList();
-                Protein bestProtein = list.First().Key;
+                // gets list of proteins with the most unaccounted-for peptide base sequences
+                var possibleBestProteinList = algDictionary.Where(p => p.Value.Count == numNewSeqs).ToList();
+                Protein bestProtein = possibleBestProteinList.First().Key;
 
                 HashSet<string> newSeqs;
                 algDictionary.TryGetValue(bestProtein, out newSeqs);
                 newSeqs = new HashSet<string>(newSeqs);
 
                 // may need to select different protein
-                if (list.Count > 1)
+                if (possibleBestProteinList.Count > 1)
                 {
                     var proteinsWithTheseBaseSeqs = new HashSet<Protein>();
 
-                    foreach (var kvp in list)
+                    foreach (var kvp in possibleBestProteinList)
                     {
                         if (newSeqs.IsSubsetOf(kvp.Value))
                             proteinsWithTheseBaseSeqs.Add(kvp.Key);
@@ -230,9 +231,9 @@ namespace EngineLayer.Analysis
 
                     foreach (var protein in proteinsWithThisPeptide)
                     {
-                        HashSet<string> allPeptideBaseSeqs;
-                        algDictionary.TryGetValue(protein, out allPeptideBaseSeqs);
-                        allPeptideBaseSeqs.Remove(newBaseSeq);
+                        HashSet<string> thisProteinsBaseSeqs;
+                        algDictionary.TryGetValue(protein, out thisProteinsBaseSeqs);
+                        thisProteinsBaseSeqs.Remove(newBaseSeq);
                     }
                 }
             }
@@ -288,44 +289,21 @@ namespace EngineLayer.Analysis
                         peptideProteinListMatch.Add(peptide, proteinListHere);
                     }
                     else
-                    {
-                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
-                        proteinListHere.Add(kvp.Key);
-                    }
+                        peptideProteinListMatch[peptide].Add(kvp.Key);
                 }
             }
-
-            // constructs return dictionary (only use parsimony proteins for the new PeptideWithSetModifications list)
-            var answer = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             foreach (var kvp in parsimonyDict)
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    if (!answer.ContainsKey(peptide))
-                    {
-                        // find CompactPeptide's original (unparsimonious) peptide matches
-                        HashSet<PeptideWithSetModifications> oldPepsWithSetMods;
-                        compactPeptideToProteinPeptideMatching.TryGetValue(peptide, out oldPepsWithSetMods);
-
-                        // get the CompactPeptide's protein list after parsimony
-                        HashSet<Protein> proteinListHere;
-                        peptideProteinListMatch.TryGetValue(peptide, out proteinListHere);
-
-                        // get the peptides that belong to the post-parsimony protein(s) only
-                        var newPeptides = new HashSet<PeptideWithSetModifications>(oldPepsWithSetMods.Where(p => proteinListHere.Contains(p.Protein)));
-
-                        answer.Add(peptide, newPeptides);
-                    }
+                    var proteinListHere = peptideProteinListMatch[peptide];
+                    var newList = compactPeptideToProteinPeptideMatching[peptide].Where(p => proteinListHere.Contains(p.Protein));
+                    compactPeptideToProteinPeptideMatching[peptide] = new HashSet<PeptideWithSetModifications>(newList);
                 }
             }
 
             Status("Finished Parsimony", nestedIds);
-
-            compactPeptideToProteinPeptideMatching = answer;
-
-            // returns for test class (TODO**: remove)
-            return answer;
         }
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
@@ -489,97 +467,217 @@ namespace EngineLayer.Analysis
 
         public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
         {
-            var baseSeqToPsmMatching = new Dictionary<string, HashSet<NewPsmWithFdr>>();
+            // key is rough m/z (m/z rounded to 3rd decimal), KVP is value; key of this is the peak, value is scan it belongs to
+            var roughMzToPeakMatching = new Dictionary<double, List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>>();
+            //var peakToScanMatching = new Dictionary<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>();
+            var fullSeqToPsmMatching = psms.GroupBy(p => p.thisPSM.FullSequence).ToList();
+            // FullSequence, mass, normalized abundance
+            var thisPeptidesNormalizedIsotopicAbundances = new Dictionary<string, List<KeyValuePair<double, double>>>();
 
-            foreach (var psm in psms)
+            var minChargeState = psms.Select(p => p.thisPSM.newPsm.scanPrecursorCharge).Min();
+            var maxChargeState = psms.Select(p => p.thisPSM.newPsm.scanPrecursorCharge).Max();
+            var chargeStates = Enumerable.Range(minChargeState, maxChargeState - 1);
+
+            // build theoretical m/z bins
+            foreach (var pepGrouping in fullSeqToPsmMatching)
             {
-                if (!baseSeqToPsmMatching.ContainsKey(psm.thisPSM.FullSequence))
+                var pepWithFormula = new Proteomics.Peptide(pepGrouping.First().thisPSM.BaseSequence);
+                var pepIsotopicDistribution = IsotopicDistribution.GetDistribution(pepWithFormula.GetChemicalFormula(), 0.0001, 0.01);
+                var modmass = pepGrouping.First().thisPSM.PeptideMonoisotopicMass - pepWithFormula.MonoisotopicMass;
+                var masses = pepIsotopicDistribution.Masses.ToList();
+                var abundances = pepIsotopicDistribution.Intensities.ToList();
+                var maxAbundance = abundances.Max();
+                var temp = new List<KeyValuePair<double, double>>();
+
+                for (int i = 0; i < masses.Count; i++)
                 {
-                    var psmList = new HashSet<NewPsmWithFdr>();
-                    psmList.Add(psm);
-                    baseSeqToPsmMatching.Add(psm.thisPSM.FullSequence, psmList);
+                    // normalize abundances
+                    abundances[i] = abundances[i] / maxAbundance;
+
+                    // add the mass of the modification(s)
+                    masses[i] += modmass;
+
+                    // add to isotopic list to check if abundance >20% normalized abundance
+                    if (abundances[i] > 0.2)
+                        temp.Add(new KeyValuePair<double, double>(masses[i], abundances[i]));
                 }
-                else
+
+                thisPeptidesNormalizedIsotopicAbundances.Add(pepGrouping.First().thisPSM.FullSequence, temp);
+
+                var thisPeptidesMass = temp.Where(x => x.Value == 1).First().Key;
+
+                foreach (var pep in pepGrouping)
+                    pep.thisPSM.newPsm.mostAbundantMass = thisPeptidesMass;
+
+                foreach (var chargeState in chargeStates)
                 {
-                    HashSet<NewPsmWithFdr> psmList;
-                    baseSeqToPsmMatching.TryGetValue(psm.thisPSM.FullSequence, out psmList);
-                    psmList.Add(psm);
+                    var t = Chemistry.ClassExtensions.ToMz(thisPeptidesMass, chargeState);
+                    var m = Math.Round(t, 2);
+                    if (!roughMzToPeakMatching.ContainsKey(m))
+                        roughMzToPeakMatching.Add(m, new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>());
                 }
             }
 
-            foreach (var kvp in baseSeqToPsmMatching)
+            // populate m/z bins with observed m/z's
+            var allMs1Scans = myMsDataFile.Where(s => s.MsnOrder == 1).ToList();
+            foreach (var scan in allMs1Scans)
             {
-                // calculate apex intensity
-                var rt1 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Min();
-                var rt2 = kvp.Value.Select(r => r.thisPSM.newPsm.scanRetentionTime).Max();
-
-                double theoreticalMz = Chemistry.ClassExtensions.ToMz(kvp.Value.First().thisPSM.PeptideMonoisotopicMass, kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge);
-
-                double mzTol = ((ppmTolerance / 1e6) * kvp.Value.First().thisPSM.PeptideMonoisotopicMass) / kvp.Value.First().thisPSM.newPsm.scanPrecursorCharge;
-
-                var spectraInThisWindow = myMsDataFile.GetMsScansInTimeRange(rt1 - rtTolerance, rt2 + rtTolerance).ToList();
-                var ms1SpectraInThisWindow = spectraInThisWindow.Where(s => s.MsnOrder == 1).ToList();
-
-                var intensities = new List<double>();
-                var retentionTimes = new List<double>();
-
-                foreach (var spectrum in ms1SpectraInThisWindow)
+                foreach (var peak in scan.MassSpectrum)
                 {
-                    var i = spectrum.MassSpectrum.Where(s => (Math.Abs(s.Mz - theoreticalMz) < mzTol)).ToList();
-                    foreach (var p in i)
+                    if (peak.Intensity > 5000)
                     {
-                        intensities.Add(p.Intensity);
-                        retentionTimes.Add(spectrum.RetentionTime);
+                        List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> mzBin;
+                        double floorMz = Math.Floor(peak.Mz * 100) / 100;
+                        double ceilingMz = Math.Ceiling(peak.Mz * 100) / 100;
+
+                        if (roughMzToPeakMatching.TryGetValue(floorMz, out mzBin))
+                            mzBin.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(peak, scan));
+                        if (roughMzToPeakMatching.TryGetValue(ceilingMz, out mzBin))
+                            mzBin.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(peak, scan));
                     }
                 }
+            }
 
-                double apexIntensity = 0;
-                if (intensities.Any())
-                    apexIntensity = intensities.Max();
+            // remove theoretical m/z bins not observed
+            roughMzToPeakMatching = roughMzToPeakMatching.Where(x => x.Value.Count != 0).ToDictionary(x => x.Key, x => x.Value);
 
-                foreach (var p in kvp.Value)
-                    p.thisPSM.newPsm.apexIntensity = apexIntensity;
+            // order bins by intensity, so the first match for each charge state will be the best
+            roughMzToPeakMatching = roughMzToPeakMatching.ToDictionary(x => x.Key, x => x.Value.OrderByDescending(p => p.Key.Intensity).ToList());
 
-                // calculate full width half max (peak quality)
-                var apexIntensityIndex = intensities.IndexOf(apexIntensity);
+            // find apex intensity of each peptide
+            foreach (var pepGrouping in fullSeqToPsmMatching)
+            {
+                var verfiedPeaks = new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>();
 
-                double leftHalfMax = double.NaN;
-                double rightHalfMax = double.NaN;
-                double fullWidthHalfMax = double.NaN;
+                double floorRT = pepGrouping.Select(p => p.thisPSM.newPsm.scanRetentionTime).Min() - rtTolerance;
+                double ceilingRT = pepGrouping.Select(p => p.thisPSM.newPsm.scanRetentionTime).Max() + rtTolerance;
 
-                // left width half max
-                for (int i = apexIntensityIndex; i >= 0; i--)
+                // find peaks within specified tolerances in the m/z bins
+                foreach (var chargeState in chargeStates)
                 {
-                    if (intensities[i] < (apexIntensity / 2))
-                    {
-                        leftHalfMax = retentionTimes[i];
-                        break;
-                    }
-                }
+                    double theorMzHere = Chemistry.ClassExtensions.ToMz(pepGrouping.First().thisPSM.newPsm.mostAbundantMass, chargeState);
+                    double mzTolHere = ((ppmTolerance / 1e6) * pepGrouping.First().thisPSM.newPsm.mostAbundantMass) / chargeState;
 
-                // right width half max
-                if (apexIntensityIndex >= 0)
-                {
-                    for (int i = apexIntensityIndex; i < intensities.Count; i++)
+                    double floorMz = Math.Floor(theorMzHere * 100) / 100;
+                    double ceilingMz = Math.Ceiling(theorMzHere * 100) / 100;
+
+                    IEnumerable<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> binPeaks = new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>();
+                    List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> t;
+                    if (roughMzToPeakMatching.TryGetValue(floorMz, out t))
+                        binPeaks = binPeaks.Concat(t);
+                    if (roughMzToPeakMatching.TryGetValue(ceilingMz, out t))
+                        binPeaks = binPeaks.Concat(t);
+
+                    foreach (var peak in binPeaks)
                     {
-                        if (intensities[i] < (apexIntensity / 2))
+                        if (!verfiedPeaks.Contains(peak))
                         {
-                            rightHalfMax = retentionTimes[i];
-                            break;
+                            // check ppm tolerance
+                            if (Math.Abs(peak.Key.Mz - theorMzHere) < mzTolHere)
+                            {
+                                // check rt
+                                if (peak.Value.RetentionTime > floorRT && peak.Value.RetentionTime < ceilingRT)
+                                {
+                                    var isotopes = thisPeptidesNormalizedIsotopicAbundances[pepGrouping.First().thisPSM.FullSequence];
+                                    var lowestMassIsotope = isotopes.Select(p => p.Key).Min();
+                                    var highestMassIsotope = isotopes.Select(p => p.Key).Max();
+                                    IMzPeak[] isotopePeaks = new IMzPeak[isotopes.Count];
+
+                                    lowestMassIsotope = Chemistry.ClassExtensions.ToMz(lowestMassIsotope, chargeState);
+                                    lowestMassIsotope -= (ppmTolerance / 1e6) * lowestMassIsotope;
+
+                                    highestMassIsotope = Chemistry.ClassExtensions.ToMz(highestMassIsotope, chargeState);
+                                    highestMassIsotope += (ppmTolerance / 1e6) * highestMassIsotope;
+
+                                    var otherPeaksInThisScan = peak.Value.MassSpectrum.Where(p => p.Mz > lowestMassIsotope && p.Mz < highestMassIsotope).ToList();
+                                    bool isotopeDistributionCheck = true;
+
+                                    foreach (var isotope in isotopes)
+                                    {
+                                        double theorIsotopeMz = Chemistry.ClassExtensions.ToMz(isotope.Key, chargeState);
+                                        double isotopeMzTol = ((ppmTolerance / 1e6) * isotope.Key) / chargeState;
+                                        bool thisIsotopeSeen = false;
+
+                                        foreach (var otherPeak in otherPeaksInThisScan)
+                                        {
+                                            if (Math.Abs(otherPeak.Mz - theorIsotopeMz) < isotopeMzTol)
+                                            {
+                                                thisIsotopeSeen = true;
+                                                isotopePeaks[isotopes.IndexOf(isotope)] = otherPeak;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!thisIsotopeSeen)
+                                            isotopeDistributionCheck = false;
+                                    }
+
+                                    if (isotopeDistributionCheck)
+                                    {
+                                        for(int i = 0; i < isotopes.Count; i++)
+                                        {
+                                            if (isotopes[i].Value < 0.8)
+                                                isotopePeaks[i] = null;
+                                        }
+                                        isotopePeaks = isotopePeaks.Where(v => v != null).ToArray();
+                                        double maxIsotopeIntensity = isotopePeaks.Select(v => v.Intensity).Max();
+                                        IMzPeak maxIsotopicPeak = isotopePeaks.Where(x => x.Intensity == maxIsotopeIntensity).First();
+                                        verfiedPeaks.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(maxIsotopicPeak, peak.Value));
+                                        // done with this charge state, move on to the next one
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                if (!double.IsNaN(leftHalfMax) && !double.IsNaN(rightHalfMax))
+                double apexIntensity = 0;
+                double apexRT = 0;
+                double apexMZ = 0;
+
+                if (verfiedPeaks.Any())
                 {
-                    fullWidthHalfMax = rightHalfMax - leftHalfMax;
+                    apexIntensity = verfiedPeaks.Select(x => x.Key.Intensity).Max();
+                    var p = verfiedPeaks.Where(x => x.Key.Intensity == apexIntensity).First();
+                    apexRT = p.Value.RetentionTime;
+                    apexMZ = p.Key.Mz;
                 }
 
-                foreach (var p in kvp.Value)
-                    p.thisPSM.newPsm.fullWidthHalfMax = fullWidthHalfMax;
-
-                // calculate SNR (TODO**)
+                foreach (var pep in pepGrouping)
+                {
+                    pep.thisPSM.newPsm.apexIntensity = apexIntensity;
+                    pep.thisPSM.newPsm.apexRT = apexRT;
+                    pep.thisPSM.newPsm.apexMz = apexMZ;
+                }
             }
+
+            // TODO** error checking for peptides that use the same apex peak
+            // assign peptide with closest (ms2RT-apexRT) to apex, try to find other peaks
+            /*
+            var v = new Dictionary<double, IGrouping<string, NewPsmWithFdr>>();
+            IGrouping<string, NewPsmWithFdr> v3;
+            var badMatchList = new List<IGrouping<string, NewPsmWithFdr>>();
+            foreach(var pepGrouping in fullSeqToPsmMatching)
+            {
+                if (v.TryGetValue(pepGrouping.First().thisPSM.newPsm.apexRT, out v3))
+                {
+                    badMatchList.Add(v3);
+                    badMatchList.Add(pepGrouping);
+                }
+                else
+                    v.Add(pepGrouping.First().thisPSM.newPsm.apexRT, pepGrouping);
+            }
+
+            foreach(var badMatch in badMatchList)
+            {
+                foreach(var pep in badMatch)
+                {
+                    pep.thisPSM.newPsm.apexIntensity = 0;
+                    pep.thisPSM.newPsm.apexRT = 0;
+                }
+            }
+            */
         }
 
         #endregion Public Methods
