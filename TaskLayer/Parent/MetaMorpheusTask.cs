@@ -118,7 +118,11 @@ namespace TaskLayer
                         tu = ToleranceUnit.Absolute;
                     else
                         break;
-                    ye = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2], CultureInfo.InvariantCulture)));
+
+                    var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
+                    var newString = split[2].Replace("±", "");
+                    var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
+                    ye = new DotSearchMode(split[0], massShifts, new Tolerance(tu, toleranceValue));
                     break;
 
                 case "interval":
