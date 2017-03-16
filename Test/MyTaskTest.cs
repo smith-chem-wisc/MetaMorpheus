@@ -23,10 +23,7 @@ namespace Test
             #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-            {
-                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile).ToList();
                 MetaMorpheusTask.AddModList(modFile);
-            }
 
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();
