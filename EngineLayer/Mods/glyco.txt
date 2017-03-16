@@ -4,6 +4,7 @@ TG   N or S or T
 PP   Anywhere.
 FM   0
 MM   291.09542
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Labile HexNAc(1)
@@ -11,6 +12,7 @@ TG   N or S or T
 PP   Anywhere.
 FM   0
 MM   203.079373
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Labile Hex(1)
@@ -18,6 +20,7 @@ TG   N or S or T
 PP   Anywhere.
 FM   0
 MM   162.052824
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Labile Fuc(1)
@@ -25,395 +28,461 @@ TG   N or S or T
 PP   Anywhere.
 FM   0
 MM   146.057909
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(4)
 TG   N or S or T
 PP   Anywhere.
 MM   3704.312144
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(3)
 TG   N or S or T
 PP   Anywhere.
 MM   3413.216724
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   3122.121304
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)Fuc(1)NeuAc(3)
 TG   N or S or T
 PP   Anywhere.
 MM   3048.084527
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(7)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2831.025884
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)Fuc(1)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2756.989107
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)Fuc(2)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2611.951596
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2610.931198
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(5)Fuc(1)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2553.909734
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(7)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2539.930464
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2465.893687
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(7)
 TG   N or S or T
 PP   Anywhere.
 MM   2393.872555
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(5)Fuc(1)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2391.85691
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)Fuc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2320.856176
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2319.835778
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(5)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2245.799001
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(4)NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   2204.772452
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(6)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2174.798267
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(6)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2141.788039
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(5)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   2100.76149
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(6)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1995.73013
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(5)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1971.718894
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(5)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1954.703581
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(5)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1938.708666
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(4)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1897.682117
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(6)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1850.692619
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(5)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1809.66607
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(5)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1792.650757
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(4)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1768.639521
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(4)Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1735.629293
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(6)
 TG   N or S or T
 PP   Anywhere.
 MM   1704.63471
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(5)
 TG   N or S or T
 PP   Anywhere.
 MM   1663.608161
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(5)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1647.613246
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(4)
 TG   N or S or T
 PP   Anywhere.
 MM   1622.581612
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(4)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1606.586697
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(4)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1589.571384
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(3)
 TG   N or S or T
 PP   Anywhere.
 MM   1581.555063
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(3)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1565.560148
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(5)
 TG   N or S or T
 PP   Anywhere.
 MM   1501.555337
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(4)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1444.533873
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(3)
 TG   N or S or T
 PP   Anywhere.
 MM   1419.502239
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(3)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1403.507324
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(6)HexNAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   1378.47569
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(4)
 TG   N or S or T
 PP   Anywhere.
 MM   1298.475964
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(3)
 TG   N or S or T
 PP   Anywhere.
 MM   1257.449415
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(3)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   1241.4545
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(5)HexNAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   1216.422866
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(3)HexNAc(3)
 TG   N or S or T
 PP   Anywhere.
 MM   1095.396591
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(4)HexNAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   1054.370042
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(1)HexNAc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   656.227617
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized NeuAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   582.19084
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(1)HexNAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   568.21157
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized HexNAc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   494.174793
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   453.148244
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Fuc(1)NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   437.153329
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized HexNAc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   406.158746
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(1)HexNAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   365.132197
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized HexNAc(1)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   349.137282
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(2)
 TG   N or S or T
 PP   Anywhere.
 MM   324.105648
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(1)Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   308.110733
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Fuc(2)
 TG   N or S or T
 PP   Anywhere.
 MM   292.115818
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized NeuAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   291.09542
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized HexNAc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   203.079373
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Hex(1)
 TG   N or S or T
 PP   Anywhere.
 MM   162.052824
+MT   Glycan
 CF   C1 O1 N1 H1
 //
 ID   Localized Fuc(1)
 TG   N or S or T
 PP   Anywhere.
 MM   146.057909
+MT   Glycan
 CF   C1 O1 N1 H1
 //
