@@ -1,6 +1,8 @@
-﻿namespace MetaMorpheusGUI
+﻿using TaskLayer;
+
+namespace MetaMorpheusGUI
 {
-    class ProteinDbForDataGrid
+    internal class ProteinDbForDataGrid
     {
 
         #region Public Constructors
@@ -9,6 +11,16 @@
         {
             Use = true;
             FileName = fileName;
+            if (fileName.ToUpper().Contains("contaminant".ToUpper())
+                || fileName.ToUpper().Contains("crap".ToUpper()))
+                Contaminant = true;
+        }
+
+        public ProteinDbForDataGrid(DbForTask uu)
+        {
+            Use = true;
+            Contaminant = uu.IsContaminant;
+            FileName = uu.FileName;
         }
 
         #endregion Public Constructors
@@ -17,19 +29,10 @@
 
         public bool Use { get; set; }
         public bool Contaminant { get; set; }
-        public string FileName { get; private set; }
-        public bool InProgress { get; private set; }
+        public string FileName { get; }
+        public bool InProgress { get; set; }
 
         #endregion Public Properties
-
-        #region Public Methods
-
-        public void SetInProgress(bool inProgress)
-        {
-            InProgress = inProgress;
-        }
-
-        #endregion Public Methods
 
     }
 }

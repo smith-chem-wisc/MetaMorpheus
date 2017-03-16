@@ -83,7 +83,7 @@ namespace MetaMorpheusGUI
             else
             {
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
-                huh.SetInProgress(false);
+                huh.InProgress = false;
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
             else
             {
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
-                huh.SetInProgress(true);
+                huh.InProgress = true;
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -113,7 +113,7 @@ namespace MetaMorpheusGUI
                 foreach (var uu in proteinDbObservableCollection)
                     uu.Use = false;
                 foreach (var uu in e.newDatabases)
-                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu.FileName));
+                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(uu));
             }
         }
 
