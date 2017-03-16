@@ -83,7 +83,7 @@ namespace MetaMorpheusGUI
             else
             {
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
-                huh.InProgress = false;
+                huh.SetInProgress(false);
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -97,7 +97,7 @@ namespace MetaMorpheusGUI
             else
             {
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
-                huh.InProgress = true;
+                huh.SetInProgress(true);
                 dataGridDatafiles.Items.Refresh();
             }
         }
