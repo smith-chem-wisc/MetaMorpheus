@@ -47,7 +47,7 @@
             <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
             <StackPanel Orientation="Horizontal" Margin="5">
                 <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox"  Width="300" />
-                <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="addNewAllowedPrecursorMassDiffsButton_Click" />
+                <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="AddNewAllowedPrecursorMassDiffsButton_Click" />
             </StackPanel>
         </StackPanel>
         <Grid>
@@ -98,8 +98,8 @@
             </DataGrid.Resources>
         </DataGrid>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save Search Task" Click="saveButton_Click"  FontSize="24" Margin="10" />
+            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click"  FontSize="24" Margin="10" />
         </StackPanel>
     </StackPanel>
 </Window>

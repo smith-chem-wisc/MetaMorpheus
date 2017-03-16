@@ -1,10 +1,8 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -66,7 +64,7 @@ namespace MetaMorpheusGUI
             var hm = ye.Content as TextBlock;
             if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(Path.Combine(@"Mods", hm.Text));
+                System.Diagnostics.Process.Start(hm.Text);
             }
         }
 
@@ -117,11 +115,11 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
 
             foreach (var modList in task.ListOfModListsFixed)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Fixed = true;
             foreach (var modList in task.ListOfModListsVariable)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Variable = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Variable = true;
             foreach (var modList in task.ListOfModListsLocalize)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Localize = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Localize = true;
 
             modificationsDataGrid.Items.Refresh();
 
@@ -131,12 +129,12 @@ namespace MetaMorpheusGUI
             searchModesDataGrid.Items.Refresh();
         }
 
-        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
         }
 
-        private void saveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
@@ -157,9 +155,9 @@ namespace MetaMorpheusGUI
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
 
-            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName).ToList();
 
             TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
@@ -167,41 +165,16 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void addNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
+        private void AddNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
         {
-            // Format: name, "interval", intervals
-            // Format: name, "dot", num, "ppm" or "da", dots
-
             try
             {
-                var split = newAllowedPrecursorMassDiffsTextBox.Text.Split(' ');
-
-                switch (split[1])
-                {
-                    case "dot":
-                        ToleranceUnit tu = ToleranceUnit.PPM;
-                        if (split[3].Equals("ppm"))
-                            tu = ToleranceUnit.PPM;
-                        else if (split[3].Equals("da"))
-                            tu = ToleranceUnit.Absolute;
-                        else
-                            break;
-                        DotSearchMode dsm = new DotSearchMode(split[0], Array.ConvertAll(split[4].Split(','), Double.Parse), new Tolerance(tu, double.Parse(split[2], CultureInfo.InvariantCulture)));
-                        MyEngine.SearchModesKnown.Add(dsm);
-                        SearchModesForThisTask.Add(new SearchModeForDataGrid(dsm));
-                        searchModesDataGrid.Items.Refresh();
-                        break;
-
-                    case "interval":
-                        IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                        IntervalSearchMode ism = new IntervalSearchMode(split[0], doubleRanges);
-                        MyEngine.SearchModesKnown.Add(ism);
-                        SearchModesForThisTask.Add(new SearchModeForDataGrid(ism));
-                        searchModesDataGrid.Items.Refresh();
-                        break;
-                }
+                var ye = MetaMorpheusTask.ParseSearchMode(newAllowedPrecursorMassDiffsTextBox.Text);
+                MyEngine.SearchModesKnown.Add(ye);
+                SearchModesForThisTask.Add(new SearchModeForDataGrid(ye));
+                searchModesDataGrid.Items.Refresh();
             }
-            catch (Exception)
+            catch
             {
                 MessageBox.Show("Examples:" + Environment.NewLine + "name dot 5 ppm 0,1.003,2.006" + Environment.NewLine + "name interval [-4;-3],[-0.5;0.5],[101;102]", "Error parsing search mode text box", MessageBoxButton.OK, MessageBoxImage.Warning);
             }

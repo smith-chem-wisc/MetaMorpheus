@@ -1,24 +1,13 @@
-﻿using EngineLayer;
-using Proteomics;
-using System.Collections.Generic;
-using TaskLayer;
-
-namespace MetaMorpheusGUI
+﻿namespace MetaMorpheusGUI
 {
-    class ModListForGptmdTask
+    internal class ModListForGptmdTask
     {
-
-        #region Private Fields
-
-        private readonly ModList uu;
-
-        #endregion Private Fields
 
         #region Public Constructors
 
-        public ModListForGptmdTask(ModList uu)
+        public ModListForGptmdTask(string filePath)
         {
-            this.uu = uu;
+            this.FileName = filePath;
         }
 
         #endregion Public Constructors
@@ -30,25 +19,7 @@ namespace MetaMorpheusGUI
         public bool Localize { get; set; }
         public bool Gptmd { get; set; }
 
-        public string FileName
-        {
-            get
-            {
-                return uu.FileName;
-            }
-        }
-
-        public string Description { get { return uu.Description; } }
-
-        public IEnumerable<Modification> Mods
-        {
-            get
-            {
-                return uu.Mods;
-            }
-        }
-
-        public ModList ModList { get { return uu; } }
+        public string FileName { get; }
 
         #endregion Public Properties
 

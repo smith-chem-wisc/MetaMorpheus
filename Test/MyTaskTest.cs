@@ -23,22 +23,19 @@ namespace Test
             #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-            {
-                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile).ToList();
-                MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
-            }
+                MetaMorpheusTask.AddModList(modFile);
 
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();
 
             SearchTask task3 = new SearchTask();
-            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("m.txt")));
-            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("glyco.txt")));
+            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task3.DoParsimony = true;
 
             SearchTask task4 = new SearchTask();
-            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("m.txt")));
-            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.FileName.EndsWith("glyco.txt")));
+            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task4.ClassicSearch = false;
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),
@@ -48,8 +45,8 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = task1.ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> variableModifications = task1.ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
             //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
 
             // Generate data for files

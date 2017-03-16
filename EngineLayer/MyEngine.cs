@@ -139,10 +139,10 @@ namespace EngineLayer
             yield return new SinglePpmAroundZeroSearchMode(20);
             yield return new SingleAbsoluteAroundZeroSearchMode(0.05);
             yield return new DotSearchMode("3mm", new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5));
-            yield return new IntervalSearchMode(new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
+            yield return new IntervalSearchMode("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
             yield return new OpenSearchMode();
-            yield return new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
-            yield return new IntervalSearchMode(new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
+            yield return new IntervalSearchMode("ZeroAndSodium", new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
+            yield return new IntervalSearchMode("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
             foreach (var sm in GetResidueInclusionExclusionSearchModes(new DoubleRange(-187, double.PositiveInfinity), 0.0075))
                 yield return sm;
         }
@@ -178,7 +178,7 @@ namespace EngineLayer
             }
             List<double> filteredMasses = massesToExclude.GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b).ToList();
 
-            yield return new DotSearchMode("Only AAs", filteredMasses, new Tolerance(ToleranceUnit.Absolute, v));
+            yield return new DotSearchMode("OnlyAAs", filteredMasses, new Tolerance(ToleranceUnit.Absolute, v));
 
             List<DoubleRange> doubleRanges = new List<DoubleRange>();
 
@@ -195,7 +195,7 @@ namespace EngineLayer
 
             doubleRanges = doubleRanges.Where(b => b.Minimum <= doubleRange.Maximum && b.Maximum >= doubleRange.Minimum).Select(b => new DoubleRange(Math.Max(doubleRange.Minimum, b.Minimum), Math.Min(doubleRange.Maximum, b.Maximum))).ToList();
 
-            yield return new IntervalSearchMode("Exclude AAs", doubleRanges);
+            yield return new IntervalSearchMode("ExcludeAAs", doubleRanges);
         }
 
         private void startingSingleEngine()

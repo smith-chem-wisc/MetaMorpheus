@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using System;
+using System.Collections.Generic;
 using TaskLayer;
 
 namespace MetaMorpheusCommandLine
@@ -38,6 +39,12 @@ namespace MetaMorpheusCommandLine
             MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
             MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
             MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
+
+            List<Tuple<string, MetaMorpheusTask>> taskList = null;
+            List<string> startingRawFilenameList = null;
+            List<DbForTask> startingXmlDbFilenameList = null;
+            EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
+            a.Run();
         }
 
         private static void MyTaskEngine_startingSingleTaskHander(object sender, SingleTaskEventArgs e)

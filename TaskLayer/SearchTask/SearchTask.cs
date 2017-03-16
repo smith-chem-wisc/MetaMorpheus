@@ -14,6 +14,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -49,22 +50,21 @@ namespace TaskLayer
             ZdotIons = false;
             CIons = false;
 
-            ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
-            ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
-            ListOfModListsLocalize = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("ptmlist.txt")) };
+            ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
+            ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
+            ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
 
             SearchModes = MyEngine.SearchModesKnown.Take(1).ToList();
             TaskType = MyTask.Search;
-            MaxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<ModList> ListOfModListsFixed { get; set; }
-        public List<ModList> ListOfModListsVariable { get; set; }
-        public List<ModList> ListOfModListsLocalize { get; set; }
+        public List<string> ListOfModListsFixed { get; set; }
+        public List<string> ListOfModListsVariable { get; set; }
+        public List<string> ListOfModListsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
@@ -97,9 +97,9 @@ namespace TaskLayer
                     sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
                 }
                 sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed.Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable.Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize.Select(b => b.FileName)));
+                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
                 sb.AppendLine("searchDecoy: " + SearchDecoy);
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
                 sb.AppendLine("searchModes: ");
@@ -118,9 +118,9 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
 
             List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
             for (int j = 0; j < SearchModes.Count; j++)

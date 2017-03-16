@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -35,12 +36,11 @@ namespace TaskLayer
             CIons = false;
             ZdotIons = false;
 
-            ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
-            ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
-            ListOfModListsLocalize = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("ptmlist.txt")) };
+            ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
+            ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
+            ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
 
             TaskType = MyTask.Calibrate;
-            MaxNumPeaksPerScan = 400;
 
             MaxDegreeOfParallelism = -1;
         }
@@ -49,9 +49,9 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public List<ModList> ListOfModListsFixed { get; set; }
-        public List<ModList> ListOfModListsVariable { get; set; }
-        public List<ModList> ListOfModListsLocalize { get; set; }
+        public List<string> ListOfModListsFixed { get; set; }
+        public List<string> ListOfModListsVariable { get; set; }
+        public List<string> ListOfModListsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
@@ -65,9 +65,9 @@ namespace TaskLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed.Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable.Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize.Select(b => b.FileName)));
+                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
                 sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
                 sb.Append("ProductMassTolerance: " + ProductMassTolerance);
                 return sb.ToString();
@@ -128,9 +128,9 @@ namespace TaskLayer
             allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;

@@ -41,30 +41,28 @@ namespace TaskLayer
             CIons = false;
             ZdotIons = false;
 
-            ListOfModListsFixed = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("f.txt")) };
-            ListOfModListsVariable = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("v.txt")) };
-            ListOfModListsLocalize = new List<ModList> { AllModLists.First(b => b.FileName.EndsWith("ptmlist.txt")) };
+            ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
+            ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
+            ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
 
-            ListOfModListsGptmd = new List<ModList> {
-                AllModLists.First(b => b.FileName.EndsWith("m.txt")),
-                AllModLists.First(b => b.FileName.EndsWith("glyco.txt")),
-                AllModLists.First(b => b.FileName.EndsWith("metals.txt")),
-                AllModLists.First(b => b.FileName.EndsWith("pt.txt"))
+            ListOfModListsGptmd = new List<string> {
+                AllModLists.First(b => b.EndsWith("m.txt")),
+                AllModLists.First(b => b.EndsWith("metals.txt")),
+                AllModLists.First(b => b.EndsWith("pt.txt"))
             };
 
             TaskType = MyTask.Gptmd;
             IsotopeErrors = false;
-            MaxNumPeaksPerScan = 400;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<ModList> ListOfModListsFixed { get; set; }
-        public List<ModList> ListOfModListsVariable { get; set; }
-        public List<ModList> ListOfModListsLocalize { get; set; }
-        public List<ModList> ListOfModListsGptmd { get; set; }
+        public List<string> ListOfModListsFixed { get; set; }
+        public List<string> ListOfModListsVariable { get; set; }
+        public List<string> ListOfModListsLocalize { get; set; }
+        public List<string> ListOfModListsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
         public bool IsotopeErrors { get; set; }
@@ -79,10 +77,10 @@ namespace TaskLayer
             {
                 var sb = new StringBuilder();
                 sb.AppendLine("isotopeErrors: " + IsotopeErrors);
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed.Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable.Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize.Select(b => b.FileName)));
-                sb.AppendLine("GPTMD mod lists: " + string.Join(",", ListOfModListsGptmd.Select(b => b.FileName)));
+                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
+                sb.AppendLine("GPTMD mod lists: " + string.Join(",", ListOfModListsGptmd));
                 sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
                 sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
                 return sb.ToString();
@@ -95,16 +93,18 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            MyTaskResults myGPTMDresults = new MyGptmdTaskResults(this);
-            myGPTMDresults.newDatabases = new List<DbForTask>();
-
+            MyTaskResults myGPTMDresults = new MyGptmdTaskResults(this)
+            {
+                newDatabases = new List<DbForTask>()
+            };
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> gptmdModifications = ListOfModListsGptmd.SelectMany(b => b.Mods).OfType<ModificationWithMass>().ToList();
+
+            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> gptmdModifications = ListOfModListsGptmd.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
