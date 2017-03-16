@@ -9,7 +9,7 @@
 
 Description: Controlled vocabulary of posttranslational modifications (PTM)
 Name:        ptmlist.txt
-Release:     2016_10 of 02-Nov-2016
+Release:     2017_03 of 15-Mar-2017
 
 ---------------------------------------------------------------------------
 
@@ -3866,6 +3866,21 @@ KW   Methylation.
 DR   RESID; AA0619.
 DR   PSI-MOD; 01982.
 //
+ID   N,N,N-trimethylmethionine
+AC   PTM-0503
+FT   MOD_RES
+TG   Methionine.
+PA   Amino acid backbone.
+PP   N-terminal.
+CF   C3 H7
+MM   43.054227
+MA   43.09
+LC   Intracellular localisation.
+TR   Bacteria; taxId:1224 (Proteobacteria), taxId:1297 (Deinococcus-Thermus).
+KW   Methylation.
+DR   RESID; AA0456.
+DR   PSI-MOD; 01382.
+//
 ID   N,N,N-trimethylserine
 AC   PTM-0430
 FT   MOD_RES
@@ -5294,6 +5309,49 @@ KW   Palmitate.
 DR   RESID; AA0079.
 DR   PSI-MOD; 00088.
 //
+ID   O-UMP-histidine
+AC   PTM-0500
+FT   MOD_RES
+TG   Histidine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C9 H11 N2 O8 P1
+MM   306.025302
+MA   306.17
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+KW   Nucleotide-binding; Phosphoprotein.
+DR   RESID; AA0372.
+DR   PSI-MOD; 00377.
+//
+ID   O-UMP-serine
+AC   PTM-0501
+FT   MOD_RES
+TG   Serine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C9 H11 N2 O8 P1
+MM   306.025302
+MA   306.17
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:33090 (Viridiplantae).
+KW   Nucleotide-binding; Phosphoprotein.
+//
+ID   O-UMP-threonine
+AC   PTM-0502
+FT   MOD_RES
+TG   Threonine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   C9 H11 N2 O8 P1
+MM   306.025302
+MA   306.17
+LC   Intracellular localisation.
+TR   Bacteria; taxId:2 (Bacteria).
+TR   Eukaryota; taxId:33090 (Viridiplantae).
+KW   Nucleotide-binding; Phosphoprotein.
+//
 ID   O-UMP-tyrosine
 AC   PTM-0333
 FT   MOD_RES
@@ -5307,6 +5365,7 @@ LC   Intracellular localisation.
 TR   Archaea; taxId:2157 (Archaea).
 TR   Bacteria; taxId:2 (Bacteria).
 TR   Eukaryota; taxId:2797 (Bangiophyceae).
+TR   Viruses and phages; taxId:10239 (Viruses).
 KW   Nucleotide-binding; Phosphoprotein.
 DR   RESID; AA0256.
 DR   PSI-MOD; 00261.

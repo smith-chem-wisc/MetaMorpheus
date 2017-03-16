@@ -1,71 +1,71 @@
 Peptide terminus modifications
 ID   Water loss
-FT   MOD_RES
 TG   Glutamate
 PP   Peptide N-terminal.
 MM   -18.010565
+MT   PeptideTermMod
 CF   H-2 O-1
 //
 ID   Ammonia loss
-FT   MOD_RES
 TG   Q or C
 PP   Peptide N-terminal.
 MM   -17.02655
+MT   PeptideTermMod
 CF   H-3 N-1
 //
 ID   Carbon Adduct
-FT   MOD_RES
 TG   P
 PP   Peptide N-terminal.
 MM   12
+MT   PeptideTermMod
 CF   C1
 //
 ID   Acetaldehyde
-FT   MOD_RES
 TG   Any
 PP   Peptide N-terminal.
 MM   26.01565
+MT   PeptideTermMod
 CF   H2 C2
 //
 ID   Formylation
-FT   MOD_RES
 TG   Any
 PP   Peptide N-terminal.
 MM   27.994915
+MT   PeptideTermMod
 CF   C1 O1
 //
 ID   Carbamylation
-FT   MOD_RES
 TG   Any
 PP   Peptide N-terminal.
 MM   43.005814
+MT   PeptideTermMod
 CF   H1 C1 N1 O1
 //
 ID   Carbamidomethylation
-FT   MOD_RES
 TG   Any
 PP   Peptide N-terminal.
 MM   57.021464
+MT   PeptideTermMod
 CF   H3 C2 N1 O1
 //
 ID   Carboxymethyl
-FT   MOD_RES
 TG   Any
 PP   Peptide N-terminal.
 MM   58.005479
+MT   PeptideTermMod
 CF   H2 C2 O2
 //
 ID   Lysine not cleaved
-FT   MOD_RES
 TG   Xk
 PP   Peptide C-terminal.
 MM   128.09496
+MT   PeptideTermMod
 CF   C6 H12 N2 O1
 //
 ID   Lysine not cleaved
-FT   MOD_RES
 TG   kX
 PP   Peptide N-terminal.
 MM   128.09496
+MT   PeptideTermMod
 CF   C6 H12 N2 O1
 //
