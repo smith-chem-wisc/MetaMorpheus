@@ -12,6 +12,8 @@
             <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
             <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
             <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
+            <Label x:Name="databaseReferencesLabel" Content="Database References to Keep" ToolTip="Comma separated list of database references to keep from an XML protein database, e.g. ref,ref,..."/>
+            <TextBox x:Name="databaseReferencesTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="100" Height="24" />
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>
