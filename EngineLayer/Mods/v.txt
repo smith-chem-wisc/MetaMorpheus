@@ -1,8 +1,8 @@
 ﻿Variable Modifications
 ID   Oxidation
-FT   MOD_RES
 TG   Methionine
 PP   Anywhere.
 MM   15.994915
+MT   Variable
 CF   O1
 //

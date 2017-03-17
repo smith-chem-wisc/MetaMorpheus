@@ -1,29 +1,29 @@
 Metals
 ID   Sodium
-FT   MOD_RES
 TG   D or E
 PP   Anywhere.
 MM   21.981943
+MT   Metal
 CF   H-1 Na1
 //
 ID   Calcium
-FT   MOD_RES
 TG   D or E
 PP   Anywhere.
 MM   37.946941
+MT   Metal
 CF   H-2 Ca1
 //
 ID   Zinc
-FT   MOD_RES
 TG   D or E
 PP   Anywhere.
 MM   61.913495
+MT   Metal
 CF   H-2 Zn1
 //
 ID   Fe[III]
-FT   MOD_RES
 TG   D or E
 PP   Anywhere.
 MM   52.911464
+MT   Metal
 CF   H-3 Fe1
 //
