@@ -36,8 +36,8 @@ namespace TaskLayer
             DoParsimony = false;
             NoOneHitWonders = false;
             Quantify = false;
-            QuantifyRtTol = 0.5;
-            QuantifyPpmTol = 3;
+            QuantifyRtTol = 3;
+            QuantifyPpmTol = 5;
             SearchDecoy = true;
             DoHistogramAnalysis = false;
             MaxMissedCleavages = 2;

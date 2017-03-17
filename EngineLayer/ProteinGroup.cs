@@ -104,16 +104,16 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             // list of protein accession numbers
-            sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.Accession))));
+            sb.Append(string.Join("|", new List<string>(Proteins.Select(p => p.Accession))));
             sb.Append("\t");
 
             // genes
             var genes = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
-            sb.Append(string.Join(" | ", genes));
+            sb.Append(string.Join("|", genes));
             sb.Append("\t");
 
             // list of protein names
-            sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.FullName))));
+            sb.Append(string.Join("|", new List<string>(Proteins.Select(p => p.FullName))));
             sb.Append("\t");
 
             // number of proteins in group
@@ -121,12 +121,12 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            sb.Append(string.Join(" | ", new HashSet<string>(StrictUniquePeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
+            sb.Append(string.Join("|", new HashSet<string>(StrictUniquePeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
             sb.Append("\t");
 
             // list of shared peptides
             var sharedPeptides = StrictPeptideList.Except(TotalUniquePeptideList);
-            sb.Append(string.Join(" | ", new HashSet<string>(sharedPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
+            sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
             sb.Append("\t");
 
             // list of razor peptides
@@ -147,11 +147,11 @@ namespace EngineLayer
             sb.Append("\t");
 
             // sequence coverage percent
-            sb.Append(string.Join(" | ", sequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100)))));
+            sb.Append(string.Join("|", sequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100)))));
             sb.Append("\t");
 
             // sequence coverage
-            sb.Append(string.Join(" | ", sequenceCoverageDisplayList));
+            sb.Append(string.Join("|", sequenceCoverageDisplayList));
             sb.Append("\t");
 
             // number of PSMs for listed peptides
