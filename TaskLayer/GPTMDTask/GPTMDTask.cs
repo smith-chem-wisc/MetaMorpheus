@@ -65,6 +65,7 @@ namespace TaskLayer
         public List<string> ListOfModListsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
+        public string[] DatabaseReferencesToKeep { get; set; }
         public bool IsotopeErrors { get; set; }
 
         #endregion Public Properties
@@ -128,7 +129,7 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
-            var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
+            var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, DatabaseReferencesToKeep, out um)).ToList();
 
             AnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
