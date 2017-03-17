@@ -107,8 +107,9 @@ namespace EngineLayer
             sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.Accession))));
             sb.Append("\t");
 
+            // genes
             var genes = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
-            //sb.Append(string.Join(" | ", genes));
+            sb.Append(string.Join(" | ", genes));
             sb.Append("\t");
 
             // list of protein names
