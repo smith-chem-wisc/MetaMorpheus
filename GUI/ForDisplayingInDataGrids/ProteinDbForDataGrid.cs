@@ -12,7 +12,7 @@ namespace MetaMorpheusGUI
             Use = true;
             FileName = fileName;
             if (fileName.ToUpper().Contains("contaminant".ToUpper())
-                || fileName.ToUpper().Contains("crap".ToUpper()))
+                || fileName.Contains("cRAP"))
                 Contaminant = true;
         }
 
