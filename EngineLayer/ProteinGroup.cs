@@ -57,11 +57,13 @@ namespace EngineLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.Append("Proteins in group" + '\t');
+                sb.Append("Protein Accession" + '\t');
+                sb.Append("Gene" + '\t');
+                sb.Append("Protein Full Name" + '\t');
                 sb.Append("Number of proteins in group" + '\t');
                 sb.Append("Unique peptides" + '\t');
                 sb.Append("Shared peptides" + '\t');
-                sb.Append("Razor peptides" + '\t');
+                //sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
                 sb.Append("Sequence coverage %" + '\t');
@@ -102,9 +104,22 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
 
-            // list of proteins in the group
-            foreach (Protein protein in Proteins)
-                sb.Append("" + protein.FullDescription + " ;; ");
+            //var newPeptideBaseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
+
+            // list of protein accession numbers
+            sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.Accession))));
+            sb.Append("\t");
+
+            //gene name
+            //var proteinFullNames = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item1)));
+            //var p1 = Proteins.First().GeneNames.Select(p => p.Item1).First();
+
+            var genes = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).First()));
+            sb.Append(string.Join(" | ", genes));
+            sb.Append("\t");
+
+            // list of protein names
+            sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.FullName))));
             sb.Append("\t");
 
             // number of proteins in group
@@ -112,34 +127,22 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            foreach (CompactPeptide uniquePeptide in StrictUniquePeptideList)
-            {
-                string peptideBaseSequence = string.Join("", uniquePeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                sb.Append("" + peptideBaseSequence + " ;; ");
-            }
+            sb.Append(string.Join(" | ", new HashSet<string>(StrictUniquePeptideList.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
             sb.Append("\t");
 
             // list of shared peptides
-            foreach (CompactPeptide sharedPeptide in StrictPeptideList)
-            {
-                if (!TotalUniquePeptideList.Contains(sharedPeptide))
-                {
-                    string peptideBaseSequence = string.Join("", sharedPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                    sb.Append("" + peptideBaseSequence + " ;; ");
-                }
-            }
+            var sharedPeptides = StrictPeptideList.Except(TotalUniquePeptideList);
+            sb.Append(string.Join(" | ", new HashSet<string>(sharedPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
             sb.Append("\t");
 
             // list of razor peptides
-            foreach (CompactPeptide razorPeptide in StrictRazorPeptideList)
-            {
-                string peptideBaseSequence = string.Join("", razorPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                sb.Append("" + peptideBaseSequence + " ;; ");
-            }
-            sb.Append("\t");
+            //foreach (CompactPeptide razorPeptide in StrictRazorPeptideList)
+            //{
+            //    string peptideBaseSequence = string.Join("", razorPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+            //
+            //    sb.Append("" + peptideBaseSequence + " ;; ");
+            //}
+            //sb.Append("\t");
 
             // number of peptides
             sb.Append("" + StrictPeptideList.Count);
@@ -150,20 +153,11 @@ namespace EngineLayer
             sb.Append("\t");
 
             // sequence coverage percent
-            foreach (double coverage in sequenceCoveragePercent)
-            {
-                double coverage1 = coverage * 100;
-                string str = string.Format("{0:0}", coverage1);
-
-                sb.Append("" + str + "% ;; ");
-            }
+            sb.Append(string.Join(" | ", sequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100)))));
             sb.Append("\t");
 
             // sequence coverage
-            foreach (string coverage in sequenceCoverageDisplayList)
-            {
-                sb.Append("" + coverage + " ;; ");
-            }
+            sb.Append(string.Join(" | ", sequenceCoverageDisplayList));
             sb.Append("\t");
 
             // number of PSMs for listed peptides
@@ -192,7 +186,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             // q value
-            sb.Append(QValue * 100);
+            sb.Append(QValue);
             sb.Append("\t");
 
             return sb.ToString();
