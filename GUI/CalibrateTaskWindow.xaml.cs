@@ -3,7 +3,6 @@ using MzLibUtil;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -76,11 +75,11 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CIons;
 
             foreach (var modList in task.ListOfModListsFixed)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Fixed = true;
             foreach (var modList in task.ListOfModListsVariable)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Variable = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Variable = true;
             foreach (var modList in task.ListOfModListsLocalize)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Localize = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Localize = true;
 
             modificationsDataGrid.Items.Refresh();
         }
@@ -123,9 +122,9 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
 
-            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName).ToList();
 
             TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
@@ -144,7 +143,7 @@ namespace MetaMorpheusGUI
             var hm = ye.Content as TextBlock;
             if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(Path.Combine(@"Mods", hm.Text));
+                System.Diagnostics.Process.Start(hm.Text);
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using Nett;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -37,10 +38,8 @@ namespace MetaMorpheusGUI
                 "MetaMorpheus: Not a release version" :
                 "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
 
-            //proteinDbObservableCollection.Add(new ProteinDbForDataGrid(@"C:\Users\stepa\Data\CalibrationPaperData\uniprot-human-reviewed-2-13-2017.xml"));
             dataGridXMLs.DataContext = proteinDbObservableCollection;
 
-            //rawDataObservableCollection.Add(new RawDataForDataGrid(@"C:\Users\stepa\Data\CalibrationPaperData\Jurkat\2017-02-25-13-57-45\Task2Calibrate\120426_Jurkat_highLC_Frac28-Calibrated.mzML"));
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
@@ -52,8 +51,7 @@ namespace MetaMorpheusGUI
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
             {
-                var readMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile).ToList();
-                MetaMorpheusTask.AddModList(new ModList(modFile, readMods));
+                MetaMorpheusTask.AddModList(modFile);
             }
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
@@ -211,24 +209,35 @@ namespace MetaMorpheusGUI
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
             if (files != null)
-                foreach (var rawDataFromDragged in files)
+                foreach (var draggedFilePath in files)
                 {
-                    var theExtension = Path.GetExtension(rawDataFromDragged).ToLowerInvariant();
+                    var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
                     switch (theExtension)
                     {
                         case ".raw":
                         case ".mzml":
-                            rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromDragged));
+                            rawDataObservableCollection.Add(new RawDataForDataGrid(draggedFilePath));
                             break;
 
                         case ".xml":
                         case ".fasta":
                         case ".gz":
-                            proteinDbObservableCollection.Add(new ProteinDbForDataGrid(rawDataFromDragged));
+                            proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
+                            break;
+
+                        case ".toml":
+                            if (draggedFilePath.Contains("CalibrationTask"))
+                                staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig)));
+                            else if (draggedFilePath.Contains("SearchTask"))
+                                staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig)));
+                            else if (draggedFilePath.Contains("GptmdTask"))
+                                staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig)));
                             break;
                     }
                     dataGridDatafiles.Items.Refresh();
+                    dataGridXMLs.Items.Refresh();
                 }
+            UpdateTaskGuiStuff();
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -434,6 +443,7 @@ namespace MetaMorpheusGUI
                 ClearTasksButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = false;
                 RunTasksButton.IsEnabled = false;
+                LoadTaskButton.IsEnabled = false;
 
                 addCalibrateTaskButton.IsEnabled = false;
                 addGPTMDTaskButton.IsEnabled = false;
@@ -457,10 +467,6 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                //statusLabel.Content = "Finished all tasks!";
-                //outProgressBar.IsIndeterminate = false;
-                //outProgressBar.Value = 100;
-
                 ResetTasksButton.IsEnabled = true;
 
                 dataGridDatafiles.Items.Refresh();
@@ -518,7 +524,7 @@ namespace MetaMorpheusGUI
             AddRaw.IsEnabled = true;
             ClearRaw.IsEnabled = true;
 
-            //statusLabel.Content = "Ready";
+            LoadTaskButton.IsEnabled = true;
 
             tasksTreeView.DataContext = staticTasksObservableCollection;
         }
@@ -557,6 +563,28 @@ namespace MetaMorpheusGUI
             {
                 System.Diagnostics.Process.Start(fileThing.Id);
             }
+        }
+
+        private void LoadTaskButton_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog()
+            {
+                Filter = "TOML files(*.toml)|*.toml",
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = true
+            };
+            if (openFileDialog1.ShowDialog() == true)
+                foreach (var tomlFromSelected in openFileDialog1.FileNames)
+                {
+                    if (tomlFromSelected.Contains("CalibrationTask"))
+                        staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<CalibrationTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig)));
+                    else if (tomlFromSelected.Contains("SearchTask"))
+                        staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<SearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig)));
+                    else if (tomlFromSelected.Contains("GptmdTask"))
+                        staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig)));
+                }
+            UpdateTaskGuiStuff();
         }
 
         #endregion Private Methods

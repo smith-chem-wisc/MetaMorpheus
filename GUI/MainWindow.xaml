@@ -127,9 +127,9 @@
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="addSearchTaskButton" Content="Add Search Task" Click="addSearchTaskButton_Click" />
-                            <Button x:Name="addCalibrateTaskButton" Content="Add Calibrate Task" Click="addCalibrateTaskButton_Click" />
-                            <Button x:Name="addGPTMDTaskButton" Content="Add GPTMD Task" Click="addGPTMDTaskButton_Click" />
+                            <Button x:Name="addSearchTaskButton" Content="New Search Task" Click="addSearchTaskButton_Click" />
+                            <Button x:Name="addCalibrateTaskButton" Content="New Calibrate Task" Click="addCalibrateTaskButton_Click" />
+                            <Button x:Name="addGPTMDTaskButton" Content="New GPTMD Task" Click="addGPTMDTaskButton_Click" />
                         </StackPanel>
                         <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="tasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
@@ -164,6 +164,7 @@
                             </TreeView.Resources>
                         </TreeView>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                            <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />

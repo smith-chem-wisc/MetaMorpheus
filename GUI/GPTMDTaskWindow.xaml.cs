@@ -3,7 +3,6 @@ using MzLibUtil;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -63,7 +62,7 @@ namespace MetaMorpheusGUI
             var hm = ye.Content as TextBlock;
             if (hm != null && !string.IsNullOrEmpty(hm.Text))
             {
-                System.Diagnostics.Process.Start(Path.Combine(@"Mods", hm.Text));
+                System.Diagnostics.Process.Start(hm.Text);
             }
         }
 
@@ -84,13 +83,13 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.ZdotIons;
 
             foreach (var modList in task.ListOfModListsFixed)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Fixed = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Fixed = true;
             foreach (var modList in task.ListOfModListsVariable)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Variable = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Variable = true;
             foreach (var modList in task.ListOfModListsLocalize)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Localize = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Localize = true;
             foreach (var modList in task.ListOfModListsGptmd)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList.FileName)).Gptmd = true;
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Gptmd = true;
 
             modificationsDataGrid.Items.Refresh();
         }
@@ -134,10 +133,10 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
 
-            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.ModList).ToList();
-            TheTask.ListOfModListsGptmd = ModFileListInWindow.Where(b => b.Gptmd).Select(b => b.ModList).ToList();
+            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsGptmd = ModFileListInWindow.Where(b => b.Gptmd).Select(b => b.FileName).ToList();
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;

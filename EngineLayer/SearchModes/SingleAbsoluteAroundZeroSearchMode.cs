@@ -1,5 +1,4 @@
 ﻿using MzLibUtil;
-using Spectra;
 using System;
 using System.Collections.Generic;
 
@@ -33,6 +32,11 @@ namespace EngineLayer
         public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass - value, peptideMonoisotopicMass + value), 0);
+        }
+
+        public override string ToString()
+        {
+            return FileNameAddition + " daltonsAroundZero " + value;
         }
 
         #endregion Public Methods

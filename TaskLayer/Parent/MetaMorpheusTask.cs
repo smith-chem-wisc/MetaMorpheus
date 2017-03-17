@@ -1,6 +1,8 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
 using MathNet.Numerics.Distributions;
+using MzLibUtil;
+using Nett;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -22,6 +24,24 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+
+        #region Public Fields
+
+        public static readonly TomlConfig tomlConfig = TomlConfig.Create(cfg => cfg
+                        .ConfigureType<Tolerance>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())
+                                .FromToml(tmlString => new Tolerance(tmlString.Value))))
+                        .ConfigureType<SearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())
+                                .FromToml(tmlString => MetaMorpheusTask.ParseSearchMode(tmlString.Value))))
+                        .ConfigureType<Protease>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())
+                                .FromToml(tmlString => ProteaseDictionary.Instance[tmlString.Value]))));
+
+        #endregion Public Fields
 
         #region Public Events
 
@@ -45,7 +65,7 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public static List<ModList> AllModLists { get; private set; }
+        public static List<string> AllModLists { get; private set; }
 
         public MyTask TaskType { get; internal set; }
 
@@ -65,8 +85,6 @@ namespace TaskLayer
 
         public bool CIons { get; set; }
 
-        public int MaxNumPeaksPerScan { get; set; }
-
         #endregion Public Properties
 
         #region Protected Properties
@@ -77,23 +95,81 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void AddModList(ModList modList)
+        public static void AddModList(string modList)
         {
             if (AllModLists == null)
-                AllModLists = new List<ModList>();
+                AllModLists = new List<string>();
             AllModLists.Add(modList);
+        }
+
+        public static SearchMode ParseSearchMode(string text)
+        {
+            SearchMode ye = null;
+
+            var split = text.Split(' ');
+
+            switch (split[1])
+            {
+                case "dot":
+                    ToleranceUnit tu = ToleranceUnit.PPM;
+                    if (split[3].ToUpperInvariant().Equals("PPM"))
+                        tu = ToleranceUnit.PPM;
+                    else if (split[3].ToUpperInvariant().Equals("DA"))
+                        tu = ToleranceUnit.Absolute;
+                    else
+                        break;
+
+                    var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
+                    var newString = split[2].Replace("±", "");
+                    var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
+                    ye = new DotSearchMode(split[0], massShifts, new Tolerance(tu, toleranceValue));
+                    break;
+
+                case "interval":
+                    IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
+                    ye = new IntervalSearchMode(split[0], doubleRanges);
+                    break;
+
+                case "OpenSearch":
+                    ye = new OpenSearchMode();
+                    break;
+
+                case "daltonsAroundZero":
+                    ye = new SingleAbsoluteAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                    break;
+
+                case "ppmAroundZero":
+                    ye = new SinglePpmAroundZeroSearchMode(double.Parse(split[2], CultureInfo.InvariantCulture));
+                    break;
+
+                default:
+                    throw new Exception("Could not parse search mode string");
+            }
+            return ye;
         }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
-            startingSingleTask(taskId);
-            var paramsFileName = Path.Combine(output_folder, "params.txt");
+            StartingSingleTask(taskId);
+            var paramsFileName = Path.Combine(output_folder, "prose.txt");
             using (StreamWriter file = new StreamWriter(paramsFileName))
             {
                 file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                file.WriteLine("taskId: " + taskId);
+                file.WriteLine("Spectra files:");
+                file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
+                file.WriteLine("XML files:");
+                file.WriteLine(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
                 file.Write(ToString());
             }
             SucessfullyFinishedWritingFile(paramsFileName, new List<string> { taskId });
+
+            // TOML
+            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+
+            Toml.WriteFile(this, tomlFileName, tomlConfig);
+            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
+
 #if !DEBUG
             try
             {
@@ -110,7 +186,7 @@ namespace TaskLayer
                 file.Write(myResults.ToString());
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
-            finishedSingleTask(taskId);
+            FinishedSingleTask(taskId);
             return myResults;
 #if !DEBUG
             }
@@ -137,14 +213,9 @@ namespace TaskLayer
             var sb = new StringBuilder();
             sb.AppendLine(SpecificTaskInfo);
             sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("Spectra files:");
-            //sb.AppendLine(string.Join(Environment.NewLine, rawDataFilenameList.Select(b => '\t' + b)));
-            sb.AppendLine("XML files:");
-            //sb.AppendLine(string.Join(Environment.NewLine, dbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
             sb.AppendLine("initiatorMethionineBehavior: " + InitiatorMethionineBehavior);
             sb.AppendLine("maxMissedCleavages: " + MaxMissedCleavages);
             sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            //sb.AppendLine("output_folder: " + OutputFolder);
             sb.AppendLine("protease: " + Protease);
             sb.AppendLine("bIons: " + BIons);
             sb.AppendLine("yIons: " + YIons);
@@ -277,12 +348,12 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private void finishedSingleTask(string taskId)
+        private void FinishedSingleTask(string taskId)
         {
             FinishedSingleTaskHandler?.Invoke(this, new SingleTaskEventArgs(taskId));
         }
 
-        private void startingSingleTask(string taskId)
+        private void StartingSingleTask(string taskId)
         {
             StartingSingleTaskHander?.Invoke(this, new SingleTaskEventArgs(taskId));
         }

@@ -1,7 +1,6 @@
 ﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace EngineLayer
@@ -22,10 +21,6 @@ namespace EngineLayer
         {
             intervals = doubleRanges.OrderBy(b => b.Mean).ToList();
             means = intervals.Select(b => b.Mean).ToArray();
-        }
-
-        public IntervalSearchMode(IEnumerable<DoubleRange> doubleRanges) : this("intervals" + string.Join("", doubleRanges.Select(b => "[" + b.Minimum.ToString("F3", CultureInfo.InvariantCulture) + "-" + b.Maximum.ToString("F3", CultureInfo.InvariantCulture) + "]")), doubleRanges)
-        {
         }
 
         #endregion Public Constructors
@@ -51,6 +46,11 @@ namespace EngineLayer
         public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             return intervals.Select(b => new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass + b.Minimum, peptideMonoisotopicMass + b.Maximum), 0));
+        }
+
+        public override string ToString()
+        {
+            return FileNameAddition + " interval " + string.Join(",", intervals);
         }
 
         #endregion Public Methods
