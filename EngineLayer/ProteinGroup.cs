@@ -103,16 +103,10 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-
-            //var newPeptideBaseSeqs = new HashSet<string>(kvp.Value.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)));
-
+            
             // list of protein accession numbers
             sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.Accession))));
             sb.Append("\t");
-
-            //gene name
-            //var proteinFullNames = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item1)));
-            //var p1 = Proteins.First().GeneNames.Select(p => p.Item1).First();
 
             var genes = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).First()));
             sb.Append(string.Join(" | ", genes));
