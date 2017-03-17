@@ -4,6 +4,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -140,6 +141,9 @@ namespace MetaMorpheusGUI
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+
+            Regex substituteWhitespace = new Regex(@"\s+");
+            TheTask.DatabaseReferencesToKeep = substituteWhitespace.Replace(databaseReferencesTextBox.Text, "").Split(',');
 
             DialogResult = true;
         }
