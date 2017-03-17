@@ -103,13 +103,12 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            
             // list of protein accession numbers
             sb.Append(string.Join(" | ", new List<string>(Proteins.Select(p => p.Accession))));
             sb.Append("\t");
 
-            var genes = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).First()));
-            sb.Append(string.Join(" | ", genes));
+            var genes = new List<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
+            //sb.Append(string.Join(" | ", genes));
             sb.Append("\t");
 
             // list of protein names
@@ -184,6 +183,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             return sb.ToString();
+
         }
 
         public void ScoreThisProteinGroup(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
