@@ -79,8 +79,8 @@ namespace EngineLayer
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(apexIntensity.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(apexMz.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(apexRT.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(apexMz.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(apexRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(mostAbundantMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
