@@ -253,7 +253,7 @@ namespace TaskLayer
                     var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                     lock (lock2) // Lock because writing is sequential
                     {
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, path);
+                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, path, false);
 
                         SucessfullyFinishedWritingFile(path, new List<string> { taskId, "Individual Searches", origDataFileName });
 
