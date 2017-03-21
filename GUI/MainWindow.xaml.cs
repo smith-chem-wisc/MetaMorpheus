@@ -179,12 +179,13 @@ namespace MetaMorpheusGUI
 
         private void AddXML_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog();
-            openPicker.Filter = "Database Files|*.xml;*.xml.gz;*.fasta";
-            openPicker.FilterIndex = 1;
-            openPicker.RestoreDirectory = true;
-            openPicker.Multiselect = true;
-
+            Microsoft.Win32.OpenFileDialog openPicker = new Microsoft.Win32.OpenFileDialog()
+            {
+                Filter = "Database Files|*.xml;*.xml.gz;*.fasta",
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = true
+            };
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(filepath));
@@ -193,12 +194,13 @@ namespace MetaMorpheusGUI
 
         private void AddRaw_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog();
-            openFileDialog1.Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML";
-            openFileDialog1.FilterIndex = 1;
-            openFileDialog1.RestoreDirectory = true;
-            openFileDialog1.Multiselect = true;
-
+            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog()
+            {
+                Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = true
+            };
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromSelected));
@@ -226,12 +228,24 @@ namespace MetaMorpheusGUI
                             break;
 
                         case ".toml":
-                            if (draggedFilePath.Contains("CalibrationTask"))
-                                staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig)));
-                            else if (draggedFilePath.Contains("SearchTask"))
-                                staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig)));
-                            else if (draggedFilePath.Contains("GptmdTask"))
-                                staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig)));
+                            var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            switch (uhum.Get<string>("TaskType"))
+                            {
+                                case "Search":
+                                    var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    staticTasksObservableCollection.Add(new PreRunTask(ye1));
+                                    break;
+
+                                case "Calibrate":
+                                    var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    staticTasksObservableCollection.Add(new PreRunTask(ye2));
+                                    break;
+
+                                case "Gptmd":
+                                    var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                                    staticTasksObservableCollection.Add(new PreRunTask(ye3));
+                                    break;
+                            }
                             break;
                     }
                     dataGridDatafiles.Items.Refresh();
@@ -259,8 +273,10 @@ namespace MetaMorpheusGUI
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
-            var t = new Thread(() => a.Run());
-            t.IsBackground = true;
+            var t = new Thread(() => a.Run())
+            {
+                IsBackground = true
+            };
             t.Start();
         }
 
@@ -577,12 +593,24 @@ namespace MetaMorpheusGUI
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var tomlFromSelected in openFileDialog1.FileNames)
                 {
-                    if (tomlFromSelected.Contains("CalibrationTask"))
-                        staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<CalibrationTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig)));
-                    else if (tomlFromSelected.Contains("SearchTask"))
-                        staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<SearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig)));
-                    else if (tomlFromSelected.Contains("GptmdTask"))
-                        staticTasksObservableCollection.Add(new PreRunTask(Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig)));
+                    var uhum = Toml.ReadFile(tomlFromSelected, MetaMorpheusTask.tomlConfig);
+                    switch (uhum.Get<string>("TaskType"))
+                    {
+                        case "Search":
+                            var ye1 = Toml.ReadFile<SearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye1));
+                            break;
+
+                        case "Calibrate":
+                            var ye2 = Toml.ReadFile<CalibrationTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye2));
+                            break;
+
+                        case "Gptmd":
+                            var ye3 = Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye3));
+                            break;
+                    }
                 }
             UpdateTaskGuiStuff();
         }

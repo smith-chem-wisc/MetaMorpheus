@@ -65,20 +65,24 @@ namespace MetaMorpheusCommandLine
                 {
                     var draggedFilePath = p.Object.Tasks[i];
 
-                    if (draggedFilePath.Contains("CalibrationTask"))
+                    var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+
+                    switch (uhum.Get<string>("TaskType"))
                     {
-                        var ye = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "CalibrationTask", ye));
-                    }
-                    else if (draggedFilePath.Contains("SearchTask"))
-                    {
-                        var ye = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "SearchTask", ye));
-                    }
-                    else if (draggedFilePath.Contains("GptmdTask"))
-                    {
-                        var ye = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "GptmdTask", ye));
+                        case "Search":
+                            var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "SearchTask", ye1));
+                            break;
+
+                        case "Calibrate":
+                            var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "CalibrationTask", ye2));
+                            break;
+
+                        case "Gptmd":
+                            var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "GptmdTask", ye3));
+                            break;
                     }
                 }
                 List<string> startingRawFilenameList = p.Object.Spectra;
