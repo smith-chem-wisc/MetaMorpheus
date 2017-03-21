@@ -16,10 +16,10 @@ namespace EngineLayer.Calibration
 
         #region Public Properties
 
-        public List<LabeledMs1DataPoint> ms1List { get; set; }
-        public List<LabeledMs2DataPoint> ms2List { get; set; }
+        public List<LabeledMs1DataPoint> Ms1List { get; set; }
+        public List<LabeledMs2DataPoint> Ms2List { get; set; }
 
-        public int Count { get { return ms1List.Count + ms2List.Count; } }
+        public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
         #endregion Public Properties
 

@@ -56,10 +56,10 @@ namespace EngineLayer.Calibration
             int k = 0;
             foreach (LabeledDataPoint p in trainingList)
             {
-                ok[k] = ExpandFeatures(transform.Transform(p.inputs));
+                ok[k] = ExpandFeatures(transform.Transform(p.Inputs));
                 k++;
             }
-            var ok2 = trainingList.Select(b => b.label).ToArray();
+            var ok2 = trainingList.Select(b => b.Label).ToArray();
 
             var ye = new Func<double[], double>[numFeaturesExpanded + 1];
             ye[0] = a => 1;
