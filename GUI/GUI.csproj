@@ -197,9 +197,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="MM.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="MMnice.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
