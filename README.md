@@ -25,6 +25,10 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 * TMT: TMT-tagged peptides may be searched and identified by selecting the tmt.txt modification and setting it to fixed. Reporter ion abundances are not yet reported. GPTM-D discovery may be run with TMT-tagged peptides.
 
+* Two search algorithms: Classic and Modern. 
+  * Classic: Suitable for matching identified peptides with spectra when exact matches between theoretical peptide mass and spectrum percursor mass are required. 
+  * Modern: Suitable for matching peptides to spectra while allowing ranges of significant differences between the peptide mass and spectrum precuros mass.  
+
 ## Example Usage (GUI)
 
 1. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic).
