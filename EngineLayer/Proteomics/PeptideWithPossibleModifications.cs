@@ -22,7 +22,7 @@ namespace EngineLayer
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
             thisDictionaryOfFixedMods = AddFixedMods(allKnownFixedModifications);
-            this.numLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
+            this.NumLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
 
         #endregion Internal Constructors
@@ -30,7 +30,7 @@ namespace EngineLayer
         #region Public Properties
 
         public int MissedCleavages { get; private set; }
-        public int numLocMods { get; private set; }
+        public int NumLocMods { get; private set; }
 
         #endregion Public Properties
 
@@ -61,8 +61,10 @@ namespace EngineLayer
                         UniqueModificationsCollection residue_variable_mods;
                         if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
                         {
-                            residue_variable_mods = new UniqueModificationsCollection();
-                            residue_variable_mods.Add(variable_modification);
+                            residue_variable_mods = new UniqueModificationsCollection
+                            {
+                                variable_modification
+                            };
                             two_based_possible_variable_and_localizeable_modifications.Add(r + 2, residue_variable_mods);
                         }
                         else
@@ -102,8 +104,10 @@ namespace EngineLayer
                                     UniqueModificationsCollection residue_variable_mods;
                                     if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
                                     {
-                                        residue_variable_mods = new UniqueModificationsCollection();
-                                        residue_variable_mods.Add(variable_modification);
+                                        residue_variable_mods = new UniqueModificationsCollection
+                                        {
+                                            variable_modification
+                                        };
                                         two_based_possible_variable_and_localizeable_modifications.Add(r + 2, residue_variable_mods);
                                     }
                                     else

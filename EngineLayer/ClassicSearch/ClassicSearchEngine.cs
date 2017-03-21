@@ -104,7 +104,7 @@ namespace EngineLayer.ClassicSearch
                         if (peptide.Length <= 1)
                             continue;
 
-                        if (peptide.numLocMods == 0 && !conserveMemory)
+                        if (peptide.NumLocMods == 0 && !conserveMemory)
                         {
                             var hc = peptide.BaseLeucineSequence;
                             var observed = level3_observed.Contains(hc);
@@ -122,7 +122,7 @@ namespace EngineLayer.ClassicSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.numLocMods > 0 && !conserveMemory)
+                            if (peptide.NumLocMods > 0 && !conserveMemory)
                             {
                                 var hc = yyy.Sequence;
                                 var observed = level4_observed.Contains(hc);

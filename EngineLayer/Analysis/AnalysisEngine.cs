@@ -1,7 +1,7 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Chemistry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -114,8 +114,10 @@ namespace EngineLayer.Analysis
                 {
                     if (!proteinsWithUniquePeptides.ContainsKey(proteinListHere.First()))
                     {
-                        var peptides = new HashSet<CompactPeptide>();
-                        peptides.Add(kvp.Key);
+                        var peptides = new HashSet<CompactPeptide>
+                        {
+                            kvp.Key
+                        };
                         proteinsWithUniquePeptides.Add(proteinListHere.First(), peptides);
                     }
                     else
@@ -134,8 +136,10 @@ namespace EngineLayer.Analysis
                 {
                     if (!proteinToPeptidesMatching.ContainsKey(peptide.Protein))
                     {
-                        var peptides = new HashSet<CompactPeptide>();
-                        peptides.Add(kvp.Key);
+                        var peptides = new HashSet<CompactPeptide>
+                        {
+                            kvp.Key
+                        };
                         proteinToPeptidesMatching.Add(peptide.Protein, peptides);
                     }
                     else
@@ -614,7 +618,7 @@ namespace EngineLayer.Analysis
 
                                     if (isotopeDistributionCheck)
                                     {
-                                        for(int i = 0; i < isotopes.Count; i++)
+                                        for (int i = 0; i < isotopes.Count; i++)
                                         {
                                             if (isotopes[i].Value < 0.8)
                                                 isotopePeaks[i] = null;

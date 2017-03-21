@@ -35,7 +35,7 @@ namespace EngineLayer.Calibration
 
         internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
-            a = trainingList.Select(b => b.label).Median();
+            a = trainingList.Select(b => b.Label).Median();
         }
 
         #endregion Internal Methods

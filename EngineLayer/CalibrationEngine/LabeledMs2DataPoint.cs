@@ -22,10 +22,10 @@
             this.rt = rt;
             this.intensity = intensity;
             this.totalIonCurrent = totalIonCurrent;
-            this.injectionTime = injectionTime.HasValue ? injectionTime.Value : double.NaN;
+            this.injectionTime = injectionTime ?? double.NaN;
             this.isolationMz = isolationMz;
-            this.label = label;
-            inputs = new double[] { mz, rt, intensity, totalIonCurrent, this.injectionTime, isolationMz };
+            this.Label = label;
+            Inputs = new double[] { mz, rt, intensity, totalIonCurrent, this.injectionTime, isolationMz };
         }
 
         #endregion Public Constructors
@@ -33,8 +33,8 @@
         #region Public Properties
 
         public static string TabSeparatedHeaderForMs1 { get { return "mz\trt\tintensity\tTIC\tInjectionTime\tIsolationmz\tLabel"; } }
-        public double label { get; private set; }
-        public double[] inputs { get; private set; }
+        public double Label { get; private set; }
+        public double[] Inputs { get; private set; }
 
         #endregion Public Properties
 

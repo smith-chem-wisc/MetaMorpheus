@@ -5,8 +5,8 @@
 
         #region Public Properties
 
-        double[] inputs { get; }
-        double label { get; }
+        double[] Inputs { get; }
+        double Label { get; }
 
         #endregion Public Properties
 

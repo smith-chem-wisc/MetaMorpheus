@@ -257,8 +257,7 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            var hm = ye.Content as TextBlock;
-            if (hm != null && !string.IsNullOrEmpty(hm.Text))
+            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -303,7 +302,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void addSearchTaskButton_Click(object sender, RoutedEventArgs e)
+        private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new SearchTaskWindow();
             if (dialog.ShowDialog() == true)
@@ -313,7 +312,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void addCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
+        private void AddCalibrateTaskButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CalibrateTaskWindow();
             if (dialog.ShowDialog() == true)
@@ -323,7 +322,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void addGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
+        private void AddGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new GptmdTaskWindow();
             if (dialog.ShowDialog() == true)
@@ -545,11 +544,10 @@ namespace MetaMorpheusGUI
             tasksTreeView.DataContext = staticTasksObservableCollection;
         }
 
-        private void tasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void TasksTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             var a = sender as TreeView;
-            var preRunTask = a.SelectedItem as PreRunTask;
-            if (preRunTask != null)
+            if (a.SelectedItem is PreRunTask preRunTask)
                 switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
@@ -568,14 +566,12 @@ namespace MetaMorpheusGUI
                         return;
                 }
 
-            var inRunTask = a.SelectedItem as InRunTask;
-            if (inRunTask != null)
+            if (a.SelectedItem is InRunTask inRunTask)
             {
                 // Display the params (always) and the results (if done)
             }
 
-            var fileThing = a.SelectedItem as OutputFileForTreeView;
-            if (fileThing != null)
+            if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
                 System.Diagnostics.Process.Start(fileThing.Id);
             }
