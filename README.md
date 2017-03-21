@@ -32,17 +32,31 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 2. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 
 3. For all following tasks, have ptmlist.txt selected for localization, f.txt for fixed, and v.txt for variable. Add, in order: 
-  * Combined 5 and 10 ppm precursor tolerance Search Task 
-  * Calibration Task
-  * Combined 5 and 10 ppm precursor tolerance Search Task
-  * G-PTM-D Task with m.txt, metals.txt, pt.txt selected in the G-PTM-D column to add these plausible modifications to the augmented database
-  * 5 ppm precursor tolerance Search Task with m.txt, metals.txt, pt.txt and ptmlist.txt selected for localization
+   * Combined 5 and 10 ppm precursor tolerance Search Task 
+   * Calibration Task
+   * Combined 5 and 10 ppm precursor tolerance Search Task
+   * G-PTM-D Task with m.txt, metals.txt, pt.txt selected in the G-PTM-D column to add these plausible modifications to the augmented database
+   * 5 ppm precursor tolerance Search Task with m.txt, metals.txt, pt.txt and ptmlist.txt selected for localization
 
 4. Click Run All Tasks!
 
 5. As the third task completes, open the results.txt files for the first and third tasks. Observe the increase in the number of confident PSMs identified due to calibration. 
 
 6. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
+
+## Example Usage (Command Line)
+
+1. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic) to the folder with MetaMorpheusCommandLine.exe executable
+
+2. Run the command 
+
+```
+MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz
+```
+
+3. As the third task completes, open the results.txt files for the first and third tasks. Observe the increase in the number of confident PSMs identified due to calibration. 
+
+4. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
 
 ## System Requirements
 
