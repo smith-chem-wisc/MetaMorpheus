@@ -1,0 +1,15 @@
+ListOfModListsFixed = ["Mods\\f.txt"]
+ListOfModListsVariable = ["Mods\\v.txt"]
+ListOfModListsLocalize = ["Mods\\ptmlist.txt"]
+ProductMassTolerance = "±0.0100 Absolute"
+PrecursorMassTolerance = "±10.0000 PPM"
+MaxDegreeOfParallelism = -1
+TaskType = "Calibrate"
+InitiatorMethionineBehavior = "Variable"
+MaxMissedCleavages = 2
+MaxModificationIsoforms = 4096
+Protease = "trypsin"
+BIons = true
+YIons = true
+ZdotIons = false
+CIons = false

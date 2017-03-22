@@ -1,7 +1,7 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Chemistry;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -601,7 +601,7 @@ namespace EngineLayer.Analysis
 
                                     if (isotopeDistributionCheck)
                                     {
-                                        for(int i = 0; i < isotopes.Count; i++)
+                                        for (int i = 0; i < isotopes.Count; i++)
                                         {
                                             if (isotopes[i].Value < 0.8)
                                                 isotopePeaks[i] = null;

@@ -92,7 +92,7 @@ namespace EngineLayer.Indexing
                         if (peptide.Length <= 1)
                             continue;
 
-                        if (peptide.numLocMods == 0)
+                        if (peptide.NumLocMods == 0)
                         {
                             lock (level3_observed)
                             {
@@ -107,7 +107,7 @@ namespace EngineLayer.Indexing
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.numLocMods > 0)
+                            if (peptide.NumLocMods > 0)
                             {
                                 lock (level4_observed)
                                 {

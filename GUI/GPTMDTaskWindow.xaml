@@ -63,8 +63,8 @@
             </DataGrid.Resources>
         </DataGrid>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save GPTMD task" Click="saveButton_Click"  FontSize="24" Margin="10" />
+            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click"  FontSize="24" Margin="10" />
         </StackPanel>
     </StackPanel>
 </Window>

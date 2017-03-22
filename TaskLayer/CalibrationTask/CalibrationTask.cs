@@ -86,8 +86,8 @@ namespace TaskLayer
                 output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeaderForMs1);
                 foreach (var dp in items)
                 {
-                    output.Write(string.Join("\t", dp.inputs));
-                    output.WriteLine("\t" + dp.label);
+                    output.Write(string.Join("\t", dp.Inputs));
+                    output.WriteLine("\t" + dp.Label);
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
@@ -101,8 +101,8 @@ namespace TaskLayer
                 output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeaderForMs1);
                 foreach (var dp in items)
                 {
-                    output.Write(string.Join("\t", dp.inputs));
-                    output.WriteLine("\t" + dp.label);
+                    output.Write(string.Join("\t", dp.Inputs));
+                    output.WriteLine("\t" + dp.Label);
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
@@ -114,9 +114,10 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            var myTaskResults = new MyCalibrationTaskResults(this);
-            myTaskResults.newSpectra = new List<string>();
-
+            var myTaskResults = new MyCalibrationTaskResults(this)
+            {
+                newSpectra = new List<string>()
+            };
             SearchMode searchMode;
             if (PrecursorMassTolerance.Unit == ToleranceUnit.PPM)
                 searchMode = new SinglePpmAroundZeroSearchMode(PrecursorMassTolerance.Value);
@@ -161,9 +162,10 @@ namespace TaskLayer
 
             object lock1 = new object();
             object lock2 = new object();
-            ParallelOptions parallelOptions = new ParallelOptions();
-            parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism;
-
+            ParallelOptions parallelOptions = new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = MaxDegreeOfParallelism
+            };
             Status("Calibrating...", new List<string> { taskId });
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
@@ -253,7 +255,7 @@ namespace TaskLayer
                     var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                     lock (lock2) // Lock because writing is sequential
                     {
-                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, path);
+                        MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, path, false);
 
                         SucessfullyFinishedWritingFile(path, new List<string> { taskId, "Individual Searches", origDataFileName });
 

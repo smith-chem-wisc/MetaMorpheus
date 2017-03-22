@@ -17,7 +17,7 @@
                 <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" />
             </Label>
             <Label Height="30" Grid.Column="1">
-                <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
+                <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" IsEnabled="false" />
             </Label>
         </Grid>
         <Grid>

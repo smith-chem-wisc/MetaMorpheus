@@ -97,13 +97,13 @@ namespace EngineLayer
 
         public MyResults Run()
         {
-            startingSingleEngine();
+            StartingSingleEngine();
             var stopWatch = new Stopwatch();
             stopWatch.Start();
             var myResults = RunSpecific();
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
-            finishedSingleEngine(myResults);
+            FinishedSingleEngine(myResults);
             return myResults;
         }
 
@@ -198,12 +198,12 @@ namespace EngineLayer
             yield return new IntervalSearchMode("ExcludeAAs", doubleRanges);
         }
 
-        private void startingSingleEngine()
+        private void StartingSingleEngine()
         {
             StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
         }
 
-        private void finishedSingleEngine(MyResults myResults)
+        private void FinishedSingleEngine(MyResults myResults)
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }
