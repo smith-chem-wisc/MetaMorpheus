@@ -86,7 +86,7 @@ namespace EngineLayer.Analysis
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
 
             // matched to fullseq or baseseq depending on user preference
-            var compactPeptideToSeqMatch = new Dictionary<CompactPeptide, string>();
+            // var compactPeptideToSeqMatch = new Dictionary<CompactPeptide, string>();
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
