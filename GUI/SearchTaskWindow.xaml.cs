@@ -98,6 +98,7 @@ namespace MetaMorpheusGUI
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.Quantify;
+            modPepsAreUnique.IsChecked = task.ModPeptidesAreUnique;
             quantRtTolerance.Text = task.QuantifyRtTol.ToString(CultureInfo.InvariantCulture);
             quantPpmTolerance.Text = task.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
@@ -140,6 +141,7 @@ namespace MetaMorpheusGUI
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.Quantify = checkBoxQuantification.IsChecked.Value;
+            TheTask.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
             TheTask.QuantifyRtTol = double.Parse(quantRtTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;

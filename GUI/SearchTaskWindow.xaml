@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="Search Task" Width="550" Height="750" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="Search Task" Width="600" Height="750" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
     <StackPanel>
         <Label Content="Search Parameters:" Height="30" />
         <Grid>
@@ -22,7 +22,6 @@
         </Grid>
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
             <StackPanel Margin="5">
@@ -32,14 +31,17 @@
                 <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
                 <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides" />
             </StackPanel>
-            <StackPanel Margin="0,20,0,0" VerticalAlignment="Top"  Grid.Column="1">
-                <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" Margin="0,0,0,0" VerticalAlignment="Top" Height="16" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+            <StackPanel Margin="160,35,0,0" VerticalAlignment="Top"  Grid.Column="1" Height="50">
+                <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require 2 peptides to ID protein" Margin="0,0,0,0" VerticalAlignment="Top" Height="16" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
                 <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
                     <Label x:Name="quantRtLabel" Content="RT Window (min)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                     <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                     <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                     <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                 </StackPanel>
+            </StackPanel>
+            <StackPanel Margin="360,35,0,0" VerticalAlignment="Top"  Grid.Column="1" Height="50">
+                <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as unique" Margin="0,0,0,0" VerticalAlignment="Top" Height="16" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
             </StackPanel>
         </Grid>
         <StackPanel Margin="5">

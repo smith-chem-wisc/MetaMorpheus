@@ -21,7 +21,7 @@ namespace Test
         {
             // creates some test proteins and digests them (simulating a protein database)
             string[] sequences = { "AB--------",   // 1: contains unique
-                                   "--C-------",   // 2: contains unique
+                                   "--C-------",   // 2: one hit wonder
                                    "---D---HHH--", // 3: subset
                                    "-B-D---HHH--", // 4: D should go to 4, not 3 (3 is subset)
                                    "-B--E-----",   // 5: subsumable
@@ -120,7 +120,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -215,7 +215,7 @@ namespace Test
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 8);
             Assert.That(parsimonyBaseSequences.Contains("AB--------"));
-            Assert.That(parsimonyBaseSequences.Contains("--C-------"));
+            Assert.That(parsimonyBaseSequences.Contains("--C-------")); 
             Assert.That(parsimonyBaseSequences.Contains("-B-D---HHH--"));
             Assert.That(parsimonyBaseSequences.Contains("-----F----*"));  // decoy
             Assert.That(parsimonyBaseSequences.Contains("----E----**"));  // contaminant
@@ -225,7 +225,7 @@ namespace Test
             Assert.That(parsimonyBaseSequences.Count == 8);
 
             // protein group tests
-            Assert.That(proteinGroups.Count == 5);
+            Assert.That(proteinGroups.Count == 4);
             Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 2);
             Assert.That(proteinGroups.First().proteinGroupScore == 19);
 
@@ -311,7 +311,7 @@ namespace Test
             var t = new PsmWithMultiplePossiblePeptides(psm, new HashSet<PeptideWithSetModifications> { peptide }, null, null, null);
             psms.Add(new NewPsmWithFdr(t));
 
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.RunQuantification(psms, 0.2, 10);
             
             Assert.That(psms.First().thisPSM.newPsm.apexIntensity == 0);
