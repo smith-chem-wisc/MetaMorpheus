@@ -154,13 +154,22 @@ namespace TaskLayer
             var paramsFileName = Path.Combine(output_folder, "prose.txt");
             using (StreamWriter file = new StreamWriter(paramsFileName))
             {
-                file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                file.WriteLine("MetaMorpheus version "
+                    + (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : MyEngine.MetaMorpheusVersion)
+                    + " is used to run a "
+                    + this.TaskType
+                    + " task on "
+                    + currentRawDataFilenameList.Count
+                    + " spectra files.");
+
+                file.WriteLine(ToString());
+
+                file.WriteLine();
                 file.WriteLine("taskId: " + taskId);
                 file.WriteLine("Spectra files:");
                 file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
                 file.WriteLine("XML files:");
-                file.WriteLine(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
-                file.Write(ToString());
+                file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
             }
             SucessfullyFinishedWritingFile(paramsFileName, new List<string> { taskId });
 
@@ -213,8 +222,10 @@ namespace TaskLayer
             var sb = new StringBuilder();
             sb.AppendLine(SpecificTaskInfo);
             sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("initiatorMethionineBehavior: " + InitiatorMethionineBehavior);
-            sb.AppendLine("maxMissedCleavages: " + MaxMissedCleavages);
+            sb.AppendLine("The initiator methionine behavior is set to "
+                + InitiatorMethionineBehavior
+                + " and the maximum number of allowed missed cleavages is "
+                + MaxMissedCleavages);
             sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
             sb.AppendLine("protease: " + Protease);
             sb.AppendLine("bIons: " + BIons);
