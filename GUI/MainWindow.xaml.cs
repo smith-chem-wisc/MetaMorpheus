@@ -213,45 +213,58 @@ namespace MetaMorpheusGUI
             if (files != null)
                 foreach (var draggedFilePath in files)
                 {
-                    var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
-                    switch (theExtension)
+                    if (Directory.Exists(draggedFilePath))
+                        foreach (string file in Directory.EnumerateFiles(draggedFilePath, "*.*", SearchOption.AllDirectories))
+                        {
+                            AddAFile(file);
+                        }
+                    else
                     {
-                        case ".raw":
-                        case ".mzml":
-                            rawDataObservableCollection.Add(new RawDataForDataGrid(draggedFilePath));
-                            break;
-
-                        case ".xml":
-                        case ".fasta":
-                        case ".gz":
-                            proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
-                            break;
-
-                        case ".toml":
-                            var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            switch (uhum.Get<string>("TaskType"))
-                            {
-                                case "Search":
-                                    var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                                    staticTasksObservableCollection.Add(new PreRunTask(ye1));
-                                    break;
-
-                                case "Calibrate":
-                                    var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                                    staticTasksObservableCollection.Add(new PreRunTask(ye2));
-                                    break;
-
-                                case "Gptmd":
-                                    var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                                    staticTasksObservableCollection.Add(new PreRunTask(ye3));
-                                    break;
-                            }
-                            break;
+                        AddAFile(draggedFilePath);
                     }
                     dataGridDatafiles.Items.Refresh();
                     dataGridXMLs.Items.Refresh();
                 }
             UpdateTaskGuiStuff();
+        }
+
+        private void AddAFile(string draggedFilePath)
+        {
+            var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+            switch (theExtension)
+            {
+                case ".raw":
+                case ".mzml":
+                    rawDataObservableCollection.Add(new RawDataForDataGrid(draggedFilePath));
+                    break;
+
+                case ".xml":
+                case ".fasta":
+                case ".gz":
+                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
+                    break;
+
+                case ".toml":
+                    var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                    switch (uhum.Get<string>("TaskType"))
+                    {
+                        case "Search":
+                            var ye1 = Toml.ReadFile<SearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye1));
+                            break;
+
+                        case "Calibrate":
+                            var ye2 = Toml.ReadFile<CalibrationTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye2));
+                            break;
+
+                        case "Gptmd":
+                            var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye3));
+                            break;
+                    }
+                    break;
+            }
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
