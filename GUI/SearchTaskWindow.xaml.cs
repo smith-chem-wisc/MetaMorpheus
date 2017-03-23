@@ -2,6 +2,7 @@
 using MzLibUtil;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -18,6 +19,8 @@ namespace MetaMorpheusGUI
     {
 
         #region Private Fields
+
+        private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForSearchTask> ModFileListInWindow = new ObservableCollection<ModListForSearchTask>();
@@ -37,6 +40,12 @@ namespace MetaMorpheusGUI
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Search Task";
+
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            {
+                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name))
+            };
+            this.DataContext = dataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
@@ -46,6 +55,12 @@ namespace MetaMorpheusGUI
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
+
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            {
+                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name))
+            };
+            this.DataContext = dataContextForSearchTaskWindow;
         }
 
         #endregion Public Constructors
@@ -61,8 +76,7 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            var hm = ye.Content as TextBlock;
-            if (hm != null && !string.IsNullOrEmpty(hm.Text))
+            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -180,7 +194,52 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
+        {
+            dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+        }
+
         #endregion Private Methods
+
+    }
+
+    public class DataContextForSearchTaskWindow : INotifyPropertyChanged
+    {
+
+        #region Private Fields
+
+        private string expanderTitle;
+
+        #endregion Private Fields
+
+        #region Public Events
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion Public Events
+
+        #region Public Properties
+
+        public string ExpanderTitle
+        {
+            get { return expanderTitle; }
+            set
+            {
+                expanderTitle = value;
+                RaisePropertyChanged("ExpanderTitle");
+            }
+        }
+
+        #endregion Public Properties
+
+        #region Protected Methods
+
+        protected void RaisePropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        #endregion Protected Methods
 
     }
 }

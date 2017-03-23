@@ -42,14 +42,27 @@
                 </StackPanel>
             </StackPanel>
         </Grid>
-        <StackPanel Margin="5">
-            <Label x:Name="allowedPrecursorMassDiffsLabel" Content="Allowed precursor mass diffs:" />
-            <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox"  Width="300" />
-                <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="AddNewAllowedPrecursorMassDiffsButton_Click" />
-            </StackPanel>
-        </StackPanel>
+        <GroupBox Header="Allowed Precursor Mass Differences">
+            <Expander x:Name="ApmdExpander" Collapsed="ApmdExpander_Collapsed">
+                <Expander.Style>
+                    <Style TargetType="Expander">
+                        <Setter Property="Header" Value="{Binding ExpanderTitle}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter Property="Header" Value="Hide"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Expander.Style>
+                <StackPanel Margin="5">
+                    <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox"  Width="300" />
+                        <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="AddNewAllowedPrecursorMassDiffsButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+        </GroupBox>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
