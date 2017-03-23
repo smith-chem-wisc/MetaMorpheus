@@ -156,7 +156,7 @@ namespace TaskLayer
                     Status("Generating indices...", new List<string> { taskId });
                     var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                     Status("Writing params...", new List<string> { taskId });
-                    writeIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
+                    WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
 
                     var indexResults = (IndexingResults)indexEngine.Run();
                     mySearchTaskResults.AddResultText(indexResults);
@@ -164,9 +164,9 @@ namespace TaskLayer
                     fragmentIndexDict = indexResults.FragmentIndexDict;
 
                     Status("Writing peptide index...", new List<string> { taskId });
-                    writePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
+                    WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
                     Status("Writing fragment index...", new List<string> { taskId });
-                    writeFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
+                    WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
                 }
                 else
                 {
@@ -254,7 +254,7 @@ namespace TaskLayer
             return folder;
         }
 
-        private void writeIndexEngineParams(IndexingEngine indexEngine, string fileName, string taskId)
+        private void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName, string taskId)
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {
@@ -285,7 +285,7 @@ namespace TaskLayer
             return null;
         }
 
-        private void writeFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile, string taskId)
+        private void WriteFragmentIndexNetSerializer(Dictionary<float, List<int>> fragmentIndex, string fragmentIndexFile, string taskId)
         {
             var messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
             var ser = new NetSerializer.Serializer(messageTypes);
@@ -295,7 +295,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(fragmentIndexFile, new List<string> { taskId });
         }
 
-        private void writePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile, string taskId)
+        private void WritePeptideIndex(List<CompactPeptide> peptideIndex, string peptideIndexFile, string taskId)
         {
             var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
             var ser = new NetSerializer.Serializer(messageTypes);
