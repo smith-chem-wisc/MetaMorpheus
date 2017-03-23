@@ -150,7 +150,7 @@ namespace EngineLayer.Analysis
             if (proteinsWithUniquePeptides.Any())
                 uniquePeptidesLeft = true;
             int numNewSeqs = algDictionary.Max(p => p.Value.Count);
-
+            
             while (numNewSeqs != 0)
             {
                 var possibleBestProteinList = new List<KeyValuePair<Protein, HashSet<string>>>();
@@ -164,15 +164,11 @@ namespace EngineLayer.Analysis
                         uniquePeptidesLeft = false;
                 }
 
+                // gets list of proteins with the most unaccounted-for peptide base sequences
                 if (!uniquePeptidesLeft)
-                {
-                    // gets list of proteins with the most unaccounted-for peptide base sequences
                     possibleBestProteinList = algDictionary.Where(p => p.Value.Count == numNewSeqs).ToList();
-                }
 
-                Protein bestProtein = null;
-                if (possibleBestProteinList.Any())
-                    bestProtein = possibleBestProteinList.First().Key;
+                Protein bestProtein = possibleBestProteinList.First().Key;
 
                 HashSet<string> newSeqs = algDictionary[bestProtein];
 
@@ -209,12 +205,14 @@ namespace EngineLayer.Analysis
                     HashSet<Protein> proteinsWithThisPeptide = peptideBaseSeqProteinListMatch[newBaseSeq];
 
                     foreach (var protein in proteinsWithThisPeptide)
-                    {
                         algDictionary[protein].Remove(newBaseSeq);
-                    }
                 }
+
                 algDictionary.Remove(bestProtein);
-                numNewSeqs = algDictionary.Max(p => p.Value.Count);
+                if (algDictionary.Any())
+                    numNewSeqs = algDictionary.Max(p => p.Value.Count);
+                else
+                    numNewSeqs = 0;
             }
 
             // build protein group after parsimony (each group only has 1 protein at this point)
