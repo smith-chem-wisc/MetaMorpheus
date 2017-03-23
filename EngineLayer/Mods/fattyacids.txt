@@ -4,12 +4,12 @@ TG   D
 PP   Anywhere.
 MM   294.183109
 CF   H26 C17 O4
-MT  FattyAcid
+MT   FattyAcid
 //
 ID   CHDHminus2methylenes
 TG   D
 PP   Anywhere.
 MM   266.151809
 CF   H22 C15 O4
-MT  FattyAcid
+MT   FattyAcid
 //
