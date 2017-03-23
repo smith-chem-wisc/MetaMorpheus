@@ -226,7 +226,7 @@ namespace Test
 
             // protein group tests
             Assert.That(proteinGroups.Count == 5);
-            Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 3);
+            Assert.That(proteinGroups.First().AllPsmsForStrictPeptideSequences.Count == 2);
             Assert.That(proteinGroups.First().proteinGroupScore == 19);
 
             // sequence coverage test
