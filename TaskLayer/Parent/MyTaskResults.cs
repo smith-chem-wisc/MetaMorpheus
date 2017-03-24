@@ -6,7 +6,7 @@ using System.Text;
 
 namespace TaskLayer
 {
-    public abstract class MyTaskResults
+    public class MyTaskResults
     {
 
         #region Public Fields
@@ -23,14 +23,14 @@ namespace TaskLayer
 
         #endregion Private Fields
 
-        #region Protected Constructors
+        #region Internal Constructors
 
-        protected MyTaskResults(MetaMorpheusTask s)
+        internal MyTaskResults(MetaMorpheusTask s)
         {
             resultTexts = new List<string>();
         }
 
-        #endregion Protected Constructors
+        #endregion Internal Constructors
 
         #region Public Methods
 

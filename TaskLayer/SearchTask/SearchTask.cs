@@ -53,6 +53,7 @@ namespace TaskLayer
             ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
             ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
             ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
+            ListOfModListsToAlwaysKeep = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
 
             SearchModes = MyEngine.SearchModesKnown.Take(1).ToList();
             TaskType = MyTask.Search;
@@ -65,6 +66,7 @@ namespace TaskLayer
         public List<string> ListOfModListsFixed { get; set; }
         public List<string> ListOfModListsVariable { get; set; }
         public List<string> ListOfModListsLocalize { get; set; }
+        public List<string> ListOfModListsToAlwaysKeep { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
@@ -76,6 +78,8 @@ namespace TaskLayer
         public bool SearchDecoy { get; set; }
         public List<SearchMode> SearchModes { get; set; }
         public bool ConserveMemory { get; set; }
+
+        public bool WritePrunedDatabase { get; set; }
 
         #endregion Public Properties
 
@@ -114,7 +118,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            var mySearchTaskResults = new MySearchTaskResults(this);
+            var mySearchTaskResults = new MyTaskResults(this);
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...", new List<string> { taskId });
@@ -185,6 +189,7 @@ namespace TaskLayer
                 keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             }
+            List<NewPsmWithFdr>[] allResultingIdentifications = null;
 
             Status("Searching files...", new List<string> { taskId });
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
@@ -207,6 +212,7 @@ namespace TaskLayer
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);
                     var analysisResults = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups", new List<string> { taskId, "Individual Searches", origDataFile }), DoParsimony, NoOneHitWonders, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, Quantify, QuantifyRtTol, QuantifyPpmTol).Run();
                     mySearchTaskResults.AddResultText(analysisResults);
+                    allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
                 }
                 else
                 {
@@ -216,6 +222,7 @@ namespace TaskLayer
                         allPsms[i].AddRange(modernSearchResults.NewPsms[i]);
                     var analysisResults = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "_ProteinGroups", new List<string> { taskId, "Individual Searches", origDataFile }), DoParsimony, NoOneHitWonders, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, Quantify, QuantifyRtTol, QuantifyPpmTol).Run();
                     mySearchTaskResults.AddResultText(analysisResults);
+                    allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
                 }
                 Status("Done!", new List<string> { taskId, "Individual Searches", origDataFile });
             }
@@ -224,6 +231,56 @@ namespace TaskLayer
             {
                 var analysisResults = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s, new List<string> { taskId }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s, new List<string> { taskId }), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, "aggregate_ProteinGroups" + s, new List<string> { taskId }), DoParsimony, NoOneHitWonders, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }, false, 0, 0).Run();
                 mySearchTaskResults.AddResultText(analysisResults);
+                allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
+            }
+
+            if (WritePrunedDatabase)
+            {
+                List<ModificationWithLocation> modificationsToAlwaysKeep = ListOfModListsToAlwaysKeep.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).ToList();
+
+                var goodPsmsForEachProtein = allResultingIdentifications.SelectMany(b => b).Where(b => b.qValueNotch < 0.01 && b.thisPSM.peptidesWithSetModifications.Count == 1 && !b.IsDecoy).GroupBy(b => b.thisPSM.peptidesWithSetModifications.First().Protein).ToDictionary(b => b.Key);
+
+                foreach (var protein in proteinList)
+                {
+                    if (!protein.IsDecoy)
+                    {
+                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.peptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(c.Key - b.thisPSM.peptidesWithSetModifications.First().OneBasedStartResidueInProtein + 1, c.Value))));
+
+                        IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
+                        foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
+                            foreach (var mod in modd.Value)
+                            {
+                                if (modificationsToAlwaysKeep.Contains(mod as ModificationWithLocation)
+                                    || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
+                                {
+                                    if (!modsToWrite.ContainsKey(modd.Key))
+                                        modsToWrite.Add(modd.Key, new List<Modification> { mod });
+                                    else
+                                        modsToWrite[modd.Key].Add(mod);
+                                }
+                            }
+                        protein.OneBasedPossibleLocalizedModifications.Clear();
+                        foreach (var kvp in modsToWrite)
+                            protein.OneBasedPossibleLocalizedModifications.Add(kvp);
+                    }
+                }
+
+                if (dbFilenameList.Any(b => !b.IsContaminant))
+                {
+                    string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "pruned.xml");
+
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+
+                    SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+                }
+                if (dbFilenameList.Any(b => b.IsContaminant))
+                {
+                    string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "pruned.xml");
+
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+
+                    SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+                }
             }
 
             return mySearchTaskResults;
