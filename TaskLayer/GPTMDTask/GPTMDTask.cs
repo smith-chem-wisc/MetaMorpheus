@@ -35,7 +35,7 @@ namespace TaskLayer
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 5);
+            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 2);
             BIons = true;
             YIons = true;
             CIons = false;
