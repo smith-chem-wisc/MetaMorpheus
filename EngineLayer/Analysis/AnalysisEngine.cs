@@ -339,12 +339,12 @@ namespace EngineLayer.Analysis
                 proteinGroup.Score();
 
             // merge protein groups that are indistinguishable after scoring
-            var pg = proteinGroups.OrderByDescending(p => p.proteinGroupScore).ToList();
+            var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
             for (int i = 0; i < (pg.Count - 1); i++)
             {
-                if (pg[i].proteinGroupScore == pg[i + 1].proteinGroupScore && pg[i].proteinGroupScore != 0)
+                if (pg[i].ProteinGroupScore == pg[i + 1].ProteinGroupScore && pg[i].ProteinGroupScore != 0)
                 {
-                    var pgsWithThisScore = pg.Where(p => p.proteinGroupScore == pg[i].proteinGroupScore).ToList();
+                    var pgsWithThisScore = pg.Where(p => p.ProteinGroupScore == pg[i].ProteinGroupScore).ToList();
 
                     // check to make sure they have the same peptides, then merge them
                     foreach (var p in pgsWithThisScore)
@@ -358,14 +358,39 @@ namespace EngineLayer.Analysis
             }
 
             // remove empty protein groups (peptides were too poor quality or group was merged)
-            proteinGroups.RemoveAll(p => p.proteinGroupScore == 0);
+            proteinGroups.RemoveAll(p => p.ProteinGroupScore == 0);
 
             // calculate sequence coverage
             foreach (var proteinGroup in proteinGroups)
                 proteinGroup.CalculateSequenceCoverage();
-
+            
             // distribute razor peptides
+            var sharedPepWithProteinGroups = new Dictionary<CompactPeptide, HashSet<ProteinGroup>>();
+            foreach (var proteinGroup in proteinGroups)
+            {
+                var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
+                foreach(var sharedPep in sharedPeps)
+                {
+                    HashSet<ProteinGroup> v;
+                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep, out v))
+                        v.Add(proteinGroup);
+                    else
+                        sharedPepWithProteinGroups.Add(sharedPep, new HashSet<ProteinGroup> { proteinGroup });
+                }
+            }
 
+            foreach(var kvp in sharedPepWithProteinGroups)
+            {
+                int i = kvp.Value.Select(p => p.AllPeptides.Select(x => System.Text.Encoding.UTF8.GetString(x.BaseSequence)).Count()).Max();
+                HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => System.Text.Encoding.UTF8.GetString(x.BaseSequence)).Count() == i));
+                foreach(var proteinGroup in t)
+                {
+                    proteinGroup.RazorPeptides.Add(kvp.Key);
+                }
+            }
+
+            foreach (var proteinGroup in proteinGroups)
+                proteinGroup.Quantify();
         }
 
         public List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
@@ -381,7 +406,7 @@ namespace EngineLayer.Analysis
             }
 
             // order protein groups by score
-            var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.proteinGroupScore).ToList();
+            var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.ProteinGroupScore).ToList();
 
             // do fdr
             int cumulativeTarget = 0;
@@ -393,8 +418,8 @@ namespace EngineLayer.Analysis
                 else
                     cumulativeTarget++;
 
-                proteinGroup.cumulativeTarget = cumulativeTarget;
-                proteinGroup.cumulativeDecoy = cumulativeDecoy;
+                proteinGroup.CumulativeTarget = cumulativeTarget;
+                proteinGroup.CumulativeDecoy = cumulativeDecoy;
                 proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
             }
 

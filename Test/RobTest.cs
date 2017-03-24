@@ -227,11 +227,11 @@ namespace Test
             // protein group tests
             Assert.That(proteinGroups.Count == 4);
             Assert.That(proteinGroups.First().AllPSMsBelow1PercentFDR.Count == 4);
-            Assert.That(proteinGroups.First().proteinGroupScore == 19);
+            Assert.That(proteinGroups.First().ProteinGroupScore == 19);
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
-                foreach (var coverage in proteinGroup.sequenceCoveragePercent)
+                foreach (var coverage in proteinGroup.SequenceCoveragePercent)
                     Assert.That(coverage <= 1.0);
         }
 
