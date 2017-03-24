@@ -1,126 +1,127 @@
 Missing
-ID   W
+ID   -W
 PP   Anywhere.
 TG   W
 MT   missing
 MM   -186.07931295073
 //
-ID   Y
+ID   -Y
 PP   Anywhere.
 TG   Y
 MT   missing
 MM   -163.06332853364
 //
-ID   R
+ID   -R
 PP   Anywhere.
 TG   R
 MT   missing
 MM   -156.10111102405
 //
-ID   U
+ID   -U
 PP   Anywhere.
 TG   U
 MT   missing
 MM   -150.95363558515
 //
-ID   F
+ID   -F
 PP   Anywhere.
 TG   F
 MT   missing
 MM   -147.06841391407
 //
-ID   H
+ID   -H
 PP   Anywhere.
 TG   H
 MT   missing
 MM   -137.05891185847
 //
-ID   M
+ID   -M
 PP   Anywhere.
 TG   M
 MT   missing
 MM   -131.04048508847
 //
-ID   E
+ID   -E
 PP   Anywhere.
 TG   E
 MT   missing
 MM   -129.04259308875
 //
-ID   K
+ID   -K
 PP   Anywhere.
 TG   K
 MT   missing
 MM   -128.09496301519
 //
-ID   Q
+ID   -Q
 PP   Anywhere.
 TG   Q
 MT   missing
 MM   -128.05857750584
 //
-ID   D
+ID   -D
 PP   Anywhere.
 TG   D
 MT   missing
 MM   -115.02694302429
 //
-ID   N
+ID   -N
 PP   Anywhere.
 TG   N
 MT   missing
 MM   -114.04292744138
 //
-ID   I
+ID   -I
 PP   Anywhere.
 TG   I
 MT   missing
 MM   -113.08406397853
 //
-ID   L
+ID   -L
 PP   Anywhere.
 TG   L
 MT   missing
 MM   -113.08406397853
 //
-ID   C
+ID   -C
 PP   Anywhere.
 TG   C
 MT   missing
 MM   -103.00918495955
 //
-ID   T
+ID   -T
 PP   Anywhere.
 TG   T
 MT   missing
 MM   -101.04767846918
 //
-ID   V
+ID   -V
 PP   Anywhere.
 TG   V
 MT   missing
 MM   -99.06841391407
 //
-ID   P
+ID   -P
 PP   Anywhere.
 TG   P
 MT   missing
 MM   -97.05276384961
 //
-ID   S
+ID   -S
 PP   Anywhere.
 TG   S
 MT   missing
 MM   -87.03202840472
 //
-ID   A
+ID   -A
 PP   Anywhere.
 TG   A
 MT   missing
 MM   -71.03711378515
 //
-ID   G
+ID   -G
 PP   Anywhere.
 TG   G
 MT   missing
 MM   -57.02146372069
+//
