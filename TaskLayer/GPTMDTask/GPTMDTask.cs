@@ -94,7 +94,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            MyTaskResults myGPTMDresults = new MyGptmdTaskResults(this)
+            MyTaskResults myGPTMDresults = new MyTaskResults(this)
             {
                 newDatabases = new List<DbForTask>()
             };

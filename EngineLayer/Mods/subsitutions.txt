@@ -1205,18 +1205,6 @@ TG   L
 MT   substitution
 MM   0.95886346284999
 //
-ID   N->D
-PP   Anywhere.
-TG   N
-MT   substitution
-MM   0.984015582910018
-//
-ID   Q->E
-PP   Anywhere.
-TG   Q
-MT   substitution
-MM   0.984015582910018
-//
 ID   I->D
 PP   Anywhere.
 TG   I
@@ -1504,18 +1492,6 @@ PP   Anywhere.
 TG   S
 MT   substitution
 MM   15.97715655483
-//
-ID   F->Y
-PP   Anywhere.
-TG   F
-MT   substitution
-MM   15.99491461957
-//
-ID   A->S
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   15.99491461957
 //
 ID   D->M
 PP   Anywhere.
@@ -1810,12 +1786,6 @@ PP   Anywhere.
 TG   V
 MT   substitution
 MM   31.9720711744
-//
-ID   P->E
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   31.98982923914
 //
 ID   M->Y
 PP   Anywhere.
@@ -2128,18 +2098,6 @@ PP   Anywhere.
 TG   G
 MT   substitution
 MM   56.06260025784
-//
-ID   A->Q
-PP   Anywhere.
-TG   A
-MT   substitution
-MM   57.02146372069
-//
-ID   G->N
-PP   Anywhere.
-TG   G
-MT   substitution
-MM   57.02146372069
 //
 ID   V->R
 PP   Anywhere.
