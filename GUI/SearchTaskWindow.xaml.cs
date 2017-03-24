@@ -43,7 +43,16 @@ namespace MetaMorpheusGUI
 
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name))
+                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
+                ModExpanderTitle =
+                "fixed: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+                + " variable: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+                + " localize: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName)),
+                AnalysisExpanderTitle = "Some analysis properties...",
+                SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = dataContextForSearchTaskWindow;
         }
@@ -58,7 +67,16 @@ namespace MetaMorpheusGUI
 
             dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
             {
-                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name))
+                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
+                ModExpanderTitle =
+                "fixed: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+                + " variable: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+                + " localize: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName)),
+                AnalysisExpanderTitle = "Some analysis properties...",
+                SearchModeExpanderTitle = "Some search properties..."
             };
             this.DataContext = dataContextForSearchTaskWindow;
         }
@@ -204,6 +222,15 @@ namespace MetaMorpheusGUI
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
             dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+            dataContextForSearchTaskWindow.ModExpanderTitle =
+                "fixed: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+                + " variable: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+                + " localize: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
+            dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
+            dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
 
         private void writePrunedDatabaseCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -252,6 +279,9 @@ namespace MetaMorpheusGUI
         #region Private Fields
 
         private string expanderTitle;
+        private string searchModeExpanderTitle;
+        private string modExpanderTitle;
+        private string analysisExpanderTitle;
 
         #endregion Private Fields
 
@@ -270,6 +300,36 @@ namespace MetaMorpheusGUI
             {
                 expanderTitle = value;
                 RaisePropertyChanged("ExpanderTitle");
+            }
+        }
+
+        public string AnalysisExpanderTitle
+        {
+            get { return analysisExpanderTitle; }
+            set
+            {
+                analysisExpanderTitle = value;
+                RaisePropertyChanged("AnalysisExpanderTitle");
+            }
+        }
+
+        public string ModExpanderTitle
+        {
+            get { return modExpanderTitle; }
+            set
+            {
+                modExpanderTitle = value;
+                RaisePropertyChanged("ModExpanderTitle");
+            }
+        }
+
+        public string SearchModeExpanderTitle
+        {
+            get { return searchModeExpanderTitle; }
+            set
+            {
+                searchModeExpanderTitle = value;
+                RaisePropertyChanged("SearchModeExpanderTitle");
             }
         }
 
