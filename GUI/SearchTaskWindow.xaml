@@ -12,7 +12,7 @@
             <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
                 <Expander.Style>
                     <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding ExpanderTitle}"/>
+                        <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}"/>
                         <Style.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter Property="Header" Value="Hide"/>
@@ -119,7 +119,7 @@
             <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
                 <Expander.Style>
                     <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding ExpanderTitle}"/>
+                        <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}"/>
                         <Style.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter Property="Header" Value="Hide"/>
@@ -163,7 +163,7 @@
             <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
                 <Expander.Style>
                     <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding ExpanderTitle}"/>
+                        <Setter Property="Header" Value="{Binding ModExpanderTitle}"/>
                         <Style.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
                                 <Setter Property="Header" Value="Hide"/>

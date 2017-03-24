@@ -17,6 +17,12 @@ namespace EngineLayer
 
         #endregion Public Fields
 
+        #region Private Fields
+
+        private double? precursorScanBestMass;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public PsmWithMultiplePossiblePeptides(PsmParent newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, List<ProductType> lp)
@@ -62,6 +68,13 @@ namespace EngineLayer
             }
 
             PeptideMonoisotopicMass = representative.MonoisotopicMass;
+
+            // Look for better match in MS1 spectrum!!!
+            if (myMsDataFile != null && !precursorScanBestMass.HasValue)
+            {
+                var precursorScan = myMsDataFile.GetOneBasedScan(newPsm.precursorScanNumber);
+                precursorScanBestMass = precursorScan.MassSpectrum.GetClosestPeakXvalue(this.PeptideMonoisotopicMass.ToMz(this.newPsm.scanPrecursorCharge)).ToMass(this.newPsm.scanPrecursorCharge);
+            }
 
             FullSequence = representative.Sequence;
             BaseSequence = representative.BaseSequence;
@@ -142,6 +155,9 @@ namespace EngineLayer
                 sb.Append("PeptideMonoisotopicMass" + '\t');
                 sb.Append("MassDiff (Da)" + '\t');
                 sb.Append("MassDiff (ppm)" + '\t');
+                sb.Append("BestMassInPrecursor" + '\t');
+                sb.Append("MassDiffToBestMass (Da)" + '\t');
+                sb.Append("MassDiffToBestMass (ppm)" + '\t');
                 sb.Append("Decoy/Contaminant/Target");
                 return sb.ToString();
             }
@@ -170,6 +186,11 @@ namespace EngineLayer
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(((ScanPrecursorMass - PeptideMonoisotopicMass) / PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+
+            sb.Append(precursorScanBestMass.Value.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append((precursorScanBestMass - PeptideMonoisotopicMass).Value.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(((precursorScanBestMass - PeptideMonoisotopicMass) / PeptideMonoisotopicMass * 1e6).Value.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+
             if (IsDecoy)
                 sb.Append("D");
             else if (IsContaminant)
