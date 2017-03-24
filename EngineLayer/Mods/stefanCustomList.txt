@@ -1,6 +1,6 @@
 Stefan Custom List
 ID   Deamidation
-TG   N
+TG   N or Q
 PP   Anywhere.
 MM   0.984016
 MT   Mod
