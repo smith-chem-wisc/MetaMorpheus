@@ -221,17 +221,11 @@ namespace EngineLayer.Calibration
                 // Each identification has an MS2 spectrum attached to it.
                 int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
 
-                //// Get the peptide, don't forget to add the modifications!!!!
-                //var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                //if (SequenceWithChemicalFormulas == null)
-                //    continue;
-                //Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
-
                 // Get the peptide, don't forget to add the modifications!!!!
-                var seq = identification.thisPSM.FullSequence;
-                if (identification.thisPSM.NumMods > 0)
+                var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
+                if (SequenceWithChemicalFormulas == null || identification.thisPSM.peptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLoss != 0))
                     continue;
-                Proteomics.Peptide coolPeptide = new Proteomics.Peptide(seq);
+                Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
                 int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
