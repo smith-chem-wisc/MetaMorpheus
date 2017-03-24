@@ -3,6 +3,7 @@ ID   Met loss + Acetylation at N-terminus
 TG   Methionine
 PP   N-terminal.
 MM   -89.02992
+MT   ProteinTermMod
 CF   H-7 C-3 N-1 S-1
 //
 ID   Dehydroalanine from Cysteine
@@ -263,6 +264,7 @@ ID   GG of K
 TG   Lysine
 PP   Anywhere.
 MM   114.042927
+MT   TrypticProduct
 CF   H6 C4 N2 O2
 //
 ID   Acetylation+Methionine

@@ -1,0 +1,148 @@
+Amino Acids
+ID   Tryptophan (W)
+PP   Anywhere.
+TG   W
+MT   AminoAcid
+MM   186.07931295073
+CF   C11 H10 O1 N2
+//
+ID   Tyrosine (Y)
+PP   Anywhere.
+TG   Y
+MT   AminoAcid
+MM   -163.06332853364
+CF   C9 H9 O2 N1
+//
+ID   Arginine (R)
+PP   Anywhere.
+TG   R
+MT   AminoAcid
+MM   156.10111102405
+CF   C6 H12 O1 N4
+//
+ID   Selenocysteine (U)
+PP   Anywhere.
+TG   U
+MT   AminoAcid
+MM   150.95363558515
+CF   C3 H5 O1 N1 Se1
+//
+ID   Phenylalanine (F)
+PP   Anywhere.
+TG   F
+MT   AminoAcid
+MM   147.06841391407
+CF   C9 H9 O1 N1
+//
+ID   Histidine (H)
+PP   Anywhere.
+TG   H
+MT   AminoAcid
+MM   137.05891185847
+CF   C6 H7 O1 N3
+//
+ID   Methionine (M)
+PP   Anywhere.
+TG   M
+MT   AminoAcid
+MM   131.04048508847
+CF   C5 H9 O1 N1 S1
+//
+ID   Glutamic Acid (E)
+PP   Anywhere.
+TG   E
+MT   AminoAcid
+MM   129.04259308875
+CF   C5 H7 O3 N1
+//
+ID   Lysine (K)
+PP   Anywhere.
+TG   K
+MT   AminoAcid
+MM   128.09496301519
+CF   C6 H12 O1 N2
+//
+ID   Glutamine (Q)
+PP   Anywhere.
+TG   Q
+MT   AminoAcid
+MM   128.05857750584
+CF   C5 H8 O2 N2
+//
+ID   Aspartic Acid (D)
+PP   Anywhere.
+TG   D
+MT   AminoAcid
+MM   115.02694302429
+CF   C4 H5 O3 N1
+//
+ID   Asparagine (N)
+PP   Anywhere.
+TG   N
+MT   AminoAcid
+MM   114.04292744138
+CF   C4 H6 O2 N2
+//
+ID   Isoleucine (I)
+PP   Anywhere.
+TG   I
+MT   AminoAcid
+MM   113.08406397853
+CF   C6 H11 O1 N1
+//
+ID   Leucine (L)
+PP   Anywhere.
+TG   L
+MT   AminoAcid
+MM   113.08406397853
+CF   C6 H11 O1 N1
+//
+ID   Cysteine (C)
+PP   Anywhere.
+TG   C
+MT   AminoAcid
+MM   103.00918495955
+CF   C6 H11 O1 N1
+//
+ID   Threonine (T)
+PP   Anywhere.
+TG   T
+MT   AminoAcid
+MM   101.04767846918
+CF   C4 H7 O2 N1
+//
+ID   Valine (V)
+PP   Anywhere.
+TG   V
+MT   AminoAcid
+MM   99.06841391407
+CF   C5 H9 O1 N1
+//
+ID   Proline (P)
+PP   Anywhere.
+TG   P
+MT   AminoAcid
+MM   97.05276384961
+CF   C5 H7 O1 N1
+//
+ID   Serine (S)
+PP   Anywhere.
+TG   S
+MT   AminoAcid
+MM   87.03202840472
+CF   C3 H5 O2 N1
+//
+ID   Alanine (A)
+PP   Anywhere.
+TG   A
+MT   AminoAcid
+MM   71.03711378515
+CF   C3 H5 O1 N1
+//
+ID   Glycine (G)
+PP   Anywhere.
+TG   G
+MT   AminoAcid
+MM   57.02146372069
+CF   C2 H3 O1 N1
+//
