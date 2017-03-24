@@ -85,13 +85,24 @@ namespace EngineLayer.Analysis
         {
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<CompactPeptide>>();
+            var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
             // peptide matched to fullseq (used depending on user preference)
             var compactPeptideToFullSeqMatch = compactPeptideToProteinPeptideMatching.ToDictionary(x => x.Key, x => x.Value.First().Sequence);
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
             {
+                // finds unique peptides (peptides that can belong to only one protein)
+                HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
+                if (proteinsAssociatedWithThisPeptide.Count() == 1)
+                {
+                    var peptides = new HashSet<PeptideWithSetModifications>();
+                    if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out peptides))
+                        proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
+                    else
+                        peptides.UnionWith(kvp.Value);
+                }
+
                 // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
                 if (kvp.Value.Where(p => p.Protein.IsDecoy).Any())
                     kvp.Value.RemoveWhere(p => !p.Protein.IsDecoy);
@@ -99,16 +110,6 @@ namespace EngineLayer.Analysis
                 // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
                 if (kvp.Value.Where(p => p.Protein.IsContaminant).Any())
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
-
-                // finds unique peptides (peptides that can belong to only one protein)
-                if (kvp.Value.Select(p => p.Protein).Count() == 1)
-                {
-                    var peptides = new HashSet<CompactPeptide>();
-                    if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out peptides))
-                        proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<CompactPeptide>() { kvp.Key });
-                    else
-                        peptides.Add(kvp.Key);
-                }
             }
 
             // makes dictionary with proteins as keys and list of associated peptides as the value (makes parsimony algo easier)
@@ -232,10 +233,15 @@ namespace EngineLayer.Analysis
             proteinGroups = new List<ProteinGroup>();
             foreach (var kvp in parsimonyDict)
             {
-                HashSet<CompactPeptide> uniquePeptidesHere;
+                HashSet<PeptideWithSetModifications> uniquePeptidesHere;
                 if (!proteinsWithUniquePeptides.TryGetValue(kvp.Key, out uniquePeptidesHere))
-                    uniquePeptidesHere = new HashSet<CompactPeptide>();
-                proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, kvp.Value, uniquePeptidesHere));
+                    uniquePeptidesHere = new HashSet<PeptideWithSetModifications>();
+
+                var allPeptidesHere = new HashSet<PeptideWithSetModifications>();
+                foreach(var compactPep in kvp.Value)
+                    allPeptidesHere.UnionWith(new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching[compactPep].Where(p => parsimonyDict.ContainsKey(p.Protein))));
+
+                proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, allPeptidesHere, uniquePeptidesHere));
             }
 
             // grab indistinguishable proteins ("if" conditions are to narrow search space)
@@ -250,9 +256,13 @@ namespace EngineLayer.Analysis
                             // prevents looking at itself
                             if (!parsimonyDict.ContainsKey(kvp.Key))
                             {
-                                if (kvp.Value.Count == proteinGroup.AllPeptides.Count)
+                                var allPeptidesHere = new HashSet<PeptideWithSetModifications>();
+                                foreach (var compactPep in kvp.Value)
+                                    allPeptidesHere.UnionWith(new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching[compactPep].Where(p => parsimonyDict.ContainsKey(p.Protein))));
+
+                                if (allPeptidesHere.Count == proteinGroup.AllPeptides.Count)
                                 {
-                                    if (kvp.Value.SetEquals(proteinGroup.AllPeptides))
+                                    if (allPeptidesHere.SetEquals(proteinGroup.AllPeptides))
                                     {
                                         proteinGroup.Proteins.Add(kvp.Key);
                                         parsimonyDict.Add(kvp.Key, kvp.Value);
@@ -263,31 +273,9 @@ namespace EngineLayer.Analysis
                     }
                 }
             }
-
-            // build protein list for each peptide after parsimony has been applied (helps construct answer)
-            var peptideProteinListMatch = new Dictionary<CompactPeptide, HashSet<Protein>>();
-            foreach (var kvp in parsimonyDict)
-            {
-                foreach (var peptide in kvp.Value)
-                {
-                    var proteinListHere = new HashSet<Protein>();
-
-                    if (!peptideProteinListMatch.TryGetValue(peptide, out proteinListHere))
-                        peptideProteinListMatch.Add(peptide, new HashSet<Protein> { kvp.Key });
-                    else
-                        proteinListHere.Add(kvp.Key);
-                }
-            }
-
-            foreach (var kvp in parsimonyDict)
-            {
-                foreach (var peptide in kvp.Value)
-                {
-                    var proteinListHere = peptideProteinListMatch[peptide];
-                    var newList = compactPeptideToProteinPeptideMatching[peptide].Where(p => proteinListHere.Contains(p.Protein));
-                    compactPeptideToProteinPeptideMatching[peptide] = new HashSet<PeptideWithSetModifications>(newList);
-                }
-            }
+            
+            foreach(var kvp in compactPeptideToProteinPeptideMatching)
+                kvp.Value.RemoveWhere(p => !parsimonyDict.ContainsKey(p.Protein));
 
             Status("Finished Parsimony", nestedIds);
         }
@@ -297,16 +285,16 @@ namespace EngineLayer.Analysis
             Status("Scoring protein groups...", nestedIds);
 
             // add each protein groups PSMs
-            var compactPeptideToPsmMatching = new Dictionary<CompactPeptide, HashSet<NewPsmWithFdr>>();
+            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<NewPsmWithFdr>>();
             foreach (var psm in psmList)
             {
                 if (psm.qValue <= 0.01)
                 {
-                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
+                    PeptideWithSetModifications peptide = psm.thisPSM.peptidesWithSetModifications.First();
                     var psmsForThisPeptide = new HashSet<NewPsmWithFdr>();
 
-                    if (!compactPeptideToPsmMatching.TryGetValue(peptide, out psmsForThisPeptide))
-                        compactPeptideToPsmMatching.Add(peptide, new HashSet<NewPsmWithFdr> { psm });
+                    if (!peptideToPsmMatching.TryGetValue(peptide, out psmsForThisPeptide))
+                        peptideToPsmMatching.Add(peptide, new HashSet<NewPsmWithFdr> { psm });
                     else
                         psmsForThisPeptide.Add(psm);
                 }
@@ -314,18 +302,13 @@ namespace EngineLayer.Analysis
 
             foreach (var proteinGroup in proteinGroups)
             {
-                List<CompactPeptide> pepsToRemove = new List<CompactPeptide>();
+                List<PeptideWithSetModifications> pepsToRemove = new List<PeptideWithSetModifications>();
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
                     HashSet<NewPsmWithFdr> psms;
-                    if (compactPeptideToPsmMatching.TryGetValue(peptide, out psms))
-                    {
-                        proteinGroup.AllPSMsBelow1PercentFDR.UnionWith(psms);
-
-                        foreach (var psm in psms)
-                            proteinGroup.PeptidesWithSetMods.UnionWith(psm.thisPSM.peptidesWithSetModifications);
-                    }
+                    if (peptideToPsmMatching.TryGetValue(peptide, out psms))
+                        proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else
                         pepsToRemove.Add(peptide);
                 }
@@ -365,7 +348,7 @@ namespace EngineLayer.Analysis
                 proteinGroup.CalculateSequenceCoverage();
             
             // distribute razor peptides
-            var sharedPepWithProteinGroups = new Dictionary<CompactPeptide, HashSet<ProteinGroup>>();
+            var sharedPepWithProteinGroups = new Dictionary<PeptideWithSetModifications, HashSet<ProteinGroup>>();
             foreach (var proteinGroup in proteinGroups)
             {
                 var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
@@ -381,8 +364,8 @@ namespace EngineLayer.Analysis
 
             foreach(var kvp in sharedPepWithProteinGroups)
             {
-                int i = kvp.Value.Select(p => p.AllPeptides.Select(x => System.Text.Encoding.UTF8.GetString(x.BaseSequence)).Count()).Max();
-                HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => System.Text.Encoding.UTF8.GetString(x.BaseSequence)).Count() == i));
+                int i = kvp.Value.Select(p => p.AllPeptides.Select(x => x.BaseSequence).Count()).Max();
+                HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Count() == i));
                 foreach(var proteinGroup in t)
                 {
                     proteinGroup.RazorPeptides.Add(kvp.Key);
@@ -402,7 +385,7 @@ namespace EngineLayer.Analysis
                 if (treatModPeptidesAsDifferentPeptides)
                     proteinGroups = proteinGroups.Where(p => p.isDecoy || p.AllPeptides.Count > 1).ToList();
                 else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || p.AllPeptides.Select(x => System.Text.Encoding.UTF8.GetString(x.BaseSequence)).Count() > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.isDecoy || p.AllPeptides.Select(x => x.BaseSequence).Count() > 1).ToList();
             }
 
             // order protein groups by score

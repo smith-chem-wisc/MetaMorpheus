@@ -18,15 +18,14 @@ namespace EngineLayer
 
         #region Internal Constructors
 
-        internal ProteinGroup(HashSet<Protein> proteins, HashSet<CompactPeptide> peptides, HashSet<CompactPeptide> uniquePeptides)
+        internal ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
             Proteins = proteins;
 
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
-            RazorPeptides = new HashSet<CompactPeptide>();
-            AllPSMsBelow1PercentFDR = new HashSet<NewPsmWithFdr>();
-            PeptidesWithSetMods = new HashSet<PeptideWithSetModifications>();
+            RazorPeptides = new HashSet<PeptideWithSetModifications>();
+            AllPsmsBelowOnePercentFDR = new HashSet<NewPsmWithFdr>();
             SequenceCoveragePercent = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             //sequenceCoverageDisplayListWithMods = new List<string>();
@@ -39,9 +38,15 @@ namespace EngineLayer
             foreach (var protein in proteins)
             {
                 if (protein.IsDecoy)
+                {
                     isDecoy = true;
+                    break;
+                }
                 if (protein.IsContaminant)
+                {
                     isContaminant = true;
+                    break;
+                }
             }
         }
 
@@ -60,7 +65,7 @@ namespace EngineLayer
                 sb.Append("Number of proteins in group" + '\t');
                 sb.Append("Unique peptides" + '\t');
                 sb.Append("Shared peptides" + '\t');
-                sb.Append("Razor peptides" + '\t');
+                //sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
                 sb.Append("Sequence coverage %" + '\t');
@@ -79,11 +84,10 @@ namespace EngineLayer
 
         public double ProteinGroupScore { get; set; }
         public HashSet<Protein> Proteins { get; set; }
-        public HashSet<CompactPeptide> AllPeptides { get; set; }
-        public HashSet<NewPsmWithFdr> AllPSMsBelow1PercentFDR { get; set; } // all PSMs below 1% fdr
-        public HashSet<CompactPeptide> UniquePeptides { get; set; }
-        public HashSet<CompactPeptide> RazorPeptides { get; set; }
-        public HashSet<PeptideWithSetModifications> PeptidesWithSetMods { get; set; }
+        public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
+        public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
+        public HashSet<PeptideWithSetModifications> RazorPeptides { get; set; }
+        public HashSet<NewPsmWithFdr> AllPsmsBelowOnePercentFDR { get; set; }
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
         //public List<string> sequenceCoverageDisplayListWithMods { get; private set; }
@@ -117,24 +121,24 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
+            sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
             sb.Append("\t");
 
             // list of shared peptides
             var sharedPeptides = AllPeptides.Except(UniquePeptides);
-            sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
+            sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.BaseSequence))));
             sb.Append("\t");
 
             // list of razor peptides
-            sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
-            sb.Append("\t");
+            //sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
+            //sb.Append("\t");
 
             // number of peptides
-            sb.Append("" + new HashSet<string>(AllPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence))).Count);
+            sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.BaseSequence)).Count);
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence))).Count);
+            sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence)).Count);
             sb.Append("\t");
 
             // sequence coverage percent
@@ -154,7 +158,7 @@ namespace EngineLayer
             //sb.Append("\t");
 
             // number of PSMs for listed peptides
-            sb.Append("" + AllPSMsBelow1PercentFDR.Count);
+            sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
             // summed metamorpheus score
@@ -189,12 +193,12 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPSMsBelow1PercentFDR.GroupBy(p => p.thisPSM.BaseSequence).Select(p => p.Select(x => x.thisPSM.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence).Select(p => p.Select(x => x.thisPSM.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
         {
-            var peptidesGroupedByProtein = PeptidesWithSetMods.GroupBy(p => p.Protein);
+            var peptidesGroupedByProtein = AllPeptides.GroupBy(p => p.Protein);
 
             foreach (var protein in Proteins)
             {
@@ -203,7 +207,7 @@ namespace EngineLayer
                     if (protein == peptideGroup.Key)
                     {
                         HashSet<int> coveredResidues = new HashSet<int>();
-                        var peptideModsBelow1FDR = new List<ModificationWithMass>();
+                        //var peptideModsBelow1FDR = new List<ModificationWithMass>();
 
                         foreach (var peptide in peptideGroup)
                         {
@@ -212,8 +216,8 @@ namespace EngineLayer
                                 for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
                                     coveredResidues.Add(i);
 
-                                foreach(var mod in peptide.allModsOneIsNterminus)
-                                    peptideModsBelow1FDR.Add(mod.Value);
+                                //foreach(var mod in peptide.allModsOneIsNterminus)
+                                //    peptideModsBelow1FDR.Add(mod.Value);
                             }
                         }
 
@@ -260,8 +264,8 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            var groups = AllPSMsBelow1PercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
-            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation", "Carbamidomethyl", "Acetylation" };
+            var groups = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
+            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation", "Carbamidomethyl", "Acetylation", "TMT_tag_lysine", "TMT_tag_terminal" };
 
             foreach (var group in groups)
             {
@@ -271,13 +275,13 @@ namespace EngineLayer
 
                 for (int i = 0; i < modsForThesePSMs.Count; i++)
                 {
-                    var unacceptableMods = modsForThesePSMs[i].Select(p => p.id);
-                    unacceptableMods = unacceptableMods.Except(acceptedModTypesForProteinQuantification);
+                    var unacceptableMods = modsForThesePSMs[i].Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
                     if (unacceptableMods.Any())
                         psmsToIgnore.Add(psmsForThisBaseSeq[i]);
                 }
 
                 psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
+
                 if(psmsForThisBaseSeq.Any())
                     Intensity += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity).Max();
             }
