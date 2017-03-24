@@ -1,126 +1,147 @@
 Missing
-ID   W
+ID   Missing Tryptophan (W)
 PP   Anywhere.
 TG   W
-MT   missing
+MT   Missing
 MM   -186.07931295073
+CF   C-11 H-10 O-1 N-2
 //
-ID   Y
+ID   Missing Tyrosine (Y)
 PP   Anywhere.
 TG   Y
-MT   missing
+MT   Missing
 MM   -163.06332853364
+CF   C-9 H-9 O-2 N-1
 //
-ID   R
+ID   MissingArginine (R)
 PP   Anywhere.
 TG   R
-MT   missing
+MT   Missing
 MM   -156.10111102405
+CF   C-6 H-12 O-1 N-4
 //
-ID   U
+ID   Missing Selenocysteine (U)
 PP   Anywhere.
 TG   U
-MT   missing
+MT   Missing
 MM   -150.95363558515
+CF   C-3 H-5 O-1 N-1 Se-1
 //
-ID   F
+ID   Missing Phenylalanine (F)
 PP   Anywhere.
 TG   F
-MT   missing
+MT   Missing
 MM   -147.06841391407
+CF   C-9 H-9 O-1 N-1
 //
-ID   H
+ID   Missing Histidine (H)
 PP   Anywhere.
 TG   H
-MT   missing
+MT   Missing
 MM   -137.05891185847
+CF   C-6 H-7 O-1 N-3
 //
-ID   M
+ID   Missing Methionine (M)
 PP   Anywhere.
 TG   M
-MT   missing
+MT   Missing
 MM   -131.04048508847
+CF   C-5 H-9 O-1 N-1 S-1
 //
-ID   E
+ID   Missing Glutamic Acid (E)
 PP   Anywhere.
 TG   E
-MT   missing
+MT   Missing
 MM   -129.04259308875
+CF   C-5 H-7 O-3 N-1
 //
-ID   K
+ID   Missing Lysine (K)
 PP   Anywhere.
 TG   K
-MT   missing
+MT   Missing
 MM   -128.09496301519
+CF   C-6 H-12 O-1 N-2
 //
-ID   Q
+ID   Missing Glutamine (Q)
 PP   Anywhere.
 TG   Q
-MT   missing
+MT   Missing
 MM   -128.05857750584
+CF   C-5 H-8 O-2 N-2
 //
-ID   D
+ID   Missing Aspartic Acid (D)
 PP   Anywhere.
 TG   D
-MT   missing
+MT   Missing
 MM   -115.02694302429
+CF   C-4 H-5 O-3 N-1
 //
-ID   N
+ID   Missing Asparagine (N)
 PP   Anywhere.
 TG   N
-MT   missing
+MT   Missing
 MM   -114.04292744138
+CF   C-4 H-6 O-2 N-2
 //
-ID   I
+ID   Missing Isoleucine (I)
 PP   Anywhere.
 TG   I
-MT   missing
+MT   Missing
 MM   -113.08406397853
 //
-ID   L
+ID   Missing Leucine (L)
 PP   Anywhere.
 TG   L
-MT   missing
+MT   Missing
 MM   -113.08406397853
+CF   C-6 H-11 O-1 N-1
 //
-ID   C
+ID   Missing Cysteine (C)
 PP   Anywhere.
 TG   C
-MT   missing
+MT   Missing
 MM   -103.00918495955
+CF   C-6 H-11 O-1 N-1
 //
-ID   T
+ID   Missing Threonine (T)
 PP   Anywhere.
 TG   T
-MT   missing
+MT   Missing
 MM   -101.04767846918
+CF   C-4 H-7 O-2 N-1
 //
-ID   V
+ID   Missing Valine (V)
 PP   Anywhere.
 TG   V
-MT   missing
+MT   Missing
 MM   -99.06841391407
+CF   C-5 H-9 O-1 N-1
 //
-ID   P
+ID   Missing Proline (P)
 PP   Anywhere.
 TG   P
-MT   missing
+MT   Missing
 MM   -97.05276384961
+CF   C-5 H-7 O-1 N-1
 //
-ID   S
+ID   Missing Serine (S)
 PP   Anywhere.
 TG   S
-MT   missing
+MT   Missing
 MM   -87.03202840472
+CF   C-3 H-5 O-2 N-1
 //
-ID   A
+ID   Missing Alanine (A)
 PP   Anywhere.
 TG   A
-MT   missing
+MT   Missing
 MM   -71.03711378515
+CF   C-3 H-5 O-1 N-1
 //
-ID   G
+ID   Missing Glycine (G)
 PP   Anywhere.
 TG   G
-MT   missing
+MT   Missing
 MM   -57.02146372069
+CF   C-2 H-3 O-1 N-1
+//
