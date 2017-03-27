@@ -275,7 +275,10 @@ namespace EngineLayer.Analysis
             }
 
             foreach (var proteinGroup in proteinGroups)
+            {
                 proteinGroup.AllPeptides.RemoveWhere(p => !proteinGroup.Proteins.Contains(p.Protein));
+                proteinGroup.DisplayModsOnPeptides = treatModPeptidesAsDifferentPeptides;
+            }
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
                 kvp.Value.RemoveWhere(p => !parsimonyDict.ContainsKey(p.Protein));

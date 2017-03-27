@@ -95,6 +95,7 @@ namespace EngineLayer
         public int CumulativeTarget { get; set; }
         public int CumulativeDecoy { get; set; }
         public double Intensity { get; private set; }
+        public bool DisplayModsOnPeptides { get; set; }
 
         #endregion Public Properties
 
@@ -121,12 +122,18 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
+            if(!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of shared peptides
-            var sharedPeptides = AllPeptides.Except(UniquePeptides);
-            sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.BaseSequence))));
+                var sharedPeptides = AllPeptides.Except(UniquePeptides);
+            if (!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of razor peptides
@@ -134,11 +141,17 @@ namespace EngineLayer
             //sb.Append("\t");
 
             // number of peptides
-            sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.BaseSequence)).Count);
+            if (!DisplayModsOnPeptides)
+                sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.BaseSequence)).Count);
+            else
+                sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.Sequence)).Count);
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence)).Count);
+            if (!DisplayModsOnPeptides)
+                sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence)).Count);
+            else
+                sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.Sequence)).Count);
             sb.Append("\t");
 
             // sequence coverage percent
