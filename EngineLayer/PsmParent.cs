@@ -36,6 +36,7 @@ namespace EngineLayer
         #region Internal Fields
 
         internal readonly int notch;
+        internal double? precursorScanBestMass;
 
         #endregion Internal Fields
 
