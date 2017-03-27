@@ -104,6 +104,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
+    <Compile Include="GlobalEngineLevelSettings.cs" />
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearch\ClassicSearchResults.cs" />

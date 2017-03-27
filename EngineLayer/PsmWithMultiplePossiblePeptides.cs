@@ -24,7 +24,7 @@ namespace EngineLayer
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
             IsContaminant = peptidesWithSetModifications.Any(b => b.Protein.IsContaminant);
-            this.peptidesWithSetModifications = peptidesWithSetModifications;
+            this.PeptidesWithSetModifications = peptidesWithSetModifications;
 
             var representative = peptidesWithSetModifications.First();
 
@@ -80,7 +80,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public HashSet<PeptideWithSetModifications> peptidesWithSetModifications { get; private set; }
+        public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; private set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
 
@@ -122,7 +122,7 @@ namespace EngineLayer
         {
             get
             {
-                return peptidesWithSetModifications.First().SequenceWithChemicalFormulas;
+                return PeptidesWithSetModifications.First().SequenceWithChemicalFormulas;
             }
         }
 
@@ -167,12 +167,12 @@ namespace EngineLayer
 
             sb.Append(newPsm.ToString() + '\t');
 
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.Protein.FullName)) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.PeptideDescription)) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.PreviousAminoAcid)) + "\t");
-            sb.Append(string.Join(" or ", peptidesWithSetModifications.Select(b => b.NextAminoAcid)) + "\t");
+            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
+            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName)) + "\t");
+            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription)) + "\t");
+            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")) + "\t");
+            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid)) + "\t");
+            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid)) + "\t");
             sb.Append(BaseSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(NumMods.ToString(CultureInfo.InvariantCulture) + '\t');

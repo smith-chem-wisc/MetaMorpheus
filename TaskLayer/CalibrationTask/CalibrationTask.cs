@@ -17,7 +17,6 @@ using UsefulProteomicsDatabases;
 namespace TaskLayer
 {
     public class CalibrationTask : MetaMorpheusTask
-
     {
 
         #region Public Constructors

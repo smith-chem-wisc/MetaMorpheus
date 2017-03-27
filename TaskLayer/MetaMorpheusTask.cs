@@ -155,7 +155,7 @@ namespace TaskLayer
             using (StreamWriter file = new StreamWriter(paramsFileName))
             {
                 file.WriteLine("MetaMorpheus version "
-                    + (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : MyEngine.MetaMorpheusVersion)
+                    + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
                     + " is used to run a "
                     + this.TaskType
                     + " task on "
@@ -191,7 +191,7 @@ namespace TaskLayer
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
-                file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
                 file.Write(myResults.ToString());
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });

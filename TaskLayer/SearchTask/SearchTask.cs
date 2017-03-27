@@ -56,7 +56,7 @@ namespace TaskLayer
             ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
             ListOfModListsToAlwaysKeep = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
 
-            SearchModes = MyEngine.SearchModesKnown.Take(1).ToList();
+            SearchModes = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
             TaskType = MyTask.Search;
         }
 
@@ -243,13 +243,13 @@ namespace TaskLayer
             {
                 List<ModificationWithLocation> modificationsToAlwaysKeep = ListOfModListsToAlwaysKeep.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).ToList();
 
-                var goodPsmsForEachProtein = allResultingIdentifications.SelectMany(b => b).Where(b => b.qValueNotch < 0.01 && b.thisPSM.peptidesWithSetModifications.Count == 1 && !b.IsDecoy).GroupBy(b => b.thisPSM.peptidesWithSetModifications.First().Protein).ToDictionary(b => b.Key);
+                var goodPsmsForEachProtein = allResultingIdentifications.SelectMany(b => b).Where(b => b.QValueNotch < 0.01 && b.thisPSM.PeptidesWithSetModifications.Count == 1 && !b.IsDecoy).GroupBy(b => b.thisPSM.PeptidesWithSetModifications.First().Protein).ToDictionary(b => b.Key);
 
                 foreach (var protein in proteinList)
                 {
                     if (!protein.IsDecoy)
                     {
-                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.peptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(c.Key - b.thisPSM.peptidesWithSetModifications.First().OneBasedStartResidueInProtein + 1, c.Value))));
+                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(c.Key - b.thisPSM.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + 1, c.Value))));
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)

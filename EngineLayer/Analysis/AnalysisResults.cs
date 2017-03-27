@@ -43,7 +43,7 @@ namespace EngineLayer.Analysis
         {
             var sb = new StringBuilder();
             sb.Append(base.ToString());
-            sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
+            sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
 
             if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
             {
