@@ -152,7 +152,6 @@
     <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
     <Compile Include="EventArgs\StringEventArgs.cs" />
     <Compile Include="EventArgs\StringListEventArgs.cs" />
-    <Compile Include="Exclusions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">
