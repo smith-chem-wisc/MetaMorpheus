@@ -114,7 +114,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            var myTaskResults = new MyCalibrationTaskResults(this)
+            var myTaskResults = new MyTaskResults(this)
             {
                 newSpectra = new List<string>()
             };

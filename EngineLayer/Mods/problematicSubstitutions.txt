@@ -1,0 +1,43 @@
+﻿Problematic substitutions
+ID   N->D
+PP   Anywhere.
+TG   N
+MT   substitution
+MM   0.984015582910018
+//
+ID   Q->E
+PP   Anywhere.
+TG   Q
+MT   substitution
+MM   0.984015582910018
+//
+ID   F->Y
+PP   Anywhere.
+TG   F
+MT   substitution
+MM   15.99491461957
+//
+ID   A->S
+PP   Anywhere.
+TG   A
+MT   substitution
+MM   15.99491461957
+//
+ID   P->E
+PP   Anywhere.
+TG   P
+MT   substitution
+MM   31.98982923914
+//
+ID   A->Q
+PP   Anywhere.
+TG   A
+MT   substitution
+MM   57.02146372069
+//
+ID   G->N
+PP   Anywhere.
+TG   G
+MT   substitution
+MM   57.02146372069
+//

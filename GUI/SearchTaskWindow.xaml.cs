@@ -2,6 +2,7 @@
 using MzLibUtil;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -18,6 +19,8 @@ namespace MetaMorpheusGUI
     {
 
         #region Private Fields
+
+        private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
 
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForSearchTask> ModFileListInWindow = new ObservableCollection<ModListForSearchTask>();
@@ -37,6 +40,21 @@ namespace MetaMorpheusGUI
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the Search Task";
+
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            {
+                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
+                ModExpanderTitle =
+                "fixed: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+                + " variable: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+                + " localize: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName)),
+                AnalysisExpanderTitle = "Some analysis properties...",
+                SearchModeExpanderTitle = "Some search properties..."
+            };
+            this.DataContext = dataContextForSearchTaskWindow;
         }
 
         public SearchTaskWindow(SearchTask task)
@@ -46,6 +64,21 @@ namespace MetaMorpheusGUI
 
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
+
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            {
+                ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
+                ModExpanderTitle =
+                "fixed: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+                + " variable: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+                + " localize: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName)),
+                AnalysisExpanderTitle = "Some analysis properties...",
+                SearchModeExpanderTitle = "Some search properties..."
+            };
+            this.DataContext = dataContextForSearchTaskWindow;
         }
 
         #endregion Public Constructors
@@ -61,8 +94,7 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            var hm = ye.Content as TextBlock;
-            if (hm != null && !string.IsNullOrEmpty(hm.Text))
+            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -121,8 +153,12 @@ namespace MetaMorpheusGUI
                 ModFileListInWindow.First(b => b.FileName.Equals(modList)).Variable = true;
             foreach (var modList in task.ListOfModListsLocalize)
                 ModFileListInWindow.First(b => b.FileName.Equals(modList)).Localize = true;
+            foreach (var modList in task.ListOfModListsToAlwaysKeep)
+                ModFileListInWindow.First(b => b.FileName.Equals(modList)).AlwaysKeep = true;
 
             modificationsDataGrid.Items.Refresh();
+
+            writePrunedDatabaseCheckBox.IsChecked = task.WritePrunedDatabase;
 
             foreach (var cool in task.SearchModes)
                 SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
@@ -160,9 +196,12 @@ namespace MetaMorpheusGUI
             TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName).ToList();
             TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName).ToList();
             TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName).ToList();
+            TheTask.ListOfModListsToAlwaysKeep = ModFileListInWindow.Where(b => b.AlwaysKeep).Select(b => b.FileName).ToList();
 
             TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
+
+            TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
 
             DialogResult = true;
         }
@@ -182,7 +221,130 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
+        {
+            dataContextForSearchTaskWindow.ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name));
+            dataContextForSearchTaskWindow.ModExpanderTitle =
+                "fixed: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName))
+                + " variable: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName))
+                + " localize: "
+                + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
+            dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
+            dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
+        }
+
+        private void writePrunedDatabaseCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                modificationsDataGrid.Columns[3].Visibility = Visibility.Visible;
+            }
+            catch { }
+        }
+
+        private void writePrunedDatabaseCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
+            }
+            catch { }
+        }
+
+        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void modificationsDataGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void modificationsDataGrid_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+        }
+
+        private void modificationsDataGrid_AutoGeneratedColumns(object sender, EventArgs e)
+        {
+            if (!TheTask.WritePrunedDatabase)
+                modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
+        }
+
         #endregion Private Methods
+
+    }
+
+    public class DataContextForSearchTaskWindow : INotifyPropertyChanged
+    {
+
+        #region Private Fields
+
+        private string expanderTitle;
+        private string searchModeExpanderTitle;
+        private string modExpanderTitle;
+        private string analysisExpanderTitle;
+
+        #endregion Private Fields
+
+        #region Public Events
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion Public Events
+
+        #region Public Properties
+
+        public string ExpanderTitle
+        {
+            get { return expanderTitle; }
+            set
+            {
+                expanderTitle = value;
+                RaisePropertyChanged("ExpanderTitle");
+            }
+        }
+
+        public string AnalysisExpanderTitle
+        {
+            get { return analysisExpanderTitle; }
+            set
+            {
+                analysisExpanderTitle = value;
+                RaisePropertyChanged("AnalysisExpanderTitle");
+            }
+        }
+
+        public string ModExpanderTitle
+        {
+            get { return modExpanderTitle; }
+            set
+            {
+                modExpanderTitle = value;
+                RaisePropertyChanged("ModExpanderTitle");
+            }
+        }
+
+        public string SearchModeExpanderTitle
+        {
+            get { return searchModeExpanderTitle; }
+            set
+            {
+                searchModeExpanderTitle = value;
+                RaisePropertyChanged("SearchModeExpanderTitle");
+            }
+        }
+
+        #endregion Public Properties
+
+        #region Protected Methods
+
+        protected void RaisePropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        #endregion Protected Methods
 
     }
 }

@@ -35,7 +35,7 @@ namespace TaskLayer
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 5);
+            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 2);
             BIons = true;
             YIons = true;
             CIons = false;
@@ -94,7 +94,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            MyTaskResults myGPTMDresults = new MyGptmdTaskResults(this)
+            MyTaskResults myGPTMDresults = new MyTaskResults(this)
             {
                 newDatabases = new List<DbForTask>()
             };

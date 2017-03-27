@@ -3,6 +3,6 @@ ID   Carbamidomethyl
 TG   C
 PP   Anywhere.
 MM   57.02146373
-MT   FixedMod
+MT   fixed
 CF   H3 C2 N O
 //

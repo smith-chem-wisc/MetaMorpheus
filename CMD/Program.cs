@@ -93,7 +93,7 @@ namespace MetaMorpheusCommandLine
             Console.WriteLine("Usage:");
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");
-            Console.WriteLine("\t-e --databases List of database files");
+            Console.WriteLine("\t-d --databases List of database files");
             return;
         }
 

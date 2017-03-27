@@ -33,7 +33,7 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 
             List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
-            PsmParent newPsm = new TestParentSpectrumMatch(2, 2);
+            PsmParent newPsm = new TestParentSpectrumMatch(2, 2, 1);
             PsmWithMultiplePossiblePeptides thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
@@ -58,7 +58,7 @@ namespace Test
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.1);
 
-            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new TestParentSpectrumMatch(2, 2), new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y }));
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new TestParentSpectrumMatch(2, 2, 1), new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y }));
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
 
             var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<NewPsmWithFdr> { thePsmwithfdr }, 3, 2, 10, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();
