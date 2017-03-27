@@ -131,7 +131,8 @@
                     <GroupBox Header="Protein Parsimony">
                         <StackPanel>
                             <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
-                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" Margin="0,0,0,0" VerticalAlignment="Top" Height="16" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
                         </StackPanel>
                     </GroupBox>
                     <GroupBox Header="Quantification">
