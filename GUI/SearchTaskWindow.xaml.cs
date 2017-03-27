@@ -118,7 +118,7 @@ namespace MetaMorpheusGUI
             modificationsDataGrid.DataContext = ModFileListInWindow;
 
             // Always create new ModFileList
-            foreach (var uu in MyEngine.SearchModesKnown)
+            foreach (var uu in GlobalTaskLevelSettings.SearchModesKnown)
                 SearchModesForThisTask.Add(new SearchModeForDataGrid(uu));
             searchModesDataGrid.DataContext = SearchModesForThisTask;
         }
@@ -211,7 +211,7 @@ namespace MetaMorpheusGUI
             try
             {
                 var ye = MetaMorpheusTask.ParseSearchMode(newAllowedPrecursorMassDiffsTextBox.Text);
-                MyEngine.SearchModesKnown.Add(ye);
+                GlobalTaskLevelSettings.SearchModesKnown.Add(ye);
                 SearchModesForThisTask.Add(new SearchModeForDataGrid(ye));
                 searchModesDataGrid.Items.Refresh();
             }

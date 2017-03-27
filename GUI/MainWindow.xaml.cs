@@ -34,9 +34,9 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            Title = MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ?
+            Title = GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ?
                 "MetaMorpheus: Not a release version" :
-                "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
+                "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
 

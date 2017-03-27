@@ -22,10 +22,10 @@ namespace MetaMorpheusCommandLine
 
         private static void Main(string[] args)
         {
-            if (MyEngine.MetaMorpheusVersion.Equals("1.0.0.0"))
+            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0"))
                 Console.WriteLine("Not a release version");
             else
-                Console.WriteLine(MyEngine.MetaMorpheusVersion);
+                Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
 
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
