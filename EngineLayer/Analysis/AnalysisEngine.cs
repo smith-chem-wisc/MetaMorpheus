@@ -273,8 +273,11 @@ namespace EngineLayer.Analysis
                     }
                 }
             }
-            
-            foreach(var kvp in compactPeptideToProteinPeptideMatching)
+
+            foreach (var proteinGroup in proteinGroups)
+                proteinGroup.AllPeptides.RemoveWhere(p => !proteinGroup.Proteins.Contains(p.Protein));
+
+            foreach (var kvp in compactPeptideToProteinPeptideMatching)
                 kvp.Value.RemoveWhere(p => !parsimonyDict.ContainsKey(p.Protein));
 
             Status("Finished Parsimony", nestedIds);
@@ -290,13 +293,15 @@ namespace EngineLayer.Analysis
             {
                 if (psm.qValue <= 0.01)
                 {
-                    PeptideWithSetModifications peptide = psm.thisPSM.peptidesWithSetModifications.First();
-                    var psmsForThisPeptide = new HashSet<NewPsmWithFdr>();
+                    foreach (var pepWithSetMods in psm.thisPSM.peptidesWithSetModifications)
+                    {
+                        var psmsForThisPeptide = new HashSet<NewPsmWithFdr>();
 
-                    if (!peptideToPsmMatching.TryGetValue(peptide, out psmsForThisPeptide))
-                        peptideToPsmMatching.Add(peptide, new HashSet<NewPsmWithFdr> { psm });
-                    else
-                        psmsForThisPeptide.Add(psm);
+                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
+                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<NewPsmWithFdr> { psm });
+                        else
+                            psmsForThisPeptide.Add(psm);
+                    }
                 }
             }
 
@@ -420,11 +425,11 @@ namespace EngineLayer.Analysis
 
             foreach (var length in peptideLengths)
             {
-                var formula = "C" + (int)(4.9384 * length)
-                            + "H" + (int)(7.7583 * length)
-                            + "N" + (int)(1.3577 * length)
-                            + "O" + (int)(1.4773 * length)
-                            + "S" + (int)(0.0417 * length);
+                var formula = "C" + (int)(4.9384 * length);
+                            //+ "H" + (int)(7.7583 * length)
+                            //+ "N" + (int)(1.3577 * length)
+                            //+ "O" + (int)(1.4773 * length)
+                            //+ "S" + (int)(0.0417 * length);
                 var isotopicDistribution = IsotopicDistribution.GetDistribution(ChemicalFormula.ParseFormula(formula), 0.0001, 0.01);
 
                 var masses = isotopicDistribution.Masses.ToArray();

@@ -71,7 +71,7 @@ namespace EngineLayer
                 sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
                 //sb.Append("Sequence coverage w Localizable Mods" + '\t');
-                sb.Append("Intensity" + '\t');
+                //sb.Append("Intensity" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy/Contaminant/Target" + '\t');
@@ -150,8 +150,8 @@ namespace EngineLayer
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
-            sb.Append(Intensity);
-            sb.Append("\t");
+            //sb.Append(Intensity);
+            //sb.Append("\t");
 
             // sequence coverage with mods
             //sb.Append(string.Join("|", sequenceCoverageDisplayListWithMods));
