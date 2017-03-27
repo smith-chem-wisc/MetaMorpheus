@@ -39,9 +39,9 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public static string MetaMorpheusVersion { get; private set; }
-        public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
-        public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
+        public static string MetaMorpheusVersion { get; }
+        public static IEnumerable<Modification> UnimodDeserialized { get; }
+        public static IEnumerable<Modification> UniprotDeseralized { get; }
 
         #endregion Public Properties
 

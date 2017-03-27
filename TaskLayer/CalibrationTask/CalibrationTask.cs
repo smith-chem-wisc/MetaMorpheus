@@ -25,7 +25,7 @@ namespace TaskLayer
         {
             // Set default values here:
             MaxMissedCleavages = 2;
-            Protease = ProteaseDictionary.Instance["trypsin"];
+            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);

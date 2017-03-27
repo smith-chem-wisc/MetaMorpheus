@@ -39,7 +39,7 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => ProteaseDictionary.Instance[tmlString.Value]))));
+                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value]))));
 
         #endregion Public Fields
 

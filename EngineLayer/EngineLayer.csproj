@@ -119,7 +119,6 @@
     <Compile Include="Proteomics\PeptideWithSetModifications.cs" />
     <Compile Include="Proteomics\ProductType.cs" />
     <Compile Include="Proteomics\Protease.cs" />
-    <Compile Include="Proteomics\ProteaseDictionary.cs" />
     <Compile Include="Proteomics\ProteinExtensions.cs" />
     <Compile Include="SearchModes\DotSearchMode.cs" />
     <Compile Include="Gptmd\GptmdEngine.cs" />
