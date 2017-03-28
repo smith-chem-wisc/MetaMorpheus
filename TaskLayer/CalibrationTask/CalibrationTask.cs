@@ -183,7 +183,7 @@ namespace TaskLayer
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFileName);
                     Status("Opening spectra file " + origDataFileName + "...", new List<string> { taskId, "Individual Searches", origDataFileName });
-                    listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                    listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 }
 
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
@@ -218,7 +218,7 @@ namespace TaskLayer
 
                 // Second search round
 
-                var listOfSortedms2ScansTest = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                var listOfSortedms2ScansTest = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
                 var searchResultsTest = (ClassicSearchResults)searchEngineTest.Run();
                 myTaskResults.AddResultText(searchResultsTest);
@@ -233,7 +233,7 @@ namespace TaskLayer
 
                 // Final search round - not required
 
-                var listOfSortedms2ScansTest2 = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                var listOfSortedms2ScansTest2 = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 var searchEngineTest2 = new ClassicSearchEngine(listOfSortedms2ScansTest2, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
                 var searchResultsTest2 = (ClassicSearchResults)searchEngineTest2.Run();
                 myTaskResults.AddResultText(searchResultsTest2);

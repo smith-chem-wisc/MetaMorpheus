@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.Indexing
 {
-    public class IndexingEngine : MyEngine
+    public class IndexingEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -71,7 +71,7 @@ namespace EngineLayer.Indexing
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);

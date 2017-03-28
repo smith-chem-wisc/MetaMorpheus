@@ -130,9 +130,9 @@
     <Compile Include="ModernSearch\ModernSearchEngine.cs" />
     <Compile Include="ModernSearch\ModernSearchResults.cs" />
     <Compile Include="ModernSearch\PsmModern.cs" />
-    <Compile Include="MyEngine.cs" />
+    <Compile Include="MetaMorpheusEngine.cs" />
     <Compile Include="Analysis\MyInfo.cs" />
-    <Compile Include="MyResults.cs" />
+    <Compile Include="MetaMorpheusEngineResults.cs" />
     <Compile Include="PsmWithFdr.cs" />
     <Compile Include="Analysis\OkBin.cs" />
     <Compile Include="PsmParent.cs" />

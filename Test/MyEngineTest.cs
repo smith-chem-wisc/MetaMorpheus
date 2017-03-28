@@ -13,7 +13,7 @@ namespace Test
         [Test]
         public static void TestMyEngine()
         {
-            MyEngine level0engine = new TestEngine(0);
+            MetaMorpheusEngine level0engine = new TestEngine(0);
 
             level0engine = new TestEngine(0);
             level0engine.Run();
@@ -23,7 +23,7 @@ namespace Test
 
         #region Private Classes
 
-        private class TestEngine : MyEngine
+        private class TestEngine : MetaMorpheusEngine
         {
 
             #region Public Constructors
@@ -36,7 +36,7 @@ namespace Test
 
             #region Protected Methods
 
-            protected override MyResults RunSpecific()
+            protected override MetaMorpheusEngineResults RunSpecific()
             {
                 return new TestResults(this);
             }
@@ -45,18 +45,18 @@ namespace Test
 
             #region Private Classes
 
-            private class TestResults : MyResults
+            private class TestResults : MetaMorpheusEngineResults
             {
 
                 #region Public Constructors
 
-                public TestResults(MyEngine e) : base(e)
+                public TestResults(MetaMorpheusEngine e) : base(e)
                 {
                 }
 
                 #endregion Public Constructors
 
-                #region Protected Properties
+                #region Public Methods
 
                 public override string ToString()
                 {
@@ -66,7 +66,7 @@ namespace Test
                     return sb.ToString();
                 }
 
-                #endregion Protected Properties
+                #endregion Public Methods
 
             }
 

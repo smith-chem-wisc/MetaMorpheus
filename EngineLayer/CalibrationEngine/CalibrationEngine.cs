@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace EngineLayer.Calibration
 {
-    public class CalibrationEngine : MyEngine
+    public class CalibrationEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -63,7 +63,7 @@ namespace EngineLayer.Calibration
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Calibrating ", nestedIds);
             var trainingPointCounts = new List<int>();

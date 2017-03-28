@@ -45,10 +45,10 @@ namespace MetaMorpheusCommandLine
 
             if (result.HasErrors == false)
             {
-                MyEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
-                MyEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
-                MyEngine.OutProgressHandler += MyEngine_outProgressHandler;
-                MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
+                MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
+                MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
+                MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
 
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;

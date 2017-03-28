@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace TaskLayer
 {
-    public class EverythingRunnerEngine : MyEngine
+    public class EverythingRunnerEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -43,7 +43,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             StartingAllTasks();
 

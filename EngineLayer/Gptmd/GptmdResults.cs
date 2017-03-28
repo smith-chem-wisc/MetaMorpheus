@@ -6,7 +6,7 @@ using System.Text;
 
 namespace EngineLayer.Gptmd
 {
-    public class GptmdResults : MyResults
+    public class GptmdResults : MetaMorpheusEngineResults
     {
 
         #region Private Fields
@@ -17,7 +17,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> mods, int modsAdded) : base(s)
+        public GptmdResults(MetaMorpheusEngine s, Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> mods, int modsAdded) : base(s)
         {
             this.Mods = mods;
             this.modsAdded = modsAdded;

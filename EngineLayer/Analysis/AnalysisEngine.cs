@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.Analysis
 {
-    public class AnalysisEngine : MyEngine
+    public class AnalysisEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -646,7 +646,7 @@ namespace EngineLayer.Analysis
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             AnalysisResults myAnalysisResults = new AnalysisResults(this);
             Status("Running analysis engine!", nestedIds);

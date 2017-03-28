@@ -211,7 +211,7 @@ namespace TaskLayer
 
                 if (ClassicSearch)
                 {
-                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
+                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
                     mySearchTaskResults.AddResultText(classicSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);

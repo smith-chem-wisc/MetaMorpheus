@@ -62,8 +62,8 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
 
-            MyEngine.OutProgressHandler += NewoutProgressBar;
-            MyEngine.OutLabelStatusHandler += NewoutLabelStatus;
+            MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
+            MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
 
             UpdateTaskGuiStuff();
         }

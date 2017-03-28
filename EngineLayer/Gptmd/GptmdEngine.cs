@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace EngineLayer.Gptmd
 {
-    public class GptmdEngine : MyEngine
+    public class GptmdEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -65,7 +65,7 @@ namespace EngineLayer.Gptmd
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             var Mods = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
 
