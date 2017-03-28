@@ -93,7 +93,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
     <Compile Include="GlobalTaskLevelSettings.cs" />
     <Compile Include="EventArgs\XmlForTaskListEventArgs.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />

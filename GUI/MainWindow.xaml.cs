@@ -43,16 +43,16 @@ namespace MetaMorpheusGUI
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
-            EverythingRunnerEngine.newDbsHandler += AddNewDB;
-            EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
-
-            EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
-
             foreach (var modFile in Directory.GetFiles(@"Mods"))
             {
                 MetaMorpheusTask.AddModList(modFile);
             }
+
+            EverythingRunnerEngine.newDbsHandler += AddNewDB;
+            EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
+            EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.warnHandler += EverythingRunnerEngine_warnHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MetaMorpheusTask.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
@@ -71,6 +71,19 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void EverythingRunnerEngine_warnHandler(object sender, StringEventArgs e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerEngine_warnHandler(sender, e)));
+            }
+            else
+            {
+                outRichTextBox.AppendText(e.s);
+                outRichTextBox.AppendText(Environment.NewLine);
+            }
+        }
 
         private void MyTaskEngine_FinishedDataFileHandler(object sender, StringEventArgs s)
         {

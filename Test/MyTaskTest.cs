@@ -97,9 +97,7 @@ namespace Test
 
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
-            var results = (EverythingRunnerResults)engine.Run();
-
-            Assert.NotNull(results);
+            engine.Run();
         }
 
         #endregion Public Methods
