@@ -94,18 +94,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EverythingRunner\EverythingRunnerResults.cs" />
-    <Compile Include="EverythingRunner\XmlForTaskListEventArgs.cs" />
+    <Compile Include="GlobalTaskLevelSettings.cs" />
+    <Compile Include="EventArgs\XmlForTaskListEventArgs.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
     <Compile Include="CalibrationTask\CalibrationTask.cs" />
     <Compile Include="GPTMDTask\GPTMDTask.cs" />
-    <Compile Include="Parent\DbForTask.cs" />
+    <Compile Include="DbForTask.cs" />
     <Compile Include="SearchTask\SearchTask.cs" />
-    <Compile Include="Parent\MetaMorpheusTask.cs" />
-    <Compile Include="Parent\MyTaskResults.cs" />
+    <Compile Include="MetaMorpheusTask.cs" />
+    <Compile Include="MyTaskResults.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="Parent\SingleTaskEventArgs.cs" />
+    <Compile Include="EventArgs\SingleTaskEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">

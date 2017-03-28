@@ -16,14 +16,14 @@ namespace EngineLayer
 
         protected MyResults(MyEngine s)
         {
-            this.MyEngine = s;
+            MyEngine = s;
         }
 
         #endregion Protected Constructors
 
         #region Protected Properties
 
-        protected MyEngine MyEngine { get; private set; }
+        protected MyEngine MyEngine { get; }
 
         #endregion Protected Properties
 

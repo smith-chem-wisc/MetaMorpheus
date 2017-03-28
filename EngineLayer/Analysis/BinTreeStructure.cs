@@ -176,7 +176,7 @@ namespace EngineLayer.Analysis
             {
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.peptidesWithSetModifications.Count == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.PeptidesWithSetModifications.Count == 1) / numTarget;
             }
         }
 
@@ -272,13 +272,13 @@ namespace EngineLayer.Analysis
                         if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores[0] < 0.5)
                         {
                             bin.pepNlocCount++;
-                            if (hehe.Item3.thisPSM.peptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                            if (hehe.Item3.thisPSM.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
                                 bin.protNlocCount++;
                         }
                         if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores.Last() < 0.5)
                         {
                             bin.pepClocCount++;
-                            if (hehe.Item3.thisPSM.peptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                            if (hehe.Item3.thisPSM.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
                                 bin.protClocCount++;
                         }
                     }
@@ -293,7 +293,7 @@ namespace EngineLayer.Analysis
                 var ok = new HashSet<string>();
                 var okformula = new HashSet<string>();
                 var okDiff = new HashSet<double>();
-                foreach (var hm in MyEngine.UnimodDeserialized)
+                foreach (var hm in GlobalEngineLevelSettings.UnimodDeserialized)
                 {
                     var theMod = hm as ModificationWithMassAndCf;
                     if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
@@ -314,7 +314,7 @@ namespace EngineLayer.Analysis
             foreach (var bin in FinalBins)
             {
                 var ok = new HashSet<string>();
-                foreach (var hm in MyEngine.UniprotDeseralized)
+                foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
                 {
                     var theMod = hm as ModificationWithMass;
                     if (theMod != null && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)

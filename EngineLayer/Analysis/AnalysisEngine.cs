@@ -238,7 +238,7 @@ namespace EngineLayer.Analysis
                     uniquePeptidesHere = new HashSet<PeptideWithSetModifications>();
 
                 var allPeptidesHere = new HashSet<PeptideWithSetModifications>();
-                foreach(var compactPep in kvp.Value)
+                foreach (var compactPep in kvp.Value)
                     allPeptidesHere.UnionWith(new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching[compactPep].Where(p => parsimonyDict.ContainsKey(p.Protein))));
 
                 proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, allPeptidesHere, uniquePeptidesHere));
@@ -294,9 +294,9 @@ namespace EngineLayer.Analysis
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<NewPsmWithFdr>>();
             foreach (var psm in psmList)
             {
-                if (psm.qValue <= 0.01)
+                if (psm.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.thisPSM.peptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.thisPSM.PeptidesWithSetModifications)
                     {
                         var psmsForThisPeptide = new HashSet<NewPsmWithFdr>();
 
@@ -354,13 +354,13 @@ namespace EngineLayer.Analysis
             // calculate sequence coverage
             foreach (var proteinGroup in proteinGroups)
                 proteinGroup.CalculateSequenceCoverage();
-            
+
             // distribute razor peptides
             var sharedPepWithProteinGroups = new Dictionary<PeptideWithSetModifications, HashSet<ProteinGroup>>();
             foreach (var proteinGroup in proteinGroups)
             {
                 var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
-                foreach(var sharedPep in sharedPeps)
+                foreach (var sharedPep in sharedPeps)
                 {
                     HashSet<ProteinGroup> v;
                     if (sharedPepWithProteinGroups.TryGetValue(sharedPep, out v))
@@ -370,11 +370,11 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            foreach(var kvp in sharedPepWithProteinGroups)
+            foreach (var kvp in sharedPepWithProteinGroups)
             {
                 int i = kvp.Value.Select(p => p.AllPeptides.Select(x => x.BaseSequence).Count()).Max();
                 HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Count() == i));
-                foreach(var proteinGroup in t)
+                foreach (var proteinGroup in t)
                 {
                     proteinGroup.RazorPeptides.Add(kvp.Key);
                 }
@@ -429,10 +429,10 @@ namespace EngineLayer.Analysis
             foreach (var length in peptideLengths)
             {
                 var formula = "C" + (int)(4.9384 * length);
-                            //+ "H" + (int)(7.7583 * length)
-                            //+ "N" + (int)(1.3577 * length)
-                            //+ "O" + (int)(1.4773 * length)
-                            //+ "S" + (int)(0.0417 * length);
+                //+ "H" + (int)(7.7583 * length)
+                //+ "N" + (int)(1.3577 * length)
+                //+ "O" + (int)(1.4773 * length)
+                //+ "S" + (int)(0.0417 * length);
                 var isotopicDistribution = IsotopicDistribution.GetDistribution(ChemicalFormula.ParseFormula(formula), 0.0001, 0.01);
 
                 var masses = isotopicDistribution.Masses.ToArray();
@@ -744,9 +744,9 @@ namespace EngineLayer.Analysis
                     Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
 
                     // For now analyze only psms with a single option
-                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01 && b.thisPSM.peptidesWithSetModifications.Count == 1)))
+                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01 && b.thisPSM.PeptidesWithSetModifications.Count == 1)))
                     {
-                        var singlePeptide = highConfidencePSM.thisPSM.peptidesWithSetModifications.First();
+                        var singlePeptide = highConfidencePSM.thisPSM.PeptidesWithSetModifications.First();
                         var modsIdentified = singlePeptide.allModsOneIsNterminus;
                         foreach (var modSeen in modsIdentified)
                         {
@@ -777,7 +777,7 @@ namespace EngineLayer.Analysis
 
                     if (doHistogramAnalysis)
                     {
-                        var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.qValue <= 0.01)).ToList();
+                        var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
                         if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
                         {
                             Status("Running histogram analysis...", nestedIds);
@@ -854,16 +854,16 @@ namespace EngineLayer.Analysis
             for (int i = ids.Count - 1; i >= 0; i--)
             {
                 NewPsmWithFdr id = ids[i];
-                if (id.qValue > min_q_value)
-                    id.qValue = min_q_value;
-                else if (id.qValue < min_q_value)
-                    min_q_value = id.qValue;
+                if (id.QValue > min_q_value)
+                    id.QValue = min_q_value;
+                else if (id.QValue < min_q_value)
+                    min_q_value = id.QValue;
 
                 int notch = id.thisPSM.newPsm.notch;
-                if (id.qValueNotch > min_q_value_notch[notch])
-                    id.qValueNotch = min_q_value_notch[notch];
-                else if (id.qValueNotch < min_q_value_notch[notch])
-                    min_q_value_notch[notch] = id.qValueNotch;
+                if (id.QValueNotch > min_q_value_notch[notch])
+                    id.QValueNotch = min_q_value_notch[notch];
+                else if (id.QValueNotch < min_q_value_notch[notch])
+                    min_q_value_notch[notch] = id.QValueNotch;
             }
 
             return ids;

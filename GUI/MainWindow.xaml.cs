@@ -34,9 +34,9 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            Title = MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ?
+            Title = GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ?
                 "MetaMorpheus: Not a release version" :
-                "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion;
+                "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion;
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
 
@@ -579,11 +579,6 @@ namespace MetaMorpheusGUI
                         return;
                 }
 
-            if (a.SelectedItem is InRunTask inRunTask)
-            {
-                // Display the params (always) and the results (if done)
-            }
-
             if (a.SelectedItem is OutputFileForTreeView fileThing)
             {
                 System.Diagnostics.Process.Start(fileThing.Id);
@@ -622,6 +617,17 @@ namespace MetaMorpheusGUI
                     }
                 }
             UpdateTaskGuiStuff();
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(@"https://github.com/smith-chem-wisc/MetaMorpheus/wiki");
+        }
+
+        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+            var globalSettingsDialog = new GlobalSettingsWindow();
+            globalSettingsDialog.ShowDialog();
         }
 
         #endregion Private Methods

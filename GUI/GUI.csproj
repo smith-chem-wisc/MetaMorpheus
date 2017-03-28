@@ -111,6 +111,9 @@
     </Compile>
     <Compile Include="CollectionForTreeView.cs" />
     <Compile Include="ForTreeView.cs" />
+    <Compile Include="GlobalSettingsWindow.xaml.cs">
+      <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="OutputFileForTreeView.cs" />
     <Compile Include="ForDisplayingInDataGrids\FinishedFileForDataGrid.cs" />
     <Compile Include="ForDisplayingInDataGrids\ModListForCalibrationTask.cs" />
@@ -128,6 +131,10 @@
     <Compile Include="ForDisplayingInDataGrids\ProteinDbForDataGrid.cs" />
     <Compile Include="InRunTask.cs" />
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="GlobalSettingsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

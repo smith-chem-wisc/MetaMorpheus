@@ -90,8 +90,10 @@ namespace EngineLayer
         public HashSet<NewPsmWithFdr> AllPsmsBelowOnePercentFDR { get; set; }
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
+
         //public List<string> sequenceCoverageDisplayListWithMods { get; private set; }
         public double QValue { get; set; }
+
         public int CumulativeTarget { get; set; }
         public int CumulativeDecoy { get; set; }
         public double Intensity { get; private set; }
@@ -122,14 +124,14 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            if(!DisplayModsOnPeptides)
+            if (!DisplayModsOnPeptides)
                 sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
             else
                 sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of shared peptides
-                var sharedPeptides = AllPeptides.Except(UniquePeptides);
+            var sharedPeptides = AllPeptides.Except(UniquePeptides);
             if (!DisplayModsOnPeptides)
                 sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.BaseSequence))));
             else
@@ -200,7 +202,6 @@ namespace EngineLayer
             sb.Append("\t");
 
             return sb.ToString();
-
         }
 
         public void Score()
@@ -261,7 +262,7 @@ namespace EngineLayer
                                 }
                             }
                         }
-                        
+
                         sequenceCoverageDisplayListWithMods.Add(seq);
                         */
                     }
@@ -283,7 +284,7 @@ namespace EngineLayer
             foreach (var group in groups)
             {
                 var psmsForThisBaseSeq = group.ToList();
-                var modsForThesePSMs = psmsForThisBaseSeq.Select(p => p.thisPSM.peptidesWithSetModifications.First().allModsOneIsNterminus.Values.ToList()).ToList();
+                var modsForThesePSMs = psmsForThisBaseSeq.Select(p => p.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Values.ToList()).ToList();
                 List<NewPsmWithFdr> psmsToIgnore = new List<NewPsmWithFdr>();
 
                 for (int i = 0; i < modsForThesePSMs.Count; i++)
@@ -295,7 +296,7 @@ namespace EngineLayer
 
                 psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
-                if(psmsForThisBaseSeq.Any())
+                if (psmsForThisBaseSeq.Any())
                     Intensity += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity).Max();
             }
         }

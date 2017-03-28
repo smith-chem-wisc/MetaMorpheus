@@ -207,7 +207,7 @@ namespace EngineLayer.Calibration
             for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
             {
                 var identification = identifications[matchIndex];
-                if (identification.qValue > 0.01)
+                if (identification.QValue > 0.01)
                     break;
 
                 // Progress
@@ -223,7 +223,7 @@ namespace EngineLayer.Calibration
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || identification.thisPSM.peptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLoss != 0))
+                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLoss != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 

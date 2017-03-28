@@ -104,6 +104,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
+    <Compile Include="GlobalEngineLevelSettings.cs" />
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
     <Compile Include="ClassicSearch\ClassicSearchResults.cs" />
@@ -118,7 +119,6 @@
     <Compile Include="Proteomics\PeptideWithSetModifications.cs" />
     <Compile Include="Proteomics\ProductType.cs" />
     <Compile Include="Proteomics\Protease.cs" />
-    <Compile Include="Proteomics\ProteaseDictionary.cs" />
     <Compile Include="Proteomics\ProteinExtensions.cs" />
     <Compile Include="SearchModes\DotSearchMode.cs" />
     <Compile Include="Gptmd\GptmdEngine.cs" />
@@ -152,7 +152,6 @@
     <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
     <Compile Include="EventArgs\StringEventArgs.cs" />
     <Compile Include="EventArgs\StringListEventArgs.cs" />
-    <Compile Include="Exclusions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">
