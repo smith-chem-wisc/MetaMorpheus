@@ -204,7 +204,7 @@ namespace TaskLayer
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
-                    file.WriteLine(MyEngine.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + MyEngine.MetaMorpheusVersion);
+                    file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
                     file.Write("e.InnerException: " + e.InnerException);
