@@ -30,7 +30,8 @@ namespace EngineLayer.Analysis
         private readonly Tolerance fragmentTolerance;
         private readonly Action<BinTreeStructure, string> writeHistogramPeaksAction;
         private readonly Action<List<NewPsmWithFdr>, string> writePsmsAction;
-        private readonly Action<List<ProteinGroup>, string> action3;
+        private readonly Action<List<NewPsmWithFdr>, string> writePsmsMzIdentMlAction;
+        private readonly Action<List<ProteinGroup>, string> action4;
         private readonly bool doParsimony;
         private readonly bool doHistogramAnalysis;
         private readonly List<ProductType> lp;
@@ -40,7 +41,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<NewPsmWithFdr>, string> action3, Action<List<ProteinGroup>, string> action4, bool doParsimony, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol) : base(2)
         {
             this.doParsimony = doParsimony;
             this.doHistogramAnalysis = doHistogramAnalysis;
@@ -56,7 +57,8 @@ namespace EngineLayer.Analysis
             this.fragmentTolerance = fragmentTolerance;
             this.writeHistogramPeaksAction = action1;
             this.writePsmsAction = action2;
-            this.action3 = action3;
+            this.writePsmsMzIdentMlAction = action3;
+            this.action4 = action4;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.maxModIsoforms = maxModIsoforms;
             this.lp = lp;
@@ -545,7 +547,7 @@ namespace EngineLayer.Analysis
                     Status("Running FDR analysis...");
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
-
+                    writePsmsMzIdentMlAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
                     // This must come before the unique peptide identifications..
                     // Or instead!!!
                     if (doHistogramAnalysis)
@@ -563,6 +565,7 @@ namespace EngineLayer.Analysis
                         Status("Running FDR analysis on unique peptides...");
                         var uniquePsmsWithFdr = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.Distinct(new SequenceComparer()), searchModes[j]);
                         writePsmsAction(uniquePsmsWithFdr, "uniquePeptides" + searchModes[j].FileNameAddition);
+                        writePsmsMzIdentMlAction(uniquePsmsWithFdr, "uniquePeptides" + searchModes[j].FileNameAddition);
                     }
 
                     if (doParsimony)
@@ -570,7 +573,7 @@ namespace EngineLayer.Analysis
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
-                        action3(proteinGroups[j], searchModes[j].FileNameAddition);
+                        action4(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
