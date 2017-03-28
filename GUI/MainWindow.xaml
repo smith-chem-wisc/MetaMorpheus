@@ -8,13 +8,14 @@
         Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="650" Height="500" Width="700">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
-            <MenuItem Header="Databases">
-                <MenuItem Header="External Databases" />
-                <MenuItem Header="Custom Modification Databases" />
+            <MenuItem Header="_Settings">
+                <MenuItem Header="Global Settings" Click="MenuItem_Click_1" />
+                <MenuItem Header="Default Search Task" />
+                <MenuItem Header="Default Gptmd Task" />
+                <MenuItem Header="Default Calibration Task" />
             </MenuItem>
-            <MenuItem Header="Help">
-                <MenuItem Header="View Help"/>
-                <MenuItem Header="About MetaMorpheus"/>
+            <MenuItem Header="_Help">
+                <MenuItem Header="Open Wiki Page" Click="MenuItem_Click" />
             </MenuItem>
         </Menu>
         <Grid>

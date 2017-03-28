@@ -5,6 +5,7 @@ namespace TaskLayer
 {
     public class XmlForTaskListEventArgs : EventArgs
     {
+
         #region Public Fields
 
         public List<DbForTask> newDatabases;
@@ -19,5 +20,6 @@ namespace TaskLayer
         }
 
         #endregion Public Constructors
+
     }
 }

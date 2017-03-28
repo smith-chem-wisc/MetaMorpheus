@@ -70,9 +70,9 @@ namespace EngineLayer.Gptmd
             var Mods = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
 
             int modsAdded = 0;
-            foreach (var ye in allIdentifications.Where(b => b.qValueNotch <= 0.01 && !b.IsDecoy))
+            foreach (var ye in allIdentifications.Where(b => b.QValueNotch <= 0.01 && !b.IsDecoy))
             {
-                foreach (var peptide in ye.thisPSM.peptidesWithSetModifications)
+                foreach (var peptide in ye.thisPSM.PeptidesWithSetModifications)
                 {
                     var baseSequence = ye.thisPSM.BaseSequence;
                     foreach (ModificationWithMass mod in GetMod(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))

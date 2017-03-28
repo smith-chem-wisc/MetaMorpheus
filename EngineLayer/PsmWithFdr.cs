@@ -48,8 +48,8 @@ namespace EngineLayer
             }
         }
 
-        public double qValue { get; set; }
-        public double qValueNotch { get; set; }
+        public double QValue { get; set; }
+        public double QValueNotch { get; set; }
 
         public bool IsDecoy
         {
@@ -69,10 +69,10 @@ namespace EngineLayer
             sb.Append(thisPSM.ToString() + '\t');
             sb.Append(cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(qValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(QValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(qValueNotch.ToString("F6", CultureInfo.InvariantCulture));
+            sb.Append(QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
 
             return sb.ToString();
         }
@@ -81,11 +81,11 @@ namespace EngineLayer
         {
             this.cumulativeTarget = cumulativeTarget;
             this.cumulativeDecoy = cumulativeDecoy;
-            qValue = tempQValue;
+            QValue = tempQValue;
 
             this.cumulativeTargetNotch = cumulativeTargetNotch;
             this.cumulativeDecoyNotch = cumulativeDecoyNotch;
-            qValueNotch = tempQValueNotch;
+            QValueNotch = tempQValueNotch;
         }
 
         #endregion Public Methods
