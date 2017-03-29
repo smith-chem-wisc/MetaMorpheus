@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -90,8 +91,13 @@ namespace EngineLayer.ClassicSearch
             int old_progress = 0;
 
             Status("Starting classic search loop...", nestedIds);
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            Thread taskThread = Thread.CurrentThread;
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), (fff, loopState) =>
             {
+                if (taskThread.ThreadState == ThreadState.Aborted)
+                {
+                    loopState.Stop();
+                }
                 var psms = new PsmClassic[searchModes.Count][];
                 for (int aede = 0; aede < searchModes.Count; aede++)
                     psms[aede] = new PsmClassic[myMsDataFileNumSpectra];

@@ -25,6 +25,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
+        private Thread everythingRunnerThread = new Thread(delegate() { });
 
         #endregion Private Fields
 
@@ -293,11 +294,11 @@ namespace MetaMorpheusGUI
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
-            var t = new Thread(() => a.Run())
+            everythingRunnerThread = new Thread(() => a.Run())
             {
                 IsBackground = true
             };
-            t.Start();
+            everythingRunnerThread.Start();
         }
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
@@ -311,6 +312,7 @@ namespace MetaMorpheusGUI
             if (staticTasksObservableCollection.Count == 0)
             {
                 RunTasksButton.IsEnabled = false;
+                CancelTasksButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = false;
                 ClearTasksButton.IsEnabled = false;
                 ResetTasksButton.IsEnabled = false;
@@ -318,6 +320,7 @@ namespace MetaMorpheusGUI
             else
             {
                 RunTasksButton.IsEnabled = true;
+                CancelTasksButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
             }
@@ -479,6 +482,7 @@ namespace MetaMorpheusGUI
                 ClearTasksButton.IsEnabled = false;
                 RemoveLastTaskButton.IsEnabled = false;
                 RunTasksButton.IsEnabled = false;
+                CancelTasksButton.IsEnabled = true;
                 LoadTaskButton.IsEnabled = false;
 
                 addCalibrateTaskButton.IsEnabled = false;
@@ -547,6 +551,7 @@ namespace MetaMorpheusGUI
             ClearTasksButton.IsEnabled = true;
             RemoveLastTaskButton.IsEnabled = true;
             RunTasksButton.IsEnabled = true;
+            CancelTasksButton.IsEnabled = false;
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
@@ -588,7 +593,7 @@ namespace MetaMorpheusGUI
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
-            {
+            { 
                 System.Diagnostics.Process.Start(fileThing.Id);
             }
         }
@@ -652,7 +657,17 @@ namespace MetaMorpheusGUI
             return false;
         }
 
-        #endregion Private Methods
+        private void CancelAllTasks_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                everythingRunnerThread.Abort();
+            }
+            catch
+            { }
+            ResetTasksButton_Click(new object(), new RoutedEventArgs());
+        }
 
+        #endregion Private Methods
     }
 }

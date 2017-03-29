@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.Indexing
 {
@@ -80,8 +81,13 @@ namespace EngineLayer.Indexing
             var level4_observed = new HashSet<string>();
             int proteinsSeen = 0;
             int old_progress = 0;
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            Thread taskThread = Thread.CurrentThread;
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), (fff, loopState) =>
             {
+                if (taskThread.ThreadState == ThreadState.Aborted)
+                {
+                    loopState.Stop();
+                }
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {

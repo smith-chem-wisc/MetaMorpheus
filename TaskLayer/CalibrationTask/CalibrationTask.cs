@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -167,8 +168,13 @@ namespace TaskLayer
             };
             Status("Calibrating...", new List<string> { taskId });
 
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            Thread taskThread = Thread.CurrentThread;
+            Parallel.For(0, currentRawFileList.Count, parallelOptions, (spectraFileIndex, loopState) =>
             {
+                if (taskThread.ThreadState == ThreadState.Aborted)
+                {
+                    loopState.Stop();
+                }
                 var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
                 var origDataFileName = currentRawFileList[spectraFileIndex];
                 LocalMS2Scan[] listOfSortedms2Scans;

@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.Analysis
 {
@@ -758,9 +759,14 @@ namespace EngineLayer.Analysis
             int proteinsSeen = 0;
             int old_progress = 0;
             var obj = new object();
+
             Status("Adding possible sources to peptide dictionary...", nestedIds);
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            Thread taskThread = Thread.CurrentThread;
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), (fff, loopState) =>
             {
+                if (taskThread.ThreadState == ThreadState.Aborted)
+                    loopState.Stop();
+
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior, fixedModifications))

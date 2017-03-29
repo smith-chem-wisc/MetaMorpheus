@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.Calibration
 {
@@ -42,8 +43,13 @@ namespace EngineLayer.Calibration
         {
             var rand = new Random();
             List<LabeledDataPoint> trainingListHere = trainingList.ToList();
-            Parallel.For(0, RegressionTrees.Length, i =>
+
+            Thread taskThread = Thread.CurrentThread;
+            Parallel.For(0, RegressionTrees.Length, (i, loopState) =>
             {
+                if (taskThread.ThreadState == ThreadState.Aborted)
+                    loopState.Stop();
+
                 List<LabeledDataPoint> subsampledTrainingPoints = new List<LabeledDataPoint>();
                 for (int j = 0; j < trainingListHere.Count; j++)
                 {

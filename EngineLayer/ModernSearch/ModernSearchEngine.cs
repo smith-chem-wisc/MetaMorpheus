@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.ModernSearch
 {
@@ -67,8 +68,15 @@ namespace EngineLayer.ModernSearch
             int scansSeen = 0;
             int old_progress = 0;
             var peptideIndexCount = peptideIndex.Count;
-            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
+
+            Thread taskThread = Thread.CurrentThread;
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), (fff, loopState) =>
             {
+                if (taskThread.ThreadState == ThreadState.Aborted)
+                {
+                    loopState.Stop();
+                }
+
                 CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
                 double[] bestScores = new double[searchModesCount];
                 int[] bestNotches = new int[searchModesCount];

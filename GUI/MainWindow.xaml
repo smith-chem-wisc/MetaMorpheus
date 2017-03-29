@@ -170,7 +170,10 @@
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3">
+                            <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Width="200" Grid.Row="3"/>
+                            <Button x:Name="CancelTasksButton" Content="Cancel all tasks" Click="CancelAllTasks_Click" FontSize="16" Grid.Row="3"/>
+                        </StackPanel>
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1"
