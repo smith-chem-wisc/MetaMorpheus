@@ -659,7 +659,7 @@ namespace EngineLayer.Analysis
             else if (quantificationMode.Equals("TMT"))
             {
                 double[] hcdTmtTagReporterIons = new double[] { 126.127725, 127.124760, 127.131079, 128.128114, 128.134433, 129.131468, 129.137787, 130.134822, 130.141141, 131.138176 };
-                double[] etdTmtTagReporterIons = new double[] { 114.127725, 115.124760, 114.127725, 115.124760, 116.134433, 117.131468, 116.134433, 117.131468, 118.141141, 119.138176 };
+                //double[] etdTmtTagReporterIons = new double[] { 114.127725, 115.124760, 114.127725, 115.124760, 116.134433, 117.131468, 116.134433, 117.131468, 118.141141, 119.138176 };
                 double mzFloor = hcdTmtTagReporterIons[0] - ((ppmTolerance / 1e6) * hcdTmtTagReporterIons[0]);
                 double mzCeiling = hcdTmtTagReporterIons[9] + ((ppmTolerance / 1e6) * hcdTmtTagReporterIons[9]);
 
@@ -720,10 +720,10 @@ namespace EngineLayer.Analysis
                             }
                         }
                     }
-                    else if (ms2Scan.DissociationType.Equals(DissociationType.ETD))
-                    {
-                        
-                    }
+                    //else if (ms2Scan.DissociationType.Equals(DissociationType.ETD))
+                    //{
+                    //    
+                    //}
 
                     psm.thisPSM.newPsm.apexIntensity = bestPlexPeaks;
                 }
