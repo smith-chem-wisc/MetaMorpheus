@@ -297,7 +297,7 @@ namespace EngineLayer
                 psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
                 if (psmsForThisBaseSeq.Any())
-                    Intensity += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity).Max();
+                    Intensity += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[0]).Max();
             }
         }
 
