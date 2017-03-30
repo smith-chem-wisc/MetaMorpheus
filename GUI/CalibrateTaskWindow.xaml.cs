@@ -100,8 +100,8 @@ namespace MetaMorpheusGUI
                 precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
             // Always create new ModFileList
-            foreach (var uu in MetaMorpheusTask.AllModLists)
-                ModFileListInWindow.Add(new ModListForCalibrationTask(uu));
+            //foreach (var uu in MetaMorpheusTask.AllModLists)
+            //    ModFileListInWindow.Add(new ModListForCalibrationTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 

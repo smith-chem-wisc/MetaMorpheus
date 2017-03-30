@@ -23,19 +23,19 @@ namespace Test
             #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                MetaMorpheusTask.AddModList(modFile);
+                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();
 
             SearchTask task3 = new SearchTask();
-            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
-            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
+            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task3.DoParsimony = true;
 
             SearchTask task4 = new SearchTask();
-            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
-            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
+            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task4.ClassicSearch = false;
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),

@@ -50,13 +50,13 @@ namespace EngineLayer.Gptmd
                     return false;
                 indexUp++;
             }
-            if (attemptToLocalize.position == ModificationSites.NProt && (proteinOneBasedIndex > 2))
+            if (attemptToLocalize.terminusLocalization == ModificationSites.NProt && (proteinOneBasedIndex > 2))
                 return false;
-            if (attemptToLocalize.position == ModificationSites.NPep && peptideOneBasedIndex > 1)
+            if (attemptToLocalize.terminusLocalization == ModificationSites.NPep && peptideOneBasedIndex > 1)
                 return false;
-            if (attemptToLocalize.position == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
+            if (attemptToLocalize.terminusLocalization == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
                 return false;
-            if (attemptToLocalize.position == ModificationSites.ProtC && proteinOneBasedIndex < protein.Length)
+            if (attemptToLocalize.terminusLocalization == ModificationSites.ProtC && proteinOneBasedIndex < protein.Length)
                 return false;
             return true;
         }

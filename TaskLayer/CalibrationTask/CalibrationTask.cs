@@ -21,7 +21,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public CalibrationTask()
+        public CalibrationTask() : base(MyTask.Calibrate)
         {
             // Set default values here:
             MaxMissedCleavages = 2;
@@ -39,8 +39,6 @@ namespace TaskLayer
             ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
             ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
 
-            TaskType = MyTask.Calibrate;
-
             MaxDegreeOfParallelism = -1;
         }
 
@@ -48,6 +46,25 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public static List<string> AllModLists { get; private set; }
+
+        public MyTask TaskType { get; internal set; }
+
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
+
+        public int MaxMissedCleavages { get; set; }
+
+        public int MaxModificationIsoforms { get; set; }
+
+        public Protease Protease { get; set; }
+
+        public bool BIons { get; set; }
+
+        public bool YIons { get; set; }
+
+        public bool ZdotIons { get; set; }
+
+        public bool CIons { get; set; }
         public List<string> ListOfModListsFixed { get; set; }
         public List<string> ListOfModListsVariable { get; set; }
         public List<string> ListOfModListsLocalize { get; set; }
@@ -57,23 +74,31 @@ namespace TaskLayer
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string SpecificTaskInfo
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
-                sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
-                sb.Append("ProductMassTolerance: " + ProductMassTolerance);
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(TaskType.ToString());
+            sb.AppendLine("The initiator methionine behavior is set to "
+                + InitiatorMethionineBehavior
+                + " and the maximum number of allowed missed cleavages is "
+                + MaxMissedCleavages);
+            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
+            sb.AppendLine("protease: " + Protease);
+            sb.AppendLine("bIons: " + BIons);
+            sb.AppendLine("yIons: " + YIons);
+            sb.AppendLine("cIons: " + CIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
+            sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
+            sb.Append("ProductMassTolerance: " + ProductMassTolerance);
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
         #region Protected Internal Methods
 

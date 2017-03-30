@@ -110,8 +110,8 @@ namespace MetaMorpheusGUI
                 precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
             // Always create new ModFileList
-            foreach (var uu in MetaMorpheusTask.AllModLists)
-                ModFileListInWindow.Add(new ModListForGptmdTask(uu));
+            //foreach (var uu in MetaMorpheusTask.AllModLists)
+            //    ModFileListInWindow.Add(new ModListForGptmdTask(uu));
             modificationsDataGrid.DataContext = ModFileListInWindow;
         }
 

@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using Fclp;
 using Nett;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -55,9 +56,11 @@ namespace MetaMorpheusCommandLine
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
 
                 foreach (var modFile in Directory.GetFiles(@"Mods"))
-                {
-                    MetaMorpheusTask.AddModList(modFile);
-                }
+                    GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+
+                foreach (var db in p.Object.Databases)
+                    if (!Path.GetExtension(db).Equals(".fasta"))
+                        GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
 
                 List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>>();
 

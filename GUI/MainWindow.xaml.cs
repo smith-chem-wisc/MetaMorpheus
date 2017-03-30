@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using Nett;
+using Proteomics;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -44,9 +45,7 @@ namespace MetaMorpheusGUI
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-            {
-                MetaMorpheusTask.AddModList(modFile);
-            }
+                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
 
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
@@ -201,7 +200,11 @@ namespace MetaMorpheusGUI
             };
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
+                {
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(filepath));
+                    if (!Path.GetExtension(filepath).Equals(".fasta"))
+                        GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
+                }
             dataGridXMLs.Items.Refresh();
         }
 
@@ -252,9 +255,11 @@ namespace MetaMorpheusGUI
                     break;
 
                 case ".xml":
-                case ".fasta":
                 case ".gz":
+                case ".fasta":
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
+                    if (!Path.GetExtension(draggedFilePath).Equals(".fasta"))
+                        GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
                     break;
 
                 case ".toml":
@@ -294,7 +299,7 @@ namespace MetaMorpheusGUI
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
-                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.taskType, staticTasksObservableCollection[i].metaMorpheusTask));
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
@@ -574,7 +579,7 @@ namespace MetaMorpheusGUI
         {
             var a = sender as TreeView;
             if (a.SelectedItem is PreRunTask preRunTask)
-                switch (preRunTask.metaMorpheusTask.TaskType)
+                switch (preRunTask.metaMorpheusTask.taskType)
                 {
                     case MyTask.Search:
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);
