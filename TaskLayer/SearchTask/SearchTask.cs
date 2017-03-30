@@ -51,10 +51,14 @@ namespace TaskLayer
             ZdotIons = false;
             CIons = false;
 
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("CommonVariable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("CommonFixed", "Carbamidomethyl of C") };
+            LocalizeAll = true;
+
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("missing", "-W"), new Tuple<string, string>("myCustomBad", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("fixed", "Carbamidomethyl") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-            ListOfModsToAlwaysKeep = new List<Tuple<string, string>>();
+
+            WritePrunedDatabase = false;
+            KeepAllUniprotMods = true;
 
             SearchModes = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
         }
@@ -83,7 +87,6 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
         public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
-        public List<Tuple<string, string>> ListOfModsToAlwaysKeep { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
@@ -98,6 +101,8 @@ namespace TaskLayer
         public bool ConserveMemory { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
+        public bool LocalizeAll { get; set; }
+        public bool KeepAllUniprotMods { get; set; }
 
         #endregion Public Properties
 
@@ -153,7 +158,12 @@ namespace TaskLayer
             Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            List<ModificationWithMass> localizeableModifications;
+            if (LocalizeAll)
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            else
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
             for (int j = 0; j < SearchModes.Count; j++)
@@ -267,7 +277,9 @@ namespace TaskLayer
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
 
-                List<Modification> modificationsToAlwaysKeep = GlobalTaskLevelSettings.AllModsKnown.Where(b => ListOfModsToAlwaysKeep.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                List<Modification> modificationsToAlwaysKeep = new List<Modification>();
+                if (KeepAllUniprotMods)
+                    modificationsToAlwaysKeep.AddRange(GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("uniprot")));
 
                 var goodPsmsForEachProtein = allResultingIdentifications.SelectMany(b => b).Where(b => b.QValueNotch < 0.01 && b.thisPSM.PeptidesWithSetModifications.Count == 1 && !b.IsDecoy).GroupBy(b => b.thisPSM.PeptidesWithSetModifications.First().Protein).ToDictionary(b => b.Key);
 
@@ -275,7 +287,7 @@ namespace TaskLayer
                 {
                     if (!protein.IsDecoy)
                     {
-                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(c.Key - b.thisPSM.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + 1, c.Value))));
+                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.thisPSM.PeptidesWithSetModifications.First()), c.Value))));
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
@@ -332,6 +344,15 @@ namespace TaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
+        }
+
+        private int GetOneBasedIndexInProtein(int oneIsNterminus, PeptideWithSetModifications peptideWithSetModifications)
+        {
+            if (oneIsNterminus == 1)
+                return peptideWithSetModifications.OneBasedStartResidueInProtein;
+            if (oneIsNterminus == peptideWithSetModifications.Length + 2)
+                return peptideWithSetModifications.OneBasedEndResidueInProtein;
+            return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)

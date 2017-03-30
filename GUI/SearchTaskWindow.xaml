@@ -171,7 +171,8 @@
                         </Style.Triggers>
                     </Style>
                 </Expander.Style>
-                <Grid>
+                <StackPanel>
+                    <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*" />
                         <ColumnDefinition Width="1*" />
@@ -188,7 +189,7 @@
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
                                 <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                         <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
                                         <TextBlock Text="{Binding DisplayName}" />
                                     </StackPanel>
@@ -207,7 +208,7 @@
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
                                 <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                         <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
                                         <TextBlock Text="{Binding DisplayName}" />
                                     </StackPanel>
@@ -237,7 +238,7 @@
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
                                 <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
                                         <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
                                         <TextBlock Text="{Binding DisplayName}" />
                                     </StackPanel>
@@ -246,6 +247,11 @@
                         </TreeView>
                     </StackPanel>
                 </Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox x:Name="writePrunedDatabaseCheckBox" Content="Write Pruned Database" />
+                        <CheckBox x:Name="keepAllUniprotModsCheckBox" Content="Keep Uniprot Modifications"  IsEnabled="{Binding IsChecked, ElementName=writePrunedDatabaseCheckBox}" />
+                    </StackPanel>
+                </StackPanel>
             </Expander>
         </GroupBox>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Bottom" Height="40">

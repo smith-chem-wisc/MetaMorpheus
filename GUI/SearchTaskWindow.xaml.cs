@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -115,26 +116,26 @@ namespace MetaMorpheusGUI
 
             foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
-                var theModType = new ModTypeForTreeView(false, hm.Key, false);
+                var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(false, uah.id, false));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
-                var theModType = new ModTypeForTreeView(false, hm.Key, false);
+                var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(false, uah.id, false));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
             foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
-                var theModType = new ModTypeForTreeView(false, hm.Key, false);
+                var theModType = new ModTypeForTreeView(hm.Key, false);
                 localizeModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
-                    theModType.Children.Add(new ModForTreeView(false, uah.id, false));
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
 
@@ -174,20 +175,15 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
-                    {
                         theMod.Use = true;
-                    }
                     else
-                    {
-                        // Mod name unknown!
-                        theModType.Children.Add(new ModForTreeView(true, mod.Item2, true));
-                    }
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
                 else
                 {
-                    // Mod type unknown!
-                    fixedModTypeForTreeViewObservableCollection.Add(new ModTypeForTreeView(true, mod.Item1, true));
-                    fixedModTypeForTreeViewObservableCollection.Last().Children.Add(new ModForTreeView(true, mod.Item2, true));
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
             foreach (var mod in task.ListOfModsVariable)
@@ -197,52 +193,58 @@ namespace MetaMorpheusGUI
                 {
                     var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
                     if (theMod != null)
-                    {
                         theMod.Use = true;
-                    }
                     else
-                    {
-                        // Mod name unknown!
-                        theModType.Children.Add(new ModForTreeView(true, mod.Item2, true));
-                    }
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
                 else
                 {
-                    // Mod type unknown!
-                    variableModTypeForTreeViewObservableCollection.Add(new ModTypeForTreeView(true, mod.Item1, true));
-                    variableModTypeForTreeViewObservableCollection.Last().Children.Add(new ModForTreeView(true, mod.Item2, true));
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
-            foreach (var mod in task.ListOfModsLocalize)
+
+            localizeAllCheckBox.IsChecked = task.LocalizeAll;
+            if (task.LocalizeAll)
             {
-                var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
-                if (theModType != null)
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    heh.Use = true;
+            }
+            else
+            {
+                foreach (var mod in task.ListOfModsLocalize)
                 {
-                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
-                    if (theMod != null)
+                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                    if (theModType != null)
                     {
-                        theMod.Use = true;
+                        var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                        if (theMod != null)
+                            theMod.Use = true;
+                        else
+                            theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                     }
                     else
                     {
-                        // Mod name unknown!
-                        theModType.Children.Add(new ModForTreeView(true, mod.Item2, true));
+                        theModType = new ModTypeForTreeView(mod.Item1, true);
+                        localizeModTypeForTreeViewObservableCollection.Add(theModType);
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                     }
-                }
-                else
-                {
-                    // Mod type unknown!
-                    localizeModTypeForTreeViewObservableCollection.Add(new ModTypeForTreeView(true, mod.Item1, true));
-                    localizeModTypeForTreeViewObservableCollection.Last().Children.Add(new ModForTreeView(true, mod.Item2, true));
                 }
             }
 
-            //modificationsDataGrid.Items.Refresh();
-
-            //writePrunedDatabaseCheckBox.IsChecked = task.WritePrunedDatabase;
+            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
 
             foreach (var cool in task.SearchModes)
                 SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
+
+            writePrunedDatabaseCheckBox.IsChecked = task.WritePrunedDatabase;
+            keepAllUniprotModsCheckBox.IsChecked = task.KeepAllUniprotMods;
 
             searchModesDataGrid.Items.Refresh();
         }
@@ -274,15 +276,27 @@ namespace MetaMorpheusGUI
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
 
-            //TheTask.ListOfModsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName).ToList();
-            //TheTask.ListOfModsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName).ToList();
-            //TheTask.ListOfModsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName).ToList();
-            //TheTask.ListOfModsToAlwaysKeep = ModFileListInWindow.Where(b => b.AlwaysKeep).Select(b => b.FileName).ToList();
+            TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
+            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            TheTask.ListOfModsFixed = new List<Tuple<string, string>>();
+            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            TheTask.ListOfModsLocalize = new List<Tuple<string, string>>();
+            if (localizeAllCheckBox.IsChecked.Value)
+                TheTask.LocalizeAll = true;
+            else
+            {
+                TheTask.LocalizeAll = false;
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            }
 
             TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
-            //TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
+            TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
+            TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
 
             DialogResult = true;
         }
