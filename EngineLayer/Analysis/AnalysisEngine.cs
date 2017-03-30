@@ -863,16 +863,16 @@ namespace EngineLayer.Analysis
 
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
 
-                    if (myMsDataFile == null && doParsimony)
-                    {
-                        var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
-
-                        foreach (var group in psmsGroupedByFilename)
-                        {
-                            var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
-                            writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
-                        }
-                    }
+                    //if (myMsDataFile == null && doParsimony)
+                    //{
+                    //    var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
+                    //
+                    //    foreach (var group in psmsGroupedByFilename)
+                    //    {
+                    //        var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
+                    //        writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
+                    //    }
+                    //}
 
                     if (doHistogramAnalysis)
                     {
