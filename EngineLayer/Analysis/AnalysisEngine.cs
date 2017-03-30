@@ -682,7 +682,7 @@ namespace EngineLayer.Analysis
                             if (goodPeaks.Any())
                                 bestPlexPeaks[indexOfThisPlex] = goodPeaks.Select(p => p.Intensity).Max();
 
-                            // if there is a high tolerance used we may count close-mass plexes as the same - check for this problem
+                            // if there was a high ppm tolerance used we may have counted close-mass plexes as the same - check for this problem
                             if(indexOfThisPlex == 2 || indexOfThisPlex == 4 || indexOfThisPlex == 6 || indexOfThisPlex == 8)
                             {
                                 if((bestPlexPeaks[indexOfThisPlex] != 0) && (bestPlexPeaks[indexOfThisPlex] == bestPlexPeaks[indexOfThisPlex - 1]))
@@ -693,26 +693,26 @@ namespace EngineLayer.Analysis
                                     var thisPlexsPossiblePeaks = ms2Scan.MassSpectrum.Where(p => (p.Mz > thisPlexsFloor) && (p.Mz < thisPlexsCeiling)).ToList();
 
                                     // first most intense in this range
-                                    var peak1 = thisPlexsPossiblePeaks.Where(p => p.Intensity == thisPlexsPossiblePeaks.Select(x => x.Intensity).Max()).FirstOrDefault();
-                                    thisPlexsPossiblePeaks.Remove(peak1);
+                                    var mostIntensePeak = thisPlexsPossiblePeaks.Where(p => p.Intensity == thisPlexsPossiblePeaks.Select(x => x.Intensity).Max()).FirstOrDefault();
+                                    thisPlexsPossiblePeaks.Remove(mostIntensePeak);
 
                                     // second most intense in this range
-                                    var peak2 = thisPlexsPossiblePeaks.Where(p => p.Intensity == thisPlexsPossiblePeaks.Select(x => x.Intensity).Max()).FirstOrDefault();
+                                    var secondMostIntensePeak = thisPlexsPossiblePeaks.Where(p => p.Intensity == thisPlexsPossiblePeaks.Select(x => x.Intensity).Max()).FirstOrDefault();
 
-                                    if (peak1 != null && peak2 != null)
+                                    if (mostIntensePeak != null && secondMostIntensePeak != null)
                                     {
-                                        if (Math.Abs(Math.Abs((peak2.Mz - peak1.Mz) - 0.006319)) < 0.0005)
+                                        if (Math.Abs(Math.Abs((secondMostIntensePeak.Mz - mostIntensePeak.Mz) - 0.006319)) < 0.0005)
                                         {
-                                            // find good plex peaks - assign them
-                                            if (peak1.Mz < peak2.Mz)
+                                            // found good plex peaks - assign them
+                                            if (mostIntensePeak.Mz < secondMostIntensePeak.Mz)
                                             {
-                                                bestPlexPeaks[indexOfThisPlex] = peak2.Intensity;
-                                                bestPlexPeaks[indexOfThisPlex - 1] = peak1.Intensity;
+                                                bestPlexPeaks[indexOfThisPlex] = secondMostIntensePeak.Intensity;
+                                                bestPlexPeaks[indexOfThisPlex - 1] = mostIntensePeak.Intensity;
                                             }
                                             else
                                             {
-                                                bestPlexPeaks[indexOfThisPlex] = peak1.Intensity;
-                                                bestPlexPeaks[indexOfThisPlex - 1] = peak2.Intensity;
+                                                bestPlexPeaks[indexOfThisPlex] = mostIntensePeak.Intensity;
+                                                bestPlexPeaks[indexOfThisPlex - 1] = secondMostIntensePeak.Intensity;
                                             }
                                         }
                                     }
