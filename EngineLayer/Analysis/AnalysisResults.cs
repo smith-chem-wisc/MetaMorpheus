@@ -65,9 +65,9 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < allModsOnPeptides.Length; i++)
             {
                 sb.AppendLine("Search mode " + i + " Mods seen:");
-                sb.AppendLine(string.Join(Environment.NewLine, allModsSeen[i].OrderBy(b => -b.Value).Select(b => b.Key + " : " + b.Value)));
+                sb.AppendLine(string.Join(Environment.NewLine, allModsSeen[i].OrderBy(b => -b.Value).Select(b => b.Key + "\t" + b.Value)));
                 sb.AppendLine("Search mode " + i + " Mods on proteins:");
-                sb.AppendLine(string.Join(Environment.NewLine, allModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => b.Key + " : " + b.Value)));
+                sb.AppendLine(string.Join(Environment.NewLine, allModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => b.Key + "\t" + b.Value)));
             }
 
             sb.Append(output);

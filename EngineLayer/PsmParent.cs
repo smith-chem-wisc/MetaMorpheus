@@ -23,7 +23,7 @@ namespace EngineLayer
         public readonly double scanPrecursorMZ;
         public readonly double scanPrecursorMass;
         public readonly double score;
-        public double apexIntensity;
+        public double[] apexIntensity;
         public double apexMz;
         public double apexRT;
         public double mostAbundantMass;
@@ -56,6 +56,7 @@ namespace EngineLayer
             this.scanPrecursorMass = scanPrecursorMass;
             this.score = score;
             this.notch = notch;
+            apexIntensity = new double[1];
         }
 
         #endregion Protected Constructors
@@ -79,7 +80,7 @@ namespace EngineLayer
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(apexIntensity.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(string.Join("|", apexIntensity) + '\t');
             sb.Append(apexMz.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(apexRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(mostAbundantMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');

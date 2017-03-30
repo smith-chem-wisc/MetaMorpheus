@@ -201,9 +201,13 @@ namespace MetaMorpheusGUI
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                 {
-                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(filepath));
-                    if (!Path.GetExtension(filepath).Equals(".fasta"))
-                        GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
+                    ProteinDbForDataGrid uu = new ProteinDbForDataGrid(filepath);
+                    if (!ExistDa(proteinDbObservableCollection, uu))
+                    {
+                        proteinDbObservableCollection.Add(uu);
+                        if (!Path.GetExtension(filepath).Equals(".fasta"))
+                            GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
+                    }
                 }
             dataGridXMLs.Items.Refresh();
         }
@@ -219,7 +223,10 @@ namespace MetaMorpheusGUI
             };
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames)
-                    rawDataObservableCollection.Add(new RawDataForDataGrid(rawDataFromSelected));
+                {
+                    RawDataForDataGrid zz = new RawDataForDataGrid(rawDataFromSelected);
+                    if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
+                }                   
             dataGridDatafiles.Items.Refresh();
         }
 
@@ -251,15 +258,15 @@ namespace MetaMorpheusGUI
             {
                 case ".raw":
                 case ".mzml":
-                    rawDataObservableCollection.Add(new RawDataForDataGrid(draggedFilePath));
+                    RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
+                    if (!ExistRaw(rawDataObservableCollection, zz)){ rawDataObservableCollection.Add(zz); }
                     break;
 
                 case ".xml":
                 case ".gz":
                 case ".fasta":
+                case ".gz":
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
-                    if (!Path.GetExtension(draggedFilePath).Equals(".fasta"))
-                        GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
                     break;
 
                 case ".toml":
@@ -646,6 +653,20 @@ namespace MetaMorpheusGUI
         {
             var globalSettingsDialog = new GlobalSettingsWindow();
             globalSettingsDialog.ShowDialog();
+        }
+
+        private bool ExistDa(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
+        {
+            foreach(ProteinDbForDataGrid pdoc in pDOC)
+                if (pdoc.FileName == uuu.FileName){ return true; }
+            return false;
+        }
+
+        private bool ExistRaw(ObservableCollection<RawDataForDataGrid> rDOC, RawDataForDataGrid zzz)
+        {
+            foreach (RawDataForDataGrid rdoc in rDOC)
+                if (rdoc.FileName == zzz.FileName) { return true; }
+            return false;
         }
 
         #endregion Private Methods
