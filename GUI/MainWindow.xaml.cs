@@ -265,7 +265,6 @@ namespace MetaMorpheusGUI
                 case ".xml":
                 case ".gz":
                 case ".fasta":
-                case ".gz":
                     proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
                     break;
 
