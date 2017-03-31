@@ -28,7 +28,7 @@ MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W
+TG   Y or W or P or F
 PP   Anywhere.
 MM   15.994915
 MT   Mod
@@ -42,9 +42,10 @@ MT   Mod
 CF   H3 C2 N1 O1
 //
 ID   Phospho
-TG   S or T
+TG   S or T or Y
 PP   Anywhere.
 MM   79.966331
+NL   0 or 79.966331
 MT   Mod
 CF   H1 O3 P1
 //
@@ -53,6 +54,13 @@ TG   X
 PP   N-terminal.
 MM   42.010565
 MT   ProteinTermMod
+CF   H2 C2 O1
+//
+ID   Acetyllysine
+TG   K
+PP   Anywhere.
+MM   42.010565
+MT   Mod
 CF   H2 C2 O1
 //
 ID   Acetald+26
@@ -120,6 +128,13 @@ CF   H-2 O-1
 //
 ID   Proline Oxidation to pyroglutamic acid
 TG   P
+PP   Anywhere.
+MM   13.979265
+MT   Mod
+CF   H-2 O1
+//
+ID   Tryptophan oxidation to oxolactone
+TG   W
 PP   Anywhere.
 MM   13.979265
 MT   Mod
@@ -197,7 +212,7 @@ MT   Metal
 CF   H-2 Fe1
 //
 ID   Methyl
-TG   E or V
+TG   E or V or H or R or K or Q or N or S or D
 PP   Anywhere.
 MM   14.015650
 MT   Mod
@@ -211,7 +226,7 @@ MT   Mod
 CF   H-4 C-1 S-1 O1
 //
 ID   DiMethyl
-TG   A
+TG   A or K or R or N
 PP   Anywhere.
 MM   28.031300
 MT   Mod
@@ -223,4 +238,93 @@ PP   Anywhere.
 MM   19.989829
 MT   Mod
 CF   C-1 O2
+//
+ID   Pyrrolidinone
+TG   P
+PP   Anywhere.
+MM   -30.010565
+MT   Mod
+CF   H-2 C-1 O-1
+//
+ID   TriMethylation
+TG   K
+PP   Anywhere.
+MM   42.046950
+MT   Mod
+CF   H6 C3
+//
+ID   Trioxidation of C
+TG   Cysteine
+PP   Anywhere.
+MM   47.984744
+OM   -9.03672
+MT   Mod
+CF   O3
+//
+ID   Sulfonation
+TG   S or T or Y
+PP   Anywhere.
+NL   79.956815
+MT   Mod
+MM   79.956815
+CF   O3 S1
+//
+ID   GG of K
+TG   Lysine
+PP   Anywhere.
+MM   114.042927
+MT   Mod
+CF   H6 C4 N2 O2
+//
+ID   Farnesylation
+TG   Cysteine
+PP   Anywhere.
+FM   0 or 204.187801
+MM   204.187801
+MT   Mod
+OM   147.166337
+CF   H24 C15
+//
+ID   Myristoylation of G
+TG   Glycine
+MT   Mod
+PP   N-terminal.
+FM   0 or 210.198366
+MM   210.198366
+CF   H26 C14 O1
+//
+ID   Myristoylation of K
+TG   K
+PP   Anywhere.
+MT   Mod
+FM   0 or 210.198366
+MM   210.198366
+CF   H26 C14 O1
+//
+ID   Myristoylation of C
+TG   Cysteine
+PP   Anywhere.
+MT   Mod
+FM   0 or 210.198366
+MM   210.198366
+OM   153.176902
+CF   H26 C14 O1
+//
+ID   Palmitoylation of C
+TG   Cysteine
+PP   Anywhere.
+MT   Mod
+FM   0 or 238.229666
+OM   181.208202
+MM   238.229666
+CF   H30 C16 O1
+//
+ID   Palmitoylation
+TG   K or S or T
+OM   181.208202
+MT   Mod
+PP   Anywhere.
+FM   0 or 238.229666
+MM   238.229666
+CF   H30 C16 O1
 //
