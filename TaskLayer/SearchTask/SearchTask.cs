@@ -249,7 +249,7 @@ namespace TaskLayer
                     mySearchTaskResults.AddResultText(classicSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);
-                    MyResults analysisResults;
+                    MetaMorpheusEngineResults analysisResults;
 
                     if (currentRawFileList.Count > 1 && DoParsimony)
                         analysisResults = new AnalysisEngine(classicSearchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), null, null, false, false, false, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, Quantify, QuantifyRtTol, QuantifyPpmTol).Run();
@@ -267,7 +267,7 @@ namespace TaskLayer
                     mySearchTaskResults.AddResultText(modernSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(modernSearchResults.NewPsms[i]);
-                    MyResults analysisResults;
+                    MetaMorpheusEngineResults analysisResults;
 
                     if (currentRawFileList.Count > 1 && DoParsimony)
                         analysisResults = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), null, null, false, false, false, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, Quantify, QuantifyRtTol, QuantifyPpmTol).Run();
@@ -284,7 +284,7 @@ namespace TaskLayer
 
             if (currentRawFileList.Count > 1)
             {
-                MyResults analysisResults;
+                MetaMorpheusEngineResults analysisResults;
                 if (DoParsimony)
                     analysisResults = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, SearchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, s, new List<string> { taskId }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, s, new List<string> { taskId }), (List<ProteinGroup> h, string s) => WriteProteinGroupsToTsv(h, OutputFolder, s + "_ProteinGroups", new List<string> { taskId }), DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }, false, 0, 0).Run();
                 else
