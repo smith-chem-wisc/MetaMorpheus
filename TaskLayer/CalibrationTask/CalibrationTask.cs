@@ -7,12 +7,12 @@ using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -35,9 +35,11 @@ namespace TaskLayer
             CIons = false;
             ZdotIons = false;
 
-            ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
-            ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
-            ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
+            LocalizeAll = true;
+
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             MaxDegreeOfParallelism = -1;
         }
@@ -65,12 +67,13 @@ namespace TaskLayer
         public bool ZdotIons { get; set; }
 
         public bool CIons { get; set; }
-        public List<string> ListOfModListsFixed { get; set; }
-        public List<string> ListOfModListsVariable { get; set; }
-        public List<string> ListOfModListsLocalize { get; set; }
+        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
+        public bool LocalizeAll { get; set; }
 
         #endregion Public Properties
 
@@ -90,9 +93,9 @@ namespace TaskLayer
             sb.AppendLine("yIons: " + YIons);
             sb.AppendLine("cIons: " + CIons);
             sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
-            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
+            //sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+            //sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+            //sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
             sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
             sb.Append("ProductMassTolerance: " + ProductMassTolerance);
             return sb.ToString();
@@ -153,9 +156,14 @@ namespace TaskLayer
             allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            List<ModificationWithMass> localizeableModifications;
+            if (LocalizeAll)
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            else
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;

@@ -114,51 +114,6 @@
                 </StackPanel>
             </Expander>
         </GroupBox>
-        <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top">
-            <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
-                <Expander.Style>
-                    <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsExpanded" Value="True">
-                                <Setter Property="Header" Value="Hide"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Expander.Style>
-                <StackPanel>
-                    <GroupBox Header="Protein Parsimony">
-                        <StackPanel>
-                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
-                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
-                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
-                        </StackPanel>
-                    </GroupBox>
-                    <GroupBox Header="Quantification">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="5*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Margin="5">
-                                <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides" />
-                            </StackPanel>
-                            <StackPanel Margin="0,20,0,0" VerticalAlignment="Top"  Grid.Column="1">
-                                <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
-                                    <Label x:Name="quantRtLabel" Content="RT Window (min)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                    <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                    <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Grid>
-                    </GroupBox>
-                    <GroupBox Header="Mass Shift Histogram Analysis">
-                        <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
-                    </GroupBox>
-                </StackPanel>
-            </Expander>
-        </GroupBox>
         <GroupBox Header="Modifications" DockPanel.Dock="Top">
             <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded" IsExpanded="True">
                 <Expander.Style>
@@ -247,10 +202,57 @@
                         </TreeView>
                     </StackPanel>
                 </Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox x:Name="writePrunedDatabaseCheckBox" Content="Write Pruned Database" />
-                        <CheckBox x:Name="keepAllUniprotModsCheckBox" Content="Keep Uniprot Modifications"  IsEnabled="{Binding IsChecked, ElementName=writePrunedDatabaseCheckBox}" />
-                    </StackPanel>
+                </StackPanel>
+            </Expander>
+        </GroupBox>
+        <GroupBox Header="Post-Search Analysis" DockPanel.Dock="Top">
+            <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
+                <Expander.Style>
+                    <Style TargetType="Expander">
+                        <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter Property="Header" Value="Hide"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Expander.Style>
+                <StackPanel>
+                    <GroupBox Header="Protein Parsimony">
+                        <StackPanel>
+                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
+                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Quantification">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="5*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Margin="5">
+                                <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides" />
+                            </StackPanel>
+                            <StackPanel Margin="0,20,0,0" VerticalAlignment="Top"  Grid.Column="1">
+                                <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
+                                    <Label x:Name="quantRtLabel" Content="RT Window (min)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Header="Mass Shift Histogram Analysis">
+                        <CheckBox x:Name="checkBoxHistogramAnalysis" Content="Do Histogram Analysis" />
+                    </GroupBox>
+                    <GroupBox Header="Pruned Database Writing">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox x:Name="writePrunedDatabaseCheckBox" Content="Write Pruned Database" />
+                            <CheckBox x:Name="keepAllUniprotModsCheckBox" Content="Keep Uniprot Modifications"  IsEnabled="{Binding IsChecked, ElementName=writePrunedDatabaseCheckBox}" />
+                        </StackPanel>
+                    </GroupBox>
                 </StackPanel>
             </Expander>
         </GroupBox>

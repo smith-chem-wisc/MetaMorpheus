@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
@@ -18,6 +19,10 @@ namespace MetaMorpheusGUI
     {
 
         #region Private Fields
+
+        private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForCalibrationTask> ModFileListInWindow = new ObservableCollection<ModListForCalibrationTask>();
@@ -56,6 +61,14 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
+        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
+        {
+        }
+
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -74,14 +87,77 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.ZdotIons;
             cCheckBox.IsChecked = task.CIons;
 
-            foreach (var modList in task.ListOfModListsFixed)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Fixed = true;
-            foreach (var modList in task.ListOfModListsVariable)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Variable = true;
-            foreach (var modList in task.ListOfModListsLocalize)
-                ModFileListInWindow.First(b => b.FileName.Equals(modList)).Localize = true;
+            foreach (var mod in task.ListOfModsFixed)
+            {
+                var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+            }
+            foreach (var mod in task.ListOfModsVariable)
+            {
+                var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+            }
 
-            modificationsDataGrid.Items.Refresh();
+            localizeAllCheckBox.IsChecked = task.LocalizeAll;
+            if (task.LocalizeAll)
+            {
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    heh.Use = true;
+            }
+            else
+            {
+                foreach (var mod in task.ListOfModsLocalize)
+                {
+                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                    if (theModType != null)
+                    {
+                        var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                        if (theMod != null)
+                            theMod.Use = true;
+                        else
+                            theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
+                    else
+                    {
+                        theModType = new ModTypeForTreeView(mod.Item1, true);
+                        localizeModTypeForTreeViewObservableCollection.Add(theModType);
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
+                }
+            }
+
+            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
         }
 
         private void PopulateChoices()
@@ -99,10 +175,30 @@ namespace MetaMorpheusGUI
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
                 precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
-            // Always create new ModFileList
-            //foreach (var uu in MetaMorpheusTask.AllModLists)
-            //    ModFileListInWindow.Add(new ModListForCalibrationTask(uu));
-            modificationsDataGrid.DataContext = ModFileListInWindow;
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                variableModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                localizeModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
         private void cancelButton_Click(object sender, RoutedEventArgs e)
@@ -122,9 +218,21 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
 
-            TheTask.ListOfModListsFixed = ModFileListInWindow.Where(b => b.Fixed).Select(b => b.FileName).ToList();
-            TheTask.ListOfModListsVariable = ModFileListInWindow.Where(b => b.Variable).Select(b => b.FileName).ToList();
-            TheTask.ListOfModListsLocalize = ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName).ToList();
+            TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
+            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            TheTask.ListOfModsFixed = new List<Tuple<string, string>>();
+            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            TheTask.ListOfModsLocalize = new List<Tuple<string, string>>();
+            if (localizeAllCheckBox.IsChecked.Value)
+                TheTask.LocalizeAll = true;
+            else
+            {
+                TheTask.LocalizeAll = false;
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            }
 
             TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;

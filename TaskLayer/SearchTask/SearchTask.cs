@@ -53,8 +53,8 @@ namespace TaskLayer
 
             LocalizeAll = true;
 
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("missing", "-W"), new Tuple<string, string>("myCustomBad", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("fixed", "Carbamidomethyl") };
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             WritePrunedDatabase = false;
@@ -285,7 +285,7 @@ namespace TaskLayer
 
                 foreach (var protein in proteinList)
                 {
-                    if (!protein.IsDecoy)
+                    if (!protein.IsDecoy && goodPsmsForEachProtein.ContainsKey(protein))
                     {
                         var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.thisPSM.PeptidesWithSetModifications.First()), c.Value))));
 
