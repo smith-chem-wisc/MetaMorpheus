@@ -861,18 +861,7 @@ namespace EngineLayer.Analysis
                     }
 
                     writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
-
-                    //if (myMsDataFile == null && doParsimony)
-                    //{
-                    //    var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
-                    //
-                    //    foreach (var group in psmsGroupedByFilename)
-                    //    {
-                    //        var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
-                    //        writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
-                    //    }
-                    //}
-
+                    
                     if (doHistogramAnalysis)
                     {
                         var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
@@ -895,6 +884,26 @@ namespace EngineLayer.Analysis
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
+                    }
+
+                    if (myMsDataFile == null && doParsimony)
+                    {
+                        var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
+
+                        foreach (var group in psmsGroupedByFilename)
+                        {
+                            var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
+                            writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
+
+                            var allUniquePeptides = new HashSet<PeptideWithSetModifications>(proteinGroups[j].SelectMany(p => p.UniquePeptides));
+                            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(group.SelectMany(p => p.thisPSM.PeptidesWithSetModifications));
+                            var uniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPeptidesForThisFile.Where(p => allUniquePeptides.Contains(p)));
+
+                            var proteinGroupsForThisFile = ConstructProteinGroups(uniquePeptidesForThisFile, allPeptidesForThisFile);
+                            ScoreProteinGroups(proteinGroupsForThisFile, group.ToList());
+                            proteinGroupsForThisFile = DoProteinFdr(proteinGroupsForThisFile);
+                            writeProteinGroupsAction(proteinGroupsForThisFile, fileName + searchModes[j].FileNameAddition);
+                        }
                     }
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;

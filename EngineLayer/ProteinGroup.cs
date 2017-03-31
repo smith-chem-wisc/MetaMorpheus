@@ -231,7 +231,8 @@ namespace EngineLayer
                                     coveredResidues.Add(i);
 
                                 //foreach(var mod in peptide.allModsOneIsNterminus)
-                                //    peptideModsBelow1FDR.Add(mod.Value);
+                                //    if(mod.Key != 1)
+                                //        peptideModsBelow1FDR.Add(mod.Value);
                             }
                         }
 
