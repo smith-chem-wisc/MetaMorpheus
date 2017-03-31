@@ -35,8 +35,14 @@ namespace TaskLayer
         public static void AddMods(IEnumerable<ModificationWithLocation> enumerable)
         {
             foreach (var ye in enumerable)
-                if (!string.IsNullOrEmpty(ye.modificationType))
-                    AllModsKnown.Add(ye);
+            {
+                if (string.IsNullOrEmpty(ye.modificationType))
+                    throw new Exception(ye.ToString() + Environment.NewLine + " has null or empty modification type");
+                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
+                    throw new Exception(ye.ToString() + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)));
+
+                AllModsKnown.Add(ye);
+            }
         }
 
         #endregion Public Methods

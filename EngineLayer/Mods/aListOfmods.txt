@@ -1,0 +1,15 @@
+﻿Fixed modifications
+ID   Carbamidomethyl of C
+TG   C
+PP   Anywhere.
+MM   57.02146373
+MT   Common Fixed
+CF   H3 C2 N O
+//
+ID   Oxidation of M
+TG   Methionine
+PP   Anywhere.
+MM   15.994915
+MT   Common Variable
+CF   O1
+//

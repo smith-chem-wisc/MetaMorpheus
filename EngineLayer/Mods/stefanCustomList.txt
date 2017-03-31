@@ -76,28 +76,28 @@ MM   189.045969
 MT   ProteinTermMod
 CF   C7 H11 N1 O3 S1
 //
-ID   Lysine not cleaved
+ID   Lysine not cleaved at C-term
 TG   Xk
 PP   Peptide C-terminal.
 MM   128.09496
 MT   PeptideTermMod
 CF   C6 H12 N2 O1
 //
-ID   Lysine not cleaved
+ID   Lysine not cleaved at N-term
 TG   kX
 PP   Peptide N-terminal.
 MM   128.09496
 MT   PeptideTermMod
 CF   C6 H12 N2 O1
 //
-ID   Arginine not cleaved
+ID   Arginine not cleaved at N-term
 TG   rX
 PP   Peptide N-terminal.
 MM   156.10111
 MT   PeptideTermMod
 CF   C6 H12 N4 O1
 //
-ID   Arginine not cleaved
+ID   Arginine not cleaved at C-term
 TG   Xr
 PP   Peptide C-terminal.
 MM   156.10111
