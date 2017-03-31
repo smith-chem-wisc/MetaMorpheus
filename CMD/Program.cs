@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using Fclp;
 using Nett;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -45,19 +46,21 @@ namespace MetaMorpheusCommandLine
 
             if (result.HasErrors == false)
             {
-                MyEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
-                MyEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
-                MyEngine.OutProgressHandler += MyEngine_outProgressHandler;
-                MyEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
+                MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
+                MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+                MetaMorpheusEngine.OutProgressHandler += MyEngine_outProgressHandler;
+                MetaMorpheusEngine.StartingSingleEngineHander += MyEngine_startingSingleEngineHander;
 
                 MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
 
                 foreach (var modFile in Directory.GetFiles(@"Mods"))
-                {
-                    MetaMorpheusTask.AddModList(modFile);
-                }
+                    GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+
+                foreach (var db in p.Object.Databases)
+                    if (!Path.GetExtension(db).Equals(".fasta"))
+                        GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());
 
                 List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>>();
 

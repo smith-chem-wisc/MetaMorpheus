@@ -1,13 +1,14 @@
 ﻿using EngineLayer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 
 namespace TaskLayer
 {
-    public class EverythingRunnerEngine : MyEngine
+    public class EverythingRunnerEngine
     {
 
         #region Private Fields
@@ -39,18 +40,24 @@ namespace TaskLayer
 
         public static event EventHandler<StringListEventArgs> newSpectrasHandler;
 
+        public static event EventHandler<StringEventArgs> warnHandler;
+
         #endregion Public Events
 
-        #region Protected Methods
+        #region Public Methods
 
-        protected override MyResults RunSpecific()
+        public void Run()
         {
             StartingAllTasks();
 
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             if (!currentRawDataFilenameList.Any())
             {
+                Warn("No data files selected");
                 FinishedAllTasks();
-                return new MyErroredResults(this, "No data files selected");
+                return;
             }
 
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
@@ -68,12 +75,14 @@ namespace TaskLayer
                 if (!currentRawDataFilenameList.Any())
                 {
                     FinishedAllTasks();
-                    return new MyErroredResults(this, "Cannot proceed. No data files selected.");
+                    Warn("Cannot proceed. No data files selected.");
+                    FinishedAllTasks();
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
                     FinishedAllTasks();
-                    return new MyErroredResults(this, "Cannot proceed. No xml files selected.");
+                    Warn("Cannot proceed. No xml files selected.");
+                    FinishedAllTasks();
                 }
                 var ok = taskList[i];
                 string outputFolderForThisTask = Path.Combine(longestDir, startTimeForAllFilenames);
@@ -94,13 +103,18 @@ namespace TaskLayer
                     NewSpectras(myTaskResults.newSpectra);
                 }
             }
+            stopWatch.Stop();
             FinishedAllTasks();
-            return new EverythingRunnerResults(this);
         }
 
-        #endregion Protected Methods
+        #endregion Public Methods
 
         #region Private Methods
+
+        private void Warn(string v)
+        {
+            warnHandler?.Invoke(this, new StringEventArgs(v, null));
+        }
 
         private void StartingAllTasks()
         {

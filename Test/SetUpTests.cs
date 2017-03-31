@@ -33,8 +33,8 @@ namespace Test
             //MyEngine.unimodDeserialized = Loaders.LoadUnimod(Path.Combine(TestContext.CurrentContext.TestDirectory, unimodLocation));
             //MyEngine.uniprotDeseralized = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, uniprotLocation));
 
-            MyEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
-            MyEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
+            MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+            MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
         }
 
         #endregion Public Methods

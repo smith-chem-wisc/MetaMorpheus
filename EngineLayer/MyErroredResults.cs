@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    public class MyErroredResults : MyResults
+    public class MyErroredResults : MetaMorpheusEngineResults
     {
 
         #region Private Fields
@@ -13,15 +13,14 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public MyErroredResults(MyEngine s, string v) : base(s)
+        public MyErroredResults(MetaMorpheusEngine s, string v) : base(s)
         {
             this.v = v;
         }
 
         #endregion Public Constructors
 
-        #region Protected Properties
-
+        #region Public Methods
 
         public override string ToString()
         {
@@ -31,7 +30,7 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

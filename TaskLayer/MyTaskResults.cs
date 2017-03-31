@@ -52,7 +52,7 @@ namespace TaskLayer
 
         #region Internal Methods
 
-        internal void AddResultText(MyResults indexResults)
+        internal void AddResultText(MetaMorpheusEngineResults indexResults)
         {
             resultTexts.Add(indexResults.ToString());
         }

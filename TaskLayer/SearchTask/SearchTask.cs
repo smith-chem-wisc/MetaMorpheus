@@ -29,7 +29,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public SearchTask()
+        public SearchTask() : base(MyTask.Search)
         {
             // Set default values here:
             ClassicSearch = true;
@@ -51,23 +51,42 @@ namespace TaskLayer
             ZdotIons = false;
             CIons = false;
 
-            ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
-            ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
-            ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
-            ListOfModListsToAlwaysKeep = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
+            LocalizeAll = true;
+
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+
+            WritePrunedDatabase = false;
+            KeepAllUniprotMods = true;
 
             SearchModes = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-            TaskType = MyTask.Search;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<string> ListOfModListsFixed { get; set; }
-        public List<string> ListOfModListsVariable { get; set; }
-        public List<string> ListOfModListsLocalize { get; set; }
-        public List<string> ListOfModListsToAlwaysKeep { get; set; }
+        public MyTask TaskType { get; internal set; }
+
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
+
+        public int MaxMissedCleavages { get; set; }
+
+        public int MaxModificationIsoforms { get; set; }
+
+        public Protease Protease { get; set; }
+
+        public bool BIons { get; set; }
+
+        public bool YIons { get; set; }
+
+        public bool ZdotIons { get; set; }
+
+        public bool CIons { get; set; }
+        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
@@ -82,42 +101,52 @@ namespace TaskLayer
         public bool ConserveMemory { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
+        public bool LocalizeAll { get; set; }
+        public bool KeepAllUniprotMods { get; set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string SpecificTaskInfo
+        public override string ToString()
         {
-            get
+            var sb = new StringBuilder();
+            sb.AppendLine(TaskType.ToString());
+            sb.AppendLine("The initiator methionine behavior is set to "
+                + InitiatorMethionineBehavior
+                + " and the maximum number of allowed missed cleavages is "
+                + MaxMissedCleavages);
+            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
+            sb.AppendLine("protease: " + Protease);
+            sb.AppendLine("bIons: " + BIons);
+            sb.AppendLine("yIons: " + YIons);
+            sb.AppendLine("cIons: " + CIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
+            sb.AppendLine("classicSearch: " + ClassicSearch);
+            sb.AppendLine("doParsimony: " + DoParsimony);
+            if (DoParsimony)
             {
-                var sb = new StringBuilder();
-                sb.AppendLine("classicSearch: " + ClassicSearch);
-                sb.AppendLine("doParsimony: " + DoParsimony);
-                if (DoParsimony)
-                {
-                    sb.AppendLine("modifiedPeptidesAreUnique: " + ModPeptidesAreUnique);
-                    sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
-                }
-                sb.AppendLine("quantify: " + Quantify);
-                if (Quantify)
-                {
-                    sb.AppendLine("quantify rt tolerance: " + QuantifyRtTol);
-                    sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
-                }
-                sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
-                sb.AppendLine("searchDecoy: " + SearchDecoy);
-                sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-                sb.AppendLine("searchModes: ");
-                sb.Append(string.Join(Environment.NewLine, SearchModes.Select(b => "\t" + b.FileNameAddition)));
-                return sb.ToString();
+                sb.AppendLine("modifiedPeptidesAreUnique: " + ModPeptidesAreUnique);
+                sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
             }
+            sb.AppendLine("quantify: " + Quantify);
+            if (Quantify)
+            {
+                sb.AppendLine("quantify rt tolerance: " + QuantifyRtTol);
+                sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
+            }
+            sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModsFixed));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModsVariable));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModsLocalize));
+            sb.AppendLine("searchDecoy: " + SearchDecoy);
+            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
+            sb.AppendLine("searchModes: ");
+            sb.Append(string.Join(Environment.NewLine, SearchModes.Select(b => "\t" + b.FileNameAddition)));
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
         #region Protected Methods
 
@@ -127,9 +156,14 @@ namespace TaskLayer
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            List<ModificationWithMass> localizeableModifications;
+            if (LocalizeAll)
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            else
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
             for (int j = 0; j < SearchModes.Count; j++)
@@ -211,7 +245,7 @@ namespace TaskLayer
 
                 if (ClassicSearch)
                 {
-                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
+                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
                     mySearchTaskResults.AddResultText(classicSearchResults);
                     for (int i = 0; i < SearchModes.Count; i++)
                         allPsms[i].AddRange(classicSearchResults.OuterPsms[i]);
@@ -241,21 +275,25 @@ namespace TaskLayer
 
             if (WritePrunedDatabase)
             {
-                List<ModificationWithLocation> modificationsToAlwaysKeep = ListOfModListsToAlwaysKeep.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).ToList();
+                Status("Writing Pruned Database...", new List<string> { taskId });
+
+                List<Modification> modificationsToAlwaysKeep = new List<Modification>();
+                if (KeepAllUniprotMods)
+                    modificationsToAlwaysKeep.AddRange(GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("uniprot")));
 
                 var goodPsmsForEachProtein = allResultingIdentifications.SelectMany(b => b).Where(b => b.QValueNotch < 0.01 && b.thisPSM.PeptidesWithSetModifications.Count == 1 && !b.IsDecoy).GroupBy(b => b.thisPSM.PeptidesWithSetModifications.First().Protein).ToDictionary(b => b.Key);
 
                 foreach (var protein in proteinList)
                 {
-                    if (!protein.IsDecoy)
+                    if (!protein.IsDecoy && goodPsmsForEachProtein.ContainsKey(protein))
                     {
-                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(c.Key - b.thisPSM.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + 1, c.Value))));
+                        var modsObservedOnThisProtein = new HashSet<Tuple<int, ModificationWithMass>>(goodPsmsForEachProtein[protein].SelectMany(b => b.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Select(c => new Tuple<int, ModificationWithMass>(GetOneBasedIndexInProtein(c.Key, b.thisPSM.PeptidesWithSetModifications.First()), c.Value))));
 
                         IDictionary<int, List<Modification>> modsToWrite = new Dictionary<int, List<Modification>>();
                         foreach (var modd in protein.OneBasedPossibleLocalizedModifications)
                             foreach (var mod in modd.Value)
                             {
-                                if (modificationsToAlwaysKeep.Contains(mod as ModificationWithLocation)
+                                if (modificationsToAlwaysKeep.Contains(mod as Modification)
                                     || modsObservedOnThisProtein.Contains(new Tuple<int, ModificationWithMass>(modd.Key, mod as ModificationWithMass)))
                                 {
                                     if (!modsToWrite.ContainsKey(modd.Key))
@@ -306,6 +344,15 @@ namespace TaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
+        }
+
+        private int GetOneBasedIndexInProtein(int oneIsNterminus, PeptideWithSetModifications peptideWithSetModifications)
+        {
+            if (oneIsNterminus == 1)
+                return peptideWithSetModifications.OneBasedStartResidueInProtein;
+            if (oneIsNterminus == peptideWithSetModifications.Length + 2)
+                return peptideWithSetModifications.OneBasedEndResidueInProtein;
+            return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)

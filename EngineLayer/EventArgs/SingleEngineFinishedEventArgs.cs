@@ -7,13 +7,13 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private readonly MyResults myResults;
+        private readonly MetaMorpheusEngineResults myResults;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public SingleEngineFinishedEventArgs(MyResults myResults)
+        public SingleEngineFinishedEventArgs(MetaMorpheusEngineResults myResults)
         {
             this.myResults = myResults;
         }

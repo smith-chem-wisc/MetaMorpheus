@@ -7,12 +7,12 @@ using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -21,7 +21,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public CalibrationTask()
+        public CalibrationTask() : base(MyTask.Calibrate)
         {
             // Set default values here:
             MaxMissedCleavages = 2;
@@ -35,11 +35,11 @@ namespace TaskLayer
             CIons = false;
             ZdotIons = false;
 
-            ListOfModListsFixed = new List<string> { AllModLists.First(b => b.EndsWith("f.txt")) };
-            ListOfModListsVariable = new List<string> { AllModLists.First(b => b.EndsWith("v.txt")) };
-            ListOfModListsLocalize = new List<string> { AllModLists.First(b => b.EndsWith("ptmlist.txt")) };
+            LocalizeAll = true;
 
-            TaskType = MyTask.Calibrate;
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             MaxDegreeOfParallelism = -1;
         }
@@ -48,32 +48,60 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public List<string> ListOfModListsFixed { get; set; }
-        public List<string> ListOfModListsVariable { get; set; }
-        public List<string> ListOfModListsLocalize { get; set; }
+        public static List<string> AllModLists { get; private set; }
+
+        public MyTask TaskType { get; internal set; }
+
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
+
+        public int MaxMissedCleavages { get; set; }
+
+        public int MaxModificationIsoforms { get; set; }
+
+        public Protease Protease { get; set; }
+
+        public bool BIons { get; set; }
+
+        public bool YIons { get; set; }
+
+        public bool ZdotIons { get; set; }
+
+        public bool CIons { get; set; }
+        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
+        public bool LocalizeAll { get; set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string SpecificTaskInfo
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
-                sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
-                sb.Append("ProductMassTolerance: " + ProductMassTolerance);
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(TaskType.ToString());
+            sb.AppendLine("The initiator methionine behavior is set to "
+                + InitiatorMethionineBehavior
+                + " and the maximum number of allowed missed cleavages is "
+                + MaxMissedCleavages);
+            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
+            sb.AppendLine("protease: " + Protease);
+            sb.AppendLine("bIons: " + BIons);
+            sb.AppendLine("yIons: " + YIons);
+            sb.AppendLine("cIons: " + CIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
+            //sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+            //sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+            //sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
+            sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
+            sb.Append("ProductMassTolerance: " + ProductMassTolerance);
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
         #region Protected Internal Methods
 
@@ -128,9 +156,14 @@ namespace TaskLayer
             allPsms[0] = new List<PsmParent>();
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> localizeableModifications = ListOfModListsLocalize.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            List<ModificationWithMass> localizeableModifications;
+            if (LocalizeAll)
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            else
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;
@@ -183,7 +216,7 @@ namespace TaskLayer
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFileName);
                     Status("Opening spectra file " + origDataFileName + "...", new List<string> { taskId, "Individual Searches", origDataFileName });
-                    listOfSortedms2Scans = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                    listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 }
 
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
@@ -218,7 +251,7 @@ namespace TaskLayer
 
                 // Second search round
 
-                var listOfSortedms2ScansTest = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                var listOfSortedms2ScansTest = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
                 var searchResultsTest = (ClassicSearchResults)searchEngineTest.Run();
                 myTaskResults.AddResultText(searchResultsTest);
@@ -233,7 +266,7 @@ namespace TaskLayer
 
                 // Final search round - not required
 
-                var listOfSortedms2ScansTest2 = MyEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+                var listOfSortedms2ScansTest2 = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
                 var searchEngineTest2 = new ClassicSearchEngine(listOfSortedms2ScansTest2, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
                 var searchResultsTest2 = (ClassicSearchResults)searchEngineTest2.Run();
                 myTaskResults.AddResultText(searchResultsTest2);

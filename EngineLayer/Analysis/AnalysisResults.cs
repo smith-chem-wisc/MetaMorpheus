@@ -5,7 +5,7 @@ using System.Text;
 
 namespace EngineLayer.Analysis
 {
-    public class AnalysisResults : MyResults
+    public class AnalysisResults : MetaMorpheusEngineResults
     {
 
         #region Internal Fields

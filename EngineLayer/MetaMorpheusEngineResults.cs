@@ -3,7 +3,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public abstract class MyResults
+    public abstract class MetaMorpheusEngineResults
     {
 
         #region Internal Fields
@@ -14,7 +14,7 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected MyResults(MyEngine s)
+        protected MetaMorpheusEngineResults(MetaMorpheusEngine s)
         {
             MyEngine = s;
         }
@@ -23,7 +23,7 @@ namespace EngineLayer
 
         #region Protected Properties
 
-        protected MyEngine MyEngine { get; }
+        protected MetaMorpheusEngine MyEngine { get; }
 
         #endregion Protected Properties
 

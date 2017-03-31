@@ -3,7 +3,7 @@ using System.Text;
 
 namespace EngineLayer.Indexing
 {
-    public class IndexingResults : MyResults
+    public class IndexingResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.ClassicSearch
 {
-    public class ClassicSearchEngine : MyEngine
+    public class ClassicSearchEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -68,7 +68,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In classic search engine!", nestedIds);
 

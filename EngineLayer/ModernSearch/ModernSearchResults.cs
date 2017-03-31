@@ -3,7 +3,7 @@ using System.Text;
 
 namespace EngineLayer.ModernSearch
 {
-    public class ModernSearchResults : MyResults
+    public class ModernSearchResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors

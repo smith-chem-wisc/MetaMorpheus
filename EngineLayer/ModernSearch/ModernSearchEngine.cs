@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
 {
-    public class ModernSearchEngine : MyEngine
+    public class ModernSearchEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -51,7 +51,7 @@ namespace EngineLayer.ModernSearch
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             var totalSpectra = myMSDataFile.NumSpectra;
 
