@@ -47,13 +47,7 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-
-            List<ModificationWithMass> localizeableModifications;
-            if (task1.LocalizeAll)
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
-            else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-
+            
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
 
