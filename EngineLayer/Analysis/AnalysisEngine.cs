@@ -896,8 +896,7 @@ namespace EngineLayer.Analysis
                         foreach (var group in psmsGroupedByFilename)
                         {
                             var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
-                            if (writePsmsAction != null)
-                                writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
+                            writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
 
                             var allUniquePeptides = new HashSet<PeptideWithSetModifications>(proteinGroups[j].SelectMany(p => p.UniquePeptides));
                             var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(group.SelectMany(p => p.thisPSM.PeptidesWithSetModifications));
@@ -906,8 +905,7 @@ namespace EngineLayer.Analysis
                             var proteinGroupsForThisFile = ConstructProteinGroups(uniquePeptidesForThisFile, allPeptidesForThisFile);
                             ScoreProteinGroups(proteinGroupsForThisFile, group.ToList());
                             proteinGroupsForThisFile = DoProteinFdr(proteinGroupsForThisFile);
-                            if (writeProteinGroupsAction != null)
-                                writeProteinGroupsAction(proteinGroupsForThisFile, fileName + searchModes[j].FileNameAddition);
+                            writeProteinGroupsAction(proteinGroupsForThisFile, fileName + searchModes[j].FileNameAddition);
                         }
                     }
 
