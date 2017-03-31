@@ -24,6 +24,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
         // Always create a new one, even if updating an existing task
         private ObservableCollection<ModListForGptmdTask> ModFileListInWindow = new ObservableCollection<ModListForGptmdTask>();
@@ -160,11 +161,32 @@ namespace MetaMorpheusGUI
                 }
             }
 
+            foreach (var mod in task.ListOfModsGptmd)
+            {
+                var theModType = gptmdModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    gptmdModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+            }
+
             foreach (var ye in variableModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
             foreach (var ye in fixedModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in gptmdModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
         }
 
@@ -207,6 +229,15 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
+
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                gptmdModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            gptmdModsTreeView.DataContext = gptmdModTypeForTreeViewObservableCollection;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -242,6 +273,9 @@ namespace MetaMorpheusGUI
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
+            TheTask.ListOfModsGptmd = new List<Tuple<string, string>>();
+            foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;

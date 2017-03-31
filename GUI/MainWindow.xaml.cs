@@ -44,9 +44,16 @@ namespace MetaMorpheusGUI
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
-            foreach (var modFile in Directory.GetFiles(@"Mods"))
-                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
-
+            try
+            {
+                foreach (var modFile in Directory.GetFiles(@"Mods"))
+                    GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                Application.Current.Shutdown();
+            }
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
@@ -206,7 +213,17 @@ namespace MetaMorpheusGUI
                     {
                         proteinDbObservableCollection.Add(uu);
                         if (!Path.GetExtension(filepath).Equals(".fasta"))
-                            GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
+                        {
+                            try
+                            {
+                                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
+                            }
+                            catch (Exception ee)
+                            {
+                                MessageBox.Show(ee.ToString());
+                                Application.Current.Shutdown();
+                            }
+                        }
                     }
                 }
             dataGridXMLs.Items.Refresh();
@@ -226,7 +243,7 @@ namespace MetaMorpheusGUI
                 {
                     RawDataForDataGrid zz = new RawDataForDataGrid(rawDataFromSelected);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
-                }                   
+                }
             dataGridDatafiles.Items.Refresh();
         }
 
@@ -259,7 +276,7 @@ namespace MetaMorpheusGUI
                 case ".raw":
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
-                    if (!ExistRaw(rawDataObservableCollection, zz)){ rawDataObservableCollection.Add(zz); }
+                    if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
                     break;
 
                 case ".xml":
@@ -656,8 +673,8 @@ namespace MetaMorpheusGUI
 
         private bool ExistDa(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
         {
-            foreach(ProteinDbForDataGrid pdoc in pDOC)
-                if (pdoc.FileName == uuu.FileName){ return true; }
+            foreach (ProteinDbForDataGrid pdoc in pDOC)
+                if (pdoc.FileName == uuu.FileName) { return true; }
             return false;
         }
 
