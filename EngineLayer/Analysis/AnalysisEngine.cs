@@ -84,7 +84,7 @@ namespace EngineLayer.Analysis
         public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            var parsimonyDict = new Dictionary<Protein, HashSet<CompactPeptide>>();
+            var parsimonyProteinList = new HashSet<Protein>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
             // peptide matched to fullseq (used depending on user preference)
@@ -209,7 +209,7 @@ namespace EngineLayer.Analysis
                     }
                 }
 
-                parsimonyDict.Add(bestProtein, proteinToPeptidesMatching[bestProtein]);
+                parsimonyProteinList.Add(bestProtein);
 
                 // remove used peptides from their proteins
                 foreach (var newBaseSeq in newSeqs)
@@ -228,62 +228,58 @@ namespace EngineLayer.Analysis
             }
 
             // *** done with parsimony
-
-            // build protein group after parsimony (each group only has 1 protein at this point)
-            proteinGroups = new List<ProteinGroup>();
-            foreach (var kvp in parsimonyDict)
+            
+            // add indistinguishable proteins
+            var leftoverProteins = algDictionary.Keys.ToList();
+            var proteinsToAdd = new List<Protein>();
+            foreach (var protein in leftoverProteins)
             {
-                HashSet<PeptideWithSetModifications> uniquePeptidesHere;
-                if (!proteinsWithUniquePeptides.TryGetValue(kvp.Key, out uniquePeptidesHere))
-                    uniquePeptidesHere = new HashSet<PeptideWithSetModifications>();
+                foreach (var parsimonyProtein in parsimonyProteinList)
+                {
+                    if (proteinToPeptidesMatching[protein].SetEquals(proteinToPeptidesMatching[parsimonyProtein]))
+                        proteinsToAdd.Add(protein);
+                }
+            }
+            parsimonyProteinList.UnionWith(proteinsToAdd);
 
-                var allPeptidesHere = new HashSet<PeptideWithSetModifications>();
-                foreach (var compactPep in kvp.Value)
-                    allPeptidesHere.UnionWith(new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching[compactPep].Where(p => parsimonyDict.ContainsKey(p.Protein))));
+            foreach (var kvp in compactPeptideToProteinPeptideMatching)
+                kvp.Value.RemoveWhere(p => !parsimonyProteinList.Contains(p.Protein));
+
+            proteinGroups = ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
+
+            Status("Finished Parsimony", nestedIds);
+        }
+
+        public List<ProteinGroup> ConstructProteinGroups(HashSet<PeptideWithSetModifications> uniquePeptides, HashSet<PeptideWithSetModifications> allPeptides)
+        {
+            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
+            var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
+            
+            foreach(var peptide in allPeptides)
+            {
+                HashSet<PeptideWithSetModifications> peptidesHere;
+                if (proteinToPeptidesMatching.TryGetValue(peptide.Protein, out peptidesHere))
+                    peptidesHere.Add(peptide);
+                else
+                    proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
+            }
+            
+            // build protein group after parsimony (each group only has 1 protein at this point, indistinguishables will be merged during scoring)
+            foreach (var kvp in proteinToPeptidesMatching)
+            {
+                var allPeptidesHere = proteinToPeptidesMatching[kvp.Key];
+                var uniquePeptidesHere = new HashSet<PeptideWithSetModifications>(allPeptidesHere.Where(p => uniquePeptides.Contains(p)));
 
                 proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, allPeptidesHere, uniquePeptidesHere));
             }
-
-            // grab indistinguishable proteins ("if" conditions are to narrow search space)
-            foreach (var proteinGroup in proteinGroups)
-            {
-                if (!proteinGroup.UniquePeptides.Any())
-                {
-                    foreach (var kvp in proteinToPeptidesMatching)
-                    {
-                        if (!proteinsWithUniquePeptides.ContainsKey(kvp.Key))
-                        {
-                            // prevents looking at itself
-                            if (!parsimonyDict.ContainsKey(kvp.Key))
-                            {
-                                var allPeptidesHere = new HashSet<PeptideWithSetModifications>();
-                                foreach (var compactPep in kvp.Value)
-                                    allPeptidesHere.UnionWith(new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching[compactPep].Where(p => parsimonyDict.ContainsKey(p.Protein))));
-
-                                if (allPeptidesHere.Count == proteinGroup.AllPeptides.Count)
-                                {
-                                    if (allPeptidesHere.SetEquals(proteinGroup.AllPeptides))
-                                    {
-                                        proteinGroup.Proteins.Add(kvp.Key);
-                                        parsimonyDict.Add(kvp.Key, kvp.Value);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
+            
             foreach (var proteinGroup in proteinGroups)
             {
                 proteinGroup.AllPeptides.RemoveWhere(p => !proteinGroup.Proteins.Contains(p.Protein));
                 proteinGroup.DisplayModsOnPeptides = treatModPeptidesAsDifferentPeptides;
             }
 
-            foreach (var kvp in compactPeptideToProteinPeptideMatching)
-                kvp.Value.RemoveWhere(p => !parsimonyDict.ContainsKey(p.Protein));
-
-            Status("Finished Parsimony", nestedIds);
+            return proteinGroups;
         }
 
         public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
@@ -340,7 +336,10 @@ namespace EngineLayer.Analysis
                     // check to make sure they have the same peptides, then merge them
                     foreach (var p in pgsWithThisScore)
                     {
-                        if (p != pg[i] && p.AllPeptides.SetEquals(pg[i].AllPeptides))
+                        var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
+                        var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
+
+                        if (p != pg[i] && seqs1.SetEquals(seqs2))
                         {
                             pg[i].MergeProteinGroupWith(p);
                         }
@@ -391,9 +390,9 @@ namespace EngineLayer.Analysis
             if (noOneHitWonders)
             {
                 if (treatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || p.AllPeptides.Count > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count() > 1).ToList();
                 else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || p.AllPeptides.Select(x => x.BaseSequence).Count() > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count() > 1).ToList();
             }
 
             // order protein groups by score
@@ -677,7 +676,7 @@ namespace EngineLayer.Analysis
                             double mzTolHere = ((ppmTolerance / 1e6) * plex);
 
                             var goodPeaks = possiblePeaks.Where(p => Math.Abs(p.Mz - plex) < mzTolHere);
-
+                            
                             int indexOfThisPlex = Array.IndexOf(hcdTmtTagReporterIons, plex);
                             if (goodPeaks.Any())
                                 bestPlexPeaks[indexOfThisPlex] = goodPeaks.Select(p => p.Intensity).Max();

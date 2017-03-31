@@ -273,6 +273,9 @@ namespace EngineLayer
         public void MergeProteinGroupWith(ProteinGroup other)
         {
             this.Proteins.UnionWith(other.Proteins);
+            this.AllPeptides.UnionWith(other.AllPeptides);
+            this.UniquePeptides.UnionWith(other.UniquePeptides);
+            this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
             other.ProteinGroupScore = 0;
         }
 
