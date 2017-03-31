@@ -4,7 +4,7 @@ using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    public class CalibrationResults : MyResults
+    public class CalibrationResults : MetaMorpheusEngineResults
     {
 
         #region Private Fields

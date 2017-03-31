@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace EngineLayer
 {
-    public abstract class MyEngine
+    public abstract class MetaMorpheusEngine
     {
 
         #region Public Events
@@ -52,7 +52,7 @@ namespace EngineLayer
             }
         }
 
-        public MyResults Run()
+        public MetaMorpheusEngineResults Run()
         {
             StartingSingleEngine();
             var stopWatch = new Stopwatch();
@@ -83,7 +83,7 @@ namespace EngineLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyResults RunSpecific();
+        protected abstract MetaMorpheusEngineResults RunSpecific();
 
         #endregion Protected Methods
 
@@ -94,7 +94,7 @@ namespace EngineLayer
             StartingSingleEngineHander?.Invoke(this, new SingleEngineEventArgs(this));
         }
 
-        private void FinishedSingleEngine(MyResults myResults)
+        private void FinishedSingleEngine(MetaMorpheusEngineResults myResults)
         {
             FinishedSingleEngineHandler?.Invoke(this, new SingleEngineFinishedEventArgs(myResults));
         }

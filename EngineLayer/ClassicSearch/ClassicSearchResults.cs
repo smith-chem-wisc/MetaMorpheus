@@ -2,7 +2,7 @@
 
 namespace EngineLayer.ClassicSearch
 {
-    public class ClassicSearchResults : MyResults
+    public class ClassicSearchResults : MetaMorpheusEngineResults
     {
 
         #region Internal Constructors

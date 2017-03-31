@@ -23,19 +23,19 @@ namespace Test
             #region Setup tasks
 
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                MetaMorpheusTask.AddModList(modFile);
+                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
 
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();
 
             SearchTask task3 = new SearchTask();
-            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
-            task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
+            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task3.DoParsimony = true;
 
             SearchTask task4 = new SearchTask();
-            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
-            task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
+            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task4.ClassicSearch = false;
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),
@@ -45,10 +45,9 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = task1.ListOfModListsVariable.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            List<ModificationWithMass> fixedModifications = task1.ListOfModListsFixed.SelectMany(b => PtmListLoader.ReadModsFromFile(b)).OfType<ModificationWithMass>().ToList();
-            //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
-
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
 
@@ -97,9 +96,7 @@ namespace Test
 
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
-            var results = (EverythingRunnerResults)engine.Run();
-
-            Assert.NotNull(results);
+            engine.Run();
         }
 
         #endregion Public Methods

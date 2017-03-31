@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -41,7 +40,18 @@ namespace TaskLayer
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value]))));
 
+        public readonly MyTask taskType;
+
         #endregion Public Fields
+
+        #region Public Constructors
+
+        public MetaMorpheusTask(MyTask taskType)
+        {
+            this.taskType = taskType;
+        }
+
+        #endregion Public Constructors
 
         #region Public Events
 
@@ -63,44 +73,7 @@ namespace TaskLayer
 
         #endregion Public Events
 
-        #region Public Properties
-
-        public static List<string> AllModLists { get; private set; }
-
-        public MyTask TaskType { get; internal set; }
-
-        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
-        public int MaxMissedCleavages { get; set; }
-
-        public int MaxModificationIsoforms { get; set; }
-
-        public Protease Protease { get; set; }
-
-        public bool BIons { get; set; }
-
-        public bool YIons { get; set; }
-
-        public bool ZdotIons { get; set; }
-
-        public bool CIons { get; set; }
-
-        #endregion Public Properties
-
-        #region Protected Properties
-
-        protected abstract string SpecificTaskInfo { get; }
-
-        #endregion Protected Properties
-
         #region Public Methods
-
-        public static void AddModList(string modList)
-        {
-            if (AllModLists == null)
-                AllModLists = new List<string>();
-            AllModLists.Add(modList);
-        }
 
         public static SearchMode ParseSearchMode(string text)
         {
@@ -157,7 +130,7 @@ namespace TaskLayer
                 file.WriteLine("MetaMorpheus version "
                     + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
                     + " is used to run a "
-                    + this.TaskType
+                    + this.taskType
                     + " task on "
                     + currentRawDataFilenameList.Count
                     + " spectra files.");
@@ -215,24 +188,6 @@ namespace TaskLayer
                 throw;
             }
 #endif
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine(SpecificTaskInfo);
-            sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
-                + InitiatorMethionineBehavior
-                + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages);
-            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("protease: " + Protease);
-            sb.AppendLine("bIons: " + BIons);
-            sb.AppendLine("yIons: " + YIons);
-            sb.AppendLine("cIons: " + CIons);
-            sb.AppendLine("zdotIons: " + ZdotIons);
-            return sb.ToString();
         }
 
         #endregion Public Methods
