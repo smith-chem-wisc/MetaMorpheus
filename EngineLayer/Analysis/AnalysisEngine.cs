@@ -860,7 +860,8 @@ namespace EngineLayer.Analysis
                         RunQuantification(orderedPsmsWithFDR, quantifyRtTol, quantifyPpmTol);
                     }
 
-                    writePsmsAction(orderedPsmsWithFDR, searchModes[j].FileNameAddition);
+                    if (writePsmsAction != null)
+                        writePsmsAction(orderedPsmsWithFDR, "_allPSMs_" + searchModes[j].FileNameAddition);
                     
                     if (doHistogramAnalysis)
                     {
@@ -876,14 +877,16 @@ namespace EngineLayer.Analysis
                     else
                     {
                         Status("Running FDR analysis on unique peptides...", nestedIds);
-                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides" + searchModes[j].FileNameAddition);
+                        if(writePsmsAction != null)
+                            writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
                     }
 
                     if (doParsimony)
                     {
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
-                        writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
+                        if(writeProteinGroupsAction != null)
+                            writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 
                     if (myMsDataFile == null && doParsimony)
@@ -893,7 +896,8 @@ namespace EngineLayer.Analysis
                         foreach (var group in psmsGroupedByFilename)
                         {
                             var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
-                            writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
+                            if (writePsmsAction != null)
+                                writePsmsAction(group.ToList(), fileName + searchModes[j].FileNameAddition);
 
                             var allUniquePeptides = new HashSet<PeptideWithSetModifications>(proteinGroups[j].SelectMany(p => p.UniquePeptides));
                             var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(group.SelectMany(p => p.thisPSM.PeptidesWithSetModifications));
@@ -902,7 +906,8 @@ namespace EngineLayer.Analysis
                             var proteinGroupsForThisFile = ConstructProteinGroups(uniquePeptidesForThisFile, allPeptidesForThisFile);
                             ScoreProteinGroups(proteinGroupsForThisFile, group.ToList());
                             proteinGroupsForThisFile = DoProteinFdr(proteinGroupsForThisFile);
-                            writeProteinGroupsAction(proteinGroupsForThisFile, fileName + searchModes[j].FileNameAddition);
+                            if (writeProteinGroupsAction != null)
+                                writeProteinGroupsAction(proteinGroupsForThisFile, fileName + searchModes[j].FileNameAddition);
                         }
                     }
 
