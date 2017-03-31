@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.Calibration
 {
@@ -12,17 +13,21 @@ namespace EngineLayer.Calibration
 
         private readonly RegressionTree[] RegressionTrees;
         private readonly bool[] useFeature;
+        private readonly Thread taskThread;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public RandomForestCalibrationFunction(int numTrees, int splitLimit, bool[] useFeature)
+        public RandomForestCalibrationFunction(int numTrees, int splitLimit, bool[] useFeature, Thread taskThread)
         {
             RegressionTrees = new RegressionTree[numTrees];
             this.useFeature = useFeature;
             for (int i = 0; i < numTrees; i++)
+            {
                 RegressionTrees[i] = new RegressionTree(splitLimit, 0, useFeature);
+            }
+            this.taskThread = taskThread;
         }
 
         #endregion Public Constructors
@@ -42,8 +47,13 @@ namespace EngineLayer.Calibration
         {
             var rand = new Random();
             List<LabeledDataPoint> trainingListHere = trainingList.ToList();
-            Parallel.For(0, RegressionTrees.Length, i =>
+
+            Thread currentThread = Thread.CurrentThread;
+            Parallel.For(0, RegressionTrees.Length, (i, loopState) =>
             {
+                if (currentThread.ThreadState == ThreadState.Aborted || taskThread != null && taskThread.ThreadState == ThreadState.Aborted)
+                    loopState.Stop();
+
                 List<LabeledDataPoint> subsampledTrainingPoints = new List<LabeledDataPoint>();
                 for (int j = 0; j < trainingListHere.Count; j++)
                 {

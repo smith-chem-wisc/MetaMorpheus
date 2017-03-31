@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -41,11 +42,13 @@ namespace EngineLayer.ClassicSearch
 
         private readonly bool conserveMemory;
 
+        private readonly Thread taskThread;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, Thread taskThread)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.MonoisotopicPrecursorMass).ToArray();
@@ -62,6 +65,7 @@ namespace EngineLayer.ClassicSearch
             this.lp = lp;
             this.nestedIds = nestedIds;
             this.conserveMemory = conserveMemory;
+            this.taskThread = taskThread;
         }
 
         #endregion Public Constructors
@@ -90,7 +94,8 @@ namespace EngineLayer.ClassicSearch
             int old_progress = 0;
 
             Status("Starting classic search loop...", nestedIds);
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            Thread currentThread = Thread.CurrentThread;
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), (fff, loopState) =>
             {
                 var psms = new PsmClassic[searchModes.Count][];
                 for (int aede = 0; aede < searchModes.Count; aede++)
@@ -122,6 +127,10 @@ namespace EngineLayer.ClassicSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
+                            if (currentThread.ThreadState == ThreadState.Aborted || taskThread != null && taskThread.ThreadState == ThreadState.Aborted)
+                            {
+                                loopState.Stop();
+                            }
                             if (peptide.NumLocMods > 0 && !conserveMemory)
                             {
                                 var hc = yyy.Sequence;

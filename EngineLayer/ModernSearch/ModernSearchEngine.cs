@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EngineLayer.ModernSearch
 {
@@ -30,12 +31,13 @@ namespace EngineLayer.ModernSearch
         private readonly List<SearchMode> searchModes;
         private readonly string fileToSearch;
         private readonly List<string> nestedIds;
+        private readonly Thread taskThread;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds)
+        public ModernSearchEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds, Thread taskThread)
         {
             this.myMSDataFile = myMSDataFile;
             this.peptideIndex = peptideIndex;
@@ -45,6 +47,7 @@ namespace EngineLayer.ModernSearch
             this.searchModes = searchModes;
             this.fileToSearch = fileToSearch;
             this.nestedIds = nestedIds;
+            this.taskThread = taskThread;
         }
 
         #endregion Public Constructors
@@ -67,7 +70,9 @@ namespace EngineLayer.ModernSearch
             int scansSeen = 0;
             int old_progress = 0;
             var peptideIndexCount = peptideIndex.Count;
-            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
+
+            Thread currentThread = Thread.CurrentThread;
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), (fff, loopState) =>
             {
                 CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
                 double[] bestScores = new double[searchModesCount];
@@ -75,6 +80,11 @@ namespace EngineLayer.ModernSearch
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
+                    if (currentThread.ThreadState == ThreadState.Aborted || taskThread != null && taskThread.ThreadState == ThreadState.Aborted)
+                    {
+                        loopState.Stop();
+                    }
+
                     var thisScan = listOfSortedms2Scans[i];
                     var thisScanprecursorMass = thisScan.MonoisotopicPrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);

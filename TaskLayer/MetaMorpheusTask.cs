@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UsefulProteomicsDatabases;
+using System.Threading;
 
 namespace TaskLayer
 {
@@ -86,6 +87,12 @@ namespace TaskLayer
         public bool CIons { get; set; }
 
         #endregion Public Properties
+
+        #region Private Properties
+
+        private Thread everythihgRunnerThread { get; set; }
+
+        #endregion Private Properties
 
         #region Protected Properties
 
