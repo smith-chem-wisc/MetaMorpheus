@@ -115,7 +115,7 @@
             </Expander>
         </GroupBox>
         <GroupBox Header="Modifications" DockPanel.Dock="Top">
-            <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded" IsExpanded="True">
+            <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
                 <Expander.Style>
                     <Style TargetType="Expander">
                         <Setter Property="Header" Value="{Binding ModExpanderTitle}"/>
