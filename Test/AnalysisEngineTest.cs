@@ -69,7 +69,7 @@ namespace Test
             bool quant = false;
             double quantRtTol = 0;
             double quantPpmTol = 0;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol, null);
 
             engine.Run();
         }

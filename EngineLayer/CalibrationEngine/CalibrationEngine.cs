@@ -6,6 +6,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace EngineLayer.Calibration
 {
@@ -38,12 +39,13 @@ namespace EngineLayer.Calibration
         private int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
         private int numFragmentsIdentified;
+        private readonly Thread taskThread;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC, List<string> nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC, List<string> nestedIds, Thread taskThread)
         {
             this.myMsDataFile = myMSDataFile;
             this.identifications = identifications;
@@ -57,6 +59,7 @@ namespace EngineLayer.Calibration
             this.ms2ListAction = ms2ListAction;
             this.doFC = doFC;
             this.nestedIds = nestedIds;
+            this.taskThread = taskThread;
         }
 
         #endregion Public Constructors
@@ -140,7 +143,7 @@ namespace EngineLayer.Calibration
             {
                 try
                 {
-                    var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
+                    var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff, taskThread);
                     ms1regressorRF.Train(trainList1);
                     var MS1mse = ms1regressorRF.GetMSE(testList1);
                     if (MS1mse < bestMS1MSE)
@@ -165,7 +168,7 @@ namespace EngineLayer.Calibration
             {
                 try
                 {
-                    var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
+                    var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff, taskThread);
                     ms2regressorRF.Train(trainList2);
                     var MS2mse = ms2regressorRF.GetMSE(testList2);
                     if (MS2mse < bestMS2MSE)

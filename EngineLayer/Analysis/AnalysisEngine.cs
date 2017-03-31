@@ -43,12 +43,13 @@ namespace EngineLayer.Analysis
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<string> nestedIds;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        private readonly Thread taskThread;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string> action2, Action<List<ProteinGroup>, string> action3, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Thread taskThread)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -76,6 +77,7 @@ namespace EngineLayer.Analysis
             this.quantifyPpmTol = QuantifyPpmTol;
             this.nestedIds = nestedIds;
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
+            this.taskThread = taskThread;
         }
 
         #endregion Public Constructors
@@ -764,11 +766,13 @@ namespace EngineLayer.Analysis
             Thread taskThread = Thread.CurrentThread;
             Parallel.ForEach(Partitioner.Create(0, totalProteins), (fff, loopState) =>
             {
-                if (taskThread.ThreadState == ThreadState.Aborted)
-                    loopState.Stop();
-
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
+                {
+                    if (taskThread.ThreadState == ThreadState.Aborted || this.taskThread != null && this.taskThread.ThreadState == ThreadState.Aborted)
+                    {
+                        loopState.Stop();
+                    }
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior, fixedModifications))
                     {
                         if (peptideWithPossibleModifications.Length <= 1)
@@ -780,6 +784,7 @@ namespace EngineLayer.Analysis
                                 v.Add(peptideWithSetModifications);
                         }
                     }
+                }
                 lock (obj)
                 {
                     foreach (var ye in local)
