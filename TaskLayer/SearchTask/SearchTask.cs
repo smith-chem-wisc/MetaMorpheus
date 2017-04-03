@@ -67,8 +67,6 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public MyTask TaskType { get; internal set; }
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
@@ -275,8 +273,10 @@ namespace TaskLayer
                     mySearchTaskResults.AddResultText(analysisResults);
                     allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
                 }
-                Status("Done!", new List<string> { taskId, "Individual Searches", origDataFile });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
+
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
 
             if (currentRawFileList.Count > 1)
             {

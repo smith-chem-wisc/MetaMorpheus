@@ -50,8 +50,6 @@ namespace TaskLayer
 
         public static List<string> AllModLists { get; private set; }
 
-        public MyTask TaskType { get; internal set; }
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
@@ -295,9 +293,11 @@ namespace TaskLayer
                     }
                 }
                 FinishedDataFile(origDataFileName, new List<string> { taskId, "Individual Searches", origDataFileName });
-                Status("Done!", new List<string> { taskId, "Individual Searches", origDataFileName });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFileName }));
             }
             );
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
+
             return myTaskResults;
         }
 

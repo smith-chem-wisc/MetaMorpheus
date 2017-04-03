@@ -57,8 +57,6 @@ namespace TaskLayer
 
         public static List<string> AllModLists { get; private set; }
 
-        public MyTask TaskType { get; internal set; }
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
@@ -190,8 +188,9 @@ namespace TaskLayer
 
                 myGPTMDresults.AddResultText(analysisResults);
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
-                Status("Done!", new List<string> { taskId, "Individual Searches", origDataFile });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
 
             if (numRawFiles > 1)
             {
