@@ -223,7 +223,7 @@ namespace EngineLayer.Calibration
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLoss != 0))
+                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 

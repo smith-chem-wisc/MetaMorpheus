@@ -138,7 +138,7 @@ namespace EngineLayer.ClassicSearch
                             }
 
                             var sortedProductMasses = yyy.FastSortedProductMasses(lp);
-                            double[] matchedIonsArray = new double[sortedProductMasses.Length];
+                            double[] matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
 
                             for (int aede = 0; aede < searchModes.Count; aede++)
                             {
@@ -152,7 +152,7 @@ namespace EngineLayer.ClassicSearch
                                     //
                                     //}
 
-                                    var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonsArray);
+                                    var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonMassesListPositiveIsMatch);
                                     var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)
                                     {
@@ -160,7 +160,7 @@ namespace EngineLayer.ClassicSearch
                                         if (current_best_psm == null || PsmClassic.FirstIsPreferable(psm, current_best_psm))
                                         {
                                             psms[aede][scan.OneBasedScanNumber - 1] = psm;
-                                            matchedIonsArray = new double[sortedProductMasses.Length];
+                                            matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
                                         }
                                     }
                                 }

@@ -28,7 +28,7 @@ namespace EngineLayer
         public double apexRT;
         public double mostAbundantMass;
 
-        public Dictionary<ProductType, double[]> matchedIonsList;
+        public Dictionary<ProductType, double[]> matchedIonsListPositiveIsMatch;
         public List<double> LocalizedScores;
 
         #endregion Public Fields
@@ -86,11 +86,11 @@ namespace EngineLayer
             sb.Append(mostAbundantMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
-            foreach (var kvp in matchedIonsList)
+            foreach (var kvp in matchedIonsListPositiveIsMatch)
                 sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
             sb.Append("]" + '\t');
 
-            sb.Append(string.Join(";", matchedIonsList.Select(b => b.Value.Count(c => c > 0))) + '\t');
+            sb.Append(string.Join(";", matchedIonsListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
 
             sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 

@@ -47,7 +47,7 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            
+
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
 
@@ -72,7 +72,7 @@ namespace Test
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
-            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, 0, new List<double> { 21.981943 }, null, "") });
+            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, null);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
