@@ -244,11 +244,7 @@ namespace EngineLayer
         /// </summary>
         private void ComputeFragmentMasses()
         {
-            p = new PeptideFragmentMasses()
-            {
-                nTerminalMasses = new List<MetaMorpheusFragment>(),
-                cTerminalMasses = new List<MetaMorpheusFragment>()
-            };
+            p = new PeptideFragmentMasses();
 
             ModificationWithMass pep_n_term_variable_mod;
             double theMass = 0;
@@ -257,7 +253,7 @@ namespace EngineLayer
                     theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
             else
                 theMass = 0;
-            p.nTerminalMasses.AddRange(ComputeFollowingFragmentMasses(theMass, 1, 1));
+            p.nTerminalMasses = ComputeFollowingFragmentMasses(theMass, 1, 1).ToList();
 
             ModificationWithMass pep_c_term_variable_mod;
             theMass = 0;
@@ -266,43 +262,53 @@ namespace EngineLayer
                     theMass = pep_c_term_variable_mod.monoisotopicMass - nl;
             else
                 theMass = 0;
-            p.cTerminalMasses.AddRange(ComputeFollowingFragmentMasses(theMass, Length, -1));
+            p.cTerminalMasses = ComputeFollowingFragmentMasses(theMass, Length, -1).ToList();
         }
 
         private IEnumerable<MetaMorpheusFragment> ComputeFollowingFragmentMasses(double prevMass, int oneBasedIndexToLookAt, int direction)
         {
-            double currentMass = prevMass + Residue.ResidueMonoisotopicMass[this[oneBasedIndexToLookAt - 1]];
-            ModificationWithMass residue_variable_mod;
-            if (allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod))
+            ModificationWithMass residue_variable_mod = null;
+            do
             {
-                foreach (double nl in residue_variable_mod.neutralLosses)
+                prevMass += Residue.ResidueMonoisotopicMass[this[oneBasedIndexToLookAt - 1]];
+
+                allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
+                if (residue_variable_mod == null)
                 {
-                    currentMass = currentMass + residue_variable_mod.monoisotopicMass - nl;
                     var theFrag = new MetaMorpheusFragment()
                     {
-                        mass = currentMass,
+                        mass = prevMass,
+                        index = oneBasedIndexToLookAt
+                    };
+                    yield return theFrag;
+                }
+                else if (residue_variable_mod.neutralLosses.Count() == 1)
+                {
+                    prevMass += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLosses.First();
+                    var theFrag = new MetaMorpheusFragment()
+                    {
+                        mass = prevMass,
+                        index = oneBasedIndexToLookAt
+                    };
+                    yield return theFrag;
+                }
+                oneBasedIndexToLookAt += direction;
+            } while (((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < Length && direction == 1)) && (residue_variable_mod == null || residue_variable_mod.neutralLosses.Count() == 1));
+            if (residue_variable_mod != null && residue_variable_mod.neutralLosses.Count() > 1)
+                foreach (double nl in residue_variable_mod.neutralLosses)
+                {
+                    var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
+                    var theFrag = new MetaMorpheusFragment()
+                    {
+                        mass = theMass,
                         index = oneBasedIndexToLookAt
                     };
                     yield return theFrag;
                     if ((direction == 1 && oneBasedIndexToLookAt + direction < Length) ||
                         (direction == -1 && oneBasedIndexToLookAt + direction > 1))
-                        foreach (var nextMass in ComputeFollowingFragmentMasses(currentMass, oneBasedIndexToLookAt + direction, direction))
+                        foreach (var nextMass in ComputeFollowingFragmentMasses(theMass, oneBasedIndexToLookAt + direction, direction))
                             yield return nextMass;
                 }
-            }
-            else
-            {
-                var theFrag = new MetaMorpheusFragment()
-                {
-                    mass = currentMass,
-                    index = oneBasedIndexToLookAt
-                };
-                yield return theFrag;
-                if ((direction == 1 && oneBasedIndexToLookAt + direction < Length) ||
-                    (direction == -1 && oneBasedIndexToLookAt + direction > 1))
-                    foreach (var nextMass in ComputeFollowingFragmentMasses(currentMass, oneBasedIndexToLookAt + direction, direction))
-                        yield return nextMass;
-            }
         }
 
         #endregion Private Methods
