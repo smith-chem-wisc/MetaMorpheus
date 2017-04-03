@@ -3,7 +3,6 @@ using EngineLayer;
 using IO.MzML;
 using MassSpectrometry;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +10,7 @@ namespace Test
 {
     internal class TestDataFile : MsDataFile<IMzmlScan>
     {
-        
+
         #region Public Constructors
 
         public TestDataFile() : base(2)
@@ -30,7 +29,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss) : base(pepWithSetModss.Count*2)
+        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss) : base(pepWithSetModss.Count * 2)
         {
             var ScansHere = new List<IMzmlScan>();
             for (int i = 0; i < pepWithSetModss.Count; i++)
@@ -44,7 +43,7 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
                 {
                     mz2.Add(aok.ToMz(1));
                     mz2.Add((aok + 1.003).ToMz(1));
@@ -67,7 +66,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -82,7 +81,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(PeptideWithSetModifications pepWithSetMods, string v):base(2)
+        public TestDataFile(PeptideWithSetModifications pepWithSetMods, string v) : base(2)
         {
             if (v.Equals("quadratic"))
             {
@@ -91,7 +90,7 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
                 {
                     var t1 = aok.ToMz(1);
                     var c = 0.0000001;
@@ -125,7 +124,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -159,14 +158,17 @@ namespace Test
                 return "TestDataFile";
             }
         }
-        
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public override IMzmlScan GetOneBasedScan(int scanNumber)
         {
             return Scans[scanNumber - 1];
         }
 
-        #endregion Public Properties
-        
+        #endregion Public Methods
+
     }
 }

@@ -45,7 +45,7 @@ ID   Phospho
 TG   S or T or Y
 PP   Anywhere.
 MM   79.966331
-NL   0 or 79.966331
+NL   0 or 97.976896
 MT   Mod
 CF   H1 O3 P1
 //

@@ -198,7 +198,7 @@ namespace EngineLayer
             return hm;
         }
 
-        public double[] FastSortedProductMasses(List<ProductType> productTypes)
+        public double[] SortedProductMassesMightNotBeUnique(List<ProductType> productTypes)
         {
             if (p == null)
                 ComputeFragmentMasses();

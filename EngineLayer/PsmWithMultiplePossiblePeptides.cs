@@ -36,7 +36,7 @@ namespace EngineLayer
                 var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
                 foreach (var huh in lp)
                 {
-                    var df = representative.FastSortedProductMasses(new List<ProductType> { huh });
+                    var df = representative.SortedProductMassesMightNotBeUnique(new List<ProductType> { huh });
                     double[] matchedIonMassesListPositiveIsMatch = new double[df.Length];
                     MatchIons(theScan, fragmentTolerance, df, matchedIonMassesListPositiveIsMatch);
                     MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
@@ -53,7 +53,7 @@ namespace EngineLayer
                 {
                     PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var gg = localizedPeptide.FastSortedProductMasses(lp);
+                    var gg = localizedPeptide.SortedProductMassesMightNotBeUnique(lp);
                     double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
                     var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch);
                     localizedScores.Add(score);

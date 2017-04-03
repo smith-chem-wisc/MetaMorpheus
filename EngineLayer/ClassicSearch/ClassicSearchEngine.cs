@@ -137,7 +137,7 @@ namespace EngineLayer.ClassicSearch
                                 }
                             }
 
-                            var sortedProductMasses = yyy.FastSortedProductMasses(lp);
+                            var sortedProductMasses = yyy.SortedProductMassesMightNotBeUnique(lp);
                             double[] matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
 
                             for (int aede = 0; aede < searchModes.Count; aede++)

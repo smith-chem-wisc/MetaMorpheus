@@ -128,7 +128,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.FastSortedProductMasses(lp))
+                            foreach (var huhu in yyy.SortedProductMassesMightNotBeUnique(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {
