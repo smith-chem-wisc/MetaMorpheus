@@ -292,23 +292,26 @@ namespace EngineLayer
                     };
                     yield return theFrag;
                 }
-                oneBasedIndexToLookAt += direction;
-            } while (((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < Length && direction == 1)) && (residue_variable_mod == null || residue_variable_mod.neutralLosses.Count() == 1));
-            if (residue_variable_mod != null && residue_variable_mod.neutralLosses.Count() > 1)
-                foreach (double nl in residue_variable_mod.neutralLosses)
+                else
                 {
-                    var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
-                    var theFrag = new MetaMorpheusFragment()
+                    foreach (double nl in residue_variable_mod.neutralLosses)
                     {
-                        mass = theMass,
-                        index = oneBasedIndexToLookAt
-                    };
-                    yield return theFrag;
-                    if ((direction == 1 && oneBasedIndexToLookAt + direction < Length) ||
-                        (direction == -1 && oneBasedIndexToLookAt + direction > 1))
-                        foreach (var nextMass in ComputeFollowingFragmentMasses(theMass, oneBasedIndexToLookAt + direction, direction))
-                            yield return nextMass;
+                        var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
+                        var theFrag = new MetaMorpheusFragment()
+                        {
+                            mass = theMass,
+                            index = oneBasedIndexToLookAt
+                        };
+                        yield return theFrag;
+                        if ((direction == 1 && oneBasedIndexToLookAt + direction < Length) ||
+                            (direction == -1 && oneBasedIndexToLookAt + direction > 1))
+                            foreach (var nextMass in ComputeFollowingFragmentMasses(theMass, oneBasedIndexToLookAt + direction, direction))
+                                yield return nextMass;
+                    }
+                    break;
                 }
+                oneBasedIndexToLookAt += direction;
+            } while ((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < Length && direction == 1));
         }
 
         #endregion Private Methods
