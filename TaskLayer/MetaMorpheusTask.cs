@@ -38,7 +38,10 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value]))));
+                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value])))
+                        .ConfigureType<List<Tuple<string,string>>>(type => type
+                            .WithConversionFor<TomlTableArray>(convert => convert
+                            .FromToml(tml=>tml.Items.Select(b => new Tuple<string,string>(b.Values.First().Get<string>(), b.Values.Last().Get<string>())).ToList()))));
 
         public readonly MyTask taskType;
 
