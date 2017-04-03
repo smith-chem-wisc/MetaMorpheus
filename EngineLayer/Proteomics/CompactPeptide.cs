@@ -47,7 +47,7 @@ namespace EngineLayer
                     }
                     else if (!fixedModifications.Contains(mod))
                     {
-                        varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
+                        varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
                         varMod1Loc = (ushort)oneBasedLoc;
                     }
                 }
@@ -61,7 +61,7 @@ namespace EngineLayer
                     }
                     else if (!fixedModifications.Contains(mod))
                     {
-                        varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
+                        varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
                         varMod2Loc = (ushort)oneBasedLoc;
                     }
                 }
@@ -75,7 +75,7 @@ namespace EngineLayer
                     }
                     else if (!fixedModifications.Contains(mod))
                     {
-                        varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
+                        varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
                         varMod3Loc = (ushort)oneBasedLoc;
                     }
                 }
