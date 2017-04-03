@@ -322,7 +322,7 @@ namespace MetaMorpheusGUI
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
-                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.taskType, staticTasksObservableCollection[i].metaMorpheusTask));
+                dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
             EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
@@ -602,7 +602,7 @@ namespace MetaMorpheusGUI
         {
             var a = sender as TreeView;
             if (a.SelectedItem is PreRunTask preRunTask)
-                switch (preRunTask.metaMorpheusTask.taskType)
+                switch (preRunTask.metaMorpheusTask.TaskType)
                 {
                     case MyTask.Search:
                         var searchDialog = new SearchTaskWindow(preRunTask.metaMorpheusTask as SearchTask);

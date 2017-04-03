@@ -39,11 +39,9 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value])))
-                        .ConfigureType<List<Tuple<string,string>>>(type => type
-                            .WithConversionFor<TomlTableArray>(convert => convert
-                            .FromToml(tml=>tml.Items.Select(b => new Tuple<string,string>(b.Values.First().Get<string>(), b.Values.Last().Get<string>())).ToList()))));
-
-        public readonly MyTask taskType;
+                        .ConfigureType<List<Tuple<string, string>>>(type => type
+                             .WithConversionFor<TomlTableArray>(convert => convert
+                             .FromToml(tml => tml.Items.Select(b => new Tuple<string, string>(b.Values.First().Get<string>(), b.Values.Last().Get<string>())).ToList()))));
 
         #endregion Public Fields
 
@@ -51,7 +49,7 @@ namespace TaskLayer
 
         public MetaMorpheusTask(MyTask taskType)
         {
-            this.taskType = taskType;
+            this.TaskType = taskType;
         }
 
         #endregion Public Constructors
@@ -75,6 +73,12 @@ namespace TaskLayer
         public static event EventHandler<StringEventArgs> NewCollectionHandler;
 
         #endregion Public Events
+
+        #region Public Properties
+
+        public MyTask TaskType { get; set; }
+
+        #endregion Public Properties
 
         #region Public Methods
 
@@ -133,7 +137,7 @@ namespace TaskLayer
                 file.WriteLine("MetaMorpheus version "
                     + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
                     + " is used to run a "
-                    + this.taskType
+                    + this.TaskType
                     + " task on "
                     + currentRawDataFilenameList.Count
                     + " spectra files.");

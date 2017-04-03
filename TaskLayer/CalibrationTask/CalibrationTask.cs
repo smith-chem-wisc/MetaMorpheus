@@ -50,8 +50,6 @@ namespace TaskLayer
 
         public static List<string> AllModLists { get; private set; }
 
-        public MyTask TaskType { get; internal set; }
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }

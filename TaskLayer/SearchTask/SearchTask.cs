@@ -67,8 +67,6 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public MyTask TaskType { get; internal set; }
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
