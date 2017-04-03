@@ -188,8 +188,9 @@ namespace TaskLayer
 
                 myGPTMDresults.AddResultText(analysisResults);
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
-                Status("Done!", new List<string> { taskId, "Individual Searches", origDataFile });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
 
             if (numRawFiles > 1)
             {

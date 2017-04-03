@@ -67,6 +67,7 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.FinishedDataFileHandler += MyTaskEngine_FinishedDataFileHandler;
             MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
+            MetaMorpheusTask.OutProgressHandler += NewoutProgressBar;
 
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;

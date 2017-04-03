@@ -72,6 +72,8 @@ namespace TaskLayer
 
         public static event EventHandler<StringEventArgs> NewCollectionHandler;
 
+        public static event EventHandler<ProgressEventArgs> OutProgressHandler;
+
         #endregion Public Events
 
         #region Public Properties
@@ -226,6 +228,11 @@ namespace TaskLayer
             }
             else
                 return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, dbRefTypesToKeep, null, out um);
+        }
+
+        protected void ReportProgress(ProgressEventArgs v)
+        {
+            OutProgressHandler?.Invoke(this, v);
         }
 
         protected abstract MyTaskResults RunSpecific(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId);
