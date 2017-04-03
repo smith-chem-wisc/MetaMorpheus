@@ -160,7 +160,7 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
                 foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
                 {
-                    var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsList;
+                    var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsListPositiveIsMatch;
                     if (ya.ContainsKey(ProductType.B)
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)

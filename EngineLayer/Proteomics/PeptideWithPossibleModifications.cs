@@ -266,12 +266,8 @@ namespace EngineLayer
             internal new void Add(ModificationWithMass mod)
             {
                 foreach (ModificationWithMass modHere in this)
-                {
-                    if (Math.Abs(modHere.monoisotopicMass - mod.monoisotopicMass) < 0.001 && Math.Abs(modHere.neutralLoss - mod.neutralLoss) < 0.001)
-                    {
+                    if (Math.Abs(modHere.monoisotopicMass - mod.monoisotopicMass) < 0.0001 && modHere.neutralLosses.SequenceEqual(mod.neutralLosses))
                         return;
-                    }
-                }
                 base.Add(mod);
             }
 
