@@ -54,6 +54,10 @@ namespace MetaMorpheusGUI
                 MessageBox.Show(e.ToString());
                 Application.Current.Shutdown();
             }
+
+            GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
+            GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
+
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;

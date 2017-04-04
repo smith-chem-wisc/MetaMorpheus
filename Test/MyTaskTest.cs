@@ -72,7 +72,7 @@ namespace Test
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
-            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null, "") });
+            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, null);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];

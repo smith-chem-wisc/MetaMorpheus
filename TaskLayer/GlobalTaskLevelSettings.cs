@@ -17,7 +17,7 @@ namespace TaskLayer
         {
             SearchModesKnown = LoadSearchModesFromFile().ToList();
             ProteaseDictionary = LoadProteaseDictionary();
-            AllModsKnown = new HashSet<Modification>();
+            AllModsKnown = new List<Modification>();
         }
 
         #endregion Public Constructors
@@ -26,7 +26,7 @@ namespace TaskLayer
 
         public static Dictionary<string, Protease> ProteaseDictionary { get; }
         public static List<SearchMode> SearchModesKnown { get; set; }
-        public static HashSet<Modification> AllModsKnown { get; set; }
+        public static List<Modification> AllModsKnown { get; set; }
 
         #endregion Public Properties
 
@@ -40,8 +40,8 @@ namespace TaskLayer
                     throw new Exception(ye.ToString() + Environment.NewLine + " has null or empty modification type");
                 if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     throw new Exception(ye.ToString() + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)));
-
-                AllModsKnown.Add(ye);
+                else
+                    AllModsKnown.Add(ye);
             }
         }
 

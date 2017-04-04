@@ -190,7 +190,7 @@ namespace EngineLayer
                 massOfExistingMod = modToReplace.monoisotopicMass;
                 vvv.Remove(j + 2);
             }
-            vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null, null));
+            vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
             var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
             return hm;
         }

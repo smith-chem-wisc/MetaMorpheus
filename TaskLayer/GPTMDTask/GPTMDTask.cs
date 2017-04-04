@@ -138,7 +138,7 @@ namespace TaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
             // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.SelectMany(b => b.massesObserved).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0, 1.0030, 2.0055, 3.0080 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
@@ -224,6 +224,20 @@ namespace TaskLayer
 
         #region Private Methods
 
+        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
+        {
+            foreach (var modOnPeptide in enumerable)
+            {
+                foreach (var modToLocalize in gptmdModifications)
+                {
+                    if (modOnPeptide.motif.Motif.Equals(modToLocalize.motif.Motif))
+                    {
+                        yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
+                    }
+                }
+            }
+        }
+
         private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> allowedCombos)
         {
             using (StreamReader r = new StreamReader(Path.Combine("Data", @"combos.txt")))
@@ -233,8 +247,8 @@ namespace TaskLayer
                     var line = r.ReadLine().Split(' ');
                     var mass1 = double.Parse(line[0]);
                     var mass2 = double.Parse(line[1]);
-                    if (allowedCombos.Any(b => b.massesObserved.Any(c => Math.Abs(c - mass1) < 1e-3)) &&
-                        allowedCombos.Any(b => b.massesObserved.Any(c => Math.Abs(c - mass2) < 1e-3)))
+                    if (allowedCombos.Any(b => b.monoisotopicMass - mass1 < 1e-3) &&
+                        allowedCombos.Any(b => b.monoisotopicMass - mass2 < 1e-3))
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }

@@ -22,7 +22,7 @@ namespace Test
             List<NewPsmWithFdr> allResultingIdentifications = null;
             ModificationMotif motifN;
             ModificationMotif.TryGetMotif("N", out motifN);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null, null) };
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
@@ -62,8 +62,8 @@ namespace Test
             ModificationMotif.TryGetMotif("N", out motifN);
             ModificationMotif motifP;
             ModificationMotif.TryGetMotif("P", out motifP);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 }, null, null),
-                                                                      new ModificationWithMass("16", null, motifP, ModificationSites.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 }, null, null) };
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
+                                                                      new ModificationWithMass("16", null, motifP, ModificationSites.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
