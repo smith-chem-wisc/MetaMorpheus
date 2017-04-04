@@ -231,7 +231,7 @@ namespace EngineLayer.Analysis
             
             // add indistinguishable proteins
             var leftoverProteins = algDictionary.Keys.ToList();
-            var proteinsToAdd = new List<Protein>();
+            var proteinsToAdd = new HashSet<Protein>();
             foreach (var protein in leftoverProteins)
             {
                 foreach (var parsimonyProtein in parsimonyProteinList)

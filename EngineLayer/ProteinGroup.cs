@@ -28,7 +28,7 @@ namespace EngineLayer
             AllPsmsBelowOnePercentFDR = new HashSet<NewPsmWithFdr>();
             SequenceCoveragePercent = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
-            //sequenceCoverageDisplayListWithMods = new List<string>();
+            SequenceCoverageDisplayListWithMods = new List<string>();
             ProteinGroupScore = 0;
             QValue = 0;
             isDecoy = false;
@@ -70,7 +70,7 @@ namespace EngineLayer
                 sb.Append("Number of unique peptides" + '\t');
                 sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
-                //sb.Append("Sequence coverage w Localizable Mods" + '\t');
+                sb.Append("Sequence coverage w Mods" + '\t');
                 //sb.Append("Intensity" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
@@ -91,7 +91,7 @@ namespace EngineLayer
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
 
-        //public List<string> sequenceCoverageDisplayListWithMods { get; private set; }
+        public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
         public double QValue { get; set; }
 
         public int CumulativeTarget { get; set; }
@@ -169,8 +169,8 @@ namespace EngineLayer
             //sb.Append("\t");
 
             // sequence coverage with mods
-            //sb.Append(string.Join("|", sequenceCoverageDisplayListWithMods));
-            //sb.Append("\t");
+            sb.Append(string.Join("|", SequenceCoverageDisplayListWithMods));
+            sb.Append("\t");
 
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
@@ -221,7 +221,6 @@ namespace EngineLayer
                     if (protein == peptideGroup.Key)
                     {
                         HashSet<int> coveredResidues = new HashSet<int>();
-                        //var peptideModsBelow1FDR = new List<ModificationWithMass>();
 
                         foreach (var peptide in peptideGroup)
                         {
@@ -229,10 +228,6 @@ namespace EngineLayer
                             {
                                 for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
                                     coveredResidues.Add(i);
-
-                                //foreach(var mod in peptide.allModsOneIsNterminus)
-                                //    if(mod.Key != 1)
-                                //        peptideModsBelow1FDR.Add(mod.Value);
                             }
                         }
 
@@ -251,21 +246,26 @@ namespace EngineLayer
                         var seq = new string(coverageArray);
                         SequenceCoverageDisplayList.Add(seq);
 
-                        /*
-                        foreach (var modsAtThisResidue in protein.OneBasedPossibleLocalizedModifications)
+                        // get sequence coverage display with mods
+                        var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
+                        foreach(var pep in peptideGroup)
                         {
-                            foreach (var mod in modsAtThisResidue.Value)
+                            foreach(var mod in pep.allModsOneIsNterminus)
                             {
-                                if (peptideModsBelow1FDR.Contains(mod))
-                                {
-                                    int modStringIndex = seq.Length - (protein.Length - modsAtThisResidue.Key);
-                                    seq = seq.Insert(modStringIndex, "[" + mod.id + "]");
-                                }
+                                if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
+                                    modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
                             }
                         }
 
-                        sequenceCoverageDisplayListWithMods.Add(seq);
-                        */
+                        var temp1 = modsOnThisProtein.OrderBy(p => p.Key).ToList();
+
+                        foreach(var mod in temp1)
+                        {
+                            int modStringIndex = seq.Length - (protein.Length - mod.Key);
+                            seq = seq.Insert(modStringIndex, "[" + mod.Value.id + "]");
+                        }
+
+                        SequenceCoverageDisplayListWithMods.Add(seq);
                     }
                 }
             }
