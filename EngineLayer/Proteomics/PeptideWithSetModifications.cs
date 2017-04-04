@@ -24,7 +24,8 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
+        public readonly int numFixedMods;
+        public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
 
         #endregion Public Fields
 
@@ -34,27 +35,23 @@ namespace EngineLayer
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
-
         private readonly PeptideWithPossibleModifications modPep;
         private double? monoisotopicMass;
-
         private string sequence;
-
         private PeptideFragmentMasses p;
-
         private bool? hasChemicalFormulas;
-
         private string sequenceWithChemicalFormulas;
 
         #endregion Private Fields
 
         #region Internal Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus)
+        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
                                                                                             : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
+            this.numFixedMods = numFixedMods;
         }
 
         #endregion Internal Constructors
@@ -194,7 +191,7 @@ namespace EngineLayer
                 vvv.Remove(j + 2);
             }
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null, null));
-            var hm = new PeptideWithSetModifications(modPep, vvv);
+            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
             return hm;
         }
 

@@ -157,7 +157,7 @@ namespace EngineLayer.ClassicSearch
                                     if (psm.score > 1)
                                     {
                                         PsmClassic current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
-                                        if (current_best_psm == null || PsmClassic.FirstIsPreferable(psm, current_best_psm))
+                                        if (current_best_psm == null || PsmClassic.FirstIsPreferable(psm, current_best_psm, variableModifications))
                                         {
                                             psms[aede][scan.OneBasedScanNumber - 1] = psm;
                                             matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
@@ -173,7 +173,7 @@ namespace EngineLayer.ClassicSearch
                     for (int aede = 0; aede < searchModes.Count; aede++)
                         for (int i = 0; i < outerPsms[aede].Length; i++)
                             if (psms[aede][i] != null)
-                                if (outerPsms[aede][i] == null || PsmClassic.FirstIsPreferable(psms[aede][i], outerPsms[aede][i]))
+                                if (outerPsms[aede][i] == null || PsmClassic.FirstIsPreferable(psms[aede][i], outerPsms[aede][i], variableModifications))
                                     outerPsms[aede][i] = psms[aede][i];
                     proteinsSeen += fff.Item2 - fff.Item1;
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);

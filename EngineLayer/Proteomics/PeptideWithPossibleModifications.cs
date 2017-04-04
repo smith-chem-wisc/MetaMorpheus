@@ -128,10 +128,14 @@ namespace EngineLayer
             int variable_modification_isoforms = 0;
             foreach (Dictionary<int, ModificationWithMass> kvp in GetVariableModificationPatterns(two_based_possible_variable_and_localizeable_modifications, maxModsForPeptide))
             {
+                int numFixedMods = 0;
                 foreach (var ok in thisDictionaryOfFixedMods)
                     if (!kvp.ContainsKey(ok.Key))
+                    {
+                        numFixedMods++;
                         kvp.Add(ok.Key, ok.Value);
-                yield return new PeptideWithSetModifications(this, kvp);
+                    }
+                yield return new PeptideWithSetModifications(this, kvp, numFixedMods);
                 variable_modification_isoforms++;
                 if (variable_modification_isoforms == maximumVariableModificationIsoforms)
                     yield break;
