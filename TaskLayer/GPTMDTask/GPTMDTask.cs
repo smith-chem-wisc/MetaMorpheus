@@ -116,7 +116,7 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            MyTaskResults myGPTMDresults = new MyTaskResults(this)
+            myTaskResults = new MyTaskResults(this)
             {
                 newDatabases = new List<DbForTask>()
             };
@@ -180,13 +180,11 @@ namespace TaskLayer
                 Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
                 var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
-                myGPTMDresults.AddResultText(searchResults);
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
                 analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), null, false, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, false, 0, 0).Run();
 
-                myGPTMDresults.AddResultText(analysisResults);
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
@@ -195,11 +193,9 @@ namespace TaskLayer
             if (numRawFiles > 1)
             {
                 analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s, new List<string> { taskId }), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s, new List<string> { taskId }), null, false, false, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }, false, 0, 0).Run();
-                myGPTMDresults.AddResultText(analysisResults);
             }
 
             var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance).Run();
-            myGPTMDresults.AddResultText(gptmdResults);
 
             if (currentXmlDbFilenameList.Any(b => !b.IsContaminant))
             {
@@ -209,7 +205,7 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-                myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
             }
             if (currentXmlDbFilenameList.Any(b => b.IsContaminant))
             {
@@ -219,9 +215,9 @@ namespace TaskLayer
 
                 SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
-                myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+                myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
             }
-            return myGPTMDresults;
+            return myTaskResults;
         }
 
         #endregion Protected Methods

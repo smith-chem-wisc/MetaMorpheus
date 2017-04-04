@@ -40,7 +40,7 @@ namespace EngineLayer.Gptmd
             sb.AppendLine("Modifications added = " + modsAdded);
             sb.AppendLine("Proteins expanded = " + Mods.Count);
             sb.AppendLine("Mods added types and counts:");
-            sb.Append(string.Join(Environment.NewLine, Mods.SelectMany(b => b.Value).GroupBy(b => b.Item2).OrderBy(b => -b.Count()).Select(b => b.Key.id + "\t" + b.Count())));
+            sb.Append(string.Join(Environment.NewLine, Mods.SelectMany(b => b.Value).GroupBy(b => b.Item2).OrderBy(b => -b.Count()).Select(b => "\t" + b.Key.id + "\t" + b.Count())));
             return sb.ToString();
         }
 

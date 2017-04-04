@@ -15,17 +15,10 @@ namespace EngineLayer.Analysis
 
         #endregion Internal Fields
 
-        #region Private Fields
-
-        private string output;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public AnalysisResults(AnalysisEngine s) : base(s)
         {
-            output = "";
         }
 
         #endregion Public Constructors
@@ -42,7 +35,7 @@ namespace EngineLayer.Analysis
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append(base.ToString());
+            sb.AppendLine(base.ToString());
             sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
 
             if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
@@ -65,26 +58,15 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < allModsOnPeptides.Length; i++)
             {
                 sb.AppendLine("Search mode " + i + " Mods seen:");
-                sb.AppendLine(string.Join(Environment.NewLine, allModsSeen[i].OrderBy(b => -b.Value).Select(b => b.Key + "\t" + b.Value)));
-                sb.AppendLine("Search mode " + i + " Mods on proteins:");
-                sb.AppendLine(string.Join(Environment.NewLine, allModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => b.Key + "\t" + b.Value)));
+                sb.AppendLine(string.Join(Environment.NewLine, allModsSeen[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                sb.AppendLine("Search mode " + i + " Mods in database:");
+                sb.AppendLine(string.Join(Environment.NewLine, allModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
-
-            sb.Append(output);
 
             return sb.ToString();
         }
 
         #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void AddText(string v)
-        {
-            output += v + Environment.NewLine;
-        }
-
-        #endregion Internal Methods
 
     }
 }
