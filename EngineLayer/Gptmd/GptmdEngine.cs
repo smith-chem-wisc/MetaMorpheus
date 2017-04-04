@@ -69,8 +69,10 @@ namespace EngineLayer.Gptmd
         {
             var Mods = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
 
+            var skipList = new List<double> { 0, 1.003, 2.0055, 3.008 };
+
             int modsAdded = 0;
-            foreach (var ye in allIdentifications.Where(b => b.QValueNotch <= 0.01 && !b.IsDecoy))
+            foreach (var ye in allIdentifications.Where(b => b.QValueNotch <= 0.01 && !b.IsDecoy && skipList.Count(c => precursorMassTolerance.Within(b.thisPSM.ScanPrecursorMass - c, b.thisPSM.PeptideMonoisotopicMass)) == 0))
             {
                 foreach (var peptide in ye.thisPSM.PeptidesWithSetModifications)
                 {
