@@ -247,8 +247,8 @@ namespace TaskLayer
                     var line = r.ReadLine().Split(' ');
                     var mass1 = double.Parse(line[0]);
                     var mass2 = double.Parse(line[1]);
-                    if (allowedCombos.Any(b => b.massesObserved.Any(c => Math.Abs(c - mass1) < 1e-3)) &&
-                        allowedCombos.Any(b => b.massesObserved.Any(c => Math.Abs(c - mass2) < 1e-3)))
+                    if (allowedCombos.Any(b => b.monoisotopicMass - mass1 < 1e-3) &&
+                        allowedCombos.Any(b => b.monoisotopicMass - mass2 < 1e-3))
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
