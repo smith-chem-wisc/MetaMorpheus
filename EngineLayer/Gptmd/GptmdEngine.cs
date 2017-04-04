@@ -75,7 +75,7 @@ namespace EngineLayer.Gptmd
                 foreach (var peptide in ye.thisPSM.PeptidesWithSetModifications)
                 {
                     var baseSequence = ye.thisPSM.BaseSequence;
-                    foreach (ModificationWithMass mod in GetMod(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance))
+                    foreach (ModificationWithMass mod in GetPossibleMods(ye.thisPSM.ScanPrecursorMass, ye.thisPSM.PeptideMonoisotopicMass, isotopeErrors, gptmdModifications, combos, precursorMassTolerance, ye.thisPSM.PeptidesWithSetModifications.First()))
                     {
                         var proteinAcession = peptide.Protein.Accession;
                         for (int i = 0; i < baseSequence.Length; i++)
@@ -103,15 +103,19 @@ namespace EngineLayer.Gptmd
 
         #region Private Methods
 
-        private static IEnumerable<ModificationWithMass> GetMod(double scanPrecursorMass, double peptideMonoisotopicMass, bool isotopeErrors, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance)
+        private static IEnumerable<ModificationWithMass> GetPossibleMods(double scanPrecursorMass, double peptideMonoisotopicMass, bool isotopeErrors, IEnumerable<ModificationWithMass> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
         {
             foreach (var Mod in allMods)
             {
-                foreach (var massObserved in Mod.massesObserved)
+                if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.monoisotopicMass))
+                    yield return Mod;
+                if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.monoisotopicMass))
+                    yield return Mod;
+                foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
                 {
-                    if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + massObserved))
+                    if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
                         yield return Mod;
-                    if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + massObserved))
+                    if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
                         yield return Mod;
                 }
             }
@@ -123,16 +127,16 @@ namespace EngineLayer.Gptmd
                 var combined = m1 + m2;
                 if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + combined))
                 {
-                    foreach (var mod in GetMod(scanPrecursorMass, peptideMonoisotopicMass + m1, isotopeErrors, allMods, combos, precursorTolerance))
+                    foreach (var mod in GetPossibleMods(scanPrecursorMass, peptideMonoisotopicMass + m1, isotopeErrors, allMods, combos, precursorTolerance, peptideWithSetModifications))
                         yield return mod;
-                    foreach (var mod in GetMod(scanPrecursorMass, peptideMonoisotopicMass + m2, isotopeErrors, allMods, combos, precursorTolerance))
+                    foreach (var mod in GetPossibleMods(scanPrecursorMass, peptideMonoisotopicMass + m2, isotopeErrors, allMods, combos, precursorTolerance, peptideWithSetModifications))
                         yield return mod;
                 }
                 if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + combined))
                 {
-                    foreach (var mod in GetMod(scanPrecursorMass, peptideMonoisotopicMass + m1, isotopeErrors, allMods, combos, precursorTolerance))
+                    foreach (var mod in GetPossibleMods(scanPrecursorMass, peptideMonoisotopicMass + m1, isotopeErrors, allMods, combos, precursorTolerance, peptideWithSetModifications))
                         yield return mod;
-                    foreach (var mod in GetMod(scanPrecursorMass, peptideMonoisotopicMass + m2, isotopeErrors, allMods, combos, precursorTolerance))
+                    foreach (var mod in GetPossibleMods(scanPrecursorMass, peptideMonoisotopicMass + m2, isotopeErrors, allMods, combos, precursorTolerance, peptideWithSetModifications))
                         yield return mod;
                 }
             }
