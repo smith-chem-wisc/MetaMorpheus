@@ -11,12 +11,6 @@ namespace TaskLayer
     public static class GlobalTaskLevelSettings
     {
 
-        #region Private Fields
-
-        private static int addedBad = 0;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         static GlobalTaskLevelSettings()
