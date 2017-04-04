@@ -11,13 +11,19 @@ namespace TaskLayer
     public static class GlobalTaskLevelSettings
     {
 
+        #region Private Fields
+
+        private static int addedBad = 0;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         static GlobalTaskLevelSettings()
         {
             SearchModesKnown = LoadSearchModesFromFile().ToList();
             ProteaseDictionary = LoadProteaseDictionary();
-            AllModsKnown = new HashSet<Modification>();
+            AllModsKnown = new List<Modification>();
         }
 
         #endregion Public Constructors
@@ -26,7 +32,7 @@ namespace TaskLayer
 
         public static Dictionary<string, Protease> ProteaseDictionary { get; }
         public static List<SearchMode> SearchModesKnown { get; set; }
-        public static HashSet<Modification> AllModsKnown { get; set; }
+        public static List<Modification> AllModsKnown { get; set; }
 
         #endregion Public Properties
 
@@ -38,10 +44,17 @@ namespace TaskLayer
             {
                 if (string.IsNullOrEmpty(ye.modificationType))
                     throw new Exception(ye.ToString() + Environment.NewLine + " has null or empty modification type");
-                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
-                    throw new Exception(ye.ToString() + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)));
 
-                AllModsKnown.Add(ye);
+                if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) && ye.modificationType.Equals("Unimod"))
+                {
+                    ModificationWithMassAndCf okyea = ye as ModificationWithMassAndCf;
+                    addedBad++;
+                    AllModsKnown.Add(new ModificationWithMassAndCf(okyea.id + addedBad.ToString(), okyea.accession, okyea.motif, okyea.terminusLocalization, okyea.chemicalFormula, okyea.monoisotopicMass, okyea.linksToOtherDbs, okyea.neutralLosses, okyea.diagnosticIons, okyea.modificationType));
+                }
+                else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
+                    throw new Exception(ye.ToString() + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)));
+                else
+                    AllModsKnown.Add(ye);
             }
         }
 
