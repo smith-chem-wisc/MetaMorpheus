@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace EngineLayer
@@ -11,6 +12,12 @@ namespace EngineLayer
         internal TimeSpan Time;
 
         #endregion Internal Fields
+
+        #region Private Fields
+
+        private List<string> outputStrings = new List<string>();
+
+        #endregion Private Fields
 
         #region Protected Constructors
 
@@ -34,10 +41,20 @@ namespace EngineLayer
             var sb = new StringBuilder();
             sb.AppendLine(GetType().Name);
             sb.AppendLine("Time to run: " + Time);
+            sb.Append(string.Join(Environment.NewLine, outputStrings));
             return sb.ToString();
         }
 
         #endregion Public Methods
+
+        #region Internal Methods
+
+        internal void AddText(string v)
+        {
+            outputStrings.Add(v);
+        }
+
+        #endregion Internal Methods
 
     }
 }

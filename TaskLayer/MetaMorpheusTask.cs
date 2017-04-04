@@ -45,6 +45,12 @@ namespace TaskLayer
 
         #endregion Public Fields
 
+        #region Protected Fields
+
+        protected MyTaskResults myTaskResults;
+
+        #endregion Protected Fields
+
         #region Public Constructors
 
         public MetaMorpheusTask(MyTask taskType)
@@ -161,28 +167,30 @@ namespace TaskLayer
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
 
+            MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
+
 #if !DEBUG
             try
             {
 #endif
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            var myResults = RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
+            RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
             stopWatch.Stop();
-            myResults.Time = stopWatch.Elapsed;
+            myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
                 file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
-                file.Write(myResults.ToString());
+                file.Write(myTaskResults.ToString());
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
             FinishedSingleTask(taskId);
-            return myResults;
 #if !DEBUG
             }
             catch (Exception e)
             {
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
@@ -197,6 +205,9 @@ namespace TaskLayer
                 throw;
             }
 #endif
+
+            MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+            return myTaskResults;
         }
 
         #endregion Public Methods
@@ -327,6 +338,11 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
+        {
+            myTaskResults.AddResultText(e.ToString());
+        }
 
         private void FinishedSingleTask(string taskId)
         {
