@@ -49,6 +49,8 @@ namespace TaskLayer
             ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("metals")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             IsotopeErrors = false;
+
+            DatabaseReferencesToKeep = new string[] { "" };
         }
 
         #endregion Public Constructors
