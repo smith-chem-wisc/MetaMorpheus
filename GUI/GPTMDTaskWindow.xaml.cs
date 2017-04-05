@@ -97,7 +97,6 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.ZdotIons;
 
             checkBoxGptmdMonoisotope.IsChecked = task.IsotopeErrors;
-            databaseReferencesTextBox.Text = string.Join(",", task.DatabaseReferencesToKeep);
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -282,9 +281,6 @@ namespace MetaMorpheusGUI
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
-
-            Regex substituteWhitespace = new Regex(@"\s+");
-            TheTask.DatabaseReferencesToKeep = substituteWhitespace.Replace(databaseReferencesTextBox.Text, "").Split(',');
 
             TheTask.IsotopeErrors = checkBoxGptmdMonoisotope.IsChecked.Value;
 
