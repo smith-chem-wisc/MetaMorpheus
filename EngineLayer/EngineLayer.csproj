@@ -120,6 +120,7 @@
     <Compile Include="Proteomics\ProductType.cs" />
     <Compile Include="Proteomics\Protease.cs" />
     <Compile Include="Proteomics\ProteinExtensions.cs" />
+    <Compile Include="SearchModes\DaltonsAroundZeroWithInnerSearchMode.cs" />
     <Compile Include="SearchModes\DotSearchMode.cs" />
     <Compile Include="Gptmd\GptmdEngine.cs" />
     <Compile Include="Gptmd\GptmdResults.cs" />
