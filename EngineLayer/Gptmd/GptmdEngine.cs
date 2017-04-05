@@ -115,10 +115,13 @@ namespace EngineLayer.Gptmd
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
                 {
-                    if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
-                        yield return Mod;
-                    if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
-                        yield return Mod;
+                    if (modOnPsm.motif.Motif.Equals(Mod.motif.Motif))
+                    {
+                        if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
+                            yield return Mod;
+                        if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
+                            yield return Mod;
+                    }
                 }
             }
 

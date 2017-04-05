@@ -49,6 +49,8 @@ namespace TaskLayer
             ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("metals")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             IsotopeErrors = false;
+
+            DatabaseReferencesToKeep = new string[] { "" };
         }
 
         #endregion Public Constructors
@@ -137,8 +139,13 @@ namespace TaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-            // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0, 1.0030, 2.0055, 3.0080 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
+            // Daltons around zero = 3.5
+            SearchMode searchMode;
+            if (IsotopeErrors)
+                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(gptmdModifications.Select(b => b.monoisotopicMass + 1.003)).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+            else
+                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];

@@ -829,8 +829,8 @@ namespace EngineLayer.Analysis
                     Dictionary<string, int> modsSeen = new Dictionary<string, int>();
                     Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
 
-                    // For now analyze only psms with a single option
-                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01 && b.thisPSM.PeptidesWithSetModifications.Count == 1)))
+                    // For now analyze only psms with a single option on unique peptides
+                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => b.QValue <= 0.01 && !b.IsDecoy && b.thisPSM.PeptidesWithSetModifications.Count == 1).GroupBy(b => b.thisPSM.FullSequence).Select(b => b.FirstOrDefault()))
                     {
                         var singlePeptide = highConfidencePSM.thisPSM.PeptidesWithSetModifications.First();
                         var modsIdentified = singlePeptide.allModsOneIsNterminus;
@@ -873,12 +873,9 @@ namespace EngineLayer.Analysis
                             writeHistogramPeaksAction(myTreeStructure, searchModes[j].FileNameAddition);
                         }
                     }
-                    else
-                    {
-                        Status("Running FDR analysis on unique peptides...", nestedIds);
-                        if (writePsmsAction != null)
-                            writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
-                    }
+                    Status("Running FDR analysis on unique peptides...", nestedIds);
+                    if (writePsmsAction != null)
+                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
 
                     if (doParsimony)
                     {
