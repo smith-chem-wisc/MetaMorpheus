@@ -877,7 +877,6 @@ namespace EngineLayer.Analysis
                     if (writePsmsAction != null)
                         writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
 
-                    Status("Doing parsimony...", nestedIds);
                     if (doParsimony)
                     {
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
