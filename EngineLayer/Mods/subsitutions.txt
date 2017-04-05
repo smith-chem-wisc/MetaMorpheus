@@ -1229,12 +1229,6 @@ TG   V
 MT   substitution
 MM   1.97926455510999
 //
-ID   P->V
-PP   Anywhere.
-TG   P
-MT   substitution
-MM   2.01565006446
-//
 ID   K->M
 PP   Anywhere.
 TG   K
