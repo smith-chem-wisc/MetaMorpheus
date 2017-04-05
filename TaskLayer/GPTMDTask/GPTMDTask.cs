@@ -138,7 +138,12 @@ namespace TaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
             // Daltons around zero = 3.5
-            SearchMode searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+            SearchMode searchMode;
+            if (IsotopeErrors)
+                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(gptmdModifications.Select(b => b.monoisotopicMass + 1.003)).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+            else
+                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];

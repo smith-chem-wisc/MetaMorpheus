@@ -11,7 +11,7 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
-        private const double missedMonoisopePeak = 1.0025;
+        private const double missedMonoisopePeak = 1.003;
         private readonly List<NewPsmWithFdr> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
@@ -115,10 +115,13 @@ namespace EngineLayer.Gptmd
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
                 {
-                    if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
-                        yield return Mod;
-                    if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
-                        yield return Mod;
+                    if (modOnPsm.motif.Motif.Equals(Mod.motif.Motif))
+                    {
+                        if (precursorTolerance.Within(scanPrecursorMass, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
+                            yield return Mod;
+                        if (isotopeErrors && precursorTolerance.Within(scanPrecursorMass - missedMonoisopePeak, peptideMonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
+                            yield return Mod;
+                    }
                 }
             }
 

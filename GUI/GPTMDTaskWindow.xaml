@@ -14,8 +14,6 @@
                         <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
                         <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                         <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
-                        <Label x:Name="databaseReferencesLabel" Content="Database References to Keep" ToolTip="Comma separated list of database references to keep from an XML protein database, e.g. ref,ref,..."/>
-                        <TextBox x:Name="databaseReferencesTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="100" Height="24" />
                     </StackPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -169,6 +167,17 @@
                     </DataTemplate>
                 </TreeView.Resources>
             </TreeView>
+            </Expander>
+        </GroupBox>
+        <GroupBox Header="G-PTM-D Parameters" DockPanel.Dock="Top">
+            <Expander x:Name="gptmdParamsExpander" Collapsed="ApmdExpander_Collapsed">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label x:Name="databaseReferencesLabel" Content="Database References to Keep" ToolTip="Comma separated list of database references to keep from an XML protein database, e.g. ref,ref,..."/>
+                        <TextBox x:Name="databaseReferencesTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="100" Height="24" />
+                    </StackPanel>
+                    <CheckBox x:Name="checkBoxGptmdMonoisotope"  Content="Look for monoisotope missed mods"/>
+                </StackPanel>
             </Expander>
         </GroupBox>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
