@@ -11,6 +11,12 @@ TG   Q
 MT   trickySubstitution
 MM   0.984015582910018
 //
+ID   E->M
+PP   Anywhere.
+TG   E
+MT   trickySubstitution
+MM   1.99789199972
+//
 ID   F->Y
 PP   Anywhere.
 TG   F

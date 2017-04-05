@@ -11,7 +11,7 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
-        private const double missedMonoisopePeak = 1.003;
+        private const double missedMonoisopePeak = 1.0025;
         private readonly List<NewPsmWithFdr> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
