@@ -215,7 +215,7 @@ namespace Test
             // check that correct proteins are in parsimony list
             Assert.That(parsimonyProteinList.Count == 8);
             Assert.That(parsimonyBaseSequences.Contains("AB--------"));
-            Assert.That(parsimonyBaseSequences.Contains("--C-------")); 
+            Assert.That(parsimonyBaseSequences.Contains("--C-------"));
             Assert.That(parsimonyBaseSequences.Contains("-B-D---HHH--"));
             Assert.That(parsimonyBaseSequences.Contains("-----F----*"));  // decoy
             Assert.That(parsimonyBaseSequences.Contains("----E----**"));  // contaminant
@@ -269,11 +269,11 @@ namespace Test
 
             foreach (var peptide in peptides)
             {
-                CfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.C }));
-                ZdotfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Zdot }));
-                BfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B }));
-                YfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.Y }));
-                BYfragmentMasses.Add(peptide, peptide.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }));
+                CfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
             double[] testB;
             Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
@@ -313,7 +313,7 @@ namespace Test
 
             AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.RunQuantification(psms, 0.2, 10);
-            
+
             Assert.That(psms.First().thisPSM.newPsm.apexIntensity[0] == 0);
         }
 

@@ -38,17 +38,24 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value]))));
-
-        public readonly MyTask taskType;
+                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value])))
+                        .ConfigureType<List<Tuple<string, string>>>(type => type
+                             .WithConversionFor<TomlTableArray>(convert => convert
+                             .FromToml(tml => tml.Items.Select(b => new Tuple<string, string>(b.Values.First().Get<string>(), b.Values.Last().Get<string>())).ToList()))));
 
         #endregion Public Fields
+
+        #region Protected Fields
+
+        protected MyTaskResults myTaskResults;
+
+        #endregion Protected Fields
 
         #region Public Constructors
 
         public MetaMorpheusTask(MyTask taskType)
         {
-            this.taskType = taskType;
+            this.TaskType = taskType;
         }
 
         #endregion Public Constructors
@@ -71,7 +78,15 @@ namespace TaskLayer
 
         public static event EventHandler<StringEventArgs> NewCollectionHandler;
 
+        public static event EventHandler<ProgressEventArgs> OutProgressHandler;
+
         #endregion Public Events
+
+        #region Public Properties
+
+        public MyTask TaskType { get; set; }
+
+        #endregion Public Properties
 
         #region Public Methods
 
@@ -130,7 +145,7 @@ namespace TaskLayer
                 file.WriteLine("MetaMorpheus version "
                     + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
                     + " is used to run a "
-                    + this.taskType
+                    + this.TaskType
                     + " task on "
                     + currentRawDataFilenameList.Count
                     + " spectra files.");
@@ -152,28 +167,30 @@ namespace TaskLayer
             Toml.WriteFile(this, tomlFileName, tomlConfig);
             SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
 
+            MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
+
 #if !DEBUG
             try
             {
 #endif
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            var myResults = RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
+            RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
             stopWatch.Stop();
-            myResults.Time = stopWatch.Elapsed;
+            myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
                 file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
-                file.Write(myResults.ToString());
+                file.Write(myTaskResults.ToString());
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
             FinishedSingleTask(taskId);
-            return myResults;
 #if !DEBUG
             }
             catch (Exception e)
             {
+                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
                 var resultsFileName = Path.Combine(output_folder, "results.txt");
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
@@ -188,6 +205,9 @@ namespace TaskLayer
                 throw;
             }
 #endif
+
+            MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+            return myTaskResults;
         }
 
         #endregion Public Methods
@@ -219,6 +239,11 @@ namespace TaskLayer
             }
             else
                 return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, dbRefTypesToKeep, null, out um);
+        }
+
+        protected void ReportProgress(ProgressEventArgs v)
+        {
+            OutProgressHandler?.Invoke(this, v);
         }
 
         protected abstract MyTaskResults RunSpecific(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId);
@@ -313,6 +338,11 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
+        {
+            myTaskResults.AddResultText(e.ToString());
+        }
 
         private void FinishedSingleTask(string taskId)
         {

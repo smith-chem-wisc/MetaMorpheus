@@ -15,10 +15,6 @@
                         <TextBox x:Name="precursorMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
                         <ComboBox x:Name="precursorMassToleranceComboBox" HorizontalAlignment="Left" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label x:Name="ff" Content="Max Degrees Of Parallelism" />
-                        <TextBox x:Name="maxDegreesOfParallelism" Width="45" Text="-1"/>
-                    </StackPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*" />
@@ -150,6 +146,17 @@
                             </TreeView>
                         </StackPanel>
                     </Grid>
+                </StackPanel>
+            </Expander>
+        </GroupBox>
+        <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
+            <Expander x:Name="CalibrationExpander" Collapsed="ApmdExpander_Collapsed">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label x:Name="ff" Content="Maximum Parallel Calibrations Allowed" />
+                        <TextBox x:Name="maxDegreesOfParallelism" Width="45" Text="-1"/>
+                    </StackPanel>
+                    <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
                 </StackPanel>
             </Expander>
         </GroupBox>

@@ -228,7 +228,7 @@ namespace EngineLayer.Analysis
             }
 
             // *** done with parsimony
-            
+
             // add indistinguishable proteins
             var leftoverProteins = algDictionary.Keys.ToList();
             var proteinsToAdd = new HashSet<Protein>();
@@ -254,8 +254,8 @@ namespace EngineLayer.Analysis
         {
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
-            
-            foreach(var peptide in allPeptides)
+
+            foreach (var peptide in allPeptides)
             {
                 HashSet<PeptideWithSetModifications> peptidesHere;
                 if (proteinToPeptidesMatching.TryGetValue(peptide.Protein, out peptidesHere))
@@ -263,7 +263,7 @@ namespace EngineLayer.Analysis
                 else
                     proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
             }
-            
+
             // build protein group after parsimony (each group only has 1 protein at this point, indistinguishables will be merged during scoring)
             foreach (var kvp in proteinToPeptidesMatching)
             {
@@ -272,7 +272,7 @@ namespace EngineLayer.Analysis
 
                 proteinGroups.Add(new ProteinGroup(new HashSet<Protein>() { kvp.Key }, allPeptidesHere, uniquePeptidesHere));
             }
-            
+
             foreach (var proteinGroup in proteinGroups)
             {
                 proteinGroup.AllPeptides.RemoveWhere(p => !proteinGroup.Proteins.Contains(p.Protein));
@@ -654,7 +654,6 @@ namespace EngineLayer.Analysis
                 }
                 */
             }
-
             else if (quantificationMode.Equals("TMT"))
             {
                 double[] hcdTmtTagReporterIons = new double[] { 126.127725, 127.124760, 127.131079, 128.128114, 128.134433, 129.131468, 129.137787, 130.134822, 130.141141, 131.138176 };
@@ -670,21 +669,21 @@ namespace EngineLayer.Analysis
                     if (ms2Scan.DissociationType.Equals(DissociationType.HCD))
                     {
                         var possiblePeaks = ms2Scan.MassSpectrum.Where(p => (p.Mz > mzFloor) && (p.Mz < mzCeiling));
-                        
+
                         foreach (var plex in hcdTmtTagReporterIons)
                         {
                             double mzTolHere = ((ppmTolerance / 1e6) * plex);
 
                             var goodPeaks = possiblePeaks.Where(p => Math.Abs(p.Mz - plex) < mzTolHere);
-                            
+
                             int indexOfThisPlex = Array.IndexOf(hcdTmtTagReporterIons, plex);
                             if (goodPeaks.Any())
                                 bestPlexPeaks[indexOfThisPlex] = goodPeaks.Select(p => p.Intensity).Max();
 
                             // if there was a high ppm tolerance used we may have counted close-mass plexes as the same - check for this problem
-                            if(indexOfThisPlex == 2 || indexOfThisPlex == 4 || indexOfThisPlex == 6 || indexOfThisPlex == 8)
+                            if (indexOfThisPlex == 2 || indexOfThisPlex == 4 || indexOfThisPlex == 6 || indexOfThisPlex == 8)
                             {
-                                if((bestPlexPeaks[indexOfThisPlex] != 0) && (bestPlexPeaks[indexOfThisPlex] == bestPlexPeaks[indexOfThisPlex - 1]))
+                                if ((bestPlexPeaks[indexOfThisPlex] != 0) && (bestPlexPeaks[indexOfThisPlex] == bestPlexPeaks[indexOfThisPlex - 1]))
                                 {
                                     // double counted a plex peak - attempt to fix
                                     var thisPlexsFloor = hcdTmtTagReporterIons[indexOfThisPlex - 1] - ((ppmTolerance / 1e6) * hcdTmtTagReporterIons[indexOfThisPlex - 1]);
@@ -721,7 +720,7 @@ namespace EngineLayer.Analysis
                     }
                     //else if (ms2Scan.DissociationType.Equals(DissociationType.ETD))
                     //{
-                    //    
+                    //
                     //}
 
                     psm.thisPSM.newPsm.apexIntensity = bestPlexPeaks;
@@ -830,8 +829,8 @@ namespace EngineLayer.Analysis
                     Dictionary<string, int> modsSeen = new Dictionary<string, int>();
                     Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
 
-                    // For now analyze only psms with a single option
-                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01 && b.thisPSM.PeptidesWithSetModifications.Count == 1)))
+                    // For now analyze only psms with a single option on unique peptides
+                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => b.QValue <= 0.01 && !b.IsDecoy && b.thisPSM.PeptidesWithSetModifications.Count == 1).GroupBy(b => b.thisPSM.FullSequence).Select(b => b.FirstOrDefault()))
                     {
                         var singlePeptide = highConfidencePSM.thisPSM.PeptidesWithSetModifications.First();
                         var modsIdentified = singlePeptide.allModsOneIsNterminus;
@@ -862,7 +861,7 @@ namespace EngineLayer.Analysis
 
                     if (writePsmsAction != null)
                         writePsmsAction(orderedPsmsWithFDR, "_allPSMs_" + searchModes[j].FileNameAddition);
-                    
+
                     if (doHistogramAnalysis)
                     {
                         var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
@@ -874,18 +873,15 @@ namespace EngineLayer.Analysis
                             writeHistogramPeaksAction(myTreeStructure, searchModes[j].FileNameAddition);
                         }
                     }
-                    else
-                    {
-                        Status("Running FDR analysis on unique peptides...", nestedIds);
-                        if(writePsmsAction != null)
-                            writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
-                    }
+                    Status("Running FDR analysis on unique peptides...", nestedIds);
+                    if (writePsmsAction != null)
+                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
 
                     if (doParsimony)
                     {
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
-                        if(writeProteinGroupsAction != null)
+                        if (writeProteinGroupsAction != null)
                             writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 

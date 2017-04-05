@@ -27,12 +27,12 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = ye[0].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
-            foreach (var huh in pep2.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep2.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
         }
 
@@ -59,12 +59,12 @@ namespace Test
             Assert.AreEqual(2, ye.Count);
             var pep1 = ye[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.FastSortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsNaN(pep2.MonoisotopicMass);
-            var cool = pep2.FastSortedProductMasses(new List<ProductType> { ProductType.Y });
+            var cool = pep2.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);
             Assert.IsTrue(cool.Length == 1);
         }
@@ -78,11 +78,11 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("M", out motif);
-            variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            variableModifications.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            variableModifications.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            variableModifications.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             var ok = ye.GetPeptidesWithSetModifications(variableModifications, 4096, 5).ToList();
             Assert.AreEqual(8, ok.Count);
 
@@ -99,11 +99,11 @@ namespace Test
             List<ModificationWithMass> fixedMods = new List<ModificationWithMass>();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("M", out motif);
-            fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            fixedMods.Add(new ModificationWithMassAndCf("PepNmod", null, motif, ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            fixedMods.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            fixedMods.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
-            fixedMods.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, 0, null, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, ModificationSites.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("PepNmod", null, motif, ModificationSites.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
+            fixedMods.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
 
             var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, fixedMods).First();
             var ok = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 5).ToList();
@@ -120,7 +120,7 @@ namespace Test
         {
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("X", out motif);
-            Modification mod = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, double.NaN, null, null, null);
+            Modification mod = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
             {
                 {2, new List<Modification> {mod } },
@@ -144,7 +144,7 @@ namespace Test
         {
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("Abcdefg", out motif);
-            Modification mod = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, double.NaN, null, null, null);
+            Modification mod = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
             {
                 {2, new List<Modification> {mod } },

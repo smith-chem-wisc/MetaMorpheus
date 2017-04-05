@@ -31,7 +31,7 @@ namespace Test
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
-            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, 0, new List<double> { 21.981943 }, null, null) };
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 },  null) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(variableModifications, 2, 1).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
@@ -57,12 +57,13 @@ namespace Test
             PsmParent newPsm = new PsmClassic(ps, fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, 2, 1, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, 0);
 
             Assert.IsNull(newPsm.LocalizedScores);
-            Assert.IsNull(newPsm.matchedIonsList);
+            Assert.IsNull(newPsm.matchedIonsListPositiveIsMatch);
             new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, lp);
 
-            // Was single peak, now three match!!!
-            Assert.AreEqual(0, newPsm.matchedIonsList[ProductType.B].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.matchedIonsList[ProductType.Y].Count(b => b > 0));
+            // Was single peak!!!
+            Assert.AreEqual(0, newPsm.matchedIonsListPositiveIsMatch[ProductType.B].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.matchedIonsListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
+            // If localizing, three match!!!
             Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
 

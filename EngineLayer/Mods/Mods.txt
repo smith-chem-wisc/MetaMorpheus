@@ -45,7 +45,7 @@ ID   Phospho
 TG   S or T or Y
 PP   Anywhere.
 MM   79.966331
-NL   0 or 79.966331
+NL   0 or 97.976896
 MT   Mod
 CF   H1 O3 P1
 //
@@ -165,7 +165,6 @@ ID   Dehydroalanine from Cysteine
 TG   C
 PP   Anywhere.
 MM   -33.987721
-OM   -91.009185
 MT   Mod
 CF   H-2 S-1
 //
@@ -257,7 +256,6 @@ ID   Trioxidation of C
 TG   Cysteine
 PP   Anywhere.
 MM   47.984744
-OM   -9.03672
 MT   Mod
 CF   O3
 //
@@ -282,7 +280,6 @@ PP   Anywhere.
 FM   0 or 204.187801
 MM   204.187801
 MT   Mod
-OM   147.166337
 CF   H24 C15
 //
 ID   Myristoylation of G
@@ -307,7 +304,6 @@ PP   Anywhere.
 MT   Mod
 FM   0 or 210.198366
 MM   210.198366
-OM   153.176902
 CF   H26 C14 O1
 //
 ID   Palmitoylation of C
@@ -315,13 +311,11 @@ TG   Cysteine
 PP   Anywhere.
 MT   Mod
 FM   0 or 238.229666
-OM   181.208202
 MM   238.229666
 CF   H30 C16 O1
 //
 ID   Palmitoylation
 TG   K or S or T
-OM   181.208202
 MT   Mod
 PP   Anywhere.
 FM   0 or 238.229666

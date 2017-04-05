@@ -1,5 +1,4 @@
-﻿using EngineLayer;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,6 +20,8 @@ namespace TaskLayer
 
         private readonly List<string> resultTexts;
 
+        private readonly StringBuilder niceText = new StringBuilder();
+
         #endregion Private Fields
 
         #region Internal Constructors
@@ -37,14 +38,37 @@ namespace TaskLayer
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine(GetType().Name);
+            sb.AppendLine(niceText.ToString());
             sb.AppendLine("Time to run: " + Time);
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine("--------------------------------------------------");
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine("New files:");
             if (newSpectra != null && newSpectra.Any())
-                sb.AppendLine("New spectra: " + string.Join(", ", newSpectra));
+            {
+                sb.AppendLine("New spectra: ");
+                sb.AppendLine();
+                sb.AppendLine(string.Join(Environment.NewLine + "\t", newSpectra));
+            }
             if (newDatabases != null && newDatabases.Any())
-                sb.AppendLine("New databases: " + string.Join(", ", newDatabases.Select(b => b.FileName)));
+            {
+                sb.AppendLine("New databases: ");
+                sb.AppendLine(string.Join(Environment.NewLine + "\t", newDatabases.Select(b => b.FileName)).ToString());
+            }
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine("--------------------------------------------------");
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine("Engine Results:");
+            sb.AppendLine();
             foreach (var ok in resultTexts)
-                sb.Append(ok);
+            {
+                sb.AppendLine(ok);
+                sb.AppendLine();
+            }
             return sb.ToString();
         }
 
@@ -52,9 +76,14 @@ namespace TaskLayer
 
         #region Internal Methods
 
-        internal void AddResultText(MetaMorpheusEngineResults indexResults)
+        internal void AddResultText(string resultsText)
         {
-            resultTexts.Add(indexResults.ToString());
+            resultTexts.Add(resultsText);
+        }
+
+        internal void AddNiceText(string niceTextString)
+        {
+            niceText.AppendLine(niceTextString);
         }
 
         #endregion Internal Methods

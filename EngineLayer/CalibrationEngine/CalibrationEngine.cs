@@ -27,7 +27,7 @@ namespace EngineLayer.Calibration
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
         private readonly bool doFC;
         private readonly List<string> nestedIds;
-        private List<NewPsmWithFdr> identifications;
+        private List<NewPsmWithFdr> goodIdentifications;
         private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
 
@@ -43,10 +43,10 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> identifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC, List<string> nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC, List<string> nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
-            this.identifications = identifications;
+            this.goodIdentifications = goodIdentifications;
             this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1IsotopicPeaksNeededForConfirmedIdentification;
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2IsotopicPeaksNeededForConfirmedIdentification;
             this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
@@ -83,7 +83,7 @@ namespace EngineLayer.Calibration
                     return new MyErroredResults(this, "No MS2 training points, identification quality is poor. Try to change the Fragment tolerance." + result.ToString());
                 if (dataPointAcquisitionResult.Ms1List.Count == 0)
                     return new MyErroredResults(this, "No MS1 training points, identification quality is poor. Try to change the Parent tolerance." + result.ToString());
-                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateSmooth(dataPointAcquisitionResult);
+                Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateLinear(dataPointAcquisitionResult);
                 result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
             }
             if (doFC)
@@ -202,28 +202,22 @@ namespace EngineLayer.Calibration
             // Set of peaks, identified by m/z and retention time. If a peak is in here, it means it has been a part of an accepted identification, and should be rejected
             var peaksAddedFromMS1HashSet = new HashSet<Tuple<double, double>>();
 
-            int numIdentifications = identifications.Count;
+            int numIdentifications = goodIdentifications.Count;
             // Loop over identifications
             for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
             {
-                var identification = identifications[matchIndex];
-                if (identification.QValue > 0.01)
-                    break;
+                var identification = goodIdentifications[matchIndex];
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
-
-                // Skip decoys, they are for sure not there!
-                if (identification.IsDecoy)
-                    continue;
 
                 // Each identification has an MS2 spectrum attached to it.
                 int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLoss != 0))
+                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
@@ -260,7 +254,7 @@ namespace EngineLayer.Calibration
             return res;
         }
 
-        private Tuple<CalibrationFunction, CalibrationFunction> CalibrateSmooth(DataPointAquisitionResults res)
+        private Tuple<CalibrationFunction, CalibrationFunction> CalibrateLinear(DataPointAquisitionResults res)
         {
             var rnd = new Random();
 
@@ -295,43 +289,28 @@ namespace EngineLayer.Calibration
                     bestMS2predictor = ms2regressor;
                 }
             }
+
+            // NOT b[2]. It is intensity!!!
             var transforms = new List<TransformFunction>
             {
                 new TransformFunction(b => new double[] { b[0] }, 1),
                 new TransformFunction(b => new double[] { b[1] }, 1),
-                new TransformFunction(b => new double[] { Math.Log(b[2]) }, 1),
                 new TransformFunction(b => new double[] { Math.Log(b[3]) }, 1),
                 new TransformFunction(b => new double[] { Math.Log(b[4]) }, 1),
 
                 new TransformFunction(b => new double[] { b[0], b[1] }, 2),
-                new TransformFunction(b => new double[] { b[0], Math.Log(b[2]) }, 2),
                 new TransformFunction(b => new double[] { b[0], Math.Log(b[3]) }, 2),
                 new TransformFunction(b => new double[] { b[0], Math.Log(b[4]) }, 2),
-                new TransformFunction(b => new double[] { b[1], Math.Log(b[2]) }, 2),
                 new TransformFunction(b => new double[] { b[1], Math.Log(b[3]) }, 2),
                 new TransformFunction(b => new double[] { b[1], Math.Log(b[4]) }, 2),
-                new TransformFunction(b => new double[] { Math.Log(b[2]), Math.Log(b[3]) }, 2),
-                new TransformFunction(b => new double[] { Math.Log(b[2]), Math.Log(b[4]) }, 2),
                 new TransformFunction(b => new double[] { Math.Log(b[3]), Math.Log(b[4]) }, 2),
 
-                new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]) }, 3),
                 new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[3]) }, 3),
                 new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[4]) }, 3),
-                new TransformFunction(b => new double[] { b[0], Math.Log(b[2]), Math.Log(b[3]) }, 3),
-                new TransformFunction(b => new double[] { b[0], Math.Log(b[2]), Math.Log(b[4]) }, 3),
                 new TransformFunction(b => new double[] { b[0], Math.Log(b[3]), Math.Log(b[4]) }, 3),
-                new TransformFunction(b => new double[] { b[1], Math.Log(b[2]), Math.Log(b[3]) }, 3),
-                new TransformFunction(b => new double[] { b[1], Math.Log(b[2]), Math.Log(b[4]) }, 3),
                 new TransformFunction(b => new double[] { b[1], Math.Log(b[3]), Math.Log(b[4]) }, 3),
-                new TransformFunction(b => new double[] { Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 3),
 
-                new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]), Math.Log(b[3]) }, 4),
-                new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]), Math.Log(b[4]) }, 4),
                 new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[3]), Math.Log(b[4]) }, 4),
-                new TransformFunction(b => new double[] { b[0], Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 4),
-                new TransformFunction(b => new double[] { b[1], Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 4),
-
-                new TransformFunction(b => new double[] { b[0], b[1], Math.Log(b[2]), Math.Log(b[3]), Math.Log(b[4]) }, 5)
             };
             foreach (var transform in transforms)
             {
@@ -368,39 +347,6 @@ namespace EngineLayer.Calibration
                     //Console.WriteLine("errored!");
                 }
             }
-            //foreach (var transform in transforms)
-            //{
-            //    Console.WriteLine("trying quadratic!");
-            //    try
-            //    {
-            //        var ms1regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
-            //        ms1regressorQuadratic.Train(trainList1);
-            //        var MS1mse = ms1regressorQuadratic.getMSE(testList1);
-            //        if (MS1mse < bestMS1MSE)
-            //        {
-            //            bestMS1MSE = MS1mse;
-            //            bestMS1predictor = ms1regressorQuadratic;
-            //        }
-            //    }
-            //    catch
-            //    {
-            //        Console.WriteLine("errored!");
-            //    }
-            //    try
-            //    {
-            //        var ms2regressorQuadratic = new QuadraticCalibrationFunctionMathNet(transform);
-            //        ms2regressorQuadratic.Train(trainList2);
-            //        var MS2mse = ms2regressorQuadratic.getMSE(testList2);
-            //        if (MS2mse < bestMS2MSE)
-            //        {
-            //            bestMS2MSE = MS2mse;
-            //            bestMS2predictor = ms2regressorQuadratic;
-            //        }
-            //    }
-            //    catch
-            //    {
-            //        Console.WriteLine("errored!");
-            //    }
 
             Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
 
