@@ -33,6 +33,7 @@ namespace EngineLayer
             QValue = 0;
             isDecoy = false;
             isContaminant = false;
+            Intensity = new double[1];
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
@@ -65,13 +66,13 @@ namespace EngineLayer
                 sb.Append("Number of proteins in group" + '\t');
                 sb.Append("Unique peptides" + '\t');
                 sb.Append("Shared peptides" + '\t');
-                //sb.Append("Razor peptides" + '\t');
+                sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
                 sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Sequence coverage w Mods" + '\t');
-                //sb.Append("Intensity" + '\t');
+                sb.Append("Intensity" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy/Contaminant/Target" + '\t');
@@ -96,7 +97,7 @@ namespace EngineLayer
 
         public int CumulativeTarget { get; set; }
         public int CumulativeDecoy { get; set; }
-        public double Intensity { get; private set; }
+        public double[] Intensity { get; private set; }
         public bool DisplayModsOnPeptides { get; set; }
 
         #endregion Public Properties
@@ -139,8 +140,8 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of razor peptides
-            //sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
-            //sb.Append("\t");
+            sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
+            sb.Append("\t");
 
             // number of peptides
             if (!DisplayModsOnPeptides)
@@ -164,12 +165,12 @@ namespace EngineLayer
             sb.Append(string.Join("|", SequenceCoverageDisplayList));
             sb.Append("\t");
 
-            // summed MS1 intensity of razor and unique peptides
-            //sb.Append(Intensity);
-            //sb.Append("\t");
-
             // sequence coverage with mods
             sb.Append(string.Join("|", SequenceCoverageDisplayListWithMods));
+            sb.Append("\t");
+
+            // summed MS1 intensity of razor and unique peptides
+            sb.Append(string.Join("|", Intensity));
             sb.Append("\t");
 
             // number of PSMs for listed peptides
@@ -283,13 +284,13 @@ namespace EngineLayer
         public void Quantify()
         {
             var groups = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
-            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation", "Carbamidomethyl", "Acetylation", "TMT_tag_lysine", "TMT_tag_terminal" };
+            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
             foreach (var group in groups)
             {
                 var psmsForThisBaseSeq = group.ToList();
                 var modsForThesePSMs = psmsForThisBaseSeq.Select(p => p.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Values.ToList()).ToList();
-                List<NewPsmWithFdr> psmsToIgnore = new List<NewPsmWithFdr>();
+                var psmsToIgnore = new List<NewPsmWithFdr>();
 
                 for (int i = 0; i < modsForThesePSMs.Count; i++)
                 {
@@ -301,7 +302,12 @@ namespace EngineLayer
                 psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
                 if (psmsForThisBaseSeq.Any())
-                    Intensity += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[0]).Max();
+                {
+                    // intensity is an array; will be size 1 for LFQ, 10 for TMT-tagged quantification
+                    Intensity = new double[psmsForThisBaseSeq.First().thisPSM.newPsm.apexIntensity.Length];
+                    for(int i = 0; i < Intensity.Length; i++)
+                        Intensity[i] += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[i]).Max();
+                }
             }
         }
 

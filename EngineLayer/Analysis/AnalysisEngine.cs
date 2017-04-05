@@ -419,11 +419,11 @@ namespace EngineLayer.Analysis
         public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
         {
             string quantificationMode = "LFQ";
-            var modsPresent = new HashSet<string>(psms.SelectMany(p => p.thisPSM.PeptidesWithSetModifications.SelectMany(x => x.allModsOneIsNterminus.Values)).Select(y => y.id));
+            var modsIdsPresent = new HashSet<string>(psms.SelectMany(p => p.thisPSM.PeptidesWithSetModifications.SelectMany(x => x.allModsOneIsNterminus.Values)).Select(y => y.id));
 
-            foreach (var mod in modsPresent)
+            foreach (var modId in modsIdsPresent)
             {
-                if (mod.Contains("TMT_tag_"))
+                if (modId.Contains("TMT_tag_"))
                 {
                     quantificationMode = "TMT";
                     break;
@@ -570,7 +570,7 @@ namespace EngineLayer.Analysis
                                         foreach (var isotope in isotopes)
                                         {
                                             double theorIsotopeMz = Chemistry.ClassExtensions.ToMz(isotope.Key, chargeState);
-                                            double isotopeMzTol = ((2.0 / 1e6) * isotope.Key) / chargeState;
+                                            double isotopeMzTol = ((3.0 / 1e6) * isotope.Key) / chargeState;
                                             bool thisIsotopeSeen = false;
 
                                             foreach (var otherPeak in otherPeaksInThisScan)
@@ -881,14 +881,15 @@ namespace EngineLayer.Analysis
                             writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "_uniquePeptides_" + searchModes[j].FileNameAddition);
                     }
 
-                    if (doParsimony)
+                    // individual (for single-file search) or aggregate results
+                    if (doParsimony && writeProteinGroupsAction != null)
                     {
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
-                        if(writeProteinGroupsAction != null)
-                            writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
+                        writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 
+                    // build individual file protein groups based on aggregate parsimony & print them
                     if (myMsDataFile == null && doParsimony)
                     {
                         var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
