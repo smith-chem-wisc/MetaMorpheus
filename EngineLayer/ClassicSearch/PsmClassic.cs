@@ -64,10 +64,12 @@ namespace EngineLayer.ClassicSearch
 
         private static bool FirstIsPreferableWithoutScore(PeptideWithSetModifications first, PeptideWithSetModifications second, double pm, List<ModificationWithMass> variableMods)
         {
-            // If matches nicely to zero, and the other one doesn't, just accept it
-            if (Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods)
+            // If matches nicely to zero or to 1.003, and the other one doesn't, just accept it
+            if ((Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods || Math.Abs(first.MonoisotopicMass - pm + 1.003) < tolInDaForPreferringHavingMods || Math.Abs(first.MonoisotopicMass - pm + 2.0055) < tolInDaForPreferringHavingMods)
+                && (Math.Abs(second.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm + 1.003) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm + 2.0055) > tolInDaForPreferringHavingMods))
                 return true;
-            if (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
+            if ((Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods || Math.Abs(second.MonoisotopicMass - pm + 1.003) < tolInDaForPreferringHavingMods || Math.Abs(second.MonoisotopicMass - pm + 2.0055) < tolInDaForPreferringHavingMods)
+                && (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(first.MonoisotopicMass - pm + 1.003) > tolInDaForPreferringHavingMods && Math.Abs(first.MonoisotopicMass - pm + 2.0055) > tolInDaForPreferringHavingMods))
                 return false;
 
             int firstVarMods = first.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
