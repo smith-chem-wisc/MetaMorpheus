@@ -14,7 +14,7 @@ namespace EngineLayer
 
         private static readonly string elementsLocation = Path.Combine(@"Data", @"elements.dat");
         private static readonly string unimodLocation = Path.Combine(@"Data", @"unimod.xml");
-        private static readonly string uniprotLocation = Path.Combine(@"Mods", @"ptmlist.txt");
+        private static readonly string uniprotLocation = Path.Combine(@"Data", @"ptmlist.txt");
 
         #endregion Private Fields
 

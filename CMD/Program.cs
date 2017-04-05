@@ -58,6 +58,9 @@ namespace MetaMorpheusCommandLine
                 foreach (var modFile in Directory.GetFiles(@"Mods"))
                     GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
 
+                GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
+                GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
+
                 foreach (var db in p.Object.Databases)
                     if (!Path.GetExtension(db).Equals(".fasta"))
                         GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<ModificationWithLocation>());

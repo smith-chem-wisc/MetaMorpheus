@@ -84,6 +84,8 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.ZdotIons;
             cCheckBox.IsChecked = task.CIons;
 
+            nonLinearCalibCheckBox.IsChecked = task.NonLinearCalibration;
+
             foreach (var mod in task.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -238,6 +240,8 @@ namespace MetaMorpheusGUI
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
             TheTask.MaxDegreeOfParallelism = int.Parse(maxDegreesOfParallelism.Text);
+
+            TheTask.NonLinearCalibration = nonLinearCalibCheckBox.IsChecked.Value;
 
             DialogResult = true;
         }
