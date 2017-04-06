@@ -66,6 +66,8 @@ namespace EngineLayer.Indexing
             sb.AppendLine("protease: " + protease);
             sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + maximumMissedCleavages);
+            sb.AppendLine("minPeptideLength: " + minPeptideLength);
+            sb.AppendLine("maxPeptideLength: " + maxPeptideLength);
             sb.AppendLine("maximumVariableModificationIsoforms: " + maximumVariableModificationIsoforms);
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
