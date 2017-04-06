@@ -294,7 +294,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    Status("Creating _indexedmzMLConnection, putting data in it, and writing!", new List<string> { taskId, "Individual Searches", origDataFileName });
+                    Status("Writing mzML!", new List<string> { taskId, "Individual Searches", origDataFileName });
                     var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "-Calibrated.mzML");
                     lock (lock2) // Lock because writing is sequential
                     {
