@@ -32,18 +32,18 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), variableModifications, localizeableModifications, fixedModifications);
 
             Assert.AreEqual("QQQ", value.First().BaseSequence);
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, InitiatorMethionineBehavior.Variable, fixedModifications).First();
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), variableModifications, localizeableModifications, fixedModifications);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), variableModifications, localizeableModifications, fixedModifications);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
@@ -69,7 +69,7 @@ namespace Test
             bool quant = false;
             double quantRtTol = 0;
             double quantPpmTol = 0;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol);
 
             engine.Run();
         }

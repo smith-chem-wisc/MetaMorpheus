@@ -20,7 +20,7 @@ namespace Test
             var prot = new Protein("MNNNKQQQQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
+            var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(2, ye.Count);
 
@@ -43,7 +43,7 @@ namespace Test
             var prot = new Protein("MNNNKQQQQ", null, null, new Dictionary<int, List<Modification>>(), new int?[] { 5 }, new int?[] { 6 }, new string[] { "lala" }, null, null, false, false, null);
             var protease = new Protease("Custom Protease", null, null, TerminusType.None, CleavageSpecificity.None, null, null, null);
 
-            var ye = prot.Digest(protease, int.MaxValue, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
+            var ye = prot.Digest(protease, int.MaxValue, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
 
             Assert.AreEqual(3, ye.Count);
         }
@@ -54,7 +54,7 @@ namespace Test
             var prot = new Protein("MNNNKQQXQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
+            var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(2, ye.Count);
             var pep1 = ye[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
@@ -74,7 +74,7 @@ namespace Test
         {
             var prot = new Protein("M", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("M", out motif);
@@ -105,7 +105,7 @@ namespace Test
             fixedMods.Add(new ModificationWithMassAndCf("PepCmod", null, motif, ModificationSites.PepC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             fixedMods.Add(new ModificationWithMassAndCf("ProtCmod", null, motif, ModificationSites.ProtC, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
 
-            var ye = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, fixedMods).First();
+            var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedMods).First();
             var ok = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 5).ToList();
 
             Assert.AreEqual(1, ok.Count);
@@ -128,8 +128,8 @@ namespace Test
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, modDict, new int?[0], new int?[0], new string[0], null, null, false, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var ye1 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
-            var ye2 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
+            var ye1 = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye2 = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
             var ok1 = ye1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
             var ok2 = ye2.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
@@ -152,8 +152,8 @@ namespace Test
             };
             var prot = new Protein("MNNNNKRRRRR", null, null, modDict, new int?[0], new int?[0], new string[0], null, null, true, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var ye1 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
-            var ye2 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
+            var ye1 = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye2 = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
             var ok1 = ye1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
             var ok2 = ye2.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
@@ -163,8 +163,8 @@ namespace Test
             Assert.IsTrue(ok2.allModsOneIsNterminus.ContainsKey(3));
 
             prot = new Protein("MNNNNKRRRRR", null, null, modDict, new int?[0], new int?[0], new string[0], null, null, false, false, null);
-            ye1 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
-            ye2 = prot.Digest(protease, 0, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
+            ye1 = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            ye2 = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Last();
             ok1 = ye1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
             ok2 = ye2.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
@@ -172,6 +172,22 @@ namespace Test
             Assert.IsFalse(ok1.allModsOneIsNterminus.Any());
             Assert.AreEqual(0, ok2.NumMods);
             Assert.IsFalse(ok2.allModsOneIsNterminus.Any());
+        }
+
+        [Test]
+        public static void TestGoodPeptideWithLength()
+        {
+            var prot = new Protein("MNNNKQQQQMNNNKQQQQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
+            var ye1 = prot.Digest(protease, 0, 5, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
+            var ye2 = prot.Digest(protease, 0, null, 5, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
+            var ye3 = prot.Digest(protease, 0, 5, 8, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
+            Assert.AreEqual(3, ye.Count);
+            Assert.AreEqual(2, ye1.Count);
+            Assert.AreEqual(2, ye2.Count);
+            Assert.AreEqual(1, ye3.Count);
         }
 
         #endregion Public Methods
