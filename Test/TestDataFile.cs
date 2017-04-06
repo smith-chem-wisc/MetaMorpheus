@@ -43,7 +43,7 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 {
                     mz2.Add(aok.ToMz(1));
                     mz2.Add((aok + 1.003).ToMz(1));
@@ -66,7 +66,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -90,7 +90,7 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 {
                     var t1 = aok.ToMz(1);
                     var c = 0.0000001;
@@ -124,7 +124,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));

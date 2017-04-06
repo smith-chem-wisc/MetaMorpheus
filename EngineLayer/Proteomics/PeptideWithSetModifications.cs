@@ -195,7 +195,7 @@ namespace EngineLayer
             return hm;
         }
 
-        public double[] SortedProductMassesMightNotBeUnique(List<ProductType> productTypes)
+        public double[] SortedProductMasses(List<ProductType> productTypes)
         {
             if (p == null)
                 ComputeFragmentMasses();
@@ -218,7 +218,7 @@ namespace EngineLayer
             if (productTypes.Contains(ProductType.Zdot))
                 allMasses = allMasses.Concat(p.cTerminalMasses.Select(b => b.mass + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass));
 
-            return allMasses.Where(f => !double.IsNaN(f)).OrderBy(b => b).ToArray();
+            return allMasses.Where(f => !double.IsNaN(f)).GroupBy(b => Math.Round(b, 3)).Select(b => b.Key).OrderBy(b => b).ToArray();
         }
 
         public override bool Equals(object obj)

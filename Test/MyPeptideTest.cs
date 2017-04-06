@@ -27,12 +27,12 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = ye[0].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
-            foreach (var huh in pep2.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep2.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
         }
 
@@ -59,12 +59,12 @@ namespace Test
             Assert.AreEqual(2, ye.Count);
             var pep1 = ye[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsNaN(pep2.MonoisotopicMass);
-            var cool = pep2.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.Y });
+            var cool = pep2.SortedProductMasses(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);
             Assert.IsTrue(cool.Length == 1);
         }
