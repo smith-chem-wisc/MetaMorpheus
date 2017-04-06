@@ -33,6 +33,12 @@
                                 <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
                                 <TextBox x:Name="maxModificationIsoformsTextBox" Width="45" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
+                                <TextBox x:Name="txtMinPeptideLength"  Width="45" />
+                                <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                <TextBox x:Name="txtMaxPeptideLength"  Width="45" />
+                            </StackPanel>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <StackPanel Orientation="Horizontal" Margin="5">
@@ -172,10 +178,6 @@
         <GroupBox Header="G-PTM-D Parameters" DockPanel.Dock="Top">
             <Expander x:Name="gptmdParamsExpander" Collapsed="ApmdExpander_Collapsed">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Label x:Name="databaseReferencesLabel" Content="Database References to Keep" ToolTip="Comma separated list of database references to keep from an XML protein database, e.g. ref,ref,..."/>
-                        <TextBox x:Name="databaseReferencesTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="100" Height="24" />
-                    </StackPanel>
                     <CheckBox x:Name="checkBoxGptmdMonoisotope"  Content="Look for monoisotope missed mods"/>
                 </StackPanel>
             </Expander>

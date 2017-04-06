@@ -16,6 +16,8 @@ namespace EngineLayer.Indexing
         private const int max_mods_for_peptide = 3;
         private const int decimalDigitsForFragmentMassRounding = 3;
         private readonly int maximumMissedCleavages;
+        private readonly int? minPeptideLength;
+        private readonly int? maxPeptideLength;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<Protein> proteinList;
 
@@ -33,7 +35,7 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -42,6 +44,8 @@ namespace EngineLayer.Indexing
             this.protease = protease;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.maximumMissedCleavages = maximumMissedCleavages;
+            this.minPeptideLength = minPeptideLength;
+            this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
             this.nestedIds = nestedIds;
@@ -62,6 +66,8 @@ namespace EngineLayer.Indexing
             sb.AppendLine("protease: " + protease);
             sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + maximumMissedCleavages);
+            sb.AppendLine("minPeptideLength: " + minPeptideLength);
+            sb.AppendLine("maxPeptideLength: " + maxPeptideLength);
             sb.AppendLine("maximumVariableModificationIsoforms: " + maximumVariableModificationIsoforms);
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
@@ -86,7 +92,7 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior, fixedModifications).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length <= 1)
@@ -128,7 +134,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.SortedProductMassesMightNotBeUnique(lp))
+                            foreach (var huhu in yyy.SortedProductMasses(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

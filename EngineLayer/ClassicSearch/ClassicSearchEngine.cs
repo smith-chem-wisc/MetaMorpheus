@@ -16,6 +16,8 @@ namespace EngineLayer.ClassicSearch
         private const int max_mods_for_peptide = 3;
 
         private readonly int maximumMissedCleavages;
+        private readonly int? minPeptideLength;
+        private readonly int? maxPeptideLength;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<SearchMode> searchModes;
 
@@ -45,7 +47,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
+        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.MonoisotopicPrecursorMass).ToArray();
@@ -55,6 +57,8 @@ namespace EngineLayer.ClassicSearch
             this.proteinList = proteinList;
             this.productMassTolerance = productMassTolerance;
             this.maximumMissedCleavages = maximumMissedCleavages;
+            this.minPeptideLength = minPeptideLength;
+            this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.searchModes = searchModes;
             this.protease = protease;
@@ -98,7 +102,7 @@ namespace EngineLayer.ClassicSearch
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length <= 1)
@@ -137,7 +141,7 @@ namespace EngineLayer.ClassicSearch
                                 }
                             }
 
-                            var sortedProductMasses = yyy.SortedProductMassesMightNotBeUnique(lp);
+                            var sortedProductMasses = yyy.SortedProductMasses(lp);
                             double[] matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
 
                             for (int aede = 0; aede < searchModes.Count; aede++)
