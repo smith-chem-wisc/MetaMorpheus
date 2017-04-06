@@ -33,7 +33,6 @@ namespace EngineLayer
             QValue = 0;
             isDecoy = false;
             isContaminant = false;
-            Intensity = new double[1];
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
@@ -91,13 +90,11 @@ namespace EngineLayer
         public HashSet<NewPsmWithFdr> AllPsmsBelowOnePercentFDR { get; set; }
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
-
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
         public double QValue { get; set; }
-
         public int CumulativeTarget { get; set; }
         public int CumulativeDecoy { get; set; }
-        public double[] Intensity { get; private set; }
+        public double[] Intensity { get; set; }
         public bool DisplayModsOnPeptides { get; set; }
 
         #endregion Public Properties
@@ -132,15 +129,18 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of shared peptides
-            var sharedPeptides = AllPeptides.Except(UniquePeptides);
+            var SharedPeptides = AllPeptides.Except(UniquePeptides);
             if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.BaseSequence))));
+                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.BaseSequence))));
             else
-                sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.Sequence))));
+                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of razor peptides
-            sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
+            if (!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // number of peptides
@@ -283,31 +283,41 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            var groups = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
+            Intensity = new double[AllPsmsBelowOnePercentFDR.First().thisPSM.newPsm.apexIntensity.Length];
+
+            var psmsGroupedByBaseSequence = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
             var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
-            foreach (var group in groups)
+            foreach (var psmGroup in psmsGroupedByBaseSequence)
             {
-                var psmsForThisBaseSeq = group.ToList();
-                var modsForThesePSMs = psmsForThisBaseSeq.Select(p => p.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Values.ToList()).ToList();
+                var psmsForThisBaseSeq = psmGroup.ToList();
                 var psmsToIgnore = new List<NewPsmWithFdr>();
 
-                for (int i = 0; i < modsForThesePSMs.Count; i++)
+                // remove shared non-razor peptides
+                foreach(var psm in psmGroup)
                 {
-                    var unacceptableMods = modsForThesePSMs[i].Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
-                    if (unacceptableMods.Any())
-                        psmsToIgnore.Add(psmsForThisBaseSeq[i]);
+                    var uniques = psm.thisPSM.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                    var razors = psm.thisPSM.PeptidesWithSetModifications.Intersect(RazorPeptides);
+
+                    if (!uniques.Any() && !razors.Any())
+                        psmsToIgnore.Add(psm);
+                }
+
+                psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
+
+                // remove modified peptides that aren't used for quantification
+                foreach (var psm in psmsForThisBaseSeq)
+                {
+                    var unacceptableModsForThisPsm = psm.thisPSM.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
+                    if (unacceptableModsForThisPsm.Any())
+                        psmsToIgnore.Add(psm);
                 }
 
                 psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
                 if (psmsForThisBaseSeq.Any())
-                {
-                    // intensity is an array; will be size 1 for LFQ, 10 for TMT-tagged quantification
-                    Intensity = new double[psmsForThisBaseSeq.First().thisPSM.newPsm.apexIntensity.Length];
                     for(int i = 0; i < Intensity.Length; i++)
                         Intensity[i] += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[i]).Max();
-                }
             }
         }
 

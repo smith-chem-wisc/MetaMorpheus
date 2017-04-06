@@ -355,17 +355,24 @@ namespace EngineLayer.Analysis
                 proteinGroup.CalculateSequenceCoverage();
 
             // distribute razor peptides
-            var sharedPepWithProteinGroups = new Dictionary<PeptideWithSetModifications, HashSet<ProteinGroup>>();
+            var sharedPepWithProteinGroups = new Dictionary<string, HashSet<ProteinGroup>>();
+            var seqToPeptide = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
             foreach (var proteinGroup in proteinGroups)
             {
                 var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
                 foreach (var sharedPep in sharedPeps)
                 {
                     HashSet<ProteinGroup> v;
-                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep, out v))
+                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out v))
                         v.Add(proteinGroup);
                     else
-                        sharedPepWithProteinGroups.Add(sharedPep, new HashSet<ProteinGroup> { proteinGroup });
+                        sharedPepWithProteinGroups.Add(sharedPep.Sequence, new HashSet<ProteinGroup> { proteinGroup });
+
+                    HashSet<PeptideWithSetModifications> v1;
+                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out v1))
+                        v1.Add(sharedPep);
+                    else
+                        seqToPeptide.Add(sharedPep.Sequence, new HashSet<PeptideWithSetModifications> { sharedPep });
                 }
             }
 
@@ -375,7 +382,8 @@ namespace EngineLayer.Analysis
                 HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Count() == i));
                 foreach (var proteinGroup in t)
                 {
-                    proteinGroup.RazorPeptides.Add(kvp.Key);
+                    var peptides = seqToPeptide[kvp.Key];
+                    proteinGroup.RazorPeptides.UnionWith(peptides.Where(p => proteinGroup.Proteins.Contains(p.Protein)));
                 }
             }
 
@@ -441,11 +449,8 @@ namespace EngineLayer.Analysis
 
                 foreach (var length in peptideLengths)
                 {
+                    // averagine has 4.9384 carbon atoms
                     var formula = "C" + (int)(4.9384 * length);
-                    //+ "H" + (int)(7.7583 * length)
-                    //+ "N" + (int)(1.3577 * length)
-                    //+ "O" + (int)(1.4773 * length)
-                    //+ "S" + (int)(0.0417 * length);
                     var isotopicDistribution = IsotopicDistribution.GetDistribution(ChemicalFormula.ParseFormula(formula), 0.0001, 0.01);
 
                     var masses = isotopicDistribution.Masses.ToArray();
@@ -626,33 +631,6 @@ namespace EngineLayer.Analysis
                         pep.thisPSM.newPsm.apexMz = apexMZ;
                     }
                 }
-
-                // TODO** error checking for peptides that use the same apex peak
-                // assign peptide with closest (ms2RT-apexRT) to apex, try to find other peaks
-                /*
-                var v = new Dictionary<double, IGrouping<string, NewPsmWithFdr>>();
-                IGrouping<string, NewPsmWithFdr> v3;
-                var badMatchList = new List<IGrouping<string, NewPsmWithFdr>>();
-                foreach(var pepGrouping in fullSeqToPsmMatching)
-                {
-                    if (v.TryGetValue(pepGrouping.First().thisPSM.newPsm.apexRT, out v3))
-                    {
-                        badMatchList.Add(v3);
-                        badMatchList.Add(pepGrouping);
-                    }
-                    else
-                        v.Add(pepGrouping.First().thisPSM.newPsm.apexRT, pepGrouping);
-                }
-
-                foreach(var badMatch in badMatchList)
-                {
-                    foreach(var pep in badMatch)
-                    {
-                        pep.thisPSM.newPsm.apexIntensity = 0;
-                        pep.thisPSM.newPsm.apexRT = 0;
-                    }
-                }
-                */
             }
             else if (quantificationMode.Equals("TMT"))
             {
@@ -882,6 +860,12 @@ namespace EngineLayer.Analysis
                     {
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
+
+                        // protein intensity values are 0 for aggregate protein groups (doesn't make sense to quantify aggregate)
+                        if (myMsDataFile == null)
+                            foreach (var pg in proteinGroups[j])
+                                pg.Intensity = new double[1];
+
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition);
                     }
 
