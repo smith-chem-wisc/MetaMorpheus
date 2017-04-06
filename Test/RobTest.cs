@@ -47,7 +47,7 @@ namespace Test
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                temp = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
 
                 foreach (var dbPeptide in temp)
                 {
@@ -120,7 +120,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -250,7 +250,7 @@ namespace Test
 
             foreach (var protein in p)
             {
-                var digestedProtein = protein.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var digestedProtein = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
 
                 foreach (var pepWithPossibleMods in digestedProtein)
                 {
@@ -301,7 +301,7 @@ namespace Test
             string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
             var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var prot = (new Protein(sequence, "", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
-            var digestedProtein = prot.Digest(protease, 2, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+            var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
 
@@ -311,7 +311,7 @@ namespace Test
             var t = new PsmWithMultiplePossiblePeptides(psm, new HashSet<PeptideWithSetModifications> { peptide }, null, null, null);
             psms.Add(new NewPsmWithFdr(t));
 
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.RunQuantification(psms, 0.2, 10);
 
             Assert.That(psms.First().thisPSM.newPsm.apexIntensity[0] == 0);

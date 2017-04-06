@@ -9,7 +9,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, Protease protease, int maximumMissedCleavages, InitiatorMethionineBehavior initiatorMethionineBehavior, IEnumerable<ModificationWithMass> allKnownFixedModifications)
+        public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, Protease protease, int maximumMissedCleavages, int? minPeptidesLenght, int? maxPeptidesLength, InitiatorMethionineBehavior initiatorMethionineBehavior, IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
             if (protease.CleavageSpecificity != CleavageSpecificity.None)
             {
@@ -29,12 +29,20 @@ namespace EngineLayer
                             // Retain!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || i != 0 || protein[0] != 'M')
                             {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full", allKnownFixedModifications);
+                                PeptideWithPossibleModifications pwpm = new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full", allKnownFixedModifications);
+                                if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                                else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
                             }
                             // Cleave!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && i == 0 && protein[0] == 'M')
                             {
-                                yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full:M cleaved", allKnownFixedModifications);
+                                PeptideWithPossibleModifications pwpm = new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full:M cleaved", allKnownFixedModifications);
+                                if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                                else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
                             }
                         }
 
@@ -47,13 +55,24 @@ namespace EngineLayer
                                     i++;
                                 // Start peptide
                                 if (i + missed_cleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + missed_cleavages] <= proteolysisProduct.OneBasedEndPosition && proteolysisProduct.OneBasedBeginPosition.HasValue)
-                                    yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages], protein, missed_cleavages, proteolysisProduct.Type + " start", allKnownFixedModifications);
-
+                                {
+                                    var pwpm = new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages], protein, missed_cleavages, proteolysisProduct.Type + " start", allKnownFixedModifications);
+                                    if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                    else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                    else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                                    else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                                }
                                 while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition)
                                     i++;
                                 // End
                                 if (i - missed_cleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 >= proteolysisProduct.OneBasedBeginPosition && proteolysisProduct.OneBasedEndPosition.HasValue)
-                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value, protein, missed_cleavages, proteolysisProduct.Type + " end", allKnownFixedModifications);
+                                {
+                                    var pwpm = new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value, protein, missed_cleavages, proteolysisProduct.Type + " end", allKnownFixedModifications);
+                                    if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                    else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                                    else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                                    else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                                }
                             }
                     }
                 }
@@ -66,20 +85,33 @@ namespace EngineLayer
             {
                 if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                 {
-                    yield return new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
+                    var pwpm = new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
+                    if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                    else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                    else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                    else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
                 }
                 if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
                 {
-                    yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                    var pwpm = new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                    if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                    else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                    else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                    else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
                 }
 
                 // Also digest using the proteolysis product start/end indices
                 foreach (var proteolysisProduct in protein.ProteolysisProducts)
                     if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue)
-                        yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications);
+                    {
+                        var pwpm = new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications);
+                        if (!minPeptidesLenght.HasValue && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                        else if (pwpm.Length >= minPeptidesLenght && !maxPeptidesLength.HasValue) { yield return pwpm; }
+                        else if (pwpm.Length >= minPeptidesLenght && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                        else if (!minPeptidesLenght.HasValue && pwpm.Length <= maxPeptidesLength) { yield return pwpm; }
+                    }
             }
         }
-
         #endregion Public Methods
 
     }

@@ -16,6 +16,8 @@ namespace EngineLayer.Indexing
         private const int max_mods_for_peptide = 3;
         private const int decimalDigitsForFragmentMassRounding = 3;
         private readonly int maximumMissedCleavages;
+        private readonly int? minPeptideLength;
+        private readonly int? maxPeptideLength;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<Protein> proteinList;
 
@@ -33,7 +35,7 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -42,6 +44,8 @@ namespace EngineLayer.Indexing
             this.protease = protease;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.maximumMissedCleavages = maximumMissedCleavages;
+            this.minPeptideLength = minPeptideLength;
+            this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
             this.nestedIds = nestedIds;
@@ -86,7 +90,7 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior, fixedModifications).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length <= 1)
