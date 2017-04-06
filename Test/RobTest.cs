@@ -269,11 +269,11 @@ namespace Test
 
             foreach (var peptide in peptides)
             {
-                CfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.C }));
-                ZdotfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.Zdot }));
-                BfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B }));
-                YfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.Y }));
-                BYfragmentMasses.Add(peptide, peptide.SortedProductMassesMightNotBeUnique(new List<ProductType> { ProductType.B, ProductType.Y }));
+                CfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
             double[] testB;
             Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
