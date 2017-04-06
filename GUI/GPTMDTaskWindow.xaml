@@ -35,6 +35,12 @@
                                 <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
                                 <TextBox x:Name="maxModificationIsoformsTextBox" Width="45" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
+                                <TextBox x:Name="txtMinPeptideLength"  Width="45" />
+                                <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                <TextBox x:Name="txtMaxPeptideLength"  Width="45" />
+                            </StackPanel>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <StackPanel Orientation="Horizontal" Margin="5">
