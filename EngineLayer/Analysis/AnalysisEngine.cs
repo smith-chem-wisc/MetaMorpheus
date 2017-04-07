@@ -645,6 +645,7 @@ namespace EngineLayer.Analysis
 
                 foreach (var psm in psms)
                 {
+                    psm.thisPSM.newPsm.quantRT = psm.thisPSM.newPsm.scanRetentionTime;
                     var ms2Scan = myMsDataFile.GetOneBasedScan(myMsDataFile.GetClosestOneBasedSpectrumNumber(psm.thisPSM.newPsm.scanRetentionTime)) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                     double[] bestPlexPeaks = new double[10];
 
