@@ -30,6 +30,8 @@ namespace MetaMorpheusCommandLine
 
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
+            Console.WriteLine(string.Join(" , ", args));
+
             p.Setup(arg => arg.Tasks)
              .As('t', "tasks")
              .Required();
