@@ -1,4 +1,5 @@
 ﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,9 +13,9 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private static readonly string elementsLocation = Path.Combine(@"Data", @"elements.dat");
-        private static readonly string unimodLocation = Path.Combine(@"Data", @"unimod.xml");
-        private static readonly string uniprotLocation = Path.Combine(@"Data", @"ptmlist.txt");
+        private static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
+        private static readonly string unimodLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"unimod.xml");
+        private static readonly string uniprotLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"ptmlist.txt");
 
         #endregion Private Fields
 
