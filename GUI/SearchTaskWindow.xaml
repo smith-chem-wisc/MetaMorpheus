@@ -226,9 +226,21 @@
                 <StackPanel>
                     <GroupBox Header="Protein Parsimony">
                         <StackPanel>
-                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" />
-                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
-                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" />
+                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" >
+                                <ToolTipService.ToolTip >
+                                    <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"/>
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
+                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" >
+                                <ToolTipService.ToolTip >
+                                    <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group"/>
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
+                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" >
+                                <ToolTipService.ToolTip >
+                                    <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"/>
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
                         </StackPanel>
                     </GroupBox>
                     <GroupBox Header="Quantification">
@@ -238,14 +250,26 @@
                                 <ColumnDefinition Width="5*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Margin="5">
-                                <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides" />
+                                <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins">
+                                    <ToolTipService.ToolTip >
+                                        <ToolTip Content="Label-free quantification is performed unless the TMT modification is detected"/>
+                                    </ToolTipService.ToolTip>
+                                </CheckBox>
                             </StackPanel>
                             <StackPanel Margin="0,20,0,0" VerticalAlignment="Top"  Grid.Column="1">
                                 <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
                                     <Label x:Name="quantRtLabel" Content="RT Window (min)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                    <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <ToolTipService.ToolTip >
+                                            <ToolTip Content="Used for LFQ. MS1 peaks within the RT window around the MS2 identification scan are candidate peaks for LFQ"/>
+                                        </ToolTipService.ToolTip>
+                                    </TextBox>
                                     <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
+                                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" >
+                                        <ToolTipService.ToolTip >
+                                            <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)"/>
+                                        </ToolTipService.ToolTip>
+                                    </TextBox>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>

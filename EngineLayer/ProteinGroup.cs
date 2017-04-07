@@ -28,7 +28,7 @@ namespace EngineLayer
             AllPsmsBelowOnePercentFDR = new HashSet<NewPsmWithFdr>();
             SequenceCoveragePercent = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
-            //sequenceCoverageDisplayListWithMods = new List<string>();
+            SequenceCoverageDisplayListWithMods = new List<string>();
             ProteinGroupScore = 0;
             QValue = 0;
             isDecoy = false;
@@ -65,13 +65,13 @@ namespace EngineLayer
                 sb.Append("Number of proteins in group" + '\t');
                 sb.Append("Unique peptides" + '\t');
                 sb.Append("Shared peptides" + '\t');
-                //sb.Append("Razor peptides" + '\t');
+                sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
                 sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
-                //sb.Append("Sequence coverage w Localizable Mods" + '\t');
-                //sb.Append("Intensity" + '\t');
+                sb.Append("Sequence coverage w Mods" + '\t');
+                sb.Append("Intensity" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy/Contaminant/Target" + '\t');
@@ -90,13 +90,11 @@ namespace EngineLayer
         public HashSet<NewPsmWithFdr> AllPsmsBelowOnePercentFDR { get; set; }
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
-
-        //public List<string> sequenceCoverageDisplayListWithMods { get; private set; }
+        public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
         public double QValue { get; set; }
-
         public int CumulativeTarget { get; set; }
         public int CumulativeDecoy { get; set; }
-        public double Intensity { get; private set; }
+        public double[] Intensity { get; set; }
         public bool DisplayModsOnPeptides { get; set; }
 
         #endregion Public Properties
@@ -131,16 +129,19 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of shared peptides
-            var sharedPeptides = AllPeptides.Except(UniquePeptides);
+            var SharedPeptides = AllPeptides.Except(UniquePeptides);
             if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.BaseSequence))));
+                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.BaseSequence))));
             else
-                sb.Append(string.Join("|", new HashSet<string>(sharedPeptides.Select(p => p.Sequence))));
+                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of razor peptides
-            //sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => System.Text.Encoding.UTF8.GetString(p.BaseSequence)))));
-            //sb.Append("\t");
+            if (!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
+            sb.Append("\t");
 
             // number of peptides
             if (!DisplayModsOnPeptides)
@@ -164,13 +165,13 @@ namespace EngineLayer
             sb.Append(string.Join("|", SequenceCoverageDisplayList));
             sb.Append("\t");
 
-            // summed MS1 intensity of razor and unique peptides
-            //sb.Append(Intensity);
-            //sb.Append("\t");
-
             // sequence coverage with mods
-            //sb.Append(string.Join("|", sequenceCoverageDisplayListWithMods));
-            //sb.Append("\t");
+            sb.Append(string.Join("|", SequenceCoverageDisplayListWithMods));
+            sb.Append("\t");
+
+            // summed MS1 intensity of razor and unique peptides
+            sb.Append(string.Join("|", Intensity));
+            sb.Append("\t");
 
             // number of PSMs for listed peptides
             sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
@@ -221,7 +222,6 @@ namespace EngineLayer
                     if (protein == peptideGroup.Key)
                     {
                         HashSet<int> coveredResidues = new HashSet<int>();
-                        //var peptideModsBelow1FDR = new List<ModificationWithMass>();
 
                         foreach (var peptide in peptideGroup)
                         {
@@ -229,10 +229,6 @@ namespace EngineLayer
                             {
                                 for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
                                     coveredResidues.Add(i);
-
-                                //foreach(var mod in peptide.allModsOneIsNterminus)
-                                //    if(mod.Key != 1)
-                                //        peptideModsBelow1FDR.Add(mod.Value);
                             }
                         }
 
@@ -251,21 +247,26 @@ namespace EngineLayer
                         var seq = new string(coverageArray);
                         SequenceCoverageDisplayList.Add(seq);
 
-                        /*
-                        foreach (var modsAtThisResidue in protein.OneBasedPossibleLocalizedModifications)
+                        // get sequence coverage display with mods
+                        var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
+                        foreach(var pep in peptideGroup)
                         {
-                            foreach (var mod in modsAtThisResidue.Value)
+                            foreach(var mod in pep.allModsOneIsNterminus)
                             {
-                                if (peptideModsBelow1FDR.Contains(mod))
-                                {
-                                    int modStringIndex = seq.Length - (protein.Length - modsAtThisResidue.Key);
-                                    seq = seq.Insert(modStringIndex, "[" + mod.id + "]");
-                                }
+                                if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
+                                    modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
                             }
                         }
 
-                        sequenceCoverageDisplayListWithMods.Add(seq);
-                        */
+                        var temp1 = modsOnThisProtein.OrderBy(p => p.Key).ToList();
+
+                        foreach(var mod in temp1)
+                        {
+                            int modStringIndex = seq.Length - (protein.Length - mod.Key);
+                            seq = seq.Insert(modStringIndex, "[" + mod.Value.id + "]");
+                        }
+
+                        SequenceCoverageDisplayListWithMods.Add(seq);
                     }
                 }
             }
@@ -282,26 +283,41 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            var groups = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
-            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation", "Carbamidomethyl", "Acetylation", "TMT_tag_lysine", "TMT_tag_terminal" };
+            Intensity = new double[AllPsmsBelowOnePercentFDR.First().thisPSM.newPsm.apexIntensity.Length];
 
-            foreach (var group in groups)
+            var psmsGroupedByBaseSequence = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
+            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
+
+            foreach (var psmGroup in psmsGroupedByBaseSequence)
             {
-                var psmsForThisBaseSeq = group.ToList();
-                var modsForThesePSMs = psmsForThisBaseSeq.Select(p => p.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Values.ToList()).ToList();
-                List<NewPsmWithFdr> psmsToIgnore = new List<NewPsmWithFdr>();
+                var psmsForThisBaseSeq = psmGroup.ToList();
+                var psmsToIgnore = new List<NewPsmWithFdr>();
 
-                for (int i = 0; i < modsForThesePSMs.Count; i++)
+                // remove shared non-razor peptides
+                foreach(var psm in psmGroup)
                 {
-                    var unacceptableMods = modsForThesePSMs[i].Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
-                    if (unacceptableMods.Any())
-                        psmsToIgnore.Add(psmsForThisBaseSeq[i]);
+                    var uniques = psm.thisPSM.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                    var razors = psm.thisPSM.PeptidesWithSetModifications.Intersect(RazorPeptides);
+
+                    if (!uniques.Any() && !razors.Any())
+                        psmsToIgnore.Add(psm);
+                }
+
+                psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
+
+                // remove modified peptides that aren't used for quantification
+                foreach (var psm in psmsForThisBaseSeq)
+                {
+                    var unacceptableModsForThisPsm = psm.thisPSM.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
+                    if (unacceptableModsForThisPsm.Any())
+                        psmsToIgnore.Add(psm);
                 }
 
                 psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
                 if (psmsForThisBaseSeq.Any())
-                    Intensity += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[0]).Max();
+                    for(int i = 0; i < Intensity.Length; i++)
+                        Intensity[i] += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[i]).Max();
             }
         }
 
