@@ -283,7 +283,7 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            Intensity = new double[AllPsmsBelowOnePercentFDR.First().thisPSM.newPsm.apexIntensity.Length];
+            Intensity = new double[AllPsmsBelowOnePercentFDR.First().thisPSM.newPsm.quantIntensity.Length];
 
             var psmsGroupedByBaseSequence = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
             var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
@@ -317,7 +317,7 @@ namespace EngineLayer
 
                 if (psmsForThisBaseSeq.Any())
                     for(int i = 0; i < Intensity.Length; i++)
-                        Intensity[i] += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.apexIntensity[i]).Max();
+                        Intensity[i] += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.quantIntensity[i]).Max();
             }
         }
 

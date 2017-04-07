@@ -630,8 +630,8 @@ namespace EngineLayer.Analysis
 
                     foreach (var pep in pepGrouping)
                     {
-                        pep.thisPSM.newPsm.apexIntensity = new double[] { apexIntensity };
-                        pep.thisPSM.newPsm.apexRT = apexRT;
+                        pep.thisPSM.newPsm.quantIntensity = new double[] { apexIntensity };
+                        pep.thisPSM.newPsm.quantRT = apexRT;
                         pep.thisPSM.newPsm.apexMz = apexMZ;
                     }
                 }
@@ -705,7 +705,7 @@ namespace EngineLayer.Analysis
                     //
                     //}
 
-                    psm.thisPSM.newPsm.apexIntensity = bestPlexPeaks;
+                    psm.thisPSM.newPsm.quantIntensity = bestPlexPeaks;
                 }
             }
         }
