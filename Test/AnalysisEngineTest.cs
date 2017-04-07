@@ -61,8 +61,8 @@ namespace Test
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value.First(), value2.First(), value3.First() });
 
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            Action<List<ProteinGroup>, string> action3 = null;
-            Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
+            Action<List<ProteinGroup>, string, List<string>> action3 = null;
+            Action<List<NewPsmWithFdr>, string, List<string>> action2 = (List<NewPsmWithFdr> l, string s, List<string> sdf) => {; };
             bool doParsimony = false;
             bool noOneHitWonders = false;
             bool modPepsAreUnique = false;
