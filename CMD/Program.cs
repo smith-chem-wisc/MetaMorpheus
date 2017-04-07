@@ -45,7 +45,7 @@ namespace MetaMorpheusCommandLine
              .Required();
 
             var result = p.Parse(args);
-
+            
             if (result.HasErrors == false)
             {
                 MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_finishedSingleEngineHandler;
@@ -98,6 +98,7 @@ namespace MetaMorpheusCommandLine
                 EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
                 a.Run();
             }
+            Console.WriteLine("Error Text:" +result.ErrorText);
             Console.WriteLine("Usage:");
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");
