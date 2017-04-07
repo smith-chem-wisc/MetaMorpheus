@@ -23,9 +23,9 @@ namespace EngineLayer
         public readonly double scanPrecursorMZ;
         public readonly double scanPrecursorMass;
         public readonly double score;
-        public double[] apexIntensity;
+        public double[] quantIntensity;
         public double apexMz;
-        public double apexRT;
+        public double quantRT;
         public double mostAbundantMass;
 
         public Dictionary<ProductType, double[]> matchedIonsListPositiveIsMatch;
@@ -56,7 +56,7 @@ namespace EngineLayer
             this.scanPrecursorMass = scanPrecursorMass;
             this.score = score;
             this.notch = notch;
-            apexIntensity = new double[1];
+            quantIntensity = new double[1];
         }
 
         #endregion Protected Constructors
@@ -80,10 +80,8 @@ namespace EngineLayer
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(string.Join("|", apexIntensity) + '\t');
-            sb.Append(apexMz.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(apexRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(mostAbundantMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(string.Join("|", quantIntensity) + '\t');
+            sb.Append(quantRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append("[");
             foreach (var kvp in matchedIonsListPositiveIsMatch)
@@ -124,10 +122,8 @@ namespace EngineLayer
             sb.Append("scanPrecursorMass" + '\t');
             sb.Append("score" + '\t');
             sb.Append("notch" + '\t');
-            sb.Append("apexIntensity" + '\t');
-            sb.Append("apexMz" + '\t');
-            sb.Append("apexRT" + '\t');
-            sb.Append("mostAbundantMass" + '\t');
+            sb.Append("quantificationIntensity" + '\t');
+            sb.Append("quantificationRT" + '\t');
 
             sb.Append("matched ions" + '\t');
             sb.Append("matched ion counts" + '\t');
