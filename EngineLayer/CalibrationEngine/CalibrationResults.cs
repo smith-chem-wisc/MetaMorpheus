@@ -1,11 +1,21 @@
 ﻿using MassSpectrometry;
+using MathNet.Numerics.Statistics;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer.Calibration
 {
     public class CalibrationResults : MetaMorpheusEngineResults
     {
+
+        #region Public Fields
+
+        public readonly List<Tuple<double, double>> ms1meanSds;
+        public readonly List<Tuple<double, double>> ms2meanSds;
+
+        #endregion Public Fields
 
         #region Private Fields
 
@@ -26,6 +36,8 @@ namespace EngineLayer.Calibration
             this.MyMSDataFile = myMSDataFile;
             ms1calibrationFunctions = new List<CalibrationFunction>();
             ms2calibrationFunctions = new List<CalibrationFunction>();
+            ms1meanSds = new List<Tuple<double, double>>();
+            ms2meanSds = new List<Tuple<double, double>>();
             numMs1MassChargeCombinationsConsideredList = new List<int>();
             numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList = new List<int>();
             numMs2MassChargeCombinationsConsideredList = new List<int>();
@@ -51,8 +63,10 @@ namespace EngineLayer.Calibration
             {
                 sb.AppendLine("\t\tRound " + (i + 1));
                 sb.AppendLine("\t\t\tTraining points: " + countList[i]);
+                sb.AppendLine("\t\t\tMs1meanSd: " + ms1meanSds[i]);
                 sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
                 sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                sb.AppendLine("\t\t\tMs2meanSd: " + ms2meanSds[i]);
                 sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
                 sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
 
@@ -76,6 +90,8 @@ namespace EngineLayer.Calibration
             numMs2MassChargeCombinationsConsideredList.Add(res.numMs2MassChargeCombinationsConsidered);
             numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(res.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
             countList.Add(res.Count);
+            ms1meanSds.Add(res.Ms1List.Select(b => b.Label).MeanStandardDeviation());
+            ms2meanSds.Add(res.Ms2List.Select(b => b.Label).MeanStandardDeviation());
         }
 
         internal void Add(CalibrationFunction ms1calib, CalibrationFunction ms2calib)
