@@ -33,6 +33,7 @@ namespace EngineLayer
             QValue = 0;
             isDecoy = false;
             isContaminant = false;
+            ModsInfo = new List<string>();
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
@@ -71,6 +72,7 @@ namespace EngineLayer
                 sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Sequence coverage w Mods" + '\t');
+                sb.Append("Modification Info List" + "\t");
                 sb.Append("Intensity" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
@@ -96,6 +98,7 @@ namespace EngineLayer
         public int CumulativeDecoy { get; set; }
         public double[] Intensity { get; set; }
         public bool DisplayModsOnPeptides { get; set; }
+        public List<string> ModsInfo { get; private set; }
 
         #endregion Public Properties
 
@@ -167,6 +170,13 @@ namespace EngineLayer
 
             // sequence coverage with mods
             sb.Append(string.Join("|", SequenceCoverageDisplayListWithMods));
+            sb.Append("\t");
+
+            //Detailed mods information list
+            bool empty = false;
+            if (ModsInfo != null)
+            {foreach(var modsInfo in ModsInfo) { if (modsInfo != "") { empty = true; } }}
+            if(empty == true) { sb.Append(string.Join("|", ModsInfo)); }
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
@@ -249,18 +259,50 @@ namespace EngineLayer
 
                         // get sequence coverage display with mods
                         var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
-                        foreach(var pep in peptideGroup)
-                        {
-                            foreach(var mod in pep.allModsOneIsNterminus)
-                            {
-                                if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
-                                    modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
-                            }
-                        }
+                        string tempModStrings = ""; //The whole string 
+                        List<int> tempPepModTotals = new List<int>();  //The List of (For one mod, The Modified Pep Num)
+                        List<int> tempPepTotals = new List<int>(); //The List of (For one mod, The total Pep Num)
+                        List<string> tempPepModValues = new List<string>(); //The List of (For one mod, the Modified Name)
+                        List<int> tempModIndex = new List<int>(); //The Index of the modified position.
 
+                        foreach (var pep in peptideGroup)
+                        {            
+                            foreach (var mod in pep.allModsOneIsNterminus)
+                            {
+                                int tempPepNumTotal = 1; //For one mod, The total Pep Num
+                                int temp;
+                                if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
+                                {     
+                                    modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
+
+                                    if (tempModIndex.Contains(pep.OneBasedStartResidueInProtein + mod.Key - 2) && 
+                                        tempPepModValues[tempModIndex.IndexOf(pep.OneBasedStartResidueInProtein + mod.Key - 2)]==mod.Value.id.ToString())
+                                    { tempPepModTotals[tempModIndex.IndexOf(pep.OneBasedStartResidueInProtein + mod.Key - 2)] +=1; }
+                                    else
+                                    {
+                                        temp = pep.OneBasedStartResidueInProtein + mod.Key - 2;
+                                        tempModIndex.Add(temp);
+                                        foreach (var pept in peptideGroup)
+                                        {
+                                            if (temp >= (pept.OneBasedStartResidueInProtein-1) && temp <= (pept.OneBasedEndResidueInProtein-1))
+                                            {tempPepNumTotal += 1;}
+                                        }
+                                        tempPepTotals.Add(tempPepNumTotal);
+                                        tempPepModValues.Add(mod.Value.id.ToString());
+                                        tempPepModTotals.Add(1);
+                                    }
+                                }
+                            }        
+                        }
+                        for(int i= 0; i < tempPepModTotals.Count(); i++)
+                        {
+                            string tempString = ("#aa" + tempModIndex[i].ToString() + "[" + tempPepModValues[i] + "|info:occupancy=" + ((double)tempPepModTotals[i] / (double)tempPepTotals[i]).ToString("F2") + "("+ tempPepModTotals[i].ToString()+"/"+ tempPepTotals[i].ToString() + ")"+ "]");
+                            tempModStrings += tempString;
+                        }
+                        ModsInfo.Add(tempModStrings);
                         var temp1 = modsOnThisProtein.OrderBy(p => p.Key).ToList();
 
-                        foreach(var mod in temp1)
+                        foreach (var mod in temp1)
                         {
                             int modStringIndex = seq.Length - (protein.Length - mod.Key);
                             seq = seq.Insert(modStringIndex, "[" + mod.Value.id + "]");
