@@ -61,10 +61,12 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            Action<List<ProteinGroup>, string> action3 = null;
+            Action<List<ProteinGroup>, string> action4 = null;
             Action<List<NewPsmWithFdr>, string> action2 = (List<NewPsmWithFdr> l, string s) => {; };
+            Action<List<NewPsmWithFdr>, string> action3 = (List<NewPsmWithFdr> l, string s) => {; };
+
             bool doParsimony = false;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, action4, doParsimony, 2, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003);
 
             engine.Run();
         }

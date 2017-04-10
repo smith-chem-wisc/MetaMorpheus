@@ -163,7 +163,7 @@ namespace TaskLayer
             var _mzid = new mzIdentML.Generated.MzIdentMLType()
             {
                 version = "1.2.0"
-                
+
             };
 
             //cvlist: URLs of controlled vocabularies used within the file. add others?
@@ -180,71 +180,128 @@ namespace TaskLayer
                 fullName = "MetaMorpheus controlled vocabulary", //used for modification names and MM scores
                 uri ="https://github.com/smith-chem-wisc/MetaMorpheus",
             }
-            }; 
+            };
 
             //analysis software list:software packages used
             _mzid.AnalysisSoftwareList = new mzIdentML.Generated.AnalysisSoftwareType[1] {  new mzIdentML.Generated.AnalysisSoftwareType()
             {
-                id = "MetaMorpheus", 
+                id = "MetaMorpheus",
                 name = "MetaMorpheus",
                 version = MyEngine.MetaMorpheusVersion,
                 uri = "https://github.com/smith-chem-wisc/MetaMorpheus"
             }};
 
-            //analysis sample collection: biological smpales analysed, annotated with CV terms
-            _mzid.AnalysisCollection = new mzIdentML.Generated.AnalysisCollectionType();
-
             //sequence collection: database entries of protein/peptide sequences identified and modifications
             _mzid.SequenceCollection = new mzIdentML.Generated.SequenceCollectionType();
-            _mzid.SequenceCollection.Peptide = new mzIdentML.Generated.PeptideType[items.SelectMany(p => p.thisPSM.peptidesWithSetModifications).Distinct().Count()];
+            _mzid.SequenceCollection.Peptide = new mzIdentML.Generated.PeptideType[items.Select(p => p.thisPSM.peptidesWithSetModifications.First()).Distinct().Count()];
             _mzid.SequenceCollection.DBSequence = new mzIdentML.Generated.DBSequenceType[items.SelectMany(p => p.thisPSM.peptidesWithSetModifications.Select(t => t.Protein)).Distinct().Count()];
-            _mzid.SequenceCollection.PeptideEvidence = new mzIdentML.Generated.PeptideEvidenceType[items.Count()];
+            _mzid.SequenceCollection.PeptideEvidence = new mzIdentML.Generated.PeptideEvidenceType[items.SelectMany(p => p.thisPSM.peptidesWithSetModifications).Distinct().Count()];
+            _mzid.DataCollection = new mzIdentML.Generated.DataCollectionType();
+            _mzid.DataCollection.AnalysisData = new mzIdentML.Generated.AnalysisDataType()
+            {
+                SpectrumIdentificationList = new mzIdentML.Generated.SpectrumIdentificationListType[1]
+            { new mzIdentML.Generated.SpectrumIdentificationListType()
+            { id = "SIL_1",
+             SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Select(p => p.thisPSM.newPsm.scanNumber).Distinct().Count()],},
+            },
+                //ProteinDetectionList = new mzIdentML.Generated.ProteinDetectionListType[1]
+                //{
+                //    new mzIdentML.Generated.ProteinDetectionListType()
+                //    {
+                //        id = "PDL_1",
+                //        ProteinAmbiguityGroup = new mzIdentML.Generated.ProteinAmbiguityGroupType[items.SelectMany(i => i.thisPSM.peptidesWithSetModifications.Select(p => p.gr)]
+                //    }
+                //}
+            };
+
+            //DataColection
+            _mzid.DataCollection.Inputs = new mzIdentML.Generated.InputsType()
+            {
+                SpectraData = new mzIdentML.Generated.SpectraDataType[items.Select(p => p.thisPSM.newPsm.fileName).Distinct().Count()],
+                SearchDatabase = new mzIdentML.Generated.SearchDatabaseType[dbFilenameList.Count] //ACCESS # OF DATABASES USED?
+            };
+
             int protein_index = 0; // protein overall
             int peptide_index = 0; // peptide overall
             int peptide_envidence = 0; // peptide evidence overall
-            int protein_peptide_index = 0; // peptides for each protein
             int mod_count = 0; // mod count for each peptide
-            Dictionary<Peptide, string> peptideEvidenceID = new Dictionary<Peptide, string>(); //key = peptide, value = peptide evidence id
+            int file_index = 0; //file index
 
-            foreach (Protein protein in items.SelectMany(p => p.thisPSM.peptidesWithSetModifications).Select(p => p.Protein).Distinct())
+            Dictionary<Protein, string> databaseRef = new Dictionary<Protein, string>(); //key protein, value database ID
+            Dictionary<PeptideWithSetModifications, int> peptideRef = new Dictionary<PeptideWithSetModifications, int>(); //key peptide, value = peptide reference 
+            Dictionary<PeptideWithSetModifications, string> peptideEvidenceRef = new Dictionary<PeptideWithSetModifications, string>(); //key peptide evidence, value = peptide evidence reference
+            Dictionary<string, int> fileRef = new Dictionary<string, int>(); //key filename, value = file index
+            Dictionary<string, List<int>> scanRef = new Dictionary<string, List<int>>(); //key = filename, value = list of scan ints 
+            Dictionary<string, List<double>> spectrumIdentificationItemRef = new Dictionary<string, List<double>>(); //key = filename_scan, value = list of spectrum identification items for that scan
+
+            //Analysis collection: the analyses performed to get the results, which map the input and output data sets. 
+            _mzid.AnalysisCollection = new mzIdentML.Generated.AnalysisCollectionType()
             {
-                protein_peptide_index = 0;
-                string database_sequence_ref = "DBSeq_" + protein.Accession;
-                _mzid.SequenceCollection.DBSequence[protein_index] = new mzIdentML.Generated.DBSequenceType()
+                SpectrumIdentification = new mzIdentML.Generated.SpectrumIdentificationType[1] { new mzIdentML.Generated.SpectrumIdentificationType()
                 {
-                    id = database_sequence_ref,
-                    length = protein.Length,
-                    searchDatabase_ref = "Uniprot",
-                    accession = protein.Accession,
-                    Seq = protein.BaseSequence,
-                    cvParam = new mzIdentML.Generated.CVParamType[1] { new mzIdentML.Generated.CVParamType()
+                    id = "SI",
+                    spectrumIdentificationProtocol_ref = "SIP",
+                    spectrumIdentificationList_ref = "SIL_1",
+                    activityDate = DateTime.Now,
+                    SearchDatabaseRef = new mzIdentML.Generated.SearchDatabaseRefType[1] { new mzIdentML.Generated.SearchDatabaseRefType() {searchDatabase_ref = "Uniprot" } },
+                    InputSpectra = new mzIdentML.Generated.InputSpectraType[items.Select(p => p.thisPSM.newPsm.fileName).Distinct().Count()],
+                } },
+                ProteinDetection = new mzIdentML.Generated.ProteinDetectionType()
+                {
+                    id = "PD_1",
+                    proteinDetectionProtocol_ref = "PDP_1",
+                    proteinDetectionList_ref = "PDL_1",
+                    InputSpectrumIdentifications = new mzIdentML.Generated.InputSpectrumIdentificationsType[1] {new mzIdentML.Generated.InputSpectrumIdentificationsType()
+                    { spectrumIdentificationList_ref = "SIL_1" }
+                }
+                }
+            };
+            foreach (string filename in items.Select(p => p.thisPSM.newPsm.fileName).Distinct().OrderBy(p => p).ToList())
+            {
+                
+                int spectrum_id_index = 0;
+                _mzid.AnalysisCollection.SpectrumIdentification[0].InputSpectra[file_index] = new mzIdentML.Generated.InputSpectraType()
+                {
+                    spectraData_ref = "SD_" + file_index
+                };
+                _mzid.DataCollection.Inputs.SpectraData[file_index] = new mzIdentML.Generated.SpectraDataType()
+                {
+                    id = "SD_" + file_index,
+                    location = "file:///" + filename + ".mzml",
+                    FileFormat = new mzIdentML.Generated.FileFormatType()
                     {
-                        accession = "MS:1001088",
-                        name = "protein description",
-                        cvRef = "PSI-MS",
-                        value = protein.FullDescription
-                    }
+                        cvParam = new mzIdentML.Generated.CVParamType()
+                        {
+                            accession = "MS:1000584",
+                            cvRef = "PSI-MS",
+                            name = "mzML format"
+                        }
                     }
                 };
-                foreach (PeptideWithSetModifications peptide in items.Select(p => p.thisPSM.peptidesWithSetModifications.First()).Where(p => p.Protein == protein).Distinct().ToList())
+                foreach (int scan in items.Where(p => p.thisPSM.newPsm.fileName == filename).Select(p => p.thisPSM.newPsm.scanNumber).Distinct())
                 {
-                    string peptide_id = "peptide_" + protein_index + "_" + protein_peptide_index;
-                    _mzid.SequenceCollection.PeptideEvidence[peptide_envidence] = new mzIdentML.Generated.PeptideEvidenceType()
+                    //spectrum identification result: all identifications made from searching one spectrum (could be more than one if DIA or coisolation)
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[spectrum_id_index] = new mzIdentML.Generated.SpectrumIdentificationResultType()
                     {
-                        isDecoy = peptide.Protein.IsDecoy,
-                        peptide_ref = peptide_id,
-                        id = "PE_" + protein_index + "_" + protein_peptide_index + "_" + peptide.Protein.Accession,
-                        startSpecified = true,
-                        endSpecified = true,
-                        start = peptide.OneBasedStartResidueInProtein,
-                        end = peptide.OneBasedEndResidueInProtein,
-                        pre = peptide.PreviousAminoAcid.ToString(),
-                        post = (peptide.OneBasedEndResidueInProtein < protein.BaseSequence.Length) ? protein[peptide.OneBasedEndResidueInProtein].ToString() : "-",
-                        dBSequence_ref = database_sequence_ref
+                        spectrumID = ("scan=" + scan).ToString(),
+                        SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[items.Where(p => p.thisPSM.newPsm.fileName == filename && p.thisPSM.newPsm.scanNumber == scan).Count()]
                     };
-                    peptideEvidenceID.Add(peptide, "PE_" + protein_index + "_" + protein_peptide_index + "_" + peptide.Protein.Accession);
-                    peptide_envidence++;
+                    spectrum_id_index++;
+                    spectrumIdentificationItemRef.Add(filename + "_" + scan, new List<double>());
+                }
+                fileRef.Add(filename, file_index);
+                scanRef.Add(filename, new List<int>());
+                file_index++;
+            }
 
+            foreach (NewPsmWithFdr psm in items)
+            {
+                //new peptide object per psm (all peptides in peptidesWithSetModifications have same sequence and modifications, only need one)
+                if (!peptideRef.ContainsKey(psm.thisPSM.peptidesWithSetModifications.First()))
+                {
+                    PeptideWithSetModifications peptide = psm.thisPSM.peptidesWithSetModifications.First();
+                    string peptide_id = "peptide_" + peptide_index;
+                    peptideRef.Add(peptide, peptide_index);
                     _mzid.SequenceCollection.Peptide[peptide_index] = new mzIdentML.Generated.PeptideType()
                     {
                         id = peptide_id,
@@ -265,7 +322,7 @@ namespace TaskLayer
                                 monoisotopicMassDelta = mod.ObservedMassShift,
                                 cvParam = new mzIdentML.Generated.CVParamType[1] { new mzIdentML.Generated.CVParamType()
                             {
-                                cvRef = "MetaMorpheus", 
+                                cvRef = "MetaMorpheus",
                                 name = "MetaMorpheusModification",
                                 accession = mod.NameInXml
                             } }
@@ -274,80 +331,71 @@ namespace TaskLayer
                         }
                     }
                     peptide_index++;
-                    protein_peptide_index++;
                 }
-                protein_index++;
-            }
 
-            //Analysis collection: the analyses performed to get the results, which map the input and output data sets. 
-            _mzid.AnalysisCollection = new mzIdentML.Generated.AnalysisCollectionType()
-            {
-                SpectrumIdentification = new mzIdentML.Generated.SpectrumIdentificationType[1] { new mzIdentML.Generated.SpectrumIdentificationType()
+                foreach (PeptideWithSetModifications peptide_evidence in psm.thisPSM.peptidesWithSetModifications)
                 {
-                    id = "SI",
-                    spectrumIdentificationProtocol_ref = "SIP",
-                    spectrumIdentificationList_ref = "SIL",
-                    InputSpectra = new mzIdentML.Generated.InputSpectraType[items.Select(p => p.thisPSM.newPsm.fileName).Distinct().Count()]
-                } }
-            };
-            int file_index = 0;
-            foreach (string filename in items.Select(p => p.thisPSM.newPsm.fileName).Distinct().OrderBy(p => p).ToList())
-            {
-                _mzid.AnalysisCollection.SpectrumIdentification[0].InputSpectra[file_index] = new mzIdentML.Generated.InputSpectraType()
-                {
-                    spectraData_ref = "SD_" + file_index
-                };
-            }
-            //Analysis protocol collection: parameters
-            _mzid.AnalysisProtocolCollection = new mzIdentML.Generated.AnalysisProtocolCollectionType();
-            _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol = new mzIdentML.Generated.SpectrumIdentificationProtocolType[1] { new mzIdentML.Generated.SpectrumIdentificationProtocolType() };
-            //add later? - already in params.txt file, may want here also
-
-            //DataColection
-            _mzid.DataCollection = new mzIdentML.Generated.DataCollectionType();
-            _mzid.DataCollection.AnalysisData = new mzIdentML.Generated.AnalysisDataType();
-            _mzid.DataCollection.Inputs = new mzIdentML.Generated.InputsType();
-            _mzid.DataCollection.Inputs.SpectraData = new mzIdentML.Generated.SpectraDataType[1]
-            { new mzIdentML.Generated.SpectraDataType()
-            {
-             FileFormat = new mzIdentML.Generated.FileFormatType()
-             {
-                cvParam = new mzIdentML.Generated.CVParamType()
-                {
-                    name = "mzML format"
-                }
-             }
-            }
-            };
-            _mzid.DataCollection.AnalysisData.SpectrumIdentificationList = new mzIdentML.Generated.SpectrumIdentificationListType[items.Select(p => p.thisPSM.newPsm.fileName).Distinct().Count()];
-
-            file_index = 0; //file index
-            foreach (string filename in items.Select(p => p.thisPSM.newPsm.fileName).Distinct())
-            {
-                int spectrum_id_index = 0;
-                _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[file_index] = new mzIdentML.Generated.SpectrumIdentificationListType()
-                { SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Where(p => p.thisPSM.newPsm.fileName == filename).Select(p => p.thisPSM.newPsm.scanNumber).Distinct().Count()] };
-
-                foreach (int scan in items.Where(p => p.thisPSM.newPsm.fileName == filename).Select(p => p.thisPSM.newPsm.scanNumber).Distinct())
-                {
-                    //spectrum identification result: all identifications made from searching one spectrum (could be more than one if DIA or coisolation)
-                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[file_index].SpectrumIdentificationResult[spectrum_id_index] = new mzIdentML.Generated.SpectrumIdentificationResultType()
+                    //if DB references doesn't contain protein, add it
+                    Protein protein = peptide_evidence.Protein;
+                    if (!databaseRef.ContainsKey(protein))
                     {
-                        spectrumID = ("scan=" + scan).ToString(),
-                        SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[items.Where(p => p.thisPSM.newPsm.fileName == filename && p.thisPSM.newPsm.scanNumber == scan).Count()]
-                    };
-
-                    int psm_index = 0;
-                    //spectrum identification item: one PSM
-                    foreach (NewPsmWithFdr psm in items.Where(p => p.thisPSM.newPsm.fileName == filename && p.thisPSM.newPsm.scanNumber == scan))
-                    {
-                        _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[file_index].SpectrumIdentificationResult[spectrum_id_index].SpectrumIdentificationItem[psm_index] = new mzIdentML.Generated.SpectrumIdentificationItemType()
+                        string database_sequence_ref = "DBSeq_" + protein.Accession;
+                        databaseRef.Add(protein, database_sequence_ref);
+                        _mzid.SequenceCollection.DBSequence[protein_index] = new mzIdentML.Generated.DBSequenceType()
                         {
-                            experimentalMassToCharge = psm.thisPSM.newPsm.scanPrecursorMZ,
-                            calculatedMassToCharge = psm.thisPSM.PeptideMonoisotopicMass.ToMassToChargeRatio(psm.thisPSM.newPsm.scanPrecursorCharge),
-                            calculatedMassToChargeSpecified = true,
-                            chargeState = psm.thisPSM.newPsm.scanPrecursorCharge,
-                            cvParam = new mzIdentML.Generated.CVParamType[2] { new mzIdentML.Generated.CVParamType()
+                            id = database_sequence_ref,
+                            length = protein.Length,
+                            searchDatabase_ref = "Uniprot", //?
+                            accession = protein.Accession,
+                            Seq = protein.BaseSequence,
+                            cvParam = new mzIdentML.Generated.CVParamType[1] { new mzIdentML.Generated.CVParamType()
+                    {
+                        accession = "MS:1001088",
+                        name = "protein description",
+                        cvRef = "PSI-MS",
+                        value = protein.FullDescription
+                    }
+                    }
+                        };
+                        protein_index++;
+                    }
+
+                    //peptide evdience for each peptide in peptidesWithSetModifications
+                    if (!peptideEvidenceRef.ContainsKey(peptide_evidence))
+                    {
+                        string id = "PE_" + peptideRef[psm.thisPSM.peptidesWithSetModifications.First()] + "_" + peptide_envidence;
+                        _mzid.SequenceCollection.PeptideEvidence[peptide_envidence] = new mzIdentML.Generated.PeptideEvidenceType()
+                        {
+                            isDecoy = peptide_evidence.Protein.IsDecoy,
+                            peptide_ref = "peptide_" + peptideRef[psm.thisPSM.peptidesWithSetModifications.First()],
+                            id = id,
+                            startSpecified = true,
+                            endSpecified = true,
+                            start = peptide_evidence.OneBasedStartResidueInProtein,
+                            end = peptide_evidence.OneBasedEndResidueInProtein,
+                            pre = peptide_evidence.PreviousAminoAcid.ToString(),
+                            post = (peptide_evidence.OneBasedEndResidueInProtein < protein.BaseSequence.Length) ? protein[peptide_evidence.OneBasedEndResidueInProtein].ToString() : "-",
+                            dBSequence_ref = databaseRef[peptide_evidence.Protein]
+                        };
+                        peptideEvidenceRef.Add(peptide_evidence, id);
+                        peptide_envidence++;
+                    }
+                }
+
+                if (!scanRef[psm.thisPSM.newPsm.fileName].Contains(psm.thisPSM.newPsm.scanNumber))
+                {
+                    scanRef[psm.thisPSM.newPsm.fileName].Add(psm.thisPSM.newPsm.scanNumber);
+                }
+                int scan_ref = scanRef[psm.thisPSM.newPsm.fileName].IndexOf(psm.thisPSM.newPsm.scanNumber);
+                spectrumIdentificationItemRef[psm.thisPSM.newPsm.fileName + "_" + psm.thisPSM.newPsm.scanNumber].Add(psm.thisPSM.newPsm.scanPrecursorMZ);
+                int spectrum_id_result = spectrumIdentificationItemRef[psm.thisPSM.newPsm.fileName + "_" + psm.thisPSM.newPsm.scanNumber].IndexOf(psm.thisPSM.newPsm.scanPrecursorMZ);
+                _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scanRef[psm.thisPSM.newPsm.fileName].IndexOf(psm.thisPSM.newPsm.scanNumber)].SpectrumIdentificationItem[spectrum_id_result] = new mzIdentML.Generated.SpectrumIdentificationItemType()
+                {
+                    experimentalMassToCharge = psm.thisPSM.newPsm.scanPrecursorMZ,
+                    calculatedMassToCharge = psm.thisPSM.PeptideMonoisotopicMass.ToMassToChargeRatio(psm.thisPSM.newPsm.scanPrecursorCharge),
+                    calculatedMassToChargeSpecified = true,
+                    chargeState = psm.thisPSM.newPsm.scanPrecursorCharge,
+                    cvParam = new mzIdentML.Generated.CVParamType[2] { new mzIdentML.Generated.CVParamType()
                          {
                          name = "Score",
                         value = psm.thisPSM.Score.ToString(),
@@ -361,39 +409,42 @@ namespace TaskLayer
                                     value = psm.qValue.ToString()
                                 }
                          },
-                            PeptideEvidenceRef = new mzIdentML.Generated.PeptideEvidenceRefType[1] { new mzIdentML.Generated.PeptideEvidenceRefType()
+                        PeptideEvidenceRef = new mzIdentML.Generated.PeptideEvidenceRefType[1] { new mzIdentML.Generated.PeptideEvidenceRefType()
                         {
-                            peptideEvidence_ref = peptideEvidenceID[psm.thisPSM.peptidesWithSetModifications.First()]
+                            peptideEvidence_ref = peptideEvidenceRef[psm.thisPSM.peptidesWithSetModifications.First()]
                         }
                         },
-                            Fragmentation = new mzIdentML.Generated.IonTypeType[psm.thisPSM.newPsm.matchedIonsList.Count]
-                        };
-                        int ion_list_count = 0;
-                        foreach (var ion_list in psm.thisPSM.newPsm.matchedIonsList)
+                    Fragmentation = new mzIdentML.Generated.IonTypeType[psm.thisPSM.newPsm.matchedIonsList.Count]
+                };
+                int ion_list_count = 0;
+                foreach (var ion_list in psm.thisPSM.newPsm.matchedIonsList)
+                {
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scanRef[psm.thisPSM.newPsm.fileName].IndexOf(psm.thisPSM.newPsm.scanNumber)].SpectrumIdentificationItem[spectrum_id_result].Fragmentation[ion_list_count] = new mzIdentML.Generated.IonTypeType()
+                    {
+                        cvParam = new mzIdentML.Generated.CVParamType()
                         {
-                            _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[file_index].SpectrumIdentificationResult[spectrum_id_index].SpectrumIdentificationItem[psm_index].Fragmentation[ion_list_count] = new mzIdentML.Generated.IonTypeType()
-                            {
-                                cvParam = new mzIdentML.Generated.CVParamType()
-                                {
-                                    name = "frag: " + ion_list.Key
-                                },
-                                FragmentArray = new mzIdentML.Generated.FragmentArrayType[1] { new mzIdentML.Generated.FragmentArrayType() { values = new float[ion_list.Value.Length] ,
+                            name = "frag: " + ion_list.Key
+                        },
+                        FragmentArray = new mzIdentML.Generated.FragmentArrayType[1] { new mzIdentML.Generated.FragmentArrayType() { values = new float[ion_list.Value.Length] ,
                                measure_ref = "m_mass",
                          } }
-                            };
+                    };
 
-                            for (int i = 0; i < ion_list.Value.Length; i++)
-                            {
-                                _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[file_index].SpectrumIdentificationResult[spectrum_id_index].SpectrumIdentificationItem[psm_index].Fragmentation[ion_list_count].FragmentArray[0].values[i] = Math.Abs((float)ion_list.Value[i]);
-                            }
-                            ion_list_count++;
-                        }
-                        psm_index++;
+                    for (int i = 0; i < ion_list.Value.Length; i++)
+                    {
+                        _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_ref].SpectrumIdentificationItem[spectrum_id_result].Fragmentation[ion_list_count].FragmentArray[0].values[i] = Math.Abs((float)ion_list.Value[i]);
                     }
-                    spectrum_id_index++;
+                    ion_list_count++;
                 }
-                file_index++;
             }
+
+            //Analysis protocol collection: parameters
+            _mzid.AnalysisProtocolCollection = new mzIdentML.Generated.AnalysisProtocolCollectionType();
+            _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol = new mzIdentML.Generated.SpectrumIdentificationProtocolType[1] { new mzIdentML.Generated.SpectrumIdentificationProtocolType()
+            {
+                id = "SIP", analysisSoftware_ref = "MetaMorpheus"
+            } };
+            //add later? - already in params.txt file, may want here also
 
             TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".mzid"));
             _indexedSerializer.Serialize(writer, _mzid);
