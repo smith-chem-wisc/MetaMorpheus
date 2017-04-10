@@ -120,13 +120,8 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-<<<<<<< HEAD
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, null, true, 0, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN);
-            dictionary = ae.ApplyProteinParsimony(out proteinGroups);
-=======
             AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
             ae.ApplyProteinParsimony(out proteinGroups);
->>>>>>> 66586e2e40cfc94379c24ed33f6a857f44f2cad2
 
             var parsimonyProteinList = new List<Protein>();
             var parsimonyBaseSequences = new List<string>();
