@@ -283,12 +283,13 @@ namespace TaskLayer
             { id = "SIL_1",
              SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Select(p => p.thisPSM.newPsm.scanNumber).Distinct().Count()],},
             },
+                //include protein groups?? 
                 //ProteinDetectionList = new mzIdentML.Generated.ProteinDetectionListType[1]
                 //{
                 //    new mzIdentML.Generated.ProteinDetectionListType()
                 //    {
                 //        id = "PDL_1",
-                //        ProteinAmbiguityGroup = new mzIdentML.Generated.ProteinAmbiguityGroupType[items.SelectMany(i => i.thisPSM.peptidesWithSetModifications.Select(p => p.gr)]
+                //        ProteinAmbiguityGroup =
                 //    }
                 //}
             };
@@ -482,8 +483,8 @@ namespace TaskLayer
                         },
                         new mzIdentML.Generated.CVParamType()
                                 {
-                                    accession = "MS:1001868",
-                                    name = "distinct peptide-level q-value",
+                                    accession = "MS:1002354",
+                                    name = "PSM-level q-value",
                                     cvRef = "PSI-MS",
                                     value = psm.QValue.ToString()
                                 }
