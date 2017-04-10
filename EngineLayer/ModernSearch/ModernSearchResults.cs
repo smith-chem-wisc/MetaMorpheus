@@ -3,7 +3,7 @@ using System.Text;
 
 namespace EngineLayer.ModernSearch
 {
-    public class ModernSearchResults : MyResults
+    public class ModernSearchResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors
@@ -21,18 +21,16 @@ namespace EngineLayer.ModernSearch
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.Append(base.ToString());
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

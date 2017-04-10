@@ -1,9 +1,11 @@
 ﻿using EngineLayer;
-using Spectra;
+using MzLibUtil;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,35 +14,40 @@ using TaskLayer;
 namespace MetaMorpheusGUI
 {
     /// <summary>
-    /// Interaction logic for GPTMDTaskWindow.xaml
+    /// Interaction logic for GptmdTaskWindow.xaml
     /// </summary>
-    public partial class GPTMDTaskWindow : Window
+    public partial class GptmdTaskWindow : Window
     {
 
         #region Private Fields
 
+        private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> variableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+
         // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForGPTMDTask> ModFileListInWindow = new ObservableCollection<ModListForGPTMDTask>();
+        private ObservableCollection<ModListForGptmdTask> ModFileListInWindow = new ObservableCollection<ModListForGptmdTask>();
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public GPTMDTaskWindow(ObservableCollection<ModList> modList)
+        public GptmdTaskWindow()
         {
             InitializeComponent();
-            PopulateChoices(modList);
+            PopulateChoices();
 
-            TheTask = new GptmdTask(modList);
+            TheTask = new GptmdTask();
             UpdateFieldsFromTask(TheTask);
 
             this.saveButton.Content = "Add the GPTMD Task";
         }
 
-        public GPTMDTaskWindow(GptmdTask myGPTMDtask, ObservableCollection<ModList> modFileList)
+        public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
             InitializeComponent();
-            PopulateChoices(modFileList);
+            PopulateChoices();
 
             TheTask = myGPTMDtask;
             UpdateFieldsFromTask(TheTask);
@@ -56,11 +63,18 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
+        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
+        {
+        }
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            var hm = ye.Content as TextBlock;
-            if (hm != null && !string.IsNullOrEmpty(hm.Text))
+            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }
@@ -69,6 +83,8 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(GptmdTask task)
         {
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            txtMinPeptideLength.Text = task.MinPeptideLength.HasValue ? task.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtMaxPeptideLength.Text = task.MaxPeptideLength.HasValue ? task.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             proteaseComboBox.SelectedItem = task.Protease;
             maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
@@ -79,23 +95,108 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
-            for (int i = 0; i < ModFileListInWindow.Count; i++)
+            cCheckBox.IsChecked = task.CIons;
+            zdotCheckBox.IsChecked = task.ZdotIons;
+
+            checkBoxGptmdMonoisotope.IsChecked = task.IsotopeErrors;
+
+            foreach (var mod in task.ListOfModsFixed)
             {
-                if (task.listOfModListsForGPTMD[i].Fixed)
-                    ModFileListInWindow[i].Fixed = true;
-                if (task.listOfModListsForGPTMD[i].Variable)
-                    ModFileListInWindow[i].Variable = true;
-                if (task.listOfModListsForGPTMD[i].Localize)
-                    ModFileListInWindow[i].Localize = true;
-                if (task.listOfModListsForGPTMD[i].Gptmd)
-                    ModFileListInWindow[i].Gptmd = true;
+                var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
             }
-            modificationsDataGrid.Items.Refresh();
+            foreach (var mod in task.ListOfModsVariable)
+            {
+                var theModType = variableModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    variableModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+            }
+
+            localizeAllCheckBox.IsChecked = task.LocalizeAll;
+            if (task.LocalizeAll)
+            {
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    heh.Use = true;
+            }
+            else
+            {
+                foreach (var mod in task.ListOfModsLocalize)
+                {
+                    var theModType = localizeModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                    if (theModType != null)
+                    {
+                        var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                        if (theMod != null)
+                            theMod.Use = true;
+                        else
+                            theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
+                    else
+                    {
+                        theModType = new ModTypeForTreeView(mod.Item1, true);
+                        localizeModTypeForTreeViewObservableCollection.Add(theModType);
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    }
+                }
+            }
+
+            foreach (var mod in task.ListOfModsGptmd)
+            {
+                var theModType = gptmdModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
+                if (theModType != null)
+                {
+                    var theMod = theModType.Children.FirstOrDefault(b => b.DisplayName.Equals(mod.Item2));
+                    if (theMod != null)
+                        theMod.Use = true;
+                    else
+                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+                else
+                {
+                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    gptmdModTypeForTreeViewObservableCollection.Add(theModType);
+                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                }
+            }
+
+            foreach (var ye in variableModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in fixedModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in localizeModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
+            foreach (var ye in gptmdModTypeForTreeViewObservableCollection)
+                ye.VerifyCheckState();
         }
 
-        private void PopulateChoices(ObservableCollection<ModList> modList)
+        private void PopulateChoices()
         {
-            foreach (Protease protease in ProteaseDictionary.Instance.Values)
+            foreach (Protease protease in GlobalTaskLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
 
@@ -108,20 +209,52 @@ namespace MetaMorpheusGUI
             foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
                 precursorMassToleranceComboBox.Items.Add(toleranceUnit);
 
-            // Always create new ModFileList
-            foreach (var uu in modList)
-                ModFileListInWindow.Add(new ModListForGPTMDTask(uu));
-            modificationsDataGrid.DataContext = ModFileListInWindow;
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                fixedModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                variableModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                localizeModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
+
+            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            {
+                var theModType = new ModTypeForTreeView(hm.Key, false);
+                gptmdModTypeForTreeViewObservableCollection.Add(theModType);
+                foreach (var uah in hm)
+                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
+            }
+            gptmdModsTreeView.DataContext = gptmdModTypeForTreeViewObservableCollection;
         }
 
-        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
         }
 
-        private void saveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            int temp;
+            TheTask.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            TheTask.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
             TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
@@ -129,10 +262,32 @@ namespace MetaMorpheusGUI
             TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
-            TheTask.listOfModListsForGPTMD = ModFileListInWindow.ToList();
+            TheTask.CIons = cCheckBox.IsChecked.Value;
+            TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
+
+            TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
+            foreach (var heh in variableModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            TheTask.ListOfModsFixed = new List<Tuple<string, string>>();
+            foreach (var heh in fixedModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            TheTask.ListOfModsLocalize = new List<Tuple<string, string>>();
+            if (localizeAllCheckBox.IsChecked.Value)
+                TheTask.LocalizeAll = true;
+            else
+            {
+                TheTask.LocalizeAll = false;
+                foreach (var heh in localizeModTypeForTreeViewObservableCollection)
+                    TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+            }
+            TheTask.ListOfModsGptmd = new List<Tuple<string, string>>();
+            foreach (var heh in gptmdModTypeForTreeViewObservableCollection)
+                TheTask.ListOfModsGptmd.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+
+            TheTask.IsotopeErrors = checkBoxGptmdMonoisotope.IsChecked.Value;
 
             DialogResult = true;
         }

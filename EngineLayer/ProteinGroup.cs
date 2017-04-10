@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -10,36 +12,41 @@ namespace EngineLayer
         #region Public Fields
 
         public readonly bool isDecoy;
+        public readonly bool isContaminant;
 
         #endregion Public Fields
 
         #region Internal Constructors
 
-        internal ProteinGroup(HashSet<Protein> proteins, HashSet<CompactPeptide> peptides, HashSet<CompactPeptide> uniquePeptides)
+        internal ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
             Proteins = proteins;
 
-            TotalPeptideList = peptides;
-            TotalUniquePeptideList = uniquePeptides;
-            TotalPsmList = new HashSet<NewPsmWithFdr>();
-            TotalPeptideWithSetModsList = new HashSet<PeptideWithSetModifications>();
-
-            AllPsmsForStrictPeptideSequences = new HashSet<NewPsmWithFdr>();
-            BestPsmPerBaseSeq = new HashSet<NewPsmWithFdr>();
-            StrictPeptideList = new HashSet<CompactPeptide>();
-            StrictRazorPeptideList = new HashSet<CompactPeptide>();
-            StrictPeptideWithSetModsList = new HashSet<PeptideWithSetModifications>();
-            StrictUniquePeptideList = new HashSet<CompactPeptide>();
-
-            proteinGroupScore = 0;
+            AllPeptides = peptides;
+            UniquePeptides = uniquePeptides;
+            RazorPeptides = new HashSet<PeptideWithSetModifications>();
+            AllPsmsBelowOnePercentFDR = new HashSet<NewPsmWithFdr>();
+            SequenceCoveragePercent = new List<double>();
+            SequenceCoverageDisplayList = new List<string>();
+            SequenceCoverageDisplayListWithMods = new List<string>();
+            ProteinGroupScore = 0;
             QValue = 0;
             isDecoy = false;
+            isContaminant = false;
 
             // if any of the proteins in the protein group are decoys, the protein group is a decoy
             foreach (var protein in proteins)
             {
                 if (protein.IsDecoy)
+                {
                     isDecoy = true;
+                    break;
+                }
+                if (protein.IsContaminant)
+                {
+                    isContaminant = true;
+                    break;
+                }
             }
         }
 
@@ -52,17 +59,22 @@ namespace EngineLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.Append("Proteins in group" + '\t');
+                sb.Append("Protein Accession" + '\t');
+                sb.Append("Gene" + '\t');
+                sb.Append("Protein Full Name" + '\t');
                 sb.Append("Number of proteins in group" + '\t');
                 sb.Append("Unique peptides" + '\t');
                 sb.Append("Shared peptides" + '\t');
                 sb.Append("Razor peptides" + '\t');
                 sb.Append("Number of peptides" + '\t');
                 sb.Append("Number of unique peptides" + '\t');
+                sb.Append("Sequence coverage %" + '\t');
                 sb.Append("Sequence coverage" + '\t');
+                sb.Append("Sequence coverage w Mods" + '\t');
+                sb.Append("Intensity" + '\t');
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
-                sb.Append("Decoy?" + '\t');
+                sb.Append("Decoy/Contaminant/Target" + '\t');
                 sb.Append("Cumulative Target" + '\t');
                 sb.Append("Cumulative Decoy" + '\t');
                 sb.Append("Q-Value (%)");
@@ -70,22 +82,20 @@ namespace EngineLayer
             }
         }
 
-        public double proteinGroupScore { get; private set; }
+        public double ProteinGroupScore { get; set; }
         public HashSet<Protein> Proteins { get; set; }
-        public HashSet<CompactPeptide> TotalPeptideList { get; set; }
-        public HashSet<NewPsmWithFdr> TotalPsmList { get; set; }
-        public HashSet<CompactPeptide> TotalUniquePeptideList { get; set; }
-        public HashSet<PeptideWithSetModifications> TotalPeptideWithSetModsList { get; set; }
-        public HashSet<NewPsmWithFdr> BestPsmPerBaseSeq { get; private set; } // for scoring
-        public HashSet<NewPsmWithFdr> AllPsmsForStrictPeptideSequences { get; private set; } // for PSMs per proteingroup output
-        public HashSet<CompactPeptide> StrictPeptideList { get; private set; }
-        public HashSet<CompactPeptide> StrictUniquePeptideList { get; private set; }
-        public HashSet<CompactPeptide> StrictRazorPeptideList { get; private set; }
-        public HashSet<PeptideWithSetModifications> StrictPeptideWithSetModsList { get; private set; }
-        public List<double> sequenceCoverage { get; private set; }
+        public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
+        public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
+        public HashSet<PeptideWithSetModifications> RazorPeptides { get; set; }
+        public HashSet<NewPsmWithFdr> AllPsmsBelowOnePercentFDR { get; set; }
+        public List<double> SequenceCoveragePercent { get; private set; }
+        public List<string> SequenceCoverageDisplayList { get; private set; }
+        public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
         public double QValue { get; set; }
-        public int cumulativeTarget { get; set; }
-        public int cumulativeDecoy { get; set; }
+        public int CumulativeTarget { get; set; }
+        public int CumulativeDecoy { get; set; }
+        public double[] Intensity { get; set; }
+        public bool DisplayModsOnPeptides { get; set; }
 
         #endregion Public Properties
 
@@ -94,208 +104,221 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
+            // list of protein accession numbers
+            sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.Accession))));
+            sb.Append("\t");
 
-            // list of proteins in the group
-            foreach (Protein protein in Proteins)
-                sb.Append("" + protein.FullDescription + " ;; ");
+            // genes
+            var genes = new HashSet<string>(Proteins.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault()));
+            sb.Append(string.Join("|", genes));
+            sb.Append("\t");
+
+            // list of protein names
+            sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.FullName))));
             sb.Append("\t");
 
             // number of proteins in group
-            sb.Append("" + Proteins.Count());
+            sb.Append("" + Proteins.Count);
             sb.Append("\t");
 
             // list of unique peptides
-            foreach (CompactPeptide uniquePeptide in StrictUniquePeptideList)
-            {
-                string peptideBaseSequence = string.Join("", uniquePeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                sb.Append("" + peptideBaseSequence + " ;; ");
-            }
+            if (!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of shared peptides
-            foreach (CompactPeptide sharedPeptide in StrictPeptideList)
-            {
-                if (!TotalUniquePeptideList.Contains(sharedPeptide))
-                {
-                    string peptideBaseSequence = string.Join("", sharedPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                    sb.Append("" + peptideBaseSequence + " ;; ");
-                }
-            }
+            var SharedPeptides = AllPeptides.Except(UniquePeptides);
+            if (!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of razor peptides
-            foreach (CompactPeptide razorPeptide in StrictRazorPeptideList)
-            {
-                string peptideBaseSequence = string.Join("", razorPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                sb.Append("" + peptideBaseSequence + " ;; ");
-            }
+            if (!DisplayModsOnPeptides)
+                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.BaseSequence))));
+            else
+                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // number of peptides
-            sb.Append("" + StrictPeptideList.Count());
+            if (!DisplayModsOnPeptides)
+                sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.BaseSequence)).Count);
+            else
+                sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.Sequence)).Count);
             sb.Append("\t");
 
             // number of unique peptides
-            sb.Append("" + StrictUniquePeptideList.Count());
+            if (!DisplayModsOnPeptides)
+                sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence)).Count);
+            else
+                sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.Sequence)).Count);
+            sb.Append("\t");
+
+            // sequence coverage percent
+            sb.Append(string.Join("|", SequenceCoveragePercent.Select(p => string.Format("{0:0}" + "%", (p * 100)))));
             sb.Append("\t");
 
             // sequence coverage
-            foreach (double coverage in sequenceCoverage)
-            {
-                double coverage1 = coverage * 100;
-                string str = string.Format("{0:0}", coverage1);
+            sb.Append(string.Join("|", SequenceCoverageDisplayList));
+            sb.Append("\t");
 
-                sb.Append("" + str + "% ;; ");
-            }
+            // sequence coverage with mods
+            sb.Append(string.Join("|", SequenceCoverageDisplayListWithMods));
+            sb.Append("\t");
+
+            // summed MS1 intensity of razor and unique peptides
+            sb.Append(string.Join("|", Intensity));
             sb.Append("\t");
 
             // number of PSMs for listed peptides
-            sb.Append("" + AllPsmsForStrictPeptideSequences.Count());
+            sb.Append("" + AllPsmsBelowOnePercentFDR.Count);
             sb.Append("\t");
 
             // summed metamorpheus score
-            sb.Append(proteinGroupScore);
+            sb.Append(ProteinGroupScore);
             sb.Append("\t");
 
             // isDecoy
-            sb.Append(isDecoy);
+            if (isDecoy)
+                sb.Append("D");
+            else if (isContaminant)
+                sb.Append("C");
+            else
+                sb.Append("T");
             sb.Append("\t");
 
             // cumulative target
-            sb.Append(cumulativeTarget);
+            sb.Append(CumulativeTarget);
             sb.Append("\t");
 
             // cumulative decoy
-            sb.Append(cumulativeDecoy);
+            sb.Append(CumulativeDecoy);
             sb.Append("\t");
 
             // q value
-            sb.Append(QValue * 100);
+            sb.Append(QValue);
             sb.Append("\t");
 
             return sb.ToString();
         }
 
-        public void ScoreThisProteinGroup(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public void Score()
         {
-            // find the best psm per base sequence (peptide FDR must be <1%) for scoring
-            Dictionary<string, NewPsmWithFdr> peptideBaseSeqToBestPsmMatching = new Dictionary<string, NewPsmWithFdr>();
-            foreach (var psm in TotalPsmList)
-            {
-                if (psm.qValue < 0.01)
-                {
-                    CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
-                    string baseSeq = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                    if (peptideBaseSeqToBestPsmMatching.ContainsKey(baseSeq))
-                    {
-                        NewPsmWithFdr psmHere;
-                        peptideBaseSeqToBestPsmMatching.TryGetValue(baseSeq, out psmHere);
-                        if (psm.thisPSM.Score > psmHere.thisPSM.Score)
-                        {
-                            peptideBaseSeqToBestPsmMatching[baseSeq] = psm;
-                        }
-                    }
-
-                    else
-                    {
-                        peptideBaseSeqToBestPsmMatching.Add(baseSeq, psm);
-                    }
-                }
-            }
-
-            // create StrictPsmList (best psm per base seq)
-            foreach (var kvp in peptideBaseSeqToBestPsmMatching)
-            {
-                BestPsmPerBaseSeq.Add(kvp.Value);
-            }
-
-            // create StrictPeptideList (only the CompactPeptide belonging to the best psm per base seq, and only if peptide FDR < 1%)
-            foreach (var psm in BestPsmPerBaseSeq)
-            {
-                CompactPeptide peptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
-                StrictPeptideList.Add(peptide);
-            }
-
-            // create StrictUniquePeptideList
-            foreach (var peptide in StrictPeptideList)
-            {
-                if (TotalUniquePeptideList.Contains(peptide))
-                    StrictUniquePeptideList.Add(peptide);
-            }
-
-            // create AllPsmsForStrictPeptideSequences
-            foreach (var peptide in StrictPeptideList)
-            {
-                string strictPepBaseSeq = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                // if the psm matches a base sequence of a peptide in the strict peptide list, add it to the psm list
-                foreach (var psm in TotalPsmList)
-                {
-                    CompactPeptide psmPeptide = psm.thisPSM.newPsm.GetCompactPeptide(variableModifications, localizeableModifications, fixedModifications);
-                    string psmPeptideBaseSeq = string.Join("", psmPeptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-
-                    if (strictPepBaseSeq.Equals(psmPeptideBaseSeq))
-                    {
-                        AllPsmsForStrictPeptideSequences.Add(psm);
-                    }
-                }
-                
-                // TODO**: StrictPeptideWithSetModsList
-                foreach(var pep in TotalPeptideWithSetModsList)
-                {
-                    if(pep.BaseSequence.Equals(strictPepBaseSeq))
-                    {
-                        StrictPeptideWithSetModsList.Add(pep);
-                    }
-                }
-            }
-
-            // score the protein group
-            foreach (var psm in BestPsmPerBaseSeq)
-            {
-                proteinGroupScore += psm.thisPSM.Score;
-            }
-
-            //TODO**: give option to ignore protein groups with one peptide
-            //if (StrictPeptideList.Count == 1)
-            //    proteinGroupScore = 0;
+            // sum the scores of the best PSM per base sequence
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence).Select(p => p.Select(x => x.thisPSM.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
         {
-            sequenceCoverage = new List<double>();
+            var peptidesGroupedByProtein = AllPeptides.GroupBy(p => p.Protein);
 
             foreach (var protein in Proteins)
             {
-                HashSet<int> coveredResidues = new HashSet<int>();
-
-                foreach (var peptide in StrictPeptideWithSetModsList)
+                foreach (var peptideGroup in peptidesGroupedByProtein)
                 {
-                    if (peptide.Protein == protein)
+                    if (protein == peptideGroup.Key)
                     {
-                        for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                        HashSet<int> coveredResidues = new HashSet<int>();
+
+                        foreach (var peptide in peptideGroup)
                         {
-                            coveredResidues.Add(i);
+                            if (peptide.Protein == peptideGroup.Key)
+                            {
+                                for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                                    coveredResidues.Add(i);
+                            }
                         }
+
+                        double sequenceCoverageHere = (double)coveredResidues.Count / peptideGroup.Key.Length;
+                        SequenceCoveragePercent.Add(sequenceCoverageHere);
+
+                        var sequenceCoverageDisplay = peptideGroup.Key.BaseSequence.ToLower(CultureInfo.InvariantCulture);
+                        var coverageArray = sequenceCoverageDisplay.ToCharArray();
+
+                        foreach (var residue in coveredResidues)
+                        {
+                            var temp = char.ToUpper(coverageArray[residue - 1]);
+                            coverageArray[residue - 1] = temp;
+                        }
+
+                        var seq = new string(coverageArray);
+                        SequenceCoverageDisplayList.Add(seq);
+
+                        // get sequence coverage display with mods
+                        var modsOnThisProtein = new HashSet<KeyValuePair<int, ModificationWithMass>>();
+                        foreach(var pep in peptideGroup)
+                        {
+                            foreach(var mod in pep.allModsOneIsNterminus)
+                            {
+                                if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
+                                    modsOnThisProtein.Add(new KeyValuePair<int, ModificationWithMass>(pep.OneBasedStartResidueInProtein + mod.Key - 2, mod.Value));
+                            }
+                        }
+
+                        var temp1 = modsOnThisProtein.OrderBy(p => p.Key).ToList();
+
+                        foreach(var mod in temp1)
+                        {
+                            int modStringIndex = seq.Length - (protein.Length - mod.Key);
+                            seq = seq.Insert(modStringIndex, "[" + mod.Value.id + "]");
+                        }
+
+                        SequenceCoverageDisplayListWithMods.Add(seq);
                     }
                 }
-
-                double sequenceCoverageHere = (double)coveredResidues.Count / protein.Length;
-                sequenceCoverage.Add(sequenceCoverageHere);
             }
         }
 
         public void MergeProteinGroupWith(ProteinGroup other)
         {
-            foreach(var protein in other.Proteins)
+            this.Proteins.UnionWith(other.Proteins);
+            this.AllPeptides.UnionWith(other.AllPeptides);
+            this.UniquePeptides.UnionWith(other.UniquePeptides);
+            this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
+            other.ProteinGroupScore = 0;
+        }
+
+        public void Quantify()
+        {
+            Intensity = new double[AllPsmsBelowOnePercentFDR.First().thisPSM.newPsm.quantIntensity.Length];
+
+            var psmsGroupedByBaseSequence = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence);
+            var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
+
+            foreach (var psmGroup in psmsGroupedByBaseSequence)
             {
-                this.Proteins.Add(protein);
+                var psmsForThisBaseSeq = psmGroup.ToList();
+                var psmsToIgnore = new List<NewPsmWithFdr>();
+
+                // remove shared non-razor peptides
+                foreach(var psm in psmGroup)
+                {
+                    var uniques = psm.thisPSM.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                    var razors = psm.thisPSM.PeptidesWithSetModifications.Intersect(RazorPeptides);
+
+                    if (!uniques.Any() && !razors.Any())
+                        psmsToIgnore.Add(psm);
+                }
+
+                psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
+
+                // remove modified peptides that aren't used for quantification
+                foreach (var psm in psmsForThisBaseSeq)
+                {
+                    var unacceptableModsForThisPsm = psm.thisPSM.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
+                    if (unacceptableModsForThisPsm.Any())
+                        psmsToIgnore.Add(psm);
+                }
+
+                psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
+
+                if (psmsForThisBaseSeq.Any())
+                    for(int i = 0; i < Intensity.Length; i++)
+                        Intensity[i] += psmsForThisBaseSeq.Select(p => p.thisPSM.newPsm.quantIntensity[i]).Max();
             }
-            other.proteinGroupScore = 0;
         }
 
         #endregion Public Methods

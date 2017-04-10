@@ -1,8 +1,0 @@
-﻿Fixed modifications
-ID   Carbamidomethyl
-FT   MOD_RES
-TG   Cysteine
-PP   Anywhere.
-MM   57.02146373
-CF   H3 C2 N O
-//

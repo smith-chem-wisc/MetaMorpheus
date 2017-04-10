@@ -13,7 +13,7 @@ namespace Test
         [Test]
         public static void TestMyEngine()
         {
-            MyEngine level0engine = new TestEngine(0);
+            MetaMorpheusEngine level0engine = new TestEngine(0);
 
             level0engine = new TestEngine(0);
             level0engine.Run();
@@ -23,12 +23,12 @@ namespace Test
 
         #region Private Classes
 
-        private class TestEngine : MyEngine
+        private class TestEngine : MetaMorpheusEngine
         {
 
             #region Public Constructors
 
-            public TestEngine(int level) : base(level)
+            public TestEngine(int level)
             {
             }
 
@@ -36,7 +36,7 @@ namespace Test
 
             #region Protected Methods
 
-            protected override MyResults RunSpecific()
+            protected override MetaMorpheusEngineResults RunSpecific()
             {
                 return new TestResults(this);
             }
@@ -45,30 +45,28 @@ namespace Test
 
             #region Private Classes
 
-            private class TestResults : MyResults
+            private class TestResults : MetaMorpheusEngineResults
             {
 
                 #region Public Constructors
 
-                public TestResults(MyEngine e) : base(e)
+                public TestResults(MetaMorpheusEngine e) : base(e)
                 {
                 }
 
                 #endregion Public Constructors
 
-                #region Protected Properties
+                #region Public Methods
 
-                protected override string StringForOutput
+                public override string ToString()
                 {
-                    get
-                    {
-                        var sb = new StringBuilder();
-                        sb.Append("String for the TestResults results class");
-                        return sb.ToString();
-                    }
+                    var sb = new StringBuilder();
+                    sb.AppendLine(base.ToString());
+                    sb.Append("String for the TestResults results class");
+                    return sb.ToString();
                 }
 
-                #endregion Protected Properties
+                #endregion Public Methods
 
             }
 

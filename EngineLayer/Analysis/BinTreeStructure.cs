@@ -1,5 +1,8 @@
-﻿using System;
+﻿using MathNet.Numerics.Statistics;
+using Proteomics;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace EngineLayer.Analysis
@@ -56,7 +59,7 @@ namespace EngineLayer.Analysis
                 {
                     // SIGMA IS THE DISTANCE TO THE CLOSEST MASS SHIFT THAT HAS A HIGHER P VALUE THAN ITSELF
 
-                    sigma[i] = getSigma(thisMassShift, thisP, i, listOfMassShifts, p);
+                    sigma[i] = GetSigma(thisMassShift, thisP, i, listOfMassShifts, p);
                 }
             }
 
@@ -100,13 +103,32 @@ namespace EngineLayer.Analysis
             }
 
             FinalBins = FinalBins.Where(b => b.Count > 1).ToList();
+
+            IdentifyUnimodBins(dc);
+            IdentifyUniprotBins(dc);
+            IdentifyAA(dc);
+
+            IdentifyCombos(dc);
+
+            IdentifyResidues();
+
+            IdentifyMods();
+
+            IdentifyAAsInCommon();
+
+            IdentifyMine(dc);
+
+            OverlappingIonSequences();
+
+            IdentifyFracWithSingle();
+            IdentifyMedianLength();
         }
 
         #endregion Internal Methods
 
         #region Private Methods
 
-        private static double getSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
+        private static double GetSigma(double thisMassShift, int thisP, int i, List<double> listOfMassShifts, int[] p)
         {
             int currentDown = i - 1;
             int currentUp = i + 1;
@@ -120,20 +142,266 @@ namespace EngineLayer.Analysis
                 {
                     lookingAtP = p[currentDown];
                     if (lookingAtP > thisP)
-                    {
                         return distDown;
-                    }
                     currentDown--;
                 }
                 else
                 {
                     lookingAtP = p[currentUp];
                     if (lookingAtP > thisP)
-                    {
                         return distUp;
-                    }
                     currentUp++;
                 }
+            }
+        }
+
+        private void OverlappingIonSequences()
+        {
+            foreach (Bin bin in FinalBins)
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
+                {
+                    var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsListPositiveIsMatch;
+                    if (ya.ContainsKey(ProductType.B)
+                        && ya.ContainsKey(ProductType.Y)
+                        && ya[ProductType.B].Any(b => b > 0)
+                        && ya[ProductType.Y].Any(b => b > 0)
+                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.PeptideMonoisotopicMass)
+                        bin.Overlapping++;
+                }
+        }
+
+        private void IdentifyFracWithSingle()
+        {
+            foreach (Bin bin in FinalBins)
+            {
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                if (numTarget > 0)
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.PeptidesWithSetModifications.Count == 1) / numTarget;
+            }
+        }
+
+        private void IdentifyMedianLength()
+        {
+            foreach (Bin bin in FinalBins)
+            {
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                if (numTarget > 0)
+                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.thisPSM.BaseSequence.Length));
+            }
+        }
+
+        private void IdentifyAAsInCommon()
+        {
+            foreach (Bin bin in FinalBins)
+            {
+                bin.AAsInCommon = new Dictionary<char, int>();
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
+                {
+                    var chars = new HashSet<char>();
+                    for (int i = 0; i < hehe.Item1.Count(); i++)
+                        chars.Add(hehe.Item1[i]);
+                    foreach (var ch in chars)
+                        if (bin.AAsInCommon.ContainsKey(ch))
+                            bin.AAsInCommon[ch]++;
+                        else
+                            bin.AAsInCommon.Add(ch, 1);
+                }
+            }
+        }
+
+        private void IdentifyMods()
+        {
+            foreach (Bin bin in FinalBins)
+            {
+                bin.modsInCommon = new Dictionary<string, int>();
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
+                {
+                    int inModLevel = 0;
+                    string currentMod = "";
+                    HashSet<string> modsHere = new HashSet<string>();
+                    for (int i = 0; i < hehe.Item2.Count(); i++)
+                    {
+                        char ye = hehe.Item2[i];
+                        if (ye.Equals('['))
+                        {
+                            inModLevel++;
+                            if (inModLevel == 1)
+                                continue;
+                        }
+                        else if (ye.Equals(']'))
+                        {
+                            inModLevel--;
+                            if (inModLevel == 0)
+                            {
+                                if (!currentMod.StartsWith("f:"))
+                                    modsHere.Add(currentMod);
+                                currentMod = "";
+                            }
+                            continue;
+                        }
+                        if (inModLevel > 0)
+                            currentMod += ye;
+                    }
+                    foreach (var modInHS in modsHere)
+                    {
+                        if (bin.modsInCommon.ContainsKey(modInHS))
+                            bin.modsInCommon[modInHS]++;
+                        else
+                            bin.modsInCommon.Add(modInHS, 1);
+                    }
+                }
+            }
+        }
+
+        private void IdentifyResidues()
+        {
+            foreach (Bin bin in FinalBins)
+            {
+                bin.residueCount = new Dictionary<char, int>();
+                foreach (var hehe in bin.uniquePSMs.Values)
+                {
+                    double bestScore = hehe.Item3.thisPSM.LocalizedScores.Max();
+                    if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.IsDecoy)
+                    {
+                        for (int i = 0; i < hehe.Item1.Count(); i++)
+                            if (bestScore - hehe.Item3.thisPSM.LocalizedScores[i] < 0.5)
+                                if (bin.residueCount.ContainsKey(hehe.Item1[i]))
+                                    bin.residueCount[hehe.Item1[i]]++;
+                                else
+                                    bin.residueCount.Add(hehe.Item1[i], 1);
+                        if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores[0] < 0.5)
+                        {
+                            bin.pepNlocCount++;
+                            if (hehe.Item3.thisPSM.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                                bin.protNlocCount++;
+                        }
+                        if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores.Last() < 0.5)
+                        {
+                            bin.pepClocCount++;
+                            if (hehe.Item3.thisPSM.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                                bin.protClocCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void IdentifyUnimodBins(double v)
+        {
+            foreach (var bin in FinalBins)
+            {
+                var ok = new HashSet<string>();
+                var okformula = new HashSet<string>();
+                var okDiff = new HashSet<double>();
+                foreach (var hm in GlobalEngineLevelSettings.UnimodDeserialized)
+                {
+                    var theMod = hm as ModificationWithMassAndCf;
+                    if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
+                    {
+                        ok.Add(hm.id);
+                        okformula.Add(theMod.chemicalFormula.Formula);
+                        okDiff.Add(theMod.monoisotopicMass - bin.MassShift);
+                    }
+                }
+                bin.UnimodId = string.Join(" or ", ok);
+                bin.UnimodFormulas = string.Join(" or ", okformula);
+                bin.UnimodDiffs = string.Join(" or ", okDiff);
+            }
+        }
+
+        private void IdentifyUniprotBins(double v)
+        {
+            foreach (var bin in FinalBins)
+            {
+                var ok = new HashSet<string>();
+                foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
+                {
+                    var theMod = hm as ModificationWithMass;
+                    if (theMod != null && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
+                        ok.Add(hm.id);
+                }
+                bin.uniprotID = string.Join(" or ", ok);
+            }
+        }
+
+        private void IdentifyCombos(double v)
+        {
+            double totalTargetCount = FinalBins.Select(b => b.CountTarget).Sum();
+            var ok = new HashSet<Tuple<double, double, double>>();
+
+            // For every non-zero bin
+            foreach (var bin in FinalBins.Where(b => Math.Abs(b.MassShift) > v))
+                foreach (var bin2 in FinalBins.Where(b => Math.Abs(b.MassShift) > v))
+                    if (bin.CountTarget * bin2.CountTarget >= totalTargetCount)
+                        ok.Add(new Tuple<double, double, double>(bin.MassShift, bin2.MassShift, Math.Min(bin.CountTarget, bin2.CountTarget)));
+
+            foreach (var bin in FinalBins)
+            {
+                var okk = new HashSet<string>();
+                foreach (var hm in ok)
+                    if (Math.Abs(hm.Item1 + hm.Item2 - bin.MassShift) <= v && bin.CountTarget < hm.Item3)
+                        okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
+                bin.combos = string.Join(" or ", okk);
+            }
+        }
+
+        private void IdentifyAA(double v)
+        {
+            foreach (var bin in FinalBins)
+            {
+                var ok = new HashSet<string>();
+                for (char c = 'A'; c <= 'Z'; c++)
+                {
+                    Residue residue;
+                    if (Residue.TryGetResidue(c, out residue))
+                    {
+                        if (Math.Abs(residue.MonoisotopicMass - bin.MassShift) <= v)
+                            ok.Add("Add " + residue.Name);
+                        if (Math.Abs(residue.MonoisotopicMass + bin.MassShift) <= v)
+                            ok.Add("Remove " + residue.Name);
+                        for (char cc = 'A'; cc <= 'Z'; cc++)
+                        {
+                            Residue residueCC;
+                            if (Residue.TryGetResidue(cc, out residueCC))
+                            {
+                                if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - bin.MassShift) <= v)
+                                    ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
+                                if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + bin.MassShift) <= v)
+                                    ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
+                            }
+                        }
+                    }
+                }
+                bin.AA = string.Join(" or ", ok);
+            }
+        }
+
+        private void IdentifyMine(double v)
+        {
+            var myInfos = new List<MyInfo>
+            {
+                new MyInfo(0, "Exact match!"),
+                new MyInfo(-48.128629, "Phosphorylation-Lysine: Probably reverse is the correct match"),
+                new MyInfo(-76.134779, "Phosphorylation-Arginine: Probably reverse is the correct match"),
+                new MyInfo(1.003, "1 MM"),
+                new MyInfo(2.0055, "2 MM"),
+                new MyInfo(3.008, "3 MM"),
+                new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"),
+                new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."),
+                new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"),
+                new MyInfo(-79.966331, "neg Phosphorylation."),
+                new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"),
+                new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"),
+                new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"),
+                new MyInfo(-105.02484, "Methionine loss then acetaldehyde"),
+                new MyInfo(52.911464, "Fe[III]")
+            };
+            foreach (Bin bin in FinalBins)
+            {
+                bin.Mine = "";
+                foreach (MyInfo myInfo in myInfos)
+                    if (Math.Abs(myInfo.MassShift - bin.MassShift) <= v)
+                        bin.Mine = myInfo.infostring;
             }
         }
 

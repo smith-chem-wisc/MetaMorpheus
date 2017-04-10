@@ -1,4 +1,4 @@
-﻿using Spectra;
+﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
 
@@ -33,6 +33,11 @@ namespace EngineLayer
         {
             var diff = ppmTolerance / 1e6 * peptideMonoisotopicMass;
             yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
+        }
+
+        public override string ToString()
+        {
+            return FileNameAddition + " ppmAroundZero " + ppmTolerance;
         }
 
         #endregion Public Methods

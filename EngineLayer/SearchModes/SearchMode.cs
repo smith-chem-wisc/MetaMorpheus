@@ -1,4 +1,4 @@
-﻿using Spectra;
+﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
 
@@ -20,7 +20,7 @@ namespace EngineLayer
         #region Public Properties
 
         public int NumNotches { get; protected set; }
-        public string FileNameAddition { get; private set; }
+        public string FileNameAddition { get; }
 
         #endregion Public Properties
 

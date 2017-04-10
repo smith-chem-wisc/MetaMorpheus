@@ -1,9 +1,9 @@
 ﻿using EngineLayer;
 using EngineLayer.Gptmd;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
-
-using Spectra;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,9 @@ namespace Test
         public static void TestGptmdEngine()
         {
             List<NewPsmWithFdr> allResultingIdentifications = null;
-            var gptmdModifications = new List<MetaMorpheusModification> { new MetaMorpheusModification("name", ModificationType.AminoAcidResidue, 'N', null, '\0', double.NaN, double.NaN, 21.981943, new Chemistry.ChemicalFormula("H-1 Na1")) };
+            ModificationMotif motifN;
+            ModificationMotif.TryGetMotif("N", out motifN);
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
@@ -31,15 +33,17 @@ namespace Test
             Assert.AreEqual(0, res.Mods.Count);
 
             PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
-            var parentProtein = new Protein("NNNNN", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), null, null, null, null, null, 0, false, false);
-            var modPep = new PeptideWithPossibleModifications(1, 5, parentProtein, 0, "ugh");
+            var parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+
+            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
-            List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
+            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
-            
+
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
             allResultingIdentifications.Add(thePsmwithfdr);
@@ -54,20 +58,25 @@ namespace Test
         public static void TestCombos()
         {
             List<NewPsmWithFdr> allIdentifications = null;
-            var gptmdModifications = new List<MetaMorpheusModification> { new MetaMorpheusModification("21", ModificationType.AminoAcidResidue, 'N', null, '\0', double.NaN, double.NaN, 21.981943, new Chemistry.ChemicalFormula("H-1 Na1")),
-                                                                          new MetaMorpheusModification("16", ModificationType.AminoAcidResidue, 'P', null, '\0', double.NaN, double.NaN, 15.994915, new Chemistry.ChemicalFormula("O1")) };
+            ModificationMotif motifN;
+            ModificationMotif.TryGetMotif("N", out motifN);
+            ModificationMotif motifP;
+            ModificationMotif.TryGetMotif("P", out motifP);
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
+                                                                      new ModificationWithMass("16", null, motifP, ModificationSites.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             bool isotopeErrors = false;
+            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             PsmParent newPsm = new TestParentSpectrumMatch(651.297638557 + 21.981943 + 15.994915);
-            var parentProtein = new Protein("NNNPPP", "accession", new Dictionary<int, List<MetaMorpheusModification>>(), null, null, null, null, null, 0, false, false);
-            var modPep = new PeptideWithPossibleModifications(1, 6, parentProtein, 0, "ugh");
+            var parentProtein = new Protein("NNNPPP", "accession", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
+            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
 
-            List<MetaMorpheusModification> variableModifications = new List<MetaMorpheusModification>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).First() };
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
+            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = null;
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
@@ -77,11 +86,9 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(6, res.Mods["accession"].Count);
-            Assert.AreEqual(3, res.Mods["accession"].Where(b=>b.Item2.Equals("21")).Count());
-            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.Equals("16")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("21")).Count());
+            Assert.AreEqual(3, res.Mods["accession"].Where(b => b.Item2.id.Equals("16")).Count());
         }
-
-
 
         #endregion Public Methods
 
@@ -92,7 +99,7 @@ namespace Test
 
             #region Public Constructors
 
-            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, double.NaN, scanPrecursorMass, 0, 0, 0, double.NaN, double.NaN, double.NaN, 1)
+            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, double.NaN, scanPrecursorMass, 0, 0, 0, 0, double.NaN, double.NaN, double.NaN, 1)
             {
             }
 
@@ -100,7 +107,7 @@ namespace Test
 
             #region Public Methods
 
-            public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+            public override CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
             {
                 throw new NotImplementedException();
             }

@@ -33,7 +33,7 @@ function img_inact(imgName)
  }
 //-->
 </SCRIPT>
-<script language="JavaScript" id="_fed_an_js_tag" src="/js/federated-analytics.all.min.js?agency=NIST&subagency=pml&pua=UA-37115410-46&yt=true"></script></head>
+<script async type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagency=NIST&pua=UA-37115410-46&yt=true&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script></head>
 <body bgcolor="#FFFFFF">
 <center><font face="Futura Md BT,Arial,Helvetica,Times" size=+1><b>Atomic Weights and Isotopic Compositions for All Elements</b></font></center>
 <pre>

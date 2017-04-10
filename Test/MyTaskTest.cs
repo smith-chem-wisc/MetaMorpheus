@@ -1,13 +1,13 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
-using Spectra;
+using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -21,80 +21,82 @@ namespace Test
         public static void TestEverythingRunner()
         {
             #region Setup tasks
-            ObservableCollection<ModList> modListObservableCollection = new ObservableCollection<ModList>();
+
             foreach (var modFile in Directory.GetFiles(@"Mods"))
-                modListObservableCollection.Add(new ModList(modFile));
-            
-            CalibrationTask task1 = new CalibrationTask(modListObservableCollection);
-            GptmdTask task2 = new GptmdTask(modListObservableCollection);
+                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
 
-            IEnumerable<SearchMode> allSms = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+            CalibrationTask task1 = new CalibrationTask();
+            GptmdTask task2 = new GptmdTask();
 
-            SearchTask task3 = new SearchTask(modListObservableCollection, allSms);
-            task3.ListOfModListsForSearch.First(b => b.FileName.EndsWith("m.txt")).Localize = true;
-            task3.ListOfModListsForSearch.First(b => b.FileName.EndsWith("glyco.txt")).Localize = true;
+            SearchTask task3 = new SearchTask();
+            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
+            task3.DoParsimony = true;
 
-            SearchTask task4 = new SearchTask(modListObservableCollection, allSms);
-            task4.ListOfModListsForSearch.First(b => b.FileName.EndsWith("m.txt")).Localize = true;
-            task4.ListOfModListsForSearch.First(b => b.FileName.EndsWith("glyco.txt")).Localize = true;
+            SearchTask task4 = new SearchTask();
+            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
+            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
             task4.ClassicSearch = false;
-            List<MyTaskEngine> taskList = new List<MyTaskEngine> { task1, task2, task3, task4 };
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
+                new Tuple<string, MetaMorpheusTask>("task1", task1),
+                new Tuple<string, MetaMorpheusTask>("task2", task2),
+                new Tuple<string, MetaMorpheusTask>("task3", task3),
+                new Tuple<string, MetaMorpheusTask>("task4", task4),};
 
             #endregion Setup tasks
 
-            List<MetaMorpheusModification> variableModifications = task1.ListOfModListsForCalibration.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            //List<MorpheusModification> fixedModifications = task1.ListOfModListsForCalibration.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            //List<MorpheusModification> localizeableModifications = task1.ListOfModListsForCalibration.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             // Generate data for files
-            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new Dictionary<int, List<MetaMorpheusModification>>(), new int[0], new int[0], new string[0], null, null, 0, false, false);
+            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
 
-            var digestedList = ParentProtein.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
+            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
-            var setList1 = modPep1.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).ToList();
+            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
 
             Assert.AreEqual(2, setList1.Count);
 
             PeptideWithSetModifications pepWithSetMods1 = setList1[0];
 
             PeptideWithPossibleModifications modPep2 = digestedList[1];
-            var setList2 = modPep2.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).ToList();
+            var setList2 = modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
 
             Assert.AreEqual(1, setList2.Count);
 
             PeptideWithSetModifications pepWithSetMods2 = setList2[0];
 
-            var dictHere = new Dictionary<int, List<MetaMorpheusModification>>();
-            dictHere.Add(3, new List<MetaMorpheusModification> { new MetaMorpheusModification(null, ModificationType.AminoAcidResidue, 'E', null, '\0', double.NaN, double.NaN, double.NaN, new Chemistry.ChemicalFormula("H-1 Na1")) });
-            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", dictHere, new int[0], new int[0], new string[0], null, null, 0, false, false);
-            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, InitiatorMethionineBehavior.Retain).ToList();
+            var dictHere = new Dictionary<int, List<Modification>>();
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("E", out motif);
+            dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
+            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, null);
+            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
-            var setList3 = modPep3.GetPeptideWithSetModifications(variableModifications, 4096, 3, new List<MetaMorpheusModification>()).ToList();
+            var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
             Assert.AreEqual(4, setList3.Count);
-            Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
+            //Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
 
-            IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
 
-            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new Dictionary<int, List<MetaMorpheusModification>>(), new int[] { 4 }, new int[] { 8 }, new string[] { "chain" }, null, null, 0, false, false);
+            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[] { 4 }, new int?[] { 8 }, new string[] { "chain" }, "name2", "fullname2", false, false, new List<DatabaseReference>());
 
             #region Write the files
 
             string mzmlName = @"ok.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyIndexedMZmlwithCalibratedSpectra(myMsDataFile, mzmlName);
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string xmlName = "okk.xml";
-            GptmdTask.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, string, string>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
             #endregion Write the files
 
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
-            var results = (EverythingRunnerResults)engine.Run();
-
-            Assert.NotNull(results);
+            engine.Run();
         }
 
         #endregion Public Methods

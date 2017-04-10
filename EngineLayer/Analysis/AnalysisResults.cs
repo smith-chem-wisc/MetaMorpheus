@@ -1,58 +1,72 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace EngineLayer.Analysis
 {
-    public class AnalysisResults : MyResults
+    public class AnalysisResults : MetaMorpheusEngineResults
     {
+
+        #region Internal Fields
+
+        internal Dictionary<string, int>[] allModsOnPeptides;
+        internal Dictionary<string, int>[] allModsSeen;
+
+        #endregion Internal Fields
 
         #region Public Constructors
 
-        public AnalysisResults(AnalysisEngine s, List<NewPsmWithFdr>[] allResultingIdentifications, List<ProteinGroup>[] proteinGroups) : base(s)
+        public AnalysisResults(AnalysisEngine s) : base(s)
         {
-            this.AllResultingIdentifications = allResultingIdentifications;
-            this.ProteinGroups = proteinGroups;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public List<NewPsmWithFdr>[] AllResultingIdentifications { get; private set; }
-        public List<ProteinGroup>[] ProteinGroups { get; private set; }
+        public List<NewPsmWithFdr>[] AllResultingIdentifications { get; set; }
+        public List<ProteinGroup>[] ProteinGroups { get; set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
+
+            if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
             {
-                var sb = new StringBuilder();
-                sb.Append("\t\tAll PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.qValue <= 0.01))));
-
-                var check = ProteinGroups.Where(s => s != null);
-                if (check.Any())
+                var numProteinsList = new List<int>();
+                for (int i = 0; i < ProteinGroups.Length; i++)
                 {
-                    var numProteinsList = new List<int>(); 
-                    for(int i = 0; i < ProteinGroups.Length; i++)
+                    if (ProteinGroups[i] == null)
+                        numProteinsList.Add(0);
+                    else
                     {
-                        if (ProteinGroups[i] == null)
-                            numProteinsList.Add(0);
-                        else
-                            numProteinsList.Add(ProteinGroups[i].Count(c => c.QValue <= 0.01));
+                        int j = ProteinGroups[i].FindIndex(c => (c.QValue >= 0.01));
+                        numProteinsList.Add(j);
                     }
-
-                    sb.Append("\n\t\tAll proteins within 1% FDR: " + string.Join(", ", numProteinsList));
                 }
 
-                return sb.ToString();
+                sb.AppendLine("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));
             }
+
+            for (int i = 0; i < allModsOnPeptides.Length; i++)
+            {
+                sb.AppendLine("Search mode " + i + " Mods seen:");
+                sb.AppendLine(string.Join(Environment.NewLine, allModsSeen[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                sb.AppendLine("Search mode " + i + " Mods in database:");
+                sb.AppendLine(string.Join(Environment.NewLine, allModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+            }
+
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

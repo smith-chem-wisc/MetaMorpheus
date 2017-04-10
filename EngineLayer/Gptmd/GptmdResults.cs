@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer.Gptmd
 {
-    public class GptmdResults : MyResults
+    public class GptmdResults : MetaMorpheusEngineResults
     {
 
         #region Private Fields
@@ -15,7 +17,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdResults(MyEngine s, Dictionary<string, HashSet<Tuple<int, string, string>>> mods, int modsAdded) : base(s)
+        public GptmdResults(MetaMorpheusEngine s, Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> mods, int modsAdded) : base(s)
         {
             this.Mods = mods;
             this.modsAdded = modsAdded;
@@ -25,24 +27,24 @@ namespace EngineLayer.Gptmd
 
         #region Public Properties
 
-        public Dictionary<string, HashSet<Tuple<int, string, string>>> Mods { get; private set; }
+        public Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> Mods { get; private set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("\t\tModifications added = " + modsAdded);
-                sb.Append("\t\tProteins expanded = " + Mods.Count);
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.AppendLine("Modifications added = " + modsAdded);
+            sb.AppendLine("Proteins expanded = " + Mods.Count);
+            sb.AppendLine("Mods added types and counts:");
+            sb.Append(string.Join(Environment.NewLine, Mods.SelectMany(b => b.Value).GroupBy(b => b.Item2).OrderBy(b => -b.Count()).Select(b => "\t" + b.Key.id + "\t" + b.Count())));
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

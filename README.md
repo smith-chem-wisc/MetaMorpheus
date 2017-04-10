@@ -1,51 +1,69 @@
+# MetaMorpheus
+
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master) 
-[![Coverage Status](https://coveralls.io/repos/github/smith-chem-wisc/MetaMorpheus/badge.svg?branch=master)]
-(https://coveralls.io/github/smith-chem-wisc/MetaMorpheus?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/smith-chem-wisc/MetaMorpheus/badge.svg?branch=master)](https://coveralls.io/github/smith-chem-wisc/MetaMorpheus?branch=master)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/11282/badge.svg)](https://scan.coverity.com/projects/metamorpheus)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus)
 
-Releases are here: [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
+Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases).
 
-# MetaMorpheus
-A bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery. This program integrates
-features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTMD](https://github.com/smith-chem-wisc/gptmd) in a single tool.
+MetaMorpheus is a bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery capability.
+This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
 
+Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) for software details!
 
-## Expanded Functionality
-MetaMorpheus adds two major components to the original Morpheus functionality
+## Major Features
 
-* Calibration: A calibration tool that uses search results of identified peptides to adjust the mz values of all peaks in the spectra. The calibrated peaks have a more accurate value, and improves the quality of any subsequent search or analysis of the data.
+* Database Search: A robust dictionary search algorithm that identifies peptides by their fragmentation spectra.
 
-* GPTM-D: We incorporated the posttranslational modification (PTM) discovery framework in MetaMorpheus, which expands the scope of peptide identifications to include both known and unknown PTMs. 
+* Calibration: A calibration tool that uses peptides identified by a database search to calibrate the mz values of all peaks in the spectra. This improves the quality of any subsequent search or analysis of the data.
 
-## Minor differences
+* G-PTM-D: Post-translational modification (PTM) discovery framework, which expands the scope of peptide identifications to include both known and unknown PTMs. 
 
-### Custom Modifications
-In addition to the small set of UniProt modifications, MetaMorpheus allows using an expanded set of arbitrary user-defined modifications throughout.
+* Quantification: Ultrafast quantification of peptide abundances is enabled. Values reported are from the intensity of the most intense and most abundant isotopic form.
 
-### Chain and Signal peptides
-Some proteins are present in biological samples as subsequences of the complete sequence specified in the database. Since they are common, and Uniprot lists these protein fragments, we expanded the search functionality to look for those as well.
+* TMT: TMT-tagged peptides may be searched and identified by selecting the tmt.txt modification and setting it to fixed. Reporter ion abundances are not yet reported. GPTM-D discovery may be run with TMT-tagged peptides.
 
-### Histogram Peak Analysis
-The modification discovery component is enhanced by the automated peak analysis heuristic. Every database search result is analyzed, and for every freqeuntly occuring mass shift (determined by a peak-finding algorithm), an analysis is conducted. The results of the analysis are written in a separate file, and they include the total number of unique peptides associated with the mass shift, the fraction of decoys, mass match with any known entry in the unimod or uniport database, mass match to an amino acid addition/removal combination, mass match to a combination of higher frequency peaks, fraction of localizable targets, localization residues and/or termini, and presence of any modifications in the matched peptides. All of this data can then be used to determine the nature of the peak, and the characteristics of the corresponding modificaiton. 
+## Example Usage (GUI)
 
-###General Requirements
-The following files must be present in the folder with the executable. If not, they are automatically downloaded (to update a file to a newer version, delete it, and the application will download a new version). This is the only network usage by the application. 
+1. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic).
 
-* uniprot.xml: A UniProt reference database in .xml format
+2. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 
-  [http://www.uniprot.org](http://www.uniprot.org)
+3. For all following tasks, have ptmlist.txt selected for localization, f.txt for fixed, and v.txt for variable. Add, in order: 
+   * Combined 5 and 10 ppm precursor tolerance Search Task 
+   * Calibration Task
+   * Combined 5 and 10 ppm precursor tolerance Search Task
+   * G-PTM-D Task with m.txt, metals.txt, pt.txt selected in the G-PTM-D column to add these plausible modifications to the augmented database
+   * 5 ppm precursor tolerance Search Task with m.txt, metals.txt, pt.txt and ptmlist.txt selected for localization
 
-* ptmlist.txt: A PTM library
- 
-  [http://www.uniprot.org/docs/ptmlist.txt](http://www.uniprot.org/docs/ptmlist.txt) 
+4. Click Run All Tasks!
 
-* for thermo .RAW files: [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader)
+5. As the third task completes, open the results.txt files for the first and third tasks. Observe the increase in the number of confident PSMs identified due to calibration. 
 
-###System Requirements and Usage
-- 8 GB of RAM is recommended
+6. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
 
-###References
+## Example Usage (Command Line)
+
+1. Download the files at [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/v/MetaMorpheusPublic) to the folder with MetaMorpheusCommandLine.exe executable
+
+2. Run the command 
+
+```
+MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExample.toml Task3SearchExample.toml Task4GptmdExample.toml Task5SearchExample.toml -s 04-30-13_CAST_Frac4_6uL.raw 04-30-13_CAST_Frac5_4uL.raw -d uniprot-mouse-reviewed-3-9-2017.xml.gz
+```
+
+3. As the third task completes, open the results.txt files for the first and third tasks. Observe the increase in the number of confident PSMs identified due to calibration. 
+
+4. As the fifth task completes, open the results.txt files for the third and fifth tasks. Observe the increase in the number of confident PSMs identified due to an addition of new plausible PTMs.
+
+## System Requirements
+
+* 8 GB of RAM is recommended
+
+* For thermo .RAW files: Need to have [Thermo MSFileReader 3.1 SP2](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed.
+
+## References
 
 * [Global Post-translational Modification Discovery--J. Proteome Res., 2016 Just Accepted](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
 

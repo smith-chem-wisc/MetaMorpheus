@@ -24,17 +24,17 @@ namespace Test
         [OneTimeSetUp]
         public static void Setup()
         {
-            Console.WriteLine("Setting up tests...");
-            Console.WriteLine("Environment.CurrentDirectory is " + Environment.CurrentDirectory);
+            //Console.WriteLine("Setting up tests...");
+            //Console.WriteLine("Environment.CurrentDirectory is " + Environment.CurrentDirectory);
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
-            Console.WriteLine("Now Environment.CurrentDirectory is " + Environment.CurrentDirectory);
+            //Console.WriteLine("Now Environment.CurrentDirectory is " + Environment.CurrentDirectory);
             Loaders.LoadElements(Path.Combine(TestContext.CurrentContext.TestDirectory, elementsLocation));
 
             //MyEngine.unimodDeserialized = Loaders.LoadUnimod(Path.Combine(TestContext.CurrentContext.TestDirectory, unimodLocation));
             //MyEngine.uniprotDeseralized = Loaders.LoadUniprot(Path.Combine(TestContext.CurrentContext.TestDirectory, uniprotLocation));
 
-            MyEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
-            MyEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
+            MetaMorpheusEngine.OutLabelStatusHandler += MyEngine_outLabelStatusHandler;
+            MetaMorpheusEngine.FinishedSingleEngineHandler += MyEngine_FinishedSingleEngineHandler;
         }
 
         #endregion Public Methods
@@ -43,12 +43,12 @@ namespace Test
 
         private static void MyEngine_FinishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
         {
-            Console.WriteLine(e.ToString());
+            //Console.WriteLine(e.ToString());
         }
 
         private static void MyEngine_outLabelStatusHandler(object sender, StringEventArgs e)
         {
-            Console.WriteLine(e.s);
+            // Console.WriteLine(e.s);
         }
 
         #endregion Private Methods

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,18 +13,18 @@ namespace EngineLayer
 
         public readonly byte[] BaseSequence;
         public readonly ushort varMod1Type;
-        public readonly byte varMod1Loc;
+        public readonly ushort varMod1Loc;
         public readonly ushort varMod2Type;
-        public readonly byte varMod2Loc;
+        public readonly ushort varMod2Loc;
         public readonly ushort varMod3Type;
-        public readonly byte varMod3Loc;
+        public readonly ushort varMod3Loc;
         public float MonoisotopicMassIncludingFixedMods;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public CompactPeptide(PeptideWithSetModifications yyy, List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             varMod1Type = 0;
             varMod1Loc = 0;
@@ -33,7 +34,7 @@ namespace EngineLayer
             varMod3Loc = 0;
             foreach (var kvpp in yyy.allModsOneIsNterminus)
             {
-                int twoBasedLoc = kvpp.Key;
+                int oneBasedLoc = kvpp.Key;
                 var mod = kvpp.Value;
                 // Variable
                 if (varMod1Type == 0)
@@ -42,15 +43,12 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod1Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (byte)twoBasedLoc;
+                        varMod1Loc = (ushort)oneBasedLoc;
                     }
-                    else if (fixedModifications.Contains(mod))
+                    else if (!fixedModifications.Contains(mod))
                     {
-                    }
-                    else
-                    {
-                        varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (byte)twoBasedLoc;
+                        varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
+                        varMod1Loc = (ushort)oneBasedLoc;
                     }
                 }
                 else if (varMod2Type == 0)
@@ -59,15 +57,12 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod2Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (byte)twoBasedLoc;
+                        varMod2Loc = (ushort)oneBasedLoc;
                     }
-                    else if (fixedModifications.Contains(mod))
+                    else if (!fixedModifications.Contains(mod))
                     {
-                    }
-                    else
-                    {
-                        varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (byte)twoBasedLoc;
+                        varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
+                        varMod2Loc = (ushort)oneBasedLoc;
                     }
                 }
                 else
@@ -76,15 +71,12 @@ namespace EngineLayer
                     if (variableModifications.Contains(mod))
                     {
                         varMod3Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (byte)twoBasedLoc;
+                        varMod3Loc = (ushort)oneBasedLoc;
                     }
-                    else if (fixedModifications.Contains(mod))
+                    else if (!fixedModifications.Contains(mod))
                     {
-                    }
-                    else
-                    {
-                        varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (byte)twoBasedLoc;
+                        varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
+                        varMod3Loc = (ushort)oneBasedLoc;
                     }
                 }
             }

@@ -1,54 +1,57 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using Spectra;
+using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
 {
-    public class ModernSearchEngine : MyEngine
+    public class ModernSearchEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
-
-        private const double tolForModificationMassDiffMatch = 0.003;
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 
         private readonly List<int>[] fragmentIndex;
 
-        private readonly double fragmentToleranceInDaltons;
+        private readonly Tolerance fragmentTolerance;
 
         private readonly float[] keys;
 
-        private readonly IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile;
+        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile;
 
         private readonly List<CompactPeptide> peptideIndex;
 
         private readonly List<SearchMode> searchModes;
+        private readonly string fileToSearch;
+        private readonly List<string> nestedIds;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, double fragmentToleranceInDaltons, List<SearchMode> searchModes) : base(2)
+        public ModernSearchEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds)
         {
             this.myMSDataFile = myMSDataFile;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
-            this.fragmentToleranceInDaltons = fragmentToleranceInDaltons;
+            this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
+            this.fileToSearch = fileToSearch;
+            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             var totalSpectra = myMSDataFile.NumSpectra;
 
@@ -56,7 +59,7 @@ namespace EngineLayer.ModernSearch
             for (int i = 0; i < searchModes.Count; i++)
                 newPsms[i] = new List<PsmModern>(new PsmModern[totalSpectra]);
 
-            LocalMS2Scan[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+            LocalMS2Scan[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;
@@ -73,7 +76,7 @@ namespace EngineLayer.ModernSearch
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var thisScan = listOfSortedms2Scans[i];
-                    var thisScanprecursorMass = thisScan.PrecursorMass;
+                    var thisScanprecursorMass = thisScan.MonoisotopicPrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
                     CalculatePeptideScores(thisScan.TheScan, fullPeptideScores);
 
@@ -134,7 +137,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, myMSDataFile.Name, thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.MonoisotopicPrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j], bestNotches[j]);
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, Path.GetFileNameWithoutExtension(fileToSearch), thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.OneBasedPrecursorScanNumber, thisScan.PrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j], bestNotches[j]);
                         }
                     }
                 }
@@ -144,7 +147,7 @@ namespace EngineLayer.ModernSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }
@@ -180,12 +183,12 @@ namespace EngineLayer.ModernSearch
             return false;
         }
 
-        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<MzPeak>> spectrum, double[] peptideScores)
+        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
         {
             foreach (var experimentalPeak in spectrum.MassSpectrum)
             {
                 var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.ProtonMass;
+                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
@@ -198,7 +201,7 @@ namespace EngineLayer.ModernSearch
                     while (downIpos >= 0)
                     {
                         closestPeak = keys[downIpos];
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[downIpos])
                                 peptideScores[heh] += theAdd;
@@ -215,7 +218,7 @@ namespace EngineLayer.ModernSearch
                     while (upIpos < keys.Length)
                     {
                         closestPeak = keys[upIpos];
-                        if (Math.Abs(closestPeak - experimentalPeakInDaltons) < fragmentToleranceInDaltons)
+                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[upIpos])
                                 peptideScores[heh] += theAdd;

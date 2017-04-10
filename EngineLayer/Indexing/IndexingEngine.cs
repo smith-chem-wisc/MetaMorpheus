@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.Indexing
 {
-    public class IndexingEngine : MyEngine
+    public class IndexingEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
@@ -15,23 +16,26 @@ namespace EngineLayer.Indexing
         private const int max_mods_for_peptide = 3;
         private const int decimalDigitsForFragmentMassRounding = 3;
         private readonly int maximumMissedCleavages;
+        private readonly int? minPeptideLength;
+        private readonly int? maxPeptideLength;
         private readonly int maximumVariableModificationIsoforms;
         private readonly List<Protein> proteinList;
 
         private readonly Protease protease;
 
-        private readonly List<MetaMorpheusModification> fixedModifications;
-        private readonly List<MetaMorpheusModification> variableModifications;
-        private readonly List<MetaMorpheusModification> localizeableModifications;
+        private readonly List<ModificationWithMass> fixedModifications;
+        private readonly List<ModificationWithMass> variableModifications;
+        private readonly List<ModificationWithMass> localizeableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
+        private readonly List<string> nestedIds;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> fixedModifications, List<MetaMorpheusModification> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int maximumVariableModificationIsoforms, List<ProductType> lp) : base(2)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -40,8 +44,11 @@ namespace EngineLayer.Indexing
             this.protease = protease;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.maximumMissedCleavages = maximumMissedCleavages;
+            this.minPeptideLength = minPeptideLength;
+            this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
+            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -59,6 +66,8 @@ namespace EngineLayer.Indexing
             sb.AppendLine("protease: " + protease);
             sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + maximumMissedCleavages);
+            sb.AppendLine("minPeptideLength: " + minPeptideLength);
+            sb.AppendLine("maxPeptideLength: " + maxPeptideLength);
             sb.AppendLine("maximumVariableModificationIsoforms: " + maximumVariableModificationIsoforms);
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
@@ -68,7 +77,7 @@ namespace EngineLayer.Indexing
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MetaMorpheusEngineResults RunSpecific()
         {
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
@@ -83,13 +92,13 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, initiatorMethionineBehavior).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length == 1 || peptide.Length > byte.MaxValue - 2)
+                        if (peptide.Length <= 1)
                             continue;
 
-                        if (peptide.OneBasedPossibleLocalizedModifications.Count == 0)
+                        if (peptide.NumLocMods == 0)
                         {
                             lock (level3_observed)
                             {
@@ -101,10 +110,10 @@ namespace EngineLayer.Indexing
                             }
                         }
 
-                        var ListOfModifiedPeptides = peptide.GetPeptideWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide, fixedModifications).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.OneBasedPossibleLocalizedModifications.Count > 0)
+                            if (peptide.NumLocMods > 0)
                             {
                                 lock (level4_observed)
                                 {
@@ -125,7 +134,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.FastSortedProductMasses(lp))
+                            foreach (var huhu in yyy.SortedProductMasses(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {
@@ -158,7 +167,7 @@ namespace EngineLayer.Indexing
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop"));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In indexing loop", nestedIds));
                         old_progress = new_progress;
                     }
                 }

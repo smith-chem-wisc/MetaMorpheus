@@ -1,7 +1,6 @@
-﻿using Spectra;
+﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace EngineLayer
@@ -11,23 +10,18 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private readonly List<double> acceptableSortedMassShifts;
+        private readonly double[] acceptableSortedMassShifts;
         private readonly Tolerance tol;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public DotSearchMode(IEnumerable<double> acceptableMassShifts, Tolerance tol) : this(tol.Value.ToString("F3", CultureInfo.InvariantCulture) + "around" + string.Join("-", acceptableMassShifts.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))), acceptableMassShifts, tol)
-        {
-        }
-
         public DotSearchMode(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
-            HashSet<double> hs = new HashSet<double>(acceptableMassShifts.Select(b => Math.Round(b, 5)));
-            this.acceptableSortedMassShifts = hs.OrderBy(b => b).ToList();
+            this.acceptableSortedMassShifts = acceptableMassShifts.OrderBy(b => b).ToArray();
             this.tol = tol;
-            this.NumNotches = acceptableSortedMassShifts.Count;
+            this.NumNotches = acceptableSortedMassShifts.Length;
         }
 
         #endregion Public Constructors
@@ -36,18 +30,30 @@ namespace EngineLayer
 
         public override int Accepts(double scanPrecursorMass, double peptideMass)
         {
-            for (int j = 0; j < acceptableSortedMassShifts.Count; j++)
-                if (tol.Within(scanPrecursorMass, acceptableSortedMassShifts[j] + peptideMass))
-                    return j;
+            // index of the first element that is larger than or equal to value
+            int index = Array.BinarySearch(acceptableSortedMassShifts, scanPrecursorMass - peptideMass);
+            if (index < 0)
+                index = ~index;
+
+            if (index < acceptableSortedMassShifts.Length && tol.Within(scanPrecursorMass, acceptableSortedMassShifts[index] + peptideMass))
+                return index;
+
+            if (index > 0 && tol.Within(scanPrecursorMass, acceptableSortedMassShifts[index - 1] + peptideMass))
+                return index - 1;
             return -1;
         }
 
         public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            for (int j = 0; j < acceptableSortedMassShifts.Count; j++)
+            for (int j = 0; j < acceptableSortedMassShifts.Length; j++)
             {
                 yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass + acceptableSortedMassShifts[j], tol), j);
             }
+        }
+
+        public override string ToString()
+        {
+            return FileNameAddition + " dot " + tol.ToString() + " " + string.Join(",", acceptableSortedMassShifts);
         }
 
         #endregion Public Methods

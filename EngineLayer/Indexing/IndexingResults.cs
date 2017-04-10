@@ -3,8 +3,9 @@ using System.Text;
 
 namespace EngineLayer.Indexing
 {
-    public class IndexingResults : MyResults
+    public class IndexingResults : MetaMorpheusEngineResults
     {
+
         #region Public Constructors
 
         public IndexingResults(List<CompactPeptide> peptideIndex, Dictionary<float, List<int>> fragmentIndexDict, IndexingEngine indexParams) : base(indexParams)
@@ -22,19 +23,18 @@ namespace EngineLayer.Indexing
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
-                sb.Append("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.Append(base.ToString());
+            sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
+            sb.AppendLine("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
+
     }
 }

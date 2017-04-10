@@ -5,26 +5,19 @@ using EngineLayer.Gptmd;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using Spectra;
+using MzLibUtil;
+using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
-    public class GptmdTask : MyTaskEngine
+    public class GptmdTask : MetaMorpheusTask
     {
-
-        #region Public Fields
-
-        public List<ModListForGPTMDTask> listOfModListsForGPTMD;
-
-        #endregion Public Fields
 
         #region Private Fields
 
@@ -34,250 +27,244 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public GptmdTask(ObservableCollection<ModList> modList)
+        public GptmdTask() : base(MyTask.Gptmd)
         {
             // Set default values here:
             MaxMissedCleavages = 2;
-            Protease = ProteaseDictionary.Instance["trypsin"];
+            MinPeptideLength = null;
+            MaxPeptideLength = null;
+            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 2);
             BIons = true;
             YIons = true;
-            listOfModListsForGPTMD = new List<ModListForGPTMDTask>();
-            foreach (var uu in modList)
-                listOfModListsForGPTMD.Add(new ModListForGPTMDTask(uu));
+            CIons = false;
+            ZdotIons = false;
 
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("f.txt")).Fixed = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("v.txt")).Variable = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("ptmlist.txt")).Localize = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("m.txt")).Gptmd = true;
-            listOfModListsForGPTMD.First(b => b.FileName.EndsWith("glyco.txt")).Gptmd = true;
+            LocalizeAll = true;
 
-            TaskType = MyTask.Gptmd;
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("metals")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+
             IsotopeErrors = false;
-            MaxNumPeaksPerScan = 400;
+
+            DatabaseReferencesToKeep = new string[] { "" };
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
+        public static List<string> AllModLists { get; private set; }
+
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
+
+        public int MaxMissedCleavages { get; set; }
+
+        public int? MinPeptideLength { get; set; }
+
+        public int? MaxPeptideLength { get; set; }
+
+        public int MaxModificationIsoforms { get; set; }
+
+        public Protease Protease { get; set; }
+
+        public bool BIons { get; set; }
+
+        public bool YIons { get; set; }
+
+        public bool ZdotIons { get; set; }
+
+        public bool CIons { get; set; }
+        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
+        public List<Tuple<string, string>> ListOfModsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
+        public string[] DatabaseReferencesToKeep { get; set; }
         public bool IsotopeErrors { get; set; }
+        public bool LocalizeAll { get; set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
-
-        protected override string SpecificTaskInfo
-        {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("isotopeErrors: " + IsotopeErrors);
-                sb.AppendLine("Fixed mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Fixed).Select(b => b.FileName)));
-                sb.AppendLine("Variable mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Variable).Select(b => b.FileName)));
-                sb.AppendLine("Localized mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Localize).Select(b => b.FileName)));
-                sb.AppendLine("GPTMD mod lists: " + string.Join(",", listOfModListsForGPTMD.Where(b => b.Gptmd).Select(b => b.FileName)));
-                sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-                sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
-                return sb.ToString();
-            }
-        }
-
-        #endregion Protected Properties
-
         #region Public Methods
 
-        public static void WriteXmlDatabase(Dictionary<string, HashSet<Tuple<int, string, string>>> Mods, List<Protein> proteinList, string outputFileName)
+        public override string ToString()
         {
-            var xmlWriterSettings = new XmlWriterSettings
-            {
-                Indent = true,
-                IndentChars = "  "
-            };
-
-            using (XmlWriter writer = XmlWriter.Create(outputFileName, xmlWriterSettings))
-            {
-                writer.WriteStartDocument();
-                writer.WriteStartElement("uniprot");
-
-                foreach (Protein protein in proteinList)
-                {
-                    writer.WriteStartElement("entry");
-                    writer.WriteStartElement("accession");
-                    writer.WriteString(protein.Accession);
-                    writer.WriteEndElement();
-                    writer.WriteStartElement("name");
-                    writer.WriteString(protein.Name);
-                    writer.WriteEndElement();
-
-                    writer.WriteStartElement("protein");
-                    writer.WriteStartElement("recommendedName");
-                    writer.WriteStartElement("fullName");
-                    writer.WriteString(protein.FullName);
-                    writer.WriteEndElement();
-                    writer.WriteEndElement();
-                    writer.WriteEndElement();
-
-                    for (int i = 0; i < protein.BigPeptideTypes.Count(); i++)
-                    {
-                        writer.WriteStartElement("feature");
-                        writer.WriteAttributeString("type", protein.BigPeptideTypes[i]);
-                        writer.WriteStartElement("location");
-                        writer.WriteStartElement("begin");
-                        writer.WriteAttributeString("position", protein.OneBasedBeginPositions[i].ToString(CultureInfo.InvariantCulture));
-                        writer.WriteEndElement();
-                        writer.WriteStartElement("end");
-                        writer.WriteAttributeString("position", protein.OneBasedEndPositions[i].ToString(CultureInfo.InvariantCulture));
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                    }
-
-                    IEnumerable<Tuple<int, string, string>> SortedMods = protein.OneBasedPossibleLocalizedModifications.SelectMany(
-                        b => b.Value.Select(c => new Tuple<int, string, string>(b.Key, c.NameInXml, c.Database))
-                        );
-                    IEnumerable<Tuple<int, string, string>> FinalSortedMods;
-                    if (Mods.ContainsKey(protein.Accession))
-                        FinalSortedMods = SortedMods.Union(Mods[protein.Accession]).OrderBy(b => b.Item1);
-                    else
-                        FinalSortedMods = SortedMods.OrderBy(b => b.Item1);
-                    foreach (var ye in FinalSortedMods)
-                    {
-                        writer.WriteStartElement("feature");
-                        writer.WriteAttributeString("type", "modified residue");
-                        writer.WriteAttributeString("description", ye.Item2);
-                        writer.WriteStartElement("db");
-                        writer.WriteString(ye.Item3);
-                        writer.WriteEndElement();
-                        writer.WriteStartElement("location");
-                        writer.WriteStartElement("position");
-                        writer.WriteAttributeString("position", ye.Item1.ToString(CultureInfo.InvariantCulture));
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                    }
-
-                    writer.WriteStartElement("sequence");
-                    writer.WriteAttributeString("length", protein.Length.ToString(CultureInfo.InvariantCulture));
-                    writer.WriteString(protein.BaseSequence);
-                    writer.WriteEndElement();
-
-                    writer.WriteEndElement();
-                }
-
-                writer.WriteEndElement();
-                writer.WriteEndDocument();
-            }
+            var sb = new StringBuilder();
+            sb.AppendLine(TaskType.ToString());
+            sb.AppendLine("The initiator methionine behavior is set to "
+                + InitiatorMethionineBehavior
+                + " and the maximum number of allowed missed cleavages is "
+                + MaxMissedCleavages);
+            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
+            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
+            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
+            sb.AppendLine("protease: " + Protease);
+            sb.AppendLine("bIons: " + BIons);
+            sb.AppendLine("yIons: " + YIons);
+            sb.AppendLine("cIons: " + CIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
+            sb.AppendLine("isotopeErrors: " + IsotopeErrors);
+            //sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
+            //sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
+            //sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
+            //sb.AppendLine("GPTMD mod lists: " + string.Join(",", ListOfModListsGptmd));
+            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
+            sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
+            return sb.ToString();
         }
 
         #endregion Public Methods
 
         #region Protected Methods
 
-        protected override MyResults RunSpecific()
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawFileList, string taskId)
         {
-            MyTaskResults myGPTMDresults = new MyGPTMDTaskResults(this);
-            myGPTMDresults.newDatabases = new List<DbForTask>();
-
-            var currentRawFileList = rawDataFilenameList;
-
+            myTaskResults = new MyTaskResults(this)
+            {
+                newDatabases = new List<DbForTask>()
+            };
             var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-            Status("Loading modifications...");
-            List<MetaMorpheusModification> variableModifications = listOfModListsForGPTMD.Where(b => b.Variable).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> fixedModifications = listOfModListsForGPTMD.Where(b => b.Fixed).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> localizeableModifications = listOfModListsForGPTMD.Where(b => b.Localize).SelectMany(b => b.Mods).ToList();
-            List<MetaMorpheusModification> gptmdModifications = listOfModListsForGPTMD.Where(b => b.Gptmd).SelectMany(b => b.Mods).ToList();
+            Status("Loading modifications...", new List<string> { taskId });
 
-            Dictionary<string, List<MetaMorpheusModification>> identifiedModsInXML;
-            HashSet<string> unidentifiedModStrings;
-            MatchXMLmodsToKnownMods(dbFilenameList, localizeableModifications, out identifiedModsInXML, out unidentifiedModStrings);
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
-            IEnumerable<Tuple<double, double>> combos = LoadCombos().ToList();
+            List<ModificationWithMass> localizeableModifications;
+            if (LocalizeAll)
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            else
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
-            // Do not remove the zero!!! It's needed here
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.PrecursorMassShift).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).OrderBy(b => b), PrecursorMassTolerance);
+            List<ModificationWithMass> gptmdModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsGptmd.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
+
+            // Daltons around zero = 3.5
+            SearchMode searchMode;
+            if (IsotopeErrors)
+                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(gptmdModifications.Select(b => b.monoisotopicMass + 1.003)).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+            else
+                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+
             var searchModes = new List<SearchMode> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
             allPsms[0] = new List<PsmParent>();
 
+            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             List<ProductType> lp = new List<ProductType>();
             if (BIons)
                 lp.Add(ProductType.B);
             if (YIons)
                 lp.Add(ProductType.Y);
+            if (CIons)
+                lp.Add(ProductType.C);
+            if (ZdotIons)
+                lp.Add(ProductType.Zdot);
 
-            Status("Loading proteins...");
-            var proteinList = dbFilenameList.SelectMany(b => GetProteins(true, identifiedModsInXML, b)).ToList();
-            AnalysisEngine analysisEngine;
+            Status("Loading proteins...", new List<string> { taskId });
+            Dictionary<string, Modification> um = null;
+            var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, DatabaseReferencesToKeep, out um)).ToList();
+
             AnalysisResults analysisResults = null;
-            for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+            var numRawFiles = currentRawFileList.Count;
+
+            Status("Running G-PTM-D...", new List<string> { taskId });
+
+            for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                Status("Loading spectra file...");
-                IMsDataFile<IMzSpectrum<MzPeak>> myMsDataFile;
+
+                NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Searches", origDataFile });
+                StartingDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
+
+                Status("Loading spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = new Mzml(origDataFile, MaxNumPeaksPerScan);
+                    myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
-                    myMsDataFile = new ThermoRawFile(origDataFile, MaxNumPeaksPerScan);
-                Status("Opening spectra file...");
-                myMsDataFile.Open();
+                    myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
+                Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
-                var listOfSortedms2Scans = GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray();
-
-                var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MaxModificationIsoforms, myMsDataFile.Name, lp);
-
-                var searchResults = (ClassicSearchResults)searchEngine.Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisEngine = new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToMzIdentmL(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
-                analysisResults = (AnalysisResults)analysisEngine.Run();
-                //output(analysisResults.ToString());
-            }
+                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsms(h, currentXmlDbFilenameList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss), null, false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, false, 0, 0).Run();
 
-            if (currentRawFileList.Count > 1)
+                FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
+            }
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
+
+            if (numRawFiles > 1)
             {
-                analysisEngine = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToTsv(h, OutputFolder, "aggregate" + s), (List<NewPsmWithFdr> h, string s) => WritePsmsToMzIdentmL(h, OutputFolder, "aggregate" + s), null, false, MaxMissedCleavages, MaxModificationIsoforms, true, lp, binTolInDaltons);
-                analysisResults = (AnalysisResults)analysisEngine.Run();
-                //output(analysisResults.ToString());
+                analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, localizeableModifications, Protease, searchModes, null, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + "_" + s, new List<string> { taskId }), (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsms(h, currentXmlDbFilenameList, OutputFolder, "aggregate" + "_" + s, ss), null, false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, new List<string> { taskId }, false, 0, 0).Run();
             }
 
-            var gptmdEngine = new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance);
-            var gptmdResults = (GptmdResults)gptmdEngine.Run();
+            var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], IsotopeErrors, gptmdModifications, combos, PrecursorMassTolerance).Run();
 
-            //output(gptmdResults.ToString());
+            if (currentXmlDbFilenameList.Any(b => !b.IsContaminant))
+            {
+                string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", currentXmlDbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
-            string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
+                ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
-            WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy).ToList(), outputXMLdbFullName);
+                SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
-            SucessfullyFinishedWritingFile(outputXMLdbFullName);
+                myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+            }
+            if (currentXmlDbFilenameList.Any(b => b.IsContaminant))
+            {
+                string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", currentXmlDbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "GPTMD.xml");
 
-            // TODO: Fix so not always outputting a contaminant
-            myGPTMDresults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
+                ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
-            return myGPTMDresults;
+                SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+
+                myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
+            }
+            return myTaskResults;
         }
 
         #endregion Protected Methods
 
         #region Private Methods
 
-        private IEnumerable<Tuple<double, double>> LoadCombos()
+        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
         {
-            using (StreamReader r = new StreamReader(Path.Combine("Data", @"combos.txt")))
+            foreach (var modOnPeptide in enumerable)
+            {
+                foreach (var modToLocalize in gptmdModifications)
+                {
+                    if (modOnPeptide.motif.Motif.Equals(modToLocalize.motif.Motif))
+                    {
+                        yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
+                    }
+                }
+            }
+        }
+
+        private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> allowedCombos)
+        {
+            using (StreamReader r = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", @"combos.txt")))
             {
                 while (r.Peek() >= 0)
                 {
                     var line = r.ReadLine().Split(' ');
-                    yield return new Tuple<double, double>(double.Parse(line[0]), double.Parse(line[1]));
+                    var mass1 = double.Parse(line[0]);
+                    var mass2 = double.Parse(line[1]);
+                    if (allowedCombos.Any(b => b.monoisotopicMass - mass1 < 1e-3) &&
+                        allowedCombos.Any(b => b.monoisotopicMass - mass2 < 1e-3))
+                        yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
         }

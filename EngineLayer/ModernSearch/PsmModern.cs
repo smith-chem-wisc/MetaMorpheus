@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Proteomics;
+using System.Collections.Generic;
 
 namespace EngineLayer.ModernSearch
 {
@@ -13,7 +14,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public PsmModern(CompactPeptide theBestPeptide, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, notch)
+        public PsmModern(CompactPeptide theBestPeptide, string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int scanPrecursorNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch) : base(fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, scanNumber, scanPrecursorNumber, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, notch)
         {
             compactPeptide = theBestPeptide;
         }
@@ -22,7 +23,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<MetaMorpheusModification> variableModifications, List<MetaMorpheusModification> localizeableModifications, List<MetaMorpheusModification> fixedModifications)
+        public override CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
         {
             return compactPeptide;
         }

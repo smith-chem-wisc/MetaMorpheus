@@ -1,30 +1,43 @@
 ﻿using MassSpectrometry;
-using Spectra;
+using MathNet.Numerics.Statistics;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer.Calibration
 {
-    public class CalibrationResults : MyResults
+    public class CalibrationResults : MetaMorpheusEngineResults
     {
+
+        #region Public Fields
+
+        public readonly List<Tuple<double, double>> ms1meanSds;
+        public readonly List<Tuple<double, double>> ms2meanSds;
+
+        #endregion Public Fields
 
         #region Private Fields
 
-        private List<int> numMs1MassChargeCombinationsConsideredList;
-        private List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
-        private List<int> numMs2MassChargeCombinationsConsideredList;
-        private List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
-        private List<int> countList;
-        private List<SeparateCalibrationFunction> calibrationFunctions;
+        private readonly List<int> numMs1MassChargeCombinationsConsideredList;
+        private readonly List<int> numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
+        private readonly List<int> numMs2MassChargeCombinationsConsideredList;
+        private readonly List<int> numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList;
+        private readonly List<int> countList;
+        private readonly List<CalibrationFunction> ms1calibrationFunctions;
+        private readonly List<CalibrationFunction> ms2calibrationFunctions;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CalibrationResults(IMsDataFile<IMzSpectrum<MzPeak>> myMSDataFile, CalibrationEngine s) : base(s)
+        public CalibrationResults(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, CalibrationEngine s) : base(s)
         {
             this.MyMSDataFile = myMSDataFile;
-            calibrationFunctions = new List<SeparateCalibrationFunction>();
+            ms1calibrationFunctions = new List<CalibrationFunction>();
+            ms2calibrationFunctions = new List<CalibrationFunction>();
+            ms1meanSds = new List<Tuple<double, double>>();
+            ms2meanSds = new List<Tuple<double, double>>();
             numMs1MassChargeCombinationsConsideredList = new List<int>();
             numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList = new List<int>();
             numMs2MassChargeCombinationsConsideredList = new List<int>();
@@ -36,52 +49,55 @@ namespace EngineLayer.Calibration
 
         #region Public Properties
 
-        public IMsDataFile<IMzSpectrum<MzPeak>> MyMSDataFile { get; private set; }
+        public IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> MyMSDataFile { get; private set; }
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
+            var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            for (int i = 0; i < countList.Count; i++)
             {
-                var sb = new StringBuilder();
-                for (int i = 0; i < countList.Count; i++)
-                {
-                    sb.AppendLine("\t\tRound " + (i + 1));
-                    sb.AppendLine("\t\t\tTraining points: " + countList[i]);
-                    sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
-                    sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
-                    sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
-                    sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                sb.AppendLine("\t\tRound " + (i + 1));
+                sb.AppendLine("\t\t\tTraining points: " + countList[i]);
+                sb.AppendLine("\t\t\tMs1meanSd: " + ms1meanSds[i]);
+                sb.AppendLine("\t\t\tMs1MassChargeSeen: " + numMs1MassChargeCombinationsConsideredList[i]);
+                sb.AppendLine("\t\t\tMs1MassChargeSeenAndIgnoredBecause too many: " + numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
+                sb.AppendLine("\t\t\tMs2meanSd: " + ms2meanSds[i]);
+                sb.AppendLine("\t\t\tMs2MassChargeSeen: " + numMs2MassChargeCombinationsConsideredList[i]);
+                sb.AppendLine("\t\t\tMs2MassChargeSeenAndIgnoredBecause too many: " + numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList[i]);
 
-                    if (i < calibrationFunctions.Count)
-                    {
-                        sb.AppendLine("\t\t\tMs1Calibration function: " + calibrationFunctions[i].CalibrationFunction1.ToString());
-                        sb.AppendLine("\t\t\tMs2Calibration function: " + calibrationFunctions[i].CalibrationFunction2.ToString());
-                    }
+                if (i < ms1calibrationFunctions.Count)
+                {
+                    sb.AppendLine("\t\t\tMs1Calibration function: " + ms1calibrationFunctions[i].ToString());
+                    sb.AppendLine("\t\t\tMs2Calibration function: " + ms2calibrationFunctions[i].ToString());
                 }
-                return sb.ToString();
             }
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
         #region Internal Methods
 
-        internal void Add(int numMs1MassChargeCombinationsConsidered, int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks, int count, int numMs2MassChargeCombinationsConsidered, int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks)
+        internal void Add(DataPointAquisitionResults res)
         {
-            numMs1MassChargeCombinationsConsideredList.Add(numMs1MassChargeCombinationsConsidered);
-            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-            numMs2MassChargeCombinationsConsideredList.Add(numMs2MassChargeCombinationsConsidered);
-            numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
-            countList.Add(count);
+            numMs1MassChargeCombinationsConsideredList.Add(res.numMs1MassChargeCombinationsConsidered);
+            numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(res.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            numMs2MassChargeCombinationsConsideredList.Add(res.numMs2MassChargeCombinationsConsidered);
+            numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaksList.Add(res.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
+            countList.Add(res.Count);
+            ms1meanSds.Add(res.Ms1List.Select(b => b.Label).MeanStandardDeviation());
+            ms2meanSds.Add(res.Ms2List.Select(b => b.Label).MeanStandardDeviation());
         }
 
-        internal void Add(CalibrationFunction combinedCalibration)
+        internal void Add(CalibrationFunction ms1calib, CalibrationFunction ms2calib)
         {
-            calibrationFunctions.Add((SeparateCalibrationFunction)combinedCalibration);
+            ms1calibrationFunctions.Add(ms1calib);
+            ms2calibrationFunctions.Add(ms2calib);
         }
 
         #endregion Internal Methods

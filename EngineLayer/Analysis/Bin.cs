@@ -13,11 +13,14 @@ namespace EngineLayer.Analysis
         public string psimodID = "-";
         public string uniprotID = "-";
         public string UnimodFormulas = "-";
+        public string UnimodDiffs = "-";
         public string AA = "-";
         public string combos = "-";
         public Dictionary<char, int> residueCount;
-        public int NlocCount;
-        public int ClocCount;
+        public int pepNlocCount;
+        public int pepClocCount;
+        public int protNlocCount;
+        public int protClocCount;
         public Dictionary<string, Tuple<string, string, NewPsmWithFdr>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
@@ -73,6 +76,7 @@ namespace EngineLayer.Analysis
         public Dictionary<char, int> AAsInCommon { get; internal set; }
         public int Overlapping { get; internal set; }
         public double FracWithSingle { get; set; }
+        public double MedianLength { get; internal set; }
 
         #endregion Public Properties
 

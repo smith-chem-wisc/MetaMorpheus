@@ -1,18 +1,19 @@
 ﻿using EngineLayer;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 
 namespace TaskLayer
 {
-    public class EverythingRunnerEngine : MyEngine
+    public class EverythingRunnerEngine
     {
 
         #region Private Fields
 
-        private readonly List<MyTaskEngine> taskList;
+        private readonly List<Tuple<string, MetaMorpheusTask>> taskList;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
 
@@ -20,7 +21,7 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<MyTaskEngine> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList) : base(0)
+        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;
@@ -39,18 +40,24 @@ namespace TaskLayer
 
         public static event EventHandler<StringListEventArgs> newSpectrasHandler;
 
+        public static event EventHandler<StringEventArgs> warnHandler;
+
         #endregion Public Events
 
-        #region Protected Methods
+        #region Public Methods
 
-        protected override MyResults RunSpecific()
+        public void Run()
         {
             StartingAllTasks();
 
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             if (!currentRawDataFilenameList.Any())
             {
+                Warn("No data files selected");
                 FinishedAllTasks();
-                return new MyErroredResults(this, "No data files selected");
+                return;
             }
 
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
@@ -68,32 +75,23 @@ namespace TaskLayer
                 if (!currentRawDataFilenameList.Any())
                 {
                     FinishedAllTasks();
-                    return new MyErroredResults(this, "Cannot proceed. No data files selected.");
+                    Warn("Cannot proceed. No data files selected.");
+                    FinishedAllTasks();
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
                     FinishedAllTasks();
-                    return new MyErroredResults(this, "Cannot proceed. No xml files selected.");
+                    Warn("Cannot proceed. No xml files selected.");
+                    FinishedAllTasks();
                 }
                 var ok = taskList[i];
-                string output_folder = null;
-                if (taskList.Count == 1)
-                {
-                    output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
-                }
-                else
-                {
-                    output_folder = Path.Combine(longestDir, startTimeForAllFilenames);
-                    output_folder = Path.Combine(output_folder, "Task" + (i + 1) + ok.TaskType);
-                }
+                string outputFolderForThisTask = Path.Combine(longestDir, startTimeForAllFilenames);
+                outputFolderForThisTask = Path.Combine(outputFolderForThisTask, ok.Item1);
 
-                if (!Directory.Exists(output_folder))
-                    Directory.CreateDirectory(output_folder);
-                ok.OutputFolder = output_folder;
-                ok.dbFilenameList = currentXmlDbFilenameList;
-                ok.rawDataFilenameList = currentRawDataFilenameList;
+                if (!Directory.Exists(outputFolderForThisTask))
+                    Directory.CreateDirectory(outputFolderForThisTask);
 
-                var myTaskResults = (MyTaskResults)ok.Run();
+                var myTaskResults = ok.Item2.RunTask(outputFolderForThisTask, currentXmlDbFilenameList, currentRawDataFilenameList, ok.Item1);
                 if (myTaskResults.newDatabases != null)
                 {
                     currentXmlDbFilenameList = myTaskResults.newDatabases;
@@ -105,13 +103,18 @@ namespace TaskLayer
                     NewSpectras(myTaskResults.newSpectra);
                 }
             }
+            stopWatch.Stop();
             FinishedAllTasks();
-            return new EverythingRunnerResults(this);
         }
 
-        #endregion Protected Methods
+        #endregion Public Methods
 
          #region Private Methods
+
+        private void Warn(string v)
+        {
+            warnHandler?.Invoke(this, new StringEventArgs(v, null));
+        }
 
         private void StartingAllTasks()
         {

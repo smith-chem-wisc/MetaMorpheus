@@ -1,6 +1,8 @@
-﻿namespace EngineLayer
+﻿using System.Text;
+
+namespace EngineLayer
 {
-    public class MyErroredResults : MyResults
+    public class MyErroredResults : MetaMorpheusEngineResults
     {
 
         #region Private Fields
@@ -11,24 +13,24 @@
 
         #region Public Constructors
 
-        public MyErroredResults(MyEngine s, string v) : base(s)
+        public MyErroredResults(MetaMorpheusEngine s, string v) : base(s)
         {
             this.v = v;
         }
 
         #endregion Public Constructors
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                return "\t\t" + v;
-            }
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
+            sb.Append(v);
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

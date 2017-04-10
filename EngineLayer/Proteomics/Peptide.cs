@@ -1,3 +1,5 @@
+using Proteomics;
+
 namespace EngineLayer
 {
     public abstract class Peptide
@@ -17,6 +19,7 @@ namespace EngineLayer
             this.Protein = protein;
             this.OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
             this.OneBasedEndResidueInProtein = oneBasedEndResidueInProtein;
+            Length = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
         }
 
         #endregion Protected Constructors
@@ -29,13 +32,7 @@ namespace EngineLayer
 
         public virtual string PeptideDescription { get; protected set; }
 
-        public int Length
-        {
-            get
-            {
-                return OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
-            }
-        }
+        public int Length { get; private set; }
 
         public virtual char PreviousAminoAcid
         {

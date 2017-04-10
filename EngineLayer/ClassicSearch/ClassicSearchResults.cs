@@ -2,7 +2,7 @@
 
 namespace EngineLayer.ClassicSearch
 {
-    public class ClassicSearchResults : MyResults
+    public class ClassicSearchResults : MetaMorpheusEngineResults
     {
 
         #region Internal Constructors
@@ -19,18 +19,16 @@ namespace EngineLayer.ClassicSearch
 
         #endregion Public Properties
 
-        #region Protected Properties
+        #region Public Methods
 
-        protected override string StringForOutput
+        public override string ToString()
         {
-            get
-            {
-                var sb = new StringBuilder();
-                return sb.ToString();
-            }
+            var sb = new StringBuilder();
+            sb.Append(base.ToString());
+            return sb.ToString();
         }
 
-        #endregion Protected Properties
+        #endregion Public Methods
 
     }
 }

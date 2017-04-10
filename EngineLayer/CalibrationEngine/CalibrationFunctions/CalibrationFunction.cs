@@ -10,13 +10,17 @@ namespace EngineLayer.Calibration
 
         internal abstract double Predict(double[] t);
 
-        internal double getMSE(IEnumerable<LabeledDataPoint> pointList)
+        internal abstract void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+            where LabeledDataPoint : IHasInputsAndOutputs;
+
+        internal double GetMSE<LabeledDataPoint>(IEnumerable<LabeledDataPoint> pointList)
+            where LabeledDataPoint : IHasInputsAndOutputs
         {
             double mse = 0;
             int count = 0;
             foreach (LabeledDataPoint p in pointList)
             {
-                mse += Math.Pow(Predict(p.inputs) - p.output, 2);
+                mse += Math.Pow(Predict(p.Inputs) - p.Label, 2);
                 count++;
             }
             return count == 0 ? 0 : mse / count;
