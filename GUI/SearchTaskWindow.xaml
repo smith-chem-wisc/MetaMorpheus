@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <DockPanel>
         <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
             <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
@@ -291,4 +292,5 @@
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>
     </DockPanel>
+    </ScrollViewer>
 </Window>
