@@ -255,7 +255,7 @@ namespace TaskLayer
 
         private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> allowedCombos)
         {
-            using (StreamReader r = new StreamReader(Path.Combine("Data", @"combos.txt")))
+            using (StreamReader r = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", @"combos.txt")))
             {
                 while (r.Peek() >= 0)
                 {

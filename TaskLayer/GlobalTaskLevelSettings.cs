@@ -54,7 +54,7 @@ namespace TaskLayer
         private static Dictionary<string, Protease> LoadProteaseDictionary()
         {
             Dictionary<string, Protease> dict = new Dictionary<string, Protease>();
-            using (StreamReader proteases = new StreamReader(Path.Combine("Data", "proteases.tsv")))
+            using (StreamReader proteases = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "proteases.tsv")))
             {
                 proteases.ReadLine();
 
