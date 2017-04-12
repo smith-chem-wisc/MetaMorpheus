@@ -841,8 +841,7 @@ namespace EngineLayer.Analysis
                         RunQuantification(orderedPsmsWithFDR, quantifyRtTol, quantifyPpmTol);
                     }
 
-                    if (writePsmsAction != null)
-                        writePsmsAction(orderedPsmsWithFDR, "allPSMs_" + searchModes[j].FileNameAddition, nestedIds);
+                    writePsmsAction?.Invoke(orderedPsmsWithFDR, "allPSMs_" + searchModes[j].FileNameAddition, nestedIds);
 
                     if (doHistogramAnalysis)
                     {
@@ -856,8 +855,7 @@ namespace EngineLayer.Analysis
                         }
                     }
                     Status("Running FDR analysis on unique peptides...", nestedIds);
-                    if (writePsmsAction != null)
-                        writePsmsAction(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
+                    writePsmsAction?.Invoke(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
 
                     // individual (for single-file search) or aggregate results
                     if (doParsimony && writeProteinGroupsAction != null)

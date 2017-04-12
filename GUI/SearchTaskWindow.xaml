@@ -11,10 +11,10 @@
             <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
                 <Expander.Style>
                     <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}"/>
+                        <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}" />
                         <Style.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
-                                <Setter Property="Header" Value="Hide"/>
+                                <Setter Property="Header" Value="Hide" />
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -27,11 +27,11 @@
                                 <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType"/>
+                                <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" />
                                 <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" Visibility="Hidden"/>
+                                <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
                             </StackPanel>
                         </Grid>
                     </GroupBox>
@@ -42,7 +42,7 @@
                                 <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top"/>
+                                <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
                                 <StackPanel Orientation="Horizontal" Margin="5">
                                     <Label x:Name="label1" Content="Max Missed Cleavages" />
                                     <TextBox x:Name="missedCleavagesTextBox"  Width="45" />
@@ -100,10 +100,10 @@
                         <Expander x:Name="ApmdExpander" Collapsed="ApmdExpander_Collapsed">
                             <Expander.Style>
                                 <Style TargetType="Expander">
-                                    <Setter Property="Header" Value="{Binding ExpanderTitle}"/>
+                                    <Setter Property="Header" Value="{Binding ExpanderTitle}" />
                                     <Style.Triggers>
                                         <Trigger Property="IsExpanded" Value="True">
-                                            <Setter Property="Header" Value="Hide"/>
+                                            <Setter Property="Header" Value="Hide" />
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -124,90 +124,90 @@
             <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
                 <Expander.Style>
                     <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding ModExpanderTitle}"/>
+                        <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
                         <Style.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
-                                <Setter Property="Header" Value="Hide"/>
+                                <Setter Property="Header" Value="Hide" />
                             </Trigger>
                         </Style.Triggers>
                     </Style>
                 </Expander.Style>
                 <StackPanel>
                     <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <Label Content="Fixed"/>
-                        <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
-                            <TreeView.Resources>
-                                <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                        <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
-                                        <TextBlock Text="{Binding DisplayName}" />
-                                    </StackPanel>
-                                </HierarchicalDataTemplate>
-                                <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                        <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
-                                        <TextBlock Text="{Binding DisplayName}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </TreeView.Resources>
-                        </TreeView>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1">
-                        <Label Content="Variable"/>
-                        <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
-                            <TreeView.Resources>
-                                <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                        <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
-                                        <TextBlock Text="{Binding DisplayName}" />
-                                    </StackPanel>
-                                </HierarchicalDataTemplate>
-                                <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
-                                        <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
-                                        <TextBlock Text="{Binding DisplayName}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </TreeView.Resources>
-                        </TreeView>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <Label Content="Database Localized"/>
-                        <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True"/>
-                        <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
-                            <TreeView.Style>
-                                <Style TargetType="{x:Type TreeView}">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
-                                            <Setter Property="Visibility" Value="Hidden"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TreeView.Style>
-                            <TreeView.Resources>
-                                <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}">
-                                        <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
-                                        <TextBlock Text="{Binding DisplayName}" />
-                                    </StackPanel>
-                                </HierarchicalDataTemplate>
-                                <DataTemplate DataType="{x:Type local:ModForTreeView}">
-                                    <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
-                                        <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}"/>
-                                        <TextBlock Text="{Binding DisplayName}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </TreeView.Resources>
-                        </TreeView>
-                    </StackPanel>
-                </Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <Label Content="Fixed" />
+                            <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" Height="400">
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                            <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                    <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                            <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <Label Content="Variable" />
+                            <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" Height="400">
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                            <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                    <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                            <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="Database Localized" />
+                            <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
+                            <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
+                                <TreeView.Style>
+                                    <Style TargetType="{x:Type TreeView}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
+                                                <Setter Property="Visibility" Value="Hidden" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TreeView.Style>
+                                <TreeView.Resources>
+                                    <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                            <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </StackPanel>
+                                    </HierarchicalDataTemplate>
+                                    <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}"  ToolTip="{Binding ToolTipStuff}">
+                                            <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                            <TextBlock Text="{Binding DisplayName}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </TreeView.Resources>
+                            </TreeView>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Expander>
         </GroupBox>
@@ -215,10 +215,10 @@
             <Expander x:Name="AnalysisExpander" Collapsed="ApmdExpander_Collapsed">
                 <Expander.Style>
                     <Style TargetType="Expander">
-                        <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}"/>
+                        <Setter Property="Header" Value="{Binding AnalysisExpanderTitle}" />
                         <Style.Triggers>
                             <Trigger Property="IsExpanded" Value="True">
-                                <Setter Property="Header" Value="Hide"/>
+                                <Setter Property="Header" Value="Hide" />
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -226,19 +226,19 @@
                 <StackPanel>
                     <GroupBox Header="Protein Parsimony">
                         <StackPanel>
-                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins" >
-                                <ToolTipService.ToolTip >
-                                    <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"/>
+                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" >
-                                <ToolTipService.ToolTip >
-                                    <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group"/>
+                            <CheckBox x:Name="checkBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}" >
-                                <ToolTipService.ToolTip >
-                                    <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"/>
+                            <CheckBox x:Name="modPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=checkBoxParsimony}">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
                         </StackPanel>
@@ -251,8 +251,8 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Margin="5">
                                 <CheckBox x:Name="checkBoxQuantification" Content="Quantify peptides/proteins">
-                                    <ToolTipService.ToolTip >
-                                        <ToolTip Content="Label-free quantification is performed unless the TMT modification is detected"/>
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="Label-free quantification is performed unless the TMT modification is detected" />
                                     </ToolTipService.ToolTip>
                                 </CheckBox>
                             </StackPanel>
@@ -260,14 +260,14 @@
                                 <StackPanel Orientation="Horizontal" Margin="-4,8,0,0">
                                     <Label x:Name="quantRtLabel" Content="RT Window (min)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                                     <TextBox x:Name="quantRtTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
-                                        <ToolTipService.ToolTip >
-                                            <ToolTip Content="Used for LFQ. MS1 peaks within the RT window around the MS2 identification scan are candidate peaks for LFQ"/>
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Used for LFQ. MS1 peaks within the RT window around the MS2 identification scan are candidate peaks for LFQ" />
                                         </ToolTipService.ToolTip>
                                     </TextBox>
                                     <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" >
-                                        <ToolTipService.ToolTip >
-                                            <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)"/>
+                                    <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)" />
                                         </ToolTipService.ToolTip>
                                     </TextBox>
                                 </StackPanel>
@@ -288,7 +288,7 @@
         </GroupBox>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Bottom" Height="40">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24"/>
+            <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>
     </DockPanel>
 </Window>
