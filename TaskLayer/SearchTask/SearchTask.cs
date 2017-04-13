@@ -202,11 +202,11 @@ namespace TaskLayer
                 Dictionary<float, List<int>> fragmentIndexDict;
                 if (pathToFolderWithIndices == null)
                 {
-                    Status("Generating indices...", new List<string> { taskId });
                     var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                     Status("Writing params...", new List<string> { taskId });
                     WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
 
+                    Status("Running Index Engine...", new List<string> { taskId });
                     var indexResults = (IndexingResults)indexEngine.Run();
                     peptideIndex = indexResults.PeptideIndex;
                     fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -246,7 +246,6 @@ namespace TaskLayer
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
                 if (ClassicSearch)
                 {
