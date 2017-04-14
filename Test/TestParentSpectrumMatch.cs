@@ -18,7 +18,7 @@ namespace Test
 
         #region Public Methods
 
-        public override CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
+        public override CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
             throw new NotImplementedException();
         }

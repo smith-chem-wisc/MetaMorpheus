@@ -20,9 +20,25 @@ namespace Test
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var localizeableModifications = new List<ModificationWithMass>();
+
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
@@ -43,9 +59,25 @@ namespace Test
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var localizeableModifications = new List<ModificationWithMass>();
+
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, localizeableModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(1, results.PeptideIndex.Count);

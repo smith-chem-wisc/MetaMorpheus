@@ -63,7 +63,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public abstract CompactPeptide GetCompactPeptide(List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications);
+        public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
 
         public override string ToString()
         {
