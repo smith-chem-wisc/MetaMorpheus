@@ -53,6 +53,7 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            Status("In modern search engine...", nestedIds);
             var totalSpectra = myMSDataFile.NumSpectra;
 
             List<PsmModern>[] newPsms = new List<PsmModern>[searchModes.Count];

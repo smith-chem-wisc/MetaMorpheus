@@ -24,7 +24,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy, List<ModificationWithMass> variableModifications, List<ModificationWithMass> localizeableModifications, List<ModificationWithMass> fixedModifications)
+        public CompactPeptide(PeptideWithSetModifications yyy, Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
             varMod1Type = 0;
             varMod1Loc = 0;
@@ -34,49 +34,25 @@ namespace EngineLayer
             varMod3Loc = 0;
             foreach (var kvpp in yyy.allModsOneIsNterminus)
             {
-                int oneBasedLoc = kvpp.Key;
-                var mod = kvpp.Value;
-                // Variable
-                if (varMod1Type == 0)
+                var ok = modsDictionary[kvpp.Value];
+                if (ok > 0)
                 {
-                    // Set first
-                    if (variableModifications.Contains(mod))
+                    ushort oneBasedLoc = (ushort)kvpp.Key;
+                    var mod = kvpp.Value;
+                    if (varMod1Type == 0)
                     {
-                        varMod1Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod1Loc = (ushort)oneBasedLoc;
+                        varMod1Type = ok;
+                        varMod1Loc = oneBasedLoc;
                     }
-                    else if (!fixedModifications.Contains(mod))
+                    else if (varMod2Type == 0)
                     {
-                        varMod1Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
-                        varMod1Loc = (ushort)oneBasedLoc;
+                        varMod2Type = ok;
+                        varMod2Loc = oneBasedLoc;
                     }
-                }
-                else if (varMod2Type == 0)
-                {
-                    // Set second
-                    if (variableModifications.Contains(mod))
+                    else
                     {
-                        varMod2Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod2Loc = (ushort)oneBasedLoc;
-                    }
-                    else if (!fixedModifications.Contains(mod))
-                    {
-                        varMod2Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
-                        varMod2Loc = (ushort)oneBasedLoc;
-                    }
-                }
-                else
-                {
-                    // Set third
-                    if (variableModifications.Contains(mod))
-                    {
-                        varMod3Type = (ushort)(variableModifications.IndexOf(mod) + 1);
-                        varMod3Loc = (ushort)oneBasedLoc;
-                    }
-                    else if (!fixedModifications.Contains(mod))
-                    {
-                        varMod3Type = (ushort)(32767 + localizeableModifications.IndexOf(localizeableModifications.First(b => b.id.Equals(mod.id))) + 1);
-                        varMod3Loc = (ushort)oneBasedLoc;
+                        varMod3Type = ok;
+                        varMod3Loc = oneBasedLoc;
                     }
                 }
             }
