@@ -134,13 +134,13 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.SortedProductMasses(lp))
+                            foreach (var huhu in yyy.ProductMassesMightHaveDuplicatesAndNaNs(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {
                                     var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
                                     List<int> value;
-                                    if (myInnerDictionary.TryGetValue(rounded, out value))
+                                    if (myInnerDictionary.TryGetValue(rounded, out value) && !value.Contains(index))
                                         value.Add(index);
                                     else
                                         myInnerDictionary.Add(rounded, new List<int> { index });
