@@ -195,30 +195,62 @@ namespace EngineLayer
             return hm;
         }
 
-        public double[] SortedProductMasses(List<ProductType> productTypes)
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
+            int massLen = 0;
+            bool containsAdot = productTypes.Contains(ProductType.Adot);
+            bool containsB = productTypes.Contains(ProductType.B);
+            bool containsC = productTypes.Contains(ProductType.C);
+            bool containsX = productTypes.Contains(ProductType.X);
+            bool containsY = productTypes.Contains(ProductType.Y);
+            bool containsZdot = productTypes.Contains(ProductType.Zdot);
+            if (containsAdot)
+                throw new NotImplementedException();
+            if (containsB)
+                massLen += Length - 2;
+            if (containsC)
+                massLen += Length - 1;
+            if (containsX)
+                throw new NotImplementedException();
+            if (containsY)
+                massLen += Length - 1;
+            if (containsZdot)
+                massLen += Length - 1;
+
+            double[] massesToReturn = new double[massLen];
+
             if (p == null)
                 ComputeFragmentMasses();
 
-            IEnumerable<double> allMasses = new List<double>();
+            int i = 0;
+            foreach (var hm in p.nTerminalMasses)
+            {
+                if (hm.index > 1 && containsB)
+                {
+                    massesToReturn[i] = hm.mass;
+                    i++;
+                }
+                if (containsC)
+                {
+                    massesToReturn[i] = hm.mass + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                    i++;
+                }
+            }
+            foreach (var hm in p.cTerminalMasses)
+            {
+                if (containsY)
+                {
+                    massesToReturn[i] = hm.mass + waterMonoisotopicMass;
+                    i++;
+                }
+                if (containsZdot)
+                {
+                    massesToReturn[i] = hm.mass + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                    i++;
+                }
+            }
 
-            // TODO: THIS
-            //if (!(product_type == ProductType.C && r < Length && this[r] == 'P') &&
-            //!(product_type == ProductType.Zdot && Length - r < Length && this[Length - r] == 'P')
-            if (productTypes.Contains(ProductType.Adot))
-                throw new NotImplementedException();
-            if (productTypes.Contains(ProductType.B))
-                allMasses = allMasses.Concat(p.nTerminalMasses.Where(b => b.index > 1).Select(b => b.mass));
-            if (productTypes.Contains(ProductType.C))
-                allMasses = allMasses.Concat(p.nTerminalMasses.Select(b => b.mass + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass));
-            if (productTypes.Contains(ProductType.X))
-                throw new NotImplementedException();
-            if (productTypes.Contains(ProductType.Y))
-                allMasses = allMasses.Concat(p.cTerminalMasses.Select(b => b.mass + waterMonoisotopicMass));
-            if (productTypes.Contains(ProductType.Zdot))
-                allMasses = allMasses.Concat(p.cTerminalMasses.Select(b => b.mass + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass));
-
-            return allMasses.Where(f => !double.IsNaN(f)).GroupBy(b => Math.Round(b, 3)).Select(b => b.Key).OrderBy(b => b).ToArray();
+            return massesToReturn;
         }
 
         public override bool Equals(object obj)

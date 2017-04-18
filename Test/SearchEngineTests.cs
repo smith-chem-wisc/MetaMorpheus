@@ -53,7 +53,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
+            var proteinList = new List<Protein> { new Protein("QXQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
@@ -61,7 +61,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
 
-            int maximumMissedCleavages = 2;
+            int maximumMissedCleavages = 0;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 4096;
