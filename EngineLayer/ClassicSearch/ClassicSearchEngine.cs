@@ -141,8 +141,9 @@ namespace EngineLayer.ClassicSearch
                                 }
                             }
 
-                            var sortedProductMasses = yyy.SortedProductMasses(lp);
-                            double[] matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
+                            var productMasses = yyy.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                            Array.Sort(productMasses);
+                            double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
                             for (int aede = 0; aede < searchModes.Count; aede++)
                             {
@@ -156,7 +157,7 @@ namespace EngineLayer.ClassicSearch
                                     //
                                     //}
 
-                                    var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, sortedProductMasses, matchedIonMassesListPositiveIsMatch);
+                                    var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
                                     var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)
                                     {
@@ -164,7 +165,7 @@ namespace EngineLayer.ClassicSearch
                                         if (current_best_psm == null || PsmClassic.FirstIsPreferable(psm, current_best_psm, variableModifications))
                                         {
                                             psms[aede][scan.OneBasedScanNumber - 1] = psm;
-                                            matchedIonMassesListPositiveIsMatch = new double[sortedProductMasses.Length];
+                                            matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
                                         }
                                     }
                                 }
