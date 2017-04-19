@@ -173,10 +173,7 @@ namespace EngineLayer
             sb.Append("\t");
 
             //Detailed mods information list
-            bool empty = false;
-            if (ModsInfo != null)
-            { foreach (var modsInfo in ModsInfo) { if (modsInfo != "") { empty = true; } } }
-            if (empty == true) { sb.Append(string.Join("|", ModsInfo)); }
+            sb.Append(string.Join("|", ModsInfo));
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
@@ -225,8 +222,23 @@ namespace EngineLayer
         {
             var peptidesGroupedByProtein = AllPeptides.GroupBy(p => p.Protein);
 
+            var proteinsWithPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
+
+            foreach (var psm in AllPsmsBelowOnePercentFDR)
+            {
+                foreach (var pepWithSetMods in psm.thisPSM.PeptidesWithSetModifications)
+                {
+                    List<PeptideWithSetModifications> temp;
+                    if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
+                        temp.Add(pepWithSetMods);
+                    else
+                        proteinsWithPsms.Add(pepWithSetMods.Protein, new List<PeptideWithSetModifications> { pepWithSetMods });
+                }
+            }
+
             foreach (var protein in Proteins)
             {
+                bool ModExist = false;
                 foreach (var peptideGroup in peptidesGroupedByProtein)
                 {
                     if (protein == peptideGroup.Key)
@@ -277,28 +289,17 @@ namespace EngineLayer
                         }
 
                         SequenceCoverageDisplayListWithMods.Add(seq);
+
+                        if (modsOnThisProtein.Any())
+                        {
+                            ModExist = true;
+                        }
                     }
                 }
-            }
 
-            var proteinsWithPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
-
-            foreach (var psm in AllPsmsBelowOnePercentFDR)
-            {
-                foreach (var pepWithSetMods in psm.thisPSM.PeptidesWithSetModifications)
-                {
-                    List<PeptideWithSetModifications> temp;
-                    if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
-                        temp.Add(pepWithSetMods);
-                    else
-                        proteinsWithPsms.Add(pepWithSetMods.Protein, new List<PeptideWithSetModifications> { pepWithSetMods });
-                }
-            }
-            foreach (var protein in Proteins)
-            {
                 foreach (var aproteinWithPsms in proteinsWithPsms)
                 {
-                    if (aproteinWithPsms.Key == protein)
+                    if (aproteinWithPsms.Key == protein && ModExist == true)
                     {
                         string tempModStrings = ""; //The whole string 
                         List<int> tempPepModTotals = new List<int>();  //The List of (For one mod, The Modified Pep Num)
@@ -331,13 +332,14 @@ namespace EngineLayer
                         }
                         for (int i = 0; i < tempPepModTotals.Count(); i++)
                         {
-                            string tempString = ("#aa" + tempModIndex[i].ToString() + "[" + tempPepModValues[i].ToString() + "|info:occupancy=" + ((double)tempPepModTotals[i] / (double)tempPepTotals[i]).ToString("F2") + "(" + tempPepModTotals[i].ToString() + "/" + tempPepTotals[i].ToString() + ")" + "]");
+                            string tempString = ("#aa" + tempModIndex[i].ToString() + "[" + tempPepModValues[i].ToString() + ",info:occupancy=" + ((double)tempPepModTotals[i] / (double)tempPepTotals[i]).ToString("F2") + "(" + tempPepModTotals[i].ToString() + "/" + tempPepTotals[i].ToString() + ")" + "];");
                             tempModStrings += tempString;
                         }
                         ModsInfo.Add(tempModStrings);
                     }
                 }
             }
+
 
         }
 
