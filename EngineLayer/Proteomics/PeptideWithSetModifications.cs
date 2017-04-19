@@ -207,15 +207,15 @@ namespace EngineLayer
             if (containsAdot)
                 throw new NotImplementedException();
             if (containsB)
-                massLen += Length - 2;
+                massLen += p.nTerminalMasses.Count(b => b.index > 1);
             if (containsC)
-                massLen += Length - 1;
+                massLen += p.nTerminalMasses.Count;
             if (containsX)
                 throw new NotImplementedException();
             if (containsY)
-                massLen += Length - 1;
+                massLen += p.cTerminalMasses.Count;
             if (containsZdot)
-                massLen += Length - 1;
+                massLen += p.cTerminalMasses.Count;
 
             double[] massesToReturn = new double[massLen];
 
