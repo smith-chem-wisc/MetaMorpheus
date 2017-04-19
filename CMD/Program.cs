@@ -30,6 +30,8 @@ namespace MetaMorpheusCommandLine
 
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
+            Console.WriteLine(string.Join(" , ", args));
+
             p.Setup(arg => arg.Tasks)
              .As('t', "tasks")
              .Required();
@@ -55,7 +57,7 @@ namespace MetaMorpheusCommandLine
                 MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
                 MetaMorpheusTask.StartingSingleTaskHander += MyTaskEngine_startingSingleTaskHander;
 
-                foreach (var modFile in Directory.GetFiles(@"Mods"))
+                foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
                     GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
 
                 GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
@@ -96,6 +98,9 @@ namespace MetaMorpheusCommandLine
                 EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
                 a.Run();
             }
+            Console.WriteLine("Error Text:" + result.ErrorText);
+            Console.WriteLine("EmptyArgs:" + result.EmptyArgs);
+            Console.WriteLine("EmptyArgs:" + string.Join(" , ", result.Errors.Select(b => b.Option.Description)));
             Console.WriteLine("Usage:");
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");

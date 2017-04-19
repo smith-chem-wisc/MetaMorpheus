@@ -75,10 +75,12 @@ namespace Test
             CompactPeptide[] peptides = new CompactPeptide[peptideList.Count];
             HashSet<PeptideWithSetModifications>[] virtualPeptideSets = new HashSet<PeptideWithSetModifications>[peptideList.Count];
 
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+
             // creates peptide list
             for (int i = 0; i < peptideList.Count; i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<ModificationWithMass>());
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), modsDictionary);
             }
 
             // creates protein list
@@ -120,7 +122,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -145,9 +147,10 @@ namespace Test
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    HashSet<PeptideWithSetModifications> hashSet = new HashSet<PeptideWithSetModifications>();
-                    hashSet.Add(peptide);
-
+                    HashSet<PeptideWithSetModifications> hashSet = new HashSet<PeptideWithSetModifications>
+                    {
+                        peptide
+                    };
                     switch (peptide.BaseSequence)
                     {
                         case "A": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), hashSet, null, null, null))); break;
@@ -269,11 +272,11 @@ namespace Test
 
             foreach (var peptide in peptides)
             {
-                CfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.C }));
-                ZdotfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.Zdot }));
-                BfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.B }));
-                YfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.Y }));
-                BYfragmentMasses.Add(peptide, peptide.SortedProductMasses(new List<ProductType> { ProductType.B, ProductType.Y }));
+                CfragmentMasses.Add(peptide, peptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
             double[] testB;
             Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
@@ -291,6 +294,8 @@ namespace Test
         [Test]
         public static void TestQuantification()
         {
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+
             int charge = 3;
             double mass = 2911.53000 + charge * Constants.protonMass;
             double mz = mass / charge;
@@ -311,7 +316,7 @@ namespace Test
             var t = new PsmWithMultiplePossiblePeptides(psm, new HashSet<PeptideWithSetModifications> { peptide }, null, null, null);
             psms.Add(new NewPsmWithFdr(t));
 
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary);
             ae.RunQuantification(psms, 0.2, 10);
 
             Assert.That(psms.First().thisPSM.newPsm.quantIntensity[0] == 0);
