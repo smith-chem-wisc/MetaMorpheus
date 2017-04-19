@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="GPTMDTaskWindow" Width="750" Height="750" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel>
         <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
             <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
@@ -187,4 +188,5 @@
             <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click"  FontSize="24" Margin="10" />
         </StackPanel>
     </StackPanel>
+    </ScrollViewer>
 </Window>
