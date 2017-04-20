@@ -140,8 +140,11 @@ namespace EngineLayer.Indexing
                                 {
                                     var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
                                     List<int> value;
-                                    if (myInnerDictionary.TryGetValue(rounded, out value) && !value.Contains(index))
-                                        value.Add(index);
+                                    if (myInnerDictionary.TryGetValue(rounded, out value))
+                                    {
+                                        if (!value.Contains(index))
+                                            value.Add(index);
+                                    }
                                     else
                                         myInnerDictionary.Add(rounded, new List<int> { index });
                                 }
