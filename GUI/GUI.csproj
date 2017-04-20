@@ -66,7 +66,7 @@
       <HintPath>..\packages\mzLib.1.0.158\lib\MzML.dll</HintPath>
     </Reference>
     <Reference Include="Nett, Version=0.6.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nett.0.6.2\lib\Net40\Nett.dll</HintPath>
+      <HintPath>..\packages\Nett.0.6.3\lib\Net40\Nett.dll</HintPath>
     </Reference>
     <Reference Include="Proteomics, Version=1.0.158.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.158\lib\Proteomics.dll</HintPath>
