@@ -183,7 +183,10 @@ namespace EngineLayer
             {
                 currentTheoreticalIndex++;
                 currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-            } while (double.IsNaN(currentTheoreticalMass));
+            } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sorted_theoretical_product_masses_for_this_peptide.Length - 1);
+
+            if (double.IsNaN(currentTheoreticalMass))
+                return 0;
 
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
 
