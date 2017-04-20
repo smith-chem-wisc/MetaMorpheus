@@ -97,7 +97,6 @@
     <Compile Include="CalibrationEngine\IHasInputsAndOutputs.cs" />
     <Compile Include="CalibrationEngine\LabeledMs2DataPoint.cs" />
     <Compile Include="CalibrationEngine\LabeledMs1DataPoint.cs" />
-    <Compile Include="CalibrationEngine\CalibrationFunctions\QuadraticCalibrationFunctionMathNet.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\RandomForestCalibrationFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
