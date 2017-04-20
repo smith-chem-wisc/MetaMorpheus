@@ -325,7 +325,6 @@ namespace Test
         [Test]
         public static void TestPTMOutput()
         {
-            List<ModificationWithMass> localizeableModifications = null;
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
