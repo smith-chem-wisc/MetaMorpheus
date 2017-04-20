@@ -113,6 +113,26 @@ namespace Test
         }
 
         [Test]
+        public static void TestAllNaN()
+        {
+            IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
+            var prot = new Protein("XMMM", null, null, mods, new int?[0], new int?[0], new string[0], null, null, false, false, null);
+            var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
+
+            var massArray = thePep.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
+            double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
+            Array.Sort(massArray);
+            double[] intensities = new double[] { 1, 1, 1, 1 };
+            double[] mz = new double[] { 1, 2, 3, 4 };
+            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
+            IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
+            var score = PsmWithMultiplePossiblePeptides.MatchIons(scan, new Tolerance(ToleranceUnit.PPM, 5), massArray, matchedIonMassesListPositiveIsMatch);
+
+            Assert.AreEqual(0, score);
+        }
+
+        [Test]
         public static void TestNoCleavage()
         {
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
