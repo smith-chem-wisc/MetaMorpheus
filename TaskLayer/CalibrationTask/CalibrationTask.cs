@@ -5,7 +5,6 @@ using EngineLayer.ClassicSearch;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using Proteomics;
 using System;
@@ -257,9 +256,6 @@ namespace TaskLayer
 
                 var goodIdentifications = analysisResults.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).ToList();
 
-                sbForThisFile.AppendLine("\t" + "Orig IDs: MeanStandardDeviation (Da) : " + goodIdentifications.Select(b => b.thisPSM.PeptideMonoisotopicMass - b.thisPSM.ScanPrecursorMass).MeanStandardDeviation());
-                sbForThisFile.AppendLine("\t" + "Orig IDs: MeanStandardDeviation (ppm): " + goodIdentifications.Select(b => ((b.thisPSM.ScanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass) / b.thisPSM.PeptideMonoisotopicMass * 1e6)).MeanStandardDeviation());
-
                 //Now can calibrate!!!
 
                 int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
@@ -285,30 +281,12 @@ namespace TaskLayer
                 var analysisEngineTest = new AnalysisEngine(searchResultsTest.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "_" + s + "test", new List<string> { taskId, "Individual Searches", origDataFileName }), (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "_" + s + "test", ss), null, false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFileName }, false, 0, 0, modsDictionary);
                 var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();
 
-                sbForThisFile.AppendLine("\t" + "Linear IDs: MeanStandardDeviation (Da) : " + analysisResultsTest.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).Select(b => b.thisPSM.PeptideMonoisotopicMass - b.thisPSM.ScanPrecursorMass).MeanStandardDeviation());
-                sbForThisFile.AppendLine("\t" + "Linear IDs: MeanStandardDeviation (ppm): " + analysisResultsTest.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).Select(b => ((b.thisPSM.ScanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass) / b.thisPSM.PeptideMonoisotopicMass * 1e6)).MeanStandardDeviation());
-
                 if (NonLinearCalibration)
                 {
                     calibrationResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).ToList(), minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after", new List<string> { taskId, "Individual Searches", origDataFileName }), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + s + "after", new List<string> { taskId, "Individual Searches", origDataFileName }), true, new List<string> { taskId, "Individual Searches", origDataFileName }).Run() as CalibrationResults;
 
                     sbForThisFile.AppendLine("\t" + "After NonLin: MS1 (Th): " + calibrationResult.ms1meanSds.Last());
                     sbForThisFile.AppendLine("\t" + "After NonLin: MS2 (Th): " + calibrationResult.ms2meanSds.Last());
-
-                    // Final search round - not required
-
-                    var listOfSortedms2ScansTest2 = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
-                    var searchEngineTest2 = new ClassicSearchEngine(listOfSortedms2ScansTest2, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFileName, lp, new List<string> { taskId, "Individual Searches", origDataFileName }, false);
-                    var searchResultsTest2 = (ClassicSearchResults)searchEngineTest2.Run();
-                    var analysisEngineTest2 = new AnalysisEngine(searchResultsTest2.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, myMsDataFile, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "_" + s + "test2", new List<string> { taskId, "Individual Searches", origDataFileName }), (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFileName) + "_" + s + "test2", ss), null, false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFileName }, false, 0, 0, modsDictionary);
-
-                    var analysisResultsTest2 = (AnalysisResults)analysisEngineTest2.Run();
-
-                    //
-                    var goodIdentifications2 = analysisResultsTest2.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).ToList();
-
-                    sbForThisFile.AppendLine("\t" + "NonLinear IDs: MeanStandardDeviation (Da) : " + goodIdentifications2.Select(b => b.thisPSM.PeptideMonoisotopicMass - b.thisPSM.ScanPrecursorMass).MeanStandardDeviation());
-                    sbForThisFile.AppendLine("\t" + "NonLinear IDs: MeanStandardDeviation (ppm): " + goodIdentifications2.Select(b => ((b.thisPSM.ScanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass) / b.thisPSM.PeptideMonoisotopicMass * 1e6)).MeanStandardDeviation());
                 }
                 myTaskResults.AddNiceText(sbForThisFile.ToString());
 
