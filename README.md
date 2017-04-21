@@ -5,10 +5,10 @@
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/11282/badge.svg)](https://scan.coverity.com/projects/metamorpheus)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus)
 
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=vulnerabilities)](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=vulnerabilities)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=code_smells)](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=code_smells)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)
+[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
+[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=vulnerabilities)](https://sonarqube.com/dashboard?id=MetaMorpheus)
+[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=code_smells)](https://sonarqube.com/dashboard?id=MetaMorpheus)
+[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 
 Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases).
 
