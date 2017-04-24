@@ -1,6 +1,3 @@
-ListOfModListsFixed = ["Mods\\f.txt"]
-ListOfModListsVariable = ["Mods\\v.txt"]
-ListOfModListsLocalize = ["Mods\\ptmlist.txt"]
 ProductMassTolerance = "±0.0100 Absolute"
 PrecursorMassTolerance = "±10.0000 PPM"
 MaxDegreeOfParallelism = -1

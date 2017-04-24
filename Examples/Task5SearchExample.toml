@@ -1,6 +1,3 @@
-ListOfModListsFixed = ["Mods\\f.txt"]
-ListOfModListsVariable = ["Mods\\v.txt"]
-ListOfModListsLocalize = ["Mods\\m.txt", "Mods\\metals.txt", "Mods\\pt.txt", "Mods\\ptmlist.txt"]
 ProductMassTolerance = "±0.0100 Absolute"
 ClassicSearch = true
 DoParsimony = false
