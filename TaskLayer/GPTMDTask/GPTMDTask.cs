@@ -51,8 +51,6 @@ namespace TaskLayer
             ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("metals")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             IsotopeErrors = false;
-
-            DatabaseReferencesToKeep = new string[] { "" };
         }
 
         #endregion Public Constructors
@@ -86,7 +84,6 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
-        public string[] DatabaseReferencesToKeep { get; set; }
         public bool IsotopeErrors { get; set; }
         public bool LocalizeAll { get; set; }
 
@@ -188,7 +185,7 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um = null;
-            var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, DatabaseReferencesToKeep, out um)).ToList();
+            var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
             AnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
