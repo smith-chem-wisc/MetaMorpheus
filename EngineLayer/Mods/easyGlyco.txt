@@ -1,0 +1,15 @@
+Easy Glycans
+ID   HexNAc
+TG   Nxs or Nxt or Nxc or S or T
+PP   Anywhere.
+NL   203.079373
+MM   203.079373
+MT   Easy Glycan
+//
+ID   Hex
+TG   X
+PP   Peptide N-terminal.
+NL   162.052824 
+MM   162.052824 
+MT   Easy Glycan
+//
