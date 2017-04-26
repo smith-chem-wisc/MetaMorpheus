@@ -1,0 +1,43 @@
+Detached
+ID   Detached XleK
+PP   Peptide N-terminal.
+TG   ikX or lkX
+MT   Detached
+NL   241.17902
+MM   241.17902
+//
+ID   Detached EK
+PP   Peptide N-terminal.
+TG   ekX
+MT   Detached
+NL   257.13755
+MM   257.13755
+//
+ID   Detached EVK or XleDK
+PP   Peptide N-terminal.
+TG   evkX or vekX or ldkX or dlkX or idkX or dikX
+MT   Detached
+NL   356.20596
+MM   356.20596
+//
+ID   Detached AK
+PP   Peptide N-terminal.
+TG   akX
+MT   Detached
+NL   199.13207
+MM   199.13207
+//
+ID   Detached VK
+PP   Peptide N-terminal.
+TG   vkX
+MT   Detached
+NL   227.16337
+MM   227.16337
+//
+ID   Detached TK
+PP   Peptide N-terminal.
+TG   tkX
+MT   Detached
+NL   229.14264 
+MM   229.14264 
+//
