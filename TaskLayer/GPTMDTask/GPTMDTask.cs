@@ -236,7 +236,7 @@ namespace TaskLayer
                 myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullName, false));
                 myTaskResults.AddNiceText("Modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 myTaskResults.AddNiceText("Mods types and counts:");
-                myTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.Select(b => "\t" + b.Key + "\t" + b.Value)));
+                myTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             if (currentXmlDbFilenameList.Any(b => b.IsContaminant))
             {
@@ -249,7 +249,7 @@ namespace TaskLayer
                 myTaskResults.newDatabases.Add(new DbForTask(outputXMLdbFullNameContaminants, true));
                 myTaskResults.AddNiceText("Contaminant modifications added: " + newModsActuallyWritten.Select(b => b.Value).Sum());
                 myTaskResults.AddNiceText("Mods types and counts:");
-                myTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.Select(b => "\t" + b.Key + "\t" + b.Value)));
+                myTaskResults.AddNiceText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             return myTaskResults;
         }
