@@ -13,3 +13,10 @@ NL   162.052824
 MM   162.052824 
 MT   Easy Glycan
 //
+ID   Hex
+TG   K or Nxs or Nxt or S or T or W or C or R or Y
+PP   Anywhere.
+NL   162.052824 
+MM   162.052824 
+MT   Easy Glycan
+//
