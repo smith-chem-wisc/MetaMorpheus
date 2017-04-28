@@ -227,7 +227,7 @@
                 <StackPanel>
                     <GroupBox Header="Protein Parsimony">
                         <StackPanel>
-                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins">
+                                <CheckBox x:Name="checkBoxParsimony" Content="Apply protein parsimony and construct protein groups">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)" />
                                 </ToolTipService.ToolTip>

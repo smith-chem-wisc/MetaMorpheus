@@ -88,7 +88,7 @@ namespace EngineLayer.Analysis
         public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            var parsimonyProteinList = new HashSet<Protein>();
+            var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
             // peptide matched to fullseq (used depending on user preference)
@@ -213,7 +213,7 @@ namespace EngineLayer.Analysis
                     }
                 }
 
-                parsimonyProteinList.Add(bestProtein);
+                parsimonyProteinList.Add(bestProtein, proteinToPeptidesMatching[bestProtein]);
 
                 // remove used peptides from their proteins
                 foreach (var newBaseSeq in newSeqs)
@@ -234,20 +234,31 @@ namespace EngineLayer.Analysis
             // *** done with parsimony
 
             // add indistinguishable proteins
-            var leftoverProteins = algDictionary.Keys.ToList();
-            var proteinsToAdd = new HashSet<Protein>();
-            foreach (var protein in leftoverProteins)
+            var proteinsGroupedByNumPeptides = proteinToPeptidesMatching.GroupBy(p => p.Value.Count);
+            var parsimonyProteinsGroupedByNumPeptides = parsimonyProteinList.GroupBy(p => p.Value.Count);
+            var indistinguishableProteins = new Dictionary<Protein, HashSet<CompactPeptide>>();
+
+            foreach (var group in proteinsGroupedByNumPeptides)
             {
-                foreach (var parsimonyProtein in parsimonyProteinList)
+                var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.Where(p => p.Key == group.Key).FirstOrDefault();
+                if (parsimonyProteinsWithSameNumPeptides != null)
                 {
-                    if (proteinToPeptidesMatching[protein].SetEquals(proteinToPeptidesMatching[parsimonyProtein]))
-                        proteinsToAdd.Add(protein);
+                    foreach (var protein in group)
+                    {
+                        foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
+                        {
+                            if (parsimonyProteinWithThisNumPeptides.Key != protein.Key)
+                                if (proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[protein.Key]))
+                                    indistinguishableProteins.Add(protein.Key, proteinToPeptidesMatching[protein.Key]);
+                        }
+                    }
                 }
             }
-            parsimonyProteinList.UnionWith(proteinsToAdd);
+            foreach(var protein in indistinguishableProteins)
+                parsimonyProteinList.Add(protein.Key, protein.Value);
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
-                kvp.Value.RemoveWhere(p => !parsimonyProteinList.Contains(p.Protein));
+                kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
 
             proteinGroups = ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
 
