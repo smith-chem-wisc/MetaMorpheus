@@ -38,8 +38,8 @@ namespace EngineLayer
                 foreach (var huh in lp)
                 {
                     var df = representative.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
+                    Array.Sort(df);
                     double[] matchedIonMassesListPositiveIsMatch = new double[df.Length];
-                    Array.Sort(matchedIonMassesListPositiveIsMatch);
                     MatchIons(theScan, fragmentTolerance, df, matchedIonMassesListPositiveIsMatch);
                     MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
                 }

@@ -152,11 +152,6 @@ namespace EngineLayer.ClassicSearch
                                 {
                                     var scan = theTuple.Item1;
 
-                                    //if(scan.TheScan.DissociationType == MassSpectrometry.DissociationType.ETD)
-                                    //{
-                                    //
-                                    //}
-
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
                                     var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
                                     if (psm.score > 1)
