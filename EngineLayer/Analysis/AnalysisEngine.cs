@@ -630,9 +630,18 @@ namespace EngineLayer.Analysis
 
                     foreach (var pep in pepGrouping)
                     {
-                        pep.thisPSM.newPsm.quantIntensity = new double[] { apexIntensity };
-                        pep.thisPSM.newPsm.quantRT = apexRT;
-                        pep.thisPSM.newPsm.apexMz = apexMZ;
+                        if (apexIntensity != 0)
+                        {
+                            pep.thisPSM.newPsm.quantIntensity = new double[] { apexIntensity };
+                            pep.thisPSM.newPsm.quantRT = apexRT;
+                            pep.thisPSM.newPsm.apexMz = apexMZ;
+                        }
+                        else
+                        {
+                            pep.thisPSM.newPsm.quantIntensity = new double[] { pep.thisPSM.newPsm.scanPrecursorIntensity };
+                            pep.thisPSM.newPsm.quantRT = pep.thisPSM.newPsm.scanRetentionTime;
+                            pep.thisPSM.newPsm.apexMz = pep.thisPSM.newPsm.scanPrecursorMZ;
+                        }
                     }
                 }
             }
@@ -645,6 +654,7 @@ namespace EngineLayer.Analysis
 
                 foreach (var psm in psms)
                 {
+                    psm.thisPSM.newPsm.quantRT = psm.thisPSM.newPsm.scanRetentionTime;
                     var ms2Scan = myMsDataFile.GetOneBasedScan(myMsDataFile.GetClosestOneBasedSpectrumNumber(psm.thisPSM.newPsm.scanRetentionTime)) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                     double[] bestPlexPeaks = new double[10];
 
@@ -863,32 +873,45 @@ namespace EngineLayer.Analysis
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
-                        // protein intensity values are 0 for aggregate protein groups (doesn't make sense to quantify aggregate)
-                        if (myMsDataFile == null)
-                            foreach (var pg in proteinGroups[j])
-                                pg.Intensity = new double[1];
-
+                        // call multifile protein quantification helper function (need all the filenames to organize results properly)
+                        var files = orderedPsmsWithFDR.Select(p => p.thisPSM.newPsm.fileName).Distinct().ToList();
+                        foreach (var pg in proteinGroups[j])
+                            pg.AggregateQuantifyHelper(files);
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition, nestedIds);
                     }
 
-                    // build individual file protein groups based on aggregate parsimony & print them
+                    // write individual file results based on aggregate results
                     if (myMsDataFile == null && doParsimony)
                     {
                         var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
 
+                        // individual psm files (with global psm fdr, global parsimony)
                         foreach (var group in psmsGroupedByFilename)
                         {
                             var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
                             writePsmsAction(group.ToList(), fileName + "_allPSMS_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.newPsm.fileName })));
+                        }
 
-                            var allUniquePeptides = new HashSet<PeptideWithSetModifications>(proteinGroups[j].SelectMany(p => p.UniquePeptides));
-                            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(group.SelectMany(p => p.thisPSM.PeptidesWithSetModifications));
-                            var uniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPeptidesForThisFile.Where(p => allUniquePeptides.Contains(p)));
+                        // individual protein group files (local protein fdr, global parsimony, global psm fdr)
+                        var fileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct();
+                        foreach (var file in fileNames)
+                        {
+                            var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
+                            foreach (var pg in proteinGroups[j])
+                            {
+                                var subsetPg = pg.ConstructSubsetProteinGroup(file);
+                                subsetPg.Score();
 
-                            var proteinGroupsForThisFile = ConstructProteinGroups(uniquePeptidesForThisFile, allPeptidesForThisFile);
-                            ScoreProteinGroups(proteinGroupsForThisFile, group.ToList());
-                            proteinGroupsForThisFile = DoProteinFdr(proteinGroupsForThisFile);
-                            writeProteinGroupsAction(proteinGroupsForThisFile, fileName + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.newPsm.fileName })));
+                                if (subsetPg.ProteinGroupScore != 0)
+                                {
+                                    subsetPg.CalculateSequenceCoverage();
+                                    subsetPg.Quantify();
+                                    subsetProteinGroupsForThisFile.Add(subsetPg);
+                                }
+                            }
+
+                            subsetProteinGroupsForThisFile = DoProteinFdr(subsetProteinGroupsForThisFile);
+                            writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                         }
                     }
 
