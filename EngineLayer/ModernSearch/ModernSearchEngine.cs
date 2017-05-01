@@ -56,11 +56,11 @@ namespace EngineLayer.ModernSearch
             Status("In modern search engine...", nestedIds);
             var totalSpectra = myMSDataFile.NumSpectra;
 
-            List<PsmModern>[] newPsms = new List<PsmModern>[searchModes.Count];
+            List<PsmParent>[][] newPsms = new List<PsmParent>[searchModes.Count][];
             for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new List<PsmModern>(new PsmModern[totalSpectra]);
+                newPsms[i] = new List<PsmParent>[totalSpectra];
 
-            LocalMS2Scan[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;
@@ -77,7 +77,7 @@ namespace EngineLayer.ModernSearch
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var thisScan = listOfSortedms2Scans[i];
-                    var thisScanprecursorMass = thisScan.MonoisotopicPrecursorMass;
+                    var thisScanprecursorMass = thisScan.PrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
                     CalculatePeptideScores(thisScan.TheScan, fullPeptideScores);
 
@@ -138,7 +138,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, Path.GetFileNameWithoutExtension(fileToSearch), thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.OneBasedPrecursorScanNumber, thisScan.PrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j], bestNotches[j]);
+                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new List<PsmParent> { new PsmModern(theBestPeptide, Path.GetFileNameWithoutExtension(fileToSearch), thisScan.RetentionTime, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.OneBasedPrecursorScanNumber, thisScan.PrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.PrecursorMz, bestScores[j], bestNotches[j]) };
                         }
                     }
                 }

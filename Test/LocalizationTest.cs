@@ -31,7 +31,7 @@ namespace Test
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
-            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 },  null) };
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(variableModifications, 2, 1).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
@@ -47,14 +47,13 @@ namespace Test
 
             string fileName = null;
             double scanRetentionTime = double.NaN;
-            double scanPrecursorIntensity = double.NaN;
             double scanPrecursorMass = pepWithSetModsForSpectrum.MonoisotopicMass;
             int scanPrecursorCharge = 0;
             int scanExperimentalPeaks = 0;
             double totalIonCurrent = double.NaN;
             double scanPrecursorMZ = double.NaN;
             double score = double.NaN;
-            PsmParent newPsm = new PsmClassic(ps, fileName, scanRetentionTime, scanPrecursorIntensity, scanPrecursorMass, 2, 1, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, 0);
+            PsmParent newPsm = new PsmClassic(ps, fileName, scanRetentionTime, scanPrecursorMass, 2, 1, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, 0);
 
             Assert.IsNull(newPsm.LocalizedScores);
             Assert.IsNull(newPsm.matchedIonsListPositiveIsMatch);

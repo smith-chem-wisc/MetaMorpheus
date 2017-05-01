@@ -8,7 +8,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchResults(List<PsmModern>[] newPsms, ModernSearchEngine s) : base(s)
+        public ModernSearchResults(List<PsmParent>[][] newPsms, ModernSearchEngine s) : base(s)
         {
             this.NewPsms = newPsms;
         }
@@ -17,7 +17,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Properties
 
-        public List<PsmModern>[] NewPsms { get; private set; }
+        public List<PsmParent>[][] NewPsms { get; private set; }
 
         #endregion Public Properties
 

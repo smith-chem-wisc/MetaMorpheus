@@ -36,13 +36,13 @@ namespace EngineLayer
             return innerResult < 0 ? innerResult : innerResult + 1;
         }
 
-        public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
             foreach (var heh in dotSearchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass))
             {
-                yield return new Tuple<DoubleRange, int>(heh.Item1, heh.Item2 + 1);
+                yield return new AllowedIntervalWithNotch(heh.allowedInterval, heh.notch + 1);
             }
-            yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass - daltonsAroundZero, peptideMonoisotopicMass + daltonsAroundZero), 0);
+            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - daltonsAroundZero, peptideMonoisotopicMass + daltonsAroundZero), 0);
         }
 
         #endregion Public Methods

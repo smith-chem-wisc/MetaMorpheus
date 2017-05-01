@@ -366,19 +366,11 @@ namespace EngineLayer.Calibration
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
-                    double precursorMZ = theScan.SelectedIonGuessMZ.Value;
-                    double precursorIntensity = theScan.SelectedIonGuessIntensity.Value;
-                    double newSelectedMZ = precursorMZ - bestCf.Item1.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz });
 
-                    double monoisotopicMZ = theScan.SelectedIonGuessMonoisotopicMZ.Value;
-                    double monoisotopicIntensity = theScan.SelectedIonGuessMonoisotopicIntensity.Value;
+                    Func<IMzPeak, double> theFuncForPrecursor = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, precursorScan.RetentionTime, x.Intensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
 
-                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Item1.Predict(new double[] { monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
-
-                    double IsolationMZ = theScan.IsolationMz;
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, IsolationMZ });
-
-                    theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
+                    theScan.TransformMzs(theFunc, theFuncForPrecursor);
                 }
                 else
                 {

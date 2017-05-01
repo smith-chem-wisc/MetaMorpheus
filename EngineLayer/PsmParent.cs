@@ -18,7 +18,6 @@ namespace EngineLayer
         public readonly double scanRetentionTime;
         public readonly int scanExperimentalPeaks;
         public readonly double totalIonCurrent;
-        public readonly double scanPrecursorIntensity;
         public readonly int scanPrecursorCharge;
         public readonly double scanPrecursorMZ;
         public readonly double scanPrecursorMass;
@@ -42,7 +41,7 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int precursorScanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
+        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorMass, int scanNumber, int precursorScanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
         {
             this.fileName = fileName;
             this.scanNumber = scanNumber;
@@ -50,7 +49,6 @@ namespace EngineLayer
             this.scanRetentionTime = scanRetentionTime;
             this.scanExperimentalPeaks = scanExperimentalPeaks;
             this.totalIonCurrent = totalIonCurrent;
-            this.scanPrecursorIntensity = scanPrecursorIntensity;
             this.scanPrecursorCharge = scanPrecursorCharge;
             this.scanPrecursorMZ = scanPrecursorMZ;
             this.scanPrecursorMass = scanPrecursorMass;
@@ -75,7 +73,6 @@ namespace EngineLayer
             sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(totalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(precursorScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
@@ -118,7 +115,6 @@ namespace EngineLayer
             sb.Append("scanExperimentalPeaks" + '\t');
             sb.Append("totalIonCurrent" + '\t');
             sb.Append("precursorScanNumber" + '\t');
-            sb.Append("scanPrecursorIntensity" + '\t');
             sb.Append("scanPrecursorCharge" + '\t');
             sb.Append("scanPrecursorMZ" + '\t');
             sb.Append("scanPrecursorMass" + '\t');

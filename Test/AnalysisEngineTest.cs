@@ -39,7 +39,7 @@ namespace Test
                 i++;
             }
 
-            PsmParent[][] newPsms = new PsmParent[1][];
+            List<PsmParent>[][] newPsms = new List<PsmParent>[1][];
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
@@ -63,9 +63,9 @@ namespace Test
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), modsDictionary);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
-            newPsms[0] = new PsmParent[] { new PsmModern(compactPeptide1, null, 1, 1, 1, 2, 2, 1,1, 1, 1, 3,0),
-                                           new PsmModern(compactPeptide2, null, 2,2,2+132.040,3,3,2,2,2,2,2,0),
-                                           new PsmModern(compactPeptide3, null, 3,3,3,4,3, 3, 3,3,3,3,0) };
+            newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, null, 1,  1, 2, 2, 1,1, 1, 1, 3,0) },
+                                                 new List<PsmParent>{  new PsmModern(compactPeptide2, null, 2,2+132.040,3,3,2,2,2,2,2,0) },
+                                                 new List<PsmParent>{ new PsmModern(compactPeptide3, null, 3, 3, 4, 3, 3, 3, 3, 3, 3, 0)} };
 
             compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);

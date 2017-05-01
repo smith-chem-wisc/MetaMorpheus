@@ -169,8 +169,8 @@ namespace TaskLayer
 
             var searchModes = new List<SearchMode> { searchMode };
 
-            List<PsmParent>[] allPsms = new List<PsmParent>[1];
-            allPsms[0] = new List<PsmParent>();
+            List<List<PsmParent>>[] allPsms = new List<List<PsmParent>>[1];
+            allPsms[0] = new List<List<PsmParent>>();
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             List<ProductType> lp = new List<ProductType>();
@@ -207,7 +207,7 @@ namespace TaskLayer
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
-                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray(), variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 

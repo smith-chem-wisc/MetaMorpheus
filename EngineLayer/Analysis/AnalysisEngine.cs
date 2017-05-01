@@ -21,7 +21,7 @@ namespace EngineLayer.Analysis
         private readonly int? minPeptideLength;
         private readonly int? maxPeptideLength;
         private readonly int maxModIsoforms;
-        private readonly PsmParent[][] newPsms;
+        private readonly List<PsmParent>[][] newPsms;
         private readonly List<Protein> proteinList;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
@@ -49,7 +49,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        public AnalysisEngine(List<PsmParent>[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -726,13 +726,14 @@ namespace EngineLayer.Analysis
             Status("Adding observed peptides to dictionary...", nestedIds);
             foreach (var psmListForAspecificSerchMode in newPsms)
                 if (psmListForAspecificSerchMode != null)
-                    foreach (var psm in psmListForAspecificSerchMode)
-                        if (psm != null)
-                        {
-                            var cp = psm.GetCompactPeptide(modsDictionary);
-                            if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
-                        }
+                    foreach (var psmList in psmListForAspecificSerchMode)
+                        if (psmList != null)
+                            foreach (var psm in psmList)
+                            {
+                                var cp = psm.GetCompactPeptide(modsDictionary);
+                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                                    compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                            }
             myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             int totalProteins = proteinList.Count;
             int proteinsSeen = 0;
@@ -797,8 +798,9 @@ namespace EngineLayer.Analysis
                     for (int i = 0; i < newPsms[0].Length; i++)
                     {
                         var huh = newPsms[j][i];
-                        if (huh != null && huh.score >= 1)
-                            psmsWithProteinHashSet[i] = new PsmWithMultiplePossiblePeptides(huh, compactPeptideToProteinPeptideMatching[huh.GetCompactPeptide(modsDictionary)], fragmentTolerance, myMsDataFile, lp);
+                        if (huh != null && huh.First().score >= 1)
+                            foreach (var psm in huh)
+                                psmsWithProteinHashSet[i] = new PsmWithMultiplePossiblePeptides(psm, compactPeptideToProteinPeptideMatching[psm.GetCompactPeptide(modsDictionary)], fragmentTolerance, myMsDataFile, lp);
                     }
 
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);

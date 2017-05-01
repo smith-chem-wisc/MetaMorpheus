@@ -31,11 +31,10 @@ namespace EngineLayer.ClassicSearch
 
         private readonly Tolerance productMassTolerance;
 
-        private readonly LocalMS2Scan[] arrayOfSortedMS2Scans;
+        private readonly Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans;
 
         private readonly double[] myScanPrecursorMasses;
 
-        private readonly int myMsDataFileNumSpectra;
         private readonly string fileName;
 
         private readonly List<ProductType> lp;
@@ -47,11 +46,10 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(LocalMS2Scan[] arrayOfSortedMS2Scans, int myMsDataFileNumSpectra, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
+        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, string fileName, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.MonoisotopicPrecursorMass).ToArray();
-            this.myMsDataFileNumSpectra = myMsDataFileNumSpectra;
+            this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
@@ -80,26 +78,26 @@ namespace EngineLayer.ClassicSearch
 
             int totalProteins = proteinList.Count;
 
-            var level3_observed = new HashSet<string>();
-            var level4_observed = new HashSet<string>();
+            var observed_base_sequences = new HashSet<string>();
+            var observed_sequences_with_modifications = new HashSet<string>();
 
             Status("Getting ms2 scans...", nestedIds);
 
-            var outerPsms = new PsmClassic[searchModes.Count][];
+            var outerPsms = new List<PsmParent>[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                outerPsms[aede] = new PsmClassic[myMsDataFileNumSpectra];
+                outerPsms[aede] = new List<PsmParent>[arrayOfSortedMS2Scans.Length];
 
             var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
 
             Status("Starting classic search loop...", nestedIds);
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new PsmClassic[searchModes.Count][];
-                for (int aede = 0; aede < searchModes.Count; aede++)
-                    psms[aede] = new PsmClassic[myMsDataFileNumSpectra];
-                for (int i = fff.Item1; i < fff.Item2; i++)
+                var psms = new List<PsmParent>[searchModes.Count][];
+                for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
+                    psms[searchModeIndex] = new List<PsmParent>[arrayOfSortedMS2Scans.Length];
+                for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
@@ -111,15 +109,15 @@ namespace EngineLayer.ClassicSearch
                         if (peptide.NumLocMods == 0 && !conserveMemory)
                         {
                             var hc = peptide.BaseLeucineSequence;
-                            var observed = level3_observed.Contains(hc);
+                            var observed = observed_base_sequences.Contains(hc);
                             if (observed)
                                 continue;
-                            lock (level3_observed)
+                            lock (observed_base_sequences)
                             {
-                                observed = level3_observed.Contains(hc);
+                                observed = observed_base_sequences.Contains(hc);
                                 if (observed)
                                     continue;
-                                level3_observed.Add(hc);
+                                observed_base_sequences.Add(hc);
                             }
                         }
 
@@ -129,15 +127,15 @@ namespace EngineLayer.ClassicSearch
                             if (peptide.NumLocMods > 0 && !conserveMemory)
                             {
                                 var hc = yyy.Sequence;
-                                var observed = level4_observed.Contains(hc);
+                                var observed = observed_sequences_with_modifications.Contains(hc);
                                 if (observed)
                                     continue;
-                                lock (level4_observed)
+                                lock (observed_sequences_with_modifications)
                                 {
-                                    observed = level4_observed.Contains(hc);
+                                    observed = observed_sequences_with_modifications.Contains(hc);
                                     if (observed)
                                         continue;
-                                    level4_observed.Add(hc);
+                                    observed_sequences_with_modifications.Add(hc);
                                 }
                             }
 
@@ -145,22 +143,35 @@ namespace EngineLayer.ClassicSearch
                             Array.Sort(productMasses);
                             double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
-                            for (int aede = 0; aede < searchModes.Count; aede++)
+                            for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                             {
-                                var searchMode = searchModes[aede];
-                                foreach (Tuple<LocalMS2Scan, int> theTuple in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
+                                var searchMode = searchModes[searchModeIndex];
+                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var scan = theTuple.Item1;
+                                    var scan = scanWithIndexAndNotchInfo.theScan;
 
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
-                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.MonoisotopicPrecursorIntensity, scan.MonoisotopicPrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.MonoisotopicPrecursorMZ, score, theTuple.Item2);
+                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.PrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.PrecursorMz, score, scanWithIndexAndNotchInfo.notch);
                                     if (psm.score > 1)
                                     {
-                                        PsmClassic current_best_psm = psms[aede][scan.OneBasedScanNumber - 1];
-                                        if (current_best_psm == null || PsmClassic.FirstIsPreferable(psm, current_best_psm, variableModifications))
+                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
                                         {
-                                            psms[aede][scan.OneBasedScanNumber - 1] = psm;
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new List<PsmParent> { psm };
                                             matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
+                                        }
+                                        else
+                                        {
+                                            PsmParent current_best_psm = psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].First();
+                                            if (PsmClassic.FirstIsPreferable(psm, current_best_psm as PsmClassic, variableModifications))
+                                            {
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new List<PsmParent> { psm };
+                                                matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
+                                            }
+                                            else if (current_best_psm.score == psm.score)
+                                            {
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(psm);
+                                                matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
+                                            }
                                         }
                                     }
                                 }
@@ -173,9 +184,18 @@ namespace EngineLayer.ClassicSearch
                     for (int aede = 0; aede < searchModes.Count; aede++)
                         for (int i = 0; i < outerPsms[aede].Length; i++)
                             if (psms[aede][i] != null)
-                                if (outerPsms[aede][i] == null || PsmClassic.FirstIsPreferable(psms[aede][i], outerPsms[aede][i], variableModifications))
+                            {
+                                if (outerPsms[aede][i] == null)
                                     outerPsms[aede][i] = psms[aede][i];
-                    proteinsSeen += fff.Item2 - fff.Item1;
+                                else
+                                {
+                                    if (PsmClassic.FirstIsPreferable(psms[aede][i].First() as PsmClassic, outerPsms[aede][i].First() as PsmClassic, variableModifications))
+                                        outerPsms[aede][i] = psms[aede][i];
+                                    else if (psms[aede][i].First().score == outerPsms[aede][i].First().score)
+                                        outerPsms[aede][i].AddRange(psms[aede][i]);
+                                }
+                            }
+                    proteinsSeen += partitionRange.Item2 - partitionRange.Item1;
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
@@ -192,22 +212,23 @@ namespace EngineLayer.ClassicSearch
 
         #region Private Methods
 
-        private IEnumerable<Tuple<LocalMS2Scan, int>> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
+        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
         {
-            foreach (Tuple<DoubleRange, int> theTuple in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
+            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
             {
-                DoubleRange ye = theTuple.Item1;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(ye.Minimum);
+                DoubleRange allowedInterval = allowedIntervalWithNotch.allowedInterval;
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
                 if (scanIndex < arrayOfSortedMS2Scans.Length)
                 {
-                    var scan = arrayOfSortedMS2Scans[scanIndex];
-                    while (scan.MonoisotopicPrecursorMass <= ye.Maximum)
+                    var scanMass = myScanPrecursorMasses[scanIndex];
+                    while (scanMass <= allowedInterval.Maximum)
                     {
-                        yield return new Tuple<LocalMS2Scan, int>(scan, theTuple.Item2);
+                        var theScan = arrayOfSortedMS2Scans[scanIndex];
+                        yield return new ScanWithIndexAndNotchInfo(theScan, allowedIntervalWithNotch.notch, scanIndex);
                         scanIndex++;
                         if (scanIndex == arrayOfSortedMS2Scans.Length)
                             break;
-                        scan = arrayOfSortedMS2Scans[scanIndex];
+                        scanMass = myScanPrecursorMasses[scanIndex];
                     }
                 }
             }

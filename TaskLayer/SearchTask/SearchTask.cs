@@ -187,9 +187,9 @@ namespace TaskLayer
                 i++;
             }
 
-            List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count];
+            List<List<PsmParent>>[] allPsms = new List<List<PsmParent>>[SearchModes.Count];
             for (int j = 0; j < SearchModes.Count; j++)
-                allPsms[j] = new List<PsmParent>();
+                allPsms[j] = new List<List<PsmParent>>();
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;
@@ -265,7 +265,7 @@ namespace TaskLayer
 
                 if (ClassicSearch)
                 {
-                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray(), myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
+                    var classicSearchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray(), variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
                     for (int ii = 0; ii < SearchModes.Count; ii++)
                         allPsms[ii].AddRange(classicSearchResults.OuterPsms[ii]);
                     MetaMorpheusEngineResults analysisResults;
