@@ -254,7 +254,7 @@ namespace EngineLayer.Analysis
                     }
                 }
             }
-            foreach(var protein in indistinguishableProteins)
+            foreach (var protein in indistinguishableProteins)
                 parsimonyProteinList.Add(protein.Key, protein.Value);
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
@@ -649,7 +649,7 @@ namespace EngineLayer.Analysis
                         }
                         else
                         {
-                            pep.thisPSM.newPsm.quantIntensity = new double[] { pep.thisPSM.newPsm.scanPrecursorIntensity };
+                            pep.thisPSM.newPsm.quantIntensity = new double[] { double.NaN };
                             pep.thisPSM.newPsm.quantRT = pep.thisPSM.newPsm.scanRetentionTime;
                             pep.thisPSM.newPsm.apexMz = pep.thisPSM.newPsm.scanPrecursorMZ;
                         }
