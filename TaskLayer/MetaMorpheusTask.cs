@@ -262,7 +262,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(ProteinGroup.TabSeparatedHeader);
+                    output.WriteLine(items.First().TabSeparatedHeader);
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }

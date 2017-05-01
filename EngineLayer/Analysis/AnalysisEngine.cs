@@ -88,7 +88,7 @@ namespace EngineLayer.Analysis
         public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            var parsimonyProteinList = new HashSet<Protein>();
+            var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
             // peptide matched to fullseq (used depending on user preference)
@@ -213,7 +213,7 @@ namespace EngineLayer.Analysis
                     }
                 }
 
-                parsimonyProteinList.Add(bestProtein);
+                parsimonyProteinList.Add(bestProtein, proteinToPeptidesMatching[bestProtein]);
 
                 // remove used peptides from their proteins
                 foreach (var newBaseSeq in newSeqs)
@@ -234,20 +234,31 @@ namespace EngineLayer.Analysis
             // *** done with parsimony
 
             // add indistinguishable proteins
-            var leftoverProteins = algDictionary.Keys.ToList();
-            var proteinsToAdd = new HashSet<Protein>();
-            foreach (var protein in leftoverProteins)
+            var proteinsGroupedByNumPeptides = proteinToPeptidesMatching.GroupBy(p => p.Value.Count);
+            var parsimonyProteinsGroupedByNumPeptides = parsimonyProteinList.GroupBy(p => p.Value.Count);
+            var indistinguishableProteins = new Dictionary<Protein, HashSet<CompactPeptide>>();
+
+            foreach (var group in proteinsGroupedByNumPeptides)
             {
-                foreach (var parsimonyProtein in parsimonyProteinList)
+                var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.Where(p => p.Key == group.Key).FirstOrDefault();
+                if (parsimonyProteinsWithSameNumPeptides != null)
                 {
-                    if (proteinToPeptidesMatching[protein].SetEquals(proteinToPeptidesMatching[parsimonyProtein]))
-                        proteinsToAdd.Add(protein);
+                    foreach (var protein in group)
+                    {
+                        foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
+                        {
+                            if (parsimonyProteinWithThisNumPeptides.Key != protein.Key)
+                                if (proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[protein.Key]))
+                                    indistinguishableProteins.Add(protein.Key, proteinToPeptidesMatching[protein.Key]);
+                        }
+                    }
                 }
             }
-            parsimonyProteinList.UnionWith(proteinsToAdd);
+            foreach(var protein in indistinguishableProteins)
+                parsimonyProteinList.Add(protein.Key, protein.Value);
 
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
-                kvp.Value.RemoveWhere(p => !parsimonyProteinList.Contains(p.Protein));
+                kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
 
             proteinGroups = ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
 
@@ -630,9 +641,18 @@ namespace EngineLayer.Analysis
 
                     foreach (var pep in pepGrouping)
                     {
-                        pep.thisPSM.newPsm.quantIntensity = new double[] { apexIntensity };
-                        pep.thisPSM.newPsm.quantRT = apexRT;
-                        pep.thisPSM.newPsm.apexMz = apexMZ;
+                        if (apexIntensity != 0)
+                        {
+                            pep.thisPSM.newPsm.quantIntensity = new double[] { apexIntensity };
+                            pep.thisPSM.newPsm.quantRT = apexRT;
+                            pep.thisPSM.newPsm.apexMz = apexMZ;
+                        }
+                        else
+                        {
+                            pep.thisPSM.newPsm.quantIntensity = new double[] { pep.thisPSM.newPsm.scanPrecursorIntensity };
+                            pep.thisPSM.newPsm.quantRT = pep.thisPSM.newPsm.scanRetentionTime;
+                            pep.thisPSM.newPsm.apexMz = pep.thisPSM.newPsm.scanPrecursorMZ;
+                        }
                     }
                 }
             }
@@ -645,6 +665,7 @@ namespace EngineLayer.Analysis
 
                 foreach (var psm in psms)
                 {
+                    psm.thisPSM.newPsm.quantRT = psm.thisPSM.newPsm.scanRetentionTime;
                     var ms2Scan = myMsDataFile.GetOneBasedScan(myMsDataFile.GetClosestOneBasedSpectrumNumber(psm.thisPSM.newPsm.scanRetentionTime)) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
                     double[] bestPlexPeaks = new double[10];
 
@@ -865,32 +886,45 @@ namespace EngineLayer.Analysis
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
-                        // protein intensity values are 0 for aggregate protein groups (doesn't make sense to quantify aggregate)
-                        if (myMsDataFile == null)
-                            foreach (var pg in proteinGroups[j])
-                                pg.Intensity = new double[1];
-
+                        // call multifile protein quantification helper function (need all the filenames to organize results properly)
+                        var files = orderedPsmsWithFDR.Select(p => p.thisPSM.newPsm.fileName).Distinct().ToList();
+                        foreach (var pg in proteinGroups[j])
+                            pg.AggregateQuantifyHelper(files);
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition, nestedIds);
                     }
 
-                    // build individual file protein groups based on aggregate parsimony & print them
+                    // write individual file results based on aggregate results
                     if (myMsDataFile == null && doParsimony)
                     {
                         var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.newPsm.fileName);
 
+                        // individual psm files (with global psm fdr, global parsimony)
                         foreach (var group in psmsGroupedByFilename)
                         {
                             var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.newPsm.fileName);
                             writePsmsAction(group.ToList(), fileName + "_allPSMS_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.newPsm.fileName })));
+                        }
 
-                            var allUniquePeptides = new HashSet<PeptideWithSetModifications>(proteinGroups[j].SelectMany(p => p.UniquePeptides));
-                            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(group.SelectMany(p => p.thisPSM.PeptidesWithSetModifications));
-                            var uniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPeptidesForThisFile.Where(p => allUniquePeptides.Contains(p)));
+                        // individual protein group files (local protein fdr, global parsimony, global psm fdr)
+                        var fileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct();
+                        foreach (var file in fileNames)
+                        {
+                            var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
+                            foreach (var pg in proteinGroups[j])
+                            {
+                                var subsetPg = pg.ConstructSubsetProteinGroup(file);
+                                subsetPg.Score();
 
-                            var proteinGroupsForThisFile = ConstructProteinGroups(uniquePeptidesForThisFile, allPeptidesForThisFile);
-                            ScoreProteinGroups(proteinGroupsForThisFile, group.ToList());
-                            proteinGroupsForThisFile = DoProteinFdr(proteinGroupsForThisFile);
-                            writeProteinGroupsAction(proteinGroupsForThisFile, fileName + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.newPsm.fileName })));
+                                if (subsetPg.ProteinGroupScore != 0)
+                                {
+                                    subsetPg.CalculateSequenceCoverage();
+                                    subsetPg.Quantify();
+                                    subsetProteinGroupsForThisFile.Add(subsetPg);
+                                }
+                            }
+
+                            subsetProteinGroupsForThisFile = DoProteinFdr(subsetProteinGroupsForThisFile);
+                            writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                         }
                     }
 

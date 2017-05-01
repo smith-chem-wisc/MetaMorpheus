@@ -319,7 +319,7 @@ namespace Test
             AnalysisEngine ae = new AnalysisEngine(new List<PsmParent>[0][], null, new List<Protein>(), null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary);
             ae.RunQuantification(psms, 0.2, 10);
 
-            Assert.That(psms.First().thisPSM.newPsm.quantIntensity[0] == 0);
+            Assert.That(psms.First().thisPSM.newPsm.quantIntensity[0] == 1000);
         }
 
         [Test]
@@ -380,8 +380,7 @@ namespace Test
             {
                 new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(0), null, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), new HashSet<PeptideWithSetModifications>() { peptideList.ElementAt(0) }, null, null, null)),
                 new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(1), null, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), new HashSet<PeptideWithSetModifications>() { peptideList.ElementAt(1) }, null, null, null)),
-                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(1), null, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), new HashSet<PeptideWithSetModifications>() { peptideList.ElementAt(1) }, null, null, null))
-            };
+                ne
             engine.ScoreProteinGroups(proteinGroups, psms);
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
         }
