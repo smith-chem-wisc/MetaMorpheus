@@ -301,8 +301,6 @@ namespace Test
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
 
             int charge = 3;
-            double mass = 2911.53000 + charge * Constants.protonMass;
-            double mz = mass / charge;
             double intensity = 1000.0;
             double rt = 20.0;
 

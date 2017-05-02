@@ -102,34 +102,6 @@ namespace EngineLayer.ClassicSearch
                     {
                         if (peptide.Length <= 1)
                             continue;
-                        //if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //Console.WriteLine("Found GPK in protein " + protein.Accession + ". NumLocMods = " + peptide.NumKnownPossibleLocMods);
-                        //if (peptide.NumKnownPossibleLocMods == 0 && !conserveMemory)
-                        //{
-                        //    var hc = peptide.BaseLeucineSequence;
-                        //    if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //        Console.WriteLine("In protein " + protein.Accession + " hc = " + hc);
-                        //    var observed = observed_base_sequences.Contains(hc);
-                        //    if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //        Console.WriteLine("observed1 status of GPK in protein " + protein.Accession + " is " + observed);
-                        //    if (observed)
-                        //        continue;
-                        //    lock (observed_base_sequences)
-                        //    {
-                        //        if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //            Console.WriteLine("Locking in protein " + protein.Accession);
-                        //        observed = observed_base_sequences.Contains(hc);
-                        //        if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //            Console.WriteLine("observed2 status of GPK in protein " + protein.Accession + " is " + observed);
-                        //        if (observed)
-                        //            continue;
-                        //        if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //            Console.WriteLine("Adding GPK in protein " + protein.Accession);
-                        //        observed_base_sequences.Add(hc);
-                        //    }
-                        //}
-                        //if (peptide.BaseLeucineSequence.Equals("GPK"))
-                        //    Console.WriteLine("Ok, looking at it in protein " + protein.Accession);
 
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
