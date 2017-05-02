@@ -88,7 +88,6 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Proteomics.Peptide pep1 = new Proteomics.Peptide("DNNK");
-            Proteomics.Peptide pep2 = new Proteomics.Peptide("NDNK");
 
             var dist1 = IsotopicDistribution.GetDistribution(pep1.GetChemicalFormula(), 0.1, 0.01);
 

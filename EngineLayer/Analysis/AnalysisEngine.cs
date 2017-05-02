@@ -747,9 +747,9 @@ namespace EngineLayer.Analysis
             Status("Adding observed peptides to dictionary...", nestedIds);
             foreach (var psmListForAspecificSerchMode in newPsms)
                 if (psmListForAspecificSerchMode != null)
-                    foreach (var psmList in psmListForAspecificSerchMode)
-                        if (psmList != null)
-                            foreach (var psm in psmList)
+                    foreach (var psmListForAspecificScan in psmListForAspecificSerchMode)
+                        if (psmListForAspecificScan != null)
+                            foreach (var psm in psmListForAspecificScan)
                             {
                                 var cp = psm.GetCompactPeptide(modsDictionary);
                                 if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
