@@ -136,20 +136,22 @@ namespace EngineLayer.ClassicSearch
                                     var psm = new PsmClassic(yyy, scan, score, scanWithIndexAndNotchInfo.notch);
                                     if (psm.score > 1)
                                     {
-                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
+                                        var currentBestPsmList = psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex];
+                                        if (currentBestPsmList == null)
                                         {
                                             psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new List<PsmParent> { psm };
                                             matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
                                         }
                                         else
                                         {
-                                            PsmParent current_best_psm = psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].First();
-                                            if (PsmClassic.FirstIsPreferable(psm, current_best_psm as PsmClassic, variableModifications))
+                                            var current_best_psm = currentBestPsmList.First() as PsmClassic;
+                                            var firstIsPreferable = PsmClassic.FirstIsPreferable(psm, current_best_psm, variableModifications);
+                                            if (firstIsPreferable.HasValue && firstIsPreferable.Value)
                                             {
                                                 psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new List<PsmParent> { psm };
                                                 matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
                                             }
-                                            else if (current_best_psm.score == psm.score)
+                                            else if (!firstIsPreferable.HasValue)
                                             {
                                                 psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(psm);
                                                 matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
@@ -171,9 +173,10 @@ namespace EngineLayer.ClassicSearch
                                     outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    if (PsmClassic.FirstIsPreferable(psms[searchModeIndex][i].First() as PsmClassic, outerPsms[searchModeIndex][i].First() as PsmClassic, variableModifications))
+                                    var firstIsPreferable = PsmClassic.FirstIsPreferable(psms[searchModeIndex][i].First() as PsmClassic, outerPsms[searchModeIndex][i].First() as PsmClassic, variableModifications);
+                                    if (firstIsPreferable.HasValue && firstIsPreferable.Value)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
-                                    else if (psms[searchModeIndex][i].First().score == outerPsms[searchModeIndex][i].First().score)
+                                    else if (!firstIsPreferable.HasValue)
                                         outerPsms[searchModeIndex][i].AddRange(psms[searchModeIndex][i]);
                                 }
                             }
