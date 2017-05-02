@@ -1,5 +1,7 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
+using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -43,17 +45,11 @@ namespace Test
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 
-            HashSet<PeptideWithSetModifications> peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { ps };
+            List<PeptideWithSetModifications> peptidesWithSetModifications = new List<PeptideWithSetModifications> { ps };
 
-            string fileName = null;
-            double scanRetentionTime = double.NaN;
-            double scanPrecursorMass = pepWithSetModsForSpectrum.MonoisotopicMass;
-            int scanPrecursorCharge = 0;
-            int scanExperimentalPeaks = 0;
-            double totalIonCurrent = double.NaN;
-            double scanPrecursorMZ = double.NaN;
-            double score = double.NaN;
-            PsmParent newPsm = new PsmClassic(ps, fileName, scanRetentionTime, scanPrecursorMass, 2, 1, scanPrecursorCharge, scanExperimentalPeaks, totalIonCurrent, scanPrecursorMZ, score, 0);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> fb = new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fb, pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
+            PsmParent newPsm = new PsmClassic(ps, scan, 0, 0);
 
             Assert.IsNull(newPsm.LocalizedScores);
             Assert.IsNull(newPsm.matchedIonsListPositiveIsMatch);

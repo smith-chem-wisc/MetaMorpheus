@@ -816,12 +816,11 @@ namespace EngineLayer.Analysis
                 if (newPsms[j] != null)
                 {
                     PsmWithMultiplePossiblePeptides[] psmsWithProteinHashSet = new PsmWithMultiplePossiblePeptides[newPsms[0].Length];
-                    for (int i = 0; i < newPsms[0].Length; i++)
+                    for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms[0].Length; myScanWithMassIndex++)
                     {
-                        var huh = newPsms[j][i];
+                        var huh = newPsms[j][myScanWithMassIndex];
                         if (huh != null && huh.First().score >= 1)
-                            foreach (var psm in huh)
-                                psmsWithProteinHashSet[i] = new PsmWithMultiplePossiblePeptides(psm, compactPeptideToProteinPeptideMatching[psm.GetCompactPeptide(modsDictionary)], fragmentTolerance, myMsDataFile, lp);
+                            psmsWithProteinHashSet[myScanWithMassIndex] = new PsmWithMultiplePossiblePeptides(huh.First(), huh.SelectMany(b => compactPeptideToProteinPeptideMatching[b.GetCompactPeptide(modsDictionary)]).ToList(), fragmentTolerance, myMsDataFile, lp);
                     }
 
                     var orderedPsmsWithPeptides = psmsWithProteinHashSet.Where(b => b != null).OrderByDescending(b => b.Score);

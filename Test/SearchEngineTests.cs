@@ -31,7 +31,7 @@ namespace Test
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
             var intensityRatio = 4;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
@@ -65,7 +65,7 @@ namespace Test
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
             var intensityRatio = 4;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
 
             int maximumMissedCleavages = 0;
             int? minPeptideLength = null;

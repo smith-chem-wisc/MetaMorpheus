@@ -41,17 +41,17 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorMass, int scanNumber, int precursorScanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
+        protected PsmParent(Ms2ScanWithSpecificMass scan, double score, int notch)
         {
-            this.fileName = fileName;
-            this.scanNumber = scanNumber;
-            this.precursorScanNumber = precursorScanNumber;
-            this.scanRetentionTime = scanRetentionTime;
-            this.scanExperimentalPeaks = scanExperimentalPeaks;
-            this.totalIonCurrent = totalIonCurrent;
-            this.scanPrecursorCharge = scanPrecursorCharge;
-            this.scanPrecursorMZ = scanPrecursorMZ;
-            this.scanPrecursorMass = scanPrecursorMass;
+            this.fileName = scan.FileNameWithoutExtension;
+            this.scanNumber = scan.TheScan.OneBasedScanNumber;
+            this.precursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
+            this.scanRetentionTime = scan.TheScan.RetentionTime;
+            this.scanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
+            this.totalIonCurrent = scan.TheScan.TotalIonCurrent;
+            this.scanPrecursorCharge = scan.PrecursorCharge;
+            this.scanPrecursorMZ = scan.PrecursorMz;
+            this.scanPrecursorMass = scan.PrecursorMass;
             this.score = score;
             this.notch = notch;
             quantIntensity = new double[1];

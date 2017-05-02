@@ -20,7 +20,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PsmWithMultiplePossiblePeptides(PsmParent newPsm, HashSet<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, List<ProductType> lp)
+        public PsmWithMultiplePossiblePeptides(PsmParent newPsm, List<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, List<ProductType> lp)
         {
             this.newPsm = newPsm;
             IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
@@ -83,7 +83,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; private set; }
+        public List<PeptideWithSetModifications> PeptidesWithSetModifications { get; private set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
 
@@ -258,14 +258,46 @@ namespace EngineLayer
 
             sb.Append(newPsm.ToString() + '\t');
 
-            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession)) + "\t");
-            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName)) + "\t");
-            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription)) + "\t");
-            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")) + "\t");
-            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid)) + "\t");
-            sb.Append(string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid)) + "\t");
-            sb.Append(BaseSequence.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(FullSequence.ToString(CultureInfo.InvariantCulture) + '\t');
+            var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]"));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.BaseSequence));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Sequence));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');

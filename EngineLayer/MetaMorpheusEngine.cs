@@ -4,6 +4,7 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace EngineLayer
@@ -27,7 +28,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, bool findAllPrecursors, bool useProvidedPrecursorInfo, int intensityRatio)
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, bool findAllPrecursors, bool useProvidedPrecursorInfo, int intensityRatio, string fullFilePath)
         {
             foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
             {
@@ -70,7 +71,7 @@ namespace EngineLayer
                     }
 
                 foreach (var heh in isolatedStuff)
-                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2);
+                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, Path.GetFileNameWithoutExtension(fullFilePath));
             }
         }
 

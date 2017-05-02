@@ -78,8 +78,8 @@ namespace EngineLayer.ClassicSearch
 
             int totalProteins = proteinList.Count;
 
-            var observed_base_sequences = new HashSet<string>();
-            var observed_sequences_with_modifications = new HashSet<string>();
+            //var observed_base_sequences = new HashSet<string>();
+            var observed_sequences = new HashSet<string>();
 
             Status("Getting ms2 scans...", nestedIds);
 
@@ -105,37 +105,50 @@ namespace EngineLayer.ClassicSearch
                     {
                         if (peptide.Length <= 1)
                             continue;
-
-                        if (peptide.NumLocMods == 0 && !conserveMemory)
-                        {
-                            var hc = peptide.BaseLeucineSequence;
-                            var observed = observed_base_sequences.Contains(hc);
-                            if (observed)
-                                continue;
-                            lock (observed_base_sequences)
-                            {
-                                observed = observed_base_sequences.Contains(hc);
-                                if (observed)
-                                    continue;
-                                observed_base_sequences.Add(hc);
-                            }
-                        }
+                        //if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //Console.WriteLine("Found GPK in protein " + protein.Accession + ". NumLocMods = " + peptide.NumKnownPossibleLocMods);
+                        //if (peptide.NumKnownPossibleLocMods == 0 && !conserveMemory)
+                        //{
+                        //    var hc = peptide.BaseLeucineSequence;
+                        //    if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //        Console.WriteLine("In protein " + protein.Accession + " hc = " + hc);
+                        //    var observed = observed_base_sequences.Contains(hc);
+                        //    if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //        Console.WriteLine("observed1 status of GPK in protein " + protein.Accession + " is " + observed);
+                        //    if (observed)
+                        //        continue;
+                        //    lock (observed_base_sequences)
+                        //    {
+                        //        if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //            Console.WriteLine("Locking in protein " + protein.Accession);
+                        //        observed = observed_base_sequences.Contains(hc);
+                        //        if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //            Console.WriteLine("observed2 status of GPK in protein " + protein.Accession + " is " + observed);
+                        //        if (observed)
+                        //            continue;
+                        //        if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //            Console.WriteLine("Adding GPK in protein " + protein.Accession);
+                        //        observed_base_sequences.Add(hc);
+                        //    }
+                        //}
+                        //if (peptide.BaseLeucineSequence.Equals("GPK"))
+                        //    Console.WriteLine("Ok, looking at it in protein " + protein.Accession);
 
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.NumLocMods > 0 && !conserveMemory)
+                            if (!conserveMemory)
                             {
                                 var hc = yyy.Sequence;
-                                var observed = observed_sequences_with_modifications.Contains(hc);
+                                var observed = observed_sequences.Contains(hc);
                                 if (observed)
                                     continue;
-                                lock (observed_sequences_with_modifications)
+                                lock (observed_sequences)
                                 {
-                                    observed = observed_sequences_with_modifications.Contains(hc);
+                                    observed = observed_sequences.Contains(hc);
                                     if (observed)
                                         continue;
-                                    observed_sequences_with_modifications.Add(hc);
+                                    observed_sequences.Add(hc);
                                 }
                             }
 
@@ -151,7 +164,7 @@ namespace EngineLayer.ClassicSearch
                                     var scan = scanWithIndexAndNotchInfo.theScan;
 
                                     var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
-                                    var psm = new PsmClassic(yyy, fileName, scan.RetentionTime, scan.PrecursorMass, scan.OneBasedScanNumber, scan.OneBasedPrecursorScanNumber, scan.PrecursorCharge, scan.NumPeaks, scan.TotalIonCurrent, scan.PrecursorMz, score, scanWithIndexAndNotchInfo.notch);
+                                    var psm = new PsmClassic(yyy, scan, score, scanWithIndexAndNotchInfo.notch);
                                     if (psm.score > 1)
                                     {
                                         if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
@@ -181,18 +194,18 @@ namespace EngineLayer.ClassicSearch
                 }
                 lock (lockObject)
                 {
-                    for (int aede = 0; aede < searchModes.Count; aede++)
-                        for (int i = 0; i < outerPsms[aede].Length; i++)
-                            if (psms[aede][i] != null)
+                    for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
+                        for (int i = 0; i < outerPsms[searchModeIndex].Length; i++)
+                            if (psms[searchModeIndex][i] != null)
                             {
-                                if (outerPsms[aede][i] == null)
-                                    outerPsms[aede][i] = psms[aede][i];
+                                if (outerPsms[searchModeIndex][i] == null)
+                                    outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    if (PsmClassic.FirstIsPreferable(psms[aede][i].First() as PsmClassic, outerPsms[aede][i].First() as PsmClassic, variableModifications))
-                                        outerPsms[aede][i] = psms[aede][i];
-                                    else if (psms[aede][i].First().score == outerPsms[aede][i].First().score)
-                                        outerPsms[aede][i].AddRange(psms[aede][i]);
+                                    if (PsmClassic.FirstIsPreferable(psms[searchModeIndex][i].First() as PsmClassic, outerPsms[searchModeIndex][i].First() as PsmClassic, variableModifications))
+                                        outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
+                                    else if (psms[searchModeIndex][i].First().score == outerPsms[searchModeIndex][i].First().score)
+                                        outerPsms[searchModeIndex][i].AddRange(psms[searchModeIndex][i]);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

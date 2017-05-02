@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.Calibration;
+using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -33,8 +34,9 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 
             List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
-            PsmParent newPsm = new TestParentSpectrumMatch(2, 2, 1);
-            PsmWithMultiplePossiblePeptides thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 2, null);
+            PsmParent newPsm = new TestParentSpectrumMatch(scan);
+            PsmWithMultiplePossiblePeptides thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, new List<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
             identifications.Add(thePsmwithfdr);
@@ -58,7 +60,11 @@ namespace Test
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.1);
 
-            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new TestParentSpectrumMatch(2, 2, 1), new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y }));
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null);
+            //PsmParent newPsm = new TestParentSpectrumMatch(2, 2, 1);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, 2, 2, null);
+            PsmParent newPsm = new TestParentSpectrumMatch(scan);
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new TestParentSpectrumMatch(scan), new List<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y }));
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
 
             var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<NewPsmWithFdr> { thePsmwithfdr }, 3, 2, 10, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();

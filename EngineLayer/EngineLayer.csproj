@@ -127,7 +127,7 @@
     <Compile Include="Indexing\IndexingEngine.cs" />
     <Compile Include="Indexing\IndexingResults.cs" />
     <Compile Include="SearchModes\IntervalSearchMode.cs" />
-    <Compile Include="LocalMs2Scan.cs" />
+    <Compile Include="Ms2ScanWithSpecificMass.cs" />
     <Compile Include="ModernSearch\ModernSearchEngine.cs" />
     <Compile Include="ModernSearch\ModernSearchResults.cs" />
     <Compile Include="ModernSearch\PsmModern.cs" />

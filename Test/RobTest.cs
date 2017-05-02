@@ -2,6 +2,7 @@
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
+using IO.MzML;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -143,25 +144,28 @@ namespace Test
             // builds psm list to match to peptides
             List<NewPsmWithFdr> psms = new List<NewPsmWithFdr>();
 
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, double.NaN, 0, "File");
+
             foreach (var kvp in dictionary)
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    HashSet<PeptideWithSetModifications> hashSet = new HashSet<PeptideWithSetModifications>
+                    List<PeptideWithSetModifications> hashSet = new List<PeptideWithSetModifications>
                     {
                         peptide
                     };
                     switch (peptide.BaseSequence)
                     {
-                        case "A": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), hashSet, null, null, null))); break;
-                        case "B": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 9, 0), hashSet, null, null, null))); break;
-                        case "C": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 8, 0), hashSet, null, null, null))); break;
-                        case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 7, 0), hashSet, null, null, null))); break;
-                        case "E": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 6, 0), hashSet, null, null, null))); break;
-                        case "F": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 5, 0), hashSet, null, null, null))); break;
-                        case "G": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 4, 0), hashSet, null, null, null))); break;
-                        case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 3, 0), hashSet, null, null, null))); break;
-                        case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, "File", 0, 0, 0, 0, 0, 0, 0, 0, 2, 0), hashSet, null, null, null))); break;
+                        case "A": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 10, 0), hashSet, null, null, null))); break;
+                        case "B": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 9, 0), hashSet, null, null, null))); break;
+                        case "C": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 8, 0), hashSet, null, null, null))); break;
+                        case "D": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 7, 0), hashSet, null, null, null))); break;
+                        case "E": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 6, 0), hashSet, null, null, null))); break;
+                        case "F": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 5, 0), hashSet, null, null, null))); break;
+                        case "G": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 4, 0), hashSet, null, null, null))); break;
+                        case "H": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 3, 0), hashSet, null, null, null))); break;
+                        case "I": psms.Add(new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptide, scan, 2, 0), hashSet, null, null, null))); break;
                     }
                 }
             }
@@ -312,8 +316,11 @@ namespace Test
 
             var psms = new List<NewPsmWithFdr>();
 
-            var psm = new PsmClassic(peptide, "File", rt, mass, 2, 1, charge, 1, 0, mz, 0, 0);
-            var t = new PsmWithMultiplePossiblePeptides(psm, new HashSet<PeptideWithSetModifications> { peptide }, null, null, null);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfkj = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            //var psm = new PsmClassic(peptide, "File", rt, mass, 2, 1, charge, 1, 0, mz, 0, 0);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, double.NaN, 1, null);
+            var psm = new PsmClassic(peptide, scan, 0, 0);
+            var t = new PsmWithMultiplePossiblePeptides(psm, new List<PeptideWithSetModifications> { peptide }, null, null, null);
             psms.Add(new NewPsmWithFdr(t));
 
             AnalysisEngine ae = new AnalysisEngine(new List<PsmParent>[0][], null, new List<Protein>(), null, null, null, null, myMsDataFile, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary);
@@ -377,11 +384,14 @@ namespace Test
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             proteinGroups = engine.ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(), peptideList);
 
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, double.NaN, 0, "File");
+
             List<NewPsmWithFdr> psms = new List<NewPsmWithFdr>
             {
-                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(0), "File", 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), new HashSet<PeptideWithSetModifications>() { peptideList.ElementAt(0) }, null, null, null)),
-                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(1), "File", 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), new HashSet<PeptideWithSetModifications>() { peptideList.ElementAt(1) }, null, null, null)),
-                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(1), "File", 0, 0, 0, 0, 0, 0, 0, 0, 10, 0), new HashSet<PeptideWithSetModifications>() { peptideList.ElementAt(1) }, null, null, null))
+                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(0), ms2scan, 10, 0), new List<PeptideWithSetModifications>() { peptideList.ElementAt(0) }, null, null, null)),
+                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(1), ms2scan,10, 0), new List<PeptideWithSetModifications>() { peptideList.ElementAt(1) }, null, null, null)),
+                new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new PsmClassic(peptideList.ElementAt(1), ms2scan, 10, 0), new List<PeptideWithSetModifications>() { peptideList.ElementAt(1) }, null, null, null))
             };
             engine.ScoreProteinGroups(proteinGroups, psms);
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);

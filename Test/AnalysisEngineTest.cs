@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ModernSearch;
+using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -63,9 +64,17 @@ namespace Test
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), modsDictionary);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
-            newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, null, 1,  1, 2, 2, 1,1, 1, 1, 3,0) },
-                                                 new List<PsmParent>{  new PsmModern(compactPeptide2, null, 2,2+132.040,3,3,2,2,2,2,2,0) },
-                                                 new List<PsmParent>{ new PsmModern(compactPeptide3, null, 3, 3, 4, 3, 3, 3, 3, 3, 3, 0)} };
+            //newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, null, 1,  1, 2, 2, 1,1, 1, 1, 3,0) },
+            //                                     new List<PsmParent>{  new PsmModern(compactPeptide2, null, 2,2+132.040,3,3,2,2,2,2,2,0) },
+            //                                     new List<PsmParent>{ new PsmModern(compactPeptide3, null, 3, 3, 4, 3, 3, 3, 3, 3, 3, 0)} };
+
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 0, null);
+            Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 0, null);
+            Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 0, null);
+
+            newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, scanA, 3,0) },
+                                                 new List<PsmParent>{ new PsmModern(compactPeptide2, scanB, 2,0) },
+                                                 new List<PsmParent>{ new PsmModern(compactPeptide3, scanC, 3, 0)} };
 
             compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);

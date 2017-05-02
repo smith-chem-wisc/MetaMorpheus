@@ -1,5 +1,7 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.Gptmd;
+using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -32,14 +34,16 @@ namespace Test
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
-            PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
+            //PsmParent newPsm = new TestParentSpectrumMatch(588.22520189093 + 21.981943);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null), (588.22520189093 + 21.981943).ToMz(1), 1, null);
+            PsmParent newPsm = new TestParentSpectrumMatch(scan);
             var parentProtein = new Protein("NNNNN", "accession", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -69,12 +73,15 @@ namespace Test
             bool isotopeErrors = false;
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            PsmParent newPsm = new TestParentSpectrumMatch(651.297638557 + 21.981943 + 15.994915);
+            //PsmParent newPsm = new TestParentSpectrumMatch(651.297638557 + 21.981943 + 15.994915);
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (651.297638557 + 21.981943 + 15.994915).ToMz(1), 1, null);
+            PsmParent newPsm = new TestParentSpectrumMatch(scan);
             var parentProtein = new Protein("NNNPPP", "accession", null, new Dictionary<int, List<Modification>>(), null, null, null, null, null, false, false, null);
             var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var peptidesWithSetModifications = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             Tolerance fragmentTolerance = null;
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = null;
             var thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
@@ -99,7 +106,7 @@ namespace Test
 
             #region Public Constructors
 
-            public TestParentSpectrumMatch(double scanPrecursorMass) : base(null, double.NaN, scanPrecursorMass, 0, 0, 0, 0, double.NaN, double.NaN, double.NaN, 1)
+            public TestParentSpectrumMatch(Ms2ScanWithSpecificMass scan) : base(scan, double.NaN, 1)
             {
             }
 
