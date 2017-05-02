@@ -62,7 +62,8 @@ namespace EngineLayer.ModernSearch
 
             bool findAllPrecursors = true;
             bool useProvidedPrecursorInfo = true;
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile, findAllPrecursors, useProvidedPrecursorInfo).OrderBy(b => b.PrecursorMass).ToArray();
+            var intensityRatio = 4;
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio).OrderBy(b => b.PrecursorMass).ToArray();
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;

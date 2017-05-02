@@ -93,12 +93,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnalysisEngineTest.cs" />
+    <Compile Include="FakeMsDataFile.cs" />
     <Compile Include="LocalizationTest.cs" />
     <Compile Include="MyPeptideTest.cs" />
     <Compile Include="MyTaskTest.cs" />
     <Compile Include="RobTest.cs" />
     <Compile Include="CalibrationEngineTest.cs" />
     <Compile Include="ModFitsTest.cs" />
+    <Compile Include="CoIsolationTests.cs" />
     <Compile Include="SearchModesTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
