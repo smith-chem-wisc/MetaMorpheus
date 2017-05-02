@@ -207,7 +207,9 @@ namespace TaskLayer
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
-                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.PrecursorMass).ToArray(), variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
+                bool findAllPrecursors = true;
+                bool useProvidedPrecursorInfo = true;
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo).OrderBy(b => b.PrecursorMass).ToArray(), variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, origDataFile, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 

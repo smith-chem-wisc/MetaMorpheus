@@ -60,7 +60,9 @@ namespace EngineLayer.ModernSearch
             for (int i = 0; i < searchModes.Count; i++)
                 newPsms[i] = new List<PsmParent>[totalSpectra];
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+            bool findAllPrecursors = true;
+            bool useProvidedPrecursorInfo = true;
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile, findAllPrecursors, useProvidedPrecursorInfo).OrderBy(b => b.PrecursorMass).ToArray();
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
             var searchModesCount = searchModes.Count;
