@@ -45,8 +45,8 @@ namespace Test
             // One scan
             Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].scanNumber);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].ScanNumber);
             Assert.AreEqual("QQQ", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
         }
 
@@ -80,8 +80,8 @@ namespace Test
             // One Scan
             Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].scanNumber);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].ScanNumber);
             Assert.AreEqual("QXQ", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
         }
 
@@ -134,8 +134,8 @@ namespace Test
             // Single ms2 scan
             Assert.AreEqual(1, searchResults.NewPsms[0].Length);
 
-            Assert.IsTrue(searchResults.NewPsms[0][0].score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][0].scanNumber);
+            Assert.IsTrue(searchResults.NewPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][0].ScanNumber);
             Assert.AreEqual("QQQ", searchResults.NewPsms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
         }
 
@@ -188,8 +188,8 @@ namespace Test
             // Single ms2 scan
             Assert.AreEqual(1, searchResults.NewPsms[0].Length);
 
-            Assert.IsTrue(searchResults.NewPsms[0][0].score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][0].scanNumber);
+            Assert.IsTrue(searchResults.NewPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][0].ScanNumber);
             Assert.AreEqual("QXQ", searchResults.NewPsms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
         }
 

@@ -46,12 +46,12 @@ namespace EngineLayer.ClassicSearch
         internal static bool? FirstIsPreferable(PsmClassic firstPsm, PsmClassic secondPsm, List<ModificationWithMass> variableMods)
         {
             // Existed! Need to compare with old match
-            if (Math.Abs(firstPsm.score - secondPsm.score) < 1e-9)
+            if (Math.Abs(firstPsm.Score - secondPsm.Score) < 1e-9)
             {
                 // Score is same, need to see if accepts and if prefer the new one
                 var first = firstPsm.ps;
                 var second = secondPsm.ps;
-                var pm = firstPsm.scanPrecursorMass;
+                var pm = firstPsm.ScanPrecursorMass;
 
                 // Prefer to be at zero rather than fewer modifications
                 if ((Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
@@ -87,7 +87,7 @@ namespace EngineLayer.ClassicSearch
 
                 return null;
             }
-            if (firstPsm.score > secondPsm.score)
+            if (firstPsm.Score > secondPsm.Score)
             {
                 return true;
             }

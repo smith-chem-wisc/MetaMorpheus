@@ -225,7 +225,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.BaseSequence).Select(p => p.Select(x => x.thisPSM.score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.Pli.BaseSequence).Select(p => p.Select(x => x.thisPSM.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
@@ -236,7 +236,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
-                foreach (var pepWithSetMods in psm.thisPSM.PeptidesWithSetModifications)
+                foreach (var pepWithSetMods in psm.thisPSM.Pli.PeptidesWithSetModifications)
                 {
                     List<PeptideWithSetModifications> temp;
                     if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
@@ -362,7 +362,7 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            var psmsGroupedByFilename = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.fileName).OrderBy(p => p.Key).ToList();
+            var psmsGroupedByFilename = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.FileName).OrderBy(p => p.Key).ToList();
 
             if (IntensitiesByFile == null || FileNames == null)
             {
@@ -385,7 +385,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.thisPSM.BaseSequence);
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.thisPSM.Pli.BaseSequence);
                 var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
@@ -396,8 +396,8 @@ namespace EngineLayer
                     // remove shared non-razor peptides
                     foreach (var psm in psmGroup)
                     {
-                        var uniques = psm.thisPSM.PeptidesWithSetModifications.Intersect(UniquePeptides);
-                        var razors = psm.thisPSM.PeptidesWithSetModifications.Intersect(RazorPeptides);
+                        var uniques = psm.thisPSM.Pli.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                        var razors = psm.thisPSM.Pli.PeptidesWithSetModifications.Intersect(RazorPeptides);
 
                         if (!uniques.Any() && !razors.Any())
                             psmsToIgnore.Add(psm);
@@ -408,7 +408,7 @@ namespace EngineLayer
                     // remove modified peptides that aren't used for quantification
                     foreach (var psm in psmsForThisBaseSeq)
                     {
-                        var unacceptableModsForThisPsm = psm.thisPSM.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
+                        var unacceptableModsForThisPsm = psm.thisPSM.Pli.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
                         if (unacceptableModsForThisPsm.Any())
                             psmsToIgnore.Add(psm);
                     }
@@ -436,8 +436,8 @@ namespace EngineLayer
 
         public ProteinGroup ConstructSubsetProteinGroup(string fileName)
         {
-            var allPsmsForThisFile = new HashSet<NewPsmWithFdr>(this.AllPsmsBelowOnePercentFDR.Where(p => p.thisPSM.fileName.Equals(fileName)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.thisPSM.PeptidesWithSetModifications));
+            var allPsmsForThisFile = new HashSet<NewPsmWithFdr>(this.AllPsmsBelowOnePercentFDR.Where(p => p.thisPSM.FileName.Equals(fileName)));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.thisPSM.Pli.PeptidesWithSetModifications));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
             var allRazorPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.RazorPeptides.Intersect(allPeptidesForThisFile));
 

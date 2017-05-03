@@ -309,7 +309,7 @@ namespace EngineLayer.Analysis
             {
                 if (psm.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.thisPSM.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.thisPSM.Pli.PeptidesWithSetModifications)
                     {
                         var psmsForThisPeptide = new HashSet<NewPsmWithFdr>();
 
@@ -446,9 +446,9 @@ namespace EngineLayer.Analysis
             // key is rough m/z (m/z rounded to 2nd decimal), value contains peak with its scan
             var mzBins = new Dictionary<double, List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>>();
 
-            var peptideGroups = psms.GroupBy(p => p.thisPSM.FullSequence).ToList();
+            var peptideGroups = psms.GroupBy(p => p.thisPSM.Pli.FullSequence).ToList();
             var lengthToIsotopicDistribution = new Dictionary<int, List<KeyValuePair<double, double>>>();
-            HashSet<int> peptideLengths = new HashSet<int>(peptideGroups.Select(p => p.First().thisPSM.BaseSequence.Length));
+            HashSet<int> peptideLengths = new HashSet<int>(peptideGroups.Select(p => p.First().thisPSM.Pli.BaseSequence.Length));
 
             foreach (var length in peptideLengths)
             {
@@ -478,15 +478,15 @@ namespace EngineLayer.Analysis
                 lengthToIsotopicDistribution.Add(length, massesWithAbundances);
             }
 
-            var minChargeState = psms.Select(p => p.thisPSM.scanPrecursorCharge).Min();
-            var maxChargeState = psms.Select(p => p.thisPSM.scanPrecursorCharge).Max();
+            var minChargeState = psms.Select(p => p.thisPSM.ScanPrecursorCharge).Min();
+            var maxChargeState = psms.Select(p => p.thisPSM.ScanPrecursorCharge).Max();
             var chargeStates = Enumerable.Range(minChargeState, maxChargeState - 1);
 
             // build theoretical m/z bins
             foreach (var pepGrouping in peptideGroups)
             {
-                var mostCommonIsotopeShift = lengthToIsotopicDistribution[pepGrouping.First().thisPSM.BaseSequence.Length].Where(p => p.Value == 1).First().Key;
-                var thisPeptidesMass = pepGrouping.First().thisPSM.PeptideMonoisotopicMass + mostCommonIsotopeShift;
+                var mostCommonIsotopeShift = lengthToIsotopicDistribution[pepGrouping.First().thisPSM.Pli.BaseSequence.Length].Where(p => p.Value == 1).First().Key;
+                var thisPeptidesMass = pepGrouping.First().thisPSM.Pli.PeptideMonoisotopicMass + mostCommonIsotopeShift;
 
                 foreach (var pep in pepGrouping)
                     pep.thisPSM.mostAbundantMass = thisPeptidesMass;
@@ -554,13 +554,13 @@ namespace EngineLayer.Analysis
                             if (Math.Abs(peakWithScan.Key.Mz - theorMzHere) < mzTolHere)
                             {
                                 // check rt tolerance
-                                var validRTs = pepGrouping.Select(p => p.thisPSM.scanRetentionTime).Where(p => Math.Abs(peakWithScan.Value.RetentionTime - p) < rtTolerance);
+                                var validRTs = pepGrouping.Select(p => p.thisPSM.ScanRetentionTime).Where(p => Math.Abs(peakWithScan.Value.RetentionTime - p) < rtTolerance);
 
                                 if (validRTs.Any())
                                 {
                                     // check isotopic distribution
-                                    var temp = lengthToIsotopicDistribution[pepGrouping.First().thisPSM.BaseSequence.Length];
-                                    var isotopes = temp.Select(p => new KeyValuePair<double, double>(p.Key + pepGrouping.First().thisPSM.PeptideMonoisotopicMass, p.Value)).ToList();
+                                    var temp = lengthToIsotopicDistribution[pepGrouping.First().thisPSM.Pli.BaseSequence.Length];
+                                    var isotopes = temp.Select(p => new KeyValuePair<double, double>(p.Key + pepGrouping.First().thisPSM.Pli.PeptideMonoisotopicMass, p.Value)).ToList();
 
                                     var lowestMassIsotope = isotopes.Select(p => p.Key).Min();
                                     var highestMassIsotope = isotopes.Select(p => p.Key).Max();
@@ -637,9 +637,9 @@ namespace EngineLayer.Analysis
                     }
                     else
                     {
-                        pep.thisPSM.quantIntensity = new double[] { pep.thisPSM.scanPrecursorMonoisotopicPeak.Intensity };
-                        pep.thisPSM.quantRT = pep.thisPSM.scanRetentionTime;
-                        pep.thisPSM.apexMz = pep.thisPSM.scanPrecursorMonoisotopicPeak.Mz;
+                        pep.thisPSM.quantIntensity = new double[] { pep.thisPSM.ScanPrecursorMonoisotopicPeak.Intensity };
+                        pep.thisPSM.quantRT = pep.thisPSM.ScanRetentionTime;
+                        pep.thisPSM.apexMz = pep.thisPSM.ScanPrecursorMonoisotopicPeak.Mz;
                     }
                 }
             }
@@ -733,10 +733,10 @@ namespace EngineLayer.Analysis
                     {
                         var huh = newPsms[j][myScanWithMassIndex];
                         if (huh != null)
-                            huh.GetTheActualPeptidesWithSetModificationsAndComputeStuff(compactPeptideToProteinPeptideMatching, fragmentTolerance, arrayOfSortedMS2Scans?[huh.ScanIndex], lp, modsDictionary);
+                            huh.ComputeProteinLevelInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, arrayOfSortedMS2Scans?[huh.ScanIndex], lp, modsDictionary);
                     }
 
-                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.score);
+                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.Score);
 
                     Status("Running FDR analysis...", nestedIds);
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
@@ -746,9 +746,9 @@ namespace EngineLayer.Analysis
                     Dictionary<string, int> modsSeen = new Dictionary<string, int>();
                     Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
 
-                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => b.QValue <= 0.01 && !b.IsDecoy).GroupBy(b => b.thisPSM.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
+                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => b.QValue <= 0.01 && !b.IsDecoy).GroupBy(b => b.thisPSM.Pli.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
                     {
-                        var singlePeptide = highConfidencePSM.thisPSM.PeptidesWithSetModifications.First();
+                        var singlePeptide = highConfidencePSM.thisPSM.Pli.PeptidesWithSetModifications.First();
                         var modsIdentified = singlePeptide.allModsOneIsNterminus;
                         foreach (var modSeen in modsIdentified)
                         {
@@ -789,7 +789,7 @@ namespace EngineLayer.Analysis
                         }
                     }
                     Status("Running FDR analysis on unique peptides...", nestedIds);
-                    writePsmsAction?.Invoke(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
+                    writePsmsAction?.Invoke(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
 
                     // individual (for single-file search) or aggregate results
                     if (doParsimony && writeProteinGroupsAction != null)
@@ -798,7 +798,7 @@ namespace EngineLayer.Analysis
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
                         // call multifile protein quantification helper function (need all the filenames to organize results properly)
-                        var files = orderedPsmsWithFDR.Select(p => p.thisPSM.fileName).Distinct().ToList();
+                        var files = orderedPsmsWithFDR.Select(p => p.thisPSM.FileName).Distinct().ToList();
                         foreach (var pg in proteinGroups[j])
                             pg.AggregateQuantifyHelper(files);
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition, nestedIds);
@@ -807,13 +807,13 @@ namespace EngineLayer.Analysis
                     // write individual file results based on aggregate results
                     if (arrayOfSortedMS2Scans == null && doParsimony)
                     {
-                        var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.fileName);
+                        var psmsGroupedByFilename = orderedPsmsWithFDR.GroupBy(p => p.thisPSM.FileName);
 
                         // individual psm files (with global psm fdr, global parsimony)
                         foreach (var group in psmsGroupedByFilename)
                         {
-                            var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.fileName);
-                            writePsmsAction(group.ToList(), fileName + "_allPSMS_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.fileName })));
+                            var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.FileName);
+                            writePsmsAction(group.ToList(), fileName + "_allPSMS_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.FileName })));
                         }
 
                         // individual protein group files (local protein fdr, global parsimony, global psm fdr)
@@ -870,7 +870,7 @@ namespace EngineLayer.Analysis
             {
                 var item = ids[i];
                 var isDecoy = item.IsDecoy;
-                int notch = item.thisPSM.notch;
+                int notch = item.thisPSM.Notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -899,7 +899,7 @@ namespace EngineLayer.Analysis
                 else if (id.QValue < min_q_value)
                     min_q_value = id.QValue;
 
-                int notch = id.thisPSM.notch;
+                int notch = id.thisPSM.Notch;
                 if (id.QValueNotch > min_q_value_notch[notch])
                     id.QValueNotch = min_q_value_notch[notch];
                 else if (id.QValueNotch < min_q_value_notch[notch])

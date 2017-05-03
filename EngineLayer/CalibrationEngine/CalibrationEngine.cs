@@ -201,10 +201,10 @@ namespace EngineLayer.Calibration
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Each identification has an MS2 spectrum attached to it.
-                int ms2spectrumIndex = identification.thisPSM.scanNumber;
-                int peptideCharge = identification.thisPSM.scanPrecursorCharge;
+                int ms2spectrumIndex = identification.thisPSM.ScanNumber;
+                int peptideCharge = identification.thisPSM.ScanPrecursorCharge;
 
-                var representativeSinglePeptide = identification.thisPSM.PeptidesWithSetModifications.First();
+                var representativeSinglePeptide = identification.thisPSM.Pli.PeptidesWithSetModifications.First();
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;

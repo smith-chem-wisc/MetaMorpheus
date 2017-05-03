@@ -70,8 +70,8 @@ namespace Test
             // Two matches for this single scan! Corresponding to two co-isolated masses
             Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].scanNumber);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].ScanNumber);
             Assert.AreEqual("NNNK", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
             Assert.AreEqual("NDNK", (searchResults.OuterPsms[0][1] as PsmClassic).ps.BaseSequence);
         }

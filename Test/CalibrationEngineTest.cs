@@ -44,7 +44,7 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.GetTheActualPeptidesWithSetModificationsAndComputeStuff(matching, fragmentTolerance, scan, lp, modsDictionary);
+            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
 
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
@@ -79,7 +79,7 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.GetTheActualPeptidesWithSetModificationsAndComputeStuff(matching, fragmentTolerance, scan, lp, modsDictionary);
+            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
 
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);

@@ -174,7 +174,7 @@ namespace Test
 
             foreach (var hm in psms)
             {
-                hm.thisPSM.GetTheActualPeptidesWithSetModificationsAndComputeStuff(initialDictionary, fragmentTolerance, scan, lp, modsDictionary);
+                hm.thisPSM.ComputeProteinLevelInfo(initialDictionary, fragmentTolerance, scan, lp, modsDictionary);
             }
 
             Console.WriteLine(psms.Count);
@@ -342,7 +342,7 @@ namespace Test
                 {psm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ peptide} }
             };
 
-            psm.GetTheActualPeptidesWithSetModificationsAndComputeStuff(compactPeptideToProteinPeptideMatching, fragmentTolerance, scan, lp, modsDictionary);
+            psm.ComputeProteinLevelInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, scan, lp, modsDictionary);
 
             psms.Add(new NewPsmWithFdr(psm));
 
@@ -429,8 +429,8 @@ namespace Test
             var match1 = new PsmClassic(peptideList.ElementAt(0), 0, 10, 0, ms2scan);
             var match2 = new PsmClassic(peptideList.ElementAt(1), 0, 10, 0, ms2scan);
 
-            match1.GetTheActualPeptidesWithSetModificationsAndComputeStuff(compactPeptideToProteinPeptideMatching, fragmentTolerance, ms2scan, lp, modsDictionary);
-            match2.GetTheActualPeptidesWithSetModificationsAndComputeStuff(compactPeptideToProteinPeptideMatching, fragmentTolerance, ms2scan, lp, modsDictionary);
+            match1.ComputeProteinLevelInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, ms2scan, lp, modsDictionary);
+            match2.ComputeProteinLevelInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, ms2scan, lp, modsDictionary);
 
             List<NewPsmWithFdr> psms = new List<NewPsmWithFdr>
             {

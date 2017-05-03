@@ -55,7 +55,7 @@ namespace EngineLayer
         {
             get
             {
-                return thisPSM.IsDecoy;
+                return thisPSM.Pli.IsDecoy;
             }
         }
 

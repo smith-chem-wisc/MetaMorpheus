@@ -73,10 +73,10 @@ namespace EngineLayer.Gptmd
             //
             foreach (var ye in allIdentifications.Where(b => b.QValueNotch <= 0.01 && !b.IsDecoy))
             {
-                var baseSequence = ye.thisPSM.BaseSequence;
-                foreach (var peptide in ye.thisPSM.PeptidesWithSetModifications)
+                var baseSequence = ye.thisPSM.Pli.BaseSequence;
+                foreach (var peptide in ye.thisPSM.Pli.PeptidesWithSetModifications)
                 {
-                    foreach (ModificationWithMass mod in GetPossibleMods(ye.thisPSM.scanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
+                    foreach (ModificationWithMass mod in GetPossibleMods(ye.thisPSM.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {
                         var proteinAcession = peptide.Protein.Accession;
                         for (int i = 0; i < baseSequence.Length; i++)

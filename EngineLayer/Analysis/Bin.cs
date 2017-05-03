@@ -68,7 +68,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.score + 1);
+                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.Pli.LocalizedScores.Max() >= b.Item3.thisPSM.Score + 1);
             }
         }
 
@@ -93,14 +93,14 @@ namespace EngineLayer.Analysis
 
         internal void Add(NewPsmWithFdr ok)
         {
-            if (uniquePSMs.ContainsKey(ok.thisPSM.FullSequence))
+            if (uniquePSMs.ContainsKey(ok.thisPSM.Pli.FullSequence))
             {
-                var current = uniquePSMs[ok.thisPSM.FullSequence];
-                if (current.Item3.thisPSM.score < ok.thisPSM.score)
-                    uniquePSMs[ok.thisPSM.FullSequence] = new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.BaseSequence, ok.thisPSM.FullSequence, ok);
+                var current = uniquePSMs[ok.thisPSM.Pli.FullSequence];
+                if (current.Item3.thisPSM.Score < ok.thisPSM.Score)
+                    uniquePSMs[ok.thisPSM.Pli.FullSequence] = new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.Pli.BaseSequence, ok.thisPSM.Pli.FullSequence, ok);
             }
             else
-                uniquePSMs.Add(ok.thisPSM.FullSequence, new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.BaseSequence, ok.thisPSM.FullSequence, ok));
+                uniquePSMs.Add(ok.thisPSM.Pli.FullSequence, new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.Pli.BaseSequence, ok.thisPSM.Pli.FullSequence, ok));
         }
 
         #endregion Internal Methods

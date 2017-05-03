@@ -49,8 +49,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
             PsmParent newPsm = new PsmClassic(ps, 0, 0, 2, scan);
 
-            Assert.IsNull(newPsm.LocalizedScores);
-            Assert.IsNull(newPsm.matchedIonsListPositiveIsMatch);
+            Assert.IsNull(newPsm.Pli);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
@@ -58,12 +57,12 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.GetTheActualPeptidesWithSetModificationsAndComputeStuff(matching, fragmentTolerance, scan, lp, modsDictionary);
+            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.matchedIonsListPositiveIsMatch[ProductType.B].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.matchedIonsListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.Pli.MatchedIonsListPositiveIsMatch[ProductType.B].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.Pli.MatchedIonsListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
-            Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
+            Assert.IsTrue(newPsm.Pli.LocalizedScores[1] > 3 && newPsm.Pli.LocalizedScores[1] < 4);
         }
 
         #endregion Public Methods

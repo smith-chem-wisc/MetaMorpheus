@@ -2,9 +2,7 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace EngineLayer
@@ -14,20 +12,6 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public readonly int notch;
-        public readonly double score;
-
-        public readonly int scanNumber;
-        public readonly int precursorScanNumber;
-        public readonly double scanRetentionTime;
-        public readonly int scanExperimentalPeaks;
-        public readonly double totalIonCurrent;
-        public readonly int scanPrecursorCharge;
-        public readonly IMzPeak scanPrecursorMonoisotopicPeak;
-        public readonly double scanPrecursorMass;
-        public Dictionary<ProductType, double[]> matchedIonsListPositiveIsMatch;
-        public List<double> LocalizedScores;
-
         public double[] quantIntensity;
         public double apexMz;
         public double quantRT;
@@ -35,28 +19,22 @@ namespace EngineLayer
 
         #endregion Public Fields
 
-        #region Internal Fields
-
-        internal readonly string fileName;
-
-        #endregion Internal Fields
-
         #region Protected Constructors
 
         protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
-            this.notch = notch;
-            this.score = score;
+            this.Notch = notch;
+            this.Score = score;
             this.ScanIndex = scanIndex;
-            this.fileName = scan.FileNameWithoutExtension;
-            this.scanNumber = scan.TheScan.OneBasedScanNumber;
-            this.precursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
-            this.scanRetentionTime = scan.TheScan.RetentionTime;
-            this.scanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
-            this.totalIonCurrent = scan.TheScan.TotalIonCurrent;
-            this.scanPrecursorCharge = scan.PrecursorCharge;
-            this.scanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
-            this.scanPrecursorMass = scan.PrecursorMass;
+            this.FileName = scan.FileNameWithoutExtension;
+            this.ScanNumber = scan.TheScan.OneBasedScanNumber;
+            this.PrecursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
+            this.ScanRetentionTime = scan.TheScan.RetentionTime;
+            this.ScanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
+            this.TotalIonCurrent = scan.TheScan.TotalIonCurrent;
+            this.ScanPrecursorCharge = scan.PrecursorCharge;
+            this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
+            this.ScanPrecursorMass = scan.PrecursorMass;
             quantIntensity = new double[1];
         }
 
@@ -64,26 +42,23 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public double PeptideMonoisotopicMass { get; set; }
+        public int Notch { get; }
+        public double Score { get; }
+        public int ScanNumber { get; }
+        public int PrecursorScanNumber { get; }
+        public double ScanRetentionTime { get; }
+        public int ScanExperimentalPeaks { get; }
+        public double TotalIonCurrent { get; }
+        public int ScanPrecursorCharge { get; }
+        public IMzPeak ScanPrecursorMonoisotopicPeak { get; }
+        public double ScanPrecursorMass { get; }
+        public string FileName { get; }
 
-        public string FullSequence { get; set; }
+        public int ScanIndex { get; }
 
-        public string BaseSequence { get; set; }
-
-        public int MissedCleavages { get; set; }
-
-        public int NumVariableMods { get; set; }
-
-        public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; internal set; }
-
-        public bool IsContaminant { get; private set; }
-
-        public bool IsDecoy { get; private set; }
-
-        public int ScanIndex { get; internal set; }
-
-        public string SequenceWithChemicalFormulas { get; internal set; }
         public int NumAmbiguous { get; internal set; }
+
+        public ProteinLevelInfo Pli { get; private set; }
 
         #endregion Public Properties
 
@@ -179,43 +154,9 @@ namespace EngineLayer
 
         public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
 
-        public void GetTheActualPeptidesWithSetModificationsAndComputeStuff(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Tolerance fragmentTolerance, Ms2ScanWithSpecificMass theScan, List<ProductType> lp, Dictionary<Proteomics.ModificationWithMass, ushort> modsDictionary)
+        public void ComputeProteinLevelInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Tolerance fragmentTolerance, Ms2ScanWithSpecificMass theScan, List<ProductType> lp, Dictionary<Proteomics.ModificationWithMass, ushort> modsDictionary)
         {
-            var theCompactPeptide = GetCompactPeptide(modsDictionary);
-            PeptidesWithSetModifications = matching[theCompactPeptide];
-            IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);
-            IsContaminant = PeptidesWithSetModifications.Any(bb => bb.Protein.IsContaminant);
-            var representative = PeptidesWithSetModifications.First();
-            var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
-            foreach (var huh in lp)
-            {
-                var df = representative.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
-                Array.Sort(df);
-                double[] matchedIonMassesListPositiveIsMatch = new double[df.Length];
-                MatchIons(theScan.TheScan, fragmentTolerance, df, matchedIonMassesListPositiveIsMatch);
-                MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
-            }
-
-            var localizedScores = new List<double>();
-            for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
-            {
-                PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, theScan.PrecursorMass - representative.MonoisotopicMass);
-
-                var gg = localizedPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                Array.Sort(gg);
-                double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                var score = MatchIons(theScan.TheScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch);
-                localizedScores.Add(score);
-            }
-
-            matchedIonsListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
-            LocalizedScores = localizedScores;
-            PeptideMonoisotopicMass = representative.MonoisotopicMass;
-            FullSequence = representative.Sequence;
-            BaseSequence = representative.BaseSequence;
-            MissedCleavages = representative.MissedCleavages;
-            NumVariableMods = representative.NumMods - representative.numFixedMods;
-            SequenceWithChemicalFormulas = representative.SequenceWithChemicalFormulas;
+            Pli = new ProteinLevelInfo(matching[GetCompactPeptide(modsDictionary)], fragmentTolerance, theScan, lp);
         }
 
         #endregion Public Methods
@@ -238,13 +179,11 @@ namespace EngineLayer
             sb.Append("notch" + '\t');
             sb.Append("quantificationIntensity" + '\t');
             sb.Append("quantificationRT" + '\t');
-
             sb.Append("matched ions" + '\t');
             sb.Append("matched ion counts" + '\t');
             sb.Append("localized scores" + '\t');
             sb.Append("improvement" + '\t');
             sb.Append("terminal localization");
-
             sb.Append("Protein Accession" + '\t');
             sb.Append("Protein FullName" + '\t');
             sb.Append("Peptide Description" + '\t');
