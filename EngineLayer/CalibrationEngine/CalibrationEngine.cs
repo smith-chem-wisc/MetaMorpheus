@@ -136,9 +136,8 @@ namespace EngineLayer.Calibration
                 new bool[] {true, true, false, false, false},
                 new bool[] {true, true, true, true, true},
             };
-            foreach (var boolStuff in boolStuffms1)
-            {
-                try
+            if (trainList1.Count > 0)
+                foreach (var boolStuff in boolStuffms1)
                 {
                     var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
                     ms1regressorRF.Train(trainList1);
@@ -149,11 +148,6 @@ namespace EngineLayer.Calibration
                         bestMS1predictor = ms1regressorRF;
                     }
                 }
-                catch
-                {
-                    //Console.WriteLine("errored!");
-                }
-            }
 
             List<bool[]> boolStuffms2 = new List<bool[]>
             {
@@ -161,9 +155,8 @@ namespace EngineLayer.Calibration
                 new bool[] {true, true, true, true, true,false},
                 new bool[] {true, true, true, true, true,true},
             };
-            foreach (var boolStuff in boolStuffms2)
-            {
-                try
+            if (trainList2.Count > 0)
+                foreach (var boolStuff in boolStuffms2)
                 {
                     var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
                     ms2regressorRF.Train(trainList2);
@@ -174,11 +167,6 @@ namespace EngineLayer.Calibration
                         bestMS2predictor = ms2regressorRF;
                     }
                 }
-                catch
-                {
-                    //Console.WriteLine("errored!");
-                }
-            }
 
             Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
 
@@ -213,15 +201,16 @@ namespace EngineLayer.Calibration
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Each identification has an MS2 spectrum attached to it.
-                int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
+                int ms2spectrumIndex = identification.thisPSM.scanNumber;
+                int peptideCharge = identification.thisPSM.scanPrecursorCharge;
+
+                var representativeSinglePeptide = identification.thisPSM.PeptidesWithSetModifications.First();
 
                 // Get the peptide, don't forget to add the modifications!!!!
-                var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
+                var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
+                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
-
-                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
                 numMs2MassChargeCombinationsConsidered = 0;
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;

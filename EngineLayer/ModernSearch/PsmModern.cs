@@ -14,7 +14,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public PsmModern(CompactPeptide theBestPeptide, Ms2ScanWithSpecificMass scan, double score, int notch) : base(scan, score, notch)
+        public PsmModern(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan)
         {
             compactPeptide = theBestPeptide;
         }

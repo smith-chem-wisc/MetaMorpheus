@@ -8,7 +8,7 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public PsmWithMultiplePossiblePeptides thisPSM;
+        public PsmParent thisPSM;
 
         #endregion Public Fields
 
@@ -23,7 +23,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public NewPsmWithFdr(PsmWithMultiplePossiblePeptides thisPsm)
+        public NewPsmWithFdr(PsmParent thisPsm)
         {
             this.thisPSM = thisPsm;
         }
@@ -37,7 +37,7 @@ namespace EngineLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.Append(PsmWithMultiplePossiblePeptides.TabSeparatedHeader + '\t');
+                sb.Append(PsmParent.GetTabSeparatedHeader() + '\t');
                 sb.Append("cumulative_target" + '\t');
                 sb.Append("cumulative_decoy" + '\t');
                 sb.Append("QValue" + '\t');

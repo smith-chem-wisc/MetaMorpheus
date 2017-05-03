@@ -80,9 +80,9 @@ namespace EngineLayer.ClassicSearch
 
             Status("Getting ms2 scans...", nestedIds);
 
-            var outerPsms = new List<PsmParent>[searchModes.Count][];
+            var outerPsms = new PsmParent[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                outerPsms[aede] = new List<PsmParent>[arrayOfSortedMS2Scans.Length];
+                outerPsms[aede] = new PsmParent[arrayOfSortedMS2Scans.Length];
 
             var lockObject = new object();
             int proteinsSeen = 0;
@@ -91,9 +91,9 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new List<PsmParent>[searchModes.Count][];
+                var psms = new PsmParent[searchModes.Count][];
                 for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
-                    psms[searchModeIndex] = new List<PsmParent>[arrayOfSortedMS2Scans.Length];
+                    psms[searchModeIndex] = new PsmParent[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -130,32 +130,18 @@ namespace EngineLayer.ClassicSearch
                                 var searchMode = searchModes[searchModeIndex];
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var scan = scanWithIndexAndNotchInfo.theScan;
-
-                                    var score = PsmWithMultiplePossiblePeptides.MatchIons(scan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
-                                    var psm = new PsmClassic(yyy, scan, score, scanWithIndexAndNotchInfo.notch);
-                                    if (psm.score > 1)
+                                    var score = PsmParent.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
+                                    if (score > 1)
                                     {
+                                        var psm = new PsmClassic(yyy, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
                                         var currentBestPsmList = psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex];
                                         if (currentBestPsmList == null)
-                                        {
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new List<PsmParent> { psm };
-                                            matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
-                                        }
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
                                         else
                                         {
-                                            var current_best_psm = currentBestPsmList.First() as PsmClassic;
-                                            var firstIsPreferable = PsmClassic.FirstIsPreferable(psm, current_best_psm, variableModifications);
-                                            if (firstIsPreferable.HasValue && firstIsPreferable.Value)
-                                            {
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new List<PsmParent> { psm };
-                                                matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
-                                            }
-                                            else if (!firstIsPreferable.HasValue)
-                                            {
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(psm);
-                                                matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
-                                            }
+                                            var singleIsPreferable = PsmClassic.FirstIsPreferable(psm, currentBestPsmList as PsmClassic, variableModifications);
+                                            if (singleIsPreferable.HasValue && singleIsPreferable.Value)
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
                                         }
                                     }
                                 }
@@ -173,11 +159,9 @@ namespace EngineLayer.ClassicSearch
                                     outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    var firstIsPreferable = PsmClassic.FirstIsPreferable(psms[searchModeIndex][i].First() as PsmClassic, outerPsms[searchModeIndex][i].First() as PsmClassic, variableModifications);
+                                    var firstIsPreferable = PsmClassic.FirstIsPreferable(psms[searchModeIndex][i] as PsmClassic, outerPsms[searchModeIndex][i] as PsmClassic, variableModifications);
                                     if (firstIsPreferable.HasValue && firstIsPreferable.Value)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
-                                    else if (!firstIsPreferable.HasValue)
-                                        outerPsms[searchModeIndex][i].AddRange(psms[searchModeIndex][i]);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

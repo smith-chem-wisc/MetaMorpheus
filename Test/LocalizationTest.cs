@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -47,14 +46,19 @@ namespace Test
 
             List<PeptideWithSetModifications> peptidesWithSetModifications = new List<PeptideWithSetModifications> { ps };
 
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> fb = new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fb, pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1, null);
-            PsmParent newPsm = new PsmClassic(ps, scan, 0, 0);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
+            PsmParent newPsm = new PsmClassic(ps, 0, 0, 2, scan);
 
             Assert.IsNull(newPsm.LocalizedScores);
             Assert.IsNull(newPsm.matchedIonsListPositiveIsMatch);
-            new PsmWithMultiplePossiblePeptides(newPsm, peptidesWithSetModifications, fragmentTolerance, myMsDataFile, lp);
 
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            {
+                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
+            };
+
+            newPsm.GetTheActualPeptidesWithSetModificationsAndComputeStuff(matching, fragmentTolerance, scan, lp, modsDictionary);
             // Was single peak!!!
             Assert.AreEqual(0, newPsm.matchedIonsListPositiveIsMatch[ProductType.B].Count(b => b > 0));
             Assert.AreEqual(1, newPsm.matchedIonsListPositiveIsMatch[ProductType.Y].Count(b => b > 0));

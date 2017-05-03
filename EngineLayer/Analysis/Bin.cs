@@ -68,7 +68,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.Score + 1);
+                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.LocalizedScores.Max() >= b.Item3.thisPSM.score + 1);
             }
         }
 
@@ -96,7 +96,7 @@ namespace EngineLayer.Analysis
             if (uniquePSMs.ContainsKey(ok.thisPSM.FullSequence))
             {
                 var current = uniquePSMs[ok.thisPSM.FullSequence];
-                if (current.Item3.thisPSM.Score < ok.thisPSM.Score)
+                if (current.Item3.thisPSM.score < ok.thisPSM.score)
                     uniquePSMs[ok.thisPSM.FullSequence] = new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.BaseSequence, ok.thisPSM.FullSequence, ok);
             }
             else

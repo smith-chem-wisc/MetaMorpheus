@@ -1,324 +1,230 @@
-﻿using Chemistry;
-using MassSpectrometry;
-using MzLibUtil;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
+﻿//using System.Collections.Generic;
+//using System.Globalization;
+//using System.IO;
+//using System.Linq;
+//using System.Text;
 
-namespace EngineLayer
-{
-    public class PsmWithMultiplePossiblePeptides
-    {
+//namespace EngineLayer
+//{
+//    public class PsmWithMultiplePossiblePeptides
+//    {
 
-        #region Public Fields
+//        #region Public Fields
 
-        public PsmParent newPsm;
+//        public readonly int scanNumber;
 
-        #endregion Public Fields
+//        public readonly int precursorScanNumber;
 
-        #region Public Constructors
+//        public readonly double scanRetentionTime;
 
-        public PsmWithMultiplePossiblePeptides(PsmParent newPsm, List<PeptideWithSetModifications> peptidesWithSetModifications, Tolerance fragmentTolerance, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, List<ProductType> lp)
-        {
-            this.newPsm = newPsm;
-            IsDecoy = peptidesWithSetModifications.Any(b => b.Protein.IsDecoy);
-            IsContaminant = peptidesWithSetModifications.Any(b => b.Protein.IsContaminant);
-            this.PeptidesWithSetModifications = peptidesWithSetModifications;
+//        public readonly int scanExperimentalPeaks;
 
-            var representative = peptidesWithSetModifications.First();
+//        public readonly double totalIonCurrent;
 
-            IMsDataScan<IMzSpectrum<IMzPeak>> theScan;
-            if (myMsDataFile != null && newPsm.matchedIonsListPositiveIsMatch == null)
-            {
-                theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
+//        public readonly int scanPrecursorCharge;
 
-                var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
-                foreach (var huh in lp)
-                {
-                    var df = representative.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
-                    Array.Sort(df);
-                    double[] matchedIonMassesListPositiveIsMatch = new double[df.Length];
-                    MatchIons(theScan, fragmentTolerance, df, matchedIonMassesListPositiveIsMatch);
-                    MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
-                }
+//        public readonly double scanPrecursorMZ;
 
-                newPsm.matchedIonsListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
-            }
+//        public readonly double scanPrecursorMass;
 
-            if (myMsDataFile != null && newPsm.LocalizedScores == null)
-            {
-                theScan = myMsDataFile.GetOneBasedScan(newPsm.scanNumber);
-                var localizedScores = new List<double>();
-                for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
-                {
-                    PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ScanPrecursorMass - representative.MonoisotopicMass);
+//        public double[] quantIntensity;
 
-                    var gg = localizedPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                    Array.Sort(gg);
-                    double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                    var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch);
-                    localizedScores.Add(score);
-                }
-                newPsm.LocalizedScores = localizedScores;
-            }
+//        public double apexMz;
 
-            PeptideMonoisotopicMass = representative.MonoisotopicMass;
+//        public double quantRT;
 
-            // Look for better match in MS1 spectrum!!!
-            if (myMsDataFile != null && !newPsm.precursorScanBestMass.HasValue)
-            {
-                var precursorScan = myMsDataFile.GetOneBasedScan(newPsm.precursorScanNumber);
-                newPsm.precursorScanBestMass = precursorScan.MassSpectrum.GetClosestPeakXvalue(this.PeptideMonoisotopicMass.ToMz(this.newPsm.scanPrecursorCharge)).ToMass(this.newPsm.scanPrecursorCharge);
-            }
+//        public double mostAbundantMass;
 
-            FullSequence = representative.Sequence;
-            BaseSequence = representative.BaseSequence;
-            MissedCleavages = representative.MissedCleavages;
-            NumVariableMods = representative.NumMods - representative.numFixedMods;
-        }
+//        #endregion Public Fields
 
-        #endregion Public Constructors
+//        #region Public Constructors
 
-        #region Public Properties
+//        public PsmWithMultiplePossiblePeptides(Ms2ScanWithSpecificMass scan, Psm match)
+//        {
+//            this.Score = match.score;
+//            this.FileName = scan.FileNameWithoutExtension;
+//            this.scanNumber = scan.TheScan.OneBasedScanNumber;
+//            this.precursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
+//            this.scanRetentionTime = scan.TheScan.RetentionTime;
+//            this.scanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
+//            this.totalIonCurrent = scan.TheScan.TotalIonCurrent;
+//            this.scanPrecursorCharge = scan.PrecursorCharge;
+//            this.scanPrecursorMZ = scan.PrecursorMz;
+//            this.scanPrecursorMass = scan.PrecursorMass;
+//            ListOfindividualPsmsWithUniquePeptides = new List<Psm> { match };
+//            quantIntensity = new double[0];
+//        }
 
-        public List<PeptideWithSetModifications> PeptidesWithSetModifications { get; private set; }
-        public bool IsDecoy { get; private set; }
-        public bool IsContaminant { get; private set; }
+//        #endregion Public Constructors
 
-        public double Score
-        {
-            get
-            {
-                return newPsm.score;
-            }
-        }
+//        #region Public Properties
 
-        public double ScanPrecursorMass
-        {
-            get
-            {
-                return newPsm.scanPrecursorMass;
-            }
-        }
+//        public List<Psm> ListOfindividualPsmsWithUniquePeptides { get; }
 
-        public List<double> LocalizedScores
-        {
-            get
-            {
-                return newPsm.LocalizedScores;
-            }
-        }
+//        public double Score { get; }
+//        public string FileName { get; }
+//        public bool IsDecoy { get { return ListOfindividualPsmsWithUniquePeptides.Any(b => b.IsDecoy); } }
+//        public bool IsContaminant { get { return ListOfindividualPsmsWithUniquePeptides.Any(b => b.IsContaminant); } }
 
-        public double PeptideMonoisotopicMass { get; private set; }
+//        #endregion Public Properties
 
-        public string FullSequence { get; private set; }
+//        #region Public Methods
 
-        public string BaseSequence { get; private set; }
+//        public override string ToString()
+//        {
+//            var sb = new StringBuilder();
 
-        public int MissedCleavages { get; private set; }
+//            sb.Append(Path.GetFileNameWithoutExtension(FileName) + '\t');
+//            sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(scanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(totalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(precursorScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+//            sb.Append(string.Join("|", quantIntensity) + '\t');
+//            sb.Append(quantRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-        public int NumVariableMods { get; private set; }
+//            StringBuilder thisSb = new StringBuilder();
+//            foreach (var psm in ListOfindividualPsmsWithUniquePeptides)
+//            {
+//                thisSb.Append("[");
+//                foreach (var kvp in psm.matchedIonsListPositiveIsMatch)
+//                    thisSb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+//                thisSb.Append("] ");
+//            }
+//            if (thisSb.Length > 32000)
+//                sb.Append("too many\t");
+//            else
+//                sb.Append(thisSb.ToString() + '\t');
 
-        public string SequenceWithChemicalFormulas
-        {
-            get
-            {
-                return PeptidesWithSetModifications.First().SequenceWithChemicalFormulas;
-            }
-        }
+//            thisSb = new StringBuilder();
+//            foreach (var psm in ListOfindividualPsmsWithUniquePeptides)
+//            {
+//                thisSb.Append("[");
+//                thisSb.Append(string.Join(";", psm.matchedIonsListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))));
+//                thisSb.Append("] ");
+//            }
+//            if (thisSb.Length > 32000)
+//                sb.Append("too many\t");
+//            else
+//                sb.Append(thisSb.ToString() + '\t');
 
-        #endregion Public Properties
+//            //sb.Append(string.Join(";", matchedIonsListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
 
-        #region Internal Properties
+//            //sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 
-        internal static string TabSeparatedHeader
-        {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.Append(PsmParent.GetTabSeparatedHeader() + '\t');
-                sb.Append("Protein Accession" + '\t');
-                sb.Append("Protein FullName" + '\t');
-                sb.Append("Peptide Description" + '\t');
-                sb.Append("Start and End ResidueInProtein" + '\t');
-                sb.Append("PreviousAminoAcid" + '\t');
-                sb.Append("NextAminoAcid" + '\t');
-                sb.Append("BaseSequence" + '\t');
-                sb.Append("FullSequence" + '\t');
-                sb.Append("numVariableMods" + '\t');
-                sb.Append("MissedCleavages" + '\t');
-                sb.Append("PeptideMonoisotopicMass" + '\t');
-                sb.Append("MassDiff (Da)" + '\t');
-                sb.Append("MassDiff (ppm)" + '\t');
-                sb.Append("BestMassInPrecursor" + '\t');
-                sb.Append("MassDiffToBestMass (Da)" + '\t');
-                sb.Append("MassDiffToBestMass (ppm)" + '\t');
-                sb.Append("Decoy/Contaminant/Target");
-                return sb.ToString();
-            }
-        }
+//            //sb.Append((LocalizedScores.Max() - score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
 
-        #endregion Internal Properties
+//            //if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
+//            //    sb.Append("N");
+//            //else if (LocalizedScores.IndexOf(LocalizedScores.Max()) == LocalizedScores.Count - 1)
+//            //    sb.Append("C");
+//            //else
+//            //    sb.Append("");
 
-        #region Public Methods
+//            //var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-        public static double MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesListPositiveIsMatch)
-        {
-            var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
-            if (TotalProductsHere == 0)
-                return 0;
-            int MatchingProductsHere = 0;
-            double MatchingIntensityHere = 0;
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-            // speed optimizations
-            double[] experimental_mzs = thisScan.MassSpectrum.XArray;
-            double[] experimental_intensities = thisScan.MassSpectrum.YArray;
-            int num_experimental_peaks = experimental_mzs.Length;
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-            int currentTheoreticalIndex = -1;
-            double currentTheoreticalMass;
-            do
-            {
-                currentTheoreticalIndex++;
-                currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-            } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sorted_theoretical_product_masses_for_this_peptide.Length - 1);
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]"));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-            if (double.IsNaN(currentTheoreticalMass))
-                return 0;
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-            int testTheoreticalIndex;
-            double testTheoreticalMZ;
-            double testTheoreticalMass;
-            // Loop over all experimenal indices
-            for (int experimentalIndex = 0; experimentalIndex < num_experimental_peaks; experimentalIndex++)
-            {
-                double currentExperimentalMZ = experimental_mzs[experimentalIndex];
-                // If found match
-                if (productMassTolerance.Within(currentExperimentalMZ, currentTheoreticalMz))
-                {
-                    MatchingProductsHere++;
-                    MatchingIntensityHere += experimental_intensities[experimentalIndex];
-                    matchedIonMassesListPositiveIsMatch[currentTheoreticalIndex] = currentTheoreticalMass;
-                    currentTheoreticalIndex++;
-                    if (currentTheoreticalIndex == TotalProductsHere)
-                        break;
-                    currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
-                }
-                // Else if for sure did not reach the next theoretical yet, move to next experimental
-                else if (currentExperimentalMZ < currentTheoreticalMz)
-                    continue;
-                // Else if for sure passed a theoretical
-                else
-                {
-                    // Mark the theoretical as missed
-                    matchedIonMassesListPositiveIsMatch[currentTheoreticalIndex] = -currentTheoreticalMass;
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.BaseSequence));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-                    // Move on to next index and never come back!
-                    currentTheoreticalIndex++;
-                    if (currentTheoreticalIndex == TotalProductsHere)
-                        break;
-                    currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+//            //s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Sequence));
+//            //if (s.Length > 32000)
+//            //    s = "too many";
+//            //sb.Append(s + "\t");
 
-                    // Start with the current ones
-                    testTheoreticalIndex = currentTheoreticalIndex;
-                    testTheoreticalMZ = currentTheoreticalMz;
-                    testTheoreticalMass = currentTheoreticalMass;
-                    // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
-                    while (currentExperimentalMZ > testTheoreticalMZ)
-                    {
-                        matchedIonMassesListPositiveIsMatch[testTheoreticalIndex] = -currentTheoreticalMass;
-                        // Store old info for possible reuse
-                        currentTheoreticalMass = testTheoreticalMass;
-                        currentTheoreticalMz = testTheoreticalMZ;
-                        currentTheoreticalIndex = testTheoreticalIndex;
+//            //sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
+//            //sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
+//            //sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            //sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+//            //sb.Append(((ScanPrecursorMass - PeptideMonoisotopicMass) / PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-                        // Update test stuff!
-                        testTheoreticalIndex++;
-                        if (testTheoreticalIndex == TotalProductsHere)
-                            break;
-                        testTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[testTheoreticalIndex];
-                        testTheoreticalMZ = testTheoreticalMass + Constants.protonMass;
-                    }
+//            if (IsDecoy)
+//                sb.Append("D");
+//            else if (IsContaminant)
+//                sb.Append("C");
+//            else
+//                sb.Append("T");
+//            return sb.ToString();
+//        }
 
-                    experimentalIndex--;
-                }
-            }
-            return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
-        }
+//        #endregion Public Methods
 
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
+//        #region Internal Methods
 
-            sb.Append(newPsm.ToString() + '\t');
+//        internal static string GetTabSeparatedHeader()
+//        {
+//            var sb = new StringBuilder();
+//            sb.Append("fileName" + '\t');
+//            sb.Append("scanNumber" + '\t');
+//            sb.Append("scanRetentionTime" + '\t');
+//            sb.Append("scanExperimentalPeaks" + '\t');
+//            sb.Append("totalIonCurrent" + '\t');
+//            sb.Append("precursorScanNumber" + '\t');
+//            sb.Append("scanPrecursorCharge" + '\t');
+//            sb.Append("scanPrecursorMZ" + '\t');
+//            sb.Append("scanPrecursorMass" + '\t');
+//            sb.Append("score" + '\t');
+//            sb.Append("notch" + '\t');
+//            sb.Append("quantificationIntensity" + '\t');
+//            sb.Append("quantificationRT" + '\t');
 
-            var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
+//            sb.Append("matched ions" + '\t');
+//            sb.Append("matched ion counts" + '\t');
+//            sb.Append("localized scores" + '\t');
+//            sb.Append("improvement" + '\t');
+//            sb.Append("terminal localization");
 
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
+//            sb.Append("Protein Accession" + '\t');
+//            sb.Append("Protein FullName" + '\t');
+//            sb.Append("Peptide Description" + '\t');
+//            sb.Append("Start and End ResidueInProtein" + '\t');
+//            sb.Append("PreviousAminoAcid" + '\t');
+//            sb.Append("NextAminoAcid" + '\t');
+//            sb.Append("BaseSequence" + '\t');
+//            sb.Append("FullSequence" + '\t');
+//            sb.Append("numVariableMods" + '\t');
+//            sb.Append("MissedCleavages" + '\t');
+//            sb.Append("PeptideMonoisotopicMass" + '\t');
+//            sb.Append("MassDiff (Da)" + '\t');
+//            sb.Append("MassDiff (ppm)" + '\t');
+//            sb.Append("Decoy/Contaminant/Target");
+//            return sb.ToString();
+//        }
 
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
+//        #endregion Internal Methods
 
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]"));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.BaseSequence));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Sequence));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append((ScanPrecursorMass - PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(((ScanPrecursorMass - PeptideMonoisotopicMass) / PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-
-            sb.Append(newPsm.precursorScanBestMass.Value.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append((newPsm.precursorScanBestMass - PeptideMonoisotopicMass).Value.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(((newPsm.precursorScanBestMass - PeptideMonoisotopicMass) / PeptideMonoisotopicMass * 1e6).Value.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-
-            if (IsDecoy)
-                sb.Append("D");
-            else if (IsContaminant)
-                sb.Append("C");
-            else
-                sb.Append("T");
-
-            return sb.ToString();
-        }
-
-        #endregion Public Methods
-
-    }
-}
+//    }
+//}

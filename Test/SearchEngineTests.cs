@@ -45,9 +45,9 @@ namespace Test
             // One scan
             Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].First().score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].First().scanNumber);
-            Assert.AreEqual("QQQ", (searchResults.OuterPsms[0][0].First() as PsmClassic).ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].scanNumber);
+            Assert.AreEqual("QQQ", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
         }
 
         [Test]
@@ -80,9 +80,9 @@ namespace Test
             // One Scan
             Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].First().score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].First().scanNumber);
-            Assert.AreEqual("QXQ", (searchResults.OuterPsms[0][0].First() as PsmClassic).ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].scanNumber);
+            Assert.AreEqual("QXQ", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
         }
 
         [Test]
@@ -120,19 +120,23 @@ namespace Test
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
+            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
             Assert.AreEqual(1, searchResults.NewPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.NewPsms[0].Length);
+            // Single ms2 scan
+            Assert.AreEqual(1, searchResults.NewPsms[0].Length);
 
-            Assert.IsTrue(searchResults.NewPsms[0][1].First().score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][1].First().scanNumber);
-            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].First().GetCompactPeptide(modsDictionary).BaseSequence);
+            Assert.IsTrue(searchResults.NewPsms[0][0].score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][0].scanNumber);
+            Assert.AreEqual("QQQ", searchResults.NewPsms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
         }
 
         [Test]
@@ -170,19 +174,23 @@ namespace Test
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
+            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
             Assert.AreEqual(1, searchResults.NewPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.NewPsms[0].Length);
+            // Single ms2 scan
+            Assert.AreEqual(1, searchResults.NewPsms[0].Length);
 
-            Assert.IsTrue(searchResults.NewPsms[0][1].First().score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][1].First().scanNumber);
-            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].First().GetCompactPeptide(modsDictionary).BaseSequence);
+            Assert.IsTrue(searchResults.NewPsms[0][0].score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][0].scanNumber);
+            Assert.AreEqual("QXQ", searchResults.NewPsms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
         }
 
         #endregion Public Methods

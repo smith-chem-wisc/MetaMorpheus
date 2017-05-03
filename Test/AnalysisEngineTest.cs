@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
-using EngineLayer.ModernSearch;
+using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -40,7 +40,7 @@ namespace Test
                 i++;
             }
 
-            List<PsmParent>[][] newPsms = new List<PsmParent>[1][];
+            PsmParent[][] newPsms = new PsmParent[1][];
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
@@ -68,13 +68,14 @@ namespace Test
             //                                     new List<PsmParent>{  new PsmModern(compactPeptide2, null, 2,2+132.040,3,3,2,2,2,2,2,0) },
             //                                     new List<PsmParent>{ new PsmModern(compactPeptide3, null, 3, 3, 4, 3, 3, 3, 3, 3, 3, 0)} };
 
-            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 0, null);
-            Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 0, null);
-            Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), 0, 0, null);
+            Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), new MzPeak(0, 0), 0, null);
+            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), new MzPeak(0, 0), 0, null);
+            Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), new MzPeak(0, 0), 0, null);
 
-            newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, scanA, 3,0) },
-                                                 new List<PsmParent>{ new PsmModern(compactPeptide2, scanB, 2,0) },
-                                                 new List<PsmParent>{ new PsmModern(compactPeptide3, scanC, 3, 0)} };
+            PsmParent matchA = new PsmClassic(value.First(), 0, 0, 0, scanA);
+            PsmParent matchB = new PsmClassic(value2.First(), 0, 0, 0, scanB);
+            PsmParent matchC = new PsmClassic(value3.First(), 0, 0, 0, scanC);
+            newPsms[0] = new PsmParent[] { matchA, matchB, matchC };
 
             compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);
@@ -93,7 +94,13 @@ namespace Test
             bool quant = false;
             double quantRtTol = 0;
             double quantPpmTol = 0;
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, myMsDataFile, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol, modsDictionary);
+
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, arrayOfMs2ScansSortedByMass, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol, modsDictionary, myMsDataFile);
 
             engine.Run();
         }

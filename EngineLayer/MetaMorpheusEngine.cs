@@ -41,7 +41,7 @@ namespace EngineLayer
 
                 var massTolerance = new Tolerance("10 PPM");
 
-                List<Tuple<List<double>, int>> isolatedStuff = new List<Tuple<List<double>, int>>();
+                List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
                 if (findAllPrecursors)
                 {
                     int maxAssumedChargeState = 10;
@@ -55,17 +55,17 @@ namespace EngineLayer
                         if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                         {
                             var PrecursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                            if (!isolatedStuff.Any(b => massTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().ToMass(b.Item2))))
+                            if (!isolatedStuff.Any(b => massTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
                             {
-                                isolatedStuff.Add(new Tuple<List<double>, int>(new List<double> { PrecursorMZ }, PrecursorCharge));
+                                isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonMonoisotopicGuessIntensity.Value) }, PrecursorCharge));
                             }
                         }
                         else
                         {
                             var PrecursorMZ = ms2scan.SelectedIonMZ;
-                            if (!isolatedStuff.Any(b => massTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().ToMass(b.Item2))))
+                            if (!isolatedStuff.Any(b => massTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
                             {
-                                isolatedStuff.Add(new Tuple<List<double>, int>(new List<double> { PrecursorMZ }, PrecursorCharge));
+                                isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonIntensity.Value) }, PrecursorCharge));
                             }
                         }
                     }

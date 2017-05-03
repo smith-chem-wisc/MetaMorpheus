@@ -23,7 +23,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public PsmClassic(PeptideWithSetModifications ps, Ms2ScanWithSpecificMass ms2scan, double score, int notch) : base(ms2scan, score, notch)
+        public PsmClassic(PeptideWithSetModifications ps, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan)
         {
             this.ps = ps;
         }

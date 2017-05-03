@@ -70,69 +70,10 @@ namespace Test
             // Two matches for this single scan! Corresponding to two co-isolated masses
             Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].First().score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].First().scanNumber);
-            Assert.AreEqual("NNNK", (searchResults.OuterPsms[0][0].First() as PsmClassic).ps.BaseSequence);
-            Assert.AreEqual("NDNK", (searchResults.OuterPsms[0][1].First() as PsmClassic).ps.BaseSequence);
-        }
-
-        [Test]
-        public static void TestTwoMatches()
-        {
-            var variableModifications = new List<ModificationWithMass>();
-            var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("MDNNKNDNK", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
-
-            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
-            Proteomics.Peptide pep1 = new Proteomics.Peptide("DNNK");
-
-            var dist1 = IsotopicDistribution.GetDistribution(pep1.GetChemicalFormula(), 0.1, 0.01);
-
-            IMzmlScan[] Scans = new IMzmlScan[2];
-            double[] ms1intensities = new double[] { 0.8, 0.2, 0.02 };
-            double[] ms1mzs = dist1.Masses.Select(b => b.ToMz(1)).ToArray();
-
-            double selectedIonMz = ms1mzs[0];
-
-            MzmlMzSpectrum MS1 = new MzmlMzSpectrum(ms1mzs, ms1intensities, false);
-
-            Scans[0] = new MzmlScan(1, MS1, 1, false, Polarity.Positive, 1.0, new MzRange(300, 2000), "first spectrum", MZAnalyzerType.Unknown, MS1.SumOfAllY, null);
-
-            double[] ms2intensities = new double[] { 1, 1 };
-            double[] ms2mzs = new double[] { 146.106.ToMz(1), 260.148.ToMz(1) };
-            MzmlMzSpectrum MS2 = new MzmlMzSpectrum(ms2mzs, ms2intensities, false);
-            double isolationMZ = selectedIonMz;
-            Scans[1] = new MzmlScanWithPrecursor(2, MS2, 2, false, Polarity.Positive, 2.0, new MzRange(100, 1500), "second spectrum", MZAnalyzerType.Unknown, MS2.SumOfAllY, selectedIonMz, null, null, isolationMZ, 2.5, DissociationType.HCD, 1, null, null);
-
-            var myMsDataFile = new FakeMsDataFile(Scans);
-
-            bool useProvidedPrecursorInfo = true;
-            bool findAllPrecursors = true;
-            var intensityRatio = 50;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
-            int maximumMissedCleavages = 2;
-            int? minPeptideLength = null;
-            int? maxPeptideLength = null;
-            int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
-            var searchResults = (ClassicSearchResults)engine.Run();
-
-            // Single search mode
-            Assert.AreEqual(1, searchResults.OuterPsms.Length);
-
-            // Single isolated mass
-            Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
-
-            // Two matches, there is ambiguity!
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].Count);
-
-            Assert.IsTrue(searchResults.OuterPsms[0][0].First().score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].First().scanNumber);
-            Assert.AreEqual("DNNK", (searchResults.OuterPsms[0][0].First() as PsmClassic).ps.BaseSequence);
-            Assert.AreEqual("NDNK", (searchResults.OuterPsms[0][0].Last() as PsmClassic).ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].scanNumber);
+            Assert.AreEqual("NNNK", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
+            Assert.AreEqual("NDNK", (searchResults.OuterPsms[0][1] as PsmClassic).ps.BaseSequence);
         }
 
         #endregion Public Methods

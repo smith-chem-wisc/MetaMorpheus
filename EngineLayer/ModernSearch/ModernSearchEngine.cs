@@ -4,7 +4,6 @@ using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
@@ -22,7 +21,7 @@ namespace EngineLayer.ModernSearch
 
         private readonly float[] keys;
 
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile;
+        private readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
 
         private readonly List<CompactPeptide> peptideIndex;
 
@@ -34,9 +33,9 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds)
         {
-            this.myMSDataFile = myMSDataFile;
+            this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
@@ -53,18 +52,12 @@ namespace EngineLayer.ModernSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In modern search engine...", nestedIds);
-            var totalSpectra = myMSDataFile.NumSpectra;
-
-            List<PsmParent>[][] newPsms = new List<PsmParent>[searchModes.Count][];
-            for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new List<PsmParent>[totalSpectra];
-
-            bool findAllPrecursors = true;
-            bool useProvidedPrecursorInfo = true;
-            var intensityRatio = 4;
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, fileToSearch).OrderBy(b => b.PrecursorMass).ToArray();
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
+            PsmParent[][] newPsms = new PsmParent[searchModes.Count][];
+            for (int i = 0; i < searchModes.Count; i++)
+                newPsms[i] = new PsmParent[listOfSortedms2Scans.Length];
+
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
             int scansSeen = 0;
@@ -140,7 +133,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.TheScan.OneBasedScanNumber - 1] = new List<PsmParent> { new PsmModern(theBestPeptide, thisScan, bestScores[j], bestNotches[j]) };
+                            newPsms[j][i] = new PsmModern(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
                         }
                     }
                 }
