@@ -284,7 +284,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    var modernSearchResults = (ModernSearchResults)new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, SearchModes, origDataFile, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
+                    var modernSearchResults = (ModernSearchResults)new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, SearchModes, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
                     for (int ii = 0; ii < SearchModes.Count; ii++)
                         allPsms[ii].AddRange(modernSearchResults.NewPsms[ii]);
                     MetaMorpheusEngineResults analysisResults;

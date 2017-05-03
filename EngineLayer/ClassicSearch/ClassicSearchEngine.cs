@@ -143,7 +143,7 @@ namespace EngineLayer.ClassicSearch
                                             if (singleIsPreferable.HasValue && singleIsPreferable.Value)
                                                 psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
                                             else if (!singleIsPreferable.HasValue)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].NumSame++;
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].NumAmbiguous++;
                                         }
                                     }
                                 }
@@ -165,7 +165,7 @@ namespace EngineLayer.ClassicSearch
                                     if (firstIsPreferable.HasValue && firstIsPreferable.Value)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                     else if (!firstIsPreferable.HasValue)
-                                        outerPsms[searchModeIndex][i].NumSame++;
+                                        outerPsms[searchModeIndex][i].NumAmbiguous++;
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

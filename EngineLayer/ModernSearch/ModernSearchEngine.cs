@@ -26,14 +26,13 @@ namespace EngineLayer.ModernSearch
         private readonly List<CompactPeptide> peptideIndex;
 
         private readonly List<SearchMode> searchModes;
-        private readonly string fileToSearch;
         private readonly List<string> nestedIds;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, List<string> nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
@@ -41,7 +40,6 @@ namespace EngineLayer.ModernSearch
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
-            this.fileToSearch = fileToSearch;
             this.nestedIds = nestedIds;
         }
 
