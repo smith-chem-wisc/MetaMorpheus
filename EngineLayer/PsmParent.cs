@@ -83,6 +83,7 @@ namespace EngineLayer
         public int ScanIndex { get; internal set; }
 
         public string SequenceWithChemicalFormulas { get; internal set; }
+        public int NumSame { get; internal set; }
 
         #endregion Public Properties
 

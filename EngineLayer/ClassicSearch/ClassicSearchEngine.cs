@@ -142,6 +142,8 @@ namespace EngineLayer.ClassicSearch
                                             var singleIsPreferable = PsmClassic.FirstIsPreferable(psm, currentBestPsmList as PsmClassic, variableModifications);
                                             if (singleIsPreferable.HasValue && singleIsPreferable.Value)
                                                 psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
+                                            else if (!singleIsPreferable.HasValue)
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].NumSame++;
                                         }
                                     }
                                 }
@@ -162,6 +164,8 @@ namespace EngineLayer.ClassicSearch
                                     var firstIsPreferable = PsmClassic.FirstIsPreferable(psms[searchModeIndex][i] as PsmClassic, outerPsms[searchModeIndex][i] as PsmClassic, variableModifications);
                                     if (firstIsPreferable.HasValue && firstIsPreferable.Value)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
+                                    else if (!firstIsPreferable.HasValue)
+                                        outerPsms[searchModeIndex][i].NumSame++;
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;
