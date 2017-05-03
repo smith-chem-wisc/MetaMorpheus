@@ -10,15 +10,6 @@ namespace EngineLayer
     public abstract class PsmParent
     {
 
-        #region Public Fields
-
-        public double[] quantIntensity;
-        public double apexMz;
-        public double quantRT;
-        public double mostAbundantMass;
-
-        #endregion Public Fields
-
         #region Protected Constructors
 
         protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
@@ -35,13 +26,17 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            quantIntensity = new double[1];
+            QuantIntensity = new double[1];
         }
 
         #endregion Protected Constructors
 
         #region Public Properties
 
+        public double[] QuantIntensity { get; set; }
+        public double ApexMz { get; set; }
+        public double QuantRT { get; set; }
+        public double MostAbundantMass { get; set; }
         public int Notch { get; }
         public double Score { get; }
         public int ScanNumber { get; }
@@ -53,11 +48,8 @@ namespace EngineLayer
         public IMzPeak ScanPrecursorMonoisotopicPeak { get; }
         public double ScanPrecursorMass { get; }
         public string FileName { get; }
-
         public int ScanIndex { get; }
-
-        public int NumAmbiguous { get; internal set; }
-
+        public int NumAmbiguous { get; set; }
         public ProteinLevelInfo Pli { get; private set; }
 
         #endregion Public Properties
@@ -166,38 +158,28 @@ namespace EngineLayer
         internal static string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
-            sb.Append("fileName" + '\t');
-            sb.Append("scanNumber" + '\t');
-            sb.Append("scanRetentionTime" + '\t');
-            sb.Append("scanExperimentalPeaks" + '\t');
-            sb.Append("totalIonCurrent" + '\t');
-            sb.Append("precursorScanNumber" + '\t');
-            sb.Append("scanPrecursorCharge" + '\t');
-            sb.Append("scanPrecursorMZ" + '\t');
-            sb.Append("scanPrecursorMass" + '\t');
-            sb.Append("score" + '\t');
-            sb.Append("notch" + '\t');
-            sb.Append("quantificationIntensity" + '\t');
-            sb.Append("quantificationRT" + '\t');
-            sb.Append("matched ions" + '\t');
-            sb.Append("matched ion counts" + '\t');
-            sb.Append("localized scores" + '\t');
-            sb.Append("improvement" + '\t');
-            sb.Append("terminal localization");
-            sb.Append("Protein Accession" + '\t');
-            sb.Append("Protein FullName" + '\t');
-            sb.Append("Peptide Description" + '\t');
-            sb.Append("Start and End ResidueInProtein" + '\t');
-            sb.Append("PreviousAminoAcid" + '\t');
-            sb.Append("NextAminoAcid" + '\t');
-            sb.Append("BaseSequence" + '\t');
-            sb.Append("FullSequence" + '\t');
-            sb.Append("numVariableMods" + '\t');
-            sb.Append("MissedCleavages" + '\t');
-            sb.Append("PeptideMonoisotopicMass" + '\t');
-            sb.Append("MassDiff (Da)" + '\t');
-            sb.Append("MassDiff (ppm)" + '\t');
-            sb.Append("Decoy/Contaminant/Target");
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Number" + '\t');
+            sb.Append("Scan Retention Time" + '\t');
+            sb.Append("Num Experimental Peaks" + '\t');
+            sb.Append("Total Ion Current" + '\t');
+            sb.Append("Precursor Scan Number" + '\t');
+            sb.Append("Precursor Charge" + '\t');
+            sb.Append("Precursor MZ" + '\t');
+            sb.Append("Precursor Intensity" + '\t');
+            sb.Append("Precursor Mass" + '\t');
+            sb.Append("Score" + '\t');
+            sb.Append("Notch" + '\t');
+            sb.Append("Quantification Intensity" + '\t');
+            sb.Append("Quantification RT" + '\t');
+            sb.Append("Ambiguous Matches" + '\t');
+
+            sb.Append(ProteinLevelInfo.GetTabSeparatedHeader());
+
+            // Need info from both current and from Pli
+            sb.Append("Mass Diff (Da)" + '\t');
+            sb.Append("Mass Diff (ppm)" + '\t');
+
             return sb.ToString();
         }
 

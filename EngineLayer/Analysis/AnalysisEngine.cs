@@ -489,7 +489,7 @@ namespace EngineLayer.Analysis
                 var thisPeptidesMass = pepGrouping.First().thisPSM.Pli.PeptideMonoisotopicMass + mostCommonIsotopeShift;
 
                 foreach (var pep in pepGrouping)
-                    pep.thisPSM.mostAbundantMass = thisPeptidesMass;
+                    pep.thisPSM.MostAbundantMass = thisPeptidesMass;
 
                 foreach (var chargeState in chargeStates)
                 {
@@ -531,8 +531,8 @@ namespace EngineLayer.Analysis
                 // find peaks within specified tolerances in the m/z bins
                 foreach (var chargeState in chargeStates)
                 {
-                    double theorMzHere = Chemistry.ClassExtensions.ToMz(pepGrouping.First().thisPSM.mostAbundantMass, chargeState);
-                    double mzTolHere = ((ppmTolerance / 1e6) * pepGrouping.First().thisPSM.mostAbundantMass) / chargeState;
+                    double theorMzHere = Chemistry.ClassExtensions.ToMz(pepGrouping.First().thisPSM.MostAbundantMass, chargeState);
+                    double mzTolHere = ((ppmTolerance / 1e6) * pepGrouping.First().thisPSM.MostAbundantMass) / chargeState;
 
                     double floorMz = Math.Floor(theorMzHere * 100) / 100;
                     double ceilingMz = Math.Ceiling(theorMzHere * 100) / 100;
@@ -631,15 +631,15 @@ namespace EngineLayer.Analysis
                 {
                     if (apexIntensity != 0)
                     {
-                        pep.thisPSM.quantIntensity = new double[] { apexIntensity };
-                        pep.thisPSM.quantRT = apexRT;
-                        pep.thisPSM.apexMz = apexMZ;
+                        pep.thisPSM.QuantIntensity = new double[] { apexIntensity };
+                        pep.thisPSM.QuantRT = apexRT;
+                        pep.thisPSM.ApexMz = apexMZ;
                     }
                     else
                     {
-                        pep.thisPSM.quantIntensity = new double[] { pep.thisPSM.ScanPrecursorMonoisotopicPeak.Intensity };
-                        pep.thisPSM.quantRT = pep.thisPSM.ScanRetentionTime;
-                        pep.thisPSM.apexMz = pep.thisPSM.ScanPrecursorMonoisotopicPeak.Mz;
+                        pep.thisPSM.QuantIntensity = new double[] { pep.thisPSM.ScanPrecursorMonoisotopicPeak.Intensity };
+                        pep.thisPSM.QuantRT = pep.thisPSM.ScanRetentionTime;
+                        pep.thisPSM.ApexMz = pep.thisPSM.ScanPrecursorMonoisotopicPeak.Mz;
                     }
                 }
             }

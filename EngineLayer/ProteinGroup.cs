@@ -8,7 +8,6 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-
         #region Public Fields
 
         public readonly bool isDecoy;
@@ -369,7 +368,7 @@ namespace EngineLayer
                 FileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct().ToList();
                 IntensitiesByFile = new double[FileNames.Count][];
 
-                int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.quantIntensity.Length; // length 1 is LFQ, length 10 is TMT
+                int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
                 for (int i = 0; i < FileNames.Count; i++)
                     IntensitiesByFile[i] = new double[quantType];
             }
@@ -417,7 +416,7 @@ namespace EngineLayer
 
                     if (psmsForThisBaseSeq.Any())
                         for (int q = 0; q < quantType; q++)
-                            IntensitiesByFile[file][q] += psmsForThisBaseSeq.Select(p => p.thisPSM.quantIntensity[q]).Max();
+                            IntensitiesByFile[file][q] += psmsForThisBaseSeq.Select(p => p.thisPSM.QuantIntensity[q]).Max();
                 }
             }
         }
@@ -427,7 +426,7 @@ namespace EngineLayer
             this.FileNames = fileNames;
             IntensitiesByFile = new double[FileNames.Count][];
 
-            int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.quantIntensity.Length; // length 1 is LFQ, length 10 is TMT
+            int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
             for (int i = 0; i < FileNames.Count; i++)
                 IntensitiesByFile[i] = new double[quantType];
 
@@ -452,6 +451,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

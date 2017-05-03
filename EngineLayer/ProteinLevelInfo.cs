@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace EngineLayer
 {
@@ -65,6 +66,34 @@ namespace EngineLayer
         public bool IsDecoy { get; }
 
         #endregion Public Properties
+
+        #region Internal Methods
+
+        internal static string GetTabSeparatedHeader()
+        {
+            var sb = new StringBuilder();
+
+            // Could have MANY options
+            sb.Append("Protein Accession" + '\t');
+            sb.Append("Protein Name" + '\t');
+            sb.Append("Peptide Description" + '\t');
+            sb.Append("Start and End Residues In Protein" + '\t');
+            sb.Append("Previous Amino Acid" + '\t');
+            sb.Append("Next Amino Acid" + '\t');
+
+            // Single info, common for all peptides/proteins
+            sb.Append("Base Sequence" + '\t');
+            sb.Append("Full Sequence" + '\t');
+            sb.Append("Matched Ion Counts" + '\t');
+            sb.Append("Localized Scores" + '\t');
+            sb.Append("Missed Cleavages" + '\t');
+            sb.Append("Variable Mods" + '\t');
+            sb.Append("Decoy/Contaminant/Target");
+            sb.Append("Peptide Monoisotopic Mass" + '\t');
+            return sb.ToString();
+        }
+
+        #endregion Internal Methods
 
     }
 }
