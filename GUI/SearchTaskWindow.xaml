@@ -7,8 +7,16 @@
         mc:Ignorable="d"
         Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <DockPanel>
-        <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
+        <DockPanel>
+            <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
+                <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
+                    <StackPanel>
+                        <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
+                        <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
+                    </StackPanel>
+                </Expander>
+            </GroupBox>
+            <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
             <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
                 <Expander.Style>
                     <Style TargetType="Expander">
@@ -227,7 +235,7 @@
                 <StackPanel>
                     <GroupBox Header="Protein Parsimony">
                         <StackPanel>
-                            <CheckBox x:Name="checkBoxParsimony" Content="Aggregate Proteins">
+                                <CheckBox x:Name="checkBoxParsimony" Content="Apply protein parsimony and construct protein groups">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)" />
                                 </ToolTipService.ToolTip>

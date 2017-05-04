@@ -1,7 +1,3 @@
-ListOfModListsFixed = ["Mods\\f.txt"]
-ListOfModListsVariable = ["Mods\\v.txt"]
-ListOfModListsLocalize = ["Mods\\ptmlist.txt"]
-ListOfModListsGptmd = ["Mods\\m.txt", "Mods\\metals.txt", "Mods\\pt.txt"]
 ProductMassTolerance = "±0.0100 Absolute"
 PrecursorMassTolerance = "±5.0000 PPM"
 DatabaseReferencesToKeep = [""]

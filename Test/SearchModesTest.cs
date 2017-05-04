@@ -1,8 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using NUnit.Framework;
-using Spectra;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -18,12 +16,12 @@ namespace Test
         public static void TestSearchModeTest()
         {
             SearchMode sm = new TestSearchMode("My custom");
-            Assert.IsTrue(sm.Accepts(2, 2)>=0);
+            Assert.IsTrue(sm.Accepts(2, 2) >= 0);
             Assert.IsTrue(sm.Accepts(0.5, 4) >= 0);
             Assert.IsFalse(sm.Accepts(0.5, 0.5) >= 0);
             Assert.IsTrue(sm.Accepts(1, 1) >= 0);
-            Assert.AreEqual(2, sm.GetAllowedPrecursorMassIntervals(0.5).First().Item1.Minimum);
-            Assert.AreEqual(0.5, sm.GetAllowedPrecursorMassIntervals(2).First().Item1.Minimum);
+            Assert.AreEqual(2, sm.GetAllowedPrecursorMassIntervals(0.5).First().allowedInterval.Minimum);
+            Assert.AreEqual(0.5, sm.GetAllowedPrecursorMassIntervals(2).First().allowedInterval.Minimum);
         }
 
         [Test]
@@ -44,14 +42,14 @@ namespace Test
 
             var theList = dsm1.GetAllowedPrecursorMassIntervals(100).ToList();
 
-            Assert.AreEqual(99.9, theList[0].Item1.Minimum);
-            Assert.AreEqual(100.1, theList[0].Item1.Maximum);
-            Assert.AreEqual(100.9, theList[1].Item1.Minimum);
-            Assert.AreEqual(101.1, theList[1].Item1.Maximum);
+            Assert.AreEqual(99.9, theList[0].allowedInterval.Minimum);
+            Assert.AreEqual(100.1, theList[0].allowedInterval.Maximum);
+            Assert.AreEqual(100.9, theList[1].allowedInterval.Minimum);
+            Assert.AreEqual(101.1, theList[1].allowedInterval.Maximum);
 
             var dsm2 = new DotSearchMode("test2", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.PPM, 5));
 
-            Assert.IsTrue(dsm2.Accepts(1000, 1000)>=0);
+            Assert.IsTrue(dsm2.Accepts(1000, 1000) >= 0);
 
             Assert.IsTrue(dsm2.Accepts(1000 * (1 + 5.0 / 1e6 / 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
             Assert.IsTrue(dsm2.Accepts(1000 * (1 - 5.0 / 1e6 / 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
@@ -65,14 +63,14 @@ namespace Test
 
             var theList2 = dsm2.GetAllowedPrecursorMassIntervals(1000).ToList();
 
-            Assert.IsTrue(theList2[0].Item1.Contains(1000));
+            Assert.IsTrue(theList2[0].allowedInterval.Contains(1000));
 
-            Assert.IsTrue(1000 * (1 + 5.0 / 1e6 / 1.0000001) < theList2[0].Item1.Maximum);
-            Assert.IsTrue(1000 * (1 - 5.0 / 1e6 / 1.0000001) > theList2[0].Item1.Minimum);
-            Assert.IsTrue(1000 * (1 + 5.0 / 1e6 * 1.0000001) > theList2[0].Item1.Maximum);
-            Assert.IsTrue(1000 * (1 - 5.0 / 1e6 * 1.0000001) < theList2[0].Item1.Minimum);
+            Assert.IsTrue(1000 * (1 + 5.0 / 1e6 / 1.0000001) < theList2[0].allowedInterval.Maximum);
+            Assert.IsTrue(1000 * (1 - 5.0 / 1e6 / 1.0000001) > theList2[0].allowedInterval.Minimum);
+            Assert.IsTrue(1000 * (1 + 5.0 / 1e6 * 1.0000001) > theList2[0].allowedInterval.Maximum);
+            Assert.IsTrue(1000 * (1 - 5.0 / 1e6 * 1.0000001) < theList2[0].allowedInterval.Minimum);
 
-            Assert.IsTrue(theList2[1].Item1.Contains(1001));
+            Assert.IsTrue(theList2[1].allowedInterval.Contains(1001));
         }
 
         [Test]
@@ -103,9 +101,9 @@ namespace Test
                 return scanPrecursorMass * peptideMass >= 1 ? 1 : -1;
             }
 
-            public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+            public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
             {
-                yield return new Tuple<DoubleRange, int>(new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue), 1);
+                yield return new AllowedIntervalWithNotch(new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue), 1);
             }
 
             #endregion Public Methods

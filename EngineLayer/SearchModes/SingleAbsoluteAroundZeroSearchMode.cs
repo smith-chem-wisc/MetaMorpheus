@@ -29,9 +29,9 @@ namespace EngineLayer
             return Math.Abs(scanPrecursorMass - peptideMass) < value ? 0 : -1;
         }
 
-        public override IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
+        public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
         {
-            yield return new Tuple<DoubleRange, int>(new DoubleRange(peptideMonoisotopicMass - value, peptideMonoisotopicMass + value), 0);
+            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - value, peptideMonoisotopicMass + value), 0);
         }
 
         public override string ToString()

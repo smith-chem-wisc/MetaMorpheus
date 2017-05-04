@@ -40,8 +40,14 @@ namespace TaskLayer
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value])))
                         .ConfigureType<List<Tuple<string, string>>>(type => type
-                             .WithConversionFor<TomlTableArray>(convert => convert
-                             .FromToml(tml => tml.Items.Select(b => new Tuple<string, string>(b.Values.First().Get<string>(), b.Values.Last().Get<string>())).ToList()))));
+                             .WithConversionFor<TomlString>(convert => convert
+                                 .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
+                                 .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+
+        private static List<Tuple<string, string>> GetModsFromString(string value)
+        {
+            return value.Split(new string[] { "\t\t" }, StringSplitOptions.None).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
+        }
 
         #endregion Public Fields
 
@@ -230,7 +236,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected static List<Protein> LoadProteinDb(string fileName, bool generateDecoys, List<ModificationWithMass> localizeableModifications, bool isContaminant, IEnumerable<string> dbRefTypesToKeep, out Dictionary<string, Modification> um)
+        protected static List<Protein> LoadProteinDb(string fileName, bool generateDecoys, List<ModificationWithMass> localizeableModifications, bool isContaminant, out Dictionary<string, Modification> um)
         {
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
@@ -256,7 +262,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(ProteinGroup.TabSeparatedHeader);
+                    output.WriteLine(items.First().TabSeparatedHeader);
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }

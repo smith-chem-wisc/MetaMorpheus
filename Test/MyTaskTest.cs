@@ -28,15 +28,14 @@ namespace Test
             CalibrationTask task1 = new CalibrationTask();
             GptmdTask task2 = new GptmdTask();
 
-            SearchTask task3 = new SearchTask();
-            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
-            //task3.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
-            task3.DoParsimony = true;
-
-            SearchTask task4 = new SearchTask();
-            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("m.txt")));
-            //task4.ListOfModListsLocalize.Add(MetaMorpheusTask.AllModLists.First(b => b.EndsWith("glyco.txt")));
-            task4.ClassicSearch = false;
+            SearchTask task3 = new SearchTask()
+            {
+                DoParsimony = true
+            };
+            SearchTask task4 = new SearchTask()
+            {
+                ClassicSearch = false
+            };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),
                 new Tuple<string, MetaMorpheusTask>("task2", task2),
@@ -79,7 +78,6 @@ namespace Test
             Assert.AreEqual(1, digestedList.Count);
             var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
             Assert.AreEqual(4, setList3.Count);
-            //Console.WriteLine(string.Join(",", setList3.Select(b => b.Sequence)));
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
 
