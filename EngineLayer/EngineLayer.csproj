@@ -103,7 +103,6 @@
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="AllowedIntervalWithNotch.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
-    <Compile Include="PsmWithMultiplePossiblePeptides.cs" />
     <Compile Include="ClassicSearch\ScanWithIndexAndNotchInfo.cs" />
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
     <Compile Include="GlobalEngineLevelSettings.cs" />

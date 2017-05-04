@@ -38,12 +38,12 @@ namespace EngineLayer
             {
                 var sb = new StringBuilder();
                 sb.Append(PsmParent.GetTabSeparatedHeader() + '\t');
-                sb.Append("cumulative_target" + '\t');
-                sb.Append("cumulative_decoy" + '\t');
+                sb.Append("Cumulative Target" + '\t');
+                sb.Append("Cumulative Decoy" + '\t');
                 sb.Append("QValue" + '\t');
-                sb.Append("cumulative_target_notch" + '\t');
-                sb.Append("cumulative_decoy_notch" + '\t');
-                sb.Append("QValue_notch");
+                sb.Append("Cumulative Target Notch" + '\t');
+                sb.Append("Cumulative Decoy Notch" + '\t');
+                sb.Append("QValue Notch");
                 return sb.ToString();
             }
         }

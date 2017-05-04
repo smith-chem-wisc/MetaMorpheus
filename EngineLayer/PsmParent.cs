@@ -3,6 +3,9 @@ using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer
@@ -151,6 +154,35 @@ namespace EngineLayer
             Pli = new ProteinLevelInfo(matching[GetCompactPeptide(modsDictionary)], fragmentTolerance, theScan, lp);
         }
 
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+
+            sb.Append(Path.GetFileNameWithoutExtension(FileName) + '\t');
+            sb.Append(ScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(PrecursorScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorMonoisotopicPeak.Mz.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(string.Join("|", QuantIntensity) + '\t');
+            sb.Append(QuantRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+
+            sb.Append(Pli.ToString() + '\t');
+
+            sb.Append((Pli.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
+
+            return sb.ToString();
+        }
+
         #endregion Public Methods
 
         #region Internal Methods
@@ -174,11 +206,12 @@ namespace EngineLayer
             sb.Append("Quantification RT" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
-            sb.Append(ProteinLevelInfo.GetTabSeparatedHeader());
+            sb.Append(ProteinLevelInfo.GetTabSeparatedHeader() + '\t');
 
             // Need info from both current and from Pli
+            sb.Append("Improvement Possible" + '\t');
             sb.Append("Mass Diff (Da)" + '\t');
-            sb.Append("Mass Diff (ppm)" + '\t');
+            sb.Append("Mass Diff (ppm)");
 
             return sb.ToString();
         }
