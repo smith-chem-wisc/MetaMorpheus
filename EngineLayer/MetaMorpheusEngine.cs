@@ -39,7 +39,7 @@ namespace EngineLayer
                 if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                     ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
 
-                var massTolerance = new Tolerance("10 PPM");
+                var massTolerance = new Tolerance("5 PPM");
 
                 List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
                 if (findAllPrecursors)
