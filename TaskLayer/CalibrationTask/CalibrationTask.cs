@@ -237,7 +237,7 @@ namespace TaskLayer
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                    Status("Opening spectra file " + origDataFile + "...", new List<string> { taskId, "Individual Searches", origDataFile });
+                    Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
                     bool findAllPrecursors = true;
                     bool useProvidedPrecursorInfo = true;
                     var intensityRatio = 4;
@@ -280,6 +280,7 @@ namespace TaskLayer
                 {
                     // Second search round
 
+                    Status("Getting ms2 scans for second round...", new List<string> { taskId, "Individual Searches", origDataFile });
                     bool useProvidedPrecursorInfo = true;
                     bool findAllPrecursors = true;
                     var intensityRatio = 4;

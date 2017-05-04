@@ -269,6 +269,7 @@ namespace TaskLayer
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
 
+                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
                 var intensityRatio = 4;
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 

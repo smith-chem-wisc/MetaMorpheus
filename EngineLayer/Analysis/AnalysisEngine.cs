@@ -732,7 +732,7 @@ namespace EngineLayer.Analysis
                     for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms[0].Length; myScanWithMassIndex++)
                     {
                         var huh = newPsms[j][myScanWithMassIndex];
-                        if (huh != null)
+                        if (huh != null && huh.Pli == null)
                             huh.ComputeProteinLevelInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, arrayOfSortedMS2Scans?[huh.ScanIndex], lp, modsDictionary);
                     }
 
