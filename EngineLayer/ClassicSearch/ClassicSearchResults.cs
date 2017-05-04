@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -15,7 +16,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Properties
 
-        public PsmClassic[][] OuterPsms { get; set; }
+        public PsmParent[][] OuterPsms { get; set; }
 
         #endregion Public Properties
 

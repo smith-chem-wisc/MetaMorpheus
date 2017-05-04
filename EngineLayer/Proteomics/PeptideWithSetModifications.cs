@@ -205,7 +205,6 @@ namespace EngineLayer
             bool containsY = productTypes.Contains(ProductType.Y);
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
 
-
             if (p == null)
                 ComputeFragmentMasses();
 
@@ -223,7 +222,7 @@ namespace EngineLayer
                 massLen += p.cTerminalMasses.Count;
 
             double[] massesToReturn = new double[massLen];
-            
+
             int i = 0;
             foreach (var hm in p.nTerminalMasses)
             {

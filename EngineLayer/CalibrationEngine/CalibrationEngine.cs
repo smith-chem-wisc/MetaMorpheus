@@ -25,7 +25,7 @@ namespace EngineLayer.Calibration
         private readonly FragmentTypes fragmentTypesForCalibration;
         private readonly Action<List<LabeledMs1DataPoint>, string> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
-        private readonly bool doFC;
+        private readonly bool doForestCalibration;
         private readonly List<string> nestedIds;
         private List<NewPsmWithFdr> goodIdentifications;
         private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
@@ -43,19 +43,19 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMS1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doFC, List<string> nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, List<string> nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.goodIdentifications = goodIdentifications;
             this.minMS1isotopicPeaksNeededForConfirmedIdentification = minMS1IsotopicPeaksNeededForConfirmedIdentification;
             this.minMS2isotopicPeaksNeededForConfirmedIdentification = minMS2IsotopicPeaksNeededForConfirmedIdentification;
             this.numFragmentsNeededForEveryIdentification = numFragmentsNeededForEveryIdentification;
-            this.mzToleranceForMs1Search = mzToleranceForMS1Search;
+            this.mzToleranceForMs1Search = mzToleranceForMs1Search;
             this.mzToleranceForMs2Search = mzToleranceForMs2Search;
             this.fragmentTypesForCalibration = fragmentTypesForCalibration;
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
-            this.doFC = doFC;
+            this.doForestCalibration = doForestCalibration;
             this.nestedIds = nestedIds;
         }
 
@@ -86,7 +86,7 @@ namespace EngineLayer.Calibration
                 Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateLinear(dataPointAcquisitionResult);
                 result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
             }
-            if (doFC)
+            if (doForestCalibration)
             {
                 trainingPointCounts = new List<int>();
                 for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
@@ -136,9 +136,8 @@ namespace EngineLayer.Calibration
                 new bool[] {true, true, false, false, false},
                 new bool[] {true, true, true, true, true},
             };
-            foreach (var boolStuff in boolStuffms1)
-            {
-                try
+            if (trainList1.Count > 0)
+                foreach (var boolStuff in boolStuffms1)
                 {
                     var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
                     ms1regressorRF.Train(trainList1);
@@ -149,11 +148,6 @@ namespace EngineLayer.Calibration
                         bestMS1predictor = ms1regressorRF;
                     }
                 }
-                catch
-                {
-                    //Console.WriteLine("errored!");
-                }
-            }
 
             List<bool[]> boolStuffms2 = new List<bool[]>
             {
@@ -161,9 +155,8 @@ namespace EngineLayer.Calibration
                 new bool[] {true, true, true, true, true,false},
                 new bool[] {true, true, true, true, true,true},
             };
-            foreach (var boolStuff in boolStuffms2)
-            {
-                try
+            if (trainList2.Count > 0)
+                foreach (var boolStuff in boolStuffms2)
                 {
                     var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
                     ms2regressorRF.Train(trainList2);
@@ -174,11 +167,6 @@ namespace EngineLayer.Calibration
                         bestMS2predictor = ms2regressorRF;
                     }
                 }
-                catch
-                {
-                    //Console.WriteLine("errored!");
-                }
-            }
 
             Tuple<CalibrationFunction, CalibrationFunction> bestCf = new Tuple<CalibrationFunction, CalibrationFunction>(bestMS1predictor, bestMS2predictor);
 
@@ -213,15 +201,16 @@ namespace EngineLayer.Calibration
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Each identification has an MS2 spectrum attached to it.
-                int ms2spectrumIndex = identification.thisPSM.newPsm.scanNumber;
+                int ms2spectrumIndex = identification.thisPSM.ScanNumber;
+                int peptideCharge = identification.thisPSM.ScanPrecursorCharge;
+
+                var representativeSinglePeptide = identification.thisPSM.Pli.PeptidesWithSetModifications.First();
 
                 // Get the peptide, don't forget to add the modifications!!!!
-                var SequenceWithChemicalFormulas = identification.thisPSM.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || identification.thisPSM.PeptidesWithSetModifications.First().allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
+                var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
+                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
-
-                int peptideCharge = identification.thisPSM.newPsm.scanPrecursorCharge;
 
                 numMs2MassChargeCombinationsConsidered = 0;
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
@@ -366,19 +355,11 @@ namespace EngineLayer.Calibration
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
-                    double precursorMZ = theScan.SelectedIonGuessMZ.Value;
-                    double precursorIntensity = theScan.SelectedIonGuessIntensity.Value;
-                    double newSelectedMZ = precursorMZ - bestCf.Item1.Predict(new double[] { precursorMZ, precursorScan.RetentionTime, precursorIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
+                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz });
 
-                    double monoisotopicMZ = theScan.SelectedIonGuessMonoisotopicMZ.Value;
-                    double monoisotopicIntensity = theScan.SelectedIonGuessMonoisotopicIntensity.Value;
+                    Func<IMzPeak, double> theFuncForPrecursor = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, precursorScan.RetentionTime, x.Intensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
 
-                    double newMonoisotopicMZ = monoisotopicMZ - bestCf.Item1.Predict(new double[] { monoisotopicMZ, precursorScan.RetentionTime, monoisotopicIntensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
-
-                    double IsolationMZ = theScan.IsolationMz;
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, IsolationMZ });
-
-                    theScan.TranformByApplyingFunctionsToSpectraAndReplacingPrecursorMZs(theFunc, newSelectedMZ, newMonoisotopicMZ);
+                    theScan.TransformMzs(theFunc, theFuncForPrecursor);
                 }
                 else
                 {

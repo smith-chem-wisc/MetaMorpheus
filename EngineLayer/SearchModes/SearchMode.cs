@@ -1,6 +1,4 @@
-﻿using MzLibUtil;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace EngineLayer
 {
@@ -34,7 +32,7 @@ namespace EngineLayer
         /// <returns></returns>
         public abstract int Accepts(double scanPrecursorMass, double peptideMass);
 
-        public abstract IEnumerable<Tuple<DoubleRange, int>> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
+        public abstract IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
 
         #endregion Public Methods
 
