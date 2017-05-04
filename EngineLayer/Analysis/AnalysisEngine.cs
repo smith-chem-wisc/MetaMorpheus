@@ -728,7 +728,7 @@ namespace EngineLayer.Analysis
             {
                 if (newPsms[j] != null)
                 {
-                    Status("Computing actual peptides with modifications...", nestedIds);
+                    Status("Computing info about actual peptides with modifications...", nestedIds);
                     for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms[0].Length; myScanWithMassIndex++)
                     {
                         var huh = newPsms[j][myScanWithMassIndex];
@@ -736,7 +736,8 @@ namespace EngineLayer.Analysis
                             huh.ComputeProteinLevelInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, arrayOfSortedMS2Scans?[huh.ScanIndex], lp, modsDictionary);
                     }
 
-                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.Score);
+                    Status("Sorting and grouping psms..", nestedIds);
+                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, string>(b.FileName, b.ScanNumber, b.Pli.FullSequence)).Select(b => b.First());
 
                     Status("Running FDR analysis...", nestedIds);
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
