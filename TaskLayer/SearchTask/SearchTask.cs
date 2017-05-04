@@ -63,6 +63,9 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
 
             SearchModes = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
+
+            FindAllPrecursors = true;
+            UseProvidedPrecursorInfo = true;
         }
 
         #endregion Public Constructors
@@ -107,6 +110,9 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool LocalizeAll { get; set; }
         public bool KeepAllUniprotMods { get; set; }
+
+        public bool FindAllPrecursors { get; set; }
+        public bool UseProvidedPrecursorInfo { get; set; }
 
         #endregion Public Properties
 
@@ -263,10 +269,8 @@ namespace TaskLayer
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
 
-                bool findAllPrecursors = true;
-                bool useProvidedPrecursorInfo = true;
                 var intensityRatio = 4;
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
                 if (ClassicSearch)
                 {
