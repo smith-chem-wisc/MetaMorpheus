@@ -110,6 +110,12 @@ namespace EngineLayer
             sb.Append(representative.Sequence + "\t");
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(string.Join(";", MatchedIonsListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
+
+            sb.Append("[");
+            foreach (var kvp in MatchedIonsListPositiveIsMatch)
+                sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+            sb.Append("]" + '\t');
+
             sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
@@ -146,6 +152,7 @@ namespace EngineLayer
             sb.Append("Full Sequence" + '\t');
             sb.Append("Variable Mods" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
+            sb.Append("Matched Ions" + '\t');
             sb.Append("Localized Scores" + '\t');
             sb.Append("Missed Cleavages" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
