@@ -84,7 +84,7 @@ namespace TaskLayer
             yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(20);
             yield return new SingleAbsoluteAroundZeroSearchMode(0.05);
-            yield return new DotSearchMode("3mm", new double[] { 0, 1.003, 2.006, 3.009 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new DotSearchMode("3mm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
             yield return new IntervalSearchMode("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
             yield return new OpenSearchMode();
             yield return new IntervalSearchMode("ZeroAndSodium", new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
