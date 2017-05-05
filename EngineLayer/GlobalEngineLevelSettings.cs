@@ -16,6 +16,7 @@ namespace EngineLayer
         private static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
         private static readonly string unimodLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"unimod.xml");
         private static readonly string uniprotLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"ptmlist.txt");
+        private static readonly string psiModLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"PSI-MOD.obo.xml");
 
         #endregion Private Fields
 
@@ -28,6 +29,7 @@ namespace EngineLayer
                 UsefulProteomicsDatabases.Loaders.LoadElements(elementsLocation);
                 UnimodDeserialized = UsefulProteomicsDatabases.Loaders.LoadUnimod(unimodLocation).ToList();
                 UniprotDeseralized = UsefulProteomicsDatabases.Loaders.LoadUniprot(uniprotLocation).ToList();
+                PsiModDeserialized = UsefulProteomicsDatabases.Loaders.LoadPsiMod(psiModLocation);
             }
             catch (WebException)
             {
@@ -43,6 +45,7 @@ namespace EngineLayer
         public static string MetaMorpheusVersion { get; }
         public static IEnumerable<Modification> UnimodDeserialized { get; }
         public static IEnumerable<Modification> UniprotDeseralized { get; }
+        public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
 
         #endregion Public Properties
 
