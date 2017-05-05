@@ -109,11 +109,15 @@ namespace Test
             GptmdTask task2 = new GptmdTask();
 
             SearchTask task3 = new SearchTask();
-
+            SearchTask task4 = new SearchTask()
+            {
+                DoParsimony = true
+            };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),
                 new Tuple<string, MetaMorpheusTask>("task2", task2),
-                new Tuple<string, MetaMorpheusTask>("task3", task3),};
+                new Tuple<string, MetaMorpheusTask>("task3", task3),
+                new Tuple<string, MetaMorpheusTask>("task4", task4),};
 
             #endregion Setup tasks
 
