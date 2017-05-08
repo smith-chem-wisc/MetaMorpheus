@@ -119,11 +119,12 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeaderForMs1);
+                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeaderForMs1 + "\t" + NewPsmWithFdr.TabSeparatedHeader);
                 foreach (var dp in items)
                 {
                     output.Write(string.Join("\t", dp.Inputs));
-                    output.WriteLine("\t" + dp.Label);
+                    output.Write("\t" + dp.Label);
+                    output.WriteLine("\t" + dp.identification);
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
@@ -134,11 +135,12 @@ namespace TaskLayer
             var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeaderForMs1);
+                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeaderForMs1 + "\t" + NewPsmWithFdr.TabSeparatedHeader);
                 foreach (var dp in items)
                 {
                     output.Write(string.Join("\t", dp.Inputs));
-                    output.WriteLine("\t" + dp.Label);
+                    output.Write("\t" + dp.Label);
+                    output.WriteLine("\t" + dp.identification);
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
