@@ -49,8 +49,6 @@ namespace TaskLayer
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
             ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("metals")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-
-            IsotopeErrors = false;
         }
 
         #endregion Public Constructors
@@ -84,7 +82,6 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
-        public bool IsotopeErrors { get; set; }
         public bool LocalizeAll { get; set; }
 
         #endregion Public Properties
@@ -107,11 +104,6 @@ namespace TaskLayer
             sb.AppendLine("yIons: " + YIons);
             sb.AppendLine("cIons: " + CIons);
             sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("isotopeErrors: " + IsotopeErrors);
-            //sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
-            //sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
-            //sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
-            //sb.AppendLine("GPTMD mod lists: " + string.Join(",", ListOfModListsGptmd));
             sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
             sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
             return sb.ToString();
@@ -160,12 +152,7 @@ namespace TaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-            // Daltons around zero = 3.5
-            SearchMode searchMode;
-            if (IsotopeErrors)
-                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(gptmdModifications.Select(b => b.monoisotopicMass + 1.003)).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
-            else
-                searchMode = new DaltonsAroundZeroWithInnerSearchMode(new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance), 3.5);
+            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
 
             var searchModes = new List<SearchMode> { searchMode };
 
@@ -205,8 +192,8 @@ namespace TaskLayer
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                Status("Opening spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
 
+                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
                 bool findAllPrecursors = true;
                 bool useProvidedPrecursorInfo = true;
                 var intensityRatio = 4;

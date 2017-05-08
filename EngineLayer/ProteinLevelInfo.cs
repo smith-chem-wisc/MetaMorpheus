@@ -40,7 +40,7 @@ namespace EngineLayer
                 localizedScores.Add(score);
             }
 
-            MatchedIonsListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
+            MatchedIonMassesListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
             LocalizedScores = localizedScores;
             PeptideMonoisotopicMass = representative.MonoisotopicMass;
             FullSequence = representative.Sequence;
@@ -55,7 +55,7 @@ namespace EngineLayer
         #region Public Properties
 
         public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; }
-        public Dictionary<ProductType, double[]> MatchedIonsListPositiveIsMatch { get; }
+        public Dictionary<ProductType, double[]> MatchedIonMassesListPositiveIsMatch { get; }
         public List<double> LocalizedScores { get; }
         public string FullSequence { get; }
         public string BaseSequence { get; }
@@ -109,7 +109,13 @@ namespace EngineLayer
             sb.Append(representative.BaseSequence + "\t");
             sb.Append(representative.Sequence + "\t");
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(string.Join(";", MatchedIonsListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
+            sb.Append(string.Join(";", MatchedIonMassesListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
+
+            sb.Append("[");
+            foreach (var kvp in MatchedIonMassesListPositiveIsMatch)
+                sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+            sb.Append("]" + '\t');
+
             sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
 
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
@@ -146,6 +152,7 @@ namespace EngineLayer
             sb.Append("Full Sequence" + '\t');
             sb.Append("Variable Mods" + '\t');
             sb.Append("Matched Ion Counts" + '\t');
+            sb.Append("Matched Ion Masses" + '\t');
             sb.Append("Localized Scores" + '\t');
             sb.Append("Missed Cleavages" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');

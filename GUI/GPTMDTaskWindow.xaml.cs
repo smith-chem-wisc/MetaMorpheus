@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -97,8 +96,6 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
-
-            checkBoxGptmdMonoisotope.IsChecked = task.IsotopeErrors;
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -286,8 +283,6 @@ namespace MetaMorpheusGUI
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
-
-            TheTask.IsotopeErrors = checkBoxGptmdMonoisotope.IsChecked.Value;
 
             DialogResult = true;
         }
