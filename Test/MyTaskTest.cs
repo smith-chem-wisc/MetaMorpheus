@@ -177,6 +177,70 @@ namespace Test
             engine.Run();
         }
 
+        [Test]
+        public static void MakeSureGptmdTaskMatchesExactMatches()
+        {
+            MetaMorpheusTask task1;
+
+            #region Setup tasks
+
+            {
+                ModificationMotif motif;
+                ModificationMotif.TryGetMotif("T", out motif);
+                GlobalTaskLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", null, motif, ModificationSites.Any, 229, null, null, null, "okType") });
+                task1 = new GptmdTask()
+                {
+                    ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
+                    ListOfModsVariable = new List<Tuple<string, string>>(),
+                    ListOfModsFixed = new List<Tuple<string, string>>(),
+                    PrecursorMassTolerance = new MzLibUtil.Tolerance(MzLibUtil.ToleranceUnit.Absolute, 1)
+                };
+            }
+
+            #endregion Setup tasks
+
+            string xmlName = "sweetness.xml";
+
+            #region Generate protein and write to file
+
+            {
+                Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), new List<Protein> { theProtein }, xmlName);
+            }
+
+            #endregion Generate protein and write to file
+
+            string mzmlName = @"ok.mzML";
+
+            #region Generate and write the mzml
+
+            {
+                Dictionary<string, Modification> ok;
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+
+                List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
+
+                var targetDigested = theProteins[0].Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 1, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+
+                ModificationMotif motif;
+                ModificationMotif.TryGetMotif("T", out motif);
+                var okjhjf = targetDigested[0].GetPeptidesWithSetModifications(GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 1, 0).ToList();
+                PeptideWithSetModifications targetGood = okjhjf.First();
+
+                var okjhj = targetDigested[1].GetPeptidesWithSetModifications(GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 2, 1).ToList();
+                PeptideWithSetModifications targetWithUnknownMod = okjhj.Last();
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+
+                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            }
+
+            #endregion Generate and write the mzml
+
+            // RUN!
+            var theStringResult = task1.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
+        }
+
         #endregion Public Methods
 
     }

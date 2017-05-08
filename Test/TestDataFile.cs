@@ -29,7 +29,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss) : base(pepWithSetModss.Count * 2)
+        public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss, bool additionalMasses = false) : base(pepWithSetModss.Count * 2)
         {
             var ScansHere = new List<IMzmlScan>();
             for (int i = 0; i < pepWithSetModss.Count; i++)
@@ -43,7 +43,12 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+                IEnumerable<double> additionalMassesArray;
+                if (additionalMasses)
+                    additionalMassesArray = new List<double> { 260.08307817722, 397.14199003569, 498.18966850487, 612.23259594625, 683.2697097314, 146.10552769922, 217.14264148437 };
+                else
+                    additionalMassesArray = new List<double>();
+                foreach (var aok in pepWithSetMods.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Concat(additionalMassesArray))
                 {
                     mz2.Add(aok.ToMz(1));
                     mz2.Add((aok + 1.003).ToMz(1));
