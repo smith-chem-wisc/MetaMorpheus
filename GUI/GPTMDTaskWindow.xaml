@@ -179,7 +179,6 @@
         <GroupBox Header="G-PTM-D Parameters" DockPanel.Dock="Top">
             <Expander x:Name="gptmdParamsExpander" Collapsed="ApmdExpander_Collapsed">
                 <StackPanel>
-                    <CheckBox x:Name="checkBoxGptmdMonoisotope"  Content="Look for monoisotope missed mods"/>
                 </StackPanel>
             </Expander>
         </GroupBox>
