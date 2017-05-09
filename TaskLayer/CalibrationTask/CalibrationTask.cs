@@ -271,7 +271,17 @@ namespace TaskLayer
 
                 var a = new CalibrationEngine(myMsDataFile, ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, new List<string> { taskId, "Individual Searches", origDataFile }), false, new List<string> { taskId, "Individual Searches", origDataFile });
 
-                var calibrationResult = (CalibrationResults)a.Run();
+                MetaMorpheusEngineResults theResult = a.Run();
+
+                CalibrationResults calibrationResult = theResult as CalibrationResults;
+
+                if (calibrationResult == null)
+                {
+                    sbForThisFile.AppendLine(theResult.ToString());
+                    Warn(theResult.ToString(), new List<string> { taskId, "Individual Searches", origDataFile });
+                    Status("Errored", new List<string> { taskId, "Individual Searches", origDataFile });
+                    return;
+                }
 
                 sbForThisFile.AppendLine("\t" + "Before Calib: MS1 (Th): " + calibrationResult.ms1meanSds.First());
                 sbForThisFile.AppendLine("\t" + "Before Calib: MS2 (Th): " + calibrationResult.ms2meanSds.First());
@@ -292,7 +302,17 @@ namespace TaskLayer
                     var analysisEngineTest = new AnalysisEngine(searchResultsTest.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, listOfSortedms2ScansTest, ProductMassTolerance, (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", new List<string> { taskId, "Individual Searches", origDataFile }), (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", ss), null, false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior, new List<string> { taskId, "Individual Searches", origDataFile }, false, 0, 0, modsDictionary, myMsDataFile);
                     var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();
 
-                    calibrationResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).ToList(), minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Searches", origDataFile }), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Searches", origDataFile }), true, new List<string> { taskId, "Individual Searches", origDataFile }).Run() as CalibrationResults;
+                    theResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, analysisResultsTest.AllResultingIdentifications[0].Where(b => b.QValue < 0.01 && !b.IsDecoy).ToList(), minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Searches", origDataFile }), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Searches", origDataFile }), true, new List<string> { taskId, "Individual Searches", origDataFile }).Run() as CalibrationResults;
+
+                    calibrationResult = theResult as CalibrationResults;
+
+                    if (calibrationResult == null)
+                    {
+                        sbForThisFile.AppendLine(theResult.ToString());
+                        Warn(theResult.ToString(), new List<string> { taskId, "Individual Searches", origDataFile });
+                        Status("Errored", new List<string> { taskId, "Individual Searches", origDataFile });
+                        return;
+                    }
 
                     sbForThisFile.AppendLine("\t" + "After NonLin: MS1 (Th): " + calibrationResult.ms1meanSds.Last());
                     sbForThisFile.AppendLine("\t" + "After NonLin: MS2 (Th): " + calibrationResult.ms2meanSds.Last());
