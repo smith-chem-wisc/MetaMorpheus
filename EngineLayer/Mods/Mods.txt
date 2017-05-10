@@ -28,14 +28,14 @@ MT   Metal
 CF   H-1 Na1
 //
 ID   Dioxidation
-TG   W
+TG   W or P
 PP   Anywhere.
 MM   31.989829
 MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E
+TG   Y or W or P or F or D or E or V or H
 PP   Anywhere.
 MM   15.994915
 MT   Mod
@@ -155,15 +155,8 @@ MM   -18.010565
 MT   Mod
 CF   H-2 O-1
 //
-ID   Proline Oxidation to pyroglutamic acid
-TG   P
-PP   Anywhere.
-MM   13.979265
-MT   Mod
-CF   H-2 O1
-//
-ID   Tryptophan oxidation to oxolactone
-TG   W
+ID   H-2 O1 
+TG   L or I or P or W or S
 PP   Anywhere.
 MM   13.979265
 MT   Mod
@@ -343,4 +336,11 @@ PP   Anywhere.
 FM   0 or 238.229666
 MM   238.229666
 CF   H30 C16 O1
+//
+ID   Topaquinone
+TG   Y
+MT   Mod
+PP   Anywhere.
+MM   29.974179
+CF   H-2 O2 
 //
