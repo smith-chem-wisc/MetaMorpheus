@@ -35,7 +35,7 @@ MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F
+TG   Y or W or P or F or D or E
 PP   Anywhere.
 MM   15.994915
 MT   Mod
@@ -72,6 +72,13 @@ CF   H2 C2 O1
 //
 ID   Acetyllysine
 TG   K
+PP   Anywhere.
+MM   42.010565
+MT   Mod
+CF   H2 C2 O1
+//
+ID   Acetylserine
+TG   S
 PP   Anywhere.
 MM   42.010565
 MT   Mod
