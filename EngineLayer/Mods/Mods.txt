@@ -275,7 +275,7 @@ MT   Mod
 CF   H6 C3
 //
 ID   Trioxidation of C
-TG   Cysteine
+TG   C
 PP   Anywhere.
 MM   47.984744
 MT   Mod
