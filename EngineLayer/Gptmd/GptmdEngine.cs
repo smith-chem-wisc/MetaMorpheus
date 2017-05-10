@@ -11,7 +11,6 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
-        private const double missedMonoisopePeak = 1.003;
         private readonly List<NewPsmWithFdr> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
@@ -70,12 +69,10 @@ namespace EngineLayer.Gptmd
             int modsAdded = 0;
             // Look at all confident identifications (with notch q value less than 0.01)
             // Of those only targets (do not add modifications for decoy peptides)
-            //
             foreach (var ye in allIdentifications.Where(b => b.QValueNotch <= 0.01 && !b.IsDecoy))
             {
                 var baseSequence = ye.thisPSM.Pli.BaseSequence;
                 foreach (var peptide in ye.thisPSM.Pli.PeptidesWithSetModifications)
-                {
                     foreach (ModificationWithMass mod in GetPossibleMods(ye.thisPSM.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {
                         var proteinAcession = peptide.Protein.Accession;
@@ -95,7 +92,6 @@ namespace EngineLayer.Gptmd
                             }
                         }
                     }
-                }
             }
             return new GptmdResults(this, Mods, modsAdded);
         }
@@ -111,13 +107,11 @@ namespace EngineLayer.Gptmd
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
-                {
                     if (modOnPsm.motif.Motif.Equals(Mod.motif.Motif))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
                             yield return Mod;
                     }
-                }
             }
 
             foreach (var combo in combos)

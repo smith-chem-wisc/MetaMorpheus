@@ -48,14 +48,17 @@ namespace TaskLayer
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = new List<Tuple<string, string>>();
-            ListOfModsGptmd = new List<Tuple<string, string>>();
+            ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b =>
+            b.modificationType.Equals("Glycan") ||
+            b.modificationType.Equals("Mod") ||
+            b.modificationType.Equals("PeptideTermMod") ||
+            b.modificationType.Equals("Metal") ||
+            b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
         }
 
         #endregion Public Constructors
 
         #region Public Properties
-
-        public static List<string> AllModLists { get; private set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
