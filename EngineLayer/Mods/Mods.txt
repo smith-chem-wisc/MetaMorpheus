@@ -156,7 +156,7 @@ MT   Mod
 CF   H-2 O-1
 //
 ID   H-2 O1 
-TG   L or I or P or W or S 
+TG   L or I or P or W or S
 PP   Anywhere.
 MM   13.979265
 MT   Mod
