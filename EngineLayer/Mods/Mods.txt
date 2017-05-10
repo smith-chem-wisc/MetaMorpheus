@@ -13,6 +13,13 @@ MM   -17.026549
 MT   PeptideTermMod
 CF   H-3 N-1
 //
+ID   Ammonia loss
+TG   N
+PP   Anywhere.
+MM   -17.026549
+MT   Mod
+CF   H-3 N-1
+//
 ID   Sodium
 TG   D or E
 PP   Anywhere.
@@ -40,6 +47,13 @@ PP   Anywhere.
 MM   57.021464
 MT   Mod
 CF   H3 C2 N1 O1
+//
+ID   Carboxymethyl
+TG   C
+PP   Anywhere.
+MM   58.005479
+MT   Mod
+CF   H2 C2 O2
 //
 ID   Phospho
 TG   S or T or Y
@@ -73,6 +87,7 @@ CF   H2 C2
 ID   Acetylation+Methionine
 TG   mX
 PP   N-terminal.
+NL   173.051055 or 0
 MM   173.051055
 MT   ProteinTermMod
 CF   C7 H11 N1 O2 S
@@ -119,11 +134,18 @@ MM   37.946941
 MT   Metal
 CF   H-2 Ca1
 //
-ID   Water loss
-TG   E or D
+ID   Water loss on pep term E
+TG   E
 PP   Peptide N-terminal.
 MM   -18.010565
 MT   PeptideTermMod
+CF   H-2 O-1
+//
+ID   Water loss
+TG   D
+PP   Anywhere.
+MM   -18.010565
+MT   Mod
 CF   H-2 O-1
 //
 ID   Proline Oxidation to pyroglutamic acid
@@ -174,13 +196,6 @@ PP   Peptide N-terminal.
 MM   27.994915
 MT   PeptideTermMod
 CF   C1 O1
-//
-ID   Carbon
-TG   P
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-MM   12
-CF   C1
 //
 ID   Zinc
 TG   D or E

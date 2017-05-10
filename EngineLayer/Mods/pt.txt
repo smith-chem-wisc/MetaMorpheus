@@ -1,6 +1,6 @@
 Peptide terminus modifications
 ID   Carbon Adduct
-TG   P
+TG   Any
 PP   Peptide N-terminal.
 MM   12
 MT   PeptideTermMod
