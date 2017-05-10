@@ -28,14 +28,14 @@ MT   Metal
 CF   H-1 Na1
 //
 ID   Dioxidation
-TG   W or L or I or P
+TG   W or P
 PP   Anywhere.
 MM   31.989829
 MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F or D or E or L or V or I or H
+TG   Y or W or P or F or D or E or V or H
 PP   Anywhere.
 MM   15.994915
 MT   Mod
