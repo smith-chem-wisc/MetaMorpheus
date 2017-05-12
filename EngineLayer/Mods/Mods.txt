@@ -148,6 +148,13 @@ MM   37.946941
 MT   Metal
 CF   H-2 Ca1
 //
+ID   H-2 on pep term M
+TG   M
+PP   Peptide N-terminal.
+MM   -2.015650 
+MT   PeptideTermMod
+CF   H-2
+//
 ID   Water loss on pep term E
 TG   E
 PP   Peptide N-terminal.
