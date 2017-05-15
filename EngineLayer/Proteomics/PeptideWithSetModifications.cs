@@ -138,7 +138,7 @@ namespace EngineLayer
                     if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
                     {
                         var jj = pep_n_term_variable_mod as ModificationWithMassAndCf;
-                        if (jj != null)
+                        if (jj != null && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -152,7 +152,7 @@ namespace EngineLayer
                         if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
                         {
                             var jj = residue_variable_mod as ModificationWithMassAndCf;
-                            if (jj != null)
+                            if (jj != null && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
                                 sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                             else
                                 return null;
@@ -164,7 +164,7 @@ namespace EngineLayer
                     if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
                     {
                         var jj = pep_c_term_variable_mod as ModificationWithMassAndCf;
-                        if (jj != null)
+                        if (jj != null && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -205,7 +205,6 @@ namespace EngineLayer
             bool containsY = productTypes.Contains(ProductType.Y);
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
 
-
             if (p == null)
                 ComputeFragmentMasses();
 
@@ -223,7 +222,7 @@ namespace EngineLayer
                 massLen += p.cTerminalMasses.Count;
 
             double[] massesToReturn = new double[massLen];
-            
+
             int i = 0;
             foreach (var hm in p.nTerminalMasses)
             {

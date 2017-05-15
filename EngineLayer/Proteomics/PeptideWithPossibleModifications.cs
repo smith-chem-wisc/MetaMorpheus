@@ -22,7 +22,7 @@ namespace EngineLayer
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
             thisDictionaryOfFixedMods = AddFixedMods(allKnownFixedModifications);
-            this.NumLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
+            this.NumKnownPossibleLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
 
         #endregion Internal Constructors
@@ -30,7 +30,7 @@ namespace EngineLayer
         #region Public Properties
 
         public int MissedCleavages { get; private set; }
-        public int NumLocMods { get; private set; }
+        public int NumKnownPossibleLocMods { get; private set; }
 
         #endregion Public Properties
 

@@ -1,4 +1,7 @@
-﻿using Proteomics;
+﻿using Chemistry;
+using MassSpectrometry;
+using MzLibUtil;
+using Proteomics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -10,97 +13,172 @@ namespace EngineLayer
     public abstract class PsmParent
     {
 
-        #region Public Fields
-
-        public readonly string fileName;
-        public readonly int scanNumber;
-        public readonly int precursorScanNumber;
-        public readonly double scanRetentionTime;
-        public readonly int scanExperimentalPeaks;
-        public readonly double totalIonCurrent;
-        public readonly double scanPrecursorIntensity;
-        public readonly int scanPrecursorCharge;
-        public readonly double scanPrecursorMZ;
-        public readonly double scanPrecursorMass;
-        public readonly double score;
-        public double[] quantIntensity;
-        public double apexMz;
-        public double quantRT;
-        public double mostAbundantMass;
-
-        public Dictionary<ProductType, double[]> matchedIonsListPositiveIsMatch;
-        public List<double> LocalizedScores;
-
-        #endregion Public Fields
-
-        #region Internal Fields
-
-        internal readonly int notch;
-        internal double? precursorScanBestMass;
-
-        #endregion Internal Fields
-
         #region Protected Constructors
 
-        protected PsmParent(string fileName, double scanRetentionTime, double scanPrecursorIntensity, double scanPrecursorMass, int scanNumber, int precursorScanNumber, int scanPrecursorCharge, int scanExperimentalPeaks, double totalIonCurrent, double scanPrecursorMZ, double score, int notch)
+        protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
-            this.fileName = fileName;
-            this.scanNumber = scanNumber;
-            this.precursorScanNumber = precursorScanNumber;
-            this.scanRetentionTime = scanRetentionTime;
-            this.scanExperimentalPeaks = scanExperimentalPeaks;
-            this.totalIonCurrent = totalIonCurrent;
-            this.scanPrecursorIntensity = scanPrecursorIntensity;
-            this.scanPrecursorCharge = scanPrecursorCharge;
-            this.scanPrecursorMZ = scanPrecursorMZ;
-            this.scanPrecursorMass = scanPrecursorMass;
-            this.score = score;
-            this.notch = notch;
-            quantIntensity = new double[1];
+            this.Notch = notch;
+            this.Score = score;
+            this.ScanIndex = scanIndex;
+            this.FileName = scan.FileNameWithoutExtension;
+            this.ScanNumber = scan.TheScan.OneBasedScanNumber;
+            this.PrecursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
+            this.ScanRetentionTime = scan.TheScan.RetentionTime;
+            this.ScanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
+            this.TotalIonCurrent = scan.TheScan.TotalIonCurrent;
+            this.ScanPrecursorCharge = scan.PrecursorCharge;
+            this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
+            this.ScanPrecursorMass = scan.PrecursorMass;
+            QuantIntensity = new double[1];
         }
 
         #endregion Protected Constructors
 
+        #region Public Properties
+
+        public double[] QuantIntensity { get; set; }
+        public double ApexMz { get; set; }
+        public double QuantRT { get; set; }
+        public double MostAbundantMass { get; set; }
+        public int Notch { get; }
+        public double Score { get; }
+        public int ScanNumber { get; }
+        public int PrecursorScanNumber { get; }
+        public double ScanRetentionTime { get; }
+        public int ScanExperimentalPeaks { get; }
+        public double TotalIonCurrent { get; }
+        public int ScanPrecursorCharge { get; }
+        public IMzPeak ScanPrecursorMonoisotopicPeak { get; }
+        public double ScanPrecursorMass { get; }
+        public string FileName { get; }
+        public int ScanIndex { get; }
+        public int NumAmbiguous { get; set; }
+        public ProteinLevelInfo Pli { get; private set; }
+
+        #endregion Public Properties
+
         #region Public Methods
 
+        public static double MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesListPositiveIsMatch)
+        {
+            var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
+            if (TotalProductsHere == 0)
+                return 0;
+            int MatchingProductsHere = 0;
+            double MatchingIntensityHere = 0;
+
+            // speed optimizations
+            double[] experimental_mzs = thisScan.MassSpectrum.XArray;
+            double[] experimental_intensities = thisScan.MassSpectrum.YArray;
+            int num_experimental_peaks = experimental_mzs.Length;
+
+            int currentTheoreticalIndex = -1;
+            double currentTheoreticalMass;
+            do
+            {
+                currentTheoreticalIndex++;
+                currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
+            } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sorted_theoretical_product_masses_for_this_peptide.Length - 1);
+
+            if (double.IsNaN(currentTheoreticalMass))
+                return 0;
+
+            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+
+            int testTheoreticalIndex;
+            double testTheoreticalMZ;
+            double testTheoreticalMass;
+            // Loop over all experimenal indices
+            for (int experimentalIndex = 0; experimentalIndex < num_experimental_peaks; experimentalIndex++)
+            {
+                double currentExperimentalMZ = experimental_mzs[experimentalIndex];
+                // If found match
+                if (productMassTolerance.Within(currentExperimentalMZ, currentTheoreticalMz))
+                {
+                    MatchingProductsHere++;
+                    MatchingIntensityHere += experimental_intensities[experimentalIndex];
+                    matchedIonMassesListPositiveIsMatch[currentTheoreticalIndex] = currentTheoreticalMass;
+                    currentTheoreticalIndex++;
+                    if (currentTheoreticalIndex == TotalProductsHere)
+                        break;
+                    currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                }
+                // Else if for sure did not reach the next theoretical yet, move to next experimental
+                else if (currentExperimentalMZ < currentTheoreticalMz)
+                    continue;
+                // Else if for sure passed a theoretical
+                else
+                {
+                    // Mark the theoretical as missed
+                    matchedIonMassesListPositiveIsMatch[currentTheoreticalIndex] = -currentTheoreticalMass;
+
+                    // Move on to next index and never come back!
+                    currentTheoreticalIndex++;
+                    if (currentTheoreticalIndex == TotalProductsHere)
+                        break;
+                    currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+
+                    // Start with the current ones
+                    testTheoreticalIndex = currentTheoreticalIndex;
+                    testTheoreticalMZ = currentTheoreticalMz;
+                    testTheoreticalMass = currentTheoreticalMass;
+                    // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
+                    while (currentExperimentalMZ > testTheoreticalMZ)
+                    {
+                        matchedIonMassesListPositiveIsMatch[testTheoreticalIndex] = -currentTheoreticalMass;
+                        // Store old info for possible reuse
+                        currentTheoreticalMass = testTheoreticalMass;
+                        currentTheoreticalMz = testTheoreticalMZ;
+                        currentTheoreticalIndex = testTheoreticalIndex;
+
+                        // Update test stuff!
+                        testTheoreticalIndex++;
+                        if (testTheoreticalIndex == TotalProductsHere)
+                            break;
+                        testTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[testTheoreticalIndex];
+                        testTheoreticalMZ = testTheoreticalMass + Constants.protonMass;
+                    }
+
+                    experimentalIndex--;
+                }
+            }
+            return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
+        }
+
         public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
+
+        public void ComputeProteinLevelInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Tolerance fragmentTolerance, Ms2ScanWithSpecificMass theScan, List<ProductType> lp, Dictionary<Proteomics.ModificationWithMass, ushort> modsDictionary)
+        {
+            Pli = new ProteinLevelInfo(matching[GetCompactPeptide(modsDictionary)], fragmentTolerance, theScan, lp);
+        }
 
         public override string ToString()
         {
             var sb = new StringBuilder();
 
-            sb.Append(Path.GetFileNameWithoutExtension(fileName) + '\t');
-            sb.Append(scanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(totalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(precursorScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanPrecursorIntensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanPrecursorMZ.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(scanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(string.Join("|", quantIntensity) + '\t');
-            sb.Append(quantRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Path.GetFileNameWithoutExtension(FileName) + '\t');
+            sb.Append(ScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(PrecursorScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorMonoisotopicPeak.Mz.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(string.Join("|", QuantIntensity) + '\t');
+            sb.Append(QuantRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append("[");
-            foreach (var kvp in matchedIonsListPositiveIsMatch)
-                sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-            sb.Append("]" + '\t');
+            sb.Append(Pli.ToString() + '\t');
 
-            sb.Append(string.Join(";", matchedIonsListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
-
-            sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
-
-            sb.Append((LocalizedScores.Max() - score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
-
-            if (LocalizedScores.IndexOf(LocalizedScores.Max()) == 0)
-                sb.Append("N");
-            else if (LocalizedScores.IndexOf(LocalizedScores.Max()) == LocalizedScores.Count - 1)
-                sb.Append("C");
-            else
-                sb.Append("");
+            sb.Append((Pli.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
 
             return sb.ToString();
         }
@@ -112,26 +190,29 @@ namespace EngineLayer
         internal static string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
-            sb.Append("fileName" + '\t');
-            sb.Append("scanNumber" + '\t');
-            sb.Append("scanRetentionTime" + '\t');
-            sb.Append("scanExperimentalPeaks" + '\t');
-            sb.Append("totalIonCurrent" + '\t');
-            sb.Append("precursorScanNumber" + '\t');
-            sb.Append("scanPrecursorIntensity" + '\t');
-            sb.Append("scanPrecursorCharge" + '\t');
-            sb.Append("scanPrecursorMZ" + '\t');
-            sb.Append("scanPrecursorMass" + '\t');
-            sb.Append("score" + '\t');
-            sb.Append("notch" + '\t');
-            sb.Append("quantificationIntensity" + '\t');
-            sb.Append("quantificationRT" + '\t');
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Number" + '\t');
+            sb.Append("Scan Retention Time" + '\t');
+            sb.Append("Num Experimental Peaks" + '\t');
+            sb.Append("Total Ion Current" + '\t');
+            sb.Append("Precursor Scan Number" + '\t');
+            sb.Append("Precursor Charge" + '\t');
+            sb.Append("Precursor MZ" + '\t');
+            sb.Append("Precursor Intensity" + '\t');
+            sb.Append("Precursor Mass" + '\t');
+            sb.Append("Score" + '\t');
+            sb.Append("Notch" + '\t');
+            sb.Append("Quantification Intensity" + '\t');
+            sb.Append("Quantification RT" + '\t');
+            sb.Append("Ambiguous Matches" + '\t');
 
-            sb.Append("matched ions" + '\t');
-            sb.Append("matched ion counts" + '\t');
-            sb.Append("localized scores" + '\t');
-            sb.Append("improvement" + '\t');
-            sb.Append("terminal localization");
+            sb.Append(ProteinLevelInfo.GetTabSeparatedHeader() + '\t');
+
+            // Need info from both current and from Pli
+            sb.Append("Improvement Possible" + '\t');
+            sb.Append("Mass Diff (Da)" + '\t');
+            sb.Append("Mass Diff (ppm)");
+
             return sb.ToString();
         }
 

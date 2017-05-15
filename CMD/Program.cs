@@ -99,6 +99,8 @@ namespace MetaMorpheusCommandLine
                 a.Run();
             }
             Console.WriteLine("Error Text:" + result.ErrorText);
+            Console.WriteLine("Version: {0}", Environment.Version.ToString());
+            Console.WriteLine("OSVersion: {0}", Environment.OSVersion.ToString());
             Console.WriteLine("EmptyArgs:" + result.EmptyArgs);
             Console.WriteLine("EmptyArgs:" + string.Join(" , ", result.Errors.Select(b => b.Option.Description)));
             Console.WriteLine("Usage:");

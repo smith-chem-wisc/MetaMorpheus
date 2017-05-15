@@ -28,23 +28,26 @@ namespace Test
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, "lawl", new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
             Assert.AreEqual(1, searchResults.OuterPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
+            // One scan
+            Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].ScanNumber);
+            Assert.AreEqual("QQQ", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
         }
 
         [Test]
@@ -59,24 +62,27 @@ namespace Test
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
 
             int maximumMissedCleavages = 0;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, myMsDataFile.NumSpectra, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, "UUU", new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
             var searchResults = (ClassicSearchResults)engine.Run();
 
             // Single search mode
             Assert.AreEqual(1, searchResults.OuterPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
+            // One Scan
+            Assert.AreEqual(1, searchResults.OuterPsms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.OuterPsms[0][1].ps.BaseSequence);
+            Assert.IsTrue(searchResults.OuterPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.OuterPsms[0][0].ScanNumber);
+            Assert.AreEqual("QXQ", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
         }
 
         [Test]
@@ -114,19 +120,23 @@ namespace Test
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
+            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, null);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
             Assert.AreEqual(1, searchResults.NewPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
+            // Single ms2 scan
+            Assert.AreEqual(1, searchResults.NewPsms[0].Length);
 
-            Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
-            Assert.AreEqual("QQQ", searchResults.NewPsms[0][1].GetCompactPeptide(modsDictionary).BaseSequence);
+            Assert.IsTrue(searchResults.NewPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][0].ScanNumber);
+            Assert.AreEqual("QQQ", searchResults.NewPsms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
         }
 
         [Test]
@@ -164,19 +174,23 @@ namespace Test
             var fragmentIndexDict = indexResults.FragmentIndexDict;
             var keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+            bool useProvidedPrecursorInfo = true;
+            bool findAllPrecursors = true;
+            var intensityRatio = 4;
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(myMsDataFile, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, "fayk", null);
+            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, null);
             var searchResults = (ModernSearchResults)engine.Run();
 
             // Single search mode
             Assert.AreEqual(1, searchResults.NewPsms.Length);
 
-            // Two scans, even including the MS1 scans
-            Assert.AreEqual(2, searchResults.NewPsms[0].Count);
+            // Single ms2 scan
+            Assert.AreEqual(1, searchResults.NewPsms[0].Length);
 
-            Assert.IsTrue(searchResults.NewPsms[0][1].score > 1);
-            Assert.AreEqual(2, searchResults.NewPsms[0][1].scanNumber);
-            Assert.AreEqual("QXQ", searchResults.NewPsms[0][1].GetCompactPeptide(modsDictionary).BaseSequence);
+            Assert.IsTrue(searchResults.NewPsms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.NewPsms[0][0].ScanNumber);
+            Assert.AreEqual("QXQ", searchResults.NewPsms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
         }
 
         #endregion Public Methods

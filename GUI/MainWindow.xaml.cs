@@ -72,6 +72,7 @@ namespace MetaMorpheusGUI
             MetaMorpheusTask.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusTask.NewCollectionHandler += NewCollectionHandler;
             MetaMorpheusTask.OutProgressHandler += NewoutProgressBar;
+            MetaMorpheusTask.WarnHandler += EverythingRunnerEngine_warnHandler;
 
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;

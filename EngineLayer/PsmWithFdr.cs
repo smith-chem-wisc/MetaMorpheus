@@ -8,7 +8,7 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public PsmWithMultiplePossiblePeptides thisPSM;
+        public PsmParent thisPSM;
 
         #endregion Public Fields
 
@@ -23,7 +23,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public NewPsmWithFdr(PsmWithMultiplePossiblePeptides thisPsm)
+        public NewPsmWithFdr(PsmParent thisPsm)
         {
             this.thisPSM = thisPsm;
         }
@@ -37,13 +37,13 @@ namespace EngineLayer
             get
             {
                 var sb = new StringBuilder();
-                sb.Append(PsmWithMultiplePossiblePeptides.TabSeparatedHeader + '\t');
-                sb.Append("cumulative_target" + '\t');
-                sb.Append("cumulative_decoy" + '\t');
+                sb.Append(PsmParent.GetTabSeparatedHeader() + '\t');
+                sb.Append("Cumulative Target" + '\t');
+                sb.Append("Cumulative Decoy" + '\t');
                 sb.Append("QValue" + '\t');
-                sb.Append("cumulative_target_notch" + '\t');
-                sb.Append("cumulative_decoy_notch" + '\t');
-                sb.Append("QValue_notch");
+                sb.Append("Cumulative Target Notch" + '\t');
+                sb.Append("Cumulative Decoy Notch" + '\t');
+                sb.Append("QValue Notch");
                 return sb.ToString();
             }
         }
@@ -55,7 +55,7 @@ namespace EngineLayer
         {
             get
             {
-                return thisPSM.IsDecoy;
+                return thisPSM.Pli.IsDecoy;
             }
         }
 

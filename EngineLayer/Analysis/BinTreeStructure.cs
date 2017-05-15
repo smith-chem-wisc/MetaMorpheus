@@ -26,7 +26,7 @@ namespace EngineLayer.Analysis
 
         internal void GenerateBins(List<NewPsmWithFdr> targetAndDecoyMatches, double dc)
         {
-            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.ScanPrecursorMass - b.thisPSM.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
+            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.ScanPrecursorMass - b.thisPSM.Pli.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
 
@@ -98,7 +98,7 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in FinalBins)
-                    if (Math.Abs(targetAndDecoyMatches[i].thisPSM.ScanPrecursorMass - targetAndDecoyMatches[i].thisPSM.PeptideMonoisotopicMass - bin.MassShift) <= dc)
+                    if (Math.Abs(targetAndDecoyMatches[i].thisPSM.ScanPrecursorMass - targetAndDecoyMatches[i].thisPSM.Pli.PeptideMonoisotopicMass - bin.MassShift) <= dc)
                         bin.Add(targetAndDecoyMatches[i]);
             }
 
@@ -160,12 +160,12 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
                 foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
                 {
-                    var ya = hm.Value.Item3.thisPSM.newPsm.matchedIonsListPositiveIsMatch;
+                    var ya = hm.Value.Item3.thisPSM.Pli.MatchedIonMassesListPositiveIsMatch;
                     if (ya.ContainsKey(ProductType.B)
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)
                         && ya[ProductType.Y].Any(b => b > 0)
-                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.PeptideMonoisotopicMass)
+                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.Pli.PeptideMonoisotopicMass)
                         bin.Overlapping++;
                 }
         }
@@ -176,7 +176,7 @@ namespace EngineLayer.Analysis
             {
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.PeptidesWithSetModifications.Count == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.Pli.PeptidesWithSetModifications.Count == 1) / numTarget;
             }
         }
 
@@ -186,7 +186,7 @@ namespace EngineLayer.Analysis
             {
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.thisPSM.BaseSequence.Length));
+                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.thisPSM.Pli.BaseSequence.Length));
             }
         }
 
@@ -260,25 +260,25 @@ namespace EngineLayer.Analysis
                 bin.residueCount = new Dictionary<char, int>();
                 foreach (var hehe in bin.uniquePSMs.Values)
                 {
-                    double bestScore = hehe.Item3.thisPSM.LocalizedScores.Max();
+                    double bestScore = hehe.Item3.thisPSM.Pli.LocalizedScores.Max();
                     if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
-                            if (bestScore - hehe.Item3.thisPSM.LocalizedScores[i] < 0.5)
+                            if (bestScore - hehe.Item3.thisPSM.Pli.LocalizedScores[i] < 0.5)
                                 if (bin.residueCount.ContainsKey(hehe.Item1[i]))
                                     bin.residueCount[hehe.Item1[i]]++;
                                 else
                                     bin.residueCount.Add(hehe.Item1[i], 1);
-                        if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores[0] < 0.5)
+                        if (hehe.Item3.thisPSM.Pli.LocalizedScores.Max() - hehe.Item3.thisPSM.Pli.LocalizedScores[0] < 0.5)
                         {
                             bin.pepNlocCount++;
-                            if (hehe.Item3.thisPSM.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                            if (hehe.Item3.thisPSM.Pli.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
                                 bin.protNlocCount++;
                         }
-                        if (hehe.Item3.thisPSM.LocalizedScores.Max() - hehe.Item3.thisPSM.LocalizedScores.Last() < 0.5)
+                        if (hehe.Item3.thisPSM.Pli.LocalizedScores.Max() - hehe.Item3.thisPSM.Pli.LocalizedScores.Last() < 0.5)
                         {
                             bin.pepClocCount++;
-                            if (hehe.Item3.thisPSM.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                            if (hehe.Item3.thisPSM.Pli.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
                                 bin.protClocCount++;
                         }
                     }
@@ -379,23 +379,23 @@ namespace EngineLayer.Analysis
         private void IdentifyMine(double v)
         {
             var myInfos = new List<MyInfo>
-            {
-                new MyInfo(0, "Exact match!"),
-                new MyInfo(-48.128629, "Phosphorylation-Lysine: Probably reverse is the correct match"),
-                new MyInfo(-76.134779, "Phosphorylation-Arginine: Probably reverse is the correct match"),
-                new MyInfo(1.003, "1 MM"),
-                new MyInfo(2.0055, "2 MM"),
-                new MyInfo(3.008, "3 MM"),
-                new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"),
-                new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."),
-                new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"),
-                new MyInfo(-79.966331, "neg Phosphorylation."),
-                new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"),
-                new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"),
-                new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"),
-                new MyInfo(-105.02484, "Methionine loss then acetaldehyde"),
-                new MyInfo(52.911464, "Fe[III]")
-            };
+                    {
+                        new MyInfo(0, "Exact match!"),
+                        new MyInfo(-48.128629, "Phosphorylation-Lysine: Probably reverse is the correct match"),
+                        new MyInfo(-76.134779, "Phosphorylation-Arginine: Probably reverse is the correct match"),
+                        new MyInfo(1.0029, "1 MM"),
+                        new MyInfo(2.0052, "2 MM"),
+                        new MyInfo(3.0077, "3 MM"),
+                        new MyInfo(173.051055, "Acetylation + Methionine: Usually on protein N terminus"),
+                        new MyInfo(-91.009185, "neg Carbamidomethylation - H2S: Usually on cysteine."),
+                        new MyInfo(-32.008456, "oxidation and then loss of oxidized M side chain"),
+                        new MyInfo(-79.966331, "neg Phosphorylation."),
+                        new MyInfo(189.045969, "Carboxymethylated + Methionine. Usually on protein N terminus"),
+                        new MyInfo(356.20596, "Lysine+V+E or Lysine+L+D"),
+                        new MyInfo(239.126988, "Lysine+H(5) C(5) N O(2), possibly Nmethylmaleimide"),
+                        new MyInfo(-105.02484, "Methionine loss then acetaldehyde"),
+                        new MyInfo(52.911464, "Fe[III]")
+                    };
             foreach (Bin bin in FinalBins)
             {
                 bin.Mine = "";

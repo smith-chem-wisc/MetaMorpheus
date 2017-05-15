@@ -4,8 +4,6 @@ using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
@@ -23,27 +21,25 @@ namespace EngineLayer.ModernSearch
 
         private readonly float[] keys;
 
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile;
+        private readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
 
         private readonly List<CompactPeptide> peptideIndex;
 
         private readonly List<SearchMode> searchModes;
-        private readonly string fileToSearch;
         private readonly List<string> nestedIds;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, string fileToSearch, List<string> nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, List<string> nestedIds)
         {
-            this.myMSDataFile = myMSDataFile;
+            this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
-            this.fileToSearch = fileToSearch;
             this.nestedIds = nestedIds;
         }
 
@@ -54,15 +50,12 @@ namespace EngineLayer.ModernSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In modern search engine...", nestedIds);
-            var totalSpectra = myMSDataFile.NumSpectra;
-
-            List<PsmModern>[] newPsms = new List<PsmModern>[searchModes.Count];
-            for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new List<PsmModern>(new PsmModern[totalSpectra]);
-
-            LocalMS2Scan[] listOfSortedms2Scans = GetMs2Scans(myMSDataFile).OrderBy(b => b.MonoisotopicPrecursorMass).ToArray();
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
+            PsmParent[][] newPsms = new PsmParent[searchModes.Count][];
+            for (int i = 0; i < searchModes.Count; i++)
+                newPsms[i] = new PsmParent[listOfSortedms2Scans.Length];
+
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
             int scansSeen = 0;
@@ -77,7 +70,7 @@ namespace EngineLayer.ModernSearch
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var thisScan = listOfSortedms2Scans[i];
-                    var thisScanprecursorMass = thisScan.MonoisotopicPrecursorMass;
+                    var thisScanprecursorMass = thisScan.PrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
                     CalculatePeptideScores(thisScan.TheScan, fullPeptideScores);
 
@@ -138,7 +131,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][thisScan.OneBasedScanNumber - 1] = new PsmModern(theBestPeptide, Path.GetFileNameWithoutExtension(fileToSearch), thisScan.RetentionTime, thisScan.MonoisotopicPrecursorIntensity, thisScanprecursorMass, thisScan.OneBasedScanNumber, thisScan.OneBasedPrecursorScanNumber, thisScan.PrecursorCharge, thisScan.NumPeaks, thisScan.TotalIonCurrent, thisScan.MonoisotopicPrecursorMZ, bestScores[j], bestNotches[j]);
+                            newPsms[j][i] = new PsmModern(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
                         }
                     }
                 }

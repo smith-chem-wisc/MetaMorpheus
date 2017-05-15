@@ -1,5 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.Calibration;
+using EngineLayer.ClassicSearch;
+using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -33,9 +35,18 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 
             List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
-            PsmParent newPsm = new TestParentSpectrumMatch(2, 2, 1);
-            PsmWithMultiplePossiblePeptides thisPSM = new PsmWithMultiplePossiblePeptides(newPsm, new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y });
-            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(thisPSM);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), new MzPeak(0, 0), 2, null);
+            PsmParent newPsm = new PsmClassic(pepWithSetMods, 0, 0, 0, scan);
+
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            {
+                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
+            };
+            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
+
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
             identifications.Add(thePsmwithfdr);
 
@@ -58,7 +69,19 @@ namespace Test
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.1);
 
-            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(new PsmWithMultiplePossiblePeptides(new TestParentSpectrumMatch(2, 2, 1), new HashSet<PeptideWithSetModifications>() { pepWithSetMods }, fragmentTolerance, myMsDataFile, new List<ProductType> { ProductType.B, ProductType.Y }));
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, new MzPeak(2, 2), 2, null);
+            PsmParent newPsm = new PsmClassic(pepWithSetMods, 0, 0, 0, scan);
+
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            {
+                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
+            };
+            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
+
+            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
 
             var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<NewPsmWithFdr> { thePsmwithfdr }, 3, 2, 10, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();
