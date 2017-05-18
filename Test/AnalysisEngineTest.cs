@@ -92,7 +92,7 @@ namespace Test
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<ProteinGroup>, string, List<string>> action3 = null;
             Action<List<NewPsmWithFdr>, string, List<string>> action2 = (List<NewPsmWithFdr> l, string s, List<string> sdf) => {; };
-            Action<List<NewPsmWithFdr>, List<ProteinGroup>, string, List<string>> action4 = null;
+            Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4 = null;
             bool doParsimony = false;
             bool noOneHitWonders = false;
             bool modPepsAreUnique = false;
