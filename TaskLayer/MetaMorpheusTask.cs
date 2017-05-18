@@ -483,7 +483,7 @@ namespace TaskLayer
                         id = "SIR_" + scan_result_scan_item.Item1,
                         spectraData_ref = "SD_" + spectral_ids[psm.thisPSM.FileName].ToString(),
                         spectrumID = psm.thisPSM.ScanNumber.ToString(),
-                        SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[50]
+                        SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[500]
                     };
                     psm_per_scan.Add(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), scan_result_scan_item);
                     sir_id++;
