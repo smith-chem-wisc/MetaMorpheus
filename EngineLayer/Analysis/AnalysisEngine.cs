@@ -779,7 +779,7 @@ namespace EngineLayer.Analysis
                     }
 
                     writePsmsAction?.Invoke(orderedPsmsWithFDR, "allPSMs_" + searchModes[j].FileNameAddition, nestedIds);
-                    if (!doParsimony) writeMzIdentmlAction.Invoke(orderedPsmsWithFDR, null, searchModes[j], searchModes[j].FileNameAddition, nestedIds);
+                    if (!doParsimony && writeMzIdentmlAction != null) writeMzIdentmlAction.Invoke(orderedPsmsWithFDR, null, searchModes[j], searchModes[j].FileNameAddition, nestedIds);
                     if (doHistogramAnalysis)
                     {
                         var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
