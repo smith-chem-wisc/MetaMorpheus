@@ -438,7 +438,7 @@ namespace TaskLayer
                             location = mod.Key - 1,
                             locationSpecified = true,
                             monoisotopicMassDelta = mod.Value.monoisotopicMass,
-                            residues = new string[1] { mod.Value.motif.ToString() },
+                            residues = new string[1] { mod.Value.motif.Motif.ToString() },
                             monoisotopicMassDeltaSpecified = true,
                             cvParam = new mzIdentML.Generated.CVParamType[1]
                             {
