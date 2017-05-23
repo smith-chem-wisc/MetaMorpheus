@@ -54,6 +54,13 @@ namespace EngineLayer
             this.numFixedMods = numFixedMods;
         }
 
+        internal PeptideWithSetModifications(PeptideWithSetModifications oldPWSM, PeptideWithSetModifications pepwithSetModsWithNewProtein) : base(pepwithSetModsWithNewProtein.Protein, pepwithSetModsWithNewProtein.OneBasedStartResidueInProtein, pepwithSetModsWithNewProtein.OneBasedEndResidueInProtein)
+        {
+            this.modPep = oldPWSM.modPep;
+            this.allModsOneIsNterminus = oldPWSM.allModsOneIsNterminus;
+            this.numFixedMods = oldPWSM.numFixedMods;
+        }
+
         #endregion Internal Constructors
 
         #region Public Properties
