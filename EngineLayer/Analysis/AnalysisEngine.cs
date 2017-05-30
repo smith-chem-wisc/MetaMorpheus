@@ -91,6 +91,33 @@ namespace EngineLayer.Analysis
 
         public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
+            // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
+            if (!treatModPeptidesAsDifferentPeptides)
+            {
+                var groups = compactPeptideToProteinPeptideMatching.GroupBy(p => p.Value.First().BaseSequence);
+                
+                foreach(var baseseq in groups)
+                {
+                    var proteinsForAllCompactPeptidesWithThisBaseSeq = baseseq.SelectMany(p => p.Value.Select(v => v.Protein)).Distinct().ToList();
+
+                    foreach (var compactPeptide in baseseq)
+                    {
+                        var proteinsHere = compactPeptide.Value.Select(p => p.Protein).Distinct();
+
+                        if (proteinsHere.Count() != proteinsForAllCompactPeptidesWithThisBaseSeq.Count)
+                        {
+                            var missingProteins = proteinsForAllCompactPeptidesWithThisBaseSeq.Except(proteinsHere);
+
+                            foreach (var missingProtein in missingProteins)
+                            {
+                                var templatePepWithSetMod = baseseq.SelectMany(p => p.Value).Where(v => v.Protein.Equals(missingProtein)).First();
+                                compactPeptideToProteinPeptideMatching[compactPeptide.Key].Add(new PeptideWithSetModifications(compactPeptide.Value.First(), templatePepWithSetMod));
+                            }
+                        }
+                    }
+                }
+            }
+
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
