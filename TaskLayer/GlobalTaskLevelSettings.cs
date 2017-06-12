@@ -83,11 +83,11 @@ namespace TaskLayer
             yield return new SinglePpmAroundZeroSearchMode(5);
             yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(20);
-            yield return new SingleAbsoluteAroundZeroSearchMode(0.05);
-            yield return new DotSearchMode("3mm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new DotSearchMode("1mm5ppm", new double[] { 0, 1.0029}, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new DotSearchMode("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new IntervalSearchMode("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
             yield return new IntervalSearchMode("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
             yield return new OpenSearchMode();
-            yield return new IntervalSearchMode("ZeroAndSodium", new List<DoubleRange> { new DoubleRange(-0.005, 0.005), new DoubleRange(21.981943 - 0.005, 21.981943 + 0.005) });
             yield return new IntervalSearchMode("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
             foreach (var sm in GetResidueInclusionExclusionSearchModes(new DoubleRange(-187, double.PositiveInfinity), 0.0075))
                 yield return sm;

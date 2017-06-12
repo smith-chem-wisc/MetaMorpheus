@@ -69,14 +69,14 @@ namespace EngineLayer.Calibration
             var trainingPointCounts = new List<int>();
             var result = new CalibrationResults(myMsDataFile, this);
             DataPointAquisitionResults dataPointAcquisitionResult = null;
-            for (int smoothCalibrationRound = 1; ; smoothCalibrationRound++)
+            for (int linearCalibrationRound = 1; ; linearCalibrationRound++)
             {
-                Status("smoothCalibrationRound " + smoothCalibrationRound, nestedIds);
+                Status("linearCalibrationRound " + linearCalibrationRound, nestedIds);
                 dataPointAcquisitionResult = GetDataPoints();
-                ms1ListAction(dataPointAcquisitionResult.Ms1List, "beforesc" + smoothCalibrationRound.ToString());
-                ms2ListAction(dataPointAcquisitionResult.Ms2List, "beforesc" + smoothCalibrationRound.ToString());
+                ms1ListAction(dataPointAcquisitionResult.Ms1List, "beforesc" + linearCalibrationRound.ToString());
+                ms2ListAction(dataPointAcquisitionResult.Ms2List, "beforesc" + linearCalibrationRound.ToString());
                 result.Add(dataPointAcquisitionResult);
-                if (smoothCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[smoothCalibrationRound - 2])
+                if (linearCalibrationRound >= 2 && dataPointAcquisitionResult.Count <= trainingPointCounts[linearCalibrationRound - 2])
                     break;
                 trainingPointCounts.Add(dataPointAcquisitionResult.Count);
                 if (dataPointAcquisitionResult.Ms2List.Count == 0)
@@ -194,14 +194,14 @@ namespace EngineLayer.Calibration
             // Loop over identifications
             for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
             {
-                var identification = goodIdentifications[matchIndex];
+                NewPsmWithFdr identification = goodIdentifications[matchIndex];
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Each identification has an MS2 spectrum attached to it.
-                int ms2spectrumIndex = identification.thisPSM.ScanNumber;
+                int ms2scanNumber = identification.thisPSM.ScanNumber;
                 int peptideCharge = identification.thisPSM.ScanPrecursorCharge;
 
                 var representativeSinglePeptide = identification.thisPSM.Pli.PeptidesWithSetModifications.First();
@@ -215,7 +215,7 @@ namespace EngineLayer.Calibration
                 numMs2MassChargeCombinationsConsidered = 0;
                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
                 numFragmentsIdentified = 0;
-                res.Ms2List.AddRange(SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2spectrumIndex) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge));
+                res.Ms2List.AddRange(SearchMS2Spectrum(myMsDataFile.GetOneBasedScan(ms2scanNumber) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, coolPeptide, peptideCharge, identification));
                 res.numMs2MassChargeCombinationsConsidered += numMs2MassChargeCombinationsConsidered;
                 res.numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
@@ -234,8 +234,8 @@ namespace EngineLayer.Calibration
 
                 numMs1MassChargeCombinationsConsidered = 0;
                 numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
-                res.Ms1List.AddRange(SearchMS1Spectra(masses, intensities, ms2spectrumIndex, -1, peaksAddedFromMS1HashSet, peptideCharge));
-                res.Ms1List.AddRange(SearchMS1Spectra(masses, intensities, ms2spectrumIndex, 1, peaksAddedFromMS1HashSet, peptideCharge));
+                res.Ms1List.AddRange(SearchMS1Spectra(masses, intensities, ms2scanNumber, -1, peaksAddedFromMS1HashSet, peptideCharge, identification));
+                res.Ms1List.AddRange(SearchMS1Spectra(masses, intensities, ms2scanNumber, 1, peaksAddedFromMS1HashSet, peptideCharge, identification));
                 res.numMs1MassChargeCombinationsConsidered += numMs1MassChargeCombinationsConsidered;
                 res.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
             }
@@ -369,7 +369,7 @@ namespace EngineLayer.Calibration
             }
         }
 
-        private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge)
+        private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, NewPsmWithFdr identification)
         {
             var theIndex = -1;
             if (direction == 1)
@@ -432,7 +432,7 @@ namespace EngineLayer.Calibration
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, double.NaN, closestPeakMZ - theMZ));
+                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, double.NaN, closestPeakMZ - theMZ, null));
                         }
                         else
                             break;
@@ -460,7 +460,8 @@ namespace EngineLayer.Calibration
                                                              trainingPointsToAverage.Select(b => b.intensity).Average(),
                                                              fullMS1scan.TotalIonCurrent,
                                                              fullMS1scan.InjectionTime,
-                                                             trainingPointsToAverage.Select(b => b.Label).Median());
+                                                             trainingPointsToAverage.Select(b => b.Label).Median(),
+                                                             identification);
                     }
                     chargeToLookAt++;
                 } while (chargeToLookAt <= highestKnownChargeForThisPeptide + 1);
@@ -468,7 +469,7 @@ namespace EngineLayer.Calibration
             }
         }
 
-        private IEnumerable<LabeledMs2DataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge)
+        private IEnumerable<LabeledMs2DataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, NewPsmWithFdr identification)
         {
             numFragmentsIdentified = 0;
             // Key: mz value, Value: error
@@ -550,7 +551,7 @@ namespace EngineLayer.Calibration
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, null, double.NaN, closestPeakMZ - theMZ));
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, null, double.NaN, closestPeakMZ - theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges
@@ -576,7 +577,8 @@ namespace EngineLayer.Calibration
                                      ms2DataScan.TotalIonCurrent,
                                      ms2DataScan.InjectionTime,
                                      ms2DataScan.IsolationMz,
-                                     trainingPointsToAverage.Select(b => b.Label).Median());
+                                     trainingPointsToAverage.Select(b => b.Label).Median(),
+                                     identification);
                         }
                     }
                 }

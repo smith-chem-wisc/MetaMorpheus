@@ -13,6 +13,13 @@ MM   -17.026549
 MT   PeptideTermMod
 CF   H-3 N-1
 //
+ID   Ammonia loss
+TG   N
+PP   Anywhere.
+MM   -17.026549
+MT   Mod
+CF   H-3 N-1
+//
 ID   Sodium
 TG   D or E
 PP   Anywhere.
@@ -21,14 +28,14 @@ MT   Metal
 CF   H-1 Na1
 //
 ID   Dioxidation
-TG   W
+TG   W or P
 PP   Anywhere.
 MM   31.989829
 MT   Mod
 CF   O2
 //
 ID   Oxidation
-TG   Y or W or P or F
+TG   Y or W or P or F or D or E or V or H
 PP   Anywhere.
 MM   15.994915
 MT   Mod
@@ -40,6 +47,20 @@ PP   Anywhere.
 MM   57.021464
 MT   Mod
 CF   H3 C2 N1 O1
+//
+ID   Carbamidomethyl of peptide N term
+TG   X
+PP   Peptide N-terminal.
+MM   57.021464
+MT   PeptideTermMod
+CF   H3 C2 N1 O1
+//
+ID   Carboxymethyl
+TG   C
+PP   Anywhere.
+MM   58.005479
+MT   Mod
+CF   H2 C2 O2
 //
 ID   Phospho
 TG   S or T or Y
@@ -63,6 +84,13 @@ MM   42.010565
 MT   Mod
 CF   H2 C2 O1
 //
+ID   Acetylserine
+TG   S
+PP   Anywhere.
+MM   42.010565
+MT   Mod
+CF   H2 C2 O1
+//
 ID   Acetald+26
 TG   X
 PP   Peptide N-terminal.
@@ -73,6 +101,7 @@ CF   H2 C2
 ID   Acetylation+Methionine
 TG   mX
 PP   N-terminal.
+NL   173.051055 or 0
 MM   173.051055
 MT   ProteinTermMod
 CF   C7 H11 N1 O2 S
@@ -119,22 +148,29 @@ MM   37.946941
 MT   Metal
 CF   H-2 Ca1
 //
-ID   Water loss
-TG   E or D
+ID   H-2 on pep term M
+TG   M
+PP   Peptide N-terminal.
+MM   -2.015650 
+MT   PeptideTermMod
+CF   H-2
+//
+ID   Water loss on pep term E
+TG   E
 PP   Peptide N-terminal.
 MM   -18.010565
 MT   PeptideTermMod
 CF   H-2 O-1
 //
-ID   Proline Oxidation to pyroglutamic acid
-TG   P
+ID   Water loss
+TG   D
 PP   Anywhere.
-MM   13.979265
+MM   -18.010565
 MT   Mod
-CF   H-2 O1
+CF   H-2 O-1
 //
-ID   Tryptophan oxidation to oxolactone
-TG   W
+ID   H-2 O1 
+TG   L or I or P or W or S
 PP   Anywhere.
 MM   13.979265
 MT   Mod
@@ -174,13 +210,6 @@ PP   Peptide N-terminal.
 MM   27.994915
 MT   PeptideTermMod
 CF   C1 O1
-//
-ID   Carbon
-TG   P
-PP   Peptide N-terminal.
-MT   PeptideTermMod
-MM   12
-CF   C1
 //
 ID   Zinc
 TG   D or E
@@ -253,7 +282,7 @@ MT   Mod
 CF   H6 C3
 //
 ID   Trioxidation of C
-TG   Cysteine
+TG   C
 PP   Anywhere.
 MM   47.984744
 MT   Mod
@@ -321,4 +350,25 @@ PP   Anywhere.
 FM   0 or 238.229666
 MM   238.229666
 CF   H30 C16 O1
+//
+ID   Topaquinone
+TG   Y
+MT   Mod
+PP   Anywhere.
+MM   29.974179
+CF   H-2 O2 
+//
+ID   Carbon Adduct
+TG   X
+PP   Peptide N-terminal.
+MM   12
+MT   PeptideTermMod
+CF   C1
+//
+ID   Carboxymethyl of peptide n term
+TG   X
+PP   Peptide N-terminal.
+MM   58.005479
+MT   PeptideTermMod
+CF   H2 C2 O2
 //

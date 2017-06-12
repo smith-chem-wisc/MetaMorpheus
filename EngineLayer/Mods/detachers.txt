@@ -41,3 +41,10 @@ MT   Detached
 NL   229.14264 
 MM   229.14264 
 //
+ID   Detached K
+PP   Peptide N-terminal.
+TG   kX
+MT   Detached
+NL   128.09496
+MM   128.09496
+//

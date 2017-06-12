@@ -34,6 +34,7 @@ namespace EngineLayer.Analysis
         private readonly Action<BinTreeStructure, string> writeHistogramPeaksAction;
         private readonly Action<List<NewPsmWithFdr>, string, List<string>> writePsmsAction;
         private readonly Action<List<ProteinGroup>, string, List<string>> writeProteinGroupsAction;
+        private readonly Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> writeMzIdentmlAction;
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
         private readonly bool doHistogramAnalysis;
@@ -50,7 +51,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4,  bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -67,6 +68,7 @@ namespace EngineLayer.Analysis
             this.writeHistogramPeaksAction = action1;
             this.writePsmsAction = action2;
             this.writeProteinGroupsAction = action3;
+            this.writeMzIdentmlAction = action4;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.minPeptideLength = minPeptideLength;
             this.maxPeptideLength = maxPeptideLength;
@@ -89,6 +91,33 @@ namespace EngineLayer.Analysis
 
         public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
         {
+            // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
+            if (!treatModPeptidesAsDifferentPeptides)
+            {
+                var groups = compactPeptideToProteinPeptideMatching.GroupBy(p => p.Value.First().BaseSequence);
+                
+                foreach(var baseseq in groups)
+                {
+                    var proteinsForAllCompactPeptidesWithThisBaseSeq = baseseq.SelectMany(p => p.Value.Select(v => v.Protein)).Distinct().ToList();
+
+                    foreach (var compactPeptide in baseseq)
+                    {
+                        var proteinsHere = compactPeptide.Value.Select(p => p.Protein).Distinct();
+
+                        if (proteinsHere.Count() != proteinsForAllCompactPeptidesWithThisBaseSeq.Count)
+                        {
+                            var missingProteins = proteinsForAllCompactPeptidesWithThisBaseSeq.Except(proteinsHere);
+
+                            foreach (var missingProtein in missingProteins)
+                            {
+                                var templatePepWithSetMod = baseseq.SelectMany(p => p.Value).Where(v => v.Protein.Equals(missingProtein)).First();
+                                compactPeptideToProteinPeptideMatching[compactPeptide.Key].Add(new PeptideWithSetModifications(compactPeptide.Value.First(), templatePepWithSetMod));
+                            }
+                        }
+                    }
+                }
+            }
+
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptide>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
@@ -777,7 +806,7 @@ namespace EngineLayer.Analysis
                     }
 
                     writePsmsAction?.Invoke(orderedPsmsWithFDR, "allPSMs_" + searchModes[j].FileNameAddition, nestedIds);
-
+                    if (!doParsimony && writeMzIdentmlAction != null) writeMzIdentmlAction.Invoke(orderedPsmsWithFDR, null, searchModes[j], searchModes[j].FileNameAddition, nestedIds);
                     if (doHistogramAnalysis)
                     {
                         var limitedpsms_with_fdr = orderedPsmsWithFDR.Where(b => (b.QValue <= 0.01)).ToList();
@@ -803,7 +832,9 @@ namespace EngineLayer.Analysis
                         foreach (var pg in proteinGroups[j])
                             pg.AggregateQuantifyHelper(files);
                         writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition, nestedIds);
+                        writeMzIdentmlAction(orderedPsmsWithFDR, proteinGroups[j], searchModes[j], searchModes[j].FileNameAddition, nestedIds);
                     }
+
 
                     // write individual file results based on aggregate results
                     if (arrayOfSortedMS2Scans == null && doParsimony)
@@ -837,8 +868,10 @@ namespace EngineLayer.Analysis
 
                             subsetProteinGroupsForThisFile = DoProteinFdr(subsetProteinGroupsForThisFile);
                             writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
+                            writeMzIdentmlAction(psmsGroupedByFilename.Where(p => p.Key == file).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, searchModes[j], file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                         }
                     }
+
 
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }

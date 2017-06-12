@@ -10,12 +10,13 @@
         public readonly double intensity;
         public readonly double totalIonCurrent;
         public readonly double injectionTime;
+        public readonly NewPsmWithFdr identification;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public LabeledMs1DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label)
+        public LabeledMs1DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label, NewPsmWithFdr identification)
         {
             this.mz = mz;
             this.rt = rt;
@@ -23,6 +24,7 @@
             this.totalIonCurrent = totalIonCurrent;
             this.injectionTime = injectionTime ?? double.NaN;
             this.Label = label;
+            this.identification = identification;
             Inputs = new double[] { mz, rt, intensity, totalIonCurrent, this.injectionTime };
         }
 

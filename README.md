@@ -44,12 +44,12 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 2. Open MetaMorpheusGUI.exe, and drag and drop the raw spectra files and the compressed Uniprot XML database on the GUI.
 
-3. For all following tasks, have ptmlist.txt selected for localization, f.txt for fixed, and v.txt for variable. Add, in order:
-   * Combined 5 and 10 ppm precursor tolerance Search Task
-   * Calibration Task
-   * Combined 5 and 10 ppm precursor tolerance Search Task
-   * G-PTM-D Task with m.txt, metals.txt, pt.txt selected in the G-PTM-D column to add these plausible modifications to the augmented database
-   * 5 ppm precursor tolerance Search Task with m.txt, metals.txt, pt.txt and ptmlist.txt selected for localization
+3. Add search tasks that test all of the functionality of MetaMorpheus. Drag the .toml files **IN ORDER** (Task1 - Task5) onto the application. 
+  * Task1SearchExample.toml - tests the standard search functionality.
+  * Task2CalibrationExample.toml - will calibrate a .raw of .mzML file based on high scoring search results and write a new calibrated .mzML file.
+  * Task3SearchExample.toml - searches the newly calibrated data file, which demonstrates improved performance and allows for tighter search tolerances.
+  * Task4GptmdExample.toml - Searches the calibrated data file to find high probability PTMs. This search task generates a new .xml protein database.
+  * Task5SearchExample.toml - Searches the calibrated input file against the G-PTM-D .xml database. This search should have the best output interms of total PSMs and total modified-peptides.
 
 4. Click Run All Tasks!
 

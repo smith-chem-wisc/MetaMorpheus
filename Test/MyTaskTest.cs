@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -46,7 +46,8 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-
+            Console.WriteLine("Size of variable Modificaitaons: " + variableModifications.Capacity);
+            Console.WriteLine("Size of fixed Modificaitaons: " + fixedModifications.Capacity);
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
 
@@ -175,6 +176,181 @@ namespace Test
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();
+        }
+
+        [Test]
+        public static void MakeSureGptmdTaskMatchesExactMatches()
+        {
+            MetaMorpheusTask task1;
+
+            #region Setup tasks
+
+            {
+                ModificationMotif motif;
+                ModificationMotif.TryGetMotif("T", out motif);
+                GlobalTaskLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", null, motif, ModificationSites.Any, 229, null, null, null, "okType") });
+                task1 = new GptmdTask()
+                {
+                    ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
+                    ListOfModsVariable = new List<Tuple<string, string>>(),
+                    ListOfModsFixed = new List<Tuple<string, string>>(),
+                    PrecursorMassTolerance = new MzLibUtil.Tolerance(MzLibUtil.ToleranceUnit.Absolute, 1)
+                };
+            }
+
+            #endregion Setup tasks
+
+            string xmlName = "sweetness.xml";
+
+            #region Generate protein and write to file
+
+            {
+                Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), new List<Protein> { theProtein }, xmlName);
+            }
+
+            #endregion Generate protein and write to file
+
+            string mzmlName = @"ok.mzML";
+
+            #region Generate and write the mzml
+
+            {
+                Dictionary<string, Modification> ok;
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+
+                List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
+
+                var targetDigested = theProteins[0].Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 1, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+
+                ModificationMotif motif;
+                ModificationMotif.TryGetMotif("T", out motif);
+                var okjhjf = targetDigested[0].GetPeptidesWithSetModifications(GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 1, 0).ToList();
+                PeptideWithSetModifications targetGood = okjhjf.First();
+
+                var okjhj = targetDigested[1].GetPeptidesWithSetModifications(GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 2, 1).ToList();
+                PeptideWithSetModifications targetWithUnknownMod = okjhj.Last();
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
+
+                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            }
+
+            #endregion Generate and write the mzml
+
+            // RUN!
+            var theStringResult = task1.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
+        }
+
+
+        //test if prunedDatabase matches expected output 
+        [Test]
+        public static void TestPrunedDatabase()
+        {
+            #region setup
+            //Create Search Task
+            SearchTask task1 = new SearchTask()
+            {
+                WritePrunedDatabase = true,
+                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") }
+            };
+
+            //add task 1 to task list
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
+               new Tuple<string, MetaMorpheusTask>("task1", task1)};
+
+
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("P", out motif);
+
+            var connorMod = new ModificationWithMass("ConnorMod", null, motif, ModificationSites.Any, 10, null, null, null, "ConnorModType");
+
+            GlobalTaskLevelSettings.AddMods(new List<ModificationWithLocation>
+            {
+                connorMod
+            });
+
+            #endregion setup
+            #region Protein and Mod Creation
+
+            //create modification lists
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            //add modification to Protein object
+            var dictHere = new Dictionary<int, List<Modification>>();
+            ModificationWithMass modToAdd = connorMod;
+            ModificationWithMass modToAdd2 = connorMod;
+            dictHere.Add(1, new List<Modification> { modToAdd });
+            dictHere.Add(3, new List<Modification> { modToAdd2 });
+
+            //protein Creation (One with mod and one without)
+            Protein TestProtein = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
+            Protein TestProteinWithMod = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
+
+            #endregion Protein and Mod Creation
+            #region XML File
+
+            //First Write XML Database 
+
+            string xmlName = "okkk.xml";
+
+            //Add Mod to list and write XML input database
+            Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> modList = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
+            var Hash = new HashSet<Tuple<int, ModificationWithMass>>();
+            Hash.Add(Tuple.Create(3, modToAdd));
+            modList.Add("test", Hash);
+            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithMod }, xmlName);
+
+            #endregion XML File
+
+            #region MZML File
+
+            //now write MZML file
+            Dictionary<string, Modification> ok;
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+            var digestedList = protein[0].Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            Assert.AreEqual(1, digestedList.Count);
+
+            PeptideWithPossibleModifications modPep1 = digestedList[0];
+
+            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            Assert.AreEqual(4, setList1.Count);
+
+            //Set Peptide with 1 mod at position 3
+            PeptideWithSetModifications pepWithSetMods1 = setList1[1];
+
+            //Finally Write MZML file
+            Assert.AreEqual("PEP[ConnorModType:ConnorMod]TID", pepWithSetMods1.Sequence);
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            string mzmlName = @"hello.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            #endregion MZML File
+
+            //run!
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
+            engine.Run();
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
+
+        }
+
+        private static void SuccessfullyFinishedAllTasks(object sender, string rootOutputFolderPath)
+        {
+            Dictionary<string, Modification> ok;
+            string[] files = Directory.GetFiles(rootOutputFolderPath + @"\task1", "okkkpruned.xml");
+            string file = files[0];
+            var protein = ProteinDbLoader.LoadProteinXML(file, true, new List<Modification>(), false, new List<string>(), out ok);
+            //check length
+            Assert.AreEqual(protein[0].OneBasedPossibleLocalizedModifications.Count, 1);
+            //check location (key)
+            Assert.AreEqual(protein[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), true);
+            List<Modification> modList = new List<Modification>();
+            modList = protein[0].OneBasedPossibleLocalizedModifications[3];
+            //check Type, count, ID
+            Assert.AreEqual(modList[0].modificationType, "ConnorModType");
+            Assert.AreEqual(modList[0].id, "ConnorMod");
+            Assert.AreEqual(modList.Count, 1);
         }
 
         #endregion Public Methods
