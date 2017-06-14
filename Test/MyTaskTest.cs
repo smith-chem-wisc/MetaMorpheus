@@ -245,7 +245,7 @@ namespace Test
 
 
         //test if prunedDatabase matches expected output 
-       [Test]
+        [Test]
         public static void TestPrunedDatabase()
         {
             hasPrunedRun = true;
@@ -336,11 +336,10 @@ namespace Test
             engine.Run();
 
             string outputFolderInThisTest = outputFolder;
-        
-            Console.WriteLine("FinishedTasksPruned");
-            string[] files = Directory.GetFiles(outputFolderInThisTest + @"\task1", "okkkpruned.xml");
-            string file = files[0];
-            var proteins = ProteinDbLoader.LoadProteinXML(file, true, new List<Modification>(), false, new List<string>(), out ok);
+            string final = Path.Combine(outputFolder, "task1", "okkkpruned.xml");
+            //string[] files = Directory.GetFiles(fileAtPath);
+            //string file = fileAtPath;
+            var proteins = ProteinDbLoader.LoadProteinXML(final, true, new List<Modification>(), false, new List<string>(), out ok);
             //check length
             Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
             //check location (key)
@@ -358,7 +357,7 @@ namespace Test
             outputFolder = rootOutputFolderPath;
 
         }
-        
+
 
         [Test]
         public static void TestUniquePeptideCount()
@@ -437,24 +436,25 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();
 
-                 List<string> found = new List<string>();
-                 string line;
+            List<string> found = new List<string>();
+            string line;
 
-                 using (StreamReader file = new StreamReader(outputFolder + @"\TestUnique\results.txt"))
-                 {
-                     while ((line = file.ReadLine()) != null)
-                     {
-                         if (line.Contains("Unique PSMS within 1% FDR"))
-                         {
-                             found.Add(line);
-                             Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
-                         }
-                     }
-                 }
+            using (StreamReader file = new StreamReader(Path.Combine(outputFolder, "TestUnique", "results.txt")))
+            {
+                while ((line = file.ReadLine()) != null)
+                {
+                    if (line.Contains("Unique PSMS within 1% FDR"))
+                    {
+                        Console.WriteLine("adsf");
+                        found.Add(line);
+                        Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
+                    }
+                }
+            }
             #endregion run
         }
 
 
-#endregion public methods
+        #endregion public methods
     }
-    }
+}
