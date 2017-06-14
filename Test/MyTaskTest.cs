@@ -338,7 +338,6 @@ namespace Test
             string outputFolderInThisTest = outputFolder;
         
             Console.WriteLine("FinishedTasksPruned");
-            Dictionary<string, Modification> mod;
             string[] files = Directory.GetFiles(outputFolderInThisTest + @"\task1", "okkkpruned.xml");
             string file = files[0];
             var proteins = ProteinDbLoader.LoadProteinXML(file, true, new List<Modification>(), false, new List<string>(), out ok);
