@@ -439,6 +439,7 @@ namespace Test
 
                  List<string> found = new List<string>();
                  string line;
+
                  using (StreamReader file = new StreamReader(outputFolder + @"\TestUnique\results.txt"))
                  {
                      while ((line = file.ReadLine()) != null)
@@ -446,7 +447,6 @@ namespace Test
                          if (line.Contains("Unique PSMS within 1% FDR"))
                          {
                              found.Add(line);
-                             Console.WriteLine("FOUND: " + found[0]);
                              Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
                          }
                      }
