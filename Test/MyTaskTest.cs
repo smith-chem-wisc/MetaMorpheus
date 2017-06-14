@@ -14,7 +14,8 @@ namespace Test
     [TestFixture]
     public class MyTaskTest
     {
-
+        public static string outputFolder = "";
+        public static bool hasPrunedRun = false;
         #region Public Methods
 
         [Test]
@@ -244,9 +245,10 @@ namespace Test
 
 
         //test if prunedDatabase matches expected output 
-        [Test]
+       [Test]
         public static void TestPrunedDatabase()
         {
+            hasPrunedRun = true;
             #region setup
             //Create Search Task
             SearchTask task1 = new SearchTask()
@@ -290,7 +292,7 @@ namespace Test
 
             #endregion Protein and Mod Creation
             #region XML File
-
+            Console.WriteLine("hi");
             //First Write XML Database 
 
             string xmlName = "okkk.xml";
@@ -329,31 +331,131 @@ namespace Test
             #endregion MZML File
 
             //run!
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
 
+            string outputFolderInThisTest = outputFolder;
+        
+            Console.WriteLine("FinishedTasksPruned");
+            Dictionary<string, Modification> mod;
+            string[] files = Directory.GetFiles(outputFolderInThisTest + @"\task1", "okkkpruned.xml");
+            string file = files[0];
+            var proteins = ProteinDbLoader.LoadProteinXML(file, true, new List<Modification>(), false, new List<string>(), out ok);
+            //check length
+            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 1);
+            //check location (key)
+            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), true);
+            List<Modification> listOfMods = new List<Modification>();
+            listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
+            //check Type, count, ID
+            Assert.AreEqual(listOfMods[0].modificationType, "ConnorModType");
+            Assert.AreEqual(listOfMods[0].id, "ConnorMod");
+            Assert.AreEqual(listOfMods.Count, 1);
         }
 
         private static void SuccessfullyFinishedAllTasks(object sender, string rootOutputFolderPath)
         {
+            outputFolder = rootOutputFolderPath;
+
+        }
+        
+
+        [Test]
+        public static void TestUniquePeptideCount()
+        {
+            #region setup
+            SearchTask testUnique = new SearchTask()
+            {
+                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") }
+            };
+
+            List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
+               new Tuple<string, MetaMorpheusTask>("TestUnique", testUnique)};
+
+
+            ModificationMotif motif;
+            ModificationMotif.TryGetMotif("P", out motif);
+
+            var testUniqeMod = new ModificationWithMass("testUniqeMod", null, motif, ModificationSites.Any, 10, null, null, null, "testUniqueModType");
+
+            GlobalTaskLevelSettings.AddMods(new List<ModificationWithLocation>
+            {
+                testUniqeMod
+            });
+            #endregion setup
+
+            #region mod setup and protein creation
+            //create modification lists
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+
+            //add modification to Protein object
+            var modDictionary = new Dictionary<int, List<Modification>>();
+            ModificationWithMass modToAdd = testUniqeMod;
+            modDictionary.Add(1, new List<Modification> { modToAdd });
+            modDictionary.Add(3, new List<Modification> { modToAdd });
+
+            //protein Creation (One with mod and one without)
+            Protein TestProtein = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), modDictionary, new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>());
+            #endregion mod setup and protein creation
+
+            #region XML setup
+            //First Write XML Database 
+
+            string xmlName = "singleProteinWithTwoMods.xml";
+
+            //Add Mod to list and write XML input database
+            Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> modList = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
+            var Hash = new HashSet<Tuple<int, ModificationWithMass>>();
+            Hash.Add(Tuple.Create(3, modToAdd));
+            modList.Add("test", Hash);
+            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProtein }, xmlName);
+            #endregion XML setup
+
+            #region MZML setup
+            //now write MZML file
             Dictionary<string, Modification> ok;
-            string[] files = Directory.GetFiles(rootOutputFolderPath + @"\task1", "okkkpruned.xml");
-            string file = files[0];
-            var protein = ProteinDbLoader.LoadProteinXML(file, true, new List<Modification>(), false, new List<string>(), out ok);
-            //check length
-            Assert.AreEqual(protein[0].OneBasedPossibleLocalizedModifications.Count, 1);
-            //check location (key)
-            Assert.AreEqual(protein[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), true);
-            List<Modification> modList = new List<Modification>();
-            modList = protein[0].OneBasedPossibleLocalizedModifications[3];
-            //check Type, count, ID
-            Assert.AreEqual(modList[0].modificationType, "ConnorModType");
-            Assert.AreEqual(modList[0].id, "ConnorMod");
-            Assert.AreEqual(modList.Count, 1);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+            var digestedList = protein[0].Digest(testUnique.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            Assert.AreEqual(1, digestedList.Count);
+
+            PeptideWithPossibleModifications modPep1 = digestedList[0];
+
+            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            Assert.AreEqual(4, setList1.Count);
+
+
+            //Finally Write MZML file
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
+            string mzmlName = @"singleProteinWithRepeatedMods.mzML";
+            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            #endregion MZML setup
+
+            #region run
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
+            string outputFolderInThisTest = outputFolder;
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
+            engine.Run();
+
+                 List<string> found = new List<string>();
+                 string line;
+                 using (StreamReader file = new StreamReader(outputFolder + @"\TestUnique\results.txt"))
+                 {
+                     while ((line = file.ReadLine()) != null)
+                     {
+                         if (line.Contains("Unique PSMS within 1% FDR"))
+                         {
+                             found.Add(line);
+                             Console.WriteLine("FOUND: " + found[0]);
+                             Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
+                         }
+                     }
+                 }
+            #endregion run
         }
 
-        #endregion Public Methods
 
+#endregion public methods
     }
-}
+    }
