@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -819,7 +819,12 @@ namespace EngineLayer.Analysis
                         }
                     }
                     Status("Running FDR analysis on unique peptides...", nestedIds);
-                    writePsmsAction?.Invoke(DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]), "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
+                    var peptidesWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]);
+
+
+                    myAnalysisResults.AddText("Unique PSMS within 1% FDR: " + peptidesWithFDR.Count);
+                    writePsmsAction?.Invoke(peptidesWithFDR, "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
+                    
 
                     // individual (for single-file search) or aggregate results
                     if (doParsimony && writeProteinGroupsAction != null)
