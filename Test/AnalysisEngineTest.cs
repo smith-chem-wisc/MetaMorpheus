@@ -92,6 +92,7 @@ namespace Test
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<ProteinGroup>, string, List<string>> action3 = null;
             Action<List<NewPsmWithFdr>, string, List<string>> action2 = (List<NewPsmWithFdr> l, string s, List<string> sdf) => {; };
+            Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4 = null;
             bool doParsimony = false;
             bool noOneHitWonders = false;
             bool modPepsAreUnique = false;
@@ -109,7 +110,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, arrayOfMs2ScansSortedByMass, fragmentTolerance, action1, action2, action3, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol, modsDictionary, myMsDataFile);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, arrayOfMs2ScansSortedByMass, fragmentTolerance, action1, action2, action3, action4, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol, modsDictionary, myMsDataFile);
 
             engine.Run();
         }
