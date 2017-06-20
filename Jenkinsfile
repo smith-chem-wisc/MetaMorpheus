@@ -6,7 +6,7 @@ pipeline {
                 checkout scm
                 echo 'Now Building...'
                 bat 'set'
-                bat 'nuget restore MetaMorpheus.sln'
+                bat '"E:\\Stefan\\Bin" restore MetaMorpheus.sln'
             }
         }
         
