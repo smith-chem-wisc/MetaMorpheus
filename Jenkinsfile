@@ -13,7 +13,7 @@ pipeline {
              input "Does the staging environment look ok?"
              }
                   }
-      state('Deploy')
+      stage('Deploy')
         steps{
              echo 'Now Deploying...' 
         
