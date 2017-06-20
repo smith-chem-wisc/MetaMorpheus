@@ -13,6 +13,7 @@ pipeline {
         stage('Test'){
             steps {
                 echo 'Now Testing...'
+                def msbuild = tool 'Main';
                 bat "\"${tool 'MSBuild'}\" SolutionName.sln /p:Configuration=Release /p:Platform=\"Any CPU\" /p:ProductVersion=1.0.0.${env.BUILD_NUMBER}"
                 input "Does the staging environment look ok?"
              }
