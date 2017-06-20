@@ -1,6 +1,5 @@
 pipeline {
     agent any
-    def msbuild = tool 'Main';
     stages {
         stage('Build') {
             steps {
@@ -8,6 +7,7 @@ pipeline {
                 echo 'Now Building...'
                 bat 'set'
                 bat '"E:\\Stefan\\Bin\\nuget.exe" restore MetaMorpheus.sln'
+                def msbuild = tool 'Main';
             }
         }
         
