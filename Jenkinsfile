@@ -5,7 +5,7 @@ pipeline {
             steps {
                 echo 'Now Building...'
                 bat 'set'
-                bat 'nuget restore SolutionName.sln'
+                bat 'E:\Stefan\Bin\nuget.exe restore C:\Program Files (x86)\Jenkins\workspace\Test_MetaMorpheus_master-TH6RBEEZ56ABBE24CBJBDWDCE3DM64VH56NCJ5X6ZTGQ2KCFPUWQ\MetaMorpheus.sln'
             }
         }
         
