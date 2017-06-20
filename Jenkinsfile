@@ -1,4 +1,7 @@
+node {
 def msbuild = tool 'Main';
+}
+
 pipeline {
     agent any
     stages {
