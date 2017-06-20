@@ -3,6 +3,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                checkout scm
                 echo 'Now Building...'
                 bat 'set'
                 bat 'nuget restore MetaMorpheus.sln'
