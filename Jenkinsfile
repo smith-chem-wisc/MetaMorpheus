@@ -9,9 +9,9 @@ pipeline {
                 bat '"E:\\Stefan\\Bin\\nuget.exe" restore MetaMorpheus.sln'
             }
         }
-        
+        def msbuild = tool 'Main';
         stage('Test'){
-            def msbuild = tool 'Main';
+            
             steps {
                 echo 'Now Testing...'
                 
