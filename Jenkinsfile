@@ -22,12 +22,12 @@ pipeline {
                 }
             }
     
-    
+    }
     post{
         always{
              echo("Pipeline is correct")
         }
     }
         
-  }
-}
+ }
+
