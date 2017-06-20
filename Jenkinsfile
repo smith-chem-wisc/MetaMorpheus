@@ -1,5 +1,5 @@
 node {
-def msbuild = tool 'Main';
+//def msbuild = tool 'Main';
 }
 
 pipeline {
