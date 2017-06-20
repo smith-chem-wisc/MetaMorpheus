@@ -5,6 +5,7 @@ pipeline {
             steps {
                 echo 'Now Building...'
                 bat 'set'
+                bat 'nuget restore SolutionName.sln'
             }
         }
         
