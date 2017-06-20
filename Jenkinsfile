@@ -21,7 +21,7 @@ pipeline {
             steps {
                 echo 'Now Testing...'
                 
-                bat '"C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe" MetaMorpheus.sln'
+                bat '"C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\msbuild.exe" MetaMorpheus.sln'
                 input "Does the staging environment look ok?"
              }
                   }
