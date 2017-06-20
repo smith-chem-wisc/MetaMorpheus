@@ -1,8 +1,9 @@
+def msbuild = tool 'Main';
 pipeline {
     agent any
     stages {
         stage('Build') {
-            def msbuild = tool 'Main';
+            
             steps {
                 checkout scm
                 echo 'Now Building...'
