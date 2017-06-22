@@ -1,5 +1,5 @@
 node {
-
+  
 
 //def msbuild = tool 'Main'; sadfasdfasdfasdfasdfasdfasdfa
 
@@ -41,7 +41,7 @@ pipeline {
     post{
         always{
              echo("Pipeline is correct")
-        }
+        }   
     }
         
  }
