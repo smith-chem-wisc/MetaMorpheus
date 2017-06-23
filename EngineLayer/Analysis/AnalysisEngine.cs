@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -53,7 +53,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4,  bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4,  bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool quantify, bool matchBetweenRuns, double quantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<string> currentRawFileList)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -499,7 +499,7 @@ namespace EngineLayer.Analysis
             FlashLFQ.ConstructBinsFromIdentifications();
 
             if(myMsDataFile != null)
-                FlashLFQ.PassInFileAndQuantify(myMsDataFile, FlashLFQ.filePaths[0]);
+                FlashLFQ.PassInFileAndQuantify(myMsDataFile, psms.First().thisPSM.FileName);
             else
             {
                 for(int fileNumber = 0; fileNumber < FlashLFQ.filePaths.Length; fileNumber++)
@@ -662,10 +662,9 @@ namespace EngineLayer.Analysis
                     Status("Running FDR analysis on unique peptides...", nestedIds);
                     var peptidesWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]);
        
-                    myAnalysisResults.AddText("Unique PSMS within 1% FDR: " + peptidesWithFDR.Count( a=> a.QValue <= .01 && a.IsDecoy == false));
+                    myAnalysisResults.AddText("Unique PSMS within 1% FDR: " + peptidesWithFDR.Count(a => a.QValue <= 0.01 && !a.IsDecoy));
                     writePsmsAction?.Invoke(peptidesWithFDR, "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
                     
-
                     // individual (for single-file search) or aggregate results
                     if (doParsimony && (myMsDataFile == null || currentRawFileList.Count == 1))
                     {
@@ -680,11 +679,10 @@ namespace EngineLayer.Analysis
                                 pg.AggregateQuantifyHelper(files);
                         }
 
-                        writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition, nestedIds);
+                        writeProteinGroupsAction(proteinGroups[j], "allProteinGroups_" + searchModes[j].FileNameAddition, nestedIds);
                         writeMzIdentmlAction(orderedPsmsWithFDR, proteinGroups[j], searchModes[j], searchModes[j].FileNameAddition, nestedIds);
                     }
-
-
+                    
                     // write individual file results based on aggregate results
                     if (arrayOfSortedMS2Scans == null && doParsimony)
                     {
@@ -694,7 +692,7 @@ namespace EngineLayer.Analysis
                         foreach (var group in psmsGroupedByFilename)
                         {
                             var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.FileName);
-                            writePsmsAction(group.ToList(), fileName + "_allPSMS_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.FileName })));
+                            writePsmsAction(group.ToList(), fileName + "_allPSMs_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.FileName })));
                         }
 
                         // individual protein group files (local protein fdr, global parsimony, global psm fdr)
@@ -716,12 +714,11 @@ namespace EngineLayer.Analysis
                             }
 
                             subsetProteinGroupsForThisFile = DoProteinFdr(subsetProteinGroupsForThisFile);
-                            writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
+                            writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition + "_ProteinGroups", new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                             writeMzIdentmlAction(psmsGroupedByFilename.Where(p => p.Key == file).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, searchModes[j], file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                         }
                     }
-
-
+                    
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }
             }

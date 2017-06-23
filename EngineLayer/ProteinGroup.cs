@@ -72,8 +72,11 @@ namespace EngineLayer
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Sequence coverage w Mods" + '\t');
                 sb.Append("Modification Info List" + "\t");
-                for (int i = 0; i < FileNames.Count; i++)
-                    sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+                if (FileNames != null && IntensitiesByFile != null)
+                {
+                    for (int i = 0; i < FileNames.Count; i++)
+                        sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+                }
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy/Contaminant/Target" + '\t');
