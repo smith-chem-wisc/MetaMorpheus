@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,7 +34,7 @@ namespace TaskLayer
 
         public static event EventHandler startingAllTasksEngineHandler;
 
-        public static event EventHandler finishedAllTasksEngineHandler;
+        public static event EventHandler<string> finishedAllTasksEngineHandler;
 
         public static event EventHandler<XmlForTaskListEventArgs> newDbsHandler;
 
@@ -56,7 +56,7 @@ namespace TaskLayer
             if (!currentRawDataFilenameList.Any())
             {
                 Warn("No data files selected");
-                FinishedAllTasks();
+                FinishedAllTasks(null);
                 return;
             }
 
@@ -70,23 +70,23 @@ namespace TaskLayer
 
             var longestDir = Path.GetDirectoryName(MatchingChars.First());
 
+            string rootOutputDir = Path.Combine(longestDir, startTimeForAllFilenames);
+
             for (int i = 0; i < taskList.Count; i++)
             {
                 if (!currentRawDataFilenameList.Any())
                 {
-                    FinishedAllTasks();
                     Warn("Cannot proceed. No data files selected.");
-                    FinishedAllTasks();
+                    FinishedAllTasks(rootOutputDir);
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
-                    FinishedAllTasks();
                     Warn("Cannot proceed. No xml files selected.");
-                    FinishedAllTasks();
+                    FinishedAllTasks(rootOutputDir);
                 }
                 var ok = taskList[i];
-                string outputFolderForThisTask = Path.Combine(longestDir, startTimeForAllFilenames);
-                outputFolderForThisTask = Path.Combine(outputFolderForThisTask, ok.Item1);
+
+                var outputFolderForThisTask = Path.Combine(rootOutputDir, ok.Item1);
 
                 if (!Directory.Exists(outputFolderForThisTask))
                     Directory.CreateDirectory(outputFolderForThisTask);
@@ -104,7 +104,7 @@ namespace TaskLayer
                 }
             }
             stopWatch.Stop();
-            FinishedAllTasks();
+            FinishedAllTasks(rootOutputDir);
         }
 
         #endregion Public Methods
@@ -121,9 +121,9 @@ namespace TaskLayer
             startingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
         }
 
-        private void FinishedAllTasks()
+        private void FinishedAllTasks(string rootOutputDir)
         {
-            finishedAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+            finishedAllTasksEngineHandler?.Invoke(this, rootOutputDir);
         }
 
         private void NewSpectras(List<string> newSpectra)

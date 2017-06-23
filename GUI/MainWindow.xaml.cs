@@ -1,4 +1,4 @@
-﻿using EngineLayer;
+using EngineLayer;
 using Nett;
 using Proteomics;
 using System;
@@ -61,7 +61,7 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+           EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
             EverythingRunnerEngine.warnHandler += EverythingRunnerEngine_warnHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
@@ -534,7 +534,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void NewSuccessfullyFinishedAllTasks(object sender, EventArgs e)
+        private void NewSuccessfullyFinishedAllTasks(object sender, string e)
         {
             if (!Dispatcher.CheckAccess())
             {
