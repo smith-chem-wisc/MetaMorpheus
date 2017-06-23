@@ -178,15 +178,18 @@ namespace EngineLayer
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
-            int numFiles = IntensitiesByFile.GetLength(0);
-            for (int i = 0; i < numFiles; i++)
+            if (IntensitiesByFile != null)
             {
-                var intensityForThisFile = IntensitiesByFile[i].Where(p => p != 0);
-                if (intensityForThisFile.Any())
-                    sb.Append(string.Join("|", IntensitiesByFile[i]));
-                else
-                    sb.Append("");
-                sb.Append("\t");
+                int numFiles = IntensitiesByFile.GetLength(0);
+                for (int i = 0; i < numFiles; i++)
+                {
+                    var intensityForThisFile = IntensitiesByFile[i].Where(p => p != 0);
+                    if (intensityForThisFile.Any())
+                        sb.Append(string.Join("|", IntensitiesByFile[i]));
+                    else
+                        sb.Append("");
+                    sb.Append("\t");
+                }
             }
 
             // number of PSMs for listed peptides
