@@ -54,6 +54,7 @@ namespace TaskLayer
             b.modificationType.Equals("PeptideTermMod") ||
             b.modificationType.Equals("Metal") ||
             b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            ConserveMemory = false;
         }
 
         #endregion Public Constructors
@@ -67,6 +68,7 @@ namespace TaskLayer
         public int? MinPeptideLength { get; set; }
 
         public int? MaxPeptideLength { get; set; }
+        public bool ConserveMemory { get; set; }
 
         public int MaxModificationIsoforms { get; set; }
 
@@ -201,7 +203,7 @@ namespace TaskLayer
                 bool useProvidedPrecursorInfo = true;
                 var intensityRatio = 4;
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
-                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Searches", origDataFile }, false).Run();
+                var searchResults = (ClassicSearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
