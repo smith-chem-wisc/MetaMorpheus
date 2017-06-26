@@ -67,6 +67,7 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
+                            <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
