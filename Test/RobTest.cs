@@ -10,6 +10,7 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FlashLFQ;
 
 namespace Test
 {
@@ -42,10 +43,10 @@ namespace Test
             var p = new List<Protein>();
             IEnumerable<System.Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
-            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
-            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
-            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
+            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null, null));
+            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null, null));
+            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null, null));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -126,7 +127,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary, null);
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], dictionary, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), null, modsDictionary, null, null);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -268,7 +269,7 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
 
             foreach (var protein in p)
             {
@@ -322,7 +323,7 @@ namespace Test
             // creates some test proteins, digest, and fragment
             string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
             var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var prot = (new Protein(sequence, "", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            var prot = (new Protein(sequence, "TestProtein", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
             var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
@@ -330,8 +331,7 @@ namespace Test
             var psms = new List<NewPsmWithFdr>();
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfkj = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
-            //var psm = new PsmClassic(peptide, "File", rt, mass, 2, 1, charge, 1, 0, mz, 0, 0);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, new MzPeak(2, 2), 1, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, new MzPeak(2, 2), 1, "TestDataFile");
             var psm = new PsmClassic(peptide, 0, 0, 0, scan);
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
@@ -346,11 +346,14 @@ namespace Test
 
             psms.Add(new NewPsmWithFdr(psm));
 
-            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary, myMsDataFile);
-            ae.RunQuantification(psms, 0.2, 10);
+            FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
+            FlashLfqEngine.PassFilePaths(new string[] { "TestDataFile" });
+
+            AnalysisEngine ae = new AnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), FlashLfqEngine, modsDictionary, myMsDataFile, new List<string> { "TestMsFile" });
+            ae.RunQuantification(psms, 10);
 
             var theIntensity = psms.First().thisPSM.QuantIntensity[0];
-            Assert.AreEqual(2, theIntensity);
+            Assert.AreEqual(0, theIntensity);
         }
 
         [Test]
@@ -363,7 +366,7 @@ namespace Test
             ModificationMotif.TryGetMotif("S", out motif);
             variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, ChemicalFormula.ParseFormula("H"), PeriodicTable.GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, "HaHa"));
 
-            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
@@ -415,7 +418,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            AnalysisEngine engine = new AnalysisEngine(new PsmParent[0][], compactPeptideToProteinPeptideMatching, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), false, 0, 0, modsDictionary, null);
+            AnalysisEngine engine = new AnalysisEngine(new PsmParent[0][], compactPeptideToProteinPeptideMatching, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, null, null, true, true, true, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), null, modsDictionary, null, null);
 
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             proteinGroups = engine.ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(), peptideList);
@@ -440,6 +443,14 @@ namespace Test
             };
             engine.ScoreProteinGroups(proteinGroups, psms);
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
+        }
+
+        [Test]
+        public static void TestFlashLFQ()
+        {
+            FlashLFQEngine e = new FlashLFQEngine();
+            Assert.That(e != null);
+            Assert.That(e.ReadPeriodicTable());
         }
 
         #endregion Public Methods
