@@ -828,6 +828,40 @@ namespace TaskLayer
             }
         }
 
+        protected void WritePeptideQuantificationResultsToTsv(List<FlashLFQ.FlashLFQSummedFeatureGroup> items, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            if (items != null)
+            {
+                var writtenFile = Path.Combine(outputFolder, fileName + ".tsv");
+
+                using (StreamWriter output = new StreamWriter(writtenFile))
+                {
+                    //output.WriteLine(items.First().TabSeparatedHeader);
+                    for (int i = 0; i < items.Count; i++)
+                        output.WriteLine(items[i]);
+                }
+
+                SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            }
+        }
+
+        protected void WritePeakQuantificationResultsToTsv(List<FlashLFQ.FlashLFQFeature> items, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            if (items != null)
+            {
+                var writtenFile = Path.Combine(outputFolder, fileName + ".tsv");
+
+                using (StreamWriter output = new StreamWriter(writtenFile))
+                {
+                    //output.WriteLine(items.First().TabSeparatedHeader);
+                    for (int i = 0; i < items.Count; i++)
+                        output.WriteLine(items[i]);
+                }
+
+                SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+            }
+        }
+
         protected void WriteTree(BinTreeStructure myTreeStructure, string output_folder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(output_folder, fileName + ".mytsv");

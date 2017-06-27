@@ -391,7 +391,7 @@ namespace EngineLayer
                 }
 
                 var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.thisPSM.Pli.BaseSequence);
-                var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
+                //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
                 {
@@ -410,6 +410,7 @@ namespace EngineLayer
 
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
+                    /*
                     // remove modified peptides that aren't used for quantification
                     foreach (var psm in psmsForThisBaseSeq)
                     {
@@ -417,6 +418,7 @@ namespace EngineLayer
                         if (unacceptableModsForThisPsm.Any())
                             psmsToIgnore.Add(psm);
                     }
+                    */
 
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 

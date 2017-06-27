@@ -96,9 +96,7 @@ namespace Test
             bool doParsimony = false;
             bool noOneHitWonders = false;
             bool modPepsAreUnique = false;
-            bool quant = false;
-            bool mbr = false;
-            double quantPpmTol = 0;
+            FlashLFQ.FlashLFQEngine FlashLFQ = null;
 
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
@@ -110,7 +108,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, arrayOfMs2ScansSortedByMass, fragmentTolerance, action1, action2, action3, action4, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, mbr, quantPpmTol, modsDictionary, myMsDataFile, null);
+            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, arrayOfMs2ScansSortedByMass, fragmentTolerance, action1, action2, action3, action4, null, null, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, FlashLFQ, modsDictionary, myMsDataFile, null);
 
             engine.Run();
         }
