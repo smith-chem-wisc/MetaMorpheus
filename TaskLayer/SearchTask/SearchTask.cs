@@ -66,6 +66,8 @@ namespace TaskLayer
 
             FindAllPrecursors = true;
             UseProvidedPrecursorInfo = true;
+
+            ConserveMemory = false;
         }
 
         #endregion Public Constructors

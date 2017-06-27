@@ -69,7 +69,7 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.MinPeptideLength.HasValue ? task.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture): "";
+            txtMinPeptideLength.Text = task.MinPeptideLength.HasValue ? task.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.MaxPeptideLength.HasValue ? task.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             proteaseComboBox.SelectedItem = task.Protease;
             maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
@@ -86,6 +86,7 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.ZdotIons;
             cCheckBox.IsChecked = task.CIons;
 
+            conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
             nonLinearCalibCheckBox.IsChecked = task.NonLinearCalibration;
 
             foreach (var mod in task.ListOfModsFixed)
@@ -221,6 +222,7 @@ namespace MetaMorpheusGUI
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
+            TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
