@@ -14,8 +14,14 @@ namespace Test
     [TestFixture]
     public class MyTaskTest
     {
+
+        #region Public Fields
+
         public static string outputFolder = "";
         public static bool hasPrunedRun = false;
+
+        #endregion Public Fields
+
         #region Public Methods
 
         [Test]
@@ -243,13 +249,14 @@ namespace Test
             Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
         }
 
-
-        //test if prunedDatabase matches expected output 
+        //test if prunedDatabase matches expected output
         [Test]
         public static void TestPrunedDatabase()
         {
             hasPrunedRun = true;
+
             #region setup
+
             //Create Search Task
             SearchTask task1 = new SearchTask()
             {
@@ -260,7 +267,6 @@ namespace Test
             //add task 1 to task list
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                new Tuple<string, MetaMorpheusTask>("task1", task1)};
-
 
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("P", out motif);
@@ -273,6 +279,7 @@ namespace Test
             });
 
             #endregion setup
+
             #region Protein and Mod Creation
 
             //create modification lists
@@ -291,16 +298,20 @@ namespace Test
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>(), new List<SequenceVariation>());
 
             #endregion Protein and Mod Creation
+
             #region XML File
+
             Console.WriteLine("hi");
-            //First Write XML Database 
+            //First Write XML Database
 
             string xmlName = "okkk.xml";
 
             //Add Mod to list and write XML input database
             Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> modList = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
-            var Hash = new HashSet<Tuple<int, ModificationWithMass>>();
-            Hash.Add(Tuple.Create(3, modToAdd));
+            var Hash = new HashSet<Tuple<int, ModificationWithMass>>
+            {
+                Tuple.Create(3, modToAdd)
+            };
             modList.Add("test", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProteinWithMod }, xmlName);
 
@@ -352,17 +363,11 @@ namespace Test
             Assert.AreEqual(listOfMods.Count, 1);
         }
 
-        private static void SuccessfullyFinishedAllTasks(object sender, string rootOutputFolderPath)
-        {
-            outputFolder = rootOutputFolderPath;
-
-        }
-
-
         [Test]
         public static void TestUniquePeptideCount()
         {
             #region setup
+
             SearchTask testUnique = new SearchTask()
             {
                 ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") }
@@ -370,7 +375,6 @@ namespace Test
 
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                new Tuple<string, MetaMorpheusTask>("TestUnique", testUnique)};
-
 
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("P", out motif);
@@ -381,9 +385,11 @@ namespace Test
             {
                 testUniqeMod
             });
+
             #endregion setup
 
             #region mod setup and protein creation
+
             //create modification lists
             List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -399,19 +405,24 @@ namespace Test
             #endregion mod setup and protein creation
 
             #region XML setup
-            //First Write XML Database 
+
+            //First Write XML Database
 
             string xmlName = "singleProteinWithTwoMods.xml";
 
             //Add Mod to list and write XML input database
             Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>> modList = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
-            var Hash = new HashSet<Tuple<int, ModificationWithMass>>();
-            Hash.Add(Tuple.Create(3, modToAdd));
+            var Hash = new HashSet<Tuple<int, ModificationWithMass>>
+            {
+                Tuple.Create(3, modToAdd)
+            };
             modList.Add("test", Hash);
             ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { TestProtein }, xmlName);
+
             #endregion XML setup
 
             #region MZML setup
+
             //now write MZML file
             Dictionary<string, Modification> ok;
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
@@ -423,14 +434,15 @@ namespace Test
             var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
             Assert.AreEqual(4, setList1.Count);
 
-
             //Finally Write MZML file
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
             #endregion MZML setup
 
             #region run
+
             EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
             string outputFolderInThisTest = outputFolder;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
@@ -451,10 +463,20 @@ namespace Test
                     }
                 }
             }
+
             #endregion run
         }
 
+        #endregion Public Methods
 
-        #endregion public methods
+        #region Private Methods
+
+        private static void SuccessfullyFinishedAllTasks(object sender, string rootOutputFolderPath)
+        {
+            outputFolder = rootOutputFolderPath;
+        }
+
+        #endregion Private Methods
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
 using EngineLayer.Analysis;
 using MathNet.Numerics.Distributions;
 using MzLibUtil;
@@ -10,9 +11,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using UsefulProteomicsDatabases;
 using System.Xml.Serialization;
-using Chemistry;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -28,7 +28,7 @@ namespace TaskLayer
 
         #region Public Fields
 
-        public static readonly TomlConfig tomlConfig = TomlConfig.Create(cfg => cfg
+        public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
@@ -45,11 +45,6 @@ namespace TaskLayer
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
-
-        private static List<Tuple<string, string>> GetModsFromString(string value)
-        {
-            return value.Split(new string[] { "\t\t" }, StringSplitOptions.None).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
-        }
 
         #endregion Public Fields
 
@@ -313,7 +308,6 @@ namespace TaskLayer
 
             _mzid.DataCollection = new mzIdentML.Generated.DataCollectionType()
             {
-
                 AnalysisData = new mzIdentML.Generated.AnalysisDataType()
                 {
                     SpectrumIdentificationList = new mzIdentML.Generated.SpectrumIdentificationListType[1]
@@ -393,7 +387,7 @@ namespace TaskLayer
                         cvParam = new mzIdentML.Generated.CVParamType()
                         {
                             accession = thermoRawFile ? "MS:1000563" : "MS:1000584",
-                            name = thermoRawFile ?  "Thermo RAW format" : "mzML format",
+                            name = thermoRawFile ? "Thermo RAW format" : "mzML format",
                             cvRef = "PSI-MS"
                         }
                     },
@@ -401,8 +395,8 @@ namespace TaskLayer
                     {
                         cvParam = new mzIdentML.Generated.CVParamType()
                         {
-                            accession = thermoRawFile? "MS:1000768" : "MS:1001530",
-                            name = thermoRawFile? "Thermo nativeID format" : "mzML unique identifier",
+                            accession = thermoRawFile ? "MS:1000768" : "MS:1001530",
+                            name = thermoRawFile ? "Thermo nativeID format" : "mzML unique identifier",
                             cvRef = "PSI-MS"
                         }
                     }
@@ -475,7 +469,7 @@ namespace TaskLayer
                 }
 
                 Tuple<int, int> scan_result_scan_item;
-                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added 
+                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
                 {
                     scan_result_scan_item = new Tuple<int, int>(sir_id, 0);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1] = new mzIdentML.Generated.SpectrumIdentificationResultType()
@@ -493,7 +487,7 @@ namespace TaskLayer
                     psm_per_scan[new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
                     scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber)];
                 }
-                foreach(PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                foreach (PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
                 {
                     peptide_ids[p].Item3.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                 }
@@ -621,7 +615,6 @@ namespace TaskLayer
                                     name = "pep:FDR threshold",
                                     cvRef = "PSI-MS",
                                     value = threshold.ToString()
-                                    
                                 }
                             }
                         }
@@ -691,17 +684,16 @@ namespace TaskLayer
                             name = "pep:FDR threshold",
                             cvRef = "PSI-MS",
                             value = threshold.ToString()
-
                         }
                     }
                 }
             };
 
-            //TODO: SEARCH DATABASE FOR EACH PROTEIN DATABASE INPUT 
+            //TODO: SEARCH DATABASE FOR EACH PROTEIN DATABASE INPUT
             _mzid.AnalysisCollection.SpectrumIdentification[0].SearchDatabaseRef[0] = new mzIdentML.Generated.SearchDatabaseRefType()
-                {
-                    searchDatabase_ref = "SDB_1"
-                };
+            {
+                searchDatabase_ref = "SDB_1"
+            };
 
             if (groups != null)
             {
@@ -935,6 +927,11 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static List<Tuple<string, string>> GetModsFromString(string value)
+        {
+            return value.Split(new string[] { "\t\t" }, StringSplitOptions.None).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
+        }
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
         {
