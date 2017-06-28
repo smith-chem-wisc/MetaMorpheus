@@ -96,6 +96,7 @@ namespace MetaMorpheusGUI
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
+            conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -261,6 +262,7 @@ namespace MetaMorpheusGUI
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
+            TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
