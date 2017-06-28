@@ -42,10 +42,10 @@ namespace Test
             var p = new List<Protein>();
             IEnumerable<System.Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
-            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null));
-            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
-            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
+            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null, null));
+            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null, null));
+            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null, null));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -268,7 +268,7 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
 
             foreach (var protein in p)
             {
@@ -322,7 +322,7 @@ namespace Test
             // creates some test proteins, digest, and fragment
             string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
             var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var prot = (new Protein(sequence, "", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null));
+            var prot = (new Protein(sequence, "", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
             var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
@@ -363,7 +363,7 @@ namespace Test
             ModificationMotif.TryGetMotif("S", out motif);
             variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, ChemicalFormula.ParseFormula("H"), PeriodicTable.GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, "HaHa"));
 
-            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
