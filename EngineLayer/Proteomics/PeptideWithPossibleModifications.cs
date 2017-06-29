@@ -78,7 +78,7 @@ namespace EngineLayer
             }
 
             // LOCALIZED MODS
-            foreach (var kvp in this.Protein.OneBasedPossibleLocalizedModifications)
+            foreach (var kvp in Protein.OneBasedPossibleLocalizedModifications)
             {
                 if (kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein)
                 {
@@ -98,7 +98,7 @@ namespace EngineLayer
                             for (int r = 0; r < Length; r++)
                             {
                                 if (locInPeptide == r + 1
-                                    && (this.Protein.IsDecoy || (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
+                                    && (Protein.IsDecoy || (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                                     && variable_modification.terminusLocalization == ModificationSites.Any)))
                                 {
                                     UniqueModificationsCollection residue_variable_mods;

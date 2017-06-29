@@ -19,16 +19,9 @@ namespace Test
         [Test]
         public static void TestLocalization()
         {
-            Dictionary<int, List<Modification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<Modification>>();
-            string accession = null;
-            int?[] beginPositions = null;
-            int?[] endPositions = null;
-            string[] bigPeptideTypes = null;
-            string name = null;
-            string fullName = null;
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            Protein parentProteinForMatch = new Protein("MEK", accession, null, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, false, false, null, null);
+            Protein parentProteinForMatch = new Protein("MEK", null);
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);

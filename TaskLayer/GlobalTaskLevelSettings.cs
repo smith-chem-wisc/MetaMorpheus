@@ -32,7 +32,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void AddMods(IEnumerable<ModificationWithLocation> enumerable)
+        public static void AddMods(IEnumerable<Modification> enumerable)
         {
             foreach (var ye in enumerable)
             {
@@ -83,7 +83,7 @@ namespace TaskLayer
             yield return new SinglePpmAroundZeroSearchMode(5);
             yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(20);
-            yield return new DotSearchMode("1mm5ppm", new double[] { 0, 1.0029}, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new DotSearchMode("1mm5ppm", new double[] { 0, 1.0029 }, new Tolerance(ToleranceUnit.PPM, 5));
             yield return new DotSearchMode("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
             yield return new IntervalSearchMode("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
             yield return new IntervalSearchMode("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });

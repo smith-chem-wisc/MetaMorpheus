@@ -2,6 +2,7 @@
 using EngineLayer;
 using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
+using FlashLFQ;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -10,7 +11,6 @@ using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FlashLFQ;
 
 namespace Test
 {
@@ -41,12 +41,12 @@ namespace Test
             var peptideList = new HashSet<PeptideWithSetModifications>();
 
             var p = new List<Protein>();
-            IEnumerable<System.Tuple<string, string>> gn = new List<Tuple<string, string>>();
+            List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
-            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", true, false, null, null));
-            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null, null));
-            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, true, null, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), gn, new Dictionary<int, List<Modification>>()));
+            p.Add(new Protein("-----F----*", "D1", gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+            p.Add(new Protein("-----F----**", "C1", gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
+            p.Add(new Protein("----E----**", "C2", gn, new Dictionary<int, List<Modification>>(), isContaminant: true));
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
@@ -178,17 +178,16 @@ namespace Test
                 hm.thisPSM.ComputeProteinLevelInfo(initialDictionary, fragmentTolerance, scan, lp, modsDictionary);
             }
 
-            Console.WriteLine(psms.Count);
-            foreach (var ok in psms)
-            {
-                Console.WriteLine(ok);
-            }
+            //Console.WriteLine(psms.Count);
+            //foreach (var ok in psms)
+            //{
+            //    Console.WriteLine(ok);
+            //}
 
             ae.ScoreProteinGroups(proteinGroups, psms);
             proteinGroups = ae.DoProteinFdr(proteinGroups);
 
-            /*
-            // prints initial dictionary
+            //prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
             System.Console.WriteLine("----Initial Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
@@ -200,14 +199,14 @@ namespace Test
                 {
                     if (!proteinList.Contains(peptide.Protein))
                     {
-                        System.Console.Write(peptide.Protein.BaseSequence + " ;; ");
+                        Console.Write(peptide.Protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.Protein);
                     }
                 }
                 System.Console.WriteLine();
             }
 
-            // prints parsimonious dictionary
+            //prints parsimonious dictionary
             System.Console.WriteLine("----Parsimonious Dictionary----");
             System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in dictionary)
@@ -225,25 +224,24 @@ namespace Test
                 System.Console.WriteLine();
             }
 
-            // prints protein groups after scoring/fdr
-            System.Console.WriteLine(ProteinGroup.TabSeparatedHeader);
+            //prints protein groups after scoring /
+            System.Console.WriteLine();
+            System.Console.WriteLine("ProteinGroups:");
             foreach (var proteinGroup in proteinGroups)
             {
                 System.Console.WriteLine(proteinGroup);
             }
-            */
 
             // check that correct proteins are in parsimony list
-            Assert.That(parsimonyProteinList.Count == 8);
-            Assert.That(parsimonyBaseSequences.Contains("AB--------"));
-            Assert.That(parsimonyBaseSequences.Contains("--C-------"));
-            Assert.That(parsimonyBaseSequences.Contains("-B-D---HHH--"));
-            Assert.That(parsimonyBaseSequences.Contains("-----F----*"));  // decoy
-            Assert.That(parsimonyBaseSequences.Contains("----E----**"));  // contaminant
-            Assert.That(parsimonyBaseSequences.Contains("-B------I-"));
-            Assert.That(parsimonyBaseSequences.Contains("----EFG---"));
-            Assert.That(parsimonyBaseSequences.Contains("----EFG--J"));
-            Assert.That(parsimonyBaseSequences.Count == 8);
+            Assert.Contains("AB--------", parsimonyBaseSequences);
+            Assert.Contains("--C-------", parsimonyBaseSequences);
+            Assert.Contains("-B-D---HHH--", parsimonyBaseSequences);
+            Assert.Contains("-----F----*", parsimonyBaseSequences);
+            Assert.Contains("----E----**", parsimonyBaseSequences);
+            Assert.Contains("-B------I-", parsimonyBaseSequences);
+            Assert.Contains("----EFG---", parsimonyBaseSequences);
+            Assert.Contains("----EFG--J", parsimonyBaseSequences);
+            Assert.AreEqual(8, parsimonyProteinList.Count);
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
@@ -269,7 +267,7 @@ namespace Test
 
             var p = new List<Protein>();
             for (int i = 0; i < sequences.Length; i++)
-                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
+                p.Add(new Protein(sequences[i], (i + 1).ToString()));
 
             foreach (var protein in p)
             {
@@ -324,7 +322,7 @@ namespace Test
             string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
             var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var prot = (new Protein(sequence, "TestProtein", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], null, "", "", false, false, null, null));
+            var prot = (new Protein(sequence, "TestProtein"));
 
             var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
@@ -368,7 +366,7 @@ namespace Test
             ModificationMotif.TryGetMotif("S", out motif);
             variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, ChemicalFormula.ParseFormula("H"), PeriodicTable.GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, "HaHa"));
 
-            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();

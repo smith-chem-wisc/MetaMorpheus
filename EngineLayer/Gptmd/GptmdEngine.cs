@@ -64,7 +64,7 @@ namespace EngineLayer.Gptmd
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var Mods = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
+            var Mods = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
             // Look at all confident identifications (with notch q value less than 0.01)
@@ -82,8 +82,8 @@ namespace EngineLayer.Gptmd
                             if (ModFits(mod, peptide.Protein, i + 1, baseSequence.Length, indexInProtein))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, ModificationWithMass>>();
-                                var theTuple = new Tuple<int, ModificationWithMass>(indexInProtein, mod);
+                                    Mods[proteinAcession] = new HashSet<Tuple<int, Modification>>();
+                                var theTuple = new Tuple<int, Modification>(indexInProtein, mod);
                                 if (!Mods[proteinAcession].Contains(theTuple))
                                 {
                                     Mods[proteinAcession].Add(theTuple);

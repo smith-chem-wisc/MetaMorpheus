@@ -22,7 +22,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
@@ -56,7 +56,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("QXQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("QXQ", null) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };
@@ -107,7 +107,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
@@ -161,7 +161,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
             var searchModes = new List<SearchMode> { new OpenSearchMode() };

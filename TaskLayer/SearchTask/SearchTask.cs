@@ -3,6 +3,7 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using FlashLFQ;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -15,7 +16,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UsefulProteomicsDatabases;
-using FlashLFQ;
 
 namespace TaskLayer
 {
@@ -297,16 +297,16 @@ namespace TaskLayer
                     for (int searchModeIndex = 0; searchModeIndex < SearchModes.Count; searchModeIndex++)
                         allPsms[searchModeIndex].AddRange(classicSearchResults.OuterPsms[searchModeIndex]);
 
-                    var analysisResults = new AnalysisEngine(classicSearchResults.OuterPsms, 
-                        compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, SearchModes, arrayOfMs2ScansSortedByMass, ProductMassTolerance, 
-                        (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }), 
-                        (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss), 
-                        (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "_ProteinGroups", ss), 
-                        (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages,  OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
+                    var analysisResults = new AnalysisEngine(classicSearchResults.OuterPsms,
+                        compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, SearchModes, arrayOfMs2ScansSortedByMass, ProductMassTolerance,
+                        (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }),
+                        (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
+                        (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "_ProteinGroups", ss),
+                        (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
                         (List<FlashLFQFeature> h, string s, List<string> ss) => WritePeakQuantificationResultsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
                         (List<FlashLFQSummedFeatureGroup> h, string s, List<string> ss) => WritePeptideQuantificationResultsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
-                        DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, 
-                        MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, 
+                        DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
+                        MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
                         new List<string> { taskId, "Individual Searches", origDataFile }, FlashLfqEngine, modsDictionary, myMsDataFile, currentRawFileList).Run();
 
                     allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
@@ -317,16 +317,16 @@ namespace TaskLayer
                     for (int ii = 0; ii < SearchModes.Count; ii++)
                         allPsms[ii].AddRange(modernSearchResults.NewPsms[ii]);
 
-                    var analysisResults = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(), 
-                        compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, SearchModes, arrayOfMs2ScansSortedByMass, ProductMassTolerance, 
-                        (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }), 
-                        (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss), 
-                        (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "_ProteinGroups", ss), 
-                        (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance,MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
+                    var analysisResults = new AnalysisEngine(modernSearchResults.NewPsms.Select(b => b.ToArray()).ToArray(),
+                        compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, SearchModes, arrayOfMs2ScansSortedByMass, ProductMassTolerance,
+                        (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }),
+                        (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
+                        (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "_ProteinGroups", ss),
+                        (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
                         (List<FlashLFQFeature> h, string s, List<string> ss) => WritePeakQuantificationResultsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
                         (List<FlashLFQSummedFeatureGroup> h, string s, List<string> ss) => WritePeptideQuantificationResultsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss),
-                        DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, 
-                        MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, 
+                        DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
+                        MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
                         new List<string> { taskId, "Individual Searches", origDataFile }, FlashLfqEngine, modsDictionary, myMsDataFile, currentRawFileList).Run();
 
                     allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
@@ -339,17 +339,17 @@ namespace TaskLayer
             // aggregate file analysis
             if (currentRawFileList.Count > 1)
             {
-                var analysisResults = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), 
-                    compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, 
-                    Protease, SearchModes, null, ProductMassTolerance, 
-                    (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate_" + s, new List<string> { taskId }), 
-                    (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, s, ss), 
-                    (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, s, ss), 
-                    (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss), 
-                    (List<FlashLFQFeature> h, string s, List<string> ss) => WritePeakQuantificationResultsToTsv(h, OutputFolder, "aggregate_" + s, ss), 
-                    (List<FlashLFQSummedFeatureGroup> h, string s, List<string> ss) => WritePeptideQuantificationResultsToTsv(h, OutputFolder, "aggregate_" + s, ss), 
-                    DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, 
-                    MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior, 
+                var analysisResults = new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(),
+                    compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications,
+                    Protease, SearchModes, null, ProductMassTolerance,
+                    (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate_" + s, new List<string> { taskId }),
+                    (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, s, ss),
+                    (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, s, ss),
+                    (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss),
+                    (List<FlashLFQFeature> h, string s, List<string> ss) => WritePeakQuantificationResultsToTsv(h, OutputFolder, "aggregate_" + s, ss),
+                    (List<FlashLFQSummedFeatureGroup> h, string s, List<string> ss) => WritePeptideQuantificationResultsToTsv(h, OutputFolder, "aggregate_" + s, ss),
+                    DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
+                    MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
                     new List<string> { taskId }, FlashLfqEngine, modsDictionary, null, currentRawFileList).Run();
 
                 allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
@@ -396,7 +396,7 @@ namespace TaskLayer
                 {
                     string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "pruned.xml");
 
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
                     SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
                 }
@@ -404,7 +404,7 @@ namespace TaskLayer
                 {
                     string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "pruned.xml");
 
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>(), proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
                     SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
                 }
