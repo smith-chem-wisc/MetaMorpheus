@@ -70,9 +70,7 @@ namespace EngineLayer.ClassicSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In classic search engine!", nestedIds);
-
-            var searchResults = new ClassicSearchResults(this);
-
+            
             int totalProteins = proteinList.Count;
 
             //var observed_base_sequences = new HashSet<string>();
@@ -177,8 +175,7 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             });
-            searchResults.OuterPsms = outerPsms;
-            return searchResults;
+            return new ClassicSearchResults(outerPsms,this);
         }
 
         #endregion Protected Methods

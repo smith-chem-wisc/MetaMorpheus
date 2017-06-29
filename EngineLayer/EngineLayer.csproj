@@ -105,6 +105,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="AllowedIntervalWithNotch.cs" />
+    <Compile Include="LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
     <Compile Include="ClassicSearch\ScanWithIndexAndNotchInfo.cs" />
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />

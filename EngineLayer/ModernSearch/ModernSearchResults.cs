@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace EngineLayer.ModernSearch
 {
@@ -10,14 +9,14 @@ namespace EngineLayer.ModernSearch
 
         public ModernSearchResults(PsmParent[][] newPsms, ModernSearchEngine s) : base(s)
         {
-            this.NewPsms = newPsms;
+            this.OuterPsms = newPsms;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public PsmParent[][] NewPsms { get; private set; }
+        public PsmParent[][] OuterPsms { get; }
 
         #endregion Public Properties
 

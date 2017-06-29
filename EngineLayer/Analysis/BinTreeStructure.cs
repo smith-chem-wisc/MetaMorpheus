@@ -24,7 +24,7 @@ namespace EngineLayer.Analysis
 
         #region Internal Methods
 
-        internal void GenerateBins(List<NewPsmWithFdr> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<NewPsmWithFdr> targetAndDecoyMatches, double dc)
         {
             List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.ScanPrecursorMass - b.thisPSM.Pli.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();

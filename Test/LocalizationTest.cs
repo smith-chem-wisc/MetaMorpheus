@@ -48,7 +48,11 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
+            newPsm.GetProteinLinkedInfo(matching, fragmentTolerance, lp, modsDictionary);
+
+            LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance);
+            f.Run();
+
             // Was single peak!!!
             Assert.AreEqual(0, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
             Assert.AreEqual(1, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));

@@ -8,6 +8,12 @@ namespace EngineLayer.Analysis
     public class AnalysisResults : MetaMorpheusEngineResults
     {
 
+        #region Public Fields
+
+        public List<NewPsmWithFdr>[] allResultingPeptides;
+
+        #endregion Public Fields
+
         #region Internal Fields
 
         internal Dictionary<string, int>[] allModsOnPeptides;

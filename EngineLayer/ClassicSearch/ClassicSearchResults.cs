@@ -1,22 +1,22 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchResults : MetaMorpheusEngineResults
     {
 
-        #region Internal Constructors
+        #region Public Constructors
 
-        internal ClassicSearchResults(ClassicSearchEngine searchParams) : base(searchParams)
+        public ClassicSearchResults(PsmParent[][] outerPsms, ClassicSearchEngine searchParams) : base(searchParams)
         {
+            OuterPsms = outerPsms;
         }
 
-        #endregion Internal Constructors
+        #endregion Public Constructors
 
         #region Public Properties
 
-        public PsmParent[][] OuterPsms { get; set; }
+        public PsmParent[][] OuterPsms { get; }
 
         #endregion Public Properties
 

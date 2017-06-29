@@ -4,7 +4,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public abstract class MetaMorpheusEngineResults
+    public class MetaMorpheusEngineResults
     {
 
         #region Internal Fields
@@ -21,7 +21,7 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected MetaMorpheusEngineResults(MetaMorpheusEngine s)
+        public MetaMorpheusEngineResults(MetaMorpheusEngine s)
         {
             MyEngine = s;
         }

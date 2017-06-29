@@ -21,7 +21,6 @@ namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
     {
-
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
@@ -54,6 +53,7 @@ namespace TaskLayer
             CIons = false;
 
             LocalizeAll = true;
+            DoLocalizationAnalysis = true;
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
@@ -115,6 +115,7 @@ namespace TaskLayer
 
         public bool FindAllPrecursors { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
+        public bool DoLocalizationAnalysis { get; set; }
 
         #endregion Public Properties
 
@@ -255,6 +256,7 @@ namespace TaskLayer
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             }
             List<NewPsmWithFdr>[] allResultingIdentifications = null;
+            List<NewPsmWithFdr>[] allResultingPeptides = null;
 
             FlashLFQEngine FlashLfqEngine = null;
             if (Quantify)
@@ -285,7 +287,7 @@ namespace TaskLayer
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
-                    myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
+                    myMsDataFile = ThermoDynamicData.InitiateDynamicConnection(origDataFile);
 
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
                 var intensityRatio = 4;
@@ -300,8 +302,8 @@ namespace TaskLayer
                 else
                 {
                     var modernSearchResults = (ModernSearchResults)new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, SearchModes, new List<string> { taskId, "Individual Searches", origDataFile }).Run();
-                    for (int ii = 0; ii < SearchModes.Count; ii++)
-                        allPsms[ii].AddRange(modernSearchResults.NewPsms[ii]);
+                    for (int searchModeIndex = 0; searchModeIndex < SearchModes.Count; searchModeIndex++)
+                        allPsms[searchModeIndex].AddRange(modernSearchResults.OuterPsms[searchModeIndex]);
                 }
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
@@ -315,13 +317,170 @@ namespace TaskLayer
                 (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, s, ss),
                 (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, s, ss),
                 (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss),
-                (List<FlashLFQFeature> h, string s, List<string> ss) => WritePeakQuantificationResultsToTsv(h, OutputFolder, "aggregate_" + s, ss),
-                (List<FlashLFQSummedFeatureGroup> h, string s, List<string> ss) => WritePeptideQuantificationResultsToTsv(h, OutputFolder, "aggregate_" + s, ss),
                 DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
                 MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
-                new List<string> { taskId }, FlashLfqEngine, modsDictionary, null, currentRawFileList).Run();
+                new List<string> { taskId }, modsDictionary, null, currentRawFileList).Run();
 
             allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
+            allResultingPeptides = ((AnalysisResults)analysisResults).allResultingPeptides;
+            var ProteinGroups = ((AnalysisResults)analysisResults).ProteinGroups;
+
+            bool doQuantification = false;
+            bool doHistogramAnalysis = true;
+            bool needToBackToLookAtSpectraAgain = DoLocalizationAnalysis || doQuantification;
+            if (needToBackToLookAtSpectraAgain)
+            {
+                for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
+                {
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+                    if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                        myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
+                    else
+                        myMsDataFile = ThermoDynamicData.InitiateDynamicConnection(origDataFile);
+                    if (DoLocalizationAnalysis)
+                    {
+                        var localizationEngine = new LocalizationEngine(allResultingIdentifications.SelectMany(b => b).Select(b => b.thisPSM).Where(b => b.FileName.Equals(origDataFile)), lp, myMsDataFile, ProductMassTolerance);
+                        var localizationResults = localizationEngine.Run();
+                    }
+
+                    if (doQuantification)
+                    {
+                        //if (FlashLfqEngine != null && ((FlashLfqEngine.filePaths.Count() == 1) || (FlashLfqEngine.mbr && myMsDataFile == null) || (!FlashLfqEngine.mbr && myMsDataFile != null)))
+                        //{
+                        //    Status("Quantifying peptides...", new List<string> { taskId });
+                        //    // use FlashLFQ to quantify peaks
+                        //    var psmsBelowOnePercentFdr = orderedPsmsWithFDR.Where(p => p.QValue < 0.01 && !p.IsDecoy);
+
+                        //    foreach (var psm in psmsBelowOnePercentFdr)
+                        //        FlashLfqEngine.AddIdentification(psm.thisPSM.FileName, psm.thisPSM.Pli.BaseSequence, psm.thisPSM.Pli.FullSequence, psm.thisPSM.Pli.PeptideMonoisotopicMass, psm.thisPSM.ScanRetentionTime, psm.thisPSM.ScanPrecursorCharge, string.Join("|", psm.thisPSM.Pli.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
+
+                        //    FlashLfqEngine.ConstructBinsFromIdentifications();
+
+                        //    if (myMsDataFile != null)
+                        //    {
+                        //        string fileName = orderedPsmsWithFDR.First().thisPSM.FileName;
+                        //        string path = FlashLfqEngine.filePaths.Where(p => System.IO.Path.GetFileNameWithoutExtension(p).Equals(fileName)).First();
+                        //        FlashLfqEngine.Quantify(myMsDataFile, path);
+                        //    }
+                        //    else
+                        //    {
+                        //        for (int i = 0; i < FlashLfqEngine.filePaths.Length; i++)
+                        //        {
+                        //            FlashLfqEngine.Quantify(null, FlashLfqEngine.filePaths[i]);
+                        //            GC.Collect();
+                        //        }
+                        //    }
+
+                        //    if (FlashLfqEngine.mbr)
+                        //        FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
+
+                        //    var allPeaks = FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList();
+                        //    writeQuantifiedPeaksAction(allPeaks, "QuantifiedPeaks_" + searchModes[j].FileNameAddition, nestedIds);
+
+                        //    var summedPeaks = FlashLfqEngine.SumFeatures(allPeaks);
+                        //    writeQuantifiedPeptidesAction(summedPeaks.ToList(), "QuantifiedPeptides_" + searchModes[j].FileNameAddition, nestedIds);
+
+                        //    // assign quantities to PSMs
+                        //    string[] fileNames = new string[FlashLfqEngine.filePaths.Length];
+                        //    for (int i = 0; i < FlashLfqEngine.filePaths.Length; i++)
+                        //        fileNames[i] = System.IO.Path.GetFileNameWithoutExtension(FlashLfqEngine.filePaths[i]);
+
+                        //    Dictionary<string, List<NewPsmWithFdr>> baseseqToPsm = new Dictionary<string, List<NewPsmWithFdr>>();
+                        //    List<NewPsmWithFdr> list;
+                        //    foreach (var psm in orderedPsmsWithFDR)
+                        //    {
+                        //        if (baseseqToPsm.TryGetValue(psm.thisPSM.Pli.BaseSequence, out list))
+                        //            list.Add(psm);
+                        //        else
+                        //            baseseqToPsm.Add(psm.thisPSM.Pli.BaseSequence, new List<NewPsmWithFdr>() { psm });
+                        //    }
+
+                        //    foreach (var summedPeak in summedPeaks)
+                        //    {
+                        //        if (baseseqToPsm.TryGetValue(summedPeak.BaseSequence, out list))
+                        //        {
+                        //            var psmsForThisBaseSeqAndFile = list.GroupBy(p => p.thisPSM.FileName);
+                        //            foreach (var file in psmsForThisBaseSeqAndFile)
+                        //            {
+                        //                int i = Array.IndexOf(fileNames, file.Key);
+
+                        //                foreach (var psm in file)
+                        //                    psm.thisPSM.QuantIntensity[0] = summedPeak.intensitiesByFile[i];
+                        //            }
+                        //        }
+                        //    }
+                        //}
+
+                        //if (FlashLfqEngine != null)
+                        //    foreach (var proteinGroup in proteinGroups)
+                        //        proteinGroup.Quantify();
+
+                        //if (FlashLfqEngine != null)
+                        //{
+                        //    // call multifile protein quantification helper function (need all the filenames to organize results properly)
+                        //    var files = orderedPsmsWithFDR.Select(p => p.thisPSM.FileName).Distinct().ToList();
+                        //    foreach (var pg in proteinGroups[j])
+                        //        pg.AggregateQuantifyHelper(files);
+                        //}
+                    }
+                }
+            }
+
+            if (DoLocalizationAnalysis && doHistogramAnalysis)
+            {
+                for (int j = 0; j < SearchModes.Count; j++)
+                {
+                    var limitedpsms_with_fdr = allResultingIdentifications[j].Where(b => (b.QValue <= 0.01)).ToList();
+                    if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
+                    {
+                        Status("Running histogram analysis...", new List<string> { taskId });
+                        var myTreeStructure = new BinTreeStructure();
+                        myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTolInDaltons);
+                        WriteTree(myTreeStructure, OutputFolder, "aggregate_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
+                    }
+                }
+            }
+
+            // Now that we are done with fdr analysis and localization analysis, can write the results!
+            for (int j = 0; j < SearchModes.Count; j++)
+            {
+                WritePsmsToTsv(allResultingIdentifications[j], OutputFolder, "allPSMs_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
+
+                WritePsmsToTsv(allResultingPeptides[j], OutputFolder, "uniquePeptides_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
+
+                var psmsGroupedByFilename = allResultingIdentifications[j].GroupBy(p => p.thisPSM.FileName);
+
+                // individual psm files (with global psm fdr, global parsimony)
+                foreach (var group in psmsGroupedByFilename)
+                {
+                    var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.FileName);
+                    WritePsmsToTsv(group.ToList(), OutputFolder, fileName + "_allPSMs_" + SearchModes[j].FileNameAddition, new List<string> { taskId, "Individual Searches", group.First().thisPSM.FileName });
+                }
+
+                // individual protein group files (local protein fdr, global parsimony, global psm fdr)
+                var fileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct();
+                if (DoParsimony)
+                    foreach (var file in fileNames)
+                    {
+                        var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
+                        foreach (var pg in ProteinGroups[j])
+                        {
+                            var subsetPg = pg.ConstructSubsetProteinGroup(file);
+                            subsetPg.Score();
+
+                            if (subsetPg.ProteinGroupScore != 0)
+                            {
+                                subsetPg.CalculateSequenceCoverage();
+                                subsetPg.Quantify();
+                                subsetProteinGroupsForThisFile.Add(subsetPg);
+                            }
+                        }
+                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, file + "_" + SearchModes[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Searches", file });
+
+                        WriteMzidentml(psmsGroupedByFilename.Where(p => p.Key == file).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, SearchModes[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, file + "_" + SearchModes[j].FileNameAddition, new List<string> { taskId, "Individual Searches", file });
+                    }
+            }
 
             if (WritePrunedDatabase)
             {
@@ -470,6 +629,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

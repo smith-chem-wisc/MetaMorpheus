@@ -51,7 +51,7 @@ namespace EngineLayer
         public string FileName { get; }
         public int ScanIndex { get; }
         public int NumAmbiguous { get; set; }
-        public ProteinLevelInfo Pli { get; private set; }
+        public ProteinLinkedInfo Pli { get; private set; }
 
         #endregion Public Properties
 
@@ -147,9 +147,9 @@ namespace EngineLayer
 
         public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
 
-        public void ComputeProteinLevelInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Tolerance fragmentTolerance, Ms2ScanWithSpecificMass theScan, List<ProductType> lp, Dictionary<Proteomics.ModificationWithMass, ushort> modsDictionary)
+        public void GetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Tolerance fragmentTolerance, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
-            Pli = new ProteinLevelInfo(matching[GetCompactPeptide(modsDictionary)], fragmentTolerance, theScan, lp);
+            Pli = new ProteinLinkedInfo(matching[GetCompactPeptide(modsDictionary)], fragmentTolerance, lp);
         }
 
         public override string ToString()
@@ -172,8 +172,8 @@ namespace EngineLayer
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append(Pli.ToString() + '\t');
-
-            sb.Append((Pli.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            if (Pli.LocalizedScores != null)
+                sb.Append((Pli.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
 
@@ -202,7 +202,7 @@ namespace EngineLayer
             sb.Append("Quantification Intensity" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
-            sb.Append(ProteinLevelInfo.GetTabSeparatedHeader() + '\t');
+            sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
 
             // Need info from both current and from Pli
             sb.Append("Improvement Possible" + '\t');
