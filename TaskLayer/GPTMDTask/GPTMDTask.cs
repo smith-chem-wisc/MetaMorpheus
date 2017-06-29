@@ -207,34 +207,21 @@ namespace TaskLayer
 
                 allPsms[0].AddRange(searchResults.OuterPsms[0]);
 
-                analysisResults = (AnalysisResults)new AnalysisEngine(searchResults.OuterPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, arrayOfMs2ScansSortedByMass, ProductMassTolerance, 
-                    (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }), 
-                    (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss), 
-                    null, 
-                    (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, ss), 
-                    null, 
-                    null, 
-                    false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, 
-                    new List<string> { taskId, "Individual Searches", origDataFile }, null, modsDictionary, myMsDataFile, null).Run();
-
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
 
-            if (numRawFiles > 1)
-            {
-                analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, null, ProductMassTolerance, 
-                    (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + "_" + s, new List<string> { taskId }), 
-                    (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, "aggregate" + "_" + s, ss), 
-                    null, 
-                    (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, "aggregate" + "_" + s, ss), 
-                    null,
-                    null,
-                    false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, 
-                    MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior, 
-                    new List<string> { taskId }, null, modsDictionary, null, null).Run();
-            }
+            analysisResults = (AnalysisResults)new AnalysisEngine(allPsms.Select(b => b.ToArray()).ToArray(), compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, null, ProductMassTolerance,
+                (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + "_" + s, new List<string> { taskId }),
+                (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, "aggregate" + "_" + s, ss),
+                null,
+                (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, "aggregate" + "_" + s, ss),
+                null,
+                null,
+                false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
+                MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior,
+                new List<string> { taskId }, null, modsDictionary, null, null).Run();
 
             var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
 
