@@ -821,7 +821,8 @@ namespace EngineLayer.Analysis
                     Status("Running FDR analysis on unique peptides...", nestedIds);
                     var peptidesWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]);
        
-                    myAnalysisResults.AddText("Unique PSMS within 1% FDR: " + peptidesWithFDR.Count( a=> a.QValue <= .01 && a.IsDecoy == false));
+                    myAnalysisResults.AddText("Unique peptides within 1% FDR: " + peptidesWithFDR.Count( a=> a.QValue <= .01 && a.IsDecoy == false));
+
                     writePsmsAction?.Invoke(peptidesWithFDR, "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
                     
 
