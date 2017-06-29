@@ -1,4 +1,4 @@
-using Chemistry;
+﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FlashLFQ;
 
 namespace EngineLayer.Analysis
 {
@@ -35,23 +36,24 @@ namespace EngineLayer.Analysis
         private readonly Action<List<NewPsmWithFdr>, string, List<string>> writePsmsAction;
         private readonly Action<List<ProteinGroup>, string, List<string>> writeProteinGroupsAction;
         private readonly Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> writeMzIdentmlAction;
+        private readonly Action<List<FlashLFQFeature>, string, List<string>> writeQuantifiedPeaksAction;
+        private readonly Action<List<FlashLFQSummedFeatureGroup>, string, List<string>> writeQuantifiedPeptidesAction;
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
         private readonly bool doHistogramAnalysis;
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly bool quantify;
-        private readonly double quantifyRtTol;
-        private readonly double quantifyPpmTol;
+        private readonly FlashLFQEngine FlashLfqEngine;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<string> nestedIds;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        private List<string> currentRawFileList;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4,  bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, bool Quantify, double QuantifyRtTol, double QuantifyPpmTol, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile)
+        public AnalysisEngine(PsmParent[][] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4, Action<List<FlashLFQFeature>, string, List<string>> action5, Action<List<FlashLFQSummedFeatureGroup>, string, List<string>> action6, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, FlashLFQEngine FlashLfqEngine, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, List<string> currentRawFileList)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -69,6 +71,8 @@ namespace EngineLayer.Analysis
             this.writePsmsAction = action2;
             this.writeProteinGroupsAction = action3;
             this.writeMzIdentmlAction = action4;
+            this.writeQuantifiedPeaksAction = action5;
+            this.writeQuantifiedPeptidesAction = action6;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.minPeptideLength = minPeptideLength;
             this.maxPeptideLength = maxPeptideLength;
@@ -76,13 +80,12 @@ namespace EngineLayer.Analysis
             this.lp = lp;
             this.binTol = binTol;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
-            this.quantify = Quantify;
-            this.quantifyRtTol = QuantifyRtTol;
-            this.quantifyPpmTol = QuantifyPpmTol;
+            this.FlashLfqEngine = FlashLfqEngine;
             this.nestedIds = nestedIds;
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
             this.modsDictionary = modsDictionary;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
+            this.currentRawFileList = currentRawFileList;
         }
 
         #endregion Public Constructors
@@ -433,8 +436,9 @@ namespace EngineLayer.Analysis
                 }
             }
 
-            foreach (var proteinGroup in proteinGroups)
-                proteinGroup.Quantify();
+            if(FlashLfqEngine != null)
+                foreach (var proteinGroup in proteinGroups)
+                    proteinGroup.Quantify();
         }
 
         public List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
@@ -470,208 +474,33 @@ namespace EngineLayer.Analysis
             return sortedProteinGroups;
         }
 
-        public void RunQuantification(List<NewPsmWithFdr> psms, double rtTolerance, double ppmTolerance)
+        public void RunQuantification(List<NewPsmWithFdr> psms, double ppmTolerance)
         {
-            // key is rough m/z (m/z rounded to 2nd decimal), value contains peak with its scan
-            var mzBins = new Dictionary<double, List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>>();
+            // use FlashLFQ to quantify peaks
+            var psmsBelowOnePercentFdr = psms.Where(p => p.QValue < 0.01 && !p.IsDecoy);
 
-            var peptideGroups = psms.GroupBy(p => p.thisPSM.Pli.FullSequence).ToList();
-            var lengthToIsotopicDistribution = new Dictionary<int, List<KeyValuePair<double, double>>>();
-            HashSet<int> peptideLengths = new HashSet<int>(peptideGroups.Select(p => p.First().thisPSM.Pli.BaseSequence.Length));
+            foreach (var psm in psmsBelowOnePercentFdr)
+                FlashLfqEngine.AddIdentification(psm.thisPSM.FileName, psm.thisPSM.Pli.BaseSequence, psm.thisPSM.Pli.FullSequence, psm.thisPSM.Pli.PeptideMonoisotopicMass, psm.thisPSM.ScanRetentionTime, psm.thisPSM.ScanPrecursorCharge, string.Join("|", psm.thisPSM.Pli.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
 
-            foreach (var length in peptideLengths)
+            FlashLfqEngine.ConstructBinsFromIdentifications();
+            
+            if (myMsDataFile != null)
             {
-                // averagine has 4.9384 carbon atoms
-                var formula = "C" + (int)(4.9384 * length);
-                var isotopicDistribution = IsotopicDistribution.GetDistribution(ChemicalFormula.ParseFormula(formula), 0.0001, 0.01);
-
-                var masses = isotopicDistribution.Masses.ToArray();
-                var abundances = isotopicDistribution.Intensities.ToArray();
-                var massesWithAbundances = new List<KeyValuePair<double, double>>();
-
-                var monoIsotopicMass = masses.Min();
-                var highestAbundance = abundances.Max();
-
-                for (int i = 0; i < masses.Length; i++)
-                {
-                    // expected isotopic mass shifts for peptide of this length
-                    masses[i] -= monoIsotopicMass;
-
-                    // normalized abundance of each mass shift
-                    abundances[i] /= highestAbundance;
-
-                    if (abundances[i] > 0.2)
-                        massesWithAbundances.Add(new KeyValuePair<double, double>(masses[i], abundances[i]));
-                }
-
-                lengthToIsotopicDistribution.Add(length, massesWithAbundances);
+                string fileName = psms.First().thisPSM.FileName;
+                string path = FlashLfqEngine.filePaths.Where(p => System.IO.Path.GetFileNameWithoutExtension(p).Equals(fileName)).First();
+                FlashLfqEngine.Quantify(myMsDataFile, path);
             }
-
-            var minChargeState = psms.Select(p => p.thisPSM.ScanPrecursorCharge).Min();
-            var maxChargeState = psms.Select(p => p.thisPSM.ScanPrecursorCharge).Max();
-            var chargeStates = Enumerable.Range(minChargeState, maxChargeState - 1);
-
-            // build theoretical m/z bins
-            foreach (var pepGrouping in peptideGroups)
+            else
             {
-                var mostCommonIsotopeShift = lengthToIsotopicDistribution[pepGrouping.First().thisPSM.Pli.BaseSequence.Length].Where(p => p.Value == 1).First().Key;
-                var thisPeptidesMass = pepGrouping.First().thisPSM.Pli.PeptideMonoisotopicMass + mostCommonIsotopeShift;
-
-                foreach (var pep in pepGrouping)
-                    pep.thisPSM.MostAbundantMass = thisPeptidesMass;
-
-                foreach (var chargeState in chargeStates)
+                for (int i = 0; i < FlashLfqEngine.filePaths.Length; i++)
                 {
-                    var t = Chemistry.ClassExtensions.ToMz(thisPeptidesMass, chargeState);
-                    var m = Math.Round(t, 2);
-                    if (!mzBins.ContainsKey(m))
-                        mzBins.Add(m, new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>());
+                    FlashLfqEngine.Quantify(null, FlashLfqEngine.filePaths[i]);
+                    GC.Collect();
                 }
             }
 
-            // populate m/z bins with observed m/z's
-            var allMs1Scans = myMsDataFile.Where(s => s.MsnOrder == 1).ToList();
-            foreach (var scan in allMs1Scans)
-            {
-                foreach (var peak in scan.MassSpectrum)
-                {
-                    if (peak.Intensity > 5000)
-                    {
-                        List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> mzBin;
-                        double floorMz = Math.Floor(peak.Mz * 100) / 100;
-                        double ceilingMz = Math.Ceiling(peak.Mz * 100) / 100;
-
-                        if (mzBins.TryGetValue(floorMz, out mzBin))
-                            mzBin.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(peak, scan));
-                        if (mzBins.TryGetValue(ceilingMz, out mzBin))
-                            mzBin.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(peak, scan));
-                    }
-                }
-            }
-
-            // remove theoretical m/z bins not observed
-            mzBins = mzBins.Where(x => x.Value.Count != 0).ToDictionary(x => x.Key, x => x.Value);
-
-            // find apex intensity of each peptide
-            foreach (var pepGrouping in peptideGroups)
-            {
-                var verfiedPeaks = new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>();
-
-                // find peaks within specified tolerances in the m/z bins
-                foreach (var chargeState in chargeStates)
-                {
-                    double theorMzHere = Chemistry.ClassExtensions.ToMz(pepGrouping.First().thisPSM.MostAbundantMass, chargeState);
-                    double mzTolHere = ((ppmTolerance / 1e6) * pepGrouping.First().thisPSM.MostAbundantMass) / chargeState;
-
-                    double floorMz = Math.Floor(theorMzHere * 100) / 100;
-                    double ceilingMz = Math.Ceiling(theorMzHere * 100) / 100;
-
-                    IEnumerable<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> binPeaks = new List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>>();
-                    List<KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>> t;
-                    if (mzBins.TryGetValue(floorMz, out t))
-                        binPeaks = binPeaks.Concat(t);
-                    if (mzBins.TryGetValue(ceilingMz, out t))
-                        binPeaks = binPeaks.Concat(t);
-
-                    binPeaks = binPeaks.OrderByDescending(p => p.Key.Intensity);
-
-                    foreach (var peakWithScan in binPeaks)
-                    {
-                        if (!verfiedPeaks.Contains(peakWithScan))
-                        {
-                            // check ppm tolerance
-                            if (Math.Abs(peakWithScan.Key.Mz - theorMzHere) < mzTolHere)
-                            {
-                                // check rt tolerance
-                                var validRTs = pepGrouping.Select(p => p.thisPSM.ScanRetentionTime).Where(p => Math.Abs(peakWithScan.Value.RetentionTime - p) < rtTolerance);
-
-                                if (validRTs.Any())
-                                {
-                                    // check isotopic distribution
-                                    var temp = lengthToIsotopicDistribution[pepGrouping.First().thisPSM.Pli.BaseSequence.Length];
-                                    var isotopes = temp.Select(p => new KeyValuePair<double, double>(p.Key + pepGrouping.First().thisPSM.Pli.PeptideMonoisotopicMass, p.Value)).ToList();
-
-                                    var lowestMassIsotope = isotopes.Select(p => p.Key).Min();
-                                    var highestMassIsotope = isotopes.Select(p => p.Key).Max();
-                                    IMzPeak[] isotopePeaks = new IMzPeak[isotopes.Count];
-
-                                    lowestMassIsotope = Chemistry.ClassExtensions.ToMz(lowestMassIsotope, chargeState);
-                                    lowestMassIsotope -= (ppmTolerance / 1e6) * lowestMassIsotope;
-
-                                    highestMassIsotope = Chemistry.ClassExtensions.ToMz(highestMassIsotope, chargeState);
-                                    highestMassIsotope += (ppmTolerance / 1e6) * highestMassIsotope;
-
-                                    var otherPeaksInThisScan = peakWithScan.Value.MassSpectrum.Where(p => p.Mz > lowestMassIsotope && p.Mz < highestMassIsotope).ToList();
-                                    bool isotopeDistributionCheck = true;
-
-                                    foreach (var isotope in isotopes)
-                                    {
-                                        double theorIsotopeMz = Chemistry.ClassExtensions.ToMz(isotope.Key, chargeState);
-                                        double isotopeMzTol = ((3.0 / 1e6) * isotope.Key) / chargeState;
-                                        bool thisIsotopeSeen = false;
-
-                                        foreach (var otherPeak in otherPeaksInThisScan)
-                                        {
-                                            if (Math.Abs(otherPeak.Mz - theorIsotopeMz) < isotopeMzTol)
-                                            {
-                                                thisIsotopeSeen = true;
-                                                isotopePeaks[isotopes.IndexOf(isotope)] = otherPeak;
-                                                break;
-                                            }
-                                        }
-
-                                        if (!thisIsotopeSeen)
-                                            isotopeDistributionCheck = false;
-                                    }
-
-                                    if (isotopeDistributionCheck)
-                                    {
-                                        for (int i = 0; i < isotopes.Count; i++)
-                                        {
-                                            if (isotopes[i].Value < 0.8)
-                                                isotopePeaks[i] = null;
-                                        }
-                                        isotopePeaks = isotopePeaks.Where(v => v != null).ToArray();
-                                        double maxIsotopeIntensity = isotopePeaks.Select(v => v.Intensity).Max();
-                                        IMzPeak maxIsotopicPeak = isotopePeaks.Where(x => x.Intensity == maxIsotopeIntensity).First();
-                                        verfiedPeaks.Add(new KeyValuePair<IMzPeak, IMsDataScan<IMzSpectrum<IMzPeak>>>(maxIsotopicPeak, peakWithScan.Value));
-                                        // done with this charge state, move on to the next one
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                double apexIntensity = 0;
-                double apexRT = 0;
-                double apexMZ = 0;
-
-                if (verfiedPeaks.Any())
-                {
-                    apexIntensity = verfiedPeaks.Select(x => x.Key.Intensity).Max();
-                    var p = verfiedPeaks.Where(x => x.Key.Intensity == apexIntensity).First();
-                    apexRT = p.Value.RetentionTime;
-                    apexMZ = p.Key.Mz;
-                }
-
-                foreach (var pep in pepGrouping)
-                {
-                    if (apexIntensity != 0)
-                    {
-                        pep.thisPSM.QuantIntensity = new double[] { apexIntensity };
-                        pep.thisPSM.QuantRT = apexRT;
-                        pep.thisPSM.ApexMz = apexMZ;
-                    }
-                    else
-                    {
-                        pep.thisPSM.QuantIntensity = new double[] { pep.thisPSM.ScanPrecursorMonoisotopicPeak.Intensity };
-                        pep.thisPSM.QuantRT = pep.thisPSM.ScanRetentionTime;
-                        pep.thisPSM.ApexMz = pep.thisPSM.ScanPrecursorMonoisotopicPeak.Mz;
-                    }
-                }
-            }
+            if (FlashLfqEngine.mbr)
+                FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
         }
 
         #endregion Public Methods
@@ -740,7 +569,7 @@ namespace EngineLayer.Analysis
             #endregion Match Seqeunces to PeptideWithSetModifications
 
             List<ProteinGroup>[] proteinGroups = null;
-            if (doParsimony)
+            if (doParsimony && ((currentRawFileList.Count > 1 && myMsDataFile == null) || currentRawFileList.Count == 1))
             {
                 Status("Applying protein parsimony...", nestedIds);
                 proteinGroups = new List<ProteinGroup>[searchModes.Count];
@@ -798,11 +627,51 @@ namespace EngineLayer.Analysis
                     }
                     allModsSeen[j] = modsSeen;
                     allModsOnPeptides[j] = modsOnPeptides;
-
-                    if (quantify)
+                    
+                    if (FlashLfqEngine != null && ((FlashLfqEngine.filePaths.Count() == 1) || (FlashLfqEngine.mbr && myMsDataFile == null) || (!FlashLfqEngine.mbr && myMsDataFile != null)))
                     {
                         Status("Quantifying peptides...", nestedIds);
-                        RunQuantification(orderedPsmsWithFDR, quantifyRtTol, quantifyPpmTol);
+                        RunQuantification(orderedPsmsWithFDR, FlashLfqEngine.ppmTolerance);
+                    }
+
+                    // write quant results after entire search task is complete
+                    if (FlashLfqEngine != null && (FlashLfqEngine.filePaths.Count() == 1 || myMsDataFile == null))
+                    {
+                        var allPeaks = FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList();
+                        writeQuantifiedPeaksAction(allPeaks, "QuantifiedPeaks_" + searchModes[j].FileNameAddition, nestedIds);
+
+                        var summedPeaks = FlashLfqEngine.SumFeatures(allPeaks);
+                        writeQuantifiedPeptidesAction(summedPeaks.ToList(), "QuantifiedPeptides_" + searchModes[j].FileNameAddition, nestedIds);
+
+                        // assign quantities to PSMs
+                        string[] fileNames = new string[FlashLfqEngine.filePaths.Length];
+                        for (int i = 0; i < FlashLfqEngine.filePaths.Length; i++)
+                            fileNames[i] = System.IO.Path.GetFileNameWithoutExtension(FlashLfqEngine.filePaths[i]);
+
+                        Dictionary<string, List<NewPsmWithFdr>> baseseqToPsm = new Dictionary<string, List<NewPsmWithFdr>>();
+                        List<NewPsmWithFdr> list;
+                        foreach (var psm in orderedPsmsWithFDR)
+                        {
+                            if (baseseqToPsm.TryGetValue(psm.thisPSM.Pli.BaseSequence, out list))
+                                list.Add(psm);
+                            else
+                                baseseqToPsm.Add(psm.thisPSM.Pli.BaseSequence, new List<NewPsmWithFdr>() { psm });
+                        }
+
+                        foreach (var summedPeak in summedPeaks)
+                        {
+                            if (baseseqToPsm.TryGetValue(summedPeak.BaseSequence, out list))
+                            {
+                                var psmsForThisBaseSeqAndFile = list.GroupBy(p => p.thisPSM.FileName);
+                                foreach (var file in psmsForThisBaseSeqAndFile)
+                                {
+                                    int i = Array.IndexOf(fileNames, file.Key);
+
+                                    foreach (var psm in file)
+                                        psm.thisPSM.QuantIntensity[0] = summedPeak.intensitiesByFile[i];
+                                }
+                            }
+                        }
                     }
 
                     writePsmsAction?.Invoke(orderedPsmsWithFDR, "allPSMs_" + searchModes[j].FileNameAddition, nestedIds);
@@ -821,25 +690,27 @@ namespace EngineLayer.Analysis
                     Status("Running FDR analysis on unique peptides...", nestedIds);
                     var peptidesWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]);
        
-                    myAnalysisResults.AddText("Unique PSMS within 1% FDR: " + peptidesWithFDR.Count( a=> a.QValue <= .01 && a.IsDecoy == false));
+                    myAnalysisResults.AddText("Unique PSMs within 1% FDR: " + peptidesWithFDR.Count(a => a.QValue <= 0.01 && !a.IsDecoy));
                     writePsmsAction?.Invoke(peptidesWithFDR, "uniquePeptides_" + searchModes[j].FileNameAddition, nestedIds);
                     
-
                     // individual (for single-file search) or aggregate results
-                    if (doParsimony && writeProteinGroupsAction != null)
+                    if (doParsimony && (myMsDataFile == null || currentRawFileList.Count == 1))
                     {
                         ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
                         proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
-                        // call multifile protein quantification helper function (need all the filenames to organize results properly)
-                        var files = orderedPsmsWithFDR.Select(p => p.thisPSM.FileName).Distinct().ToList();
-                        foreach (var pg in proteinGroups[j])
-                            pg.AggregateQuantifyHelper(files);
-                        writeProteinGroupsAction(proteinGroups[j], searchModes[j].FileNameAddition, nestedIds);
+                        if (FlashLfqEngine != null)
+                        {
+                            // call multifile protein quantification helper function (need all the filenames to organize results properly)
+                            var files = orderedPsmsWithFDR.Select(p => p.thisPSM.FileName).Distinct().ToList();
+                            foreach (var pg in proteinGroups[j])
+                                pg.AggregateQuantifyHelper(files);
+                        }
+
+                        writeProteinGroupsAction(proteinGroups[j], "allProteinGroups_" + searchModes[j].FileNameAddition, nestedIds);
                         writeMzIdentmlAction(orderedPsmsWithFDR, proteinGroups[j], searchModes[j], searchModes[j].FileNameAddition, nestedIds);
                     }
-
-
+                    
                     // write individual file results based on aggregate results
                     if (arrayOfSortedMS2Scans == null && doParsimony)
                     {
@@ -849,7 +720,7 @@ namespace EngineLayer.Analysis
                         foreach (var group in psmsGroupedByFilename)
                         {
                             var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.FileName);
-                            writePsmsAction(group.ToList(), fileName + "_allPSMS_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.FileName })));
+                            writePsmsAction(group.ToList(), fileName + "_allPSMs_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", group.First().thisPSM.FileName })));
                         }
 
                         // individual protein group files (local protein fdr, global parsimony, global psm fdr)
@@ -871,12 +742,11 @@ namespace EngineLayer.Analysis
                             }
 
                             subsetProteinGroupsForThisFile = DoProteinFdr(subsetProteinGroupsForThisFile);
-                            writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
+                            writeProteinGroupsAction(subsetProteinGroupsForThisFile, file + "_" + searchModes[j].FileNameAddition + "_ProteinGroups", new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                             writeMzIdentmlAction(psmsGroupedByFilename.Where(p => p.Key == file).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, searchModes[j], file + "_" + searchModes[j].FileNameAddition, new List<string>(nestedIds.Concat(new List<string> { "Individual Searches", file })));
                         }
                     }
-
-
+                    
                     allResultingIdentifications[j] = orderedPsmsWithFDR;
                 }
             }

@@ -157,7 +157,7 @@ namespace Test
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
-            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, null, new List<SequenceVariation>());
+            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], null, null, false, false, new List<DatabaseReference>(), new List<SequenceVariation>());
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
@@ -294,7 +294,7 @@ namespace Test
             dictHere.Add(3, new List<Modification> { modToAdd2 });
 
             //protein Creation (One with mod and one without)
-            Protein TestProtein = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>(), new List<SequenceVariation>());
+            Protein TestProtein = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>(), null);
             Protein TestProteinWithMod = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), dictHere, new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>(), new List<SequenceVariation>());
 
             #endregion Protein and Mod Creation
@@ -402,7 +402,6 @@ namespace Test
 
             //protein Creation (One with mod and one without)
             Protein TestProtein = new Protein("PEPTID", "accession1", new List<Tuple<string, string>>(), modDictionary, new int?[0], new int?[0], new string[0], "name1", "fullname1", false, false, new List<DatabaseReference>(), new List<SequenceVariation>());
-
             #endregion mod setup and protein creation
 
             #region XML setup

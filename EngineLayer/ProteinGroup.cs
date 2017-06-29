@@ -72,8 +72,11 @@ namespace EngineLayer
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Sequence coverage w Mods" + '\t');
                 sb.Append("Modification Info List" + "\t");
-                for (int i = 0; i < FileNames.Count; i++)
-                    sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+                if (FileNames != null && IntensitiesByFile != null)
+                {
+                    for (int i = 0; i < FileNames.Count; i++)
+                        sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+                }
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy/Contaminant/Target" + '\t');
@@ -178,15 +181,18 @@ namespace EngineLayer
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
-            int numFiles = IntensitiesByFile.GetLength(0);
-            for (int i = 0; i < numFiles; i++)
+            if (IntensitiesByFile != null)
             {
-                var intensityForThisFile = IntensitiesByFile[i].Where(p => p != 0);
-                if (intensityForThisFile.Any())
-                    sb.Append(string.Join("|", IntensitiesByFile[i]));
-                else
-                    sb.Append("");
-                sb.Append("\t");
+                int numFiles = IntensitiesByFile.GetLength(0);
+                for (int i = 0; i < numFiles; i++)
+                {
+                    var intensityForThisFile = IntensitiesByFile[i].Where(p => p != 0);
+                    if (intensityForThisFile.Any())
+                        sb.Append(string.Join("|", IntensitiesByFile[i]));
+                    else
+                        sb.Append("");
+                    sb.Append("\t");
+                }
             }
 
             // number of PSMs for listed peptides
@@ -385,7 +391,7 @@ namespace EngineLayer
                 }
 
                 var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.thisPSM.Pli.BaseSequence);
-                var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
+                //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
                 {
@@ -404,6 +410,7 @@ namespace EngineLayer
 
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
+                    /*
                     // remove modified peptides that aren't used for quantification
                     foreach (var psm in psmsForThisBaseSeq)
                     {
@@ -411,6 +418,7 @@ namespace EngineLayer
                         if (unacceptableModsForThisPsm.Any())
                             psmsToIgnore.Add(psm);
                     }
+                    */
 
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 

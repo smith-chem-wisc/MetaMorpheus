@@ -29,7 +29,7 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            QuantIntensity = new double[1];
+            this.QuantIntensity = new double[1];
         }
 
         #endregion Protected Constructors
@@ -37,8 +37,6 @@ namespace EngineLayer
         #region Public Properties
 
         public double[] QuantIntensity { get; set; }
-        public double ApexMz { get; set; }
-        public double QuantRT { get; set; }
         public double MostAbundantMass { get; set; }
         public int Notch { get; }
         public double Score { get; }
@@ -171,7 +169,6 @@ namespace EngineLayer
             sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(Notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(string.Join("|", QuantIntensity) + '\t');
-            sb.Append(QuantRT.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append(Pli.ToString() + '\t');
@@ -203,7 +200,6 @@ namespace EngineLayer
             sb.Append("Score" + '\t');
             sb.Append("Notch" + '\t');
             sb.Append("Quantification Intensity" + '\t');
-            sb.Append("Quantification RT" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
             sb.Append(ProteinLevelInfo.GetTabSeparatedHeader() + '\t');
