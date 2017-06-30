@@ -219,7 +219,6 @@ namespace TaskLayer
             }
 
             object lock1 = new object();
-            object lock2 = new object();
             ParallelOptions parallelOptions = new ParallelOptions()
             {
                 MaxDegreeOfParallelism = MaxDegreeOfParallelism
@@ -340,14 +339,12 @@ namespace TaskLayer
 
                 Status("Writing mzML!", new List<string> { taskId, "Individual Searches", origDataFile });
                 var path = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "-Calibrated.mzML");
-                lock (lock2) // Lock because writing is sequential
-                {
-                    MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, path, false);
 
-                    SucessfullyFinishedWritingFile(path, new List<string> { taskId, "Individual Searches", origDataFile });
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, path, false);
 
-                    myTaskResults.newSpectra.Add(path);
-                }
+                SucessfullyFinishedWritingFile(path, new List<string> { taskId, "Individual Searches", origDataFile });
+
+                myTaskResults.newSpectra.Add(path);
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
             }
