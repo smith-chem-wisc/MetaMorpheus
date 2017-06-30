@@ -270,22 +270,29 @@ namespace EngineLayer.Analysis
             // add indistinguishable proteins
             var proteinsGroupedByNumPeptides = proteinToPeptidesMatching.GroupBy(p => p.Value.Count);
             var parsimonyProteinsGroupedByNumPeptides = parsimonyProteinList.GroupBy(p => p.Value.Count);
-            var indistinguishableProteins = new Dictionary<Protein, HashSet<CompactPeptide>>();
+            var indistinguishableProteins = new ConcurrentDictionary<Protein, HashSet<CompactPeptide>>();
 
             foreach (var group in proteinsGroupedByNumPeptides)
             {
                 var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.Where(p => p.Key == group.Key).FirstOrDefault();
+                var list = group.ToList();
                 if (parsimonyProteinsWithSameNumPeptides != null)
                 {
-                    foreach (var protein in group)
-                    {
-                        foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
+                    Parallel.ForEach(Partitioner.Create(0, list.Count), 
+                        new ParallelOptions { MaxDegreeOfParallelism = -1 },
+                        (range, loopState) =>
                         {
-                            if (parsimonyProteinWithThisNumPeptides.Key != protein.Key)
-                                if (proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[protein.Key]))
-                                    indistinguishableProteins.Add(protein.Key, proteinToPeptidesMatching[protein.Key]);
+                            for(int i = range.Item1; i < range.Item2; i++)
+                            {
+                                foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
+                                {
+                                    if (parsimonyProteinWithThisNumPeptides.Key != list[i].Key)
+                                        if (proteinToPeptidesMatching[parsimonyProteinWithThisNumPeptides.Key].SetEquals(proteinToPeptidesMatching[list[i].Key]))
+                                            indistinguishableProteins.GetOrAdd(list[i].Key, proteinToPeptidesMatching[list[i].Key]);
+                                }
+                            }
                         }
-                    }
+                    );
                 }
             }
             foreach (var protein in indistinguishableProteins)
