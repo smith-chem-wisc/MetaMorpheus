@@ -53,7 +53,7 @@ namespace Test
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            newPsm.GetProteinLinkedInfo(matching, fragmentTolerance, lp, modsDictionary);
+            newPsm.GetProteinLinkedInfo(matching, modsDictionary);
 
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
@@ -96,7 +96,7 @@ namespace Test
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            match.GetProteinLinkedInfo(matching, fragmentTolerance,  lp, modsDictionary);
+            match.GetProteinLinkedInfo(matching, modsDictionary);
 
             NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(match);
             thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);

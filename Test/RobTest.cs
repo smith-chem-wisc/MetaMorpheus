@@ -175,7 +175,7 @@ namespace Test
 
             foreach (var hm in psms)
             {
-                hm.thisPSM.GetProteinLinkedInfo(initialDictionary, fragmentTolerance, lp, modsDictionary);
+                hm.thisPSM.GetProteinLinkedInfo(initialDictionary, modsDictionary);
             }
 
             //Console.WriteLine(psms.Count);
@@ -342,7 +342,7 @@ namespace Test
                 {psm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ peptide} }
             };
 
-            psm.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, lp, modsDictionary);
+            psm.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
 
             psms.Add(new NewPsmWithFdr(psm));
 
@@ -432,8 +432,8 @@ namespace Test
             var match1 = new PsmClassic(peptideList.ElementAt(0), 0, 10, 0, ms2scan);
             var match2 = new PsmClassic(peptideList.ElementAt(1), 0, 10, 0, ms2scan);
 
-            match1.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, lp, modsDictionary);
-            match2.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, lp, modsDictionary);
+            match1.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
+            match2.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
 
             List<NewPsmWithFdr> psms = new List<NewPsmWithFdr>
             {

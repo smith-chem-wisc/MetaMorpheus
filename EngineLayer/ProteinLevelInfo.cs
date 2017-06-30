@@ -1,5 +1,4 @@
-﻿using MzLibUtil;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -11,7 +10,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet, Tolerance fragmentTolerance, List<ProductType> lp)
+        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet)
         {
             PeptidesWithSetModifications = hashSet;
             IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);

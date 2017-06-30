@@ -543,7 +543,7 @@ namespace EngineLayer.Analysis
                     {
                         var huh = newPsms[j][myScanWithMassIndex];
                         if (huh != null && huh.Pli == null)
-                            huh.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, fragmentTolerance, lp, modsDictionary);
+                            huh.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
                     }
 
                     Status("Sorting and grouping psms..", nestedIds);

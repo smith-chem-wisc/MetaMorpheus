@@ -147,9 +147,9 @@ namespace EngineLayer
 
         public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
 
-        public void GetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Tolerance fragmentTolerance, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        public void GetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
-            Pli = new ProteinLinkedInfo(matching[GetCompactPeptide(modsDictionary)], fragmentTolerance, lp);
+            Pli = new ProteinLinkedInfo(matching[GetCompactPeptide(modsDictionary)]);
         }
 
         public override string ToString()

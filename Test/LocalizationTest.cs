@@ -48,7 +48,7 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.GetProteinLinkedInfo(matching, fragmentTolerance, lp, modsDictionary);
+            newPsm.GetProteinLinkedInfo(matching, modsDictionary);
 
             LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance);
             f.Run();
