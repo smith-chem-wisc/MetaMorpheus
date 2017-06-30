@@ -244,7 +244,7 @@ namespace MetaMorpheusGUI
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
 
-            foreach (var cool in task.SearchModes)
+            foreach (var cool in task.MassDiffAcceptors)
                 SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
 
             writePrunedDatabaseCheckBox.IsChecked = task.WritePrunedDatabase;
@@ -301,7 +301,7 @@ namespace MetaMorpheusGUI
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
+            TheTask.MassDiffAcceptors = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
