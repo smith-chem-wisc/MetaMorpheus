@@ -10,6 +10,7 @@ namespace EngineLayer.ClassicSearch
 {
     public class ClassicSearchEngine : MetaMorpheusEngine
     {
+
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
@@ -214,5 +215,6 @@ namespace EngineLayer.ClassicSearch
         }
 
         #endregion Private Methods
+
     }
 }
