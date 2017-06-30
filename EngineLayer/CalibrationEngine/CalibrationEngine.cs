@@ -11,6 +11,7 @@ namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
+
         #region Private Fields
 
         private const double fineResolutionForIsotopeDistCalculation = 0.1;
@@ -474,8 +475,6 @@ namespace EngineLayer.Calibration
             // Key: mz value, Value: error
             var addedPeaks = new Dictionary<double, double>();
 
-            double IsolationMZ = ms2DataScan.IsolationMz;
-
             var countForThisMS2 = 0;
             var countForThisMS2a = 0;
 
@@ -585,5 +584,6 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Private Methods
+
     }
 }
