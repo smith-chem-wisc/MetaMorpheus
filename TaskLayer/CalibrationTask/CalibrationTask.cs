@@ -252,9 +252,7 @@ namespace TaskLayer
                 var searchEngine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory);
 
                 var searchResults = (SearchResults)searchEngine.Run();
-
-                List<PsmParent>[] allPsms = new List<PsmParent>[1];
-                allPsms[0] = searchResults.Psms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
+                var allPsms = searchResults.Psms;
                 // Group and order psms
 
                 SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
@@ -310,15 +308,14 @@ namespace TaskLayer
                     var searchEngineTest = new ClassicSearchEngine(listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory);
                     var searchResultsTest = (SearchResults)searchEngineTest.Run();
 
-                    List<PsmParent>[] allPsmsTest = new List<PsmParent>[1];
-                    allPsmsTest[0] = searchResultsTest.Psms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
+                    allPsms = searchResultsTest.Psms;
                     // Group and order psms
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsmsTest, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
                     var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
                     Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
-                    var analysisEngineTest = new FdrAnalysisEngine(allPsmsTest,
+                    var analysisEngineTest = new FdrAnalysisEngine(allPsms,
                         compactPeptideToProteinPeptideMatching,
                         searchModes,
                         false, false, false,
@@ -326,7 +323,7 @@ namespace TaskLayer
 
                     var analysisResultsTest = (FdrAnalysisResults)analysisEngineTest.Run();
 
-                    theResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, allPsmsTest[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.Pli.IsDecoy).ToList(), minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Spectra Files", origDataFile }), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Spectra Files", origDataFile }), true, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run() as CalibrationResults;
+                    theResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.Pli.IsDecoy).ToList(), minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Spectra Files", origDataFile }), (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s + "after", new List<string> { taskId, "Individual Spectra Files", origDataFile }), true, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run() as CalibrationResults;
 
                     calibrationResult = theResult as CalibrationResults;
 

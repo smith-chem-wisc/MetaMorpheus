@@ -13,6 +13,7 @@ namespace Test
     [TestFixture]
     public class SearchEngineTests
     {
+
         #region Public Methods
 
         [Test]
@@ -41,7 +42,7 @@ namespace Test
             Assert.AreEqual(1, searchResults.Psms.Length);
 
             // One scan
-            Assert.AreEqual(1, searchResults.Psms[0].Length);
+            Assert.AreEqual(1, searchResults.Psms[0].Count);
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
@@ -75,7 +76,7 @@ namespace Test
             Assert.AreEqual(1, searchResults.Psms.Length);
 
             // One Scan
-            Assert.AreEqual(1, searchResults.Psms[0].Length);
+            Assert.AreEqual(1, searchResults.Psms[0].Count);
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
@@ -128,7 +129,7 @@ namespace Test
             Assert.AreEqual(1, searchResults.Psms.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(1, searchResults.Psms[0].Length);
+            Assert.AreEqual(1, searchResults.Psms[0].Count);
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
@@ -181,7 +182,7 @@ namespace Test
             Assert.AreEqual(1, searchResults.Psms.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(1, searchResults.Psms[0].Length);
+            Assert.AreEqual(1, searchResults.Psms[0].Count);
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
@@ -189,5 +190,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }

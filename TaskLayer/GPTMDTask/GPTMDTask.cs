@@ -202,27 +202,25 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                 var searchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory).Run();
 
-                allPsms[0].AddRange(searchResults.Psms[0]);
+                allPsms = searchResults.Psms;
 
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            List<PsmParent>[] allPsmsTest = new List<PsmParent>[1];
-            allPsmsTest[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsmsTest, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
-            analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsmsTest, compactPeptideToProteinPeptideMatchingTest,
+            analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatchingTest,
                         searchModes,
                         false, false, false,
                         new List<string> { taskId }).Run();
 
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsmsTest[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
 
             if (currentXmlDbFilenameList.Any(b => !b.IsContaminant))
             {

@@ -130,9 +130,7 @@ namespace EngineLayer.ModernSearch
                     {
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
-                        {
                             newPsms[j][i] = new PsmModern(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
-                        }
                     }
                 }
                 lock (outputObject)
