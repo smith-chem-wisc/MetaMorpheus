@@ -21,6 +21,7 @@ namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
     {
+
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
@@ -341,7 +342,7 @@ namespace TaskLayer
                     if (DoLocalizationAnalysis)
                     {
                         var localizationEngine = new LocalizationEngine(allResultingIdentifications.SelectMany(b => b).Select(b => b.thisPSM).Where(b => b.FileName.Equals(origDataFile)), lp, myMsDataFile, ProductMassTolerance);
-                        var localizationResults = localizationEngine.Run();
+                        localizationEngine.Run();
                     }
 
                     if (doQuantification)
@@ -629,5 +630,6 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
+
     }
 }
