@@ -158,12 +158,12 @@ namespace TaskLayer
             {
                 newSpectra = new List<string>()
             };
-            SearchMode searchMode;
+            MassDiffAcceptor searchMode;
             if (PrecursorMassTolerance.Unit == ToleranceUnit.PPM)
                 searchMode = new SinglePpmAroundZeroSearchMode(PrecursorMassTolerance.Value);
             else
                 searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassTolerance.Value);
-            var searchModes = new List<SearchMode> { searchMode };
+            var searchModes = new List<MassDiffAcceptor> { searchMode };
 
             Status("Loading modifications...", new List<string> { taskId });
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -254,15 +254,14 @@ namespace TaskLayer
 
                 var searchResults = (SearchResults)searchEngine.Run();
 
-                InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
                 // Run analysis on single file results
                 var analysisEngine = new AnalysisEngine(searchResults.Psms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications,
                     Protease, searchModes, listOfSortedms2Scans, ProductMassTolerance,
                     (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s, new List<string> { taskId, "Individual Searches", origDataFile }),
                     (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, ss),
                     null,
-                    (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, ss),
-                    false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior,
+                    (List<NewPsmWithFdr> h, List<ProteinGroup> g, MassDiffAcceptor m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, ss),
+                    false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, false, lp, double.NaN, InitiatorMethionineBehavior,
                     new List<string> { taskId, "Individual Searches", origDataFile }, modsDictionary, null);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
@@ -313,9 +312,9 @@ namespace TaskLayer
                         (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", new List<string> { taskId, "Individual Searches", origDataFile }),
                         (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", ss),
                         null,
-                        (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", ss),
+                        (List<NewPsmWithFdr> h, List<ProteinGroup> g, MassDiffAcceptor m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", ss),
                         false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
-                        MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior,
+                        MaxModificationIsoforms, false, lp, double.NaN, InitiatorMethionineBehavior,
                         new List<string> { taskId, "Individual Searches", origDataFile }, modsDictionary, null);
 
                     var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();

@@ -15,7 +15,7 @@ namespace Test
         [Test]
         public static void TestSearchModeTest()
         {
-            SearchMode sm = new TestSearchMode("My custom");
+            MassDiffAcceptor sm = new TestSearchMode("My custom");
             Assert.IsTrue(sm.Accepts(2, 2) >= 0);
             Assert.IsTrue(sm.Accepts(0.5, 4) >= 0);
             Assert.IsFalse(sm.Accepts(0.5, 0.5) >= 0);
@@ -27,7 +27,7 @@ namespace Test
         [Test]
         public static void TestDotSearchMode()
         {
-            var dsm1 = new DotSearchMode("test1", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.Absolute, 0.1));
+            var dsm1 = new DotMassDiffAcceptor("test1", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.Absolute, 0.1));
 
             Assert.IsTrue(dsm1.Accepts(1000, 1000) >= 0);
             Assert.IsTrue(dsm1.Accepts(1000, 1000 + 0.1 / 2) >= 0);
@@ -47,7 +47,7 @@ namespace Test
             Assert.AreEqual(100.9, theList[1].allowedInterval.Minimum);
             Assert.AreEqual(101.1, theList[1].allowedInterval.Maximum);
 
-            var dsm2 = new DotSearchMode("test2", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.PPM, 5));
+            var dsm2 = new DotMassDiffAcceptor("test2", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.PPM, 5));
 
             Assert.IsTrue(dsm2.Accepts(1000, 1000) >= 0);
 
@@ -83,7 +83,7 @@ namespace Test
         #region Private Classes
 
         // Accept if scanPrecursorMass*peptideMass>=1.
-        private class TestSearchMode : SearchMode
+        private class TestSearchMode : MassDiffAcceptor
         {
 
             #region Public Constructors

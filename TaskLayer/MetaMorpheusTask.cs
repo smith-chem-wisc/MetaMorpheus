@@ -33,7 +33,7 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => new Tolerance(tmlString.Value))))
-                        .ConfigureType<SearchMode>(type => type
+                        .ConfigureType<MassDiffAcceptor>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => MetaMorpheusTask.ParseSearchMode(tmlString.Value))))
@@ -93,9 +93,9 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static SearchMode ParseSearchMode(string text)
+        public static MassDiffAcceptor ParseSearchMode(string text)
         {
-            SearchMode ye = null;
+            MassDiffAcceptor ye = null;
 
             var split = text.Split(' ');
 
@@ -113,12 +113,12 @@ namespace TaskLayer
                     var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
                     var newString = split[2].Replace("±", "");
                     var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    ye = new DotSearchMode(split[0], massShifts, new Tolerance(tu, toleranceValue));
+                    ye = new DotMassDiffAcceptor(split[0], massShifts, new Tolerance(tu, toleranceValue));
                     break;
 
                 case "interval":
                     IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                    ye = new IntervalSearchMode(split[0], doubleRanges);
+                    ye = new IntervalMassDiffAcceptor(split[0], doubleRanges);
                     break;
 
                 case "OpenSearch":
@@ -229,7 +229,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        protected internal void WriteMzidentml(List<NewPsmWithFdr> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, SearchMode searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WriteMzidentml(List<NewPsmWithFdr> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, MassDiffAcceptor searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.thisPSM.Pli.PeptidesWithSetModifications).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();

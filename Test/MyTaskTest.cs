@@ -41,7 +41,7 @@ namespace Test
             };
             SearchTask task4 = new SearchTask()
             {
-                ClassicSearch = false
+                SearchType = SearchType.Modern
             };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),

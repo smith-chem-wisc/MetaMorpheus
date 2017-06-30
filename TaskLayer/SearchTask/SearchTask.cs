@@ -34,7 +34,6 @@ namespace TaskLayer
         public SearchTask() : base(MyTask.Search)
         {
             // Set default values here:
-            ClassicSearch = true;
             DoParsimony = false;
             NoOneHitWonders = false;
             ModPeptidesAreUnique = false;
@@ -99,7 +98,6 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
         public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
-        public bool ClassicSearch { get; set; }
         public bool DoParsimony { get; set; }
         public bool ModPeptidesAreUnique { get; set; }
         public bool NoOneHitWonders { get; set; }
@@ -108,7 +106,7 @@ namespace TaskLayer
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchDecoy { get; set; }
-        public List<SearchMode> SearchModes { get; set; }
+        public List<MassDiffAcceptor> SearchModes { get; set; }
         public bool ConserveMemory { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
@@ -118,6 +116,8 @@ namespace TaskLayer
         public bool FindAllPrecursors { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
+
+        public SearchType SearchType { get; set; }
 
         #endregion Public Properties
 
@@ -139,7 +139,7 @@ namespace TaskLayer
             sb.AppendLine("yIons: " + YIons);
             sb.AppendLine("cIons: " + CIons);
             sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("classicSearch: " + ClassicSearch);
+            sb.AppendLine("SearchType: " + SearchType);
             sb.AppendLine("doParsimony: " + DoParsimony);
             if (DoParsimony)
             {
@@ -218,8 +218,7 @@ namespace TaskLayer
             if (CIons)
                 lp.Add(ProductType.C);
 
-            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            if (!ClassicSearch)
+            if (SearchType == SearchType.Modern)
             {
                 Status("Getting fragment dictionary...", new List<string> { taskId });
                 var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId });
@@ -303,7 +302,7 @@ namespace TaskLayer
                     var intensityRatio = 4;
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
-                    if (ClassicSearch)
+                    if (SearchType == SearchType.Classic)
                     {
                         var classicSearchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, SearchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
                         for (int searchModeIndex = 0; searchModeIndex < SearchModes.Count(); searchModeIndex++)
@@ -327,9 +326,9 @@ namespace TaskLayer
                 (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate_" + s, new List<string> { taskId }),
                 (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, s, ss),
                 (List<ProteinGroup> h, string s, List<string> ss) => WriteProteinGroupsToTsv(h, OutputFolder, s, ss),
-                (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss),
+                (List<NewPsmWithFdr> h, List<ProteinGroup> g, MassDiffAcceptor m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss),
                 DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
-                MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
+                MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, InitiatorMethionineBehavior,
                 new List<string> { taskId }, modsDictionary, currentRawFileList).Run();
 
             allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;

@@ -25,7 +25,7 @@ namespace TaskLayer
         #region Public Properties
 
         public static Dictionary<string, Protease> ProteaseDictionary { get; }
-        public static List<SearchMode> SearchModesKnown { get; set; }
+        public static List<MassDiffAcceptor> SearchModesKnown { get; set; }
         public static List<Modification> AllModsKnown { get; set; }
 
         #endregion Public Properties
@@ -78,17 +78,17 @@ namespace TaskLayer
             return dict;
         }
 
-        private static IEnumerable<SearchMode> LoadSearchModesFromFile()
+        private static IEnumerable<MassDiffAcceptor> LoadSearchModesFromFile()
         {
             yield return new SinglePpmAroundZeroSearchMode(5);
             yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(20);
-            yield return new DotSearchMode("1mm5ppm", new double[] { 0, 1.0029 }, new Tolerance(ToleranceUnit.PPM, 5));
-            yield return new DotSearchMode("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
-            yield return new IntervalSearchMode("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
-            yield return new IntervalSearchMode("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
+            yield return new DotMassDiffAcceptor("1mm5ppm", new double[] { 0, 1.0029 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new DotMassDiffAcceptor("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new IntervalMassDiffAcceptor("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
+            yield return new IntervalMassDiffAcceptor("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
             yield return new OpenSearchMode();
-            yield return new IntervalSearchMode("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
+            yield return new IntervalMassDiffAcceptor("-187andUp", new List<DoubleRange> { new DoubleRange(-187, double.PositiveInfinity) });
             foreach (var sm in GetResidueInclusionExclusionSearchModes(new DoubleRange(-187, double.PositiveInfinity), 0.0075))
                 yield return sm;
         }
@@ -99,7 +99,7 @@ namespace TaskLayer
         /// <param name="doubleRange"></param>
         /// <param name="v"></param>
         /// <returns></returns>
-        private static IEnumerable<SearchMode> GetResidueInclusionExclusionSearchModes(DoubleRange doubleRange, double v)
+        private static IEnumerable<MassDiffAcceptor> GetResidueInclusionExclusionSearchModes(DoubleRange doubleRange, double v)
         {
             List<double> massesToExclude = new List<double>();
             for (char c = 'A'; c <= 'Z'; c++)
@@ -124,7 +124,7 @@ namespace TaskLayer
             }
             List<double> filteredMasses = massesToExclude.GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b).ToList();
 
-            yield return new DotSearchMode("OnlyAAs", filteredMasses, new Tolerance(ToleranceUnit.Absolute, v));
+            yield return new DotMassDiffAcceptor("OnlyAAs", filteredMasses, new Tolerance(ToleranceUnit.Absolute, v));
 
             List<DoubleRange> doubleRanges = new List<DoubleRange>();
 
@@ -141,7 +141,7 @@ namespace TaskLayer
 
             doubleRanges = doubleRanges.Where(b => b.Minimum <= doubleRange.Maximum && b.Maximum >= doubleRange.Minimum).Select(b => new DoubleRange(Math.Max(doubleRange.Minimum, b.Minimum), Math.Min(doubleRange.Maximum, b.Maximum))).ToList();
 
-            yield return new IntervalSearchMode("ExcludeAAs", doubleRanges);
+            yield return new IntervalMassDiffAcceptor("ExcludeAAs", doubleRanges);
         }
 
         #endregion Private Methods

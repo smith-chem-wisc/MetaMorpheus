@@ -89,10 +89,10 @@ namespace Test
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<ProteinGroup>, string, List<string>> action3 = null;
             Action<List<NewPsmWithFdr>, string, List<string>> action2 = (List<NewPsmWithFdr> l, string s, List<string> sdf) => {; };
-            Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4 = null;
+            Action<List<NewPsmWithFdr>, List<ProteinGroup>, MassDiffAcceptor, string, List<string>> action4 = null;
             bool doParsimony = false;
             bool noOneHitWonders = false;
             bool modPepsAreUnique = false;

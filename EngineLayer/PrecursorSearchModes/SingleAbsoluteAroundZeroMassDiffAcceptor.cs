@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class SingleAbsoluteAroundZeroSearchMode : SearchMode
+    public class SingleAbsoluteAroundZeroSearchMode : MassDiffAcceptor
     {
 
         #region Private Fields

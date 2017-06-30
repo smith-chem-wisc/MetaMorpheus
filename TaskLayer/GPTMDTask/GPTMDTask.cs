@@ -157,14 +157,13 @@ namespace TaskLayer
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-            SearchMode searchMode = new DotSearchMode("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
+            MassDiffAcceptor searchMode = new DotMassDiffAcceptor("", gptmdModifications.Select(b => b.monoisotopicMass).Concat(GetObservedMasses(variableModifications.Concat(fixedModifications), gptmdModifications)).Concat(combos.Select(b => b.Item1 + b.Item2)).Concat(new List<double> { 0 }).GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b), PrecursorMassTolerance);
 
-            var searchModes = new List<SearchMode> { searchMode };
+            var searchModes = new List<MassDiffAcceptor> { searchMode };
 
             List<PsmParent>[] allPsms = new List<PsmParent>[1];
             allPsms[0] = new List<PsmParent>();
 
-            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             List<ProductType> lp = new List<ProductType>();
             if (BIons)
                 lp.Add(ProductType.B);
@@ -216,9 +215,9 @@ namespace TaskLayer
                 (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + "_" + s, new List<string> { taskId }),
                 (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, "aggregate" + "_" + s, ss),
                 null,
-                (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, "aggregate" + "_" + s, ss),
+                (List<NewPsmWithFdr> h, List<ProteinGroup> g, MassDiffAcceptor m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, "aggregate" + "_" + s, ss),
                 false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
-                MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior,
+                MaxModificationIsoforms, true, lp, binTolInDaltons, InitiatorMethionineBehavior,
                 new List<string> { taskId }, modsDictionary, null).Run();
 
             var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], gptmdModifications, combos, PrecursorMassTolerance).Run();

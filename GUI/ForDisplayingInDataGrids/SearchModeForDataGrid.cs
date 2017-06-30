@@ -7,13 +7,13 @@ namespace MetaMorpheusGUI
 
         #region Public Fields
 
-        public readonly SearchMode searchMode;
+        public readonly MassDiffAcceptor searchMode;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public SearchModeForDataGrid(SearchMode searchMode)
+        public SearchModeForDataGrid(MassDiffAcceptor searchMode)
         {
             this.searchMode = searchMode;
         }

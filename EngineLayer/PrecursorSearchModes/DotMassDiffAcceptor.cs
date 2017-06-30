@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class DotSearchMode : SearchMode
+    public class DotMassDiffAcceptor : MassDiffAcceptor
     {
 
         #region Private Fields
@@ -17,7 +17,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public DotSearchMode(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
+        public DotMassDiffAcceptor(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
             this.acceptableSortedMassShifts = acceptableMassShifts.OrderBy(b => b).ToArray();
             this.tol = tol;

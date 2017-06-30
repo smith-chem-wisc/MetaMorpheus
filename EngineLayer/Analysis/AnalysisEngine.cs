@@ -25,11 +25,11 @@ namespace EngineLayer.Analysis
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly Protease protease;
-        private readonly List<SearchMode> searchModes;
+        private readonly List<MassDiffAcceptor> searchModes;
         private readonly Tolerance fragmentTolerance;
         private readonly Action<BinTreeStructure, string> writeHistogramPeaksAction;
         private readonly Action<List<ProteinGroup>, string, List<string>> writeProteinGroupsAction;
-        private readonly Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> writeMzIdentmlAction;
+        private readonly Action<List<NewPsmWithFdr>, List<ProteinGroup>, MassDiffAcceptor, string, List<string>> writeMzIdentmlAction;
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
         private readonly bool doHistogramAnalysis;
@@ -43,7 +43,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(IEnumerable<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<SearchMode> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> currentRawFileList)
+        public AnalysisEngine(IEnumerable<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<MassDiffAcceptor> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, MassDiffAcceptor, string, List<string>> action4, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> currentRawFileList)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
@@ -612,7 +612,7 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, SearchMode sm)
+        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, MassDiffAcceptor sm)
         {
             var ids = new List<NewPsmWithFdr>();
             foreach (PsmParent item in items)

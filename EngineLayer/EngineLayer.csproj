@@ -105,6 +105,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="AllowedIntervalWithNotch.cs" />
+    <Compile Include="SearchType.cs" />
     <Compile Include="LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
     <Compile Include="ClassicSearch\ScanWithIndexAndNotchInfo.cs" />
@@ -125,12 +126,12 @@
     <Compile Include="Proteomics\ProductType.cs" />
     <Compile Include="Proteomics\Protease.cs" />
     <Compile Include="Proteomics\ProteinExtensions.cs" />
-    <Compile Include="SearchModes\DotSearchMode.cs" />
+    <Compile Include="PrecursorSearchModes\DotMassDiffAcceptor.cs" />
     <Compile Include="Gptmd\GptmdEngine.cs" />
     <Compile Include="Gptmd\GptmdResults.cs" />
     <Compile Include="Indexing\IndexingEngine.cs" />
     <Compile Include="Indexing\IndexingResults.cs" />
-    <Compile Include="SearchModes\IntervalSearchMode.cs" />
+    <Compile Include="PrecursorSearchModes\IntervalMassDiffAcceptor.cs" />
     <Compile Include="Ms2ScanWithSpecificMass.cs" />
     <Compile Include="ModernSearch\ModernSearchEngine.cs" />
     <Compile Include="ModernSearch\PsmModern.cs" />
@@ -145,10 +146,10 @@
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="ProteinGroup.cs" />
-    <Compile Include="SearchModes\OpenSearchMode.cs" />
-    <Compile Include="SearchModes\SearchMode.cs" />
-    <Compile Include="SearchModes\SingleAbsoluteAroundZeroSearchMode.cs" />
-    <Compile Include="SearchModes\SinglePpmAroundZeroSearchMode.cs" />
+    <Compile Include="PrecursorSearchModes\OpenMassDiffAcceptor.cs" />
+    <Compile Include="PrecursorSearchModes\MassDiffAcceptor.cs" />
+    <Compile Include="PrecursorSearchModes\SingleAbsoluteAroundZeroMassDiffAcceptor.cs" />
+    <Compile Include="PrecursorSearchModes\SinglePpmAroundZeroMassDiffAcceptor.cs" />
     <Compile Include="EventArgs\SingleEngineEventArgs.cs" />
     <Compile Include="EventArgs\SingleEngineFinishedEventArgs.cs" />
     <Compile Include="EventArgs\SingleFileEventArgs.cs" />

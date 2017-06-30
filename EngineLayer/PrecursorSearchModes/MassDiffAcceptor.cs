@@ -2,12 +2,12 @@
 
 namespace EngineLayer
 {
-    public abstract class SearchMode
+    public abstract class MassDiffAcceptor
     {
 
         #region Protected Constructors
 
-        protected SearchMode(string fileNameAddition)
+        protected MassDiffAcceptor(string fileNameAddition)
         {
             FileNameAddition = fileNameAddition;
             NumNotches = 1;

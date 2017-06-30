@@ -146,8 +146,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            classicSearchRadioButton.IsChecked = task.ClassicSearch;
-            modernSearchRadioButton.IsChecked = !task.ClassicSearch;
+            classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
+            modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.Quantify;
@@ -260,7 +260,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
+            TheTask.SearchType = classicSearchRadioButton.IsChecked.Value ? SearchType.Classic : SearchType.Modern;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.Quantify = checkBoxQuantification.IsChecked.Value;
