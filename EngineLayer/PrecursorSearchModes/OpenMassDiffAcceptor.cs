@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class OpenSearchMode : SearchMode
+    public class OpenSearchMode : MassDiffAcceptor
     {
 
         #region Public Constructors

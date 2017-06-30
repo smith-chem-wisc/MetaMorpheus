@@ -11,7 +11,7 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
-        private readonly List<NewPsmWithFdr> allIdentifications;
+        private readonly List<PsmParent> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
         private readonly Tolerance precursorMassTolerance;
@@ -20,7 +20,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<NewPsmWithFdr> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance)
+        public GptmdEngine(List<PsmParent> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance)
         {
             this.allIdentifications = allIdentifications;
             this.gptmdModifications = gptmdModifications;
@@ -64,16 +64,16 @@ namespace EngineLayer.Gptmd
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var Mods = new Dictionary<string, HashSet<Tuple<int, ModificationWithMass>>>();
+            var Mods = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
             // Look at all confident identifications (with notch q value less than 0.01)
             // Of those only targets (do not add modifications for decoy peptides)
-            foreach (var ye in allIdentifications.Where(b => b.QValueNotch <= 0.01 && !b.IsDecoy))
+            foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.Pli.IsDecoy))
             {
-                var baseSequence = ye.thisPSM.Pli.BaseSequence;
-                foreach (var peptide in ye.thisPSM.Pli.PeptidesWithSetModifications)
-                    foreach (ModificationWithMass mod in GetPossibleMods(ye.thisPSM.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
+                var baseSequence = ye.Pli.BaseSequence;
+                foreach (var peptide in ye.Pli.PeptidesWithSetModifications)
+                    foreach (ModificationWithMass mod in GetPossibleMods(ye.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {
                         var proteinAcession = peptide.Protein.Accession;
                         for (int i = 0; i < baseSequence.Length; i++)
@@ -82,8 +82,8 @@ namespace EngineLayer.Gptmd
                             if (ModFits(mod, peptide.Protein, i + 1, baseSequence.Length, indexInProtein))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
-                                    Mods[proteinAcession] = new HashSet<Tuple<int, ModificationWithMass>>();
-                                var theTuple = new Tuple<int, ModificationWithMass>(indexInProtein, mod);
+                                    Mods[proteinAcession] = new HashSet<Tuple<int, Modification>>();
+                                var theTuple = new Tuple<int, Modification>(indexInProtein, mod);
                                 if (!Mods[proteinAcession].Contains(theTuple))
                                 {
                                     Mods[proteinAcession].Add(theTuple);

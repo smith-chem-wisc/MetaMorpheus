@@ -2,7 +2,6 @@
 {
     internal class RawDataForDataGrid
     {
-
         #region Public Constructors
 
         public RawDataForDataGrid(string fileName)
@@ -33,6 +32,5 @@
         }
 
         #endregion Public Methods
-
     }
 }

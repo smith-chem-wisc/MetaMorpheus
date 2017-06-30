@@ -7,7 +7,6 @@ namespace Test
 {
     internal class TestScan : IMsDataScan<IMzSpectrum<IMzPeak>>
     {
-
         #region Public Constructors
 
         public TestScan(int OneBasedScanNumber, double RetentionTime, MzmlMzSpectrum MassSpectrum, double InjectionTime)
@@ -105,6 +104,10 @@ namespace Test
             }
         }
 
+        #endregion Public Properties
+
+        #region Public Methods
+
         public byte[] Get64BitNoiseDataBaseline()
         {
             throw new NotImplementedException();
@@ -120,18 +123,11 @@ namespace Test
             throw new NotImplementedException();
         }
 
-
-
-        #endregion Public Properties
-
-        #region Public Methods
-
         public void TransformByApplyingFunctionToSpectra(Func<IMzPeak, double> convertorForSpectrum)
         {
             MassSpectrum.ReplaceXbyApplyingFunction(convertorForSpectrum);
         }
 
         #endregion Public Methods
-
     }
 }

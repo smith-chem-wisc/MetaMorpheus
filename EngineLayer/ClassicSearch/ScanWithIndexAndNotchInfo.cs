@@ -2,7 +2,6 @@
 {
     internal class ScanWithIndexAndNotchInfo
     {
-
         #region Public Fields
 
         public Ms2ScanWithSpecificMass theScan;
@@ -21,6 +20,5 @@
         }
 
         #endregion Public Constructors
-
     }
 }

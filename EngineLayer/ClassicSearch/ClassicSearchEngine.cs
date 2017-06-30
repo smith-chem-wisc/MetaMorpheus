@@ -19,7 +19,7 @@ namespace EngineLayer.ClassicSearch
         private readonly int? minPeptideLength;
         private readonly int? maxPeptideLength;
         private readonly int maximumVariableModificationIsoforms;
-        private readonly List<SearchMode> searchModes;
+        private readonly List<MassDiffAcceptor> searchModes;
 
         private readonly List<Protein> proteinList;
 
@@ -44,7 +44,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<SearchMode> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
+        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
@@ -70,8 +70,6 @@ namespace EngineLayer.ClassicSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In classic search engine!", nestedIds);
-
-            var searchResults = new ClassicSearchResults(this);
 
             int totalProteins = proteinList.Count;
 
@@ -177,15 +175,14 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             });
-            searchResults.OuterPsms = outerPsms;
-            return searchResults;
+            return new SearchResults(outerPsms, this);
         }
 
         #endregion Protected Methods
 
         #region Private Methods
 
-        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, SearchMode searchMode)
+        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
         {
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervals(peptideMonoisotopicMass).ToList())
             {

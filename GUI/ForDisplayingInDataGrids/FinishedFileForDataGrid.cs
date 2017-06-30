@@ -2,7 +2,6 @@
 {
     public class FinishedFileForDataGrid
     {
-
         #region Public Constructors
 
         public FinishedFileForDataGrid(string filePath)
@@ -17,6 +16,5 @@
         public string FilePath { get; private set; }
 
         #endregion Public Properties
-
     }
 }

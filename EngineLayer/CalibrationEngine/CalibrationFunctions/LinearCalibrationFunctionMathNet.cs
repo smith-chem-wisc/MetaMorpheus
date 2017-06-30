@@ -8,7 +8,6 @@ namespace EngineLayer.Calibration
 {
     internal class LinearCalibrationFunctionMathNet : CalibrationFunction
     {
-
         #region Private Fields
 
         private readonly int numFeatures;
@@ -69,6 +68,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
-
     }
 }

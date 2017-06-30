@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public class AllowedIntervalWithNotch
     {
-
         #region Public Fields
 
         public DoubleRange allowedInterval;
@@ -21,6 +20,5 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
     }
 }

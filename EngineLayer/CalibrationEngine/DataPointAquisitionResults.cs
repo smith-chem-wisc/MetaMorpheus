@@ -4,7 +4,6 @@ namespace EngineLayer.Calibration
 {
     internal class DataPointAquisitionResults
     {
-
         #region Public Fields
 
         public int numMs1MassChargeCombinationsConsidered;
@@ -22,6 +21,5 @@ namespace EngineLayer.Calibration
         public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
         #endregion Public Properties
-
     }
 }

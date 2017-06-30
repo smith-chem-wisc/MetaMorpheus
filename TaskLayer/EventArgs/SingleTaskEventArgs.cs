@@ -4,7 +4,6 @@ namespace TaskLayer
 {
     public class SingleTaskEventArgs : EventArgs
     {
-
         #region Public Constructors
 
         public SingleTaskEventArgs(string theTask)
@@ -19,6 +18,5 @@ namespace TaskLayer
         public string TaskId { get; private set; }
 
         #endregion Public Properties
-
     }
 }
