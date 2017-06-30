@@ -1,6 +1,8 @@
 ﻿using Proteomics;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.Analysis
 {
@@ -222,11 +224,11 @@ namespace EngineLayer.Analysis
                 var list = group.ToList();
                 if (parsimonyProteinsWithSameNumPeptides != null)
                 {
-                    Parallel.ForEach(Partitioner.Create(0, list.Count), 
+                    Parallel.ForEach(Partitioner.Create(0, list.Count),
                         new ParallelOptions { MaxDegreeOfParallelism = -1 },
                         (range, loopState) =>
                         {
-                            for(int i = range.Item1; i < range.Item2; i++)
+                            for (int i = range.Item1; i < range.Item2; i++)
                             {
                                 foreach (var parsimonyProteinWithThisNumPeptides in parsimonyProteinsWithSameNumPeptides)
                                 {
