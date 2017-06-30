@@ -288,7 +288,7 @@ namespace TaskLayer
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
-                    myMsDataFile = ThermoDynamicData.InitiateDynamicConnection(origDataFile);
+                    myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
 
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
                 var intensityRatio = 4;
@@ -320,7 +320,7 @@ namespace TaskLayer
                 (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss),
                 DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
                 MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
-                new List<string> { taskId }, modsDictionary,  currentRawFileList).Run();
+                new List<string> { taskId }, modsDictionary, currentRawFileList).Run();
 
             allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
             allResultingPeptides = ((AnalysisResults)analysisResults).allResultingPeptides;
@@ -338,10 +338,11 @@ namespace TaskLayer
                     if (Path.GetExtension(origDataFile).Equals(".mzML"))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
-                        myMsDataFile = ThermoDynamicData.InitiateDynamicConnection(origDataFile);
+                        myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                     if (DoLocalizationAnalysis)
                     {
-                        var localizationEngine = new LocalizationEngine(allResultingIdentifications.SelectMany(b => b).Select(b => b.thisPSM).Where(b => b.FileName.Equals(origDataFile)), lp, myMsDataFile, ProductMassTolerance);
+                        Status("Running localization analysis...", new List<string> { taskId, "Individual Searches", origDataFile });
+                        var localizationEngine = new LocalizationEngine(allResultingIdentifications.SelectMany(b => b).Select(b => b.thisPSM).Where(b => b.FullFilePath.Equals(origDataFile)), lp, myMsDataFile, ProductMassTolerance);
                         localizationEngine.Run();
                     }
 
@@ -446,28 +447,30 @@ namespace TaskLayer
             // Now that we are done with fdr analysis and localization analysis, can write the results!
             for (int j = 0; j < SearchModes.Count; j++)
             {
-                WritePsmsToTsv(allResultingIdentifications[j], OutputFolder, "allPSMs_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
+                WritePsmsToTsv(allResultingIdentifications[j], OutputFolder, "aggregatePSMs_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
 
-                WritePsmsToTsv(allResultingPeptides[j], OutputFolder, "uniquePeptides_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
+                WritePsmsToTsv(allResultingPeptides[j], OutputFolder, "aggregateUniquePeptides_" + SearchModes[j].FileNameAddition, new List<string> { taskId });
 
-                var psmsGroupedByFilename = allResultingIdentifications[j].GroupBy(p => p.thisPSM.FileName);
+                var psmsGroupedByFile = allResultingIdentifications[j].GroupBy(p => p.thisPSM.FullFilePath);
 
                 // individual psm files (with global psm fdr, global parsimony)
-                foreach (var group in psmsGroupedByFilename)
+                foreach (var group in psmsGroupedByFile)
                 {
-                    var fileName = System.IO.Path.GetFileNameWithoutExtension(group.First().thisPSM.FileName);
-                    WritePsmsToTsv(group.ToList(), OutputFolder, fileName + "_allPSMs_" + SearchModes[j].FileNameAddition, new List<string> { taskId, "Individual Searches", group.First().thisPSM.FileName });
+                    var strippedFileName = Path.GetFileNameWithoutExtension(group.First().thisPSM.FullFilePath);
+                    WritePsmsToTsv(group.ToList(), OutputFolder, strippedFileName + "_allPSMs_" + SearchModes[j].FileNameAddition, new List<string> { taskId, "Individual Searches", group.First().thisPSM.FullFilePath });
                 }
 
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)
-                var fileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct();
+                var fullFilePaths = psmsGroupedByFile.Select(p => p.Key).Distinct();
                 if (DoParsimony)
-                    foreach (var file in fileNames)
+                    foreach (var fullFilePath in fullFilePaths)
                     {
+                        var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
+
                         var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
                         foreach (var pg in ProteinGroups[j])
                         {
-                            var subsetPg = pg.ConstructSubsetProteinGroup(file);
+                            var subsetPg = pg.ConstructSubsetProteinGroup(fullFilePath);
                             subsetPg.Score();
 
                             if (subsetPg.ProteinGroupScore != 0)
@@ -477,9 +480,9 @@ namespace TaskLayer
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, file + "_" + SearchModes[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Searches", file });
+                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchModes[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Searches", fullFilePath });
 
-                        WriteMzidentml(psmsGroupedByFilename.Where(p => p.Key == file).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, SearchModes[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, file + "_" + SearchModes[j].FileNameAddition, new List<string> { taskId, "Individual Searches", file });
+                        WriteMzidentml(psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, SearchModes[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, strippedFileName + "_" + SearchModes[j].FileNameAddition, new List<string> { taskId, "Individual Searches", fullFilePath });
                     }
             }
 

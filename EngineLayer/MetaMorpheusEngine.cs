@@ -4,7 +4,6 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace EngineLayer
@@ -71,7 +70,7 @@ namespace EngineLayer
                     }
 
                 foreach (var heh in isolatedStuff)
-                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, Path.GetFileNameWithoutExtension(fullFilePath));
+                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
             }
         }
 

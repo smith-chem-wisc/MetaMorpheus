@@ -233,7 +233,7 @@ namespace TaskLayer
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.thisPSM.Pli.PeptidesWithSetModifications).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
-            List<string> filenames = items.Select(i => i.thisPSM.FileName).Distinct().ToList();
+            List<string> filenames = items.Select(i => i.thisPSM.FullFilePath).Distinct().ToList();
 
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML.Generated.MzIdentMLType));
             var _mzid = new mzIdentML.Generated.MzIdentMLType()
@@ -469,23 +469,23 @@ namespace TaskLayer
                 }
 
                 Tuple<int, int> scan_result_scan_item;
-                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
+                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
                 {
                     scan_result_scan_item = new Tuple<int, int>(sir_id, 0);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1] = new mzIdentML.Generated.SpectrumIdentificationResultType()
                     {
                         id = "SIR_" + scan_result_scan_item.Item1,
-                        spectraData_ref = "SD_" + spectral_ids[psm.thisPSM.FileName].ToString(),
+                        spectraData_ref = "SD_" + spectral_ids[psm.thisPSM.FullFilePath].ToString(),
                         spectrumID = psm.thisPSM.ScanNumber.ToString(),
                         SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[500]
                     };
-                    psm_per_scan.Add(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), scan_result_scan_item);
+                    psm_per_scan.Add(new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber), scan_result_scan_item);
                     sir_id++;
                 }
                 else
                 {
-                    psm_per_scan[new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
-                    scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber)];
+                    psm_per_scan[new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
+                    scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber)];
                 }
                 foreach (PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
                 {
@@ -803,11 +803,11 @@ namespace TaskLayer
 
         protected abstract MyTaskResults RunSpecific(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId);
 
-        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName, List<string> nestedIds)
+        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds)
         {
             if (items != null)
             {
-                var writtenFile = Path.Combine(outputFolder, fileName + ".tsv");
+                var writtenFile = Path.Combine(outputFolder, strippedFileName + ".tsv");
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {

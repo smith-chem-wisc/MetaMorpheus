@@ -8,6 +8,7 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
+
         #region Public Fields
 
         public readonly bool isDecoy;
@@ -367,11 +368,11 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            var psmsGroupedByFilename = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.FileName).OrderBy(p => p.Key).ToList();
+            var psmsGroupedByFile = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.FullFilePath).OrderBy(p => p.Key).ToList();
 
             if (IntensitiesByFile == null || FileNames == null)
             {
-                FileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct().ToList();
+                FileNames = psmsGroupedByFile.Select(p => p.Key).Distinct().ToList();
                 IntensitiesByFile = new double[FileNames.Count][];
 
                 int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
@@ -383,7 +384,7 @@ namespace EngineLayer
             {
                 var quantType = IntensitiesByFile[file].Length;
 
-                var thisFilesPsms = psmsGroupedByFilename.Where(p => p.Key.Equals(FileNames[file])).FirstOrDefault();
+                var thisFilesPsms = psmsGroupedByFile.Where(p => p.Key.Equals(FileNames[file])).FirstOrDefault();
                 if (thisFilesPsms == null)
                 {
                     IntensitiesByFile[file] = new double[quantType];
@@ -441,9 +442,9 @@ namespace EngineLayer
             Quantify();
         }
 
-        public ProteinGroup ConstructSubsetProteinGroup(string fileName)
+        public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
-            var allPsmsForThisFile = new HashSet<NewPsmWithFdr>(this.AllPsmsBelowOnePercentFDR.Where(p => p.thisPSM.FileName.Equals(fileName)));
+            var allPsmsForThisFile = new HashSet<NewPsmWithFdr>(this.AllPsmsBelowOnePercentFDR.Where(p => p.thisPSM.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.thisPSM.Pli.PeptidesWithSetModifications));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
             var allRazorPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.RazorPeptides.Intersect(allPeptidesForThisFile));
@@ -459,5 +460,6 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

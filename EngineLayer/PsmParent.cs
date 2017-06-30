@@ -20,7 +20,7 @@ namespace EngineLayer
             this.Notch = notch;
             this.Score = score;
             this.ScanIndex = scanIndex;
-            this.FileName = scan.FileNameWithoutExtension;
+            this.FullFilePath = scan.FullFilePath;
             this.ScanNumber = scan.TheScan.OneBasedScanNumber;
             this.PrecursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
             this.ScanRetentionTime = scan.TheScan.RetentionTime;
@@ -48,7 +48,7 @@ namespace EngineLayer
         public int ScanPrecursorCharge { get; }
         public IMzPeak ScanPrecursorMonoisotopicPeak { get; }
         public double ScanPrecursorMass { get; }
-        public string FileName { get; }
+        public string FullFilePath { get; }
         public int ScanIndex { get; }
         public int NumAmbiguous { get; set; }
         public ProteinLinkedInfo Pli { get; private set; }
@@ -156,7 +156,7 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
 
-            sb.Append(Path.GetFileNameWithoutExtension(FileName) + '\t');
+            sb.Append(Path.GetFileNameWithoutExtension(FullFilePath) + '\t');
             sb.Append(ScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');

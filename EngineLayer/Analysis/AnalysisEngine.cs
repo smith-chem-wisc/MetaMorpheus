@@ -1,5 +1,4 @@
-﻿using MassSpectrometry;
-using MzLibUtil;
+﻿using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Concurrent;
@@ -547,7 +546,7 @@ namespace EngineLayer.Analysis
                     }
 
                     Status("Sorting and grouping psms..", nestedIds);
-                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, string>(b.FileName, b.ScanNumber, b.Pli.FullSequence)).Select(b => b.First());
+                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, string>(b.FullFilePath, b.ScanNumber, b.Pli.FullSequence)).Select(b => b.First());
 
                     Status("Running FDR analysis...", nestedIds);
                     var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
