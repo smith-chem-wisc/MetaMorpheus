@@ -8,7 +8,6 @@ namespace Test
     [TestFixture]
     public class ModFitsTest
     {
-
         #region Public Methods
 
         [Test]
@@ -70,6 +69,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

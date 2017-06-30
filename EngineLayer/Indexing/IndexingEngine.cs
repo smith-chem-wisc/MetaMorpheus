@@ -148,7 +148,6 @@ namespace EngineLayer.Indexing
                                     else
                                         myInnerDictionary.Add(rounded, new List<int> { index });
                                 }
-                                ps.MonoisotopicMassIncludingFixedMods = (float)yyy.MonoisotopicMass;
                             }
                         }
                     }

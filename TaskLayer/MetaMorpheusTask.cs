@@ -25,7 +25,6 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
-
         #region Public Fields
 
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
@@ -227,23 +226,23 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WritePsmsToTsv(IEnumerable<PsmParent> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(NewPsmWithFdr.TabSeparatedHeader);
-                for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i]);
+                output.WriteLine(PsmParent.GetTabSeparatedHeader());
+                foreach (var heh in items)
+                    output.WriteLine(heh);
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        protected internal void WriteMzidentml(List<NewPsmWithFdr> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, MassDiffAcceptor searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WriteMzidentml(IEnumerable<PsmParent> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, MassDiffAcceptor searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
         {
-            List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.thisPSM.Pli.PeptidesWithSetModifications).Distinct().ToList();
+            List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.Pli.PeptidesWithSetModifications).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
-            List<string> filenames = items.Select(i => i.thisPSM.FullFilePath).Distinct().ToList();
+            List<string> filenames = items.Select(i => i.FullFilePath).Distinct().ToList();
 
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML.Generated.MzIdentMLType));
             var _mzid = new mzIdentML.Generated.MzIdentMLType()
@@ -325,7 +324,7 @@ namespace TaskLayer
                         new mzIdentML.Generated.SpectrumIdentificationListType()
                         {
                             id = "SIL",
-                            SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Count]
+                            SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Count()]
                         }
                     }
                 },
@@ -419,9 +418,9 @@ namespace TaskLayer
             int p_index = 0;
             Dictionary<PeptideWithSetModifications, Tuple<int, int, List<string>>> peptide_ids = new Dictionary<PeptideWithSetModifications, Tuple<int, int, List<string>>>(); //key is peptide, value is <peptide id for that peptide, peptide evidence id>
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
-            foreach (NewPsmWithFdr psm in items)
+            foreach (PsmParent psm in items)
             {
-                PeptideWithSetModifications peptide = psm.thisPSM.Pli.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
+                PeptideWithSetModifications peptide = psm.Pli.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
                 Tuple<int, int, List<string>> peptide_id;
                 //if first peptide on list hasn't been added, add peptide and peptide evidence
                 if (!peptide_ids.TryGetValue(peptide, out peptide_id))
@@ -458,7 +457,7 @@ namespace TaskLayer
                         mod_id++;
                     }
 
-                    foreach (PeptideWithSetModifications peptide_evidence in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                    foreach (PeptideWithSetModifications peptide_evidence in psm.Pli.PeptidesWithSetModifications)
                     {
                         _mzid.SequenceCollection.PeptideEvidence[pe_index] = new mzIdentML.Generated.PeptideEvidenceType()
                         {
@@ -479,38 +478,38 @@ namespace TaskLayer
                 }
 
                 Tuple<int, int> scan_result_scan_item;
-                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
+                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
                 {
                     scan_result_scan_item = new Tuple<int, int>(sir_id, 0);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1] = new mzIdentML.Generated.SpectrumIdentificationResultType()
                     {
                         id = "SIR_" + scan_result_scan_item.Item1,
-                        spectraData_ref = "SD_" + spectral_ids[psm.thisPSM.FullFilePath].ToString(),
-                        spectrumID = psm.thisPSM.ScanNumber.ToString(),
+                        spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
+                        spectrumID = psm.ScanNumber.ToString(),
                         SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[500]
                     };
-                    psm_per_scan.Add(new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber), scan_result_scan_item);
+                    psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
                     sir_id++;
                 }
                 else
                 {
-                    psm_per_scan[new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
-                    scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.thisPSM.FullFilePath, psm.thisPSM.ScanNumber)];
+                    psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
+                    scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)];
                 }
-                foreach (PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                foreach (PeptideWithSetModifications p in psm.Pli.PeptidesWithSetModifications)
                 {
                     peptide_ids[p].Item3.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                 }
                 _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2] = new mzIdentML.Generated.SpectrumIdentificationItemType()
                 {
-                    chargeState = psm.thisPSM.ScanPrecursorCharge,
+                    chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
-                    experimentalMassToCharge = psm.thisPSM.ScanPrecursorMonoisotopicPeak.Mz,
-                    calculatedMassToCharge = psm.thisPSM.Pli.PeptideMonoisotopicMass.ToMz(psm.thisPSM.ScanPrecursorCharge),
-                    passThreshold = psm.QValue <= threshold,
+                    experimentalMassToCharge = psm.ScanPrecursorMonoisotopicPeak.Mz,
+                    calculatedMassToCharge = psm.Pli.PeptideMonoisotopicMass.ToMz(psm.ScanPrecursorCharge),
+                    passThreshold = psm.FdrInfo.QValue <= threshold,
                     rank = 1,
                     peptide_ref = "P_" + peptide_id.Item1,
-                    PeptideEvidenceRef = new mzIdentML.Generated.PeptideEvidenceRefType[psm.thisPSM.Pli.PeptidesWithSetModifications.Count],
+                    PeptideEvidenceRef = new mzIdentML.Generated.PeptideEvidenceRefType[psm.Pli.PeptidesWithSetModifications.Count],
                     cvParam = new mzIdentML.Generated.CVParamType[2]
                     {
                         new mzIdentML.Generated.CVParamType()
@@ -518,20 +517,20 @@ namespace TaskLayer
                             name = "Morpheus:Morpheus score",
                             cvRef = "PSI-MS",
                             accession = "MS:1002662",
-                            value = psm.thisPSM.Score.ToString()
+                            value = psm.Score.ToString()
                         },
                         new mzIdentML.Generated.CVParamType()
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
                             cvRef = "PSI-MS",
-                            value = psm.QValue.ToString()
+                            value = psm.FdrInfo.QValue.ToString()
                         }
                     }
                 };
 
                 int pe = 0;
-                foreach (PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                foreach (PeptideWithSetModifications p in psm.Pli.PeptidesWithSetModifications)
                 {
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].PeptideEvidenceRef[pe]
                         = new mzIdentML.Generated.PeptideEvidenceRefType()
@@ -959,6 +958,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

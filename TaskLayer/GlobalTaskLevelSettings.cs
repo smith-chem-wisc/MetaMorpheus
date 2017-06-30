@@ -10,7 +10,6 @@ namespace TaskLayer
 {
     public static class GlobalTaskLevelSettings
     {
-
         #region Public Constructors
 
         static GlobalTaskLevelSettings()
@@ -145,6 +144,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

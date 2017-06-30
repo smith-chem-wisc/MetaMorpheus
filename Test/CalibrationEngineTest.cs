@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public class CalibrationEngineTests
     {
-
         #region Public Methods
 
         [Test]
@@ -33,7 +32,7 @@ namespace Test
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
 
-            List<NewPsmWithFdr> identifications = new List<NewPsmWithFdr>();
+            List<PsmParent> identifications = new List<PsmParent>();
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), new MzPeak(0, 0), 2, null);
             PsmParent newPsm = new PsmClassic(pepWithSetMods, 0, 0, 0, scan);
 
@@ -43,11 +42,10 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.GetProteinLinkedInfo(matching, modsDictionary);
+            newPsm.SetProteinLinkedInfo(matching, modsDictionary);
 
-            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
-            thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
-            identifications.Add(thePsmwithfdr);
+            newPsm.SetValues(1, 0, 0, 1, 0, 0);
+            identifications.Add(newPsm);
 
             int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
             int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
@@ -78,16 +76,14 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.GetProteinLinkedInfo(matching, modsDictionary);
+            newPsm.SetProteinLinkedInfo(matching, modsDictionary);
 
-            NewPsmWithFdr thePsmwithfdr = new NewPsmWithFdr(newPsm);
-            thePsmwithfdr.SetValues(1, 0, 0, 1, 0, 0);
+            newPsm.SetValues(1, 0, 0, 1, 0, 0);
 
-            var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<NewPsmWithFdr> { thePsmwithfdr }, 3, 2, 10, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();
+            var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<PsmParent> { newPsm }, 3, 2, 10, new Tolerance(ToleranceUnit.PPM, 10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();
             Assert.IsTrue(res is CalibrationResults);
         }
 
         #endregion Public Methods
-
     }
 }

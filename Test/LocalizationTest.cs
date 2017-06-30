@@ -13,7 +13,6 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
-
         #region Public Methods
 
         [Test]
@@ -48,7 +47,7 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.GetProteinLinkedInfo(matching, modsDictionary);
+            newPsm.SetProteinLinkedInfo(matching, modsDictionary);
 
             LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance);
             f.Run();
@@ -61,6 +60,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

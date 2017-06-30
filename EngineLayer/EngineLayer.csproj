@@ -88,8 +88,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Analysis\AnalysisEngine.cs" />
-    <Compile Include="Analysis\AnalysisResults.cs" />
+    <Compile Include="Analysis\FdrAnalysisEngine.cs" />
+    <Compile Include="Analysis\FdrAnalysisResults.cs" />
     <Compile Include="Analysis\Bin.cs" />
     <Compile Include="Analysis\BinTreeStructure.cs" />
     <Compile Include="CalibrationEngine\CalibrationFunctions\CalibrationFunction.cs" />
@@ -105,6 +105,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="AllowedIntervalWithNotch.cs" />
+    <Compile Include="FdrInfo.cs" />
     <Compile Include="SearchType.cs" />
     <Compile Include="LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
@@ -138,7 +139,6 @@
     <Compile Include="MetaMorpheusEngine.cs" />
     <Compile Include="Analysis\MyInfo.cs" />
     <Compile Include="MetaMorpheusEngineResults.cs" />
-    <Compile Include="PsmWithFdr.cs" />
     <Compile Include="Analysis\OkBin.cs" />
     <Compile Include="PsmParent.cs" />
     <Compile Include="EventArgs\ProgressEventArgs.cs" />
@@ -156,6 +156,8 @@
     <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
     <Compile Include="EventArgs\StringEventArgs.cs" />
     <Compile Include="EventArgs\StringListEventArgs.cs" />
+    <Compile Include="SequencesToActualProteinPeptidesEngine.cs" />
+    <Compile Include="SequencesToActualProteinPeptidesEngineResults.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">

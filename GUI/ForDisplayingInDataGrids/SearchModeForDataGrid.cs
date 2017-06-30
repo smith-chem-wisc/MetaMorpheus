@@ -2,9 +2,8 @@
 
 namespace MetaMorpheusGUI
 {
-    class SearchModeForDataGrid
+    internal class SearchModeForDataGrid
     {
-
         #region Public Fields
 
         public readonly MassDiffAcceptor searchMode;
@@ -27,6 +26,5 @@ namespace MetaMorpheusGUI
         public string Name { get { return searchMode.FileNameAddition; } }
 
         #endregion Public Properties
-
     }
 }

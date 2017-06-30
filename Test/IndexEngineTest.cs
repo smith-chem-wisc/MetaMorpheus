@@ -10,7 +10,6 @@ namespace Test
     [TestFixture]
     public class IndexEngineTest
     {
-
         #region Public Methods
 
         [Test]
@@ -87,6 +86,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

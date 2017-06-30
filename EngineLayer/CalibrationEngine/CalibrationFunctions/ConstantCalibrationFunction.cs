@@ -7,7 +7,6 @@ namespace EngineLayer.Calibration
 {
     public class ConstantCalibrationFunction : CalibrationFunction
     {
-
         #region Public Fields
 
         public double a;
@@ -39,6 +38,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
-
     }
 }

@@ -17,7 +17,6 @@ namespace Test
     [TestFixture]
     public class MyPeptideTest
     {
-
         #region Public Methods
 
         [Test]
@@ -289,6 +288,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

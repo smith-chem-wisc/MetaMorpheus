@@ -1,41 +1,19 @@
-﻿using MzLibUtil;
-using Proteomics;
-using System;
-using System.Collections.Concurrent;
+﻿using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace EngineLayer.Analysis
 {
-    public class AnalysisEngine : MetaMorpheusEngine
+    public class FdrAnalysisEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
 
-        private const int max_mods_for_peptide = 3;
-        private readonly double binTol;
-        private readonly int maximumMissedCleavages;
-        private readonly int? minPeptideLength;
-        private readonly int? maxPeptideLength;
-        private readonly int maxModIsoforms;
         private readonly IEnumerable<PsmParent>[] newPsms;
-        private readonly List<Protein> proteinList;
-        private readonly List<ModificationWithMass> variableModifications;
-        private readonly List<ModificationWithMass> fixedModifications;
-        private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
-        private readonly Protease protease;
         private readonly List<MassDiffAcceptor> searchModes;
-        private readonly Tolerance fragmentTolerance;
-        private readonly Action<BinTreeStructure, string> writeHistogramPeaksAction;
-        private readonly Action<List<ProteinGroup>, string, List<string>> writeProteinGroupsAction;
-        private readonly Action<List<NewPsmWithFdr>, List<ProteinGroup>, MassDiffAcceptor, string, List<string>> writeMzIdentmlAction;
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
-        private readonly bool doHistogramAnalysis;
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly List<ProductType> lp;
-        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<string> nestedIds;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
@@ -43,32 +21,15 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisEngine(IEnumerable<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<MassDiffAcceptor> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<BinTreeStructure, string> action1, Action<List<NewPsmWithFdr>, string, List<string>> action2, Action<List<ProteinGroup>, string, List<string>> action3, Action<List<NewPsmWithFdr>, List<ProteinGroup>, MassDiffAcceptor, string, List<string>> action4, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, bool doHistogramAnalysis, List<ProductType> lp, double binTol, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> currentRawFileList)
+        public FdrAnalysisEngine(IEnumerable<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
-            this.doHistogramAnalysis = doHistogramAnalysis;
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
-            this.proteinList = proteinList;
-            this.variableModifications = variableModifications;
-            this.fixedModifications = fixedModifications;
-            this.protease = protease;
             this.searchModes = searchModes;
-            this.fragmentTolerance = fragmentTolerance;
-            this.writeHistogramPeaksAction = action1;
-            this.writeProteinGroupsAction = action3;
-            this.writeMzIdentmlAction = action4;
-            this.maximumMissedCleavages = maximumMissedCleavages;
-            this.minPeptideLength = minPeptideLength;
-            this.maxPeptideLength = maxPeptideLength;
-            this.maxModIsoforms = maxModIsoforms;
-            this.lp = lp;
-            this.binTol = binTol;
-            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.nestedIds = nestedIds;
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
-            this.modsDictionary = modsDictionary;
         }
 
         #endregion Public Constructors
@@ -314,22 +275,22 @@ namespace EngineLayer.Analysis
             return proteinGroups;
         }
 
-        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, List<NewPsmWithFdr> psmList)
+        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<PsmParent> psmList)
         {
             Status("Scoring protein groups...", nestedIds);
 
             // add each protein groups PSMs
-            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<NewPsmWithFdr>>();
+            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PsmParent>>();
             foreach (var psm in psmList)
             {
-                if (psm.QValue <= 0.01)
+                if (psm.FdrInfo.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
                     {
-                        var psmsForThisPeptide = new HashSet<NewPsmWithFdr>();
+                        var psmsForThisPeptide = new HashSet<PsmParent>();
 
                         if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
-                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<NewPsmWithFdr> { psm });
+                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PsmParent> { psm });
                         else
                             psmsForThisPeptide.Add(psm);
                     }
@@ -342,7 +303,7 @@ namespace EngineLayer.Analysis
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    HashSet<NewPsmWithFdr> psms;
+                    HashSet<PsmParent> psms;
                     if (peptideToPsmMatching.TryGetValue(peptide, out psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else
@@ -459,64 +420,8 @@ namespace EngineLayer.Analysis
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            AnalysisResults myAnalysisResults = new AnalysisResults(this);
+            FdrAnalysisResults myAnalysisResults = new FdrAnalysisResults(this);
             Status("Running analysis engine!", nestedIds);
-            //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-
-            #region Match Seqeunces to PeptideWithSetModifications
-
-            myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            Status("Adding observed peptides to dictionary...", nestedIds);
-            foreach (var psmListForAspecificSerchMode in newPsms)
-                if (psmListForAspecificSerchMode != null)
-                    foreach (var psm in psmListForAspecificSerchMode)
-                        if (psm != null)
-                        {
-                            var cp = psm.GetCompactPeptide(modsDictionary);
-                            if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
-                        }
-            myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            int totalProteins = proteinList.Count;
-            int proteinsSeen = 0;
-            int old_progress = 0;
-            var obj = new object();
-            Status("Adding possible sources to peptide dictionary...", nestedIds);
-            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
-            {
-                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
-                for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
-                    {
-                        if (peptideWithPossibleModifications.Length <= 1)
-                            continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
-                        {
-                            HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, modsDictionary), out v))
-                                v.Add(peptideWithSetModifications);
-                        }
-                    }
-                lock (obj)
-                {
-                    foreach (var ye in local)
-                    {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
-                            foreach (var huh in ye.Value)
-                                v.Add(huh);
-                    }
-                    proteinsSeen += fff.Item2 - fff.Item1;
-                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
-                    if (new_progress > old_progress)
-                    {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
-                        old_progress = new_progress;
-                    }
-                }
-            });
-
-            #endregion Match Seqeunces to PeptideWithSetModifications
 
             List<ProteinGroup>[] proteinGroups = null;
             if (doParsimony)
@@ -528,80 +433,56 @@ namespace EngineLayer.Analysis
                     ApplyProteinParsimony(out proteinGroups[i]);
             }
 
-            List<NewPsmWithFdr>[] allResultingIdentifications = new List<NewPsmWithFdr>[searchModes.Count];
-            List<NewPsmWithFdr>[] allResultingPeptides = new List<NewPsmWithFdr>[searchModes.Count];
             Dictionary<string, int>[] allModsSeen = new Dictionary<string, int>[searchModes.Count];
             Dictionary<string, int>[] allModsOnPeptides = new Dictionary<string, int>[searchModes.Count];
 
             for (int j = 0; j < searchModes.Count; j++)
             {
-                if (newPsms[j] != null)
+                Status("Running FDR analysis...", nestedIds);
+                DoFalseDiscoveryRateAnalysis(newPsms[j], searchModes[j]);
+
+                Status("Running modification analysis...", nestedIds);
+
+                Dictionary<string, int> modsSeen = new Dictionary<string, int>();
+                Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
+
+                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.Pli.IsDecoy).GroupBy(b => b.Pli.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
                 {
-                    Status("Computing info about actual peptides with modifications...", nestedIds);
-                    foreach (var huh in newPsms[j])
+                    var singlePeptide = highConfidencePSM.Pli.PeptidesWithSetModifications.First();
+                    var modsIdentified = singlePeptide.allModsOneIsNterminus;
+                    foreach (var modSeen in modsIdentified)
                     {
-                        if (huh != null && huh.Pli == null)
-                            huh.GetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
+                        if (modsSeen.ContainsKey(modSeen.Value.id))
+                            modsSeen[modSeen.Value.id]++;
+                        else
+                            modsSeen.Add(modSeen.Value.id, 1);
                     }
-
-                    Status("Sorting and grouping psms..", nestedIds);
-                    var orderedPsmsWithPeptides = newPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, string>(b.FullFilePath, b.ScanNumber, b.Pli.FullSequence)).Select(b => b.First());
-
-                    Status("Running FDR analysis...", nestedIds);
-                    var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, searchModes[j]);
-
-                    Status("Running modification analysis...", nestedIds);
-
-                    Dictionary<string, int> modsSeen = new Dictionary<string, int>();
-                    Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
-
-                    foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => b.QValue <= 0.01 && !b.IsDecoy).GroupBy(b => b.thisPSM.Pli.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
+                    var modsInProtein = singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein).SelectMany(b => b.Value);
+                    foreach (var modInProtein in modsInProtein)
                     {
-                        var singlePeptide = highConfidencePSM.thisPSM.Pli.PeptidesWithSetModifications.First();
-                        var modsIdentified = singlePeptide.allModsOneIsNterminus;
-                        foreach (var modSeen in modsIdentified)
-                        {
-                            if (modsSeen.ContainsKey(modSeen.Value.id))
-                                modsSeen[modSeen.Value.id]++;
-                            else
-                                modsSeen.Add(modSeen.Value.id, 1);
-                        }
-                        var modsInProtein = singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein).SelectMany(b => b.Value);
-                        foreach (var modInProtein in modsInProtein)
-                        {
-                            if (modsOnPeptides.ContainsKey(modInProtein.id))
-                                modsOnPeptides[modInProtein.id]++;
-                            else
-                                modsOnPeptides.Add(modInProtein.id, 1);
-                        }
+                        if (modsOnPeptides.ContainsKey(modInProtein.id))
+                            modsOnPeptides[modInProtein.id]++;
+                        else
+                            modsOnPeptides.Add(modInProtein.id, 1);
                     }
-                    allModsSeen[j] = modsSeen;
-                    allModsOnPeptides[j] = modsOnPeptides;
+                }
+                allModsSeen[j] = modsSeen;
+                allModsOnPeptides[j] = modsOnPeptides;
 
-                    if (!doParsimony && writeMzIdentmlAction != null) writeMzIdentmlAction.Invoke(orderedPsmsWithFDR, null, searchModes[j], searchModes[j].FileNameAddition, nestedIds);
+                //if (!doParsimony && writeMzIdentmlAction != null)
+                //    writeMzIdentmlAction.Invoke(newPsms[j], null, searchModes[j], searchModes[j].FileNameAddition, nestedIds);
 
-                    Status("Running FDR analysis on unique peptides...", nestedIds);
-                    var peptidesWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()), searchModes[j]);
+                // write aggregate results
+                if (doParsimony)
+                {
+                    ScoreProteinGroups(proteinGroups[j], newPsms[j]);
+                    proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
 
-                    myAnalysisResults.AddText("Unique peptides within 1% FDR: " + peptidesWithFDR.Count(a => a.QValue <= .01 && a.IsDecoy == false));
-
-                    // write aggregate results
-                    if (doParsimony)
-                    {
-                        ScoreProteinGroups(proteinGroups[j], orderedPsmsWithFDR);
-                        proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
-
-                        writeProteinGroupsAction(proteinGroups[j], "allProteinGroups_" + searchModes[j].FileNameAddition, nestedIds);
-                        writeMzIdentmlAction(orderedPsmsWithFDR, proteinGroups[j], searchModes[j], searchModes[j].FileNameAddition, nestedIds);
-                    }
-
-                    allResultingIdentifications[j] = orderedPsmsWithFDR;
-                    allResultingPeptides[j] = peptidesWithFDR;
+                    //writeProteinGroupsAction(proteinGroups[j], "allProteinGroups_" + searchModes[j].FileNameAddition, nestedIds);
+                    //writeMzIdentmlAction(newPsms[j], proteinGroups[j], searchModes[j], searchModes[j].FileNameAddition, nestedIds);
                 }
             }
 
-            myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
-            myAnalysisResults.allResultingPeptides = allResultingPeptides;
             myAnalysisResults.ProteinGroups = proteinGroups;
             myAnalysisResults.allModsSeen = allModsSeen;
             myAnalysisResults.allModsOnPeptides = allModsOnPeptides;
@@ -612,11 +493,11 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<NewPsmWithFdr> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, MassDiffAcceptor sm)
+        private static List<PsmParent> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, MassDiffAcceptor sm)
         {
-            var ids = new List<NewPsmWithFdr>();
+            var ids = new List<PsmParent>();
             foreach (PsmParent item in items)
-                ids.Add(new NewPsmWithFdr(item));
+                ids.Add(item);
 
             int cumulative_target = 0;
             int cumulative_decoy = 0;
@@ -627,8 +508,8 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < ids.Count; i++)
             {
                 var item = ids[i];
-                var isDecoy = item.IsDecoy;
-                int notch = item.thisPSM.Notch;
+                var isDecoy = item.Pli.IsDecoy;
+                int notch = item.Notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -651,17 +532,17 @@ namespace EngineLayer.Analysis
 
             for (int i = ids.Count - 1; i >= 0; i--)
             {
-                NewPsmWithFdr id = ids[i];
-                if (id.QValue > min_q_value)
-                    id.QValue = min_q_value;
-                else if (id.QValue < min_q_value)
-                    min_q_value = id.QValue;
+                PsmParent id = ids[i];
+                if (id.FdrInfo.QValue > min_q_value)
+                    id.FdrInfo.QValue = min_q_value;
+                else if (id.FdrInfo.QValue < min_q_value)
+                    min_q_value = id.FdrInfo.QValue;
 
-                int notch = id.thisPSM.Notch;
-                if (id.QValueNotch > min_q_value_notch[notch])
-                    id.QValueNotch = min_q_value_notch[notch];
-                else if (id.QValueNotch < min_q_value_notch[notch])
-                    min_q_value_notch[notch] = id.QValueNotch;
+                int notch = id.Notch;
+                if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
+                    id.FdrInfo.QValueNotch = min_q_value_notch[notch];
+                else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])
+                    min_q_value_notch[notch] = id.FdrInfo.QValueNotch;
             }
 
             return ids;

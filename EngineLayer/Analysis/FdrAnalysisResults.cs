@@ -5,12 +5,11 @@ using System.Text;
 
 namespace EngineLayer.Analysis
 {
-    public class AnalysisResults : MetaMorpheusEngineResults
+    public class FdrAnalysisResults : MetaMorpheusEngineResults
     {
-
         #region Public Fields
 
-        public List<NewPsmWithFdr>[] allResultingPeptides;
+        public List<PsmParent>[] allResultingPeptides;
 
         #endregion Public Fields
 
@@ -23,7 +22,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public AnalysisResults(AnalysisEngine s) : base(s)
+        public FdrAnalysisResults(FdrAnalysisEngine s) : base(s)
         {
         }
 
@@ -31,7 +30,6 @@ namespace EngineLayer.Analysis
 
         #region Public Properties
 
-        public List<NewPsmWithFdr>[] AllResultingIdentifications { get; set; }
         public List<ProteinGroup>[] ProteinGroups { get; set; }
 
         #endregion Public Properties
@@ -42,7 +40,7 @@ namespace EngineLayer.Analysis
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.QValue <= 0.01))));
+            //sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.FdrInfo.QValue <= 0.01))));
 
             if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
             {
@@ -73,6 +71,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Public Methods
-
     }
 }

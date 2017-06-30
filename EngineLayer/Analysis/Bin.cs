@@ -6,7 +6,6 @@ namespace EngineLayer.Analysis
 {
     public class Bin
     {
-
         #region Public Fields
 
         public string UnimodId = "-";
@@ -21,7 +20,7 @@ namespace EngineLayer.Analysis
         public int pepClocCount;
         public int protNlocCount;
         public int protClocCount;
-        public Dictionary<string, Tuple<string, string, NewPsmWithFdr>> uniquePSMs;
+        public Dictionary<string, Tuple<string, string, PsmParent>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
         #endregion Public Fields
@@ -31,7 +30,7 @@ namespace EngineLayer.Analysis
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, NewPsmWithFdr>>();
+            uniquePSMs = new Dictionary<string, Tuple<string, string, PsmParent>>();
         }
 
         #endregion Public Constructors
@@ -52,7 +51,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => b.Item3.IsDecoy);
+                return uniquePSMs.Values.Count(b => b.Item3.Pli.IsDecoy);
             }
         }
 
@@ -68,7 +67,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.Pli.LocalizedScores.Max() >= b.Item3.thisPSM.Score + 1);
+                return uniquePSMs.Values.Count(b => !b.Item3.Pli.IsDecoy && b.Item3.Pli.LocalizedScores.Max() >= b.Item3.Score + 1);
             }
         }
 
@@ -91,19 +90,18 @@ namespace EngineLayer.Analysis
 
         #region Internal Methods
 
-        internal void Add(NewPsmWithFdr ok)
+        internal void Add(PsmParent ok)
         {
-            if (uniquePSMs.ContainsKey(ok.thisPSM.Pli.FullSequence))
+            if (uniquePSMs.ContainsKey(ok.Pli.FullSequence))
             {
-                var current = uniquePSMs[ok.thisPSM.Pli.FullSequence];
-                if (current.Item3.thisPSM.Score < ok.thisPSM.Score)
-                    uniquePSMs[ok.thisPSM.Pli.FullSequence] = new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.Pli.BaseSequence, ok.thisPSM.Pli.FullSequence, ok);
+                var current = uniquePSMs[ok.Pli.FullSequence];
+                if (current.Item3.Score < ok.Score)
+                    uniquePSMs[ok.Pli.FullSequence] = new Tuple<string, string, PsmParent>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok);
             }
             else
-                uniquePSMs.Add(ok.thisPSM.Pli.FullSequence, new Tuple<string, string, NewPsmWithFdr>(ok.thisPSM.Pli.BaseSequence, ok.thisPSM.Pli.FullSequence, ok));
+                uniquePSMs.Add(ok.Pli.FullSequence, new Tuple<string, string, PsmParent>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok));
         }
 
         #endregion Internal Methods
-
     }
 }

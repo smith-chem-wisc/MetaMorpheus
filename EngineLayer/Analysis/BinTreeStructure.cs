@@ -9,7 +9,6 @@ namespace EngineLayer.Analysis
 {
     public class BinTreeStructure
     {
-
         #region Private Fields
 
         private const int minAdditionalPsmsInBin = 1;
@@ -22,11 +21,11 @@ namespace EngineLayer.Analysis
 
         #endregion Public Properties
 
-        #region Internal Methods
+        #region Public Methods
 
-        public void GenerateBins(List<NewPsmWithFdr> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<PsmParent> targetAndDecoyMatches, double dc)
         {
-            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.thisPSM.ScanPrecursorMass - b.thisPSM.Pli.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
+            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
 
@@ -98,7 +97,7 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in FinalBins)
-                    if (Math.Abs(targetAndDecoyMatches[i].thisPSM.ScanPrecursorMass - targetAndDecoyMatches[i].thisPSM.Pli.PeptideMonoisotopicMass - bin.MassShift) <= dc)
+                    if (Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].Pli.PeptideMonoisotopicMass - bin.MassShift) <= dc)
                         bin.Add(targetAndDecoyMatches[i]);
             }
 
@@ -124,7 +123,7 @@ namespace EngineLayer.Analysis
             IdentifyMedianLength();
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
 
         #region Private Methods
 
@@ -158,14 +157,14 @@ namespace EngineLayer.Analysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.Pli.IsDecoy))
                 {
-                    var ya = hm.Value.Item3.thisPSM.Pli.MatchedIonMassesListPositiveIsMatch;
+                    var ya = hm.Value.Item3.Pli.MatchedIonMassesListPositiveIsMatch;
                     if (ya.ContainsKey(ProductType.B)
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)
                         && ya[ProductType.Y].Any(b => b > 0)
-                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.thisPSM.Pli.PeptideMonoisotopicMass)
+                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.Pli.PeptideMonoisotopicMass)
                         bin.Overlapping++;
                 }
         }
@@ -174,9 +173,9 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in FinalBins)
             {
-                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.Pli.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.thisPSM.Pli.PeptidesWithSetModifications.Count == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.Pli.IsDecoy && b.Item3.Pli.PeptidesWithSetModifications.Count == 1) / numTarget;
             }
         }
 
@@ -184,9 +183,9 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in FinalBins)
             {
-                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.Pli.IsDecoy);
                 if (numTarget > 0)
-                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.thisPSM.Pli.BaseSequence.Length));
+                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.Pli.IsDecoy).Select(b => (double)b.Item3.Pli.BaseSequence.Length));
             }
         }
 
@@ -195,7 +194,7 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
             {
                 bin.AAsInCommon = new Dictionary<char, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.Pli.IsDecoy))
                 {
                     var chars = new HashSet<char>();
                     for (int i = 0; i < hehe.Item1.Count(); i++)
@@ -214,7 +213,7 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
             {
                 bin.modsInCommon = new Dictionary<string, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.Pli.IsDecoy))
                 {
                     int inModLevel = 0;
                     string currentMod = "";
@@ -260,25 +259,25 @@ namespace EngineLayer.Analysis
                 bin.residueCount = new Dictionary<char, int>();
                 foreach (var hehe in bin.uniquePSMs.Values)
                 {
-                    double bestScore = hehe.Item3.thisPSM.Pli.LocalizedScores.Max();
-                    if (bestScore >= hehe.Item3.thisPSM.Score + 1 && !hehe.Item3.IsDecoy)
+                    double bestScore = hehe.Item3.Pli.LocalizedScores.Max();
+                    if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.Pli.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
-                            if (bestScore - hehe.Item3.thisPSM.Pli.LocalizedScores[i] < 0.5)
+                            if (bestScore - hehe.Item3.Pli.LocalizedScores[i] < 0.5)
                                 if (bin.residueCount.ContainsKey(hehe.Item1[i]))
                                     bin.residueCount[hehe.Item1[i]]++;
                                 else
                                     bin.residueCount.Add(hehe.Item1[i], 1);
-                        if (hehe.Item3.thisPSM.Pli.LocalizedScores.Max() - hehe.Item3.thisPSM.Pli.LocalizedScores[0] < 0.5)
+                        if (hehe.Item3.Pli.LocalizedScores.Max() - hehe.Item3.Pli.LocalizedScores[0] < 0.5)
                         {
                             bin.pepNlocCount++;
-                            if (hehe.Item3.thisPSM.Pli.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                            if (hehe.Item3.Pli.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
                                 bin.protNlocCount++;
                         }
-                        if (hehe.Item3.thisPSM.Pli.LocalizedScores.Max() - hehe.Item3.thisPSM.Pli.LocalizedScores.Last() < 0.5)
+                        if (hehe.Item3.Pli.LocalizedScores.Max() - hehe.Item3.Pli.LocalizedScores.Last() < 0.5)
                         {
                             bin.pepClocCount++;
-                            if (hehe.Item3.thisPSM.Pli.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                            if (hehe.Item3.Pli.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
                                 bin.protClocCount++;
                         }
                     }
@@ -406,6 +405,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Private Methods
-
     }
 }

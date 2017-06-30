@@ -124,8 +124,6 @@ namespace TaskLayer
             {
                 newDatabases = new List<DbForTask>()
             };
-            var compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
             Status("Loading modifications...", new List<string> { taskId });
 
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -178,7 +176,7 @@ namespace TaskLayer
             Dictionary<string, Modification> um = null;
             var proteinList = currentXmlDbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
-            AnalysisResults analysisResults = null;
+            FdrAnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
 
             Status("Running G-PTM-D...", new List<string> { taskId });
@@ -211,16 +209,22 @@ namespace TaskLayer
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
 
-            analysisResults = (AnalysisResults)new AnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, Protease, searchModes, null, ProductMassTolerance,
-                (BinTreeStructure myTreeStructure, string s) => WriteTree(myTreeStructure, OutputFolder, "aggregate" + "_" + s, new List<string> { taskId }),
-                (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, "aggregate" + "_" + s, ss),
-                null,
-                (List<NewPsmWithFdr> h, List<ProteinGroup> g, MassDiffAcceptor m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, "aggregate" + "_" + s, ss),
-                false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
-                MaxModificationIsoforms, true, lp, binTolInDaltons, InitiatorMethionineBehavior,
-                new List<string> { taskId }, modsDictionary, null).Run();
 
-            var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
+            List<PsmParent>[] allPsmsTest = new List<PsmParent>[1];
+            allPsmsTest[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
+            // Group and order psms
+
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsmsTest, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
+            var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
+
+            analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsmsTest, compactPeptideToProteinPeptideMatchingTest,
+                        searchModes,
+                        false, false, false,
+                        new List<string> { taskId}).Run();
+            
+
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
 
             if (currentXmlDbFilenameList.Any(b => !b.IsContaminant))
             {

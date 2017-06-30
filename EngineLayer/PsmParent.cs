@@ -15,7 +15,7 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, double peptideMonoisotopicMass)
         {
             this.Notch = notch;
             this.Score = score;
@@ -30,6 +30,7 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
             this.QuantIntensity = new double[1];
+            this.PeptideMonoisotopicMass = peptideMonoisotopicMass;
         }
 
         #endregion Protected Constructors
@@ -52,6 +53,8 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumAmbiguous { get; set; }
         public ProteinLinkedInfo Pli { get; private set; }
+        public double PeptideMonoisotopicMass { get; internal set; }
+        public FdrInfo FdrInfo { get; set; }
 
         #endregion Public Properties
 
@@ -147,7 +150,7 @@ namespace EngineLayer
 
         public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
 
-        public void GetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        public void SetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
             Pli = new ProteinLinkedInfo(matching[GetCompactPeptide(modsDictionary)]);
         }
@@ -176,15 +179,37 @@ namespace EngineLayer
                 sb.Append((Pli.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
+            
+            sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(FdrInfo.cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(FdrInfo.cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
+            sb.Append(FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
 
             return sb.ToString();
         }
 
         #endregion Public Methods
 
+
+        public void SetValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
+        {
+
+            FdrInfo = new FdrInfo()
+            {
+                cumulativeTarget = cumulativeTarget,
+                cumulativeDecoy = cumulativeDecoy,
+                QValue = tempQValue,
+                cumulativeTargetNotch = cumulativeTargetNotch,
+                cumulativeDecoyNotch = cumulativeDecoyNotch,
+                QValueNotch = tempQValueNotch
+            };
+        }
+
         #region Internal Methods
 
-        internal static string GetTabSeparatedHeader()
+        public static string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
@@ -208,6 +233,13 @@ namespace EngineLayer
             sb.Append("Improvement Possible" + '\t');
             sb.Append("Mass Diff (Da)" + '\t');
             sb.Append("Mass Diff (ppm)");
+
+            sb.Append("Cumulative Target" + '\t');
+            sb.Append("Cumulative Decoy" + '\t');
+            sb.Append("QValue" + '\t');
+            sb.Append("Cumulative Target Notch" + '\t');
+            sb.Append("Cumulative Decoy Notch" + '\t');
+            sb.Append("QValue Notch");
 
             return sb.ToString();
         }

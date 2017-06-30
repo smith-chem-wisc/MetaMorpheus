@@ -5,7 +5,6 @@ namespace EngineLayer.Calibration
 {
     public abstract class CalibrationFunction
     {
-
         #region Internal Methods
 
         internal abstract double Predict(double[] t);
@@ -27,6 +26,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
-
     }
 }

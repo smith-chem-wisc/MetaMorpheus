@@ -18,7 +18,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
-
         #region Private Fields
 
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
@@ -376,12 +375,10 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
     {
-
         #region Private Fields
 
         private string expanderTitle;
@@ -449,6 +446,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Protected Methods
-
     }
 }

@@ -4,7 +4,6 @@ namespace MetaMorpheusGUI
 {
     internal class ProteinDbForDataGrid
     {
-
         #region Public Constructors
 
         public ProteinDbForDataGrid(string fileName)
@@ -46,6 +45,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Public Methods
-
     }
 }
