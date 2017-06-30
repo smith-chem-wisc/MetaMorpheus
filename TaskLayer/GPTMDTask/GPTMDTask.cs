@@ -217,11 +217,9 @@ namespace TaskLayer
                 (List<NewPsmWithFdr> h, string s, List<string> ss) => WritePsmsToTsv(h, OutputFolder, "aggregate" + "_" + s, ss),
                 null,
                 (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, "aggregate" + "_" + s, ss),
-                null,
-                null,
                 false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
                 MaxModificationIsoforms, true, lp, binTolInDaltons, initiatorMethionineBehavior,
-                new List<string> { taskId }, null, modsDictionary, null, null).Run();
+                new List<string> { taskId }, modsDictionary, null, null).Run();
 
             var gptmdResults = (GptmdResults)new GptmdEngine(analysisResults.AllResultingIdentifications[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
 
