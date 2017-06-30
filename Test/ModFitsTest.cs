@@ -16,7 +16,7 @@ namespace Test
         {
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("X", out motif);
-            ModificationWithMass attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            ModificationWithMass attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
 
             Protein protein = new Protein("M", null, null, null, null, null, null, null, null, false, false, null, null);
             int peptideOneBasedIndex = 1;
@@ -25,27 +25,27 @@ namespace Test
             Assert.IsTrue(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("M", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             Assert.IsTrue(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("N", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             Assert.IsFalse(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("Mx", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             Assert.IsFalse(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("Mr", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             Assert.IsFalse(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("xM", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             Assert.IsFalse(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("Nxs", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
 
             protein = new Protein("MNRS", null, null, null, null, null, null, null, null, false, false, null, null);
             peptideOneBasedIndex = 1;
@@ -54,7 +54,7 @@ namespace Test
             Assert.IsFalse(GptmdEngine.ModFits(attemptToLocalize, protein, peptideOneBasedIndex, peptideLength, proteinOneBasedIndex));
 
             ModificationMotif.TryGetMotif("Nxs", out motif);
-            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null,  null);
+            attemptToLocalize = new ModificationWithMass(null, null, motif, ModificationSites.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
 
             protein = new Protein("MNRS", null, null, null, null, null, null, null, null, false, false, null, null);
             peptideOneBasedIndex = 1;
