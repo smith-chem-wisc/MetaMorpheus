@@ -3,7 +3,6 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
-using FlashLFQ;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
@@ -179,27 +178,31 @@ namespace TaskLayer
             else
                 localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
+            #region Populate modsDictionary
+
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int i = 1;
-            foreach (var mod in variableModifications)
             {
-                modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                if (!modsDictionary.ContainsKey(mod))
+                foreach (var mod in fixedModifications)
+                    modsDictionary.Add(mod, 0);
+                int i = 1;
+                foreach (var mod in variableModifications)
+                {
                     modsDictionary.Add(mod, (ushort)i);
-                i++;
+                    i++;
+                }
+                foreach (var mod in localizeableModifications)
+                {
+                    if (!modsDictionary.ContainsKey(mod))
+                        modsDictionary.Add(mod, (ushort)i);
+                    i++;
+                }
             }
+
+            #endregion Populate modsDictionary
 
             List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count()];
             for (int j = 0; j < MassDiffAcceptors.Count; j++)
-            {
                 allPsms[j] = new List<PsmParent>();
-            }
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;
@@ -220,6 +223,8 @@ namespace TaskLayer
 
             if (SearchType == SearchType.Modern)
             {
+                #region Generate indices for modern search
+
                 Status("Getting fragment dictionary...", new List<string> { taskId });
                 var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -257,27 +262,29 @@ namespace TaskLayer
                 }
                 keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                 fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+
+                #endregion Generate indices for modern search
             }
             List<NewPsmWithFdr>[] allResultingIdentifications = null;
             List<NewPsmWithFdr>[] allResultingPeptides = null;
 
-            FlashLFQEngine FlashLfqEngine = null;
-            if (Quantify)
-            {
-                FlashLfqEngine = new FlashLFQEngine();
-                FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
+            //FlashLFQEngine FlashLfqEngine = null;
+            //if (Quantify)
+            //{
+            //    FlashLfqEngine = new FlashLFQEngine();
+            //    FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
-                if (!FlashLfqEngine.ReadPeriodicTable())
-                    throw new Exception("Quantification error - could not find periodic table file");
+            //    if (!FlashLfqEngine.ReadPeriodicTable())
+            //        throw new Exception("Quantification error - could not find periodic table file");
 
-                if (!FlashLfqEngine.ParseArgs(new string[] {
-                "--ppm " + QuantifyPpmTol,
-                "--sil true",
-                "--pau false",
-                "--mbr " + MatchBetweenRuns }
-                ))
-                    throw new Exception("Quantification error - Could not pass parameters");
-            }
+            //    if (!FlashLfqEngine.ParseArgs(new string[] {
+            //    "--ppm " + QuantifyPpmTol,
+            //    "--sil true",
+            //    "--pau false",
+            //    "--mbr " + MatchBetweenRuns }
+            //    ))
+            //        throw new Exception("Quantification error - Could not pass parameters");
+            //}
 
             // individual file analysis
             object lock1 = new object();
@@ -299,8 +306,8 @@ namespace TaskLayer
                     }
 
                     Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
-                    var intensityRatio = 4;
-                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+
+                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
                     if (SearchType == SearchType.Classic)
                     {

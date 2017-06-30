@@ -30,8 +30,7 @@ namespace Test
 
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
-            var intensityRatio = 4;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, 4, null).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
@@ -64,8 +63,7 @@ namespace Test
 
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
-            var intensityRatio = 4;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, 4, null).OrderBy(b => b.PrecursorMass).ToArray();
 
             int maximumMissedCleavages = 0;
             int? minPeptideLength = null;
@@ -122,8 +120,7 @@ namespace Test
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
-            var intensityRatio = 4;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, 4, null).OrderBy(b => b.PrecursorMass).ToArray();
 
             var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, null);
             var searchResults = (SearchResults)engine.Run();
@@ -176,8 +173,7 @@ namespace Test
             var fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
-            var intensityRatio = 4;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, 4, null).OrderBy(b => b.PrecursorMass).ToArray();
 
             var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, null);
             var searchResults = (SearchResults)engine.Run();

@@ -142,36 +142,46 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
             StartingSingleTask(taskId);
-            var paramsFileName = Path.Combine(output_folder, "prose.txt");
-            using (StreamWriter file = new StreamWriter(paramsFileName))
+
+            #region Write Prose
+
             {
-                file.WriteLine("MetaMorpheus version "
-                    + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
-                    + " is used to run a "
-                    + this.TaskType
-                    + " task on "
-                    + currentRawDataFilenameList.Count
-                    + " spectra files.");
+                var proseFilePath = Path.Combine(output_folder, "prose.txt");
+                using (StreamWriter file = new StreamWriter(proseFilePath))
+                {
+                    file.WriteLine("MetaMorpheus version "
+                        + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
+                        + " is used to run a "
+                        + this.TaskType
+                        + " task on "
+                        + currentRawDataFilenameList.Count
+                        + " spectra files.");
 
-                file.WriteLine(ToString());
+                    file.WriteLine(ToString());
 
-                file.WriteLine();
-                file.WriteLine("taskId: " + taskId);
-                file.WriteLine("Spectra files:");
-                file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
-                file.WriteLine("XML files:");
-                file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
+                    file.WriteLine();
+                    file.WriteLine("taskId: " + taskId);
+                    file.WriteLine("Spectra files:");
+                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
+                    file.WriteLine("XML files:");
+                    file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
+                }
+                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }
-            SucessfullyFinishedWritingFile(paramsFileName, new List<string> { taskId });
 
-            // TOML
-            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            #endregion Write Prose
 
-            Toml.WriteFile(this, tomlFileName, tomlConfig);
-            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
+            #region write TOML
+
+            {
+                var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+                Toml.WriteFile(this, tomlFileName, tomlConfig);
+                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
+            }
+
+            #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-
 #if !DEBUG
             try
             {

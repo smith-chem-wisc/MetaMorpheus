@@ -27,7 +27,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, bool findAllPrecursors, bool useProvidedPrecursorInfo, int intensityRatio, string fullFilePath)
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, bool findAllPrecursors, bool useProvidedPrecursorInfo, double intensityRatio, string fullFilePath)
         {
             foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
             {
