@@ -185,30 +185,29 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
-                NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Searches", origDataFile });
-                StartingDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
+                NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                Status("Loading spectra file...", new List<string> { taskId, "Individual Searches", origDataFile });
+                Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 if (Path.GetExtension(origDataFile).Equals(".mzML"))
                     myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                 else
                     myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
 
-                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Searches", origDataFile });
+                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 bool findAllPrecursors = true;
                 bool useProvidedPrecursorInfo = true;
                 var intensityRatio = 4;
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
-                var searchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Searches", origDataFile }, ConserveMemory).Run();
+                var searchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory).Run();
 
                 allPsms[0].AddRange(searchResults.Psms[0]);
 
-                FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Searches", origDataFile });
-                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches", origDataFile }));
+                FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
             }
-            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Searches" }));
-
+            ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             List<PsmParent>[] allPsmsTest = new List<PsmParent>[1];
             allPsmsTest[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
@@ -221,8 +220,7 @@ namespace TaskLayer
             analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsmsTest, compactPeptideToProteinPeptideMatchingTest,
                         searchModes,
                         false, false, false,
-                        new List<string> { taskId}).Run();
-            
+                        new List<string> { taskId }).Run();
 
             var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
 
