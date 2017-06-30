@@ -264,7 +264,7 @@ namespace TaskLayer
                     null,
                     (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + s, ss),
                     false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior,
-                    new List<string> { taskId, "Individual Searches", origDataFile }, modsDictionary, myMsDataFile, null);
+                    new List<string> { taskId, "Individual Searches", origDataFile }, modsDictionary,  null);
 
                 var analysisResults = (AnalysisResults)analysisEngine.Run();
 
@@ -317,7 +317,7 @@ namespace TaskLayer
                         (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "_" + s + "test", ss),
                         false, false, false, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
                         MaxModificationIsoforms, false, lp, double.NaN, initiatorMethionineBehavior,
-                        new List<string> { taskId, "Individual Searches", origDataFile }, modsDictionary, myMsDataFile, null);
+                        new List<string> { taskId, "Individual Searches", origDataFile }, modsDictionary,  null);
 
                     var analysisResultsTest = (AnalysisResults)analysisEngineTest.Run();
 

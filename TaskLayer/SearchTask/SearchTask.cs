@@ -320,7 +320,7 @@ namespace TaskLayer
                 (List<NewPsmWithFdr> h, List<ProteinGroup> g, SearchMode m, string s, List<string> ss) => WriteMzidentml(h, g, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, m, ProductMassTolerance, MaxMissedCleavages, OutputFolder, s, ss),
                 DoParsimony, NoOneHitWonders, ModPeptidesAreUnique, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength,
                 MaxModificationIsoforms, DoHistogramAnalysis, lp, binTolInDaltons, initiatorMethionineBehavior,
-                new List<string> { taskId }, modsDictionary, null, currentRawFileList).Run();
+                new List<string> { taskId }, modsDictionary,  currentRawFileList).Run();
 
             allResultingIdentifications = ((AnalysisResults)analysisResults).AllResultingIdentifications;
             allResultingPeptides = ((AnalysisResults)analysisResults).allResultingPeptides;
