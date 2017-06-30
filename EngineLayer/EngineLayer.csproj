@@ -112,7 +112,7 @@
     <Compile Include="GlobalEngineLevelSettings.cs" />
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
-    <Compile Include="ClassicSearch\ClassicSearchResults.cs" />
+    <Compile Include="SearchResults.cs" />
     <Compile Include="ClassicSearch\PsmClassic.cs" />
     <Compile Include="Proteomics\CleavageSpecificity.cs" />
     <Compile Include="Proteomics\CompactPeptide.cs" />
@@ -133,7 +133,6 @@
     <Compile Include="SearchModes\IntervalSearchMode.cs" />
     <Compile Include="Ms2ScanWithSpecificMass.cs" />
     <Compile Include="ModernSearch\ModernSearchEngine.cs" />
-    <Compile Include="ModernSearch\ModernSearchResults.cs" />
     <Compile Include="ModernSearch\PsmModern.cs" />
     <Compile Include="MetaMorpheusEngine.cs" />
     <Compile Include="Analysis\MyInfo.cs" />

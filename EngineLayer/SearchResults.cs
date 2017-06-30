@@ -1,22 +1,22 @@
 ﻿using System.Text;
 
-namespace EngineLayer.ModernSearch
+namespace EngineLayer
 {
-    public class ModernSearchResults : MetaMorpheusEngineResults
+    public class SearchResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors
 
-        public ModernSearchResults(PsmParent[][] newPsms, ModernSearchEngine s) : base(s)
+        public SearchResults(PsmParent[][] psms, MetaMorpheusEngine searchParams) : base(searchParams)
         {
-            this.OuterPsms = newPsms;
+            Psms = psms;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public PsmParent[][] OuterPsms { get; }
+        public PsmParent[][] Psms { get; }
 
         #endregion Public Properties
 

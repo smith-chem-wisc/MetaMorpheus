@@ -146,7 +146,7 @@ namespace EngineLayer.ModernSearch
                     }
                 }
             });
-            return new ModernSearchResults(newPsms, this);
+            return new SearchResults(newPsms, this);
         }
 
         #endregion Protected Methods
