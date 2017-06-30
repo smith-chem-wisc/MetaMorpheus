@@ -196,6 +196,10 @@ namespace TaskLayer
             }
 
             List<PsmParent>[] allPsms = new List<PsmParent>[SearchModes.Count()];
+            for (int j = 0; j < SearchModes.Count; j++)
+            {
+                allPsms[j] = new List<PsmParent>();
+            }
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;
