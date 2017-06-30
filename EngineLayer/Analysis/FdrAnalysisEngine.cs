@@ -23,7 +23,7 @@ namespace EngineLayer.Analysis
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(IEnumerable<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds)
+        public FdrAnalysisEngine(List<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;

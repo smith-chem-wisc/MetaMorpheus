@@ -127,7 +127,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            FdrAnalysisEngine ae = new FdrAnalysisEngine(new PsmParent[0][], dictionary, null, true, true, true, null);
+            FdrAnalysisEngine ae = new FdrAnalysisEngine(new List<PsmParent>[0], dictionary, null, true, true, true, null);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -419,7 +419,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(new PsmParent[0][], compactPeptideToProteinPeptideMatching, null, true, true, true, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(new List<PsmParent>[0], compactPeptideToProteinPeptideMatching, null, true, true, true, new List<string> { "ff" });
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             proteinGroups = engine.ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(), peptideList);
 
@@ -437,7 +437,7 @@ namespace Test
             {
                 FdrInfo = new FdrInfo()
             };
-            var match3= new PsmClassic(peptideList.ElementAt(1), 0, 10, 0, ms2scan)
+            var match3 = new PsmClassic(peptideList.ElementAt(1), 0, 10, 0, ms2scan)
             {
                 FdrInfo = new FdrInfo()
             };

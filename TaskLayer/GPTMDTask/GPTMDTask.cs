@@ -222,7 +222,7 @@ namespace TaskLayer
                         false, false, false,
                         new List<string> { taskId }).Run();
 
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsmsTest[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
 
             if (currentXmlDbFilenameList.Any(b => !b.IsContaminant))
             {
