@@ -192,29 +192,7 @@ namespace TaskLayer
 #endif
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> localizeableModifications;
-            if (LocalizeAll)
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
-            else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int i = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                if (!modsDictionary.ContainsKey(mod))
-                    modsDictionary.Add(mod, (ushort)i);
-                i++;
-            }
-            RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId, variableModifications, fixedModifications, localizeableModifications, modsDictionary);
+            RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
             stopWatch.Stop();
             myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
@@ -837,7 +815,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Dictionary<ModificationWithMass, ushort> modsDictionary);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId);
 
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds)
         {

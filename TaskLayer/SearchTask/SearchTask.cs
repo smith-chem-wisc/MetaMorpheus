@@ -160,13 +160,37 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
             myTaskResults = new MyTaskResults(this);
 
             List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count()];
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
                 allPsms[searchModeIndex] = new List<PsmParent>();
+
+            Status("Loading modifications...", new List<string> { taskId });
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> localizeableModifications;
+            if (LocalizeAll)
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            else
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
+            foreach (var mod in fixedModifications)
+                modsDictionary.Add(mod, 0);
+            int i = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                if (!modsDictionary.ContainsKey(mod))
+                    modsDictionary.Add(mod, (ushort)i);
+                i++;
+            }
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> um;
