@@ -56,6 +56,7 @@ namespace TaskLayer
             b.modificationType.Equals("Metal") ||
             b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
             ConserveMemory = false;
+            MaxDegreeOfParallelism = null;
         }
 
         #endregion Public Constructors
@@ -177,7 +178,10 @@ namespace TaskLayer
 
             object lock1 = new object();
             object lock2 = new object();
-            Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
+            ParallelOptions parallelOptions = new ParallelOptions();
+            if (MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
+            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
 

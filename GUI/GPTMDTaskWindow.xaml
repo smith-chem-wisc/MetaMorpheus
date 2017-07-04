@@ -68,6 +68,10 @@
                                 </StackPanel>
                             </Grid>
                             <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                                <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                            </StackPanel>
                         </StackPanel>
                     </Expander>
                 </GroupBox>

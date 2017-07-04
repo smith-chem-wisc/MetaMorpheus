@@ -69,6 +69,7 @@ namespace TaskLayer
             UseProvidedPrecursorInfo = true;
 
             ConserveMemory = false;
+            MaxDegreeOfParallelism = null;
         }
 
         #endregion Public Constructors
@@ -257,7 +258,10 @@ namespace TaskLayer
             object lock1 = new object();
             object lock2 = new object();
             Status("Searching files...", new List<string> { taskId });
-            Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
+            ParallelOptions parallelOptions = new ParallelOptions();
+            if (MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
+            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });

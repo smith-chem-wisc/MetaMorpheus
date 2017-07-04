@@ -45,7 +45,7 @@ namespace TaskLayer
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
-            MaxDegreeOfParallelism = -1;
+            MaxDegreeOfParallelism = null;
             ConserveMemory = false;
         }
 
@@ -77,7 +77,6 @@ namespace TaskLayer
         public bool CIons { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
-        public int MaxDegreeOfParallelism { get; set; }
         public bool NonLinearCalibration { get; set; }
 
         #endregion Public Properties
@@ -213,10 +212,9 @@ namespace TaskLayer
             }
 
             object lock1 = new object();
-            ParallelOptions parallelOptions = new ParallelOptions()
-            {
-                MaxDegreeOfParallelism = MaxDegreeOfParallelism
-            };
+            ParallelOptions parallelOptions = new ParallelOptions();
+            if (MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
             Status("Calibrating...", new List<string> { taskId });
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
