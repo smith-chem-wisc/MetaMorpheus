@@ -169,7 +169,10 @@ namespace TaskLayer
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
                 allPsms[searchModeIndex] = new List<PsmParent>();
 
-            Status("Loading modifications...", new List<string> { taskId });
+            Status("Loading modifications...", taskId);
+
+            #region Load modifications
+
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
@@ -193,29 +196,31 @@ namespace TaskLayer
                 i++;
             }
 
+            #endregion Load modifications
+
             Status("Loading proteins...", new List<string> { taskId });
-            Dictionary<string, Modification> um;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, SearchDecoy, localizeableModifications, b.IsContaminant, out um)).ToList();
+            Dictionary<string, Modification> unknownModifications;
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+
+            List<ProductType> ionTypes = new List<ProductType>();
+            if (BIons)
+                ionTypes.Add(ProductType.B);
+            if (YIons)
+                ionTypes.Add(ProductType.Y);
+            if (ZdotIons)
+                ionTypes.Add(ProductType.Zdot);
+            if (CIons)
+                ionTypes.Add(ProductType.C);
 
             List<CompactPeptide> peptideIndex = null;
             float[] keys = null;
             List<int>[] fragmentIndex = null;
-            List<ProductType> lp = new List<ProductType>();
-            if (BIons)
-                lp.Add(ProductType.B);
-            if (YIons)
-                lp.Add(ProductType.Y);
-            if (ZdotIons)
-                lp.Add(ProductType.Zdot);
-            if (CIons)
-                lp.Add(ProductType.C);
-
             if (SearchType == SearchType.Modern)
             {
                 #region Generate indices for modern search
 
                 Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId });
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
                 Dictionary<float, List<int>> fragmentIndexDict;
@@ -257,48 +262,53 @@ namespace TaskLayer
 
             object lock1 = new object();
             object lock2 = new object();
-            Status("Searching files...", new List<string> { taskId });
+            Status("Searching files...", taskId);
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
+            double completedFiles = 0;
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
+                    NewCollection(Path.GetFileName(origDataFile), thisId);
 
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                     lock (lock1) // Lock because reading is sequential
                     {
-                        Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                        Status("Loading spectra file...", thisId);
                         if (Path.GetExtension(origDataFile).Equals(".mzML"))
                             myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                         else
                             myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                     }
 
-                    Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-
+                    Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
+                    Status("Starting search...", thisId);
                     SearchResults searchResults;
                     if (SearchType == SearchType.Classic)
-                        searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory).Run());
+                        searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory).Run());
                     else
-                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run()));
+                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
                     lock (lock2)
                     {
                         for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
                             allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
                     }
-                    ReportProgress(new ProgressEventArgs(100, "Done with search!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
+                    ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                    ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                 }
             );
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
+            Status("Ordering and grouping psms...", taskId);
             for (int j = 0; j < allPsms.Length; j++)
                 allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
             // Group and order psms
+            Status("Ordering and filtering psms...", taskId);
             List<ProteinGroup>[] ProteinGroups = null;
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
@@ -334,7 +344,7 @@ namespace TaskLayer
                     if (DoLocalizationAnalysis)
                     {
                         Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                        var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b.FullFilePath.Equals(origDataFile)), lp, myMsDataFile, ProductMassTolerance);
+                        var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b.FullFilePath.Equals(origDataFile)), ionTypes, myMsDataFile, ProductMassTolerance);
                         localizationEngine.Run();
                     }
 

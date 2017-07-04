@@ -148,7 +148,7 @@ namespace TaskLayer
         {
             StartingSingleTask(taskId);
 
-            #region Write Prose
+            #region Write prose
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -174,7 +174,7 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }
 
-            #endregion Write Prose
+            #endregion Write prose
 
             #region write TOML
 
@@ -923,6 +923,11 @@ namespace TaskLayer
         protected void FinishedDataFile(string v, List<string> nestedIDs)
         {
             FinishedDataFileHandler?.Invoke(this, new StringEventArgs(v, nestedIDs));
+        }
+
+        protected void Status(string v, string id)
+        {
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, new List<string> { id }));
         }
 
         protected void Status(string v, List<string> nestedIds)
