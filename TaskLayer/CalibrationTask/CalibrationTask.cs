@@ -254,10 +254,7 @@ namespace TaskLayer
                 Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
                 // Run analysis on single file results
-                var analysisEngine = new FdrAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching,
-                    searchModes,
-                    false, false, false,
-                    new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                var analysisEngine = new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 var analysisResults = (FdrAnalysisResults)analysisEngine.Run();
 
@@ -310,11 +307,7 @@ namespace TaskLayer
                     var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
                     Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
-                    var analysisEngineTest = new FdrAnalysisEngine(allPsms,
-                        compactPeptideToProteinPeptideMatching,
-                        searchModes,
-                        false, false, false,
-                        new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var analysisEngineTest = new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     var analysisResultsTest = (FdrAnalysisResults)analysisEngineTest.Run();
 

@@ -11,11 +11,11 @@ namespace EngineLayer
     public abstract class MetaMorpheusEngine
     {
 
-        #region Protected Fields
+        #region Public Fields
 
-        protected readonly List<string> nestedIds;
+        public readonly List<string> nestedIds;
 
-        #endregion Protected Fields
+        #endregion Public Fields
 
         #region Public Constructors
 

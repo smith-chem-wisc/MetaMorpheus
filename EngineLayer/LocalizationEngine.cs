@@ -63,7 +63,7 @@ namespace EngineLayer
                 ok.Pli.MatchedIonMassesListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
                 ok.Pli.LocalizedScores = localizedScores;
             }
-            return new MetaMorpheusEngineResults(this);
+            return new LocalizationEngineResults(this);
         }
 
         #endregion Protected Methods

@@ -9,6 +9,7 @@ namespace EngineLayer.Calibration
 {
     public class CalibrationResults : MetaMorpheusEngineResults
     {
+
         #region Public Fields
 
         public readonly List<Tuple<double, double>> ms1meanSds;
@@ -100,5 +101,6 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
+
     }
 }
