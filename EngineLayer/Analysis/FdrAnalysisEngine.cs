@@ -440,41 +440,10 @@ namespace EngineLayer.Analysis
                     ApplyProteinParsimony(out proteinGroups[i]);
             }
 
-            Dictionary<string, int>[] allModsSeen = new Dictionary<string, int>[searchModes.Count];
-            Dictionary<string, int>[] allModsOnPeptides = new Dictionary<string, int>[searchModes.Count];
-
             for (int j = 0; j < searchModes.Count; j++)
             {
                 Status("Running FDR analysis...", nestedIds);
                 DoFalseDiscoveryRateAnalysis(newPsms[j], searchModes[j]);
-
-                Status("Running modification analysis...", nestedIds);
-
-                Dictionary<string, int> modsSeen = new Dictionary<string, int>();
-                Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
-
-                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.Pli.IsDecoy).GroupBy(b => b.Pli.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
-                {
-                    var singlePeptide = highConfidencePSM.Pli.PeptidesWithSetModifications.First();
-                    var modsIdentified = singlePeptide.allModsOneIsNterminus;
-                    foreach (var modSeen in modsIdentified)
-                    {
-                        if (modsSeen.ContainsKey(modSeen.Value.id))
-                            modsSeen[modSeen.Value.id]++;
-                        else
-                            modsSeen.Add(modSeen.Value.id, 1);
-                    }
-                    var modsInProtein = singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein).SelectMany(b => b.Value);
-                    foreach (var modInProtein in modsInProtein)
-                    {
-                        if (modsOnPeptides.ContainsKey(modInProtein.id))
-                            modsOnPeptides[modInProtein.id]++;
-                        else
-                            modsOnPeptides.Add(modInProtein.id, 1);
-                    }
-                }
-                allModsSeen[j] = modsSeen;
-                allModsOnPeptides[j] = modsOnPeptides;
 
                 //if (!doParsimony && writeMzIdentmlAction != null)
                 //    writeMzIdentmlAction.Invoke(newPsms[j], null, searchModes[j], searchModes[j].FileNameAddition, nestedIds);
@@ -491,8 +460,6 @@ namespace EngineLayer.Analysis
             }
 
             myAnalysisResults.ProteinGroups = proteinGroups;
-            myAnalysisResults.allModsSeen = allModsSeen;
-            myAnalysisResults.allModsOnPeptides = allModsOnPeptides;
             return myAnalysisResults;
         }
 

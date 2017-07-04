@@ -7,6 +7,7 @@ namespace TaskLayer
 {
     public class MyTaskResults
     {
+
         #region Public Fields
 
         public List<string> newSpectra;
@@ -37,25 +38,33 @@ namespace TaskLayer
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine(niceText.ToString());
-            sb.AppendLine("Time to run: " + Time);
+            sb.AppendLine("Time to run task: " + Time);
             sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
-            sb.AppendLine();
-            sb.AppendLine();
-            sb.AppendLine("New files:");
-            if (newSpectra != null && newSpectra.Any())
+            if ((newSpectra != null && newSpectra.Any()) || (newDatabases != null && newDatabases.Any()))
             {
-                sb.AppendLine("New spectra: ");
                 sb.AppendLine();
-                sb.AppendLine(string.Join(Environment.NewLine + "\t", newSpectra));
+                sb.AppendLine();
+                sb.AppendLine("New files:");
+                if (newSpectra != null && newSpectra.Any())
+                {
+                    sb.AppendLine("New spectra: ");
+                    sb.AppendLine();
+                    sb.AppendLine(string.Join(Environment.NewLine + "\t", newSpectra));
+                }
+                if (newDatabases != null && newDatabases.Any())
+                {
+                    sb.AppendLine("New databases: ");
+                    sb.AppendLine(string.Join(Environment.NewLine + "\t", newDatabases.Select(b => b.FileName)).ToString());
+                }
+                sb.AppendLine();
+                sb.AppendLine();
+                sb.AppendLine("--------------------------------------------------");
             }
-            if (newDatabases != null && newDatabases.Any())
-            {
-                sb.AppendLine("New databases: ");
-                sb.AppendLine(string.Join(Environment.NewLine + "\t", newDatabases.Select(b => b.FileName)).ToString());
-            }
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine(niceText.ToString());
             sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
@@ -86,5 +95,6 @@ namespace TaskLayer
         }
 
         #endregion Internal Methods
+
     }
 }

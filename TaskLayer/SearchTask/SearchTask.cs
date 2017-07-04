@@ -298,6 +298,7 @@ namespace TaskLayer
                             allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
                     }
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                    completedFiles++;
                     ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                 }
             );
@@ -308,18 +309,20 @@ namespace TaskLayer
                 allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
             // Group and order psms
-            Status("Ordering and filtering psms...", taskId);
+            Status("Matching peptides to proteins...", taskId);
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
             Status("Running FDR analysis...", taskId);
 
-            var analysisResults = new FdrAnalysisEngine(allPsms,
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms,
                 compactPeptideToProteinPeptideMatching,
                 MassDiffAcceptors,
                 DoParsimony, NoOneHitWonders, ModPeptidesAreUnique,
                 new List<string> { taskId }).Run();
+
+            new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
 
             bool doQuantification = false;
             bool doHistogramAnalysis = true;
@@ -395,7 +398,7 @@ namespace TaskLayer
                         var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                         var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
-                        foreach (var pg in ((FdrAnalysisResults)analysisResults).ProteinGroups[j])
+                        foreach (var pg in ((FdrAnalysisResults)fdrAnalysisResults).ProteinGroups[j])
                         {
                             var subsetPg = pg.ConstructSubsetProteinGroup(fullFilePath);
                             subsetPg.Score();
