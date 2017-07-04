@@ -36,7 +36,6 @@ namespace EngineLayer.ClassicSearch
         private readonly double[] myScanPrecursorMasses;
 
         private readonly List<ProductType> lp;
-        private readonly List<string> nestedIds;
 
         private readonly bool conserveMemory;
 
@@ -44,7 +43,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory)
+        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory) : base(nestedIds)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
@@ -59,7 +58,6 @@ namespace EngineLayer.ClassicSearch
             this.searchModes = searchModes;
             this.protease = protease;
             this.lp = lp;
-            this.nestedIds = nestedIds;
             this.conserveMemory = conserveMemory;
         }
 

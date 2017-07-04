@@ -26,7 +26,7 @@ namespace Test
         {
             #region Public Constructors
 
-            public TestEngine(int level)
+            public TestEngine(int level):base(null)
             {
             }
 

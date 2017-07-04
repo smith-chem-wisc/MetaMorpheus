@@ -216,7 +216,7 @@ namespace TaskLayer
 
             allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
@@ -225,7 +225,7 @@ namespace TaskLayer
                         false, false, false,
                         new List<string> { taskId }).Run();
 
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance).Run();
+            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance, new List<string> { taskId }).Run();
 
             if (dbFilenameList.Any(b => !b.IsContaminant))
             {
