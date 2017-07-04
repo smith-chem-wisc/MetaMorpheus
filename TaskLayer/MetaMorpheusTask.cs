@@ -438,7 +438,7 @@ namespace TaskLayer
                     {
                         _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML.Generated.ModificationType()
                         {
-                            location = mod.Key,
+                            location = mod.Key - 1,
                             locationSpecified = true,
                             monoisotopicMassDelta = mod.Value.monoisotopicMass,
                             residues = new string[1] { mod.Value.motif.Motif.ToString() },
