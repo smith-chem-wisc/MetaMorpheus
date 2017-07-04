@@ -17,6 +17,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
+
         #region Private Fields
 
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
@@ -81,7 +82,7 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
-            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString(CultureInfo.InvariantCulture);
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
             zdotCheckBox.IsChecked = task.ZdotIons;
             cCheckBox.IsChecked = task.CIons;
 
@@ -245,7 +246,8 @@ namespace MetaMorpheusGUI
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
-            TheTask.MaxDegreeOfParallelism = int.Parse(maxDegreesOfParallelism.Text);
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
 
             TheTask.NonLinearCalibration = nonLinearCalibCheckBox.IsChecked.Value;
 
@@ -263,5 +265,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 }

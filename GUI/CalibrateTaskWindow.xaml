@@ -63,6 +63,10 @@
                             </StackPanel>
                         </Grid>
                         <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                            <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                        </StackPanel>
                     </StackPanel>
                 </Expander>
             </GroupBox>
@@ -160,10 +164,6 @@
             <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
                 <Expander x:Name="CalibrationExpander" Collapsed="ApmdExpander_Collapsed">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="ff" Content="Maximum Parallel Calibrations Allowed" />
-                            <TextBox x:Name="maxDegreesOfParallelism" Width="45" Text="-1" />
-                        </StackPanel>
                         <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
                     </StackPanel>
                 </Expander>

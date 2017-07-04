@@ -13,6 +13,7 @@ namespace Test
     [TestFixture]
     public class SearchEngineTests
     {
+
         #region Public Methods
 
         [Test]
@@ -189,5 +190,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }

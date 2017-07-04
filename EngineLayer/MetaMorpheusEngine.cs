@@ -11,6 +11,21 @@ namespace EngineLayer
     public abstract class MetaMorpheusEngine
     {
 
+        #region Protected Fields
+
+        protected readonly List<string> nestedIds;
+
+        #endregion Protected Fields
+
+        #region Public Constructors
+
+        public MetaMorpheusEngine(List<string> nestedIds)
+        {
+            this.nestedIds = nestedIds;
+        }
+
+        #endregion Public Constructors
+
         #region Public Events
 
         public static event EventHandler<SingleEngineEventArgs> StartingSingleEngineHander;

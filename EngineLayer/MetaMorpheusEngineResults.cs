@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace EngineLayer
@@ -13,20 +12,14 @@ namespace EngineLayer
 
         #endregion Internal Fields
 
-        #region Private Fields
-
-        private List<string> outputStrings = new List<string>();
-
-        #endregion Private Fields
-
-        #region Protected Constructors
+        #region Public Constructors
 
         public MetaMorpheusEngineResults(MetaMorpheusEngine s)
         {
             MyEngine = s;
         }
 
-        #endregion Protected Constructors
+        #endregion Public Constructors
 
         #region Protected Properties
 
@@ -40,21 +33,11 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(GetType().Name);
-            sb.AppendLine("Time to run: " + Time);
-            sb.Append(string.Join(Environment.NewLine, outputStrings));
+            sb.Append("Time to run: " + Time);
             return sb.ToString();
         }
 
         #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void AddText(string v)
-        {
-            outputStrings.Add(v);
-        }
-
-        #endregion Internal Methods
 
     }
 }

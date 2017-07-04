@@ -20,7 +20,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<PsmParent> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance)
+        public LocalizationEngine(IEnumerable<PsmParent> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;

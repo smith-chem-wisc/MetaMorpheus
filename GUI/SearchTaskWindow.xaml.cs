@@ -18,6 +18,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
+
         #region Private Fields
 
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
@@ -170,6 +171,7 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
             deconvolutePrecursors.IsChecked = task.FindAllPrecursors;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -305,6 +307,8 @@ namespace MetaMorpheusGUI
 
             TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
             TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
 
             DialogResult = true;
         }
@@ -375,10 +379,12 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
     {
+
         #region Private Fields
 
         private string expanderTitle;
@@ -446,5 +452,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Protected Methods
+
     }
 }

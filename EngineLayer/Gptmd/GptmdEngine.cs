@@ -20,7 +20,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<PsmParent> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance)
+        public GptmdEngine(List<PsmParent> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.allIdentifications = allIdentifications;
             this.gptmdModifications = gptmdModifications;

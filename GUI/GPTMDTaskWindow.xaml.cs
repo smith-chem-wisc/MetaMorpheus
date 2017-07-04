@@ -17,6 +17,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class GptmdTaskWindow : Window
     {
+
         #region Private Fields
 
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
@@ -91,6 +92,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = (int)task.PrecursorMassTolerance.Unit;
 
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
@@ -285,9 +287,13 @@ namespace MetaMorpheusGUI
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
+
             DialogResult = true;
         }
 
         #endregion Private Methods
+
     }
 }

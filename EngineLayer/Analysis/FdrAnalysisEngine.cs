@@ -16,21 +16,19 @@ namespace EngineLayer.Analysis
         private readonly bool doParsimony;
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly List<string> nestedIds;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds)
+        public FdrAnalysisEngine(List<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool doParsimony, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
         {
             this.doParsimony = doParsimony;
             this.noOneHitWonders = noOneHitWonders;
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             this.searchModes = searchModes;
-            this.nestedIds = nestedIds;
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
         }
 

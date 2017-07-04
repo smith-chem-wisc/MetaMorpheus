@@ -25,6 +25,7 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+
         #region Public Fields
 
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
@@ -86,6 +87,11 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public int? MaxDegreeOfParallelism { get; set; }
+        public bool LocalizeAll { get; set; }
+        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public MyTask TaskType { get; set; }
 
         #endregion Public Properties
@@ -142,7 +148,7 @@ namespace TaskLayer
         {
             StartingSingleTask(taskId);
 
-            #region Write Prose
+            #region Write prose
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -168,7 +174,7 @@ namespace TaskLayer
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }
 
-            #endregion Write Prose
+            #endregion Write prose
 
             #region write TOML
 
@@ -811,7 +817,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId);
 
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds)
         {
@@ -919,6 +925,11 @@ namespace TaskLayer
             FinishedDataFileHandler?.Invoke(this, new StringEventArgs(v, nestedIDs));
         }
 
+        protected void Status(string v, string id)
+        {
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, new List<string> { id }));
+        }
+
         protected void Status(string v, List<string> nestedIds)
         {
             OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
@@ -959,5 +970,6 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

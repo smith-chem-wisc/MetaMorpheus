@@ -29,7 +29,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, Dictionary<ModificationWithMass, ushort> modsDictionary, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms)
+        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, Dictionary<ModificationWithMass, ushort> modsDictionary, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
