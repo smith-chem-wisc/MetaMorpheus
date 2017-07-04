@@ -505,6 +505,7 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = psm.ScanPrecursorMonoisotopicPeak.Mz,
+                    calculatedMassToChargerSpecified = true,
                     calculatedMassToCharge = psm.Pli.PeptideMonoisotopicMass.ToMz(psm.ScanPrecursorCharge),
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     rank = 1,
