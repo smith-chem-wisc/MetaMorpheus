@@ -68,7 +68,7 @@ namespace Test
             Assert.AreEqual(1, searchResults.Psms.Length);
 
             // Two matches for this single scan! Corresponding to two co-isolated masses
-            Assert.AreEqual(2, searchResults.Psms[0].Count);
+            Assert.AreEqual(2, searchResults.Psms[0].Length);
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);

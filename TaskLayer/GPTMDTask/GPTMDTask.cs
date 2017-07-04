@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -152,7 +153,9 @@ namespace TaskLayer
 
             Status("Running G-PTM-D...", new List<string> { taskId });
 
-            for (int spectraFileIndex = 0; spectraFileIndex < numRawFiles; spectraFileIndex++)
+            object lock1 = new object();
+            object lock2 = new object();
+            Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
 
@@ -161,26 +164,32 @@ namespace TaskLayer
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-                if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                    myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
-                else
-                    myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-
+                lock (lock1) // Lock because reading is sequential
+                {
+                    if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                        myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
+                    else
+                        myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
+                }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 bool findAllPrecursors = true;
                 bool useProvidedPrecursorInfo = true;
                 var intensityRatio = 4;
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
                 var searchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory).Run();
-
-                allPsms = searchResults.Psms;
-
+                lock (lock2)
+                {
+                    allPsms[0].AddRange(searchResults.Psms[0]);
+                }
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-            }
+            });
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             // Group and order psms
+
+            for (int j = 0; j < allPsms.Length; j++)
+                allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, modsDictionary, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms);
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
