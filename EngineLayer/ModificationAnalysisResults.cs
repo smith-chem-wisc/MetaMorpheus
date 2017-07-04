@@ -28,7 +28,7 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append(base.ToString());
+            sb.AppendLine(base.ToString());
             for (int i = 0; i < AllModsOnPeptides.Length; i++)
             {
                 sb.AppendLine("Search mode " + i + " Mods seen:");

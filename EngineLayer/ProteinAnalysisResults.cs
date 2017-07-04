@@ -26,9 +26,9 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.AppendLine(base.ToString());
             if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
             {
-                sb.AppendLine();
                 var numProteinsList = new List<int>();
                 for (int i = 0; i < ProteinGroups.Length; i++)
                 {
