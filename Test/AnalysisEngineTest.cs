@@ -85,9 +85,6 @@ namespace Test
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             Action<List<PsmParent>, string, List<string>> action2 = (List<PsmParent> l, string s, List<string> sdf) => {; };
-            bool doParsimony = false;
-            bool noOneHitWonders = false;
-            bool modPepsAreUnique = false;
 
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
@@ -103,7 +100,7 @@ namespace Test
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, searchModes, doParsimony, noOneHitWonders, modPepsAreUnique, new List<string> { "ff" });
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchModes, new List<string> { "ff" });
 
             engine.Run();
         }

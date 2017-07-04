@@ -109,6 +109,8 @@
     <Compile Include="LocalizationEngineResults.cs" />
     <Compile Include="ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysisResults.cs" />
+    <Compile Include="ProteinAnalysisEngine.cs" />
+    <Compile Include="ProteinAnalysisResults.cs" />
     <Compile Include="SearchType.cs" />
     <Compile Include="LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />

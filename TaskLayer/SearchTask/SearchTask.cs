@@ -113,6 +113,7 @@ namespace TaskLayer
         public bool FindAllPrecursors { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
+        public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
 
@@ -316,17 +317,13 @@ namespace TaskLayer
 
             Status("Running FDR analysis...", taskId);
 
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms,
-                compactPeptideToProteinPeptideMatching,
-                MassDiffAcceptors,
-                DoParsimony, NoOneHitWonders, ModPeptidesAreUnique,
-                new List<string> { taskId }).Run();
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
 
             new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
 
-            bool doQuantification = false;
-            bool doHistogramAnalysis = true;
-            bool needToBackToLookAtSpectraAgain = DoLocalizationAnalysis || doQuantification;
+            var proteinAnalysisResults = (ProteinAnalysisResults)(new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
+
+            bool needToBackToLookAtSpectraAgain = DoLocalizationAnalysis || DoQuantification;
             if (needToBackToLookAtSpectraAgain)
             {
                 Status("Analyzing Spectra...", new List<string> { taskId });
@@ -345,11 +342,11 @@ namespace TaskLayer
                     if (DoLocalizationAnalysis)
                     {
                         Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                        var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b.FullFilePath.Equals(origDataFile)), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                        var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                         localizationEngine.Run();
                     }
 
-                    if (doQuantification)
+                    if (DoQuantification)
                     {
                     }
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
@@ -357,7 +354,7 @@ namespace TaskLayer
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            if (doHistogramAnalysis)
+            if (DoHistogramAnalysis)
             {
                 for (int j = 0; j < MassDiffAcceptors.Count; j++)
                 {
@@ -398,7 +395,7 @@ namespace TaskLayer
                         var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                         var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
-                        foreach (var pg in ((FdrAnalysisResults)fdrAnalysisResults).ProteinGroups[j])
+                        foreach (var pg in proteinAnalysisResults.ProteinGroups[j])
                         {
                             var subsetPg = pg.ConstructSubsetProteinGroup(fullFilePath);
                             subsetPg.Score();

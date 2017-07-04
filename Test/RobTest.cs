@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using FlashLFQ;
 using IO.MzML;
@@ -127,7 +126,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            FdrAnalysisEngine ae = new FdrAnalysisEngine(new List<PsmParent>[0], dictionary, null, true, true, true, null);
+            ProteinAnalysisEngine ae = new ProteinAnalysisEngine(new List<PsmParent>[0], dictionary, null, true, false, null);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -419,7 +418,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            FdrAnalysisEngine engine = new FdrAnalysisEngine(new List<PsmParent>[0], compactPeptideToProteinPeptideMatching, null, true, true, true, new List<string> { "ff" });
+            ProteinAnalysisEngine engine = new ProteinAnalysisEngine(new List<PsmParent>[0], compactPeptideToProteinPeptideMatching, null, true, true, new List<string> { "ff" });
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             proteinGroups = engine.ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(), peptideList);
 

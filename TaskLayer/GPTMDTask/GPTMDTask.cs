@@ -220,10 +220,7 @@ namespace TaskLayer
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
-            analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatchingTest,
-                        searchModes,
-                        false, false, false,
-                        new List<string> { taskId }).Run();
+            analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId }).Run();
 
             var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance, new List<string> { taskId }).Run();
 
