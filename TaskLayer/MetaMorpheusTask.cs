@@ -506,6 +506,7 @@ namespace TaskLayer
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = psm.ScanPrecursorMonoisotopicPeak.Mz,
                     calculatedMassToCharge = psm.Pli.PeptideMonoisotopicMass.ToMz(psm.ScanPrecursorCharge),
+                    calculatedMassToChargeSpecified = true,
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     rank = 1,
                     peptide_ref = "P_" + peptide_id.Item1,
