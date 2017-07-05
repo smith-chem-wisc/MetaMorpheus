@@ -212,8 +212,10 @@ namespace EngineLayer
             bool containsY = productTypes.Contains(ProductType.Y);
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
 
-            if (p == null)
-                ComputeFragmentMasses();
+            object lockObj = new object();
+            lock (lockObj)
+                if (p == null)
+                    ComputeFragmentMasses();
 
             if (containsAdot)
                 throw new NotImplementedException();
