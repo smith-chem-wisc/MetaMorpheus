@@ -62,14 +62,6 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
-        {
-        }
-
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
