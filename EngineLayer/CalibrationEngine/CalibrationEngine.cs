@@ -478,9 +478,9 @@ namespace EngineLayer.Calibration
 
             var scanWindowRange = ms2DataScan.ScanWindowRange;
 
-            Fragment[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).ToArray();
+            IHasChemicalFormula[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).OfType<IHasChemicalFormula>().ToArray();
 
-            foreach (IHasChemicalFormula fragment in fragmentList)
+            foreach (var fragment in fragmentList)
             {
                 bool fragmentIdentified = false;
                 bool computedIsotopologues = false;
