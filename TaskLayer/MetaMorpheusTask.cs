@@ -107,7 +107,7 @@ namespace TaskLayer
             switch (split[1])
             {
                 case "dot":
-                    ToleranceUnit tu = ToleranceUnit.PPM;
+                    ToleranceUnit tu;
                     if (split[3].ToUpperInvariant().Equals("PPM"))
                         tu = ToleranceUnit.PPM;
                     else if (split[3].ToUpperInvariant().Equals("DA"))

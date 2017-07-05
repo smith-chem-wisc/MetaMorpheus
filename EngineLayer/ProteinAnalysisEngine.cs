@@ -77,7 +77,7 @@ namespace EngineLayer
                 HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
                 if (proteinsAssociatedWithThisPeptide.Count == 1)
                 {
-                    var peptides = new HashSet<PeptideWithSetModifications>();
+                    HashSet<PeptideWithSetModifications> peptides;
                     if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out peptides))
                         proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
                     else
@@ -98,7 +98,7 @@ namespace EngineLayer
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    var peptides = new HashSet<CompactPeptide>();
+                    HashSet<CompactPeptide> peptides;
                     if (!proteinToPeptidesMatching.TryGetValue(peptide.Protein, out peptides))
                         proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<CompactPeptide>() { kvp.Key });
                     else
@@ -112,7 +112,7 @@ namespace EngineLayer
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    var proteinListHere = new HashSet<Protein>();
+                    HashSet<Protein> proteinListHere;
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
                         pepSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
@@ -293,7 +293,7 @@ namespace EngineLayer
                 {
                     foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
                     {
-                        var psmsForThisPeptide = new HashSet<PsmParent>();
+                        HashSet<PsmParent> psmsForThisPeptide;
 
                         if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
                             peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PsmParent> { psm });

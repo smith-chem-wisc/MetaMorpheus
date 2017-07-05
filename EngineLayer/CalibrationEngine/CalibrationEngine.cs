@@ -369,7 +369,7 @@ namespace EngineLayer.Calibration
 
         private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, PsmParent identification)
         {
-            var theIndex = -1;
+            int theIndex;
             if (direction == 1)
                 theIndex = ms2spectrumIndex;
             else
