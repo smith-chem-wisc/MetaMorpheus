@@ -25,9 +25,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
-        // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForGptmdTask> ModFileListInWindow = new ObservableCollection<ModListForGptmdTask>();
-
         #endregion Private Fields
 
         #region Public Constructors

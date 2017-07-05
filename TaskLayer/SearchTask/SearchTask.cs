@@ -25,7 +25,6 @@ namespace TaskLayer
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
-        private const int max_mods_for_peptide = 3;
 
         #endregion Private Fields
 

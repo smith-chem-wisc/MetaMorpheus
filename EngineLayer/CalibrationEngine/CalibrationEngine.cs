@@ -26,8 +26,8 @@ namespace EngineLayer.Calibration
         private readonly Action<List<LabeledMs1DataPoint>, string> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
         private readonly bool doForestCalibration;
-        private List<PsmParent> goodIdentifications;
-        private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly List<PsmParent> goodIdentifications;
+        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
 
         private int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;

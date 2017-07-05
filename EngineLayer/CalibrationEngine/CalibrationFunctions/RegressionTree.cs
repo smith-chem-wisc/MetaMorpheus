@@ -12,6 +12,7 @@ namespace EngineLayer.Calibration
 
         private readonly int level;
         private readonly bool[] useFeature;
+        private readonly int doNotSplitIfUnderThis;
         private RegressionTree leftTree;
         private RegressionTree rightTree;
 
@@ -19,7 +20,6 @@ namespace EngineLayer.Calibration
 
         private double bestValue;
         private int bestI = -1;
-        private int doNotSplitIfUnderThis;
 
         #endregion Private Fields
 
