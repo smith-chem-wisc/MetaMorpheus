@@ -319,7 +319,7 @@ namespace EngineLayer
                     };
                     yield return theFrag;
                 }
-                else if (residue_variable_mod.neutralLosses.Count() == 1)
+                else if (residue_variable_mod.neutralLosses.Count == 1)
                 {
                     prevMass += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLosses.First();
                     var theFrag = new MetaMorpheusFragment()

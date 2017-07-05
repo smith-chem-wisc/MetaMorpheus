@@ -7,6 +7,7 @@ namespace EngineLayer.Calibration
 {
     internal class RegressionTree : CalibrationFunction
     {
+
         #region Private Fields
 
         private readonly int level;
@@ -52,7 +53,7 @@ namespace EngineLayer.Calibration
         {
             var trainingPoints = trainingList.ToList();
             var averageOutputs = trainingPoints.Select(b => b.Label).Average();
-            if (trainingPoints.Count() < doNotSplitIfUnderThis)
+            if (trainingPoints.Count < doNotSplitIfUnderThis)
             {
                 output = averageOutputs;
                 return;
@@ -130,5 +131,6 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
+
     }
 }

@@ -291,9 +291,9 @@ namespace TaskLayer
             }};
             _mzid.SequenceCollection = new mzIdentML.Generated.SequenceCollectionType()
             {
-                Peptide = new mzIdentML.Generated.PeptideType[peptides.Count()],
-                DBSequence = new mzIdentML.Generated.DBSequenceType[proteins.Count()],
-                PeptideEvidence = new mzIdentML.Generated.PeptideEvidenceType[peptides.Count()]
+                Peptide = new mzIdentML.Generated.PeptideType[peptides.Count],
+                DBSequence = new mzIdentML.Generated.DBSequenceType[proteins.Count],
+                PeptideEvidence = new mzIdentML.Generated.PeptideEvidenceType[peptides.Count]
             };
             int protein_index = 0;
             foreach (Protein protein in proteins)
@@ -584,7 +584,7 @@ namespace TaskLayer
                                 },
                             }
                         },
-                        ModificationParams = new mzIdentML.Generated.SearchModificationType[fixedMods.Count() + variableMods.Count()],
+                        ModificationParams = new mzIdentML.Generated.SearchModificationType[fixedMods.Count + variableMods.Count],
                         Enzymes = new mzIdentML.Generated.EnzymesType()
                         {
                             Enzyme = new mzIdentML.Generated.EnzymeType[proteases.Count]

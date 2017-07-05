@@ -56,7 +56,7 @@ namespace EngineLayer
 
                             foreach (var missingProtein in missingProteins)
                             {
-                                var templatePepWithSetMod = baseseq.SelectMany(p => p.Value).Where(v => v.Protein.Equals(missingProtein)).First();
+                                var templatePepWithSetMod = baseseq.SelectMany(p => p.Value).First(v => v.Protein.Equals(missingProtein));
                                 compactPeptideToProteinPeptideMatching[compactPeptide.Key].Add(new PeptideWithSetModifications(compactPeptide.Value.First(), templatePepWithSetMod));
                             }
                         }
@@ -75,7 +75,7 @@ namespace EngineLayer
             {
                 // finds unique peptides (peptides that can belong to only one protein)
                 HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
-                if (proteinsAssociatedWithThisPeptide.Count() == 1)
+                if (proteinsAssociatedWithThisPeptide.Count == 1)
                 {
                     var peptides = new HashSet<PeptideWithSetModifications>();
                     if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out peptides))
@@ -85,11 +85,11 @@ namespace EngineLayer
                 }
 
                 // if a peptide is associated with a decoy protein, remove all target protein associations with the peptide
-                if (kvp.Value.Where(p => p.Protein.IsDecoy).Any())
+                if (kvp.Value.Any(p => p.Protein.IsDecoy))
                     kvp.Value.RemoveWhere(p => !p.Protein.IsDecoy);
 
                 // if a peptide is associated with a contaminant protein, remove all target protein associations with the peptide
-                if (kvp.Value.Where(p => p.Protein.IsContaminant).Any())
+                if (kvp.Value.Any(p => p.Protein.IsContaminant))
                     kvp.Value.RemoveWhere(p => !p.Protein.IsContaminant);
             }
 
@@ -217,7 +217,7 @@ namespace EngineLayer
 
             foreach (var group in proteinsGroupedByNumPeptides)
             {
-                var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.Where(p => p.Key == group.Key).FirstOrDefault();
+                var parsimonyProteinsWithSameNumPeptides = parsimonyProteinsGroupedByNumPeptides.FirstOrDefault(p => p.Key == group.Key);
                 var list = group.ToList();
                 if (parsimonyProteinsWithSameNumPeptides != null)
                 {
@@ -394,9 +394,9 @@ namespace EngineLayer
             if (noOneHitWonders)
             {
                 if (treatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count() > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
                 else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count() > 1).ToList();
+                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
             }
 
             // order protein groups by score
