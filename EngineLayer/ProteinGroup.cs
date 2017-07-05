@@ -8,6 +8,7 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
+
         #region Public Fields
 
         public readonly bool isDecoy;
@@ -24,7 +25,7 @@ namespace EngineLayer
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
             RazorPeptides = new HashSet<PeptideWithSetModifications>();
-            AllPsmsBelowOnePercentFDR = new HashSet<NewPsmWithFdr>();
+            AllPsmsBelowOnePercentFDR = new HashSet<PsmParent>();
             SequenceCoveragePercent = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -72,8 +73,11 @@ namespace EngineLayer
                 sb.Append("Sequence coverage" + '\t');
                 sb.Append("Sequence coverage w Mods" + '\t');
                 sb.Append("Modification Info List" + "\t");
-                for (int i = 0; i < FileNames.Count; i++)
-                    sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+                if (FileNames != null && IntensitiesByFile != null)
+                {
+                    for (int i = 0; i < FileNames.Count; i++)
+                        sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+                }
                 sb.Append("Number of PSMs" + '\t');
                 sb.Append("Summed MetaMorpheus Score" + '\t');
                 sb.Append("Decoy/Contaminant/Target" + '\t');
@@ -89,7 +93,7 @@ namespace EngineLayer
         public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
         public HashSet<PeptideWithSetModifications> RazorPeptides { get; set; }
-        public HashSet<NewPsmWithFdr> AllPsmsBelowOnePercentFDR { get; set; }
+        public HashSet<PsmParent> AllPsmsBelowOnePercentFDR { get; set; }
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
@@ -178,15 +182,18 @@ namespace EngineLayer
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
-            int numFiles = IntensitiesByFile.GetLength(0);
-            for (int i = 0; i < numFiles; i++)
+            if (IntensitiesByFile != null)
             {
-                var intensityForThisFile = IntensitiesByFile[i].Where(p => p != 0);
-                if (intensityForThisFile.Any())
-                    sb.Append(string.Join("|", IntensitiesByFile[i]));
-                else
-                    sb.Append("");
-                sb.Append("\t");
+                int numFiles = IntensitiesByFile.GetLength(0);
+                for (int i = 0; i < numFiles; i++)
+                {
+                    var intensityForThisFile = IntensitiesByFile[i].Where(p => p != 0);
+                    if (intensityForThisFile.Any())
+                        sb.Append(string.Join("|", IntensitiesByFile[i]));
+                    else
+                        sb.Append("");
+                    sb.Append("\t");
+                }
             }
 
             // number of PSMs for listed peptides
@@ -224,7 +231,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.Pli.BaseSequence).Select(p => p.Select(x => x.thisPSM.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.Pli.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
@@ -235,7 +242,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
-                foreach (var pepWithSetMods in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
                 {
                     List<PeptideWithSetModifications> temp;
                     if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
@@ -339,7 +346,7 @@ namespace EngineLayer
                                 }
                             }
                         }
-                        for (int i = 0; i < tempPepModTotals.Count(); i++)
+                        for (int i = 0; i < tempPepModTotals.Count; i++)
                         {
                             string tempString = ("#aa" + tempModIndex[i].ToString() + "[" + tempPepModValues[i].ToString() + ",info:occupancy=" + ((double)tempPepModTotals[i] / (double)tempPepTotals[i]).ToString("F2") + "(" + tempPepModTotals[i].ToString() + "/" + tempPepTotals[i].ToString() + ")" + "];");
                             tempModStrings += tempString;
@@ -361,14 +368,14 @@ namespace EngineLayer
 
         public void Quantify()
         {
-            var psmsGroupedByFilename = AllPsmsBelowOnePercentFDR.GroupBy(p => p.thisPSM.FileName).OrderBy(p => p.Key).ToList();
+            var psmsGroupedByFile = AllPsmsBelowOnePercentFDR.GroupBy(p => p.FullFilePath).OrderBy(p => p.Key).ToList();
 
             if (IntensitiesByFile == null || FileNames == null)
             {
-                FileNames = psmsGroupedByFilename.Select(p => p.Key).Distinct().ToList();
+                FileNames = psmsGroupedByFile.Select(p => p.Key).Distinct().ToList();
                 IntensitiesByFile = new double[FileNames.Count][];
 
-                int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
+                int quantType = AllPsmsBelowOnePercentFDR.First().QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
                 for (int i = 0; i < FileNames.Count; i++)
                     IntensitiesByFile[i] = new double[quantType];
             }
@@ -377,26 +384,26 @@ namespace EngineLayer
             {
                 var quantType = IntensitiesByFile[file].Length;
 
-                var thisFilesPsms = psmsGroupedByFilename.Where(p => p.Key.Equals(FileNames[file])).FirstOrDefault();
+                var thisFilesPsms = psmsGroupedByFile.FirstOrDefault(p => p.Key.Equals(FileNames[file]));
                 if (thisFilesPsms == null)
                 {
                     IntensitiesByFile[file] = new double[quantType];
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.thisPSM.Pli.BaseSequence);
-                var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.Pli.BaseSequence);
+                //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
                 {
                     var psmsForThisBaseSeq = psmGroup.ToList();
-                    var psmsToIgnore = new List<NewPsmWithFdr>();
+                    var psmsToIgnore = new List<PsmParent>();
 
                     // remove shared non-razor peptides
                     foreach (var psm in psmGroup)
                     {
-                        var uniques = psm.thisPSM.Pli.PeptidesWithSetModifications.Intersect(UniquePeptides);
-                        var razors = psm.thisPSM.Pli.PeptidesWithSetModifications.Intersect(RazorPeptides);
+                        var uniques = psm.Pli.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                        var razors = psm.Pli.PeptidesWithSetModifications.Intersect(RazorPeptides);
 
                         if (!uniques.Any() && !razors.Any())
                             psmsToIgnore.Add(psm);
@@ -404,19 +411,21 @@ namespace EngineLayer
 
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
+                    /*
                     // remove modified peptides that aren't used for quantification
                     foreach (var psm in psmsForThisBaseSeq)
                     {
-                        var unacceptableModsForThisPsm = psm.thisPSM.Pli.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
+                        var unacceptableModsForThisPsm = psm.Pli.PeptidesWithSetModifications.SelectMany(p => p.allModsOneIsNterminus.Values).Select(p => p.id).Except(acceptedModTypesForProteinQuantification);
                         if (unacceptableModsForThisPsm.Any())
                             psmsToIgnore.Add(psm);
                     }
+                    */
 
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
                     if (psmsForThisBaseSeq.Any())
                         for (int q = 0; q < quantType; q++)
-                            IntensitiesByFile[file][q] += psmsForThisBaseSeq.Select(p => p.thisPSM.QuantIntensity[q]).Max();
+                            IntensitiesByFile[file][q] += psmsForThisBaseSeq.Select(p => p.QuantIntensity[q]).Max();
                 }
             }
         }
@@ -426,17 +435,17 @@ namespace EngineLayer
             this.FileNames = fileNames;
             IntensitiesByFile = new double[FileNames.Count][];
 
-            int quantType = AllPsmsBelowOnePercentFDR.First().thisPSM.QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
+            int quantType = AllPsmsBelowOnePercentFDR.First().QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
             for (int i = 0; i < FileNames.Count; i++)
                 IntensitiesByFile[i] = new double[quantType];
 
             Quantify();
         }
 
-        public ProteinGroup ConstructSubsetProteinGroup(string fileName)
+        public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
-            var allPsmsForThisFile = new HashSet<NewPsmWithFdr>(this.AllPsmsBelowOnePercentFDR.Where(p => p.thisPSM.FileName.Equals(fileName)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.thisPSM.Pli.PeptidesWithSetModifications));
+            var allPsmsForThisFile = new HashSet<PsmParent>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.Pli.PeptidesWithSetModifications));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
             var allRazorPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.RazorPeptides.Intersect(allPeptidesForThisFile));
 
@@ -451,5 +460,6 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
     }
 }

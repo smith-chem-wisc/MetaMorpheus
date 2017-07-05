@@ -7,7 +7,6 @@ namespace EngineLayer.Calibration
 {
     internal class RandomForestCalibrationFunction : CalibrationFunction
     {
-
         #region Private Fields
 
         private readonly RegressionTree[] RegressionTrees;
@@ -60,6 +59,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
-
     }
 }

@@ -8,13 +8,13 @@ namespace EngineLayer.ModernSearch
 
         #region Private Fields
 
-        private CompactPeptide compactPeptide;
+        private readonly CompactPeptide compactPeptide;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public PsmModern(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan)
+        public PsmModern(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan, theBestPeptide.MonoisotopicMassIncludingFixedMods)
         {
             compactPeptide = theBestPeptide;
         }

@@ -25,9 +25,6 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> localizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<ModTypeForTreeView> gptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
 
-        // Always create a new one, even if updating an existing task
-        private ObservableCollection<ModListForGptmdTask> ModFileListInWindow = new ObservableCollection<ModListForGptmdTask>();
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -62,14 +59,6 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
-        {
-        }
-
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -92,6 +81,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = (int)task.PrecursorMassTolerance.Unit;
 
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
@@ -285,6 +275,9 @@ namespace MetaMorpheusGUI
 
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
 
             DialogResult = true;
         }

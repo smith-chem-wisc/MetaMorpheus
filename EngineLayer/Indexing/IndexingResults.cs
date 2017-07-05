@@ -28,7 +28,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.Append(base.ToString());
+            sb.AppendLine(base.ToString());
             sb.AppendLine("\t\tfragmentIndexDict.Count: " + FragmentIndexDict.Count);
             sb.AppendLine("\t\tpeptideIndex.Count: " + PeptideIndex.Count);
             return sb.ToString();

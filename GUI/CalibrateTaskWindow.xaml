@@ -9,7 +9,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
-                <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
+                <Expander x:Name="SearchModeExpander">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="5">
                             <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
@@ -63,11 +63,15 @@
                             </StackPanel>
                         </Grid>
                         <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                            <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                        </StackPanel>
                     </StackPanel>
                 </Expander>
             </GroupBox>
             <GroupBox Header="Modifications" DockPanel.Dock="Top">
-                <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
+                <Expander x:Name="ModExpander">
                     <Expander.Style>
                         <Style TargetType="Expander">
                             <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
@@ -158,12 +162,8 @@
                 </Expander>
             </GroupBox>
             <GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
-                <Expander x:Name="CalibrationExpander" Collapsed="ApmdExpander_Collapsed">
+                <Expander x:Name="CalibrationExpander">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <Label x:Name="ff" Content="Maximum Parallel Calibrations Allowed" />
-                            <TextBox x:Name="maxDegreesOfParallelism" Width="45" Text="-1" />
-                        </StackPanel>
                         <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
                     </StackPanel>
                 </Expander>

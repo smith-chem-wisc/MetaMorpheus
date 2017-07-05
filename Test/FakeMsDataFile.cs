@@ -7,7 +7,6 @@ namespace Test
 {
     public class FakeMsDataFile : MsDataFile<IMzmlScan>, IMsStaticDataFile<IMzmlScan>
     {
-
         #region Public Constructors
 
         public FakeMsDataFile(IMzmlScan[] FakeScans) : base(FakeScans)
@@ -33,6 +32,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

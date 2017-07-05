@@ -11,7 +11,7 @@
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 
 Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases).
-
+ 
 MetaMorpheus is a bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery capability.
 This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
 

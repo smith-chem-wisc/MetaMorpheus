@@ -2,7 +2,6 @@
 {
     public class DbForTask
     {
-
         #region Public Constructors
 
         public DbForTask(string fileName, bool isContaminant)
@@ -19,6 +18,5 @@
         public bool IsContaminant { get; }
 
         #endregion Public Properties
-
     }
 }

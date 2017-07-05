@@ -58,14 +58,6 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
-        {
-        }
-
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -82,7 +74,7 @@ namespace MetaMorpheusGUI
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
-            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString(CultureInfo.InvariantCulture);
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
             zdotCheckBox.IsChecked = task.ZdotIons;
             cCheckBox.IsChecked = task.CIons;
 
@@ -246,7 +238,8 @@ namespace MetaMorpheusGUI
             TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
 
-            TheTask.MaxDegreeOfParallelism = int.Parse(maxDegreesOfParallelism.Text);
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
 
             TheTask.NonLinearCalibration = nonLinearCalibCheckBox.IsChecked.Value;
 

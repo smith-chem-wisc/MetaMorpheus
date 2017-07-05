@@ -23,7 +23,6 @@ namespace MetaMorpheusGUI
 
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
-        private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
 
@@ -61,7 +60,7 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.newDbsHandler += AddNewDB;
             EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
             EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-           EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
             EverythingRunnerEngine.warnHandler += EverythingRunnerEngine_warnHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
@@ -190,11 +189,6 @@ namespace MetaMorpheusGUI
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
             }
-        }
-
-        private void AddFinishedFile(string filepath)
-        {
-            finishedFileObservableCollection.Add(new FinishedFileForDataGrid(filepath));
         }
 
         private void ClearRaw_Click(object sender, RoutedEventArgs e)
@@ -573,11 +567,6 @@ namespace MetaMorpheusGUI
         private void ClearXML_Click(object sender, RoutedEventArgs e)
         {
             proteinDbObservableCollection.Clear();
-        }
-
-        private void ClearOutput_Click(object sender, RoutedEventArgs e)
-        {
-            finishedFileObservableCollection.Clear();
         }
 
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)

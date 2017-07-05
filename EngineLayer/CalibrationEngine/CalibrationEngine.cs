@@ -26,9 +26,8 @@ namespace EngineLayer.Calibration
         private readonly Action<List<LabeledMs1DataPoint>, string> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
         private readonly bool doForestCalibration;
-        private readonly List<string> nestedIds;
-        private List<NewPsmWithFdr> goodIdentifications;
-        private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly List<PsmParent> goodIdentifications;
+        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
 
         private int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -43,7 +42,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<NewPsmWithFdr> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, List<string> nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<PsmParent> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, List<string> nestedIds) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.goodIdentifications = goodIdentifications;
@@ -56,7 +55,6 @@ namespace EngineLayer.Calibration
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
             this.doForestCalibration = doForestCalibration;
-            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -194,21 +192,21 @@ namespace EngineLayer.Calibration
             // Loop over identifications
             for (int matchIndex = 0; matchIndex < numIdentifications; matchIndex++)
             {
-                NewPsmWithFdr identification = goodIdentifications[matchIndex];
+                PsmParent identification = goodIdentifications[matchIndex];
 
                 // Progress
                 if (numIdentifications < 100 || matchIndex % (numIdentifications / 100) == 0)
                     ReportProgress(new ProgressEventArgs(100 * matchIndex / numIdentifications, "Looking at identifications...", nestedIds));
 
                 // Each identification has an MS2 spectrum attached to it.
-                int ms2scanNumber = identification.thisPSM.ScanNumber;
-                int peptideCharge = identification.thisPSM.ScanPrecursorCharge;
+                int ms2scanNumber = identification.ScanNumber;
+                int peptideCharge = identification.ScanPrecursorCharge;
 
-                var representativeSinglePeptide = identification.thisPSM.Pli.PeptidesWithSetModifications.First();
+                var representativeSinglePeptide = identification.Pli.PeptidesWithSetModifications.First();
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
+                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
@@ -369,9 +367,9 @@ namespace EngineLayer.Calibration
             }
         }
 
-        private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, NewPsmWithFdr identification)
+        private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, PsmParent identification)
         {
-            var theIndex = -1;
+            int theIndex;
             if (direction == 1)
                 theIndex = ms2spectrumIndex;
             else
@@ -469,22 +467,20 @@ namespace EngineLayer.Calibration
             }
         }
 
-        private IEnumerable<LabeledMs2DataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, NewPsmWithFdr identification)
+        private IEnumerable<LabeledMs2DataPoint> SearchMS2Spectrum(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> ms2DataScan, Proteomics.Peptide peptide, int peptideCharge, PsmParent identification)
         {
             numFragmentsIdentified = 0;
             // Key: mz value, Value: error
             var addedPeaks = new Dictionary<double, double>();
-
-            double IsolationMZ = ms2DataScan.IsolationMz;
 
             var countForThisMS2 = 0;
             var countForThisMS2a = 0;
 
             var scanWindowRange = ms2DataScan.ScanWindowRange;
 
-            Fragment[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).ToArray();
+            IHasChemicalFormula[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).OfType<IHasChemicalFormula>().ToArray();
 
-            foreach (IHasChemicalFormula fragment in fragmentList)
+            foreach (var fragment in fragmentList)
             {
                 bool fragmentIdentified = false;
                 bool computedIsotopologues = false;

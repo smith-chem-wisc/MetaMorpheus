@@ -22,10 +22,10 @@ namespace Test
         {
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
-            var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
             var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Proteomics.Peptide pep1 = new Proteomics.Peptide("NNNK");
@@ -62,18 +62,18 @@ namespace Test
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 4096;
             var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
-            var searchResults = (ClassicSearchResults)engine.Run();
+            var searchResults = (SearchResults)engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, searchResults.OuterPsms.Length);
+            Assert.AreEqual(1, searchResults.Psms.Length);
 
             // Two matches for this single scan! Corresponding to two co-isolated masses
-            Assert.AreEqual(2, searchResults.OuterPsms[0].Length);
+            Assert.AreEqual(2, searchResults.Psms[0].Length);
 
-            Assert.IsTrue(searchResults.OuterPsms[0][0].Score > 1);
-            Assert.AreEqual(2, searchResults.OuterPsms[0][0].ScanNumber);
-            Assert.AreEqual("NNNK", (searchResults.OuterPsms[0][0] as PsmClassic).ps.BaseSequence);
-            Assert.AreEqual("NDNK", (searchResults.OuterPsms[0][1] as PsmClassic).ps.BaseSequence);
+            Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
+            Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
+            Assert.AreEqual("NNNK", (searchResults.Psms[0][0] as PsmClassic).ps.BaseSequence);
+            Assert.AreEqual("NDNK", (searchResults.Psms[0][1] as PsmClassic).ps.BaseSequence);
         }
 
         #endregion Public Methods

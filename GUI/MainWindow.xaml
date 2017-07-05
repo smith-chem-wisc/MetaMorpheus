@@ -26,9 +26,9 @@
             </Grid.ColumnDefinitions>
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" MinHeight="100"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="2*" MinHeight="100"/>
+                    <RowDefinition Height="1*" MinHeight="100" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="2*" MinHeight="100" />
                 </Grid.RowDefinitions>
                 <GroupBox Header="Protein Databases" Name="proteinDatabasesGroupBox">
                     <Grid>
@@ -53,8 +53,7 @@
                         VerticalAlignment="Center"
                         HorizontalAlignment="Stretch"
                         Background="Silver"
-                        Height="5"
-                        />
+                        Height="5" />
                 <GroupBox Header="Datafiles" Grid.Row="2"  Name="datafilesGroupBox">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -111,13 +110,12 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Stretch"
                         Background="Silver"
-                        Width="5"
-                        />
+                        Width="5" />
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="2*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
                 <GroupBox Header="Tasks" Name="tasksGroupBox">
                     <Grid>
@@ -138,7 +136,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="T " />
                                         <TextBlock Text="{Binding DisplayName}" />
-                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"/>
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
@@ -146,7 +144,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="C " />
                                         <TextBlock Text="{Binding DisplayName}" />
-                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100"/>
+                                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" />
                                         <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </HierarchicalDataTemplate>
@@ -170,15 +168,14 @@
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3"/>
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3" />
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Stretch"
                         Background="Silver"
-                        Height="5"
-                        />
+                        Height="5" />
                 <GroupBox Header="Warnings" Grid.Row="2">
                     <RichTextBox x:Name="outRichTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True">
                         <RichTextBox.Resources>

@@ -5,7 +5,6 @@ namespace EngineLayer.Calibration
 {
     public class IdentityCalibrationFunction : CalibrationFunction
     {
-
         #region Public Methods
 
         public override string ToString()
@@ -29,6 +28,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
-
     }
 }

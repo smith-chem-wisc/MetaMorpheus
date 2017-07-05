@@ -7,7 +7,6 @@ namespace Test
     [TestFixture]
     public class MyEngineTest
     {
-
         #region Public Methods
 
         [Test]
@@ -25,10 +24,9 @@ namespace Test
 
         private class TestEngine : MetaMorpheusEngine
         {
-
             #region Public Constructors
 
-            public TestEngine(int level)
+            public TestEngine(int level):base(null)
             {
             }
 
@@ -47,7 +45,6 @@ namespace Test
 
             private class TestResults : MetaMorpheusEngineResults
             {
-
                 #region Public Constructors
 
                 public TestResults(MetaMorpheusEngine e) : base(e)
@@ -67,14 +64,11 @@ namespace Test
                 }
 
                 #endregion Public Methods
-
             }
 
             #endregion Private Classes
-
         }
 
         #endregion Private Classes
-
     }
 }

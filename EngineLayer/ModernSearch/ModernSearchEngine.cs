@@ -25,14 +25,13 @@ namespace EngineLayer.ModernSearch
 
         private readonly List<CompactPeptide> peptideIndex;
 
-        private readonly List<SearchMode> searchModes;
-        private readonly List<string> nestedIds;
+        private readonly List<MassDiffAcceptor> searchModes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<SearchMode> searchModes, List<string> nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
@@ -40,7 +39,6 @@ namespace EngineLayer.ModernSearch
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
-            this.nestedIds = nestedIds;
         }
 
         #endregion Public Constructors
@@ -130,9 +128,7 @@ namespace EngineLayer.ModernSearch
                     {
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
-                        {
                             newPsms[j][i] = new PsmModern(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
-                        }
                     }
                 }
                 lock (outputObject)
@@ -146,7 +142,7 @@ namespace EngineLayer.ModernSearch
                     }
                 }
             });
-            return new ModernSearchResults(newPsms, this);
+            return new SearchResults(newPsms, this);
         }
 
         #endregion Protected Methods
@@ -183,7 +179,7 @@ namespace EngineLayer.ModernSearch
             {
                 var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
-                float closestPeak = float.NaN;
+                float closestPeak;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
                     ipos = ~ipos;

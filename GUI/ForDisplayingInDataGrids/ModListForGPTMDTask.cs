@@ -2,7 +2,6 @@
 {
     internal class ModListForGptmdTask
     {
-
         #region Public Constructors
 
         public ModListForGptmdTask(string filePath)
@@ -22,6 +21,5 @@
         public string FileName { get; }
 
         #endregion Public Properties
-
     }
 }

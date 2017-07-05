@@ -146,13 +146,13 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            classicSearchRadioButton.IsChecked = task.ClassicSearch;
-            modernSearchRadioButton.IsChecked = !task.ClassicSearch;
+            classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
+            modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.Quantify;
+            checkBoxMatchBetweenRuns.IsChecked = task.MatchBetweenRuns;
             modPepsAreUnique.IsChecked = task.ModPeptidesAreUnique;
-            quantRtTolerance.Text = task.QuantifyRtTol.ToString(CultureInfo.InvariantCulture);
             quantPpmTolerance.Text = task.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
@@ -171,6 +171,7 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
             deconvolutePrecursors.IsChecked = task.FindAllPrecursors;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -244,7 +245,7 @@ namespace MetaMorpheusGUI
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
 
-            foreach (var cool in task.SearchModes)
+            foreach (var cool in task.MassDiffAcceptors)
                 SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
 
             writePrunedDatabaseCheckBox.IsChecked = task.WritePrunedDatabase;
@@ -260,12 +261,12 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
+            TheTask.SearchType = classicSearchRadioButton.IsChecked.Value ? SearchType.Classic : SearchType.Modern;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.Quantify = checkBoxQuantification.IsChecked.Value;
+            TheTask.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
-            TheTask.QuantifyRtTol = double.Parse(quantRtTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
@@ -301,11 +302,13 @@ namespace MetaMorpheusGUI
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
+            TheTask.MassDiffAcceptors = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
             TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
 
             DialogResult = true;
         }
@@ -337,42 +340,6 @@ namespace MetaMorpheusGUI
             //    + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
             dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
-        }
-
-        private void writePrunedDatabaseCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                //modificationsDataGrid.Columns[3].Visibility = Visibility.Visible;
-            }
-            catch { }
-        }
-
-        private void writePrunedDatabaseCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                //modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
-            }
-            catch { }
-        }
-
-        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void modificationsDataGrid_Loaded(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void modificationsDataGrid_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-        }
-
-        private void modificationsDataGrid_AutoGeneratedColumns(object sender, EventArgs e)
-        {
-            //if (!TheTask.WritePrunedDatabase)
-            //    modificationsDataGrid.Columns[3].Visibility = Visibility.Collapsed;
         }
 
         #endregion Private Methods

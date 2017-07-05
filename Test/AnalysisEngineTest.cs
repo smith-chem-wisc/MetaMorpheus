@@ -40,11 +40,9 @@ namespace Test
                 i++;
             }
 
-            PsmParent[][] newPsms = new PsmParent[1][];
+            List<PsmParent>[] newPsms = new List<PsmParent>[1];
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession", null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
@@ -80,25 +78,13 @@ namespace Test
             PsmParent matchB = new PsmClassic(value2.First(), 0, 0, 0, scanB);
             PsmParent matchC = new PsmClassic(value3.First(), 0, 0, 0, scanC);
 
-            newPsms[0] = new PsmParent[] { matchA, matchB, matchC };
-
-            compactPeptideToProteinPeptideMatching.Add(compactPeptide1, value1);
-            compactPeptideToProteinPeptideMatching.Add(compactPeptide2, value2);
-            compactPeptideToProteinPeptideMatching.Add(compactPeptide3, value3);
+            newPsms[0] = new List<PsmParent> { matchA, matchB, matchC };
 
             Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
-            var searchModes = new List<SearchMode> { new SinglePpmAroundZeroSearchMode(5) };
-            Action<List<ProteinGroup>, string, List<string>> action3 = null;
-            Action<List<NewPsmWithFdr>, string, List<string>> action2 = (List<NewPsmWithFdr> l, string s, List<string> sdf) => {; };
-            Action<List<NewPsmWithFdr>, List<ProteinGroup>, SearchMode, string, List<string>> action4 = null;
-            bool doParsimony = false;
-            bool noOneHitWonders = false;
-            bool modPepsAreUnique = false;
-            bool quant = false;
-            double quantRtTol = 0;
-            double quantPpmTol = 0;
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            Action<List<PsmParent>, string, List<string>> action2 = (List<PsmParent> l, string s, List<string> sdf) => {; };
 
             bool useProvidedPrecursorInfo = true;
             bool findAllPrecursors = true;
@@ -110,7 +96,11 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            AnalysisEngine engine = new AnalysisEngine(newPsms, compactPeptideToProteinPeptideMatching, proteinList, variableModifications, fixedModifications, protease, searchModes, arrayOfMs2ScansSortedByMass, fragmentTolerance, action1, action2, action3, action4, doParsimony, noOneHitWonders, modPepsAreUnique, 2, null, null, 4096, true, new List<ProductType> { ProductType.B, ProductType.Y }, 0.003, InitiatorMethionineBehavior.Variable, new List<string> { "ff" }, quant, quantRtTol, quantPpmTol, modsDictionary, myMsDataFile);
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, modsDictionary, proteinList, searchModes, protease, 2, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 1024, null);
+            var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+            var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+
+            FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchModes, new List<string> { "ff" });
 
             engine.Run();
         }

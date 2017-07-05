@@ -13,22 +13,14 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
-
         #region Public Methods
 
         [Test]
         public static void TestLocalization()
         {
-            Dictionary<int, List<Modification>> oneBasedPossibleLocalizedModifications = new Dictionary<int, List<Modification>>();
-            string accession = null;
-            int?[] beginPositions = null;
-            int?[] endPositions = null;
-            string[] bigPeptideTypes = null;
-            string name = null;
-            string fullName = null;
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            Protein parentProteinForMatch = new Protein("MEK", accession, null, oneBasedPossibleLocalizedModifications, beginPositions, endPositions, bigPeptideTypes, name, fullName, false, false, null);
+            Protein parentProteinForMatch = new Protein("MEK", null);
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("E", out motif);
@@ -55,7 +47,11 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.ComputeProteinLevelInfo(matching, fragmentTolerance, scan, lp, modsDictionary);
+            newPsm.SetProteinLinkedInfo(matching, modsDictionary);
+
+            LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
+            f.Run();
+
             // Was single peak!!!
             Assert.AreEqual(0, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
             Assert.AreEqual(1, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
@@ -64,6 +60,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

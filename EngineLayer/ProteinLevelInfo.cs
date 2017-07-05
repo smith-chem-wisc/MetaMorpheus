@@ -1,47 +1,22 @@
-﻿using MzLibUtil;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace EngineLayer
 {
-    public class ProteinLevelInfo
+    public class ProteinLinkedInfo
     {
 
         #region Public Constructors
 
-        public ProteinLevelInfo(HashSet<PeptideWithSetModifications> hashSet, Tolerance fragmentTolerance, Ms2ScanWithSpecificMass theScan, List<ProductType> lp)
+        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet)
         {
             PeptidesWithSetModifications = hashSet;
             IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);
             IsContaminant = PeptidesWithSetModifications.Any(bb => bb.Protein.IsContaminant);
             var representative = PeptidesWithSetModifications.First();
-            var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
-            foreach (var huh in lp)
-            {
-                var df = representative.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
-                Array.Sort(df);
-                double[] matchedIonMassesListPositiveIsMatch = new double[df.Length];
-                PsmParent.MatchIons(theScan.TheScan, fragmentTolerance, df, matchedIonMassesListPositiveIsMatch);
-                MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
-            }
 
-            var localizedScores = new List<double>();
-            for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
-            {
-                PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, theScan.PrecursorMass - representative.MonoisotopicMass);
-
-                var gg = localizedPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                Array.Sort(gg);
-                double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                var score = PsmParent.MatchIons(theScan.TheScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch);
-                localizedScores.Add(score);
-            }
-
-            MatchedIonMassesListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
-            LocalizedScores = localizedScores;
             PeptideMonoisotopicMass = representative.MonoisotopicMass;
             FullSequence = representative.Sequence;
             BaseSequence = representative.BaseSequence;
@@ -55,8 +30,6 @@ namespace EngineLayer
         #region Public Properties
 
         public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; }
-        public Dictionary<ProductType, double[]> MatchedIonMassesListPositiveIsMatch { get; }
-        public List<double> LocalizedScores { get; }
         public string FullSequence { get; }
         public string BaseSequence { get; }
         public int MissedCleavages { get; }
@@ -65,6 +38,9 @@ namespace EngineLayer
         public string SequenceWithChemicalFormulas { get; }
         public bool IsContaminant { get; }
         public bool IsDecoy { get; }
+
+        public Dictionary<ProductType, double[]> MatchedIonMassesListPositiveIsMatch { get; set; }
+        public List<double> LocalizedScores { get; set; }
 
         #endregion Public Properties
 
@@ -109,15 +85,17 @@ namespace EngineLayer
             sb.Append(representative.BaseSequence + "\t");
             sb.Append(representative.Sequence + "\t");
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(string.Join(";", MatchedIonMassesListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
+            if (MatchedIonMassesListPositiveIsMatch != null)
+            {
+                sb.Append(string.Join(";", MatchedIonMassesListPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))) + '\t');
 
-            sb.Append("[");
-            foreach (var kvp in MatchedIonMassesListPositiveIsMatch)
-                sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
-            sb.Append("]" + '\t');
+                sb.Append("[");
+                foreach (var kvp in MatchedIonMassesListPositiveIsMatch)
+                    sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]" + '\t');
 
-            sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
-
+                sb.Append("[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]" + '\t');
+            }
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
