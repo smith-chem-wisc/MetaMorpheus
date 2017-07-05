@@ -17,14 +17,14 @@ namespace EngineLayer
 
         #endregion Public Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
-        public MetaMorpheusEngine(List<string> nestedIds)
+        protected MetaMorpheusEngine(List<string> nestedIds)
         {
             this.nestedIds = nestedIds;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Events
 

@@ -54,14 +54,14 @@ namespace TaskLayer
 
         #endregion Protected Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
-        public MetaMorpheusTask(MyTask taskType)
+        protected MetaMorpheusTask(MyTask taskType)
         {
             this.TaskType = taskType;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Events
 
