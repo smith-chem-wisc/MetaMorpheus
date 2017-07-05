@@ -126,6 +126,10 @@
                                 </StackPanel>
                             </Expander>
                         </GroupBox>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
+                            <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                        </StackPanel>
                     </StackPanel>
                 </Expander>
             </GroupBox>
@@ -272,7 +276,7 @@
                                             <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)" />
                                         </ToolTipService.ToolTip>
                                     </TextBox>
-                                    <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}"/>
+                                    <CheckBox x:Name="checkBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" />
                                     </ToolTipService.ToolTip>

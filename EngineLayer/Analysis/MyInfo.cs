@@ -2,7 +2,6 @@
 {
     internal class MyInfo
     {
-
         #region Internal Fields
 
         internal string infostring;
@@ -24,6 +23,5 @@
         public double MassShift { get; internal set; }
 
         #endregion Public Properties
-
     }
 }

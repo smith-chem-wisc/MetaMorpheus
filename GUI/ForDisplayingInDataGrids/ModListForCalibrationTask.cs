@@ -2,7 +2,6 @@
 {
     internal class ModListForCalibrationTask
     {
-
         #region Public Constructors
 
         public ModListForCalibrationTask(string filePath)
@@ -21,6 +20,5 @@
         public string FileName { get; }
 
         #endregion Public Properties
-
     }
 }

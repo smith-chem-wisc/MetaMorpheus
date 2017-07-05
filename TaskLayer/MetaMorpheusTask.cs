@@ -33,7 +33,7 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => new Tolerance(tmlString.Value))))
-                        .ConfigureType<SearchMode>(type => type
+                        .ConfigureType<MassDiffAcceptor>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => MetaMorpheusTask.ParseSearchMode(tmlString.Value))))
@@ -87,15 +87,20 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public int? MaxDegreeOfParallelism { get; set; }
+        public bool LocalizeAll { get; set; }
+        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
+        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
+        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public MyTask TaskType { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public static SearchMode ParseSearchMode(string text)
+        public static MassDiffAcceptor ParseSearchMode(string text)
         {
-            SearchMode ye = null;
+            MassDiffAcceptor ye = null;
 
             var split = text.Split(' ');
 
@@ -113,12 +118,12 @@ namespace TaskLayer
                     var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
                     var newString = split[2].Replace("±", "");
                     var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    ye = new DotSearchMode(split[0], massShifts, new Tolerance(tu, toleranceValue));
+                    ye = new DotMassDiffAcceptor(split[0], massShifts, new Tolerance(tu, toleranceValue));
                     break;
 
                 case "interval":
                     IEnumerable<DoubleRange> doubleRanges = Array.ConvertAll(split[2].Split(','), b => new DoubleRange(double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[0], CultureInfo.InvariantCulture), double.Parse(b.Trim(new char[] { '[', ']' }).Split(';')[1], CultureInfo.InvariantCulture)));
-                    ye = new IntervalSearchMode(split[0], doubleRanges);
+                    ye = new IntervalMassDiffAcceptor(split[0], doubleRanges);
                     break;
 
                 case "OpenSearch":
@@ -142,36 +147,46 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
             StartingSingleTask(taskId);
-            var paramsFileName = Path.Combine(output_folder, "prose.txt");
-            using (StreamWriter file = new StreamWriter(paramsFileName))
+
+            #region Write prose
+
             {
-                file.WriteLine("MetaMorpheus version "
-                    + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
-                    + " is used to run a "
-                    + this.TaskType
-                    + " task on "
-                    + currentRawDataFilenameList.Count
-                    + " spectra files.");
+                var proseFilePath = Path.Combine(output_folder, "prose.txt");
+                using (StreamWriter file = new StreamWriter(proseFilePath))
+                {
+                    file.WriteLine("MetaMorpheus version "
+                        + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
+                        + " is used to run a "
+                        + this.TaskType
+                        + " task on "
+                        + currentRawDataFilenameList.Count
+                        + " spectra files.");
 
-                file.WriteLine(ToString());
+                    file.WriteLine(ToString());
 
-                file.WriteLine();
-                file.WriteLine("taskId: " + taskId);
-                file.WriteLine("Spectra files:");
-                file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
-                file.WriteLine("XML files:");
-                file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
+                    file.WriteLine();
+                    file.WriteLine("taskId: " + taskId);
+                    file.WriteLine("Spectra files:");
+                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
+                    file.WriteLine("XML files:");
+                    file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
+                }
+                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }
-            SucessfullyFinishedWritingFile(paramsFileName, new List<string> { taskId });
 
-            // TOML
-            var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+            #endregion Write prose
 
-            Toml.WriteFile(this, tomlFileName, tomlConfig);
-            SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
+            #region write TOML
+
+            {
+                var tomlFileName = Path.Combine(output_folder, GetType().Name + "config.toml");
+                Toml.WriteFile(this, tomlFileName, tomlConfig);
+                SucessfullyFinishedWritingFile(tomlFileName, new List<string> { taskId });
+            }
+
+            #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-
 #if !DEBUG
             try
             {
@@ -217,23 +232,23 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal void WritePsmsToTsv(List<NewPsmWithFdr> items, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WritePsmsToTsv(IEnumerable<PsmParent> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(NewPsmWithFdr.TabSeparatedHeader);
-                for (int i = 0; i < items.Count; i++)
-                    output.WriteLine(items[i]);
+                output.WriteLine(PsmParent.GetTabSeparatedHeader());
+                foreach (var heh in items)
+                    output.WriteLine(heh);
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        protected internal void WriteMzidentml(List<NewPsmWithFdr> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, SearchMode searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WriteMzidentml(IEnumerable<PsmParent> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, MassDiffAcceptor searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
         {
-            List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.thisPSM.Pli.PeptidesWithSetModifications).Distinct().ToList();
+            List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.Pli.PeptidesWithSetModifications).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
-            List<string> filenames = items.Select(i => i.thisPSM.FileName).Distinct().ToList();
+            List<string> filenames = items.Select(i => i.FullFilePath).Distinct().ToList();
 
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML.Generated.MzIdentMLType));
             var _mzid = new mzIdentML.Generated.MzIdentMLType()
@@ -315,7 +330,7 @@ namespace TaskLayer
                         new mzIdentML.Generated.SpectrumIdentificationListType()
                         {
                             id = "SIL",
-                            SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Count]
+                            SpectrumIdentificationResult = new mzIdentML.Generated.SpectrumIdentificationResultType[items.Count()]
                         }
                     }
                 },
@@ -409,9 +424,9 @@ namespace TaskLayer
             int p_index = 0;
             Dictionary<PeptideWithSetModifications, Tuple<int, int, List<string>>> peptide_ids = new Dictionary<PeptideWithSetModifications, Tuple<int, int, List<string>>>(); //key is peptide, value is <peptide id for that peptide, peptide evidence id>
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
-            foreach (NewPsmWithFdr psm in items)
+            foreach (PsmParent psm in items)
             {
-                PeptideWithSetModifications peptide = psm.thisPSM.Pli.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
+                PeptideWithSetModifications peptide = psm.Pli.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
                 Tuple<int, int, List<string>> peptide_id;
                 //if first peptide on list hasn't been added, add peptide and peptide evidence
                 if (!peptide_ids.TryGetValue(peptide, out peptide_id))
@@ -429,7 +444,7 @@ namespace TaskLayer
                     {
                         _mzid.SequenceCollection.Peptide[peptide_id.Item1].Modification[mod_id] = new mzIdentML.Generated.ModificationType()
                         {
-                            location = mod.Key,
+                            location = mod.Key - 1,
                             locationSpecified = true,
                             monoisotopicMassDelta = mod.Value.monoisotopicMass,
                             residues = new string[1] { mod.Value.motif.Motif.ToString() },
@@ -448,7 +463,7 @@ namespace TaskLayer
                         mod_id++;
                     }
 
-                    foreach (PeptideWithSetModifications peptide_evidence in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                    foreach (PeptideWithSetModifications peptide_evidence in psm.Pli.PeptidesWithSetModifications)
                     {
                         _mzid.SequenceCollection.PeptideEvidence[pe_index] = new mzIdentML.Generated.PeptideEvidenceType()
                         {
@@ -469,38 +484,39 @@ namespace TaskLayer
                 }
 
                 Tuple<int, int> scan_result_scan_item;
-                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
+                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
                 {
                     scan_result_scan_item = new Tuple<int, int>(sir_id, 0);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1] = new mzIdentML.Generated.SpectrumIdentificationResultType()
                     {
                         id = "SIR_" + scan_result_scan_item.Item1,
-                        spectraData_ref = "SD_" + spectral_ids[psm.thisPSM.FileName].ToString(),
-                        spectrumID = psm.thisPSM.ScanNumber.ToString(),
+                        spectraData_ref = "SD_" + spectral_ids[psm.FullFilePath].ToString(),
+                        spectrumID = psm.ScanNumber.ToString(),
                         SpectrumIdentificationItem = new mzIdentML.Generated.SpectrumIdentificationItemType[500]
                     };
-                    psm_per_scan.Add(new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber), scan_result_scan_item);
+                    psm_per_scan.Add(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), scan_result_scan_item);
                     sir_id++;
                 }
                 else
                 {
-                    psm_per_scan[new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
-                    scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.thisPSM.FileName, psm.thisPSM.ScanNumber)];
+                    psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
+                    scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)];
                 }
-                foreach (PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                foreach (PeptideWithSetModifications p in psm.Pli.PeptidesWithSetModifications)
                 {
                     peptide_ids[p].Item3.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                 }
                 _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2] = new mzIdentML.Generated.SpectrumIdentificationItemType()
                 {
-                    chargeState = psm.thisPSM.ScanPrecursorCharge,
+                    chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
-                    experimentalMassToCharge = psm.thisPSM.ScanPrecursorMonoisotopicPeak.Mz,
-                    calculatedMassToCharge = psm.thisPSM.Pli.PeptideMonoisotopicMass.ToMz(psm.thisPSM.ScanPrecursorCharge),
-                    passThreshold = psm.QValue <= threshold,
+                    experimentalMassToCharge = psm.ScanPrecursorMonoisotopicPeak.Mz,
+                    calculatedMassToCharge = psm.Pli.PeptideMonoisotopicMass.ToMz(psm.ScanPrecursorCharge),
+                    calculatedMassToChargeSpecified = true,
+                    passThreshold = psm.FdrInfo.QValue <= threshold,
                     rank = 1,
                     peptide_ref = "P_" + peptide_id.Item1,
-                    PeptideEvidenceRef = new mzIdentML.Generated.PeptideEvidenceRefType[psm.thisPSM.Pli.PeptidesWithSetModifications.Count],
+                    PeptideEvidenceRef = new mzIdentML.Generated.PeptideEvidenceRefType[psm.Pli.PeptidesWithSetModifications.Count],
                     cvParam = new mzIdentML.Generated.CVParamType[2]
                     {
                         new mzIdentML.Generated.CVParamType()
@@ -508,20 +524,20 @@ namespace TaskLayer
                             name = "Morpheus:Morpheus score",
                             cvRef = "PSI-MS",
                             accession = "MS:1002662",
-                            value = psm.thisPSM.Score.ToString()
+                            value = psm.Score.ToString()
                         },
                         new mzIdentML.Generated.CVParamType()
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
                             cvRef = "PSI-MS",
-                            value = psm.QValue.ToString()
+                            value = psm.FdrInfo.QValue.ToString()
                         }
                     }
                 };
 
                 int pe = 0;
-                foreach (PeptideWithSetModifications p in psm.thisPSM.Pli.PeptidesWithSetModifications)
+                foreach (PeptideWithSetModifications p in psm.Pli.PeptidesWithSetModifications)
                 {
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].PeptideEvidenceRef[pe]
                         = new mzIdentML.Generated.PeptideEvidenceRefType()
@@ -793,7 +809,7 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinFasta(fileName, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, null, out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected void ReportProgress(ProgressEventArgs v)
@@ -801,13 +817,13 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId);
 
-        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string fileName, List<string> nestedIds)
+        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds)
         {
             if (items != null)
             {
-                var writtenFile = Path.Combine(outputFolder, fileName + ".tsv");
+                var writtenFile = Path.Combine(outputFolder, strippedFileName + ".tsv");
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
@@ -907,6 +923,11 @@ namespace TaskLayer
         protected void FinishedDataFile(string v, List<string> nestedIDs)
         {
             FinishedDataFileHandler?.Invoke(this, new StringEventArgs(v, nestedIDs));
+        }
+
+        protected void Status(string v, string id)
+        {
+            OutLabelStatusHandler?.Invoke(this, new StringEventArgs(v, new List<string> { id }));
         }
 
         protected void Status(string v, List<string> nestedIds)

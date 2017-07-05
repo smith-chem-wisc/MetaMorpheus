@@ -7,7 +7,6 @@ namespace EngineLayer.ClassicSearch
 {
     public class PsmClassic : PsmParent
     {
-
         #region Public Fields
 
         public PeptideWithSetModifications ps;
@@ -23,7 +22,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public PsmClassic(PeptideWithSetModifications ps, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan)
+        public PsmClassic(PeptideWithSetModifications ps, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan, ps.MonoisotopicMass)
         {
             this.ps = ps;
         }
@@ -95,6 +94,5 @@ namespace EngineLayer.ClassicSearch
         }
 
         #endregion Internal Methods
-
     }
 }

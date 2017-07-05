@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class IntervalSearchMode : SearchMode
+    public class IntervalMassDiffAcceptor : MassDiffAcceptor
     {
 
         #region Private Fields
@@ -17,7 +17,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public IntervalSearchMode(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
+        public IntervalMassDiffAcceptor(string fileNameAddition, IEnumerable<DoubleRange> doubleRanges) : base(fileNameAddition)
         {
             intervals = doubleRanges.OrderBy(b => b.Mean).ToList();
             means = intervals.Select(b => b.Mean).ToArray();

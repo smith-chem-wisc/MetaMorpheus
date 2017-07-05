@@ -4,7 +4,6 @@ namespace MetaMorpheusGUI
 {
     internal class PreRunTask
     {
-
         #region Public Fields
 
         public readonly MetaMorpheusTask metaMorpheusTask;
@@ -31,6 +30,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Public Properties
-
     }
 }

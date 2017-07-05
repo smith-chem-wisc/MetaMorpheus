@@ -1,23 +1,22 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
-namespace EngineLayer.ModernSearch
+namespace EngineLayer
 {
-    public class ModernSearchResults : MetaMorpheusEngineResults
+    public class SearchResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors
 
-        public ModernSearchResults(PsmParent[][] newPsms, ModernSearchEngine s) : base(s)
+        public SearchResults(PsmParent[][] psms, MetaMorpheusEngine searchParams) : base(searchParams)
         {
-            this.NewPsms = newPsms;
+            Psms = psms;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public PsmParent[][] NewPsms { get; private set; }
+        public PsmParent[][] Psms { get; }
 
         #endregion Public Properties
 

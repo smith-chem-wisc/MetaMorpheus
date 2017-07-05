@@ -146,8 +146,8 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(SearchTask task)
         {
-            classicSearchRadioButton.IsChecked = task.ClassicSearch;
-            modernSearchRadioButton.IsChecked = !task.ClassicSearch;
+            classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
+            modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.Quantify;
@@ -171,6 +171,7 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
             deconvolutePrecursors.IsChecked = task.FindAllPrecursors;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
+            maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -244,7 +245,7 @@ namespace MetaMorpheusGUI
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
 
-            foreach (var cool in task.SearchModes)
+            foreach (var cool in task.MassDiffAcceptors)
                 SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
 
             writePrunedDatabaseCheckBox.IsChecked = task.WritePrunedDatabase;
@@ -260,7 +261,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.ClassicSearch = classicSearchRadioButton.IsChecked.Value;
+            TheTask.SearchType = classicSearchRadioButton.IsChecked.Value ? SearchType.Classic : SearchType.Modern;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.Quantify = checkBoxQuantification.IsChecked.Value;
@@ -301,11 +302,13 @@ namespace MetaMorpheusGUI
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
+            TheTask.MassDiffAcceptors = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
             TheTask.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             TheTask.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;
             TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
+                TheTask.MaxDegreeOfParallelism = jsakdf;
 
             DialogResult = true;
         }

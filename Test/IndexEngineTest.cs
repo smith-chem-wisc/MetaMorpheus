@@ -10,13 +10,12 @@ namespace Test
     [TestFixture]
     public class IndexEngineTest
     {
-
         #region Public Methods
 
         [Test]
         public static void TestIndexEngine()
         {
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var localizeableModifications = new List<ModificationWithMass>();
@@ -55,7 +54,7 @@ namespace Test
         [Test]
         public static void TestIndexEngineWithWeirdSeq()
         {
-            var proteinList = new List<Protein> { new Protein("MQXQ", null, null, new Dictionary<int, List<Modification>>(), new int?[0], new int?[0], new string[0], null, null, false, false, null, null) };
+            var proteinList = new List<Protein> { new Protein("MQXQ", null) };
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var localizeableModifications = new List<ModificationWithMass>();
@@ -87,6 +86,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

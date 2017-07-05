@@ -6,7 +6,6 @@ namespace MetaMorpheusGUI
 {
     public class ForTreeView : INotifyPropertyChanged
     {
-
         #region Private Fields
 
         private string status;
@@ -94,6 +93,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Protected Methods
-
     }
 }

@@ -18,7 +18,7 @@ namespace EngineLayer
         public readonly ushort varMod2Loc;
         public readonly ushort varMod3Type;
         public readonly ushort varMod3Loc;
-        public float MonoisotopicMassIncludingFixedMods;
+        public double MonoisotopicMassIncludingFixedMods;
 
         #endregion Public Fields
 
@@ -56,6 +56,7 @@ namespace EngineLayer
                     }
                 }
             }
+            MonoisotopicMassIncludingFixedMods = yyy.MonoisotopicMass;
 
             BaseSequence = yyy.BaseSequence.Select(b => (byte)b).ToArray();
         }

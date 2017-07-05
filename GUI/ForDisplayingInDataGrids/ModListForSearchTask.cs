@@ -2,7 +2,6 @@
 {
     internal class ModListForSearchTask
     {
-
         #region Public Constructors
 
         public ModListForSearchTask(string filePath)
@@ -22,6 +21,5 @@
         public string FileName { get; }
 
         #endregion Public Properties
-
     }
 }

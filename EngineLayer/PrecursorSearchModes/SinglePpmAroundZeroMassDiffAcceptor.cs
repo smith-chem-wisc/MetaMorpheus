@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class SinglePpmAroundZeroSearchMode : SearchMode
+    public class SinglePpmAroundZeroSearchMode : MassDiffAcceptor
     {
 
         #region Private Fields
