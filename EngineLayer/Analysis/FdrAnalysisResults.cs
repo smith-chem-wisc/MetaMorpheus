@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer.Analysis
@@ -26,8 +27,7 @@ namespace EngineLayer.Analysis
         {
             var sb = new StringBuilder();
             sb.Append(base.ToString());
-            //sb.AppendLine("All PSMS within 1% FDR: " + string.Join(", ", AllResultingIdentifications.Select(b => b.Count(c => c.FdrInfo.QValue <= 0.01))));
-
+            sb.AppendLine("All target PSMS within 1% FDR: " + string.Join(", ", allResultingPeptides.Select(b => b.Count(c => c.FdrInfo.QValue <= 0.01 && !c.Pli.IsDecoy))));
             return sb.ToString();
         }
 
