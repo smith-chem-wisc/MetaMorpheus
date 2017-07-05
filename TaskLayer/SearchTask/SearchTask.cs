@@ -390,6 +390,7 @@ namespace TaskLayer
                     WritePsmsToTsv(psmsForThisFile, OutputFolder, strippedFileName + "_PSMs_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     WritePsmsToTsv(uniquePeptidesForFile, OutputFolder, strippedFileName + "_UniquePeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
+                    myTaskResults.AddNiceText("Unique peptides within 1% FDR" + MassDiffAcceptors[j].FileNameAddition + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
                 }
 
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)
