@@ -5,6 +5,7 @@ namespace MetaMorpheusGUI
 {
     public class ModForTreeView : INotifyPropertyChanged
     {
+
         #region Private Fields
 
         private bool _isChecked;
@@ -78,5 +79,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Protected Methods
+
     }
 }

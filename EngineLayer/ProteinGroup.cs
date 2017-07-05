@@ -346,7 +346,7 @@ namespace EngineLayer
                                 }
                             }
                         }
-                        for (int i = 0; i < tempPepModTotals.Count(); i++)
+                        for (int i = 0; i < tempPepModTotals.Count; i++)
                         {
                             string tempString = ("#aa" + tempModIndex[i].ToString() + "[" + tempPepModValues[i].ToString() + ",info:occupancy=" + ((double)tempPepModTotals[i] / (double)tempPepTotals[i]).ToString("F2") + "(" + tempPepModTotals[i].ToString() + "/" + tempPepTotals[i].ToString() + ")" + "];");
                             tempModStrings += tempString;
@@ -384,7 +384,7 @@ namespace EngineLayer
             {
                 var quantType = IntensitiesByFile[file].Length;
 
-                var thisFilesPsms = psmsGroupedByFile.Where(p => p.Key.Equals(FileNames[file])).FirstOrDefault();
+                var thisFilesPsms = psmsGroupedByFile.FirstOrDefault(p => p.Key.Equals(FileNames[file]));
                 if (thisFilesPsms == null)
                 {
                     IntensitiesByFile[file] = new double[quantType];

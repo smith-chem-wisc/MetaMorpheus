@@ -20,12 +20,6 @@ namespace TaskLayer
     public class GptmdTask : MetaMorpheusTask
     {
 
-        #region Private Fields
-
-        private const double binTolInDaltons = 0.003;
-
-        #endregion Private Fields
-
         #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
@@ -171,7 +165,6 @@ namespace TaskLayer
             Dictionary<string, Modification> um = null;
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, true, localizeableModifications, b.IsContaminant, out um)).ToList();
 
-            FdrAnalysisResults analysisResults = null;
             var numRawFiles = currentRawFileList.Count;
 
             Status("Running G-PTM-D...", new List<string> { taskId });
@@ -220,7 +213,7 @@ namespace TaskLayer
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
-            analysisResults = (FdrAnalysisResults)new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId }).Run();
+            new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId }).Run();
 
             var gptmdResults = (GptmdResults)new GptmdEngine(allPsms[0], gptmdModifications, combos, PrecursorMassTolerance, new List<string> { taskId }).Run();
 

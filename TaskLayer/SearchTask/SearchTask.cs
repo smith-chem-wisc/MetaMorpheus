@@ -25,7 +25,6 @@ namespace TaskLayer
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
-        private const int max_mods_for_peptide = 3;
 
         #endregion Private Fields
 
@@ -166,8 +165,8 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
 
-            List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count()];
-            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
+            List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count];
+            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                 allPsms[searchModeIndex] = new List<PsmParent>();
 
             Status("Loading modifications...", taskId);
@@ -295,7 +294,7 @@ namespace TaskLayer
                         searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
                     lock (lock2)
                     {
-                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
+                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                             allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
                     }
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));

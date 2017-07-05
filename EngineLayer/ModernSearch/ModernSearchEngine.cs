@@ -179,7 +179,7 @@ namespace EngineLayer.ModernSearch
             {
                 var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
-                float closestPeak = float.NaN;
+                float closestPeak;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
                     ipos = ~ipos;

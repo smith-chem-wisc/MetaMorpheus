@@ -262,7 +262,7 @@ namespace EngineLayer
 
         #region Protected Classes
 
-        protected class UniqueModificationsCollection : List<ModificationWithMass>
+        protected sealed class UniqueModificationsCollection : List<ModificationWithMass>
         {
 
             #region Internal Methods
