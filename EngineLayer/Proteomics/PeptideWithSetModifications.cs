@@ -42,12 +42,14 @@ namespace EngineLayer
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
 
+        private object lockObj = new object();
+
         #endregion Private Fields
 
         #region Internal Constructors
 
         internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+                                                                                                    : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
@@ -212,7 +214,6 @@ namespace EngineLayer
             bool containsY = productTypes.Contains(ProductType.Y);
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
 
-            object lockObj = new object();
             lock (lockObj)
                 if (p == null)
                     ComputeFragmentMasses();
