@@ -3,8 +3,7 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
-using IO.MzML;
-using IO.Thermo;
+using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -16,7 +15,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
-using FlashLFQ;
 
 namespace TaskLayer
 {
@@ -26,6 +24,8 @@ namespace TaskLayer
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
+
+        private FlashLFQEngine FlashLfqEngine;
 
         #endregion Private Fields
 
@@ -116,8 +116,6 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
-
-        private FlashLFQEngine FlashLfqEngine;
 
         #endregion Public Properties
 
@@ -263,8 +261,8 @@ namespace TaskLayer
                 #endregion Generate indices for modern search
             }
 
-            object lock1 = new object();
             object lock2 = new object();
+            MyFileManager myFileManager = new MyFileManager();
             Status("Searching files...", taskId);
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
@@ -273,18 +271,11 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
+
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
-
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-                    lock (lock1) // Lock because reading is sequential
-                    {
-                        Status("Loading spectra file...", thisId);
-                        if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                            myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
-                        else
-                            myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                    }
+                    Status("Loading spectra file...", thisId);
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
 
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
@@ -296,14 +287,7 @@ namespace TaskLayer
                     else
                         searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
 
-                    /*
-                    if (DoLocalizationAnalysis)
-                    {
-                        Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                        var localizationEngine = new LocalizationEngine(searchResults.Psms.SelectMany(b => b).Where(b => b != null).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                        localizationEngine.Run();
-                    }
-                    */
+                    myFileManager.DoneWithFile(origDataFile);
 
                     lock (lock2)
                     {
@@ -335,6 +319,19 @@ namespace TaskLayer
 
             var proteinAnalysisResults = (ProteinAnalysisResults)(new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
 
+            if (DoLocalizationAnalysis)
+            {
+                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                {
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    localizationEngine.Run();
+                    myFileManager.DoneWithFile(origDataFile);
+                });
+            }
+
             if (DoQuantification)
             {
                 // use FlashLFQ to quantify peaks across all files
@@ -357,14 +354,17 @@ namespace TaskLayer
                     FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.Pli.BaseSequence, psm.Pli.FullSequence, psm.Pli.PeptideMonoisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.Pli.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
 
                 FlashLfqEngine.ConstructBinsFromIdentifications();
-                
-                for(int j = 0; j < currentRawFileList.Count; j++)
+
+                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
-                    ReportProgress(new ProgressEventArgs(100, "Quantifying...", new List<string> { taskId, "Individual Spectra Files", currentRawFileList[j] }));
-                    FlashLfqEngine.Quantify(null, currentRawFileList[j]);
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    ReportProgress(new ProgressEventArgs(100, "Quantifying...", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                    FlashLfqEngine.Quantify(myMsDataFile, origDataFile);
+                    myFileManager.DoneWithFile(origDataFile);
                     GC.Collect();
-                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", currentRawFileList[j] }));
-                }
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
+                });
 
                 if (FlashLfqEngine.mbr)
                     FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();

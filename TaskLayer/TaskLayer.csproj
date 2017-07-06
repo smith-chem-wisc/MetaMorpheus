@@ -101,6 +101,7 @@
     <Compile Include="CalibrationTask\CalibrationTask.cs" />
     <Compile Include="GPTMDTask\GPTMDTask.cs" />
     <Compile Include="DbForTask.cs" />
+    <Compile Include="SearchTask\MyFileManager.cs" />
     <Compile Include="SearchTask\SearchTask.cs" />
     <Compile Include="MetaMorpheusTask.cs" />
     <Compile Include="MyTaskResults.cs" />
