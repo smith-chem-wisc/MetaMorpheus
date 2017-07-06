@@ -319,6 +319,18 @@ namespace TaskLayer
 
             var proteinAnalysisResults = (ProteinAnalysisResults)(new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
 
+            if (DoLocalizationAnalysis)
+            {
+                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                {
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    localizationEngine.Run();
+                });
+            }
+
             if (DoQuantification)
             {
                 // use FlashLFQ to quantify peaks across all files
