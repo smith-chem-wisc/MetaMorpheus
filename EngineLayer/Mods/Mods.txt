@@ -300,7 +300,7 @@ ID   GG of K
 TG   Lysine
 PP   Anywhere.
 MM   114.042927
-MT   Mod
+MT   TrypsinDigestedMod
 CF   H6 C4 N2 O2
 //
 ID   Farnesylation
