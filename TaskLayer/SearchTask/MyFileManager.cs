@@ -37,7 +37,6 @@ namespace TaskLayer
                 return value;
 
             // By now know that need to load this file!!!
-
             var success = false;
             lock (fileLoadingLock) // Lock because reading is sequential
                 while (!success)
@@ -54,6 +53,7 @@ namespace TaskLayer
                     {
                         var notInUse = inUse.First(b => !b.Value);
                         myMsDataFiles[notInUse.Key] = null;
+                        inUse.Remove(notInUse.Key);
                     }
                 }
 
