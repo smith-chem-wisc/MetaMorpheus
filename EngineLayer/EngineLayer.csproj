@@ -107,6 +107,8 @@
     <Compile Include="AllowedIntervalWithNotch.cs" />
     <Compile Include="FdrInfo.cs" />
     <Compile Include="LocalizationEngineResults.cs" />
+    <Compile Include="LocalizationResults.cs" />
+    <Compile Include="MatchedIonMassesListPositiveIsMatch.cs" />
     <Compile Include="ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysisResults.cs" />
     <Compile Include="ProteinAnalysisEngine.cs" />

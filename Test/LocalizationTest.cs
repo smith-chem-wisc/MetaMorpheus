@@ -13,6 +13,7 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
+
         #region Public Methods
 
         [Test]
@@ -53,12 +54,13 @@ namespace Test
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
-            Assert.IsTrue(newPsm.Pli.LocalizedScores[1] > 3 && newPsm.Pli.LocalizedScores[1] < 4);
+            Assert.IsTrue(newPsm.LocalizationResults.LocalizedScores[1] > 3 && newPsm.LocalizationResults.LocalizedScores[1] < 4);
         }
 
         #endregion Public Methods
+
     }
 }

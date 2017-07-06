@@ -311,16 +311,6 @@ namespace TaskLayer
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
-            Status("Running FDR analysis...", taskId);
-
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
-
-            new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
-
-            ProteinAnalysisResults proteinAnalysisResults = null;
-            if (DoParsimony)
-                proteinAnalysisResults = (ProteinAnalysisResults)(new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
-
             if (DoLocalizationAnalysis)
             {
                 Status("Running localization analysis...", taskId);
@@ -334,7 +324,20 @@ namespace TaskLayer
                     myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
                 });
+                Status("Grouping by matched ions...", taskId);
+                for (int j = 0; j < allPsms.Length; j++)
+                    allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.LocalizationResults.MatchedIonMassesListPositiveIsMatch)).Select(b => b.First()).ToList();
             }
+
+            Status("Running FDR analysis...", taskId);
+
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
+
+            new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
+
+            ProteinAnalysisResults proteinAnalysisResults = null;
+            if (DoParsimony)
+                proteinAnalysisResults = (ProteinAnalysisResults)(new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
 
             if (DoQuantification)
             {
