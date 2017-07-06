@@ -335,6 +335,8 @@ namespace TaskLayer
                     if (DoQuantification)
                     {
                     }
+
+                    myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
                 });
             }
