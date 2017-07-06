@@ -844,7 +844,8 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    //output.WriteLine(items.First().TabSeparatedHeader);
+                    output.WriteLine(FlashLFQ.FlashLFQSummedFeatureGroup.TabSeparatedHeader);
+
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
@@ -861,7 +862,8 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    //output.WriteLine(items.First().TabSeparatedHeader);
+                    output.WriteLine(FlashLFQ.FlashLFQFeature.TabSeparatedHeader);
+
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
