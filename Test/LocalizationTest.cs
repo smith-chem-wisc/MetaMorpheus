@@ -35,7 +35,7 @@ namespace Test
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications.Last();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
             PsmParent newPsm = new PsmClassic(ps, 0, 0, 2, scan);

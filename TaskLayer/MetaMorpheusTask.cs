@@ -32,7 +32,7 @@ namespace TaskLayer
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => new Tolerance(tmlString.Value))))
+                                .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<MassDiffAcceptor>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
@@ -107,18 +107,14 @@ namespace TaskLayer
             switch (split[1])
             {
                 case "dot":
-                    ToleranceUnit tu;
-                    if (split[3].ToUpperInvariant().Equals("PPM"))
-                        tu = ToleranceUnit.PPM;
-                    else if (split[3].ToUpperInvariant().Equals("DA"))
-                        tu = ToleranceUnit.Absolute;
-                    else
-                        break;
 
                     var massShifts = Array.ConvertAll(split[4].Split(','), Double.Parse);
                     var newString = split[2].Replace("±", "");
                     var toleranceValue = double.Parse(newString, CultureInfo.InvariantCulture);
-                    ye = new DotMassDiffAcceptor(split[0], massShifts, new Tolerance(tu, toleranceValue));
+                    if (split[3].ToUpperInvariant().Equals("PPM"))
+                        ye = new DotMassDiffAcceptor(split[0], massShifts, new PpmTolerance(toleranceValue));
+                    else if (split[3].ToUpperInvariant().Equals("DA"))
+                        ye = new DotMassDiffAcceptor(split[0], massShifts, new AbsoluteTolerance(toleranceValue));
                     break;
 
                 case "interval":
@@ -606,8 +602,8 @@ namespace TaskLayer
                                 name = "search tolerance minus value",
                                 value = productTolerance.Value.ToString(),
                                 cvRef = "PSI-MS",
-                                unitAccession = productTolerance.Unit == ToleranceUnit.PPM? "UO:0000169": "UO:0000221",
-                                unitName = productTolerance.Unit == ToleranceUnit.PPM? "parts per million" : "dalton" ,
+                                unitAccession = productTolerance is PpmTolerance? "UO:0000169": "UO:0000221",
+                                unitName = productTolerance is PpmTolerance? "parts per million" : "dalton" ,
                                 unitCvRef = "UO"
                             }
                         },

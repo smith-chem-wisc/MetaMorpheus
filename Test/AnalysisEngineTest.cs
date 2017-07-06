@@ -80,7 +80,7 @@ namespace Test
 
             newPsms[0] = new List<PsmParent> { matchA, matchB, matchC };
 
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            Tolerance fragmentTolerance = new PpmTolerance(10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };

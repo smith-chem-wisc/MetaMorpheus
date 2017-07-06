@@ -1,5 +1,6 @@
 using EngineLayer;
 using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System;
@@ -201,7 +202,7 @@ namespace Test
                     ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
                     ListOfModsVariable = new List<Tuple<string, string>>(),
                     ListOfModsFixed = new List<Tuple<string, string>>(),
-                    PrecursorMassTolerance = new MzLibUtil.Tolerance(MzLibUtil.ToleranceUnit.Absolute, 1)
+                    PrecursorMassTolerance = new AbsoluteTolerance(1)
                 };
             }
 

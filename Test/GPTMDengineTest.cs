@@ -27,7 +27,7 @@ namespace Test
             ModificationMotif.TryGetMotif("N", out motifN);
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
-            Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             allResultingIdentifications = new List<PsmParent>();
             var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
@@ -52,7 +52,7 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
             newPsm.SetProteinLinkedInfo(matching, modsDictionary);
 
             newPsm.SetValues(1, 0, 0, 1, 0, 0);
@@ -75,7 +75,7 @@ namespace Test
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
                                                                       new ModificationWithMass("16", null, motifP, ModificationSites.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
-            Tolerance precursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            Tolerance precursorMassTolerance = new PpmTolerance(10);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
@@ -94,7 +94,9 @@ namespace Test
                 {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
+
             match.SetProteinLinkedInfo(matching, modsDictionary);
 
             match.SetValues(1, 0, 0, 1, 0, 0);
