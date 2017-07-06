@@ -9,6 +9,7 @@ namespace Test
     [TestFixture]
     public class SearchModesTest
     {
+
         #region Public Methods
 
         [Test]
@@ -26,7 +27,7 @@ namespace Test
         [Test]
         public static void TestDotSearchMode()
         {
-            var dsm1 = new DotMassDiffAcceptor("test1", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.Absolute, 0.1));
+            var dsm1 = new DotMassDiffAcceptor("test1", new double[] { 0, 1 }, new AbsoluteTolerance(0.1));
 
             Assert.IsTrue(dsm1.Accepts(1000, 1000) >= 0);
             Assert.IsTrue(dsm1.Accepts(1000, 1000 + 0.1 / 2) >= 0);
@@ -46,7 +47,7 @@ namespace Test
             Assert.AreEqual(100.9, theList[1].allowedInterval.Minimum);
             Assert.AreEqual(101.1, theList[1].allowedInterval.Maximum);
 
-            var dsm2 = new DotMassDiffAcceptor("test2", new double[] { 0, 1 }, new Tolerance(ToleranceUnit.PPM, 5));
+            var dsm2 = new DotMassDiffAcceptor("test2", new double[] { 0, 1 }, new PpmTolerance(5));
 
             Assert.IsTrue(dsm2.Accepts(1000, 1000) >= 0);
 
@@ -84,6 +85,7 @@ namespace Test
         // Accept if scanPrecursorMass*peptideMass>=1.
         private class TestSearchMode : MassDiffAcceptor
         {
+
             #region Public Constructors
 
             public TestSearchMode(string fileNameAddition) : base(fileNameAddition)
@@ -105,8 +107,10 @@ namespace Test
             }
 
             #endregion Public Methods
+
         }
 
         #endregion Private Classes
+
     }
 }

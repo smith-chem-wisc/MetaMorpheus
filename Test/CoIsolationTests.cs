@@ -24,7 +24,7 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
-            var productMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 

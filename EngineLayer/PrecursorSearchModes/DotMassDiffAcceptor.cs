@@ -47,7 +47,7 @@ namespace EngineLayer
         {
             for (int j = 0; j < acceptableSortedMassShifts.Length; j++)
             {
-                yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass + acceptableSortedMassShifts[j], tol), j);
+                yield return new AllowedIntervalWithNotch(tol.GetRange(peptideMonoisotopicMass + acceptableSortedMassShifts[j]), j);
             }
         }
 

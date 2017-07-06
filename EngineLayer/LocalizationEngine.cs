@@ -60,8 +60,7 @@ namespace EngineLayer
                     localizedScores.Add(score);
                 }
 
-                ok.Pli.MatchedIonMassesListPositiveIsMatch = MatchedIonDictPositiveIsMatch;
-                ok.Pli.LocalizedScores = localizedScores;
+                ok.LocalizationResults = new LocalizationResults(MatchedIonDictPositiveIsMatch, localizedScores);
             }
             return new LocalizationEngineResults(this);
         }

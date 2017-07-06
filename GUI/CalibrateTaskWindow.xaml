@@ -169,8 +169,8 @@
                 </Expander>
             </GroupBox>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
-                <Button x:Name="saveButton" Content="Save Calibrate Task" Click="saveButton_Click" FontSize="24" Margin="10" />
+                <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+                <Button x:Name="saveButton" Content="Save Calibrate Task" Click="SaveButton_Click" FontSize="24" Margin="10" />
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
