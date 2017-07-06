@@ -323,6 +323,7 @@ namespace TaskLayer
 
             if (DoLocalizationAnalysis)
             {
+                Status("Running localization analysis...", taskId);
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
@@ -440,7 +441,7 @@ namespace TaskLayer
 
                     var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
 
-                    myTaskResults.AddNiceText("Unique peptides within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
+                    myTaskResults.AddNiceText("PSMs within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
 
                     WritePsmsToTsv(psmsForThisFile, OutputFolder, strippedFileName + "_PSMs_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()).ToList();
