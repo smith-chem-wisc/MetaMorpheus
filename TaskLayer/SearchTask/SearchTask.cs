@@ -272,11 +272,11 @@ namespace TaskLayer
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
 
-                    Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
+                    Status("Loading spectra file...", thisId);
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -328,6 +328,7 @@ namespace TaskLayer
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                     var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     localizationEngine.Run();
+                    myFileManager.DoneWithFile(origDataFile);
                 });
             }
 
