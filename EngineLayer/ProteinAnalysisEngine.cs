@@ -427,7 +427,7 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinAnalysisResults myAnalysisResults = new ProteinAnalysisResults(this);
-            Status("Running analysis engine!", nestedIds);
+            Status("Running protein analysis engine!", nestedIds);
 
             List<ProteinGroup>[] proteinGroups = null;
             Status("Applying protein parsimony...", nestedIds);

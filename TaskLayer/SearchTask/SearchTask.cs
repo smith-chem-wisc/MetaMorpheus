@@ -323,6 +323,7 @@ namespace TaskLayer
 
             if (DoLocalizationAnalysis)
             {
+                Status("Running localization analysis...", taskId);
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
