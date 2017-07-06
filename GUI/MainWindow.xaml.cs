@@ -18,11 +18,11 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
+
         #region Private Fields
 
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
-        private readonly ObservableCollection<FinishedFileForDataGrid> finishedFileObservableCollection = new ObservableCollection<FinishedFileForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
 
@@ -189,11 +189,6 @@ namespace MetaMorpheusGUI
                 dataGridDatafiles.Items.Refresh();
                 dataGridXMLs.Items.Refresh();
             }
-        }
-
-        private void AddFinishedFile(string filepath)
-        {
-            finishedFileObservableCollection.Add(new FinishedFileForDataGrid(filepath));
         }
 
         private void ClearRaw_Click(object sender, RoutedEventArgs e)
@@ -574,11 +569,6 @@ namespace MetaMorpheusGUI
             proteinDbObservableCollection.Clear();
         }
 
-        private void ClearOutput_Click(object sender, RoutedEventArgs e)
-        {
-            finishedFileObservableCollection.Clear();
-        }
-
         private void ResetTasksButton_Click(object sender, RoutedEventArgs e)
         {
             tasksGroupBox.IsEnabled = true;
@@ -691,5 +681,6 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
+
     }
 }

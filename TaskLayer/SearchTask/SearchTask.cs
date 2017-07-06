@@ -26,7 +26,6 @@ namespace TaskLayer
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
-        private const int max_mods_for_peptide = 3;
 
         #endregion Private Fields
 
@@ -169,8 +168,8 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
 
-            List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count()];
-            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
+            List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count];
+            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                 allPsms[searchModeIndex] = new List<PsmParent>();
 
             Status("Loading modifications...", taskId);
@@ -308,7 +307,7 @@ namespace TaskLayer
 
                     lock (lock2)
                     {
-                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count(); searchModeIndex++)
+                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                             allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
                     }
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
@@ -420,6 +419,8 @@ namespace TaskLayer
             {
                 WritePsmsToTsv(allPsms[j], OutputFolder, "aggregatePSMs_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
 
+                myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + MassDiffAcceptors[j].FileNameAddition + ": " + allPsms[j].Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
+
                 var uniquePeptides = allPsms[j].GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
                 WritePsmsToTsv(uniquePeptides, OutputFolder, "aggregateUniquePeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
@@ -432,11 +433,15 @@ namespace TaskLayer
                 foreach (var group in psmsGroupedByFile)
                 {
                     var psmsForThisFile = group.ToList();
+
                     var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
+
+                    myTaskResults.AddNiceText("Unique peptides within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
+
                     WritePsmsToTsv(psmsForThisFile, OutputFolder, strippedFileName + "_PSMs_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.Pli.FullSequence).Select(b => b.FirstOrDefault()).ToList();
                     WritePsmsToTsv(uniquePeptidesForFile, OutputFolder, strippedFileName + "_UniquePeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
-                    myTaskResults.AddNiceText("Unique peptides within 1% FDR" + MassDiffAcceptors[j].FileNameAddition + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
+                    myTaskResults.AddNiceText("Unique peptides within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue <= .01 && a.Pli.IsDecoy == false));
                 }
 
                 if (DoParsimony)

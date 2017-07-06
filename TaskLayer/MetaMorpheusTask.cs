@@ -54,14 +54,14 @@ namespace TaskLayer
 
         #endregion Protected Fields
 
-        #region Public Constructors
+        #region Protected Constructors
 
-        public MetaMorpheusTask(MyTask taskType)
+        protected MetaMorpheusTask(MyTask taskType)
         {
             this.TaskType = taskType;
         }
 
-        #endregion Public Constructors
+        #endregion Protected Constructors
 
         #region Public Events
 
@@ -107,7 +107,7 @@ namespace TaskLayer
             switch (split[1])
             {
                 case "dot":
-                    ToleranceUnit tu = ToleranceUnit.PPM;
+                    ToleranceUnit tu;
                     if (split[3].ToUpperInvariant().Equals("PPM"))
                         tu = ToleranceUnit.PPM;
                     else if (split[3].ToUpperInvariant().Equals("DA"))
@@ -291,9 +291,9 @@ namespace TaskLayer
             }};
             _mzid.SequenceCollection = new mzIdentML.Generated.SequenceCollectionType()
             {
-                Peptide = new mzIdentML.Generated.PeptideType[peptides.Count()],
-                DBSequence = new mzIdentML.Generated.DBSequenceType[proteins.Count()],
-                PeptideEvidence = new mzIdentML.Generated.PeptideEvidenceType[peptides.Count()]
+                Peptide = new mzIdentML.Generated.PeptideType[peptides.Count],
+                DBSequence = new mzIdentML.Generated.DBSequenceType[proteins.Count],
+                PeptideEvidence = new mzIdentML.Generated.PeptideEvidenceType[peptides.Count]
             };
             int protein_index = 0;
             foreach (Protein protein in proteins)
@@ -584,7 +584,7 @@ namespace TaskLayer
                                 },
                             }
                         },
-                        ModificationParams = new mzIdentML.Generated.SearchModificationType[fixedMods.Count() + variableMods.Count()],
+                        ModificationParams = new mzIdentML.Generated.SearchModificationType[fixedMods.Count + variableMods.Count],
                         Enzymes = new mzIdentML.Generated.EnzymesType()
                         {
                             Enzyme = new mzIdentML.Generated.EnzymeType[proteases.Count]

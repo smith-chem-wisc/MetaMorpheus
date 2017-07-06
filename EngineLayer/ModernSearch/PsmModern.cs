@@ -8,7 +8,7 @@ namespace EngineLayer.ModernSearch
 
         #region Private Fields
 
-        private CompactPeptide compactPeptide;
+        private readonly CompactPeptide compactPeptide;
 
         #endregion Private Fields
 

@@ -26,8 +26,8 @@ namespace EngineLayer.Calibration
         private readonly Action<List<LabeledMs1DataPoint>, string> ms1ListAction;
         private readonly Action<List<LabeledMs2DataPoint>, string> ms2ListAction;
         private readonly bool doForestCalibration;
-        private List<PsmParent> goodIdentifications;
-        private IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly List<PsmParent> goodIdentifications;
+        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private int numMs1MassChargeCombinationsConsidered;
 
         private int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -206,7 +206,7 @@ namespace EngineLayer.Calibration
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
-                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count() != 1 || b.Value.neutralLosses.First() != 0))
+                if (SequenceWithChemicalFormulas == null || representativeSinglePeptide.allModsOneIsNterminus.Any(b => b.Value.neutralLosses.Count != 1 || b.Value.neutralLosses.First() != 0))
                     continue;
                 Proteomics.Peptide coolPeptide = new Proteomics.Peptide(SequenceWithChemicalFormulas);
 
@@ -369,7 +369,7 @@ namespace EngineLayer.Calibration
 
         private IEnumerable<LabeledMs1DataPoint> SearchMS1Spectra(double[] originalMasses, double[] originalIntensities, int ms2spectrumIndex, int direction, HashSet<Tuple<double, double>> peaksAddedHashSet, int peptideCharge, PsmParent identification)
         {
-            var theIndex = -1;
+            int theIndex;
             if (direction == 1)
                 theIndex = ms2spectrumIndex;
             else
@@ -478,9 +478,9 @@ namespace EngineLayer.Calibration
 
             var scanWindowRange = ms2DataScan.ScanWindowRange;
 
-            Fragment[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).ToArray();
+            IHasChemicalFormula[] fragmentList = peptide.Fragment(fragmentTypesForCalibration, true).OfType<IHasChemicalFormula>().ToArray();
 
-            foreach (IHasChemicalFormula fragment in fragmentList)
+            foreach (var fragment in fragmentList)
             {
                 bool fragmentIdentified = false;
                 bool computedIsotopologues = false;

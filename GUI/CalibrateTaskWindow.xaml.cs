@@ -58,14 +58,6 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
-        {
-        }
-
-        private void ModExpander_Expanded(object sender, RoutedEventArgs e)
-        {
-        }
-
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
