@@ -3,8 +3,6 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
-using IO.MzML;
-using IO.Thermo;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -260,8 +258,8 @@ namespace TaskLayer
                 #endregion Generate indices for modern search
             }
 
-            object lock1 = new object();
             object lock2 = new object();
+            MyFileManager myFileManager = new MyFileManager();
             Status("Searching files...", taskId);
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
@@ -270,19 +268,12 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
+
+                    Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+
                     var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                     NewCollection(Path.GetFileName(origDataFile), thisId);
-
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-                    lock (lock1) // Lock because reading is sequential
-                    {
-                        Status("Loading spectra file...", thisId);
-                        if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                            myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
-                        else
-                            myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                    }
-
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -292,6 +283,9 @@ namespace TaskLayer
                         searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory).Run());
                     else
                         searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
+
+                    myFileManager.DoneWithFile(origDataFile);
+
                     lock (lock2)
                     {
                         for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
@@ -329,15 +323,8 @@ namespace TaskLayer
                 Parallel.For(0, currentRawFileList.Count, spectraFileIndex =>
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-                    lock (lock1) // Lock because reading is sequential
-                    {
-                        Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                        if (Path.GetExtension(origDataFile).Equals(".mzML"))
-                            myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
-                        else
-                            myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
-                    }
+                    Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                     if (DoLocalizationAnalysis)
                     {
                         Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
