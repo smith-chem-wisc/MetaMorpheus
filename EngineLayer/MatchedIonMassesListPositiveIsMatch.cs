@@ -56,11 +56,9 @@ namespace EngineLayer
                 double[] val;
                 if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out val))
                     return false;
-                for (int i = 0; i < val.Length; i++)
-                {
-                    if (val[i] != hah.Value[i])
+                foreach (var ok in hah.Value.Where(b => b > 0))
+                    if (!val.Contains(ok))
                         return false;
-                }
             }
             return true;
         }
