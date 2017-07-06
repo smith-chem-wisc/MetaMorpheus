@@ -3,6 +3,7 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
@@ -14,7 +15,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
-using FlashLFQ;
 
 namespace TaskLayer
 {
@@ -24,6 +24,8 @@ namespace TaskLayer
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
+
+        private FlashLFQEngine FlashLfqEngine;
 
         #endregion Private Fields
 
@@ -114,8 +116,6 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
-
-        private FlashLFQEngine FlashLfqEngine;
 
         #endregion Public Properties
 
@@ -341,14 +341,17 @@ namespace TaskLayer
                     FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.Pli.BaseSequence, psm.Pli.FullSequence, psm.Pli.PeptideMonoisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.Pli.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
 
                 FlashLfqEngine.ConstructBinsFromIdentifications();
-                
-                for(int j = 0; j < currentRawFileList.Count; j++)
+
+                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
                 {
-                    ReportProgress(new ProgressEventArgs(100, "Quantifying...", new List<string> { taskId, "Individual Spectra Files", currentRawFileList[j] }));
-                    FlashLfqEngine.Quantify(null, currentRawFileList[j]);
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+                    ReportProgress(new ProgressEventArgs(100, "Quantifying...", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                    FlashLfqEngine.Quantify(myMsDataFile, origDataFile);
+                    myFileManager.DoneWithFile(origDataFile);
                     GC.Collect();
-                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", currentRawFileList[j] }));
-                }
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
+                });
 
                 if (FlashLfqEngine.mbr)
                     FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
