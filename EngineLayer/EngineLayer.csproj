@@ -172,6 +172,7 @@
     <Compile Include="EventArgs\StringListEventArgs.cs" />
     <Compile Include="SequencesToActualProteinPeptidesEngine.cs" />
     <Compile Include="SequencesToActualProteinPeptidesEngineResults.cs" />
+    <Compile Include="XLSearchResults.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">

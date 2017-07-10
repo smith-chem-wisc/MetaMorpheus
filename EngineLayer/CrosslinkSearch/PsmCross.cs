@@ -31,12 +31,11 @@ namespace EngineLayer.CrosslinkSearch
 
         public CompactPeptide CompactPeptide { get { return compactPeptide; } set { compactPeptide = value; } }
 
-        //public double XLBestLocalScaore { get; set; }
         //public ProductMassesMightHave pmmh { get; set; }
-        //public MatchedIonInfo matchedIonInfo { get; set; }
         public double peptideMass { get; set; }
         public double XLBestScore { get; set; }
         public MatchedIonInfo matchedIonInfo { get; set; }
+        public double NScore { get; set; }
 
 
         #region Public Methods

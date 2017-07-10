@@ -26,7 +26,7 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly List<CompactPeptide> peptideIndex;
 
-        private readonly List<MassDiffAcceptor> searchModes;
+        private readonly MassDiffAcceptor searchMode;
 
         //Crosslink parameters
         private CrosslinkerTypeClass crosslinker;
@@ -41,14 +41,14 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, MassDiffAcceptor searchMode, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
-            this.searchModes = searchModes;
+            this.searchMode = searchMode;
             this.crosslinker = crosslinker;
             this.CrosslinkSearchTopNum = CrosslinkSearchTopNum;
             this.CrosslinkSearchWithCrosslinkerMod = CrosslinkSearchWithCrosslinkerMod;
@@ -105,7 +105,6 @@ namespace EngineLayer.CrosslinkSearch
                         {
 
                             // Check if makes sense to add due to peptidescore!
-                            var searchMode = searchModes;
                             //currentWorstScore to mark the current worst score and peptide for comparation and removal.
                             double currentWorstScore = worstScores;
                             //From all scored peptides to choose the Top Num ones
@@ -176,7 +175,6 @@ namespace EngineLayer.CrosslinkSearch
                                     XLCalculateTotalProductMassesMightHave(thisScan, psmCross1);
                                     XLCalculateTotalProductMassesMightHave(thisScan, psmCross2);
                                     var currentTuplePair = new Tuple<PsmCross, PsmCross>(psmCross1, psmCross2);
-                                    //var currentTuplePair = new Tuple<PsmParent, PsmParent>(new PsmCross(crosslinkPeptidePair.Item1.BestPeptide, crosslinkPeptidePair.Item1.BestNotch, crosslinkPeptidePair.Item1.BestScore, i, thisScan), new PsmCross(crosslinkPeptidePair.Item2.BestPeptide, crosslinkPeptidePair.Item2.BestNotch, crosslinkPeptidePair.Item2.BestScore, i, thisScan));
                                     newPsmsTopTuple.Add(currentTuplePair);
                                 }
                             }

@@ -11,7 +11,6 @@
             <GroupBox Header="Crosslink Search" DockPanel.Dock="Top">
                 <Expander x:Name="CrosslinkSearchExpander">
                     <StackPanel Orientation="Vertical">
-                        <RadioButton x:Name="CrosslinkSearchRadioButton" Content="Crosslink Search" GroupName="SearchType" />
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1*" />

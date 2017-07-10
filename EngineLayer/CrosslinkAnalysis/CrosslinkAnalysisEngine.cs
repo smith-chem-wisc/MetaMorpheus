@@ -30,12 +30,9 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly Protease protease;
-        private readonly List<MassDiffAcceptor> searchModes;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans;
         private readonly Tolerance fragmentTolerance;
-        private readonly Action<List<PsmCross>, string, List<string>> writePsmsAction;
-        private readonly Action<List<Tuple<PsmCross, PsmCross>>, string, List<string>> writeCrosslinkAction;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
@@ -49,7 +46,7 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<Tuple<PsmCross, PsmCross>> newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, List<MassDiffAcceptor> searchModes, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, Action<List<PsmCross>, string, List<string>> action2, Action<List<Tuple<PsmCross, PsmCross>>, string, List<string>> action4, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, List<string> nestedIds, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchWithAllBeta) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<Tuple<PsmCross, PsmCross>> newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchWithAllBeta, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -57,11 +54,9 @@ namespace EngineLayer.CrosslinkAnalysis
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.protease = protease;
-            this.searchModes = searchModes;
+
             this.myMsDataFile = myMSDataFile;
             this.fragmentTolerance = fragmentTolerance;
-            this.writePsmsAction = action2;
-            this.writeCrosslinkAction = action4;
             this.maximumMissedCleavages = maximumMissedCleavages;
             this.minPeptideLength = minPeptideLength;
             this.maxPeptideLength = maxPeptideLength;
@@ -236,12 +231,8 @@ namespace EngineLayer.CrosslinkAnalysis
             //    }
             //}
 
-            writePsmsAction?.Invoke(orderedPsmsWithFDR, "allPSMs_" + XLsearchMode.FileNameAddition, nestedIds);
-            writeCrosslinkAction?.Invoke(CrosslinkOrderedPsmsWithFDR, "_Crosslink_" + XLsearchMode.FileNameAddition, nestedIds);
             allResultingIdentifications = orderedPsmsWithFDR;
             allResultingIdentificationsfdr = CrosslinkOrderedPsmsWithFDR;
-
-
 
             //myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
             myAnalysisResults.allModsSeen = allModsSeen;
@@ -427,7 +418,7 @@ namespace EngineLayer.CrosslinkAnalysis
             return ids;
         }
 
-        /*
+        /* Draw spectra annotation
         private void XLDrawMSMatchToPdf(Ms2ScanWithSpecificMass MsScanForDraw, Tuple<NewPsmWithFdr, NewPsmWithFdr> PsmCrosssForDraw)
         {
 
