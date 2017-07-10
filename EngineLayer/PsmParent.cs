@@ -173,7 +173,7 @@ namespace EngineLayer
             // Need info from both current and from Pli
             sb.Append("Improvement Possible" + '\t');
             sb.Append("Mass Diff (Da)" + '\t');
-            sb.Append("Mass Diff (ppm)");
+            sb.Append("Mass Diff (ppm)" + '\t');
 
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');

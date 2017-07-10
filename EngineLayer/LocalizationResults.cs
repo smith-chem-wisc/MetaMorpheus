@@ -51,7 +51,7 @@ namespace EngineLayer
             var sb = new StringBuilder();
             sb.Append("Matched Ion Counts" + '\t');
             sb.Append("Matched Ion Masses" + '\t');
-            sb.Append("Localized Scores" + '\t');
+            sb.Append("Localized Scores");
             return sb.ToString();
         }
 
