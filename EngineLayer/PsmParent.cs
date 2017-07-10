@@ -217,6 +217,10 @@ namespace EngineLayer
                 sb.Append(LocalizationResults.ToString() + '\t');
                 sb.Append((LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
             }
+            else
+            {
+                sb.Append("\t\t");
+            }
             sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
 
