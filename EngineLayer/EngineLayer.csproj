@@ -105,6 +105,15 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="AllowedIntervalWithNotch.cs" />
+    <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
+    <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisResults.cs" />
+    <Compile Include="CrosslinkerType.cs" />
+    <Compile Include="CrosslinkSearch\BestPeptideScoreNotch.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkSearchEngine.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkSearchEngine2.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkSearchResults.cs" />
+    <Compile Include="CrosslinkSearch\MatchedIonInfo.cs" />
+    <Compile Include="CrosslinkSearch\PsmCross.cs" />
     <Compile Include="FdrInfo.cs" />
     <Compile Include="LocalizationEngineResults.cs" />
     <Compile Include="LocalizationResults.cs" />
