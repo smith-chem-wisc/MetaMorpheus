@@ -628,7 +628,7 @@ namespace MetaMorpheusGUI
                         calibratedialog.ShowDialog();
                         return;
                     case MyTask.XLSearch:
-                        var XLSearchdialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
+                        var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         return;
 

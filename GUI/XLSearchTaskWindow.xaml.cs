@@ -3,7 +3,6 @@ using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -153,7 +152,6 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
             //Crosslink search para
-            CrosslinkSearchRadioButton.IsChecked = task.CrosslinkSearch;
             cbCrosslinker.SelectedIndex = (int)task.crosslinkerType;
             txtXLTopNum.Text = task.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbSearchWithXLAllBeta.IsChecked = task.CrosslinkSearchWithAllBeta;
@@ -253,7 +251,7 @@ namespace MetaMorpheusGUI
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
 
-            foreach (var cool in task.SearchModes)
+            foreach (var cool in task.MassDiffAcceptors)
                 SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
 
             searchModesDataGrid.Items.Refresh();
@@ -266,7 +264,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.CrosslinkSearch = CrosslinkSearchRadioButton.IsChecked.Value;
             TheTask.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
             TheTask.crosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
@@ -313,8 +310,7 @@ namespace MetaMorpheusGUI
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.SearchModes = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
-            //TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
+            TheTask.MassDiffAcceptors = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
 
             DialogResult = true;
         }
