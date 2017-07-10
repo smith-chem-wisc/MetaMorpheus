@@ -81,6 +81,8 @@ namespace MetaMorpheusGUI
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
             nonLinearCalibCheckBox.IsChecked = task.NonLinearCalibration;
 
+            writeIntermediateFilesCheckBox.IsChecked = task.WriteIntermediateFiles;
+
             foreach (var mod in task.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -213,6 +215,8 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+
+            TheTask.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
