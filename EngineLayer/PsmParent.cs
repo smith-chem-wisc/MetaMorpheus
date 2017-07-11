@@ -219,10 +219,10 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append("\t\t");
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
             }
             sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
