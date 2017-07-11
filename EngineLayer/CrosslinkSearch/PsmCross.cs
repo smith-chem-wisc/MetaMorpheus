@@ -36,6 +36,7 @@ namespace EngineLayer.CrosslinkSearch
         public double XLBestScore { get; set; }
         public MatchedIonInfo matchedIonInfo { get; set; }
         public double NScore { get; set; }
+        public double XLTotalScore { get; set; }
 
 
         #region Public Methods
@@ -62,7 +63,7 @@ namespace EngineLayer.CrosslinkSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         public Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
-        //Dictionary<ModificationWithMass, ushort> modsDictionary;
+        
         private PeptideFragmentMasses p;
 
         private void computeAllModsOneIsNterminus(Dictionary<ModificationWithMass, ushort> modsDictionary)

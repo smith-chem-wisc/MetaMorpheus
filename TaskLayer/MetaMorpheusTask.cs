@@ -805,8 +805,8 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 Score\tPep1 nScore" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 Score\tPep1 nScore\tMass diff\tQValue");
+                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore" +
+                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tTotalScore\tMass diff\tQValue");
                 foreach (var item in items)
                 {
                     var x = item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
@@ -822,15 +822,16 @@ namespace TaskLayer
                         + "\t" + item.Item1.Pli.FullSequence
                         + "\t" + item.Item1.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
+                        //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Pli.BaseSequence
                         + "\t" + item.Item2.Pli.FullSequence
                         + "\t" + item.Item2.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
+                        //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
+                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                         + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.Pli.PeptideMonoisotopicMass - item.Item1.Pli.PeptideMonoisotopicMass)
                         + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
                 }
