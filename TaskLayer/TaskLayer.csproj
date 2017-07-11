@@ -109,6 +109,7 @@
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="EventArgs\SingleTaskEventArgs.cs" />
+    <Compile Include="XLSearchTask\XLSearchTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">
