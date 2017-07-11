@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="650" Height="500" Width="700">
+        Title="MetaMorpheus Not a release" Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="500" Width="800">
     <DockPanel>
         <Menu x:Name="menu" DockPanel.Dock="Top">
             <MenuItem Header="_Settings">
@@ -129,6 +129,7 @@
                             <Button x:Name="addSearchTaskButton" Content="New Search Task" Click="AddSearchTaskButton_Click" />
                             <Button x:Name="addCalibrateTaskButton" Content="New Calibrate Task" Click="AddCalibrateTaskButton_Click" />
                             <Button x:Name="addGPTMDTaskButton" Content="New GPTMD Task" Click="AddGPTMDTaskButton_Click" />
+                            <Button x:Name="btnAddCrosslinkSearch" Content="New XL Task" Click="btnAddCrosslinkSearch_Click"/>
                         </StackPanel>
                         <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
