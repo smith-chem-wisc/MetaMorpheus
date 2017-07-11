@@ -314,7 +314,7 @@ namespace EngineLayer.CrosslinkSearch
             var modMass = theScan.PrecursorMass - psmCross.CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass;
             int length = psmCross.CompactPeptide.BaseSequence.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp, modsDictionary);
-            PsmCross.ProductMassesMightHave pmmhNew = new PsmCross.ProductMassesMightHave();
+            PsmCross.ProductMassesMightHave pmmhTop = new PsmCross.ProductMassesMightHave();
             int pos = -1;
             List<PsmCross.ProductMassesMightHave> pmmhList = new List<PsmCross.ProductMassesMightHave>();
             for (int ipos = 0; ipos < psmCross.CompactPeptide.BaseSequence.Length; ipos++)
@@ -438,7 +438,7 @@ namespace EngineLayer.CrosslinkSearch
                 scoreList.Add(pmmScore);
             }
 
-            pmmhNew = pmmhList[scoreList.IndexOf(scoreList.Max())];
+            pmmhTop = pmmhList[scoreList.IndexOf(scoreList.Max())];
             //psmCross.pmmh = pmmhNew;
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];

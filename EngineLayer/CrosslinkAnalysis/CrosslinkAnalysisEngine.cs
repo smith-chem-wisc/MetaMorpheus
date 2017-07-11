@@ -38,15 +38,14 @@ namespace EngineLayer.CrosslinkAnalysis
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         //Draw Control
         private readonly CrosslinkerTypeClass crosslinker;
-        private readonly bool CrosslinkSearchWithAllBeta;
         private string OutputFolder;
-        private bool draw = true;
+        //private bool draw = true;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<Tuple<PsmCross, PsmCross>> newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, bool CrosslinkSearchWithAllBeta, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<Tuple<PsmCross, PsmCross>> newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -67,7 +66,6 @@ namespace EngineLayer.CrosslinkAnalysis
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.OutputFolder = OutputFolder;
             this.crosslinker = crosslinker;
-            this.CrosslinkSearchWithAllBeta = CrosslinkSearchWithAllBeta;
         }
 
         #endregion Public Constructors
@@ -89,7 +87,6 @@ namespace EngineLayer.CrosslinkAnalysis
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
             #region Match Seqeunces to PeptideWithSetModifications
-
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             Status("Adding observed peptides to dictionary...", nestedIds);
             foreach (var psmpair in newPsms)
@@ -150,14 +147,10 @@ namespace EngineLayer.CrosslinkAnalysis
                     }
                 }
             });
-
             #endregion Match Seqeunces to PeptideWithSetModifications
-
 
             List<PsmCross> allResultingIdentifications = new List<PsmCross>();
             List<Tuple<PsmCross, PsmCross>> allResultingIdentificationsfdr = new List<Tuple<PsmCross, PsmCross>>();
-            Dictionary<string, int> allModsSeen = new Dictionary<string, int>();
-            Dictionary<string, int> allModsOnPeptides = new Dictionary<string, int>();
 
             Status("Computing info about actual peptides with modifications...", nestedIds);
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
@@ -168,61 +161,37 @@ namespace EngineLayer.CrosslinkAnalysis
                 var huh1 = newPsms[myScanWithMassIndex].Item2;
                 if (huh1 != null && huh1.Pli == null)
                     huh1.SetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
+                newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 
-            List<PsmCross> PsmCrossForfdrList = new List<PsmCross>();
-            foreach (var PsmCrossForfdr in newPsms)
-            {
-                //Filter matches that do not have improved XLLocalScore
-                if (PsmCrossForfdr.Item1.XLBestScore > PsmCrossForfdr.Item1.Score)
-                {
-                    PsmCrossForfdrList.Add(PsmCrossForfdr.Item1);
-                    PsmCrossForfdrList.Add(PsmCrossForfdr.Item2);
-                }
-            }
-            Status("Sorting and grouping psms..", nestedIds);
-            var orderedPsmsWithPeptides = PsmCrossForfdrList.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, string>(b.FullFilePath, b.ScanNumber, b.Pli.FullSequence)).Select(b => b.First());
-
-            Status("Running FDR analysis...", nestedIds);
-            var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, XLsearchMode);
-
-            //Status("Running modification analysis...", nestedIds);
-
-            //Dictionary<string, int> modsSeen = new Dictionary<string, int>();
-            //Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
-
-            //foreach (var highConfidencePSM in orderedPsmsWithFDR.Where(b => b.QValue <= 0.01 && !b.IsDecoy).GroupBy(b => b.thisPSM.Pli.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
+            #region Calculate single peptide FDR
+            //List<PsmCross> PsmCrossForfdrList = new List<PsmCross>();
+            //foreach (var PsmCrossForfdr in newPsms)
             //{
-            //    var singlePeptide = highConfidencePSM.thisPSM.Pli.PeptidesWithSetModifications.First();
-            //    var modsIdentified = singlePeptide.allModsOneIsNterminus;
-            //    foreach (var modSeen in modsIdentified)
+            //    //Filter matches that do not have improved XLLocalScore
+            //    if (PsmCrossForfdr.Item1.XLBestScore > PsmCrossForfdr.Item1.Score)
             //    {
-            //        if (modsSeen.ContainsKey(modSeen.Value.id))
-            //            modsSeen[modSeen.Value.id]++;
-            //        else
-            //            modsSeen.Add(modSeen.Value.id, 1);
-            //    }
-            //    var modsInProtein = singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein).SelectMany(b => b.Value);
-            //    foreach (var modInProtein in modsInProtein)
-            //    {
-            //        if (modsOnPeptides.ContainsKey(modInProtein.id))
-            //            modsOnPeptides[modInProtein.id]++;
-            //        else
-            //            modsOnPeptides.Add(modInProtein.id, 1);
+            //        PsmCrossForfdrList.Add(PsmCrossForfdr.Item1);
+            //        PsmCrossForfdrList.Add(PsmCrossForfdr.Item2);
             //    }
             //}
-            //allModsSeen = modsSeen;
-            //allModsOnPeptides = modsOnPeptides;
+            //Status("Sorting and grouping psms..", nestedIds);
+            //var orderedPsmsWithPeptides = PsmCrossForfdrList.Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.Pli.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, string>(b.FullFilePath, b.ScanNumber, b.Pli.FullSequence)).Select(b => b.First());
 
-            orderedPsmsWithFDR = orderedPsmsWithFDR.OrderBy(p => p.ScanNumber).ToList();
+            //Status("Running FDR analysis...", nestedIds);
+            //var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, XLsearchMode);
+            //allResultingIdentifications = orderedPsmsWithFDR.OrderBy(p => p.ScanNumber).ToList();
+            //myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
+            #endregion
 
             //Calculate Crosslink peptide FDR
-            var CrosslinkOrderedPsmCrossWithPeptides = newPsms.OrderByDescending(b => b.Item1.Score).ToList();
+            var CrosslinkOrderedPsmCrossWithPeptides = newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
             var CrosslinkOrderedPsmsWithFDR = CrosslinkDoFalseDiscoveryRateAnalysis(CrosslinkOrderedPsmCrossWithPeptides, XLsearchMode);
 
             //Filter out crosslink peptide from Decoy and Qvalue > 0.01
-            CrosslinkOrderedPsmsWithFDR = CrosslinkOrderedPsmsWithFDR.Where(p => p.Item1.Pli.IsDecoy != true && p.Item2.Pli.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            //allResultingIdentificationsfdr = CrosslinkOrderedPsmsWithFDR.Where(p => p.Item1.Pli.IsDecoy != true && p.Item2.Pli.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
 
+            #region Draw spetra anotation
             //if (draw)
             //{
             //    foreach (var drawCompactPepList in CrosslinkOrderedPsmsWithFDR)
@@ -230,15 +199,9 @@ namespace EngineLayer.CrosslinkAnalysis
             //        XLDrawMSMatchToPdf(arrayOfSortedMS2Scans?[drawCompactPepList.Item1.ScanIndex], drawCompactPepList);
             //    }
             //}
+            #endregion
 
-            allResultingIdentifications = orderedPsmsWithFDR;
-            allResultingIdentificationsfdr = CrosslinkOrderedPsmsWithFDR;
-
-            //myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
-            myAnalysisResults.allModsSeen = allModsSeen;
-            myAnalysisResults.allModsOnPeptides = allModsOnPeptides;
-
-            myAnalysisResults.AllResultingIdentificationFdrPairs = allResultingIdentificationsfdr;
+            //myAnalysisResults.AllResultingIdentificationFdrPairs = allResultingIdentificationsfdr;
             return myAnalysisResults;
         }
 
@@ -246,61 +209,7 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #region Private Methods
 
-        //private static List<PsmCross> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmCross> items, MassDiffAcceptor sm)
-        //{
-        //    var ids = new List<PsmCross>();
-        //    foreach (PsmCross item in items)
-        //        ids.Add(new NewPsmWithFdr(item));
-
-        //    int cumulative_target = 0;
-        //    int cumulative_decoy = 0;
-
-        //    int[] cumulative_target_per_notch = new int[sm.NumNotches];
-        //    int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
-
-        //    for (int i = 0; i < ids.Count; i++)
-        //    {
-        //        var item = ids[i];
-        //        var isDecoy = item..IsDecoy;
-        //        int notch = item.thisPSM.Notch;
-        //        if (isDecoy)
-        //            cumulative_decoy++;
-        //        else
-        //            cumulative_target++;
-
-        //        if (isDecoy)
-        //            cumulative_decoy_per_notch[notch]++;
-        //        else
-        //            cumulative_target_per_notch[notch]++;
-
-        //        double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-        //        double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / (cumulative_target_per_notch[notch] + cumulative_decoy_per_notch[notch]);
-        //        item.SetValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
-        //    }
-
-        //    double min_q_value = double.PositiveInfinity;
-        //    double[] min_q_value_notch = new double[sm.NumNotches];
-        //    for (int i = 0; i < sm.NumNotches; i++)
-        //        min_q_value_notch[i] = double.PositiveInfinity;
-
-        //    for (int i = ids.Count - 1; i >= 0; i--)
-        //    {
-        //        NewPsmWithFdr id = ids[i];
-        //        if (id.QValue > min_q_value)
-        //            id.QValue = min_q_value;
-        //        else if (id.QValue < min_q_value)
-        //            min_q_value = id.QValue;
-
-        //        int notch = id.thisPSM.Notch;
-        //        if (id.QValueNotch > min_q_value_notch[notch])
-        //            id.QValueNotch = min_q_value_notch[notch];
-        //        else if (id.QValueNotch < min_q_value_notch[notch])
-        //            min_q_value_notch[notch] = id.QValueNotch;
-        //    }
-
-        //    return ids;
-        //}
-
+        /* DoFalseDiscoveryRateAnalysis
         private static List<PsmCross> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmCross> items, MassDiffAcceptor sm)
         {
             var ids = new List<PsmCross>();
@@ -355,6 +264,7 @@ namespace EngineLayer.CrosslinkAnalysis
 
             return ids;
         }
+        */
 
         //Calculate the FDR of crosslinked peptide FP/(FP+TP)
         private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
