@@ -13,6 +13,7 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
+
         #region Public Methods
 
         [Test]
@@ -34,7 +35,7 @@ namespace Test
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications.Last();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
             PsmParent newPsm = new PsmClassic(ps, 0, 0, 2, scan);
@@ -53,12 +54,13 @@ namespace Test
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.Pli.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
-            Assert.IsTrue(newPsm.Pli.LocalizedScores[1] > 3 && newPsm.Pli.LocalizedScores[1] < 4);
+            Assert.IsTrue(newPsm.LocalizationResults.LocalizedScores[1] > 3 && newPsm.LocalizationResults.LocalizedScores[1] < 4);
         }
 
         #endregion Public Methods
+
     }
 }

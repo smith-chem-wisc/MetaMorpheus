@@ -30,8 +30,8 @@ namespace TaskLayer
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 10);
+            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            PrecursorMassTolerance = new PpmTolerance(10);
             BIons = true;
             YIons = true;
             CIons = false;
@@ -154,7 +154,7 @@ namespace TaskLayer
                 newSpectra = new List<string>()
             };
             MassDiffAcceptor searchMode;
-            if (PrecursorMassTolerance.Unit == ToleranceUnit.PPM)
+            if (PrecursorMassTolerance is PpmTolerance)
                 searchMode = new SinglePpmAroundZeroSearchMode(PrecursorMassTolerance.Value);
             else
                 searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassTolerance.Value);

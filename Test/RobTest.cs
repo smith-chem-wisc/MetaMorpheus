@@ -170,7 +170,7 @@ namespace Test
             }
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             foreach (var hm in psms)
             {
@@ -335,7 +335,7 @@ namespace Test
             var psm = new PsmClassic(peptide, 0, 0, 0, scan);
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
@@ -426,7 +426,7 @@ namespace Test
             Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, new MzPeak(2, 2), 0, "File");
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             var match1 = new PsmClassic(peptideList.ElementAt(0), 0, 10, 0, ms2scan)
             {

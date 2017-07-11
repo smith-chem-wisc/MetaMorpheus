@@ -10,6 +10,7 @@ namespace TaskLayer
 {
     public static class GlobalTaskLevelSettings
     {
+
         #region Public Constructors
 
         static GlobalTaskLevelSettings()
@@ -82,8 +83,8 @@ namespace TaskLayer
             yield return new SinglePpmAroundZeroSearchMode(5);
             yield return new SinglePpmAroundZeroSearchMode(10);
             yield return new SinglePpmAroundZeroSearchMode(20);
-            yield return new DotMassDiffAcceptor("1mm5ppm", new double[] { 0, 1.0029 }, new Tolerance(ToleranceUnit.PPM, 5));
-            yield return new DotMassDiffAcceptor("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new Tolerance(ToleranceUnit.PPM, 5));
+            yield return new DotMassDiffAcceptor("1mm5ppm", new double[] { 0, 1.0029 }, new PpmTolerance(5));
+            yield return new DotMassDiffAcceptor("3mm5ppm", new double[] { 0, 1.0029, 2.0052, 3.0077 }, new PpmTolerance(5));
             yield return new IntervalMassDiffAcceptor("2.1aroundZero", new List<DoubleRange>() { new DoubleRange(-2.1, 2.1) });
             yield return new IntervalMassDiffAcceptor("3.5aroundZero", new List<DoubleRange>() { new DoubleRange(-3.5, 3.5) });
             yield return new OpenSearchMode();
@@ -123,7 +124,7 @@ namespace TaskLayer
             }
             List<double> filteredMasses = massesToExclude.GroupBy(b => Math.Round(b, 6)).Select(b => b.FirstOrDefault()).OrderBy(b => b).ToList();
 
-            yield return new DotMassDiffAcceptor("OnlyAAs", filteredMasses, new Tolerance(ToleranceUnit.Absolute, v));
+            yield return new DotMassDiffAcceptor("OnlyAAs", filteredMasses, new AbsoluteTolerance(v));
 
             List<DoubleRange> doubleRanges = new List<DoubleRange>();
 
@@ -144,5 +145,6 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
+
     }
 }

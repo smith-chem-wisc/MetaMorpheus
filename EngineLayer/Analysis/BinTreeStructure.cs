@@ -9,6 +9,7 @@ namespace EngineLayer.Analysis
 {
     public class BinTreeStructure
     {
+
         #region Private Fields
 
         private const int minAdditionalPsmsInBin = 1;
@@ -159,7 +160,7 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
                 foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.Pli.IsDecoy))
                 {
-                    var ya = hm.Value.Item3.Pli.MatchedIonMassesListPositiveIsMatch;
+                    var ya = hm.Value.Item3.LocalizationResults.MatchedIonMassesListPositiveIsMatch;
                     if (ya.ContainsKey(ProductType.B)
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)
@@ -259,22 +260,22 @@ namespace EngineLayer.Analysis
                 bin.residueCount = new Dictionary<char, int>();
                 foreach (var hehe in bin.uniquePSMs.Values)
                 {
-                    double bestScore = hehe.Item3.Pli.LocalizedScores.Max();
+                    double bestScore = hehe.Item3.LocalizationResults.LocalizedScores.Max();
                     if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.Pli.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
-                            if (bestScore - hehe.Item3.Pli.LocalizedScores[i] < 0.5)
+                            if (bestScore - hehe.Item3.LocalizationResults.LocalizedScores[i] < 0.5)
                                 if (bin.residueCount.ContainsKey(hehe.Item1[i]))
                                     bin.residueCount[hehe.Item1[i]]++;
                                 else
                                     bin.residueCount.Add(hehe.Item1[i], 1);
-                        if (hehe.Item3.Pli.LocalizedScores.Max() - hehe.Item3.Pli.LocalizedScores[0] < 0.5)
+                        if (hehe.Item3.LocalizationResults.LocalizedScores.Max() - hehe.Item3.LocalizationResults.LocalizedScores[0] < 0.5)
                         {
                             bin.pepNlocCount++;
                             if (hehe.Item3.Pli.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
                                 bin.protNlocCount++;
                         }
-                        if (hehe.Item3.Pli.LocalizedScores.Max() - hehe.Item3.Pli.LocalizedScores.Last() < 0.5)
+                        if (hehe.Item3.LocalizationResults.LocalizedScores.Max() - hehe.Item3.LocalizationResults.LocalizedScores.Last() < 0.5)
                         {
                             bin.pepClocCount++;
                             if (hehe.Item3.Pli.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
@@ -405,5 +406,6 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Private Methods
+
     }
 }

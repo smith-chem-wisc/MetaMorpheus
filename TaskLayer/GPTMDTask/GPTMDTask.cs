@@ -31,8 +31,8 @@ namespace TaskLayer
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
-            PrecursorMassTolerance = new Tolerance(ToleranceUnit.PPM, 2);
+            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            PrecursorMassTolerance = new PpmTolerance(2);
             BIons = true;
             YIons = true;
             CIons = false;

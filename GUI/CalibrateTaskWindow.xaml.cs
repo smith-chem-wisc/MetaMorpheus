@@ -68,9 +68,9 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
 
             productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
+            productMassToleranceComboBox.SelectedIndex = task.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            precursorMassToleranceComboBox.SelectedIndex = (int)task.PrecursorMassTolerance.Unit;
+            precursorMassToleranceComboBox.SelectedIndex = task.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
@@ -163,11 +163,10 @@ namespace MetaMorpheusGUI
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
-            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                productMassToleranceComboBox.Items.Add(toleranceUnit);
-
-            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                precursorMassToleranceComboBox.Items.Add(toleranceUnit);
+            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Ppm");
+            precursorMassToleranceComboBox.Items.Add("Absolute");
+            precursorMassToleranceComboBox.Items.Add("Ppm");
 
             foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -195,16 +194,15 @@ namespace MetaMorpheusGUI
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
         }
 
-        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
         }
 
-        private void saveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            int temp;
-            TheTask.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            TheTask.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
             TheTask.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
             TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
@@ -232,11 +230,15 @@ namespace MetaMorpheusGUI
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
+            if (productMassToleranceComboBox.SelectedIndex == 0)
+                TheTask.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            else
+                TheTask.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
-            TheTask.PrecursorMassTolerance.Value = double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.PrecursorMassTolerance.Unit = (ToleranceUnit)precursorMassToleranceComboBox.SelectedIndex;
+            if (precursorMassToleranceComboBox.SelectedIndex == 0)
+                TheTask.PrecursorMassTolerance = new AbsoluteTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            else
+                TheTask.PrecursorMassTolerance = new PpmTolerance(double.Parse(precursorMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 TheTask.MaxDegreeOfParallelism = jsakdf;
@@ -249,8 +251,7 @@ namespace MetaMorpheusGUI
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
-            var hm = ye.Content as TextBlock;
-            if (hm != null && !string.IsNullOrEmpty(hm.Text))
+            if (ye.Content is TextBlock hm && !string.IsNullOrEmpty(hm.Text))
             {
                 System.Diagnostics.Process.Start(hm.Text);
             }

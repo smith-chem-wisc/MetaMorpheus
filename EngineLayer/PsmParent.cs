@@ -55,6 +55,7 @@ namespace EngineLayer
         public ProteinLinkedInfo Pli { get; private set; }
         public double PeptideMonoisotopicMass { get; internal set; }
         public FdrInfo FdrInfo { get; set; }
+        public LocalizationResults LocalizationResults { get; internal set; }
 
         #endregion Public Properties
 
@@ -148,6 +149,42 @@ namespace EngineLayer
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
         }
 
+        public static string GetTabSeparatedHeader()
+        {
+            var sb = new StringBuilder();
+            sb.Append("File Name" + '\t');
+            sb.Append("Scan Number" + '\t');
+            sb.Append("Scan Retention Time" + '\t');
+            sb.Append("Num Experimental Peaks" + '\t');
+            sb.Append("Total Ion Current" + '\t');
+            sb.Append("Precursor Scan Number" + '\t');
+            sb.Append("Precursor Charge" + '\t');
+            sb.Append("Precursor MZ" + '\t');
+            sb.Append("Precursor Intensity" + '\t');
+            sb.Append("Precursor Mass" + '\t');
+            sb.Append("Score" + '\t');
+            sb.Append("Notch" + '\t');
+            sb.Append("Quantification Intensity" + '\t');
+            sb.Append("Ambiguous Matches" + '\t');
+
+            sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
+            sb.Append(LocalizationResults.GetTabSeparatedHeader() + '\t');
+
+            // Need info from both current and from Pli
+            sb.Append("Improvement Possible" + '\t');
+            sb.Append("Mass Diff (Da)" + '\t');
+            sb.Append("Mass Diff (ppm)");
+
+            sb.Append("Cumulative Target" + '\t');
+            sb.Append("Cumulative Decoy" + '\t');
+            sb.Append("QValue" + '\t');
+            sb.Append("Cumulative Target Notch" + '\t');
+            sb.Append("Cumulative Decoy Notch" + '\t');
+            sb.Append("QValue Notch");
+
+            return sb.ToString();
+        }
+
         public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
 
         public void SetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
@@ -175,11 +212,14 @@ namespace EngineLayer
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append(Pli.ToString() + '\t');
-            if (Pli.LocalizedScores != null)
-                sb.Append((Pli.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            if (LocalizationResults != null)
+            {
+                sb.Append(LocalizationResults.ToString() + '\t');
+                sb.Append((LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+            }
             sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
-            
+
             sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
@@ -190,12 +230,8 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        #endregion Public Methods
-
-
         public void SetValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
         {
-
             FdrInfo = new FdrInfo()
             {
                 cumulativeTarget = cumulativeTarget,
@@ -207,44 +243,7 @@ namespace EngineLayer
             };
         }
 
-        #region Internal Methods
-
-        public static string GetTabSeparatedHeader()
-        {
-            var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Scan Retention Time" + '\t');
-            sb.Append("Num Experimental Peaks" + '\t');
-            sb.Append("Total Ion Current" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Intensity" + '\t');
-            sb.Append("Precursor Mass" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Notch" + '\t');
-            sb.Append("Quantification Intensity" + '\t');
-            sb.Append("Ambiguous Matches" + '\t');
-
-            sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
-
-            // Need info from both current and from Pli
-            sb.Append("Improvement Possible" + '\t');
-            sb.Append("Mass Diff (Da)" + '\t');
-            sb.Append("Mass Diff (ppm)");
-
-            sb.Append("Cumulative Target" + '\t');
-            sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("QValue" + '\t');
-            sb.Append("Cumulative Target Notch" + '\t');
-            sb.Append("Cumulative Decoy Notch" + '\t');
-            sb.Append("QValue Notch");
-
-            return sb.ToString();
-        }
-
-        #endregion Internal Methods
+        #endregion Public Methods
 
     }
 }
