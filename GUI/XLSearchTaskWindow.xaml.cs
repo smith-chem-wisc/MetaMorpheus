@@ -106,8 +106,8 @@ namespace MetaMorpheusGUI
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
-            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                cbbXLprecusorMsTl.Items.Add(toleranceUnit);
+            //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
+            //    cbbXLprecusorMsTl.Items.Add(toleranceUnit);
 
             foreach (Protease protease in GlobalTaskLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -116,8 +116,8 @@ namespace MetaMorpheusGUI
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
 
-            foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-                productMassToleranceComboBox.Items.Add(toleranceUnit);
+            //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
+            //    productMassToleranceComboBox.Items.Add(toleranceUnit);
 
             foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
@@ -161,7 +161,7 @@ namespace MetaMorpheusGUI
             txtUdXLkerShortMass.Text = task.UdXLkerShortMass.HasValue ? task.UdXLkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerLongMass.Text = task.UdXLkerLongMass.HasValue ? task.UdXLkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerAminoAcid.Text = task.UdXLkerResidue;
-            cbbXLprecusorMsTl.SelectedIndex = (int)task.XLprecusorMsTl.Unit;
+            cbbXLprecusorMsTl.SelectedIndex = task.XLprecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLPrecusorMsTl.Text = task.XLprecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
             checkBoxDecoy.IsChecked = task.SearchDecoy;
@@ -172,7 +172,7 @@ namespace MetaMorpheusGUI
             maxModificationIsoformsTextBox.Text = task.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
-            productMassToleranceComboBox.SelectedIndex = (int)task.ProductMassTolerance.Unit;
+            productMassToleranceComboBox.SelectedIndex = task.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
@@ -267,8 +267,10 @@ namespace MetaMorpheusGUI
             TheTask.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
             TheTask.crosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
-            TheTask.XLprecusorMsTl.Value = double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture);
-            TheTask.XLprecusorMsTl.Unit = (ToleranceUnit)cbbXLprecusorMsTl.SelectedIndex;
+            if (cbbXLprecusorMsTl.SelectedIndex == 0)
+                TheTask.XLprecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+            else
+                TheTask.XLprecusorMsTl = new PpmTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             if (TheTask.crosslinkerType == CrosslinkerType.UserDefined)
             {
                 TheTask.UdXLkerName = txtUdXLKerName.Text;
@@ -285,8 +287,10 @@ namespace MetaMorpheusGUI
             TheTask.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
-            TheTask.ProductMassTolerance.Value = double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.ProductMassTolerance.Unit = (ToleranceUnit)productMassToleranceComboBox.SelectedIndex;
+            if (productMassToleranceComboBox.SelectedIndex == 0)
+                TheTask.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
+            else
+                TheTask.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.CIons = cCheckBox.IsChecked.Value;

@@ -48,7 +48,7 @@ namespace TaskLayer
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            ProductMassTolerance = ProductMassTolerance = new AbsoluteTolerance(0.01);
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -81,7 +81,7 @@ namespace TaskLayer
             UdXLkerLongMass = null;
             UdXLkerTotalMass = null;
             UdXLkerResidue = null;
-            XLprecusorMsTl = new Tolerance(ToleranceUnit.Absolute, 0.01);
+            XLprecusorMsTl = new AbsoluteTolerance(0.01);
         }
 
         #endregion Public Constructors
