@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
+using EngineLayer.CrosslinkSearch;
 
 namespace TaskLayer
 {
@@ -20,7 +21,8 @@ namespace TaskLayer
     {
         Search,
         Gptmd,
-        Calibrate
+        Calibrate,
+        XLSearch
     }
 
     public abstract class MetaMorpheusTask
