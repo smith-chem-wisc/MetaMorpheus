@@ -372,10 +372,7 @@ namespace TaskLayer
                     GC.Collect();
                     ReportProgress(new ProgressEventArgs(100, "Done quantifying!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
                 });
-
-                if (FlashLfqEngine.mbr)
-                    FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
-
+                
                 // assign quantities to PSMs
                 Dictionary<string, List<PsmParent>> baseseqToPsm = new Dictionary<string, List<PsmParent>>();
                 List<PsmParent> list;
