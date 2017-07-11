@@ -361,46 +361,6 @@ namespace TaskLayer
             return myTaskResults;
         }
 
-        protected void WriteCrosslinkToTsv(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, List<string> nestedIds)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".mytsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tTotalScore\tMass diff\tQValue");
-                foreach (var item in items)
-                {
-                    var x = item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
-                    output.WriteLine(
-                        item.Item1.FullFilePath
-                        + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
-                        + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t"
-                        + "\t" + item.Item1.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.Pli.BaseSequence
-                        + "\t" + item.Item1.Pli.FullSequence
-                        + "\t" + item.Item1.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
-                        //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t"
-                        + "\t" + item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.Pli.BaseSequence
-                        + "\t" + item.Item2.Pli.FullSequence
-                        + "\t" + item.Item2.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
-                        //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
-
-                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.Pli.PeptideMonoisotopicMass - item.Item1.Pli.PeptideMonoisotopicMass)
-                        + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
-        }
-
         #endregion Protected Methods
 
         #region Private Methods
@@ -487,6 +447,46 @@ namespace TaskLayer
             }
 
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
+        }
+
+        private void WriteCrosslinkToTsv(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            var writtenFile = Path.Combine(outputFolder, fileName + ".mytsv");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
+                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore" +
+                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tTotalScore\tMass diff\tQValue");
+                foreach (var item in items)
+                {
+                    var x = item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
+                    output.WriteLine(
+                        item.Item1.FullFilePath
+                        + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
+                        + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t"
+                        + "\t" + item.Item1.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.Pli.BaseSequence
+                        + "\t" + item.Item1.Pli.FullSequence
+                        + "\t" + item.Item1.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
+                        //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
+                        + "\t"
+                        + "\t" + item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.Pli.BaseSequence
+                        + "\t" + item.Item2.Pli.FullSequence
+                        + "\t" + item.Item2.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
+                        //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
+
+                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.Pli.PeptideMonoisotopicMass - item.Item1.Pli.PeptideMonoisotopicMass)
+                        + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
+                }
+            }
+            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
         #endregion Private Methods
