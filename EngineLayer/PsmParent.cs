@@ -173,7 +173,7 @@ namespace EngineLayer
             // Need info from both current and from Pli
             sb.Append("Improvement Possible" + '\t');
             sb.Append("Mass Diff (Da)" + '\t');
-            sb.Append("Mass Diff (ppm)");
+            sb.Append("Mass Diff (ppm)" + '\t');
 
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
@@ -217,8 +217,12 @@ namespace EngineLayer
                 sb.Append(LocalizationResults.ToString() + '\t');
                 sb.Append((LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
             }
+            else
+            {
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+            }
             sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
