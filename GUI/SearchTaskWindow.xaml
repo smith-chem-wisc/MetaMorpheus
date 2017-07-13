@@ -6,7 +6,12 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
         <DockPanel>
             <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                 <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
@@ -295,10 +300,11 @@
                     </StackPanel>
                 </Expander>
             </GroupBox>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Bottom" Height="40">
-                <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-                <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
-            </StackPanel>
         </DockPanel>
     </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
+        </StackPanel>
+    </Grid>
 </Window>
