@@ -173,6 +173,10 @@ namespace MetaMorpheusGUI
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
 
+            DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
+            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
+            DeconvolutionMassToleranceInPpmTextBox.Text = task.DeconvolutionMassTolerance.Value.ToString();
+
             foreach (var mod in task.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -288,6 +292,10 @@ namespace MetaMorpheusGUI
 
             TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+            TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
