@@ -57,11 +57,12 @@ namespace MetaMorpheusGUI
             GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
             GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
 
-            EverythingRunnerEngine.newDbsHandler += AddNewDB;
-            EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
-            EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
-            EverythingRunnerEngine.warnHandler += EverythingRunnerEngine_warnHandler;
+            EverythingRunnerEngine.NewDbsHandler += AddNewDB;
+            EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
+            EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
+            EverythingRunnerEngine.FinishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.WarnHandler += EverythingRunnerEngine_warnHandler;
+            EverythingRunnerEngine.FinishedWritingAllResultsFileHandler += EverythingRunnerEngine_FinishedWritingAllResultsFileHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MetaMorpheusTask.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
@@ -82,6 +83,20 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, string e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(sender, e)));
+            }
+            else
+            {
+                dynamicTasksObservableCollection.Add(new InRunTask("All Task Results", null));
+                dynamicTasksObservableCollection.Last().Progress = 100;
+                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e));
+            }
+        }
 
         private void EverythingRunnerEngine_warnHandler(object sender, StringEventArgs e)
         {
@@ -303,6 +318,7 @@ namespace MetaMorpheusGUI
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye3));
                             break;
+
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye4));
@@ -629,11 +645,11 @@ namespace MetaMorpheusGUI
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
                         return;
+
                     case MyTask.XLSearch:
                         var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
                         XLSearchdialog.ShowDialog();
                         return;
-
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
@@ -671,6 +687,7 @@ namespace MetaMorpheusGUI
                             var ye3 = Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye3));
                             break;
+
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye4));

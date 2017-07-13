@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.Analysis;
+using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using MzLibUtil;
 using Nett;
@@ -13,7 +14,6 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
-using EngineLayer.CrosslinkSearch;
 
 namespace TaskLayer
 {
@@ -96,9 +96,64 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public MyTask TaskType { get; set; }
 
+        public bool DoPrecursorDeconvolution { get; set; }
+        public bool UseProvidedPrecursorInfo { get; set; }
+        public double DeconvolutionIntensityRatio { get; set; }
+        public int DeconvolutionMaxAssumedChargeState { get; set; }
+        public Tolerance DeconvolutionMassTolerance { get; set; }
+
         #endregion Public Properties
 
         #region Public Methods
+
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string fullFilePath,
+         bool doPrecursorDeconvolution,
+         bool useProvidedPrecursorInfo,
+         double deconvolutionIntensityRatio,
+         int deconvolutionMaxAssumedChargeState,
+         Tolerance deconvolutionMassTolerance)
+        {
+            foreach (var ms2scan in myMSDataFile.OfType<IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>>())
+            {
+                var precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber);
+
+                ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
+
+                if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                    ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
+
+                List<Tuple<List<IMzPeak>, int>> isolatedStuff = new List<Tuple<List<IMzPeak>, int>>();
+                if (doPrecursorDeconvolution)
+                {
+                    isolatedStuff = ms2scan.GetIsolatedMassesAndCharges(precursorSpectrum.MassSpectrum, deconvolutionMaxAssumedChargeState, deconvolutionMassTolerance, deconvolutionIntensityRatio).ToList();
+                }
+
+                if (useProvidedPrecursorInfo)
+                    if (ms2scan.SelectedIonChargeStateGuess.HasValue)
+                    {
+                        var PrecursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
+                        if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
+                        {
+                            var PrecursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+                            if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
+                            {
+                                isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonMonoisotopicGuessIntensity.Value) }, PrecursorCharge));
+                            }
+                        }
+                        else
+                        {
+                            var PrecursorMZ = ms2scan.SelectedIonMZ;
+                            if (!isolatedStuff.Any(b => deconvolutionMassTolerance.Within(PrecursorMZ.ToMass(PrecursorCharge), b.Item1.First().Mz.ToMass(b.Item2))))
+                            {
+                                isolatedStuff.Add(new Tuple<List<IMzPeak>, int>(new List<IMzPeak> { new MzPeak(PrecursorMZ, ms2scan.SelectedIonIntensity.Value) }, PrecursorCharge));
+                            }
+                        }
+                    }
+
+                foreach (var heh in isolatedStuff)
+                    yield return new Ms2ScanWithSpecificMass(ms2scan, heh.Item1.First(), heh.Item2, fullFilePath);
+            }
+        }
 
         public static MassDiffAcceptor ParseSearchMode(string text)
         {

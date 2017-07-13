@@ -66,11 +66,15 @@ namespace TaskLayer
 
             MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
-            FindAllPrecursors = true;
-            UseProvidedPrecursorInfo = true;
-
             ConserveMemory = false;
             MaxDegreeOfParallelism = null;
+
+            // Deconvolution stuff
+            DoPrecursorDeconvolution = true;
+            UseProvidedPrecursorInfo = true;
+            DeconvolutionIntensityRatio = 4;
+            DeconvolutionMaxAssumedChargeState = 10;
+            DeconvolutionMassTolerance = new PpmTolerance(5);
         }
 
         #endregion Public Constructors
@@ -110,8 +114,6 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
 
-        public bool FindAllPrecursors { get; set; }
-        public bool UseProvidedPrecursorInfo { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
 
@@ -278,7 +280,7 @@ namespace TaskLayer
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
 
                     Status("Getting ms2 scans...", thisId);
-                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                     Status("Starting search...", thisId);
                     SearchResults searchResults;

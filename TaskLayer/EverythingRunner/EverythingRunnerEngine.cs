@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace TaskLayer
 {
@@ -32,15 +33,17 @@ namespace TaskLayer
 
         #region Public Events
 
-        public static event EventHandler startingAllTasksEngineHandler;
+        public static event EventHandler<string> FinishedWritingAllResultsFileHandler;
 
-        public static event EventHandler<string> finishedAllTasksEngineHandler;
+        public static event EventHandler StartingAllTasksEngineHandler;
 
-        public static event EventHandler<XmlForTaskListEventArgs> newDbsHandler;
+        public static event EventHandler<string> FinishedAllTasksEngineHandler;
 
-        public static event EventHandler<StringListEventArgs> newSpectrasHandler;
+        public static event EventHandler<XmlForTaskListEventArgs> NewDbsHandler;
 
-        public static event EventHandler<StringEventArgs> warnHandler;
+        public static event EventHandler<StringListEventArgs> NewSpectrasHandler;
+
+        public static event EventHandler<StringEventArgs> WarnHandler;
 
         #endregion Public Events
 
@@ -72,17 +75,21 @@ namespace TaskLayer
 
             string rootOutputDir = Path.Combine(longestDir, startTimeForAllFilenames);
 
+            StringBuilder allResultsText = new StringBuilder();
+
             for (int i = 0; i < taskList.Count; i++)
             {
                 if (!currentRawDataFilenameList.Any())
                 {
                     Warn("Cannot proceed. No data files selected.");
                     FinishedAllTasks(rootOutputDir);
+                    return;
                 }
                 if (!currentXmlDbFilenameList.Any())
                 {
                     Warn("Cannot proceed. No xml files selected.");
                     FinishedAllTasks(rootOutputDir);
+                    return;
                 }
                 var ok = taskList[i];
 
@@ -102,8 +109,19 @@ namespace TaskLayer
                     currentRawDataFilenameList = myTaskResults.newSpectra;
                     NewSpectras(myTaskResults.newSpectra);
                 }
+                allResultsText.AppendLine(Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + myTaskResults.ToString());
             }
             stopWatch.Stop();
+
+            var resultsFileName = Path.Combine(rootOutputDir, "allResults.txt");
+            using (StreamWriter file = new StreamWriter(resultsFileName))
+            {
+                file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                file.WriteLine("Total time: " + stopWatch.Elapsed);
+                file.Write(allResultsText.ToString());
+            }
+            FinishedWritingAllResultsFileHandler?.Invoke(this, resultsFileName);
+
             FinishedAllTasks(rootOutputDir);
         }
 
@@ -113,27 +131,27 @@ namespace TaskLayer
 
         private void Warn(string v)
         {
-            warnHandler?.Invoke(this, new StringEventArgs(v, null));
+            WarnHandler?.Invoke(this, new StringEventArgs(v, null));
         }
 
         private void StartingAllTasks()
         {
-            startingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
+            StartingAllTasksEngineHandler?.Invoke(this, EventArgs.Empty);
         }
 
         private void FinishedAllTasks(string rootOutputDir)
         {
-            finishedAllTasksEngineHandler?.Invoke(this, rootOutputDir);
+            FinishedAllTasksEngineHandler?.Invoke(this, rootOutputDir);
         }
 
         private void NewSpectras(List<string> newSpectra)
         {
-            newSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
+            NewSpectrasHandler?.Invoke(this, new StringListEventArgs(newSpectra));
         }
 
         private void NewDBs(List<DbForTask> newDatabases)
         {
-            newDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
+            NewDbsHandler?.Invoke(this, new XmlForTaskListEventArgs(newDatabases));
         }
 
         #endregion Private Methods
