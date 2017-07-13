@@ -152,7 +152,7 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(XLSearchTask task)
         {
             //Crosslink search para
-            cbCrosslinker.SelectedIndex = (int)task.crosslinkerType;
+            cbCrosslinker.SelectedIndex = (int)task.CrosslinkerType;
             txtXLTopNum.Text = task.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
             ckbSearchWithXLAllBeta.IsChecked = task.CrosslinkSearchWithAllBeta;
             txtUdXLKerName.Text = task.UdXLkerName;
@@ -266,12 +266,12 @@ namespace MetaMorpheusGUI
         {
             TheTask.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
             TheTask.CrosslinkSearchWithAllBeta = ckbSearchWithXLAllBeta.IsChecked.Value;
-            TheTask.crosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
+            TheTask.CrosslinkerType = (CrosslinkerType)cbCrosslinker.SelectedIndex;
             if (cbbXLprecusorMsTl.SelectedIndex == 0)
                 TheTask.XLprecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             else
                 TheTask.XLprecusorMsTl = new PpmTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
-            if (TheTask.crosslinkerType == CrosslinkerType.UserDefined)
+            if (TheTask.CrosslinkerType == CrosslinkerType.UserDefined)
             {
                 TheTask.UdXLkerName = txtUdXLKerName.Text;
                 TheTask.UdXLkerCleavable = ckbUdXLkerCleavable.IsChecked.Value;

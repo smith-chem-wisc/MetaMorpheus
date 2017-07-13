@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -53,10 +54,13 @@ namespace Test
 
             var myMsDataFile = new FakeMsDataFile(Scans);
 
-            bool useProvidedPrecursorInfo = true;
-            bool findAllPrecursors = true;
-            var intensityRatio = 50;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+            bool DoPrecursorDeconvolution = true;
+            bool UseProvidedPrecursorInfo = true;
+            double DeconvolutionIntensityRatio = 50;
+            int DeconvolutionMaxAssumedChargeState = 10;
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;

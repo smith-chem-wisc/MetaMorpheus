@@ -169,7 +169,7 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
-            deconvolutePrecursors.IsChecked = task.FindAllPrecursors;
+            deconvolutePrecursors.IsChecked = task.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
 
@@ -286,7 +286,7 @@ namespace MetaMorpheusGUI
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
 
-            TheTask.FindAllPrecursors = deconvolutePrecursors.IsChecked.Value;
+            TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
