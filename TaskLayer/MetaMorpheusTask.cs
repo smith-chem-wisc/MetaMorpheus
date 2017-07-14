@@ -257,6 +257,8 @@ namespace TaskLayer
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
             FinishedSingleTask(taskId);
+
+
 #if !DEBUG
             }
             catch (Exception e)
@@ -266,6 +268,7 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(resultsFileName))
                 {
                     file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                    file.WriteLine(MzLibUtil.SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
                     file.Write("e: " + e);
                     file.Write("e.Message: " + e.Message);
                     file.Write("e.InnerException: " + e.InnerException);
