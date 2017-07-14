@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
-using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
+using EngineLayer.CrosslinkAnalysis;
+using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using FlashLFQ;
@@ -14,8 +15,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EngineLayer.CrosslinkSearch;
-using EngineLayer.CrosslinkAnalysis;
 
 namespace TaskLayer
 {
@@ -67,12 +66,9 @@ namespace TaskLayer
 
             MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
-            FindAllPrecursors = false;
-            UseProvidedPrecursorInfo = true;
-
             ConserveMemory = false;
             MaxDegreeOfParallelism = null;
-            crosslinkerType = CrosslinkerType.DSS;
+            CrosslinkerType = CrosslinkerType.DSS;
             CrosslinkSearchTopNum = 50;
             CrosslinkSearchWithAllBeta = false;
             UdXLkerName = null;
@@ -82,6 +78,13 @@ namespace TaskLayer
             UdXLkerTotalMass = null;
             UdXLkerResidue = null;
             XLprecusorMsTl = new AbsoluteTolerance(0.01);
+
+            // Deconvolution stuff
+            DoPrecursorDeconvolution = true;
+            UseProvidedPrecursorInfo = true;
+            DeconvolutionIntensityRatio = 4;
+            DeconvolutionMaxAssumedChargeState = 10;
+            DeconvolutionMassTolerance = new PpmTolerance(5);
         }
 
         #endregion Public Constructors
@@ -121,14 +124,12 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
 
-        public bool FindAllPrecursors { get; set; }
-        public bool UseProvidedPrecursorInfo { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
 
-        public CrosslinkerType crosslinkerType { get; set; }
+        public CrosslinkerType CrosslinkerType { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
         public bool CrosslinkSearchWithAllBeta { get; set; }
         public string UdXLkerName { get; set; }
@@ -138,7 +139,6 @@ namespace TaskLayer
         public double? UdXLkerLongMass { get; set; }
         public string UdXLkerResidue { get; set; }
         public Tolerance XLprecusorMsTl { get; set; }
-
 
         #endregion Public Properties
 
@@ -245,46 +245,45 @@ namespace TaskLayer
 
             #region Generate indices for modern search
 
-                Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
-                string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+            Status("Getting fragment dictionary...", new List<string> { taskId });
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
-                Dictionary<float, List<int>> fragmentIndexDict;
-                if (pathToFolderWithIndices == null)
-                {
-                    var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
-                    Status("Writing params...", new List<string> { taskId });
-                    WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
+            Dictionary<float, List<int>> fragmentIndexDict;
+            if (pathToFolderWithIndices == null)
+            {
+                var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
+                Status("Writing params...", new List<string> { taskId });
+                WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
 
-                    Status("Running Index Engine...", new List<string> { taskId });
-                    var indexResults = (IndexingResults)indexEngine.Run();
-                    peptideIndex = indexResults.PeptideIndex;
-                    fragmentIndexDict = indexResults.FragmentIndexDict;
+                Status("Running Index Engine...", new List<string> { taskId });
+                var indexResults = (IndexingResults)indexEngine.Run();
+                peptideIndex = indexResults.PeptideIndex;
+                fragmentIndexDict = indexResults.FragmentIndexDict;
 
-                    Status("Writing peptide index...", new List<string> { taskId });
-                    WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
-                    Status("Writing fragment index...", new List<string> { taskId });
-                    WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
-                }
-                else
-                {
-                    Status("Reading peptide index...", new List<string> { taskId });
-                    var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                    var ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                        peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+                Status("Writing peptide index...", new List<string> { taskId });
+                WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
+                Status("Writing fragment index...", new List<string> { taskId });
+                WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
+            }
+            else
+            {
+                Status("Reading peptide index...", new List<string> { taskId });
+                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                var ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
 
-                    Status("Reading fragment index...", new List<string> { taskId });
-                    messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-                    ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                        fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
-                }
-                keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+                Status("Reading fragment index...", new List<string> { taskId });
+                messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                ser = new NetSerializer.Serializer(messageTypes);
+                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                    fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+            }
+            keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+            fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-                #endregion Generate indices for modern search
-            
+            #endregion Generate indices for modern search
 
             object lock2 = new object();
             MyFileManager myFileManager = new MyFileManager();
@@ -295,8 +294,8 @@ namespace TaskLayer
             double completedFiles = 0;
 
             var crosslinker = new CrosslinkerTypeClass();
-            crosslinker.SelectCrosslinker(crosslinkerType);
-            if (crosslinkerType == CrosslinkerType.UserDefined)
+            crosslinker.SelectCrosslinker(CrosslinkerType);
+            if (CrosslinkerType == CrosslinkerType.UserDefined)
             {
                 crosslinker.CrosslinkerName = UdXLkerName;
                 crosslinker.Cleavable = UdXLkerCleavable;
@@ -316,7 +315,7 @@ namespace TaskLayer
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
 
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, FindAllPrecursors, UseProvidedPrecursorInfo, 4, origDataFile).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 Status("Starting search...", thisId);
                 SearchResults searchResults;
@@ -329,7 +328,6 @@ namespace TaskLayer
                     xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
                 else
                     xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, ionTypes, modsDictionary, thisId).Run());
-                
 
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -353,11 +351,11 @@ namespace TaskLayer
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsmsXLTuple, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }).Run();
- 
+
             WriteCrosslinkToTsv(allPsmsXLTuple, OutputFolder, "xl_all", new List<string> { taskId });
             var allPsmsXLTupleFDR = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).Where(p => p.Item1.Pli.IsDecoy != true && p.Item2.Pli.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
-            
+
             return myTaskResults;
         }
 

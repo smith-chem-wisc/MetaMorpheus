@@ -343,7 +343,7 @@ namespace Test
             #endregion MZML File
 
             //run!
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();
 
@@ -445,7 +445,7 @@ namespace Test
 
             #region run
 
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
             string outputFolderInThisTest = outputFolder;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();

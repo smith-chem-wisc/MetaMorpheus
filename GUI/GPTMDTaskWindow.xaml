@@ -9,7 +9,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
-            <RowDefinition Height="20" />
+            <RowDefinition Height="50" />
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
@@ -188,9 +188,9 @@
                 </GroupBox>
             </DockPanel>
         </ScrollViewer>
-        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click" />
+            <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click" FontSize="24"  />
         </StackPanel>
     </Grid>
 </Window>

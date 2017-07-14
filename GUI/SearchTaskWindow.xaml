@@ -6,14 +6,31 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="Search Task" Width="750" Height="750" WindowStartupLocation="CenterScreen">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
         <DockPanel>
             <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                 <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
-                    <StackPanel>
-                        <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
-                        <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
-                    </StackPanel>
+                        <StackPanel>
+                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
+                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label Content="Decsonvolution Intensity Ratio " />
+                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label Content="Deconvolution Max Assumed Charge State" />
+                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" Width="45"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label Content="Deconvolution Mass Tolerance in PPM" />
+                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45"/>
+                            </StackPanel>
+                        </StackPanel>
                 </Expander>
             </GroupBox>
             <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
@@ -295,10 +312,11 @@
                     </StackPanel>
                 </Expander>
             </GroupBox>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" DockPanel.Dock="Bottom" Height="40">
-                <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-                <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
-            </StackPanel>
         </DockPanel>
     </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
+        </StackPanel>
+    </Grid>
 </Window>
