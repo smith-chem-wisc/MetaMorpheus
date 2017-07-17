@@ -1,17 +1,18 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
+using Proteomics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
-using Proteomics;
+using System.Threading.Tasks;
 
 namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSearchEngine : MetaMorpheusEngine
     {
+
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
@@ -28,14 +29,18 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly MassDiffAcceptor searchMode;
 
-        //Crosslink parameters
-        private CrosslinkerTypeClass crosslinker;
         private readonly int CrosslinkSearchTopNum;
+
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
+
         private readonly Tolerance XLprecusorMsTl;
 
         private readonly List<ProductType> lp;
+
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
+
+        //Crosslink parameters
+        private CrosslinkerTypeClass crosslinker;
 
         #endregion Private Fields
 
@@ -103,7 +108,6 @@ namespace EngineLayer.CrosslinkSearch
 
                         if (consideredScore >= 1)
                         {
-
                             // Check if makes sense to add due to peptidescore!
                             //currentWorstScore to mark the current worst score and peptide for comparation and removal.
                             double currentWorstScore = worstScores;
@@ -152,8 +156,6 @@ namespace EngineLayer.CrosslinkSearch
                                     worstScores = bestPeptideScoreNotch.Last().BestScore;
                                 }
                             }
-                            #endregion
-
                         }
                     }
 
@@ -180,7 +182,6 @@ namespace EngineLayer.CrosslinkSearch
                             }
                         }
                     }
-
                 }
                 lock (outputObject)
                 {
@@ -226,10 +227,10 @@ namespace EngineLayer.CrosslinkSearch
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
         {
-            foreach (var experimentalPeak in spectrum.MassSpectrum)
+            for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
+                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
@@ -279,7 +280,6 @@ namespace EngineLayer.CrosslinkSearch
 
             for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
             {
-
                 var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
                 for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
                 {
@@ -443,10 +443,9 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
             //}
-
         }
 
         #endregion Private Methods
+
     }
 }
-

@@ -1,23 +1,24 @@
 ﻿using Chemistry;
+using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using MzLibUtil;
+using Proteomics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
-using Proteomics;
-using EngineLayer.ClassicSearch;
-
+using System.Threading.Tasks;
 
 namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSearchEngine2 : MetaMorpheusEngine
     {
+
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 
+        private const int max_mods_for_peptide = 3;
         private readonly List<int>[] fragmentIndex;
 
         private readonly Tolerance fragmentTolerance;
@@ -33,28 +34,24 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<ProductType> lp;
         //Crosslink parameters
 
-        private CrosslinkerTypeClass crosslinker;
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLprecusorMsTl;
-
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly List<Protein> proteinList;
         private readonly Protease protease;
-
-        private const int max_mods_for_peptide = 3;
-
         private readonly int maximumMissedCleavages;
         private readonly int? minPeptideLength;
         private readonly int? maxPeptideLength;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly int maxModIsoforms;
-
-        //AnalysisEngine parameters 
-        //private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
+        private CrosslinkerTypeClass crosslinker;
 
         #endregion Private Fields
+
+        //AnalysisEngine parameters
+        //private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
 
         #region Public Constructors
 
@@ -178,12 +175,10 @@ namespace EngineLayer.CrosslinkSearch
                                     worstScores = bestPeptideScoreNotch.Last().BestScore;
                                 }
                             }
-                            #endregion
                         }
                     }
 
                     //Create parameters to store current Crosslinked psm data?
-
 
                     if (bestPeptideScoreNotch != null)
                     {
@@ -213,8 +208,6 @@ namespace EngineLayer.CrosslinkSearch
                 }
             });
             //return new CrosslinkSearchResults2(newPsmsTop, this);
-
-
 
             ///Start search the Beta PsmCross
             List<PsmCross> allAlphaPsms = new List<PsmCross>();
@@ -273,10 +266,10 @@ namespace EngineLayer.CrosslinkSearch
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
         {
-            foreach (var experimentalPeak in spectrum.MassSpectrum)
+            for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
+                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
                 float closestPeak = float.NaN;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
@@ -454,7 +447,6 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
             //}
-
         }
 
         private List<Tuple<PsmCross, PsmCross>> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory = false)
@@ -557,13 +549,11 @@ namespace EngineLayer.CrosslinkSearch
                                     }
                                 }
                             }
-
                         }
                     }
                 }
                 lock (lockObject)
                 {
-
                     for (int i = 0; i < outerPsms.Length; i++)
                         if (psms[i] != null)
                         {
@@ -641,7 +631,8 @@ namespace EngineLayer.CrosslinkSearch
             // index of the first element that is larger than value
             return index;
         }
+
         #endregion Private Methods
+
     }
 }
-
