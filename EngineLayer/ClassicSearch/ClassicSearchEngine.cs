@@ -72,7 +72,7 @@ namespace EngineLayer.ClassicSearch
             Status("In classic search engine!", nestedIds);
 
             int totalProteins = proteinList.Count;
-            
+
             var observed_sequences = new HashSet<CompactPeptide>();
 
             Status("Getting ms2 scans...", nestedIds);
@@ -97,9 +97,6 @@ namespace EngineLayer.ClassicSearch
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length <= 1)
-                            continue;
-
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {

@@ -93,9 +93,6 @@ namespace EngineLayer.Indexing
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length <= 1)
-                            continue;
-
                         if (peptide.NumKnownPossibleLocMods == 0)
                         {
                             lock (level3_observed)

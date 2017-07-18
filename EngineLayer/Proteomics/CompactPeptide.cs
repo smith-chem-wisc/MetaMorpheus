@@ -40,7 +40,8 @@ namespace EngineLayer
             else
                 theMass = 0;
             CTerminalMasses = ComputeFollowingFragmentMasses(yyy, theMass, yyy.Length, -1).ToArray();
-            MonoisotopicMass = waterMonoisotopicMass + CTerminalMasses[CTerminalMasses.Length - 1];
+
+            MonoisotopicMass = yyy.MonoisotopicMass;
         }
 
         #endregion Public Constructors
@@ -88,20 +89,20 @@ namespace EngineLayer
             if (containsAdot)
                 throw new NotImplementedException();
             if (containsB)
-                massLen += NTerminalMasses.Length - 2;
-            if (containsC)
                 massLen += NTerminalMasses.Length - 1;
+            if (containsC)
+                massLen += NTerminalMasses.Length;
             if (containsX)
                 throw new NotImplementedException();
             if (containsY)
-                massLen += CTerminalMasses.Length - 1;
+                massLen += CTerminalMasses.Length;
             if (containsZdot)
-                massLen += CTerminalMasses.Length - 1;
+                massLen += CTerminalMasses.Length;
 
             double[] massesToReturn = new double[massLen];
 
             int i = 0;
-            for (int j = 0; j < NTerminalMasses.Length - 1; j++)
+            for (int j = 0; j < NTerminalMasses.Length; j++)
             {
                 var hm = NTerminalMasses[j];
                 if (containsB)
@@ -118,7 +119,7 @@ namespace EngineLayer
                     i++;
                 }
             }
-            for (int j = 0; j < CTerminalMasses.Length - 1; j++)
+            for (int j = 0; j < CTerminalMasses.Length; j++)
             {
                 var hm = CTerminalMasses[j];
                 if (containsY)
@@ -170,7 +171,7 @@ namespace EngineLayer
                     break;
                 }
                 oneBasedIndexToLookAt += direction;
-            } while ((oneBasedIndexToLookAt >= 1 && direction == -1) || (oneBasedIndexToLookAt <= yyy.Length && direction == 1));
+            } while ((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < yyy.Length && direction == 1));
         }
 
         #endregion Private Methods

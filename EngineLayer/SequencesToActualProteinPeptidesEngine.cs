@@ -80,8 +80,6 @@ namespace EngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                     {
-                        if (peptideWithPossibleModifications.Length <= 1)
-                            continue;
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
                             HashSet<PeptideWithSetModifications> v;

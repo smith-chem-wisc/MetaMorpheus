@@ -41,7 +41,7 @@ namespace MyBenchmarkk
             int totalProteins = proteinList.Count;
             Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             int maximumMissedCleavages = 0;
-            int? minPeptideLength = null;
+            int? minPeptideLength = 5;
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 0;
             int max_mods_for_peptide = 0;
@@ -62,9 +62,6 @@ namespace MyBenchmarkk
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length <= 1)
-                            continue;
-
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
@@ -95,9 +92,6 @@ namespace MyBenchmarkk
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length <= 1)
-                            continue;
-
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
@@ -140,9 +134,6 @@ namespace MyBenchmarkk
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length <= 1)
-                            continue;
-
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {

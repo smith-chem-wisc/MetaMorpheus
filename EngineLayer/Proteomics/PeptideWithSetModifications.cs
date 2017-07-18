@@ -1,6 +1,8 @@
-﻿using Proteomics;
+﻿using Chemistry;
+using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer
@@ -17,6 +19,7 @@ namespace EngineLayer
 
         #region Private Fields
 
+        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private readonly PeptideWithPossibleModifications modPep;
         private string sequence;
         private bool? hasChemicalFormulas;
@@ -24,6 +27,7 @@ namespace EngineLayer
         private object lockObj = new object();
 
         private CompactPeptide compactPeptide;
+        private double? monoisotopicMass;
 
         #endregion Private Fields
 
@@ -64,7 +68,14 @@ namespace EngineLayer
         {
             get
             {
-                return CompactPeptide.MonoisotopicMass;
+                if (!monoisotopicMass.HasValue)
+                {
+                    monoisotopicMass = waterMonoisotopicMass;
+                    foreach (var mod in allModsOneIsNterminus.Values)
+                        monoisotopicMass += mod.monoisotopicMass;
+                    monoisotopicMass += BaseSequence.Select(b => Residue.ResidueMonoisotopicMass[b]).Sum();
+                }
+                return monoisotopicMass.Value;
             }
         }
 
