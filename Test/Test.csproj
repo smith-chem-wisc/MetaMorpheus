@@ -115,6 +115,7 @@
     <Compile Include="IndexEngineTest.cs" />
     <Compile Include="SearchEngineTests.cs" />
     <Compile Include="TestDataFile.cs" />
+    <Compile Include="TestPsm.cs" />
     <Compile Include="TestToml.cs" />
     <Compile Include="TestScan.cs" />
     <Compile Include="MyEngineTest.cs" />
