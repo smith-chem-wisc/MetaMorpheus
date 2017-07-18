@@ -17,12 +17,12 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public PsmCross(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan)
+        public PsmCross(CompactPeptide theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(theBestPeptide, notch, score, scanIndex, scan)
         {
             compactPeptide = theBestPeptide;
         }
 
-        public PsmCross(PeptideWithSetModifications ps, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(notch, score, scanIndex, scan)
+        public PsmCross(PeptideWithSetModifications ps, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan) : base(ps.CompactPeptide, notch, score, scanIndex, scan)
         {
             this.ps = ps;
         }

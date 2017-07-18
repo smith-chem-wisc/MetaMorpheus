@@ -22,7 +22,7 @@ namespace Test
             IMzPeak peak = new MzPeak(4, 4);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, peak, 1, null);
-            PsmParent psm = new PsmParent(pepWithSetMods, 1, 2, 3, scan);
+            PsmParent psm = new PsmParent(pepWithSetMods.CompactPeptide, 1, 2, 3, scan);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), PsmParent.GetTabSeparatedHeader().Count(f => f == '\t'));
 

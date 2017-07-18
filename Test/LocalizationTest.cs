@@ -37,8 +37,7 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            PsmParent newPsm = new PsmParent(0, 0, 2, scan);
-            newPsm.Add(ps.CompactPeptide);
+            PsmParent newPsm = new PsmParent(ps.CompactPeptide, 0, 0, 2, scan);
 
             Assert.IsNull(newPsm.Pli);
 

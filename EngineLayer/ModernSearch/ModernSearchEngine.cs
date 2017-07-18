@@ -129,8 +129,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][i] = new PsmParent(bestNotches[j], bestScores[j], i, thisScan);
-                            newPsms[j][i].Add(theBestPeptide);
+                            newPsms[j][i] = new PsmParent(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
                         }
                     }
                 }

@@ -74,12 +74,9 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakB, 1, null);
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakC, 1, null);
 
-            PsmParent matchA = new PsmParent(0, 0, 0, scanA);
-            matchA.Add(compactPeptide1);
-            PsmParent matchB = new PsmParent(0, 0, 0, scanB);
-            matchB.Add(compactPeptide2);
-            PsmParent matchC = new PsmParent(0, 0, 0, scanC);
-            matchC.Add(compactPeptide3);
+            PsmParent matchA = new PsmParent(compactPeptide1, 0, 0, 0, scanA);
+            PsmParent matchB = new PsmParent(compactPeptide2, 0, 0, 0, scanB);
+            PsmParent matchC = new PsmParent(compactPeptide3, 0, 0, 0, scanC);
 
             newPsms[0] = new List<PsmParent> { matchA, matchB, matchC };
 

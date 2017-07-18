@@ -43,8 +43,7 @@ namespace Test
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            PsmParent newPsm = new PsmParent(0, 0, 0, scan);
-            newPsm.Add(peptidesWithSetModifications.First().CompactPeptide);
+            PsmParent newPsm = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
@@ -86,10 +85,8 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            PsmParent match = new PsmParent(0, 0, 0, scan);
-            match.Add(peptidesWithSetModifications.First().CompactPeptide);
-            PsmParent newPsm = new PsmParent(0, 0, 0, scan);
-            newPsm.Add(peptidesWithSetModifications.First().CompactPeptide);
+            PsmParent match = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            PsmParent newPsm = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {

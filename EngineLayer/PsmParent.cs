@@ -27,7 +27,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public PsmParent(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.Notch = notch;
             this.Score = score;
@@ -42,11 +42,7 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
             this.QuantIntensity = new double[1];
-        }
-
-        public PsmParent(PeptideWithSetModifications peptide, int v1, int v2, int v3, Ms2ScanWithSpecificMass scan) : this(v1, v2, v3, scan)
-        {
-            Add(peptide.CompactPeptide);
+            Add(peptide);
         }
 
         #endregion Public Constructors
