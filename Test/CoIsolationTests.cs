@@ -76,8 +76,12 @@ namespace Test
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
-            //Assert.AreEqual("NNNK", (searchResults.Psms[0][0] as PsmClassic).ps.BaseSequence);
-            //Assert.AreEqual("NDNK", (searchResults.Psms[0][1] as PsmClassic).ps.BaseSequence);
+
+
+            new SequencesToActualProteinPeptidesEngine(new List<PsmParent>[] { new List<PsmParent> { searchResults.Psms[0][0], searchResults.Psms[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            
+            Assert.AreEqual("NNNK", searchResults.Psms[0][0].Pli.BaseSequence);
+            Assert.AreEqual("NDNK", searchResults.Psms[0][1].Pli.BaseSequence);
         }
 
         #endregion Public Methods
