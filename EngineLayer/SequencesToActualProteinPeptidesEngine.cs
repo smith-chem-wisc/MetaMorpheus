@@ -64,7 +64,7 @@ namespace EngineLayer
                     foreach (var psm in psmListForAspecificSerchMode)
                         if (psm != null)
                         {
-                            var cp = psm.GetCompactPeptide(modsDictionary);
+                            var cp = psm.compactPeptide;
                             if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                                 compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                         }
@@ -85,7 +85,7 @@ namespace EngineLayer
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
                             HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, modsDictionary), out v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
                                 v.Add(peptideWithSetModifications);
                         }
                     }

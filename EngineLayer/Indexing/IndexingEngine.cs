@@ -123,7 +123,7 @@ namespace EngineLayer.Indexing
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy, modsDictionary);
+                            var ps = new CompactPeptide(yyy);
 
                             int index;
                             lock (myDictionary)
@@ -132,7 +132,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.ProductMassesMightHaveDuplicatesAndNaNs(lp))
+                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

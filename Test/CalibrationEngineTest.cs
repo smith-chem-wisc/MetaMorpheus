@@ -35,12 +35,12 @@ namespace Test
 
             List<PsmParent> identifications = new List<PsmParent>();
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), new MzPeak(0, 0), 2, null);
-            PsmParent newPsm = new PsmClassic(pepWithSetMods, 0, 0, 0, scan);
+            PsmParent newPsm = new PsmParent(pepWithSetMods.CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
+                {newPsm.compactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             newPsm.SetProteinLinkedInfo(matching, modsDictionary);
@@ -69,12 +69,12 @@ namespace Test
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfd = new MzmlScanWithPrecursor(2, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, new MzPeak(2, 2), 2, null);
-            PsmParent newPsm = new PsmClassic(pepWithSetMods, 0, 0, 0, scan);
+            PsmParent newPsm = new PsmParent(pepWithSetMods.CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
+                {newPsm.compactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             newPsm.SetProteinLinkedInfo(matching, modsDictionary);

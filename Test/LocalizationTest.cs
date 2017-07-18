@@ -38,14 +38,14 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            PsmParent newPsm = new PsmClassic(ps, 0, 0, 2, scan);
+            PsmParent newPsm = new PsmParent(ps.CompactPeptide, 0, 0, 2, scan);
 
             Assert.IsNull(newPsm.Pli);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
+                {newPsm.compactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
             newPsm.SetProteinLinkedInfo(matching, modsDictionary);

@@ -318,11 +318,7 @@ namespace MetaMorpheusGUI
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye3));
                             break;
-
-                        case "XLSearch":
-                            var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye4));
-                            break;
+                            
                     }
                     break;
             }
@@ -405,16 +401,7 @@ namespace MetaMorpheusGUI
                 UpdateTaskGuiStuff();
             }
         }
-
-        private void btnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new XLSearchTaskWindow();
-            if (dialog.ShowDialog() == true)
-            {
-                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
-                UpdateTaskGuiStuff();
-            }
-        }
+        
 
         private void RemoveLastTask_Click(object sender, RoutedEventArgs e)
         {
@@ -547,7 +534,6 @@ namespace MetaMorpheusGUI
                 addCalibrateTaskButton.IsEnabled = false;
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
-                btnAddCrosslinkSearch.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -609,7 +595,6 @@ namespace MetaMorpheusGUI
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
-            btnAddCrosslinkSearch.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
 
             proteinDatabasesGroupBox.IsEnabled = true;
@@ -644,11 +629,6 @@ namespace MetaMorpheusGUI
                     case MyTask.Calibrate:
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
-                        return;
-
-                    case MyTask.XLSearch:
-                        var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
-                        XLSearchdialog.ShowDialog();
                         return;
                 }
 
@@ -686,11 +666,6 @@ namespace MetaMorpheusGUI
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye3));
-                            break;
-
-                        case "XLSearch":
-                            var ye4 = Toml.ReadFile<XLSearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye4));
                             break;
                     }
                 }

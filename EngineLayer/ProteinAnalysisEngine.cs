@@ -114,10 +114,7 @@ namespace EngineLayer
                 {
                     HashSet<Protein> proteinListHere;
                     string pepSequence;
-                    if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
-                    else
-                        pepSequence = compactPeptideToFullSeqMatch[peptide];
+                    pepSequence = compactPeptideToFullSeqMatch[peptide];
 
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out proteinListHere))
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });

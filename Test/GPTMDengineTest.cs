@@ -44,12 +44,12 @@ namespace Test
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            PsmParent newPsm = new PsmClassic(peptidesWithSetModifications.First(), 0, 0, 0, scan);
+            PsmParent newPsm = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
+                {newPsm.compactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -86,12 +86,12 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            PsmParent match = new PsmClassic(peptidesWithSetModifications.First(), 0, 0, 0, scan);
-            PsmParent newPsm = new PsmClassic(peptidesWithSetModifications.First(), 0, 0, 0, scan);
+            PsmParent match = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            PsmParent newPsm = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
+                {newPsm.compactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 

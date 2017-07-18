@@ -2,6 +2,7 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -10,12 +11,18 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public abstract class PsmParent
+    public class PsmParent
     {
+
+        #region Public Fields
+
+        public readonly CompactPeptide compactPeptide;
+
+        #endregion Public Fields
 
         #region Protected Constructors
 
-        protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, double peptideMonoisotopicMass)
+        public PsmParent(CompactPeptide compactPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.Notch = notch;
             this.Score = score;
@@ -30,11 +37,62 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
             this.QuantIntensity = new double[1];
-            this.PeptideMonoisotopicMass = peptideMonoisotopicMass;
+            this.PeptideMonoisotopicMass = compactPeptide.MonoisotopicMass;
+            this.compactPeptide = compactPeptide;
         }
 
         #endregion Protected Constructors
 
+        internal static bool? FirstIsPreferable(PsmParent firstPsm, PsmParent secondPsm, List<ModificationWithMass> variableMods)
+        {
+            // Existed! Need to compare with old match
+            if (Math.Abs(firstPsm.Score - secondPsm.Score) < 1e-9)
+            {
+                //// Score is same, need to see if accepts and if prefer the new one
+                //var first = firstPsm.ps;
+                //var second = secondPsm.ps;
+                //var pm = firstPsm.ScanPrecursorMass;
+
+                //// Prefer to be at zero rather than fewer modifications
+                //if ((Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
+                //    && (Math.Abs(second.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods))
+                //    return true;
+                //if ((Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
+                //    && (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods))
+                //    return false;
+
+                //int firstVarMods = first.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
+                //int secondVarMods = second.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
+
+                //// Want the lowest number of localizeable mods!!! Even at the expense of many variable and fixed mods.
+                //if (first.NumMods - firstVarMods - first.numFixedMods < second.NumMods - secondVarMods - second.numFixedMods)
+                //    return true;
+                //if (first.NumMods - firstVarMods - first.numFixedMods > second.NumMods - secondVarMods - second.numFixedMods)
+                //    return false;
+
+                //// If have same number of localizeable mods, pick the lowest number of localizeable + variable mods
+                //if (first.NumMods - first.numFixedMods < second.NumMods - second.numFixedMods)
+                //    return true;
+                //if (first.NumMods - first.numFixedMods > second.NumMods - second.numFixedMods)
+                //    return false;
+
+                //// If have same numbers of localizeable and variable mods, prefer not to have substitutions and removals!
+                //int firstNumRazor = first.allModsOneIsNterminus.Count(b => b.Value.modificationType.Equals("substitution") || b.Value.modificationType.Equals("missing") || b.Value.modificationType.Equals("trickySubstitution"));
+                //int secondNumRazor = second.allModsOneIsNterminus.Count(b => b.Value.modificationType.Equals("substitution") || b.Value.modificationType.Equals("missing") || b.Value.modificationType.Equals("trickySubstitution"));
+
+                //if (firstNumRazor < secondNumRazor)
+                //    return true;
+                //if (firstNumRazor > secondNumRazor)
+                //    return false;
+
+                return null;
+            }
+            if (firstPsm.Score > secondPsm.Score)
+            {
+                return true;
+            }
+            return false;
+        }
         #region Public Properties
 
         public double[] QuantIntensity { get; set; }
@@ -185,11 +243,9 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
-
         public void SetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
         {
-            Pli = new ProteinLinkedInfo(matching[GetCompactPeptide(modsDictionary)]);
+            Pli = new ProteinLinkedInfo(matching[compactPeptide]);
         }
 
         public override string ToString()

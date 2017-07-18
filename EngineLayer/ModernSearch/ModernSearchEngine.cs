@@ -91,7 +91,7 @@ namespace EngineLayer.ModernSearch
                                 if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
-                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass);
                                     if (notch >= 0 && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
                                     {
                                         bestPeptides[j] = candidatePeptide;
@@ -102,7 +102,7 @@ namespace EngineLayer.ModernSearch
                                 else if (currentBestScore < consideredScore)
                                 {
                                     // Score is better, only make sure it is acceptable
-                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass);
                                     if (notch >= 0)
                                     {
                                         bestPeptides[j] = candidatePeptide;
@@ -114,7 +114,7 @@ namespace EngineLayer.ModernSearch
                             // Did not exist! Only make sure that it is acceptable
                             else
                             {
-                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass);
                                 if (notch >= 0)
                                 {
                                     bestPeptides[j] = candidatePeptide;
@@ -128,7 +128,7 @@ namespace EngineLayer.ModernSearch
                     {
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
-                            newPsms[j][i] = new PsmModern(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
+                            newPsms[j][i] = new PsmParent(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
                     }
                 }
                 lock (outputObject)
@@ -152,24 +152,11 @@ namespace EngineLayer.ModernSearch
         // Want this to return false more!! So less computation is done. So second is preferable more often.
         private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
         {
-            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods)
+            if (Math.Abs(first.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods)
                 return true;
-            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods)
+            if (Math.Abs(first.MonoisotopicMass - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMass - pm) < tolInDaForPreferringHavingMods)
                 return false;
-
-            if (first.varMod1Type == 0 && second.varMod1Type > 0)
-                return true;
-            if (first.varMod1Type > 0 && second.varMod1Type == 0)
-                return false;
-            if (first.varMod2Type == 0 && second.varMod2Type > 0)
-                return true;
-            if (first.varMod2Type > 0 && second.varMod2Type == 0)
-                return false;
-            if (first.varMod3Type == 0 && second.varMod3Type > 0)
-                return true;
-            if (first.varMod3Type > 0 && second.varMod3Type == 0)
-                return false;
-
+            
             return false;
         }
 
