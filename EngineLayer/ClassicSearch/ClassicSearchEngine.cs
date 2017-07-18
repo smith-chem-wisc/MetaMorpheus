@@ -119,20 +119,20 @@ namespace EngineLayer.ClassicSearch
                             Array.Sort(productMasses);
                             double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
-                            for (int massDiffAcceptorIndex = 0; massDiffAcceptorIndex < searchModes.Count; massDiffAcceptorIndex++)
+                            for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                             {
-                                var massDiffAcceptor = searchModes[massDiffAcceptorIndex];
-                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMass, massDiffAcceptor).ToList())
+                                var searchMode = searchModes[searchModeIndex];
+                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMass, searchMode).ToList())
                                 {
                                     var score = PsmParent.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
                                     if (score > 1)
                                     {
-                                        if (psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex] = new PsmParent(scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                        if (score - psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
-                                            psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score);
-                                        else if (score - psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)
-                                            psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide);
+                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new PsmParent(scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                        if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score);
+                                        else if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide);
                                     }
                                 }
                             }
