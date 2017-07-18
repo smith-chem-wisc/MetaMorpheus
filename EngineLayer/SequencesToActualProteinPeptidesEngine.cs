@@ -12,7 +12,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
-        private readonly List<SingleScanMatches>[] allPsms;
+        private readonly List<PsmParent>[] allPsms;
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly List<Protein> proteinList;
         private readonly List<MassDiffAcceptor> massDiffAcceptors;
@@ -29,7 +29,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<SingleScanMatches>[] allPsms, Dictionary<ModificationWithMass, ushort> modsDictionary, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, Dictionary<ModificationWithMass, ushort> modsDictionary, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
@@ -115,7 +115,7 @@ namespace EngineLayer
                 {
                     foreach (var huh in allPsms[j])
                     {
-                        if (huh != null && huh.MostProbable == null)
+                        if (huh != null && huh.Pli == null)
                             huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching, modsDictionary);
                     }
                 }

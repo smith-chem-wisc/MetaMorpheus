@@ -7,7 +7,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SearchResults(SingleScanMatches[][] psms, MetaMorpheusEngine searchParams) : base(searchParams)
+        public SearchResults(PsmParent[][] psms, MetaMorpheusEngine searchParams) : base(searchParams)
         {
             Psms = psms;
         }
@@ -16,7 +16,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public SingleScanMatches[][] Psms { get; }
+        public PsmParent[][] Psms { get; }
 
         #endregion Public Properties
 

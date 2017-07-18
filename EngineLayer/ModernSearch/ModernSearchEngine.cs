@@ -50,9 +50,9 @@ namespace EngineLayer.ModernSearch
             Status("In modern search engine...", nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            SingleScanMatches[][] newPsms = new SingleScanMatches[searchModes.Count][];
+            PsmParent[][] newPsms = new PsmParent[searchModes.Count][];
             for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new SingleScanMatches[listOfSortedms2Scans.Length];
+                newPsms[i] = new PsmParent[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -129,7 +129,7 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide theBestPeptide = bestPeptides[j];
                         if (theBestPeptide != null)
                         {
-                            newPsms[j][i] = new SingleScanMatches(bestNotches[j], bestScores[j], i, thisScan);
+                            newPsms[j][i] = new PsmParent(bestNotches[j], bestScores[j], i, thisScan);
                             newPsms[j][i].Add(theBestPeptide);
                         }
                     }

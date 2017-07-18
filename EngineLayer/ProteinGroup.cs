@@ -25,7 +25,7 @@ namespace EngineLayer
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
             RazorPeptides = new HashSet<PeptideWithSetModifications>();
-            AllPsmsBelowOnePercentFDR = new HashSet<SingleScanMatches>();
+            AllPsmsBelowOnePercentFDR = new HashSet<PsmParent>();
             SequenceCoveragePercent = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -93,7 +93,7 @@ namespace EngineLayer
         public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
         public HashSet<PeptideWithSetModifications> RazorPeptides { get; set; }
-        public HashSet<SingleScanMatches> AllPsmsBelowOnePercentFDR { get; set; }
+        public HashSet<PsmParent> AllPsmsBelowOnePercentFDR { get; set; }
         public List<double> SequenceCoveragePercent { get; private set; }
         public List<string> SequenceCoverageDisplayList { get; private set; }
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
@@ -231,7 +231,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.MostProbable.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.Pli.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
@@ -242,7 +242,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
-                foreach (var pepWithSetMods in psm.MostProbable.PeptidesWithSetModifications)
+                foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
                 {
                     List<PeptideWithSetModifications> temp;
                     if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
@@ -391,19 +391,19 @@ namespace EngineLayer
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.MostProbable.BaseSequence);
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.Pli.BaseSequence);
                 //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
                 {
                     var psmsForThisBaseSeq = psmGroup.ToList();
-                    var psmsToIgnore = new List<SingleScanMatches>();
+                    var psmsToIgnore = new List<PsmParent>();
 
                     // remove shared non-razor peptides
                     foreach (var psm in psmGroup)
                     {
-                        var uniques = psm.MostProbable.PeptidesWithSetModifications.Intersect(UniquePeptides);
-                        var razors = psm.MostProbable.PeptidesWithSetModifications.Intersect(RazorPeptides);
+                        var uniques = psm.Pli.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                        var razors = psm.Pli.PeptidesWithSetModifications.Intersect(RazorPeptides);
 
                         if (!uniques.Any() && !razors.Any())
                             psmsToIgnore.Add(psm);
@@ -444,8 +444,8 @@ namespace EngineLayer
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
-            var allPsmsForThisFile = new HashSet<SingleScanMatches>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.MostProbable.PeptidesWithSetModifications));
+            var allPsmsForThisFile = new HashSet<PsmParent>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.Pli.PeptidesWithSetModifications));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
             var allRazorPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.RazorPeptides.Intersect(allPeptidesForThisFile));
 

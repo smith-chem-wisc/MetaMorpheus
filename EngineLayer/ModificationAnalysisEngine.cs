@@ -9,13 +9,13 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly List<MassDiffAcceptor> searchModes;
-        private readonly List<SingleScanMatches>[] newPsms;
+        private readonly List<PsmParent>[] newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModificationAnalysisEngine(List<SingleScanMatches>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<PsmParent>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.searchModes = searchModes;
             this.newPsms = newPsms;
@@ -39,9 +39,9 @@ namespace EngineLayer
                 Dictionary<string, int> modsSeen = new Dictionary<string, int>();
                 Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
 
-                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.MostProbable.IsDecoy).GroupBy(b => b.MostProbable.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
+                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.Pli.IsDecoy).GroupBy(b => b.Pli.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
                 {
-                    var singlePeptide = highConfidencePSM.MostProbable.PeptidesWithSetModifications.First();
+                    var singlePeptide = highConfidencePSM.Pli.PeptidesWithSetModifications.First();
                     var modsIdentified = singlePeptide.allModsOneIsNterminus;
                     foreach (var modSeen in modsIdentified)
                     {

@@ -60,7 +60,7 @@ namespace Test
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = SingleScanMatches.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
 
             Assert.Less(score, 4);
             Assert.Greater(score, 3);
@@ -83,7 +83,7 @@ namespace Test
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = SingleScanMatches.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
 
             Assert.Less(score, 2);
             Assert.Greater(score, 1);
@@ -106,7 +106,7 @@ namespace Test
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = SingleScanMatches.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
 
             Assert.Less(score, 2);
             Assert.Greater(score, 1);
@@ -127,7 +127,7 @@ namespace Test
             double[] mz = new double[] { 1, 2, 3, 4 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = SingleScanMatches.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
 
             Assert.AreEqual(0, score);
         }

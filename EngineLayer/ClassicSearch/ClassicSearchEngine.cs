@@ -77,9 +77,9 @@ namespace EngineLayer.ClassicSearch
 
             Status("Getting ms2 scans...", nestedIds);
 
-            var outerPsms = new SingleScanMatches[massDiffAcceptors.Count][];
+            var outerPsms = new PsmParent[massDiffAcceptors.Count][];
             for (int aede = 0; aede < massDiffAcceptors.Count; aede++)
-                outerPsms[aede] = new SingleScanMatches[arrayOfSortedMS2Scans.Length];
+                outerPsms[aede] = new PsmParent[arrayOfSortedMS2Scans.Length];
 
             var lockObject = new object();
             int proteinsSeen = 0;
@@ -88,9 +88,9 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new SingleScanMatches[massDiffAcceptors.Count][];
+                var psms = new PsmParent[massDiffAcceptors.Count][];
                 for (int searchModeIndex = 0; searchModeIndex < massDiffAcceptors.Count; searchModeIndex++)
-                    psms[searchModeIndex] = new SingleScanMatches[arrayOfSortedMS2Scans.Length];
+                    psms[searchModeIndex] = new PsmParent[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -124,11 +124,11 @@ namespace EngineLayer.ClassicSearch
                                 var massDiffAcceptor = massDiffAcceptors[massDiffAcceptorIndex];
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMass, massDiffAcceptor).ToList())
                                 {
-                                    var score = SingleScanMatches.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
+                                    var score = PsmParent.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
                                     if (score > 1)
                                     {
                                         if (psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex] = new SingleScanMatches(scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                            psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex] = new PsmParent(scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
                                         if (score - psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
                                             psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score);
                                         else if (score - psms[massDiffAcceptorIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)

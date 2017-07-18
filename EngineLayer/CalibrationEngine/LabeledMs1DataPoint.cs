@@ -10,13 +10,13 @@
         public readonly double intensity;
         public readonly double totalIonCurrent;
         public readonly double injectionTime;
-        public readonly SingleScanMatches identification;
+        public readonly PsmParent identification;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public LabeledMs1DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label, SingleScanMatches identification)
+        public LabeledMs1DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label, PsmParent identification)
         {
             this.mz = mz;
             this.rt = rt;

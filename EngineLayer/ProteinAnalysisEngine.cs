@@ -16,13 +16,13 @@ namespace EngineLayer
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
-        private readonly IEnumerable<SingleScanMatches>[] newPsms;
+        private readonly IEnumerable<PsmParent>[] newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinAnalysisEngine(List<SingleScanMatches>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinAnalysisEngine(List<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
@@ -278,22 +278,22 @@ namespace EngineLayer
             return proteinGroups;
         }
 
-        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SingleScanMatches> psmList)
+        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<PsmParent> psmList)
         {
             Status("Scoring protein groups...", nestedIds);
 
             // add each protein groups PSMs
-            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<SingleScanMatches>>();
+            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PsmParent>>();
             foreach (var psm in psmList)
             {
                 if (psm.FdrInfo.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.MostProbable.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
                     {
-                        HashSet<SingleScanMatches> psmsForThisPeptide;
+                        HashSet<PsmParent> psmsForThisPeptide;
 
                         if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
-                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<SingleScanMatches> { psm });
+                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PsmParent> { psm });
                         else
                             psmsForThisPeptide.Add(psm);
                     }
@@ -306,7 +306,7 @@ namespace EngineLayer
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    HashSet<SingleScanMatches> psms;
+                    HashSet<PsmParent> psms;
                     if (peptideToPsmMatching.TryGetValue(peptide, out psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else

@@ -11,7 +11,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class SingleScanMatches
+    public class PsmParent
     {
 
         #region Public Fields
@@ -28,7 +28,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SingleScanMatches(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.Notch = notch;
             this.Score = score;
@@ -64,7 +64,7 @@ namespace EngineLayer
         public string FullFilePath { get; }
         public int ScanIndex { get; }
         public int NumAmbiguous { get; set; }
-        public ProteinLinkedInfo MostProbable { get; private set; }
+        public ProteinLinkedInfo Pli { get; private set; }
         public double PeptideMonoisotopicMass { get; internal set; }
         public FdrInfo FdrInfo { get; set; }
         public LocalizationResults LocalizationResults { get; internal set; }
@@ -213,8 +213,8 @@ namespace EngineLayer
             foreach (var compactPeptide in compactPeptides)
             {
                 var candidatePli = new ProteinLinkedInfo(matching[compactPeptide]);
-                if (MostProbable == null || FirstIsPreferable(candidatePli, MostProbable))
-                    MostProbable = candidatePli;
+                if (Pli == null || FirstIsPreferable(candidatePli, Pli))
+                    Pli = candidatePli;
             }
         }
 
@@ -237,7 +237,7 @@ namespace EngineLayer
             sb.Append(string.Join("|", QuantIntensity) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append(MostProbable.ToString() + '\t');
+            sb.Append(Pli.ToString() + '\t');
             if (LocalizationResults != null)
             {
                 sb.Append(LocalizationResults.ToString() + '\t');
