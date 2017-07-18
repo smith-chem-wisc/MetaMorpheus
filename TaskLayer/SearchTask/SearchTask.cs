@@ -544,6 +544,7 @@ namespace TaskLayer
                     }
                 }
 
+                //writes all proteins
                 if (dbFilenameList.Any(b => !b.IsContaminant))
                 {
                     string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "pruned.xml");
@@ -557,6 +558,24 @@ namespace TaskLayer
                     string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "pruned.xml");
 
                     ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+
+                    SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
+                }
+
+                //writes only detected proteins
+                if (dbFilenameList.Any(b => !b.IsContaminant))
+                {
+                    string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "proteinPruned.xml");
+
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => goodPsmsForEachProtein.ContainsKey(b) && !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+
+                    SucessfullyFinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
+                }
+                if (dbFilenameList.Any(b => b.IsContaminant))
+                {
+                    string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", dbFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FileName))) + "proteinPruned.xml");
+
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList.Where(b => goodPsmsForEachProtein.ContainsKey(b) && !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
                     SucessfullyFinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
                 }
