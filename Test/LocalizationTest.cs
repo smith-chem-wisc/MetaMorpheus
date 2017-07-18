@@ -48,7 +48,7 @@ namespace Test
                 {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.ResolveProteinsAndMostProbablePeptide(matching, modsDictionary);
+            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
 
             LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
             f.Run();

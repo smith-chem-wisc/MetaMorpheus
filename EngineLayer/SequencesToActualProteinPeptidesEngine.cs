@@ -29,11 +29,10 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, Dictionary<ModificationWithMass, ushort> modsDictionary, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
-            this.modsDictionary = modsDictionary;
             this.allPsms = allPsms;
             this.protease = protease;
             this.maxMissedCleavages = maxMissedCleavages;
@@ -116,7 +115,7 @@ namespace EngineLayer
                     foreach (var huh in allPsms[j])
                     {
                         if (huh != null && huh.Pli == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching, modsDictionary);
+                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                     }
                 }
             }

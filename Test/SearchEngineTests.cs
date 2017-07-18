@@ -52,7 +52,10 @@ namespace Test
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
-            //Assert.AreEqual("QQQ", (searchResults.Psms[0][0] as PsmClassic).ps.BaseSequence);
+
+            new SequencesToActualProteinPeptidesEngine(new List<PsmParent>[] { new List<PsmParent> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            Assert.AreEqual("QQQ", searchResults.Psms[0][0].Pli.BaseSequence);
         }
 
         [Test]
@@ -90,7 +93,10 @@ namespace Test
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
-            //Assert.AreEqual("QXQ", (searchResults.Psms[0][0] as PsmClassic).ps.BaseSequence);
+
+            new SequencesToActualProteinPeptidesEngine(new List<PsmParent>[] { new List<PsmParent> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            Assert.AreEqual("QXQ", searchResults.Psms[0][0].Pli.BaseSequence);
         }
 
         [Test]
@@ -122,7 +128,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -137,7 +143,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, null);
+            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>());
             var searchResults = (SearchResults)engine.Run();
 
             // Single search mode
@@ -148,7 +154,10 @@ namespace Test
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
-            //Assert.AreEqual("QQQ", searchResults.Psms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
+
+            new SequencesToActualProteinPeptidesEngine(new List<PsmParent>[] { new List<PsmParent> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            Assert.AreEqual("QQQ", searchResults.Psms[0][0].Pli.BaseSequence);
         }
 
         [Test]
@@ -180,7 +189,8 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
+            int maximumMissedCleavages = 2;
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, maximumMissedCleavages, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -195,7 +205,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, null);
+            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>());
             var searchResults = (SearchResults)engine.Run();
 
             // Single search mode
@@ -206,7 +216,10 @@ namespace Test
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
-            //Assert.AreEqual("QXQ", searchResults.Psms[0][0].GetCompactPeptide(modsDictionary).BaseSequence);
+
+            new SequencesToActualProteinPeptidesEngine(new List<PsmParent>[] { new List<PsmParent> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            Assert.AreEqual("QXQ", searchResults.Psms[0][0].Pli.BaseSequence);
         }
 
         #endregion Public Methods

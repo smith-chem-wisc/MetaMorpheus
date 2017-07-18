@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -208,7 +207,7 @@ namespace EngineLayer
             compactPeptides.Add(correspondingCompactPeptide);
         }
 
-        public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var compactPeptide in compactPeptides)
             {
