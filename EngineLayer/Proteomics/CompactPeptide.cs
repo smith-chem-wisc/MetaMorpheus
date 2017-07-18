@@ -41,7 +41,7 @@ namespace EngineLayer
                 theMass = 0;
             CTerminalMasses = ComputeFollowingFragmentMasses(yyy, theMass, yyy.Length, -1).ToArray();
 
-            MonoisotopicMass = yyy.MonoisotopicMass;
+            MonoisotopicMassIncludingFixedMods = yyy.MonoisotopicMass;
         }
 
         #endregion Public Constructors
@@ -50,7 +50,7 @@ namespace EngineLayer
 
         public double[] CTerminalMasses { get; }
         public double[] NTerminalMasses { get; }
-        public double MonoisotopicMass { get; }
+        public double MonoisotopicMassIncludingFixedMods { get; }
 
         #endregion Public Properties
 

@@ -122,7 +122,7 @@ namespace EngineLayer.ClassicSearch
                             for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                             {
                                 var searchMode = searchModes[searchModeIndex];
-                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMass, searchMode).ToList())
+                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                                 {
                                     var score = PsmParent.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
                                     if (score > 1)

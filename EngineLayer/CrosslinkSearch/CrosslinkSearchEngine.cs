@@ -115,7 +115,7 @@ namespace EngineLayer.CrosslinkSearch
                                 if (Math.Abs(currentWorstScore - consideredScore) < 1e-9)
                                 {
                                     // Score is same as the worst, need to see if accepts and if prefer the new one
-                                    int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass);
+                                    int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0 && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptideScoreNotch.Last().BestPeptide, thisScanprecursorMass))
                                     {
                                         bestPeptideScoreNotch.RemoveAt(CrosslinkSearchTopNum - 1);
@@ -127,7 +127,7 @@ namespace EngineLayer.CrosslinkSearch
                                 else if (currentWorstScore < consideredScore)
                                 {
                                     // Score is better than the worst, only make sure it is acceptable
-                                    int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass);
+                                    int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
                                         bestPeptideScoreNotch.RemoveAt(CrosslinkSearchTopNum - 1);
@@ -140,7 +140,7 @@ namespace EngineLayer.CrosslinkSearch
                             // Did not exist! Only make sure that it is acceptable.
                             else
                             {
-                                int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMass);
+                                int notch = XLsearchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                 if (notch >= 0)
                                 {
                                     if (bestPeptideScoreNotch == null)
@@ -280,10 +280,10 @@ namespace EngineLayer.CrosslinkSearch
             for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
             {
 
-                var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMass;
+                var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
                 for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
                 {
-                    var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMass;
+                    var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMassIncludingFixedMods;
                     if (crosslinker.Cleavable == true && CrosslinkSearchWithCrosslinkerMod == true)
                     {
                         if (XLprecusorMsTl.Within(theScan.PrecursorMass, x + y + crosslinker.TotalMass - crosslinker.CleaveMassShort * 2)
