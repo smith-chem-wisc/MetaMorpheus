@@ -105,6 +105,15 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="AllowedIntervalWithNotch.cs" />
+    <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
+    <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisResults.cs" />
+    <Compile Include="CrosslinkerType.cs" />
+    <Compile Include="CrosslinkSearch\BestPeptideScoreNotch.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkSearchEngine.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkSearchEngine2.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkSearchResults.cs" />
+    <Compile Include="CrosslinkSearch\MatchedIonInfo.cs" />
+    <Compile Include="CrosslinkSearch\PsmCross.cs" />
     <Compile Include="FdrInfo.cs" />
     <Compile Include="LocalizationEngineResults.cs" />
     <Compile Include="LocalizationResults.cs" />
@@ -163,6 +172,7 @@
     <Compile Include="EventArgs\StringListEventArgs.cs" />
     <Compile Include="SequencesToActualProteinPeptidesEngine.cs" />
     <Compile Include="SequencesToActualProteinPeptidesEngineResults.cs" />
+    <Compile Include="XLSearchResults.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">
@@ -214,6 +224,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\mzLib.1.0.194\build\mzLib.targets" Condition="Exists('..\packages\mzLib.1.0.194\build\mzLib.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
