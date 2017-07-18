@@ -609,6 +609,7 @@ namespace MetaMorpheusGUI
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
+            btnAddCrosslinkSearch.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
 
             proteinDatabasesGroupBox.IsEnabled = true;
