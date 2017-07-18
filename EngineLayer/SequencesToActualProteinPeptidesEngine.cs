@@ -8,11 +8,12 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
+
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
         private readonly List<PsmParent>[] allPsms;
-mz        private readonly List<Protein> proteinList;
+        private readonly List<Protein> proteinList;
         private readonly List<MassDiffAcceptor> massDiffAcceptors;
         private readonly Protease protease;
         private readonly int maxMissedCleavages;
@@ -121,5 +122,6 @@ mz        private readonly List<Protein> proteinList;
         }
 
         #endregion Protected Methods
+
     }
 }

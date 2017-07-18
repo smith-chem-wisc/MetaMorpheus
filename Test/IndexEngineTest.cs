@@ -3,6 +3,7 @@ using EngineLayer.Indexing;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Test
 {
@@ -42,13 +43,18 @@ namespace Test
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            //var listOfPeptides = results.PeptideIndex.Select(b => string.Join("", b.BaseSequence.Select(c => char.ConvertFromUtf32(c)))).ToList();
+            var digestedList = proteinList[0].Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).ToList();
 
-            //Assert.Contains("MNNNK", listOfPeptides);
-            //Assert.Contains("NNNK", listOfPeptides);
-            //Assert.Contains("QQQ", listOfPeptides);
-            //Assert.Contains("MNNNKQQQ", listOfPeptides);
-            //Assert.Contains("NNNKQQQ", listOfPeptides);
+            Assert.AreEqual(5, digestedList.Count);
+            foreach (var fdfd in digestedList)
+            {
+                var dfdfse = fdfd.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+                Assert.AreEqual(1, dfdfse.Count);
+                foreach (var kjdfk in dfdfse)
+                {
+                    Assert.Contains(kjdfk.CompactPeptide, results.PeptideIndex);
+                }
+            }
         }
 
         [Test]
