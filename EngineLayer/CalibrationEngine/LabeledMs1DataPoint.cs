@@ -2,6 +2,7 @@
 {
     public class LabeledMs1DataPoint : IHasInputsAndOutputs
     {
+
         #region Public Fields
 
         public readonly double mz;
@@ -9,13 +10,13 @@
         public readonly double intensity;
         public readonly double totalIonCurrent;
         public readonly double injectionTime;
-        public readonly PsmParent identification;
+        public readonly SingleScanMatches identification;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public LabeledMs1DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label, PsmParent identification)
+        public LabeledMs1DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double label, SingleScanMatches identification)
         {
             this.mz = mz;
             this.rt = rt;
@@ -36,5 +37,6 @@
         public double[] Inputs { get; private set; }
 
         #endregion Public Properties
+
     }
 }

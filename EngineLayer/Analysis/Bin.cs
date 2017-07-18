@@ -21,7 +21,7 @@ namespace EngineLayer.Analysis
         public int pepClocCount;
         public int protNlocCount;
         public int protClocCount;
-        public Dictionary<string, Tuple<string, string, PsmParent>> uniquePSMs;
+        public Dictionary<string, Tuple<string, string, SingleScanMatches>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
         #endregion Public Fields
@@ -31,7 +31,7 @@ namespace EngineLayer.Analysis
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, PsmParent>>();
+            uniquePSMs = new Dictionary<string, Tuple<string, string, SingleScanMatches>>();
         }
 
         #endregion Public Constructors
@@ -52,7 +52,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => b.Item3.Pli.IsDecoy);
+                return uniquePSMs.Values.Count(b => b.Item3.MostProbable.IsDecoy);
             }
         }
 
@@ -68,7 +68,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.Pli.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
+                return uniquePSMs.Values.Count(b => !b.Item3.MostProbable.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
             }
         }
 
@@ -91,16 +91,16 @@ namespace EngineLayer.Analysis
 
         #region Internal Methods
 
-        internal void Add(PsmParent ok)
+        internal void Add(SingleScanMatches ok)
         {
-            if (uniquePSMs.ContainsKey(ok.Pli.FullSequence))
+            if (uniquePSMs.ContainsKey(ok.MostProbable.FullSequence))
             {
-                var current = uniquePSMs[ok.Pli.FullSequence];
+                var current = uniquePSMs[ok.MostProbable.FullSequence];
                 if (current.Item3.Score < ok.Score)
-                    uniquePSMs[ok.Pli.FullSequence] = new Tuple<string, string, PsmParent>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok);
+                    uniquePSMs[ok.MostProbable.FullSequence] = new Tuple<string, string, SingleScanMatches>(ok.MostProbable.BaseSequence, ok.MostProbable.FullSequence, ok);
             }
             else
-                uniquePSMs.Add(ok.Pli.FullSequence, new Tuple<string, string, PsmParent>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok));
+                uniquePSMs.Add(ok.MostProbable.FullSequence, new Tuple<string, string, SingleScanMatches>(ok.MostProbable.BaseSequence, ok.MostProbable.FullSequence, ok));
         }
 
         #endregion Internal Methods

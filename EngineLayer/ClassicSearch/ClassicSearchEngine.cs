@@ -77,9 +77,9 @@ namespace EngineLayer.ClassicSearch
 
             Status("Getting ms2 scans...", nestedIds);
 
-            var outerPsms = new PsmParent[searchModes.Count][];
+            var outerPsms = new SingleScanMatches[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                outerPsms[aede] = new PsmParent[arrayOfSortedMS2Scans.Length];
+                outerPsms[aede] = new SingleScanMatches[arrayOfSortedMS2Scans.Length];
 
             var lockObject = new object();
             int proteinsSeen = 0;
@@ -88,9 +88,9 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new PsmParent[searchModes.Count][];
+                var psms = new SingleScanMatches[searchModes.Count][];
                 for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
-                    psms[searchModeIndex] = new PsmParent[arrayOfSortedMS2Scans.Length];
+                    psms[searchModeIndex] = new SingleScanMatches[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -124,21 +124,15 @@ namespace EngineLayer.ClassicSearch
                                 var searchMode = searchModes[searchModeIndex];
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = PsmParent.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
+                                    var score = SingleScanMatches.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
                                     if (score > 1)
                                     {
-                                        var psm = new PsmParent(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                        var currentBestPsmList = psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex];
-                                        if (currentBestPsmList == null)
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
-                                        else
-                                        {
-                                            var singleIsPreferable = PsmParent.FirstIsPreferable(psm, currentBestPsmList, variableModifications);
-                                            if (singleIsPreferable.HasValue && singleIsPreferable.Value)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
-                                            else if (!singleIsPreferable.HasValue)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].NumAmbiguous++;
-                                        }
+                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new SingleScanMatches(scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                        if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score);
+                                        else if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide);
                                     }
                                 }
                             }
@@ -155,11 +149,10 @@ namespace EngineLayer.ClassicSearch
                                     outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    var firstIsPreferable = PsmParent.FirstIsPreferable(psms[searchModeIndex][i], outerPsms[searchModeIndex][i], variableModifications);
-                                    if (firstIsPreferable.HasValue && firstIsPreferable.Value)
+                                    if (psms[searchModeIndex][i].Score - outerPsms[searchModeIndex][i].Score > 1e-9)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
-                                    else if (!firstIsPreferable.HasValue)
-                                        outerPsms[searchModeIndex][i].NumAmbiguous++;
+                                    else if (psms[searchModeIndex][i].Score - outerPsms[searchModeIndex][i].Score > -1e-9)
+                                        outerPsms[searchModeIndex][i].Add(psms[searchModeIndex][i].compactPeptides);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

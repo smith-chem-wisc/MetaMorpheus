@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
-using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -41,7 +40,7 @@ namespace Test
                 i++;
             }
 
-            List<PsmParent>[] newPsms = new List<PsmParent>[1];
+            List<SingleScanMatches>[] newPsms = new List<SingleScanMatches>[1];
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
@@ -75,17 +74,20 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakB, 1, null);
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakC, 1, null);
 
-            PsmParent matchA = new PsmParent(compactPeptide1, 0, 0, 0, scanA);
-            PsmParent matchB = new PsmParent(compactPeptide2, 0, 0, 0, scanB);
-            PsmParent matchC = new PsmParent(compactPeptide3, 0, 0, 0, scanC);
+            SingleScanMatches matchA = new SingleScanMatches(0, 0, 0, scanA);
+            matchA.Add(compactPeptide1);
+            SingleScanMatches matchB = new SingleScanMatches(0, 0, 0, scanB);
+            matchB.Add(compactPeptide2);
+            SingleScanMatches matchC = new SingleScanMatches(0, 0, 0, scanC);
+            matchC.Add(compactPeptide3);
 
-            newPsms[0] = new List<PsmParent> { matchA, matchB, matchC };
+            newPsms[0] = new List<SingleScanMatches> { matchA, matchB, matchC };
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            Action<List<PsmParent>, string, List<string>> action2 = (List<PsmParent> l, string s, List<string> sdf) => {; };
+            Action<List<SingleScanMatches>, string, List<string>> action2 = (List<SingleScanMatches> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;

@@ -145,7 +145,7 @@
     <Compile Include="Analysis\MyInfo.cs" />
     <Compile Include="MetaMorpheusEngineResults.cs" />
     <Compile Include="Analysis\OkBin.cs" />
-    <Compile Include="PsmParent.cs" />
+    <Compile Include="SingleScanMatches.cs" />
     <Compile Include="EventArgs\ProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>

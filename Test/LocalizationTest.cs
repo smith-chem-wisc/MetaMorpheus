@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
@@ -38,19 +37,20 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            PsmParent newPsm = new PsmParent(ps.CompactPeptide, 0, 0, 2, scan);
+            SingleScanMatches newPsm = new SingleScanMatches(0, 0, 2, scan);
+            newPsm.Add(ps.CompactPeptide);
 
-            Assert.IsNull(newPsm.Pli);
+            Assert.IsNull(newPsm.MostProbable);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.compactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
+                {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.SetProteinLinkedInfo(matching, modsDictionary);
+            newPsm.ResolveProteinsAndMostProbablePeptide(matching, modsDictionary);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
+            LocalizationEngine f = new LocalizationEngine(new List<SingleScanMatches> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
             f.Run();
 
             // Was single peak!!!
