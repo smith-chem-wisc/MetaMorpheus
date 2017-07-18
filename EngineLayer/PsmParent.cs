@@ -44,6 +44,11 @@ namespace EngineLayer
             this.QuantIntensity = new double[1];
         }
 
+        public PsmParent(PeptideWithSetModifications peptide, int v1, int v2, int v3, Ms2ScanWithSpecificMass scan) : this(v1, v2, v3, scan)
+        {
+            Add(peptide.CompactPeptide);
+        }
+
         #endregion Public Constructors
 
         #region Public Properties
