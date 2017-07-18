@@ -42,7 +42,7 @@ namespace TaskLayer
             SearchDecoy = true;
             DoHistogramAnalysis = false;
             MaxMissedCleavages = 2;
-            MinPeptideLength = null;
+            MinPeptideLength = 5;
             MaxPeptideLength = null;
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
