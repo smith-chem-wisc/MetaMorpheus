@@ -26,7 +26,7 @@ namespace TaskLayer
         {
             // Set default values here:
             MaxMissedCleavages = 2;
-            MinPeptideLength = null;
+            MinPeptideLength = 5;
             MaxPeptideLength = null;
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
