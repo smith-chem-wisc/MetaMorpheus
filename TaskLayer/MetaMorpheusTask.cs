@@ -35,6 +35,12 @@ namespace TaskLayer
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
+                        .ConfigureType<PpmTolerance>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<AbsoluteTolerance>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
                         .ConfigureType<MassDiffAcceptor>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
@@ -257,7 +263,6 @@ namespace TaskLayer
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
             FinishedSingleTask(taskId);
-
 
 #if !DEBUG
             }
