@@ -81,6 +81,75 @@ namespace EngineLayer
                     throw new NotImplementedException();
                 }
             }
+            else if (protease.Name.Equals("singleC"))
+            {
+                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                {
+                    if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || protein.Length <= maxPeptidesLength))
+                    {
+                        yield return new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
+                    }
+                }
+                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                {
+                    if ((!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || protein.Length - 1 <= maxPeptidesLength))
+                    {
+                        yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                    }
+                }
+
+                //cleave in one spot
+                for (int index = 2; index < protein.Length; index++) //position BEFORE the amino acid
+                {
+                    if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                    {
+                        if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength) &&
+                                   (!maxPeptidesLength.HasValue || (index) <= maxPeptidesLength))
+                        {
+                            yield return new PeptideWithPossibleModifications(1, index, protein, 0, "test", allKnownFixedModifications);
+                        }
+                    }
+                    if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                    {
+                        if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || (index) <= maxPeptidesLength))
+                        {
+                            yield return new PeptideWithPossibleModifications(2, index, protein, 0, "test", allKnownFixedModifications);
+                        }
+                    }
+                }
+            }
+            else if (protease.Name.Equals("singleN"))
+            {
+                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                {
+                    if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || protein.Length <= maxPeptidesLength))
+                    {
+                        yield return new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
+                    }
+                }
+                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                {
+                    if ((!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || protein.Length - 1 <= maxPeptidesLength))
+                    {
+                        yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                    }
+                }
+
+                //cleave in one spot
+                for (int index = 2; index < protein.Length; index++) //position BEFORE the amino acid
+                {
+                    if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || (index) <= maxPeptidesLength))
+                    {
+                        yield return new PeptideWithPossibleModifications(index + 1, protein.Length, protein, 0, "test", allKnownFixedModifications);
+                    }
+                }
+            }
             else  // protease.CleavageSpecificity == CleavageSpecificity.None
             {
                 if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
