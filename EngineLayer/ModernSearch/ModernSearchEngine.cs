@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace EngineLayer.ModernSearch
 {
@@ -27,11 +28,15 @@ namespace EngineLayer.ModernSearch
 
         private readonly List<MassDiffAcceptor> searchModes;
 
+        private readonly bool addCompIons;
+
+        private readonly List<ProductType> lp;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
@@ -39,6 +44,8 @@ namespace EngineLayer.ModernSearch
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
+            this.addCompIons = addCompIons;
+            this.lp = lp;
         }
 
         #endregion Public Constructors
@@ -50,9 +57,9 @@ namespace EngineLayer.ModernSearch
             Status("In modern search engine...", nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            Psm[][] newPsms = new Psm[searchModes.Count][];
+            PsmParent[][] newPsms = new PsmParent[searchModes.Count][];
             for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new Psm[listOfSortedms2Scans.Length];
+                newPsms[i] = new PsmParent[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -61,16 +68,17 @@ namespace EngineLayer.ModernSearch
             var peptideIndexCount = peptideIndex.Count;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
-                List<CompactPeptide>[] bestPeptides = new List<CompactPeptide>[searchModesCount];
+                CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
                 double[] bestScores = new double[searchModesCount];
-                List<int>[] bestNotches = new List<int>[searchModesCount];
+                int[] bestNotches = new int[searchModesCount];
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var thisScan = listOfSortedms2Scans[i];
                     var thisScanprecursorMass = thisScan.PrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
-                    CalculatePeptideScores(thisScan.TheScan, fullPeptideScores);
+                    double thePrecursorMass = thisScan.PrecursorMass;
+                    CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
 
                     Array.Clear(bestPeptides, 0, searchModesCount);
                     Array.Clear(bestScores, 0, searchModesCount);
@@ -92,10 +100,11 @@ namespace EngineLayer.ModernSearch
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0)
+                                    if (notch >= 0 && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
                                     {
-                                        bestPeptides[j].Add(candidatePeptide);
-                                        bestNotches[j].Add(notch);
+                                        bestPeptides[j] = candidatePeptide;
+                                        bestScores[j] = consideredScore;
+                                        bestNotches[j] = notch;
                                     }
                                 }
                                 else if (currentBestScore < consideredScore)
@@ -104,9 +113,9 @@ namespace EngineLayer.ModernSearch
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
-                                        bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
+                                        bestPeptides[j] = candidatePeptide;
                                         bestScores[j] = consideredScore;
-                                        bestNotches[j] = new List<int> { notch };
+                                        bestNotches[j] = notch;
                                     }
                                 }
                             }
@@ -116,23 +125,18 @@ namespace EngineLayer.ModernSearch
                                 int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                 if (notch >= 0)
                                 {
-                                    bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
+                                    bestPeptides[j] = candidatePeptide;
                                     bestScores[j] = consideredScore;
-                                    bestNotches[j] = new List<int> { notch };
+                                    bestNotches[j] = notch;
                                 }
                             }
                         }
                     }
                     for (int j = 0; j < searchModesCount; j++)
                     {
-                        if (bestPeptides[j] != null)
-                        {
-                            newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
-                            for (int k = 1; k < bestPeptides[j].Count; k++)
-                            {
-                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
-                            }
-                        }
+                        CompactPeptide theBestPeptide = bestPeptides[j];
+                        if (theBestPeptide != null)
+                            newPsms[j][i] = new PsmModern(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
                     }
                 }
                 lock (outputObject)
@@ -153,12 +157,62 @@ namespace EngineLayer.ModernSearch
 
         #region Private Methods
 
-        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
+        // Want this to return false more!! So less computation is done. So second is preferable more often.
+        private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
         {
-            for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods)
+                return true;
+            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods)
+                return false;
+
+            if (first.varMod1Type == 0 && second.varMod1Type > 0)
+                return true;
+            if (first.varMod1Type > 0 && second.varMod1Type == 0)
+                return false;
+            if (first.varMod2Type == 0 && second.varMod2Type > 0)
+                return true;
+            if (first.varMod2Type > 0 && second.varMod2Type == 0)
+                return false;
+            if (first.varMod3Type == 0 && second.varMod3Type > 0)
+                return true;
+            if (first.varMod3Type > 0 && second.varMod3Type == 0)
+                return false;
+
+            return false;
+        }
+
+        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
+        {
+            List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
+            for(int i=0; i<spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                experimentalPeaks.Add(spectrum.MassSpectrum[i]);             
+            }
+            if (addCompIons)
+            {
+                //If HCD
+                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                {
+                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    {
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity / 3)));
+                    }
+                }
+                //If ETD
+                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                {
+                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    {
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 3)));
+                    }
+                }
+            }
+            IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
+            
+            foreach(IMzPeak experimentalPeak in sortedPeaksMZ)
+            {
+                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
                 float closestPeak;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)

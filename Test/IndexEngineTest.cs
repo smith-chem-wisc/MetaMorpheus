@@ -10,7 +10,6 @@ namespace Test
     [TestFixture]
     public class IndexEngineTest
     {
-
         #region Public Methods
 
         [Test]
@@ -38,23 +37,18 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var digestedList = proteinList[0].Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).ToList();
+            var listOfPeptides = results.PeptideIndex.Select(b => string.Join("", b.BaseSequence.Select(c => char.ConvertFromUtf32(c)))).ToList();
 
-            Assert.AreEqual(5, digestedList.Count);
-            foreach (var fdfd in digestedList)
-            {
-                var dfdfse = fdfd.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
-                Assert.AreEqual(1, dfdfse.Count);
-                foreach (var kjdfk in dfdfse)
-                {
-                    Assert.Contains(kjdfk.CompactPeptide, results.PeptideIndex);
-                }
-            }
+            Assert.Contains("MNNNK", listOfPeptides);
+            Assert.Contains("NNNK", listOfPeptides);
+            Assert.Contains("QQQ", listOfPeptides);
+            Assert.Contains("MNNNKQQQ", listOfPeptides);
+            Assert.Contains("NNNKQQQ", listOfPeptides);
         }
 
         [Test]
@@ -82,7 +76,7 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, null);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(1, results.PeptideIndex.Count);
@@ -92,6 +86,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

@@ -1,9 +1,4 @@
-﻿//using OxyPlot;
-//using OxyPlot.Axes;
-//using OxyPlot.Series;
-//using OxyPlot.Annotations;
-using EngineLayer.CrosslinkSearch;
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
 using System;
@@ -11,6 +6,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+//using OxyPlot;
+//using OxyPlot.Axes;
+//using OxyPlot.Series;
+//using OxyPlot.Annotations;
+using EngineLayer.CrosslinkSearch;
 
 namespace EngineLayer.CrosslinkAnalysis
 {
@@ -35,16 +35,13 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly Tolerance fragmentTolerance;
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-
+        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         //Draw Control
         private readonly CrosslinkerTypeClass crosslinker;
-
-        private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private string OutputFolder;
+        //private bool draw = true;
 
         #endregion Private Fields
-
-        //private bool draw = true;
 
         #region Public Constructors
 
@@ -73,6 +70,12 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #endregion Public Constructors
 
+        #region Public Methods
+
+
+
+        #endregion Public Methods
+
         #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -84,7 +87,6 @@ namespace EngineLayer.CrosslinkAnalysis
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
 
             #region Match Seqeunces to PeptideWithSetModifications
-
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             Status("Adding observed peptides to dictionary...", nestedIds);
             foreach (var psmpair in newPsms)
@@ -93,13 +95,13 @@ namespace EngineLayer.CrosslinkAnalysis
                 {
                     if (psmpair.Item1 != null)
                     {
-                        var cp = psmpair.Item1.CompactPeptide;
+                        var cp = psmpair.Item1.GetCompactPeptide(modsDictionary);
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                             compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                     }
                     if (psmpair.Item2 != null)
                     {
-                        var cp = psmpair.Item2.CompactPeptide;
+                        var cp = psmpair.Item2.GetCompactPeptide(modsDictionary);
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                             compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                     }
@@ -122,7 +124,7 @@ namespace EngineLayer.CrosslinkAnalysis
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
                         {
                             HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, modsDictionary), out v))
                                 v.Add(peptideWithSetModifications);
                         }
                     }
@@ -145,7 +147,6 @@ namespace EngineLayer.CrosslinkAnalysis
                     }
                 }
             });
-
             #endregion Match Seqeunces to PeptideWithSetModifications
 
             List<PsmCross> allResultingIdentifications = new List<PsmCross>();
@@ -155,16 +156,15 @@ namespace EngineLayer.CrosslinkAnalysis
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
                 var huh = newPsms[myScanWithMassIndex].Item1;
-                if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                if (huh != null && huh.Pli == null)
+                    huh.SetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
                 var huh1 = newPsms[myScanWithMassIndex].Item2;
-                if (huh1 != null && huh1.MostProbableProteinInfo == null)
-                    huh1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                if (huh1 != null && huh1.Pli == null)
+                    huh1.SetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
                 newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 
             #region Calculate single peptide FDR
-
             //List<PsmCross> PsmCrossForfdrList = new List<PsmCross>();
             //foreach (var PsmCrossForfdr in newPsms)
             //{
@@ -182,8 +182,7 @@ namespace EngineLayer.CrosslinkAnalysis
             //var orderedPsmsWithFDR = DoFalseDiscoveryRateAnalysis(orderedPsmsWithPeptides, XLsearchMode);
             //allResultingIdentifications = orderedPsmsWithFDR.OrderBy(p => p.ScanNumber).ToList();
             //myAnalysisResults.AllResultingIdentifications = allResultingIdentifications;
-
-            #endregion Calculate single peptide FDR
+            #endregion
 
             //Calculate Crosslink peptide FDR
             var CrosslinkOrderedPsmCrossWithPeptides = newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
@@ -193,7 +192,6 @@ namespace EngineLayer.CrosslinkAnalysis
             //allResultingIdentificationsfdr = CrosslinkOrderedPsmsWithFDR.Where(p => p.Item1.Pli.IsDecoy != true && p.Item2.Pli.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
 
             #region Draw spetra anotation
-
             //if (draw)
             //{
             //    foreach (var drawCompactPepList in CrosslinkOrderedPsmsWithFDR)
@@ -201,14 +199,15 @@ namespace EngineLayer.CrosslinkAnalysis
             //        XLDrawMSMatchToPdf(arrayOfSortedMS2Scans?[drawCompactPepList.Item1.ScanIndex], drawCompactPepList);
             //    }
             //}
-
-            #endregion Draw spetra anotation
+            #endregion
 
             //myAnalysisResults.AllResultingIdentificationFdrPairs = allResultingIdentificationsfdr;
             return myAnalysisResults;
         }
 
         #endregion Protected Methods
+
+        #region Private Methods
 
         /* DoFalseDiscoveryRateAnalysis
         private static List<PsmCross> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmCross> items, MassDiffAcceptor sm)
@@ -267,8 +266,6 @@ namespace EngineLayer.CrosslinkAnalysis
         }
         */
 
-        #region Private Methods
-
         //Calculate the FDR of crosslinked peptide FP/(FP+TP)
         private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
         {
@@ -288,8 +285,8 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 var item1 = ids[i].Item1; var item2 = ids[i].Item2;
 
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
-                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
+                var isDecoy1 = item1.Pli.IsDecoy; var isDecoy2 = item1.Pli.IsDecoy;
+                int notch1 = item1.Notch; int notch2 = item1.Notch;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;
                 else
@@ -334,6 +331,7 @@ namespace EngineLayer.CrosslinkAnalysis
         /* Draw spectra annotation
         private void XLDrawMSMatchToPdf(Ms2ScanWithSpecificMass MsScanForDraw, Tuple<NewPsmWithFdr, NewPsmWithFdr> PsmCrosssForDraw)
         {
+
             var x = MsScanForDraw.TheScan.MassSpectrum.XArray;
             var y = MsScanForDraw.TheScan.MassSpectrum.YArray;
 
@@ -406,6 +404,7 @@ namespace EngineLayer.CrosslinkAnalysis
                     model.Annotations.Add(textAnno2);
                     model.Series.Add(s1[i]);
                 }
+
             }
 
             for (int i = 0; i < matchedIonDic2.MatchedIonMz.Length; i++)
@@ -439,6 +438,7 @@ namespace EngineLayer.CrosslinkAnalysis
                 }
             }
 
+
             using (var stream = File.Create(OutputFolder + "\\" + "Scan" + scanNum + ".pdf"))
             {
                 PdfExporter pdf = new PdfExporter { Width = 700, Height = 300 };
@@ -466,6 +466,5 @@ namespace EngineLayer.CrosslinkAnalysis
         }
 
         #endregion Private Methods
-
     }
 }

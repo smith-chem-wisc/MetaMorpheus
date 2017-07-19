@@ -38,13 +38,14 @@ namespace EngineLayer.ClassicSearch
         private readonly List<ProductType> lp;
 
         private readonly bool conserveMemory;
-        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
+
+        private readonly bool addCompIons;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, InitiatorMethionineBehavior initiatorMethionineBehavior) : base(nestedIds)
+        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, bool addCompIons) : base(nestedIds)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
@@ -59,8 +60,8 @@ namespace EngineLayer.ClassicSearch
             this.searchModes = searchModes;
             this.protease = protease;
             this.lp = lp;
+            this.addCompIons = addCompIons;
             this.conserveMemory = conserveMemory;
-            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
         }
 
         #endregion Public Constructors
@@ -73,13 +74,14 @@ namespace EngineLayer.ClassicSearch
 
             int totalProteins = proteinList.Count;
 
-            var observed_sequences = new HashSet<CompactPeptide>();
+            //var observed_base_sequences = new HashSet<string>();
+            var observed_sequences = new HashSet<string>();
 
             Status("Getting ms2 scans...", nestedIds);
 
-            var outerPsms = new Psm[searchModes.Count][];
+            var outerPsms = new PsmParent[searchModes.Count][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                outerPsms[aede] = new Psm[arrayOfSortedMS2Scans.Length];
+                outerPsms[aede] = new PsmParent[arrayOfSortedMS2Scans.Length];
 
             var lockObject = new object();
             int proteinsSeen = 0;
@@ -88,53 +90,60 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new Psm[searchModes.Count][];
+                var psms = new PsmParent[searchModes.Count][];
                 for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
-                    psms[searchModeIndex] = new Psm[arrayOfSortedMS2Scans.Length];
+                    psms[searchModeIndex] = new PsmParent[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
+                        if (peptide.Length <= 1)
+                            continue;
+
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
                             if (!conserveMemory)
                             {
-                                var observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                var hc = yyy.Sequence;
+                                var observed = observed_sequences.Contains(hc);
                                 if (observed)
                                     continue;
                                 lock (observed_sequences)
                                 {
-                                    observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                    observed = observed_sequences.Contains(hc);
                                     if (observed)
                                         continue;
-                                    observed_sequences.Add(correspondingCompactPeptide);
+                                    observed_sequences.Add(hc);
                                 }
                             }
 
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                            var productMasses = yyy.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                             Array.Sort(productMasses);
                             double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
                             for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                             {
                                 var searchMode = searchModes[searchModeIndex];
-                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
+                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(yyy.MonoisotopicMass, searchMode).ToList())
                                 {
-                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
+                                    double thePrecursorMass=scanWithIndexAndNotchInfo.theScan.PrecursorMass;
+                                    var score = PsmParent.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
                                     if (score > 1)
                                     {
-                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                        var psm = new PsmClassic(yyy, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                        var currentBestPsmList = psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex];
+                                        if (currentBestPsmList == null)
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
                                         else
                                         {
-                                            if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
-                                            else if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch);
+                                            var singleIsPreferable = PsmClassic.FirstIsPreferable(psm, currentBestPsmList as PsmClassic, variableModifications);
+                                            if (singleIsPreferable.HasValue && singleIsPreferable.Value)
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = psm;
+                                            else if (!singleIsPreferable.HasValue)
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].NumAmbiguous++;
                                         }
                                     }
                                 }
@@ -152,10 +161,11 @@ namespace EngineLayer.ClassicSearch
                                     outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    if (psms[searchModeIndex][i].Score - outerPsms[searchModeIndex][i].Score > 1e-9)
+                                    var firstIsPreferable = PsmClassic.FirstIsPreferable(psms[searchModeIndex][i] as PsmClassic, outerPsms[searchModeIndex][i] as PsmClassic, variableModifications);
+                                    if (firstIsPreferable.HasValue && firstIsPreferable.Value)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
-                                    else if (psms[searchModeIndex][i].Score - outerPsms[searchModeIndex][i].Score > -1e-9)
-                                        outerPsms[searchModeIndex][i].Add(psms[searchModeIndex][i]);
+                                    else if (!firstIsPreferable.HasValue)
+                                        outerPsms[searchModeIndex][i].NumAmbiguous++;
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;
