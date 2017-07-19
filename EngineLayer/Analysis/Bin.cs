@@ -21,7 +21,7 @@ namespace EngineLayer.Analysis
         public int pepClocCount;
         public int protNlocCount;
         public int protClocCount;
-        public Dictionary<string, Tuple<string, string, SingleScanManyPeptidesMatch>> uniquePSMs;
+        public Dictionary<string, Tuple<string, string, Psm>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
         #endregion Public Fields
@@ -31,7 +31,7 @@ namespace EngineLayer.Analysis
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, SingleScanManyPeptidesMatch>>();
+            uniquePSMs = new Dictionary<string, Tuple<string, string, Psm>>();
         }
 
         #endregion Public Constructors
@@ -91,16 +91,16 @@ namespace EngineLayer.Analysis
 
         #region Internal Methods
 
-        internal void Add(SingleScanManyPeptidesMatch ok)
+        internal void Add(Psm ok)
         {
             if (uniquePSMs.ContainsKey(ok.MostProbableProteinInfo.FullSequence))
             {
                 var current = uniquePSMs[ok.MostProbableProteinInfo.FullSequence];
                 if (current.Item3.Score < ok.Score)
-                    uniquePSMs[ok.MostProbableProteinInfo.FullSequence] = new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok);
+                    uniquePSMs[ok.MostProbableProteinInfo.FullSequence] = new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok);
             }
             else
-                uniquePSMs.Add(ok.MostProbableProteinInfo.FullSequence, new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok));
+                uniquePSMs.Add(ok.MostProbableProteinInfo.FullSequence, new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok));
         }
 
         #endregion Internal Methods

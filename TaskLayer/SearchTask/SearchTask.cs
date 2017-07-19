@@ -168,9 +168,9 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
 
-            List<SingleScanManyPeptidesMatch>[] allPsms = new List<SingleScanManyPeptidesMatch>[MassDiffAcceptors.Count];
+            List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                allPsms[searchModeIndex] = new List<SingleScanManyPeptidesMatch>();
+                allPsms[searchModeIndex] = new List<Psm>();
 
             Status("Loading modifications...", taskId);
 
@@ -364,14 +364,14 @@ namespace TaskLayer
                     FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
 
                 // assign quantities to PSMs
-                Dictionary<string, List<SingleScanManyPeptidesMatch>> baseseqToPsm = new Dictionary<string, List<SingleScanManyPeptidesMatch>>();
-                List<SingleScanManyPeptidesMatch> list;
+                Dictionary<string, List<Psm>> baseseqToPsm = new Dictionary<string, List<Psm>>();
+                List<Psm> list;
                 foreach (var psm in psmsBelowOnePercentFdr)
                 {
                     if (baseseqToPsm.TryGetValue(psm.MostProbableProteinInfo.BaseSequence, out list))
                         list.Add(psm);
                     else
-                        baseseqToPsm.Add(psm.MostProbableProteinInfo.BaseSequence, new List<SingleScanManyPeptidesMatch>() { psm });
+                        baseseqToPsm.Add(psm.MostProbableProteinInfo.BaseSequence, new List<Psm>() { psm });
                 }
 
                 var summedPeaks = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");

@@ -140,8 +140,8 @@ namespace TaskLayer
 
             var searchModes = new List<MassDiffAcceptor> { searchMode };
 
-            List<SingleScanManyPeptidesMatch>[] allPsms = new List<SingleScanManyPeptidesMatch>[1];
-            allPsms[0] = new List<SingleScanManyPeptidesMatch>();
+            List<Psm>[] allPsms = new List<Psm>[1];
+            allPsms[0] = new List<Psm>();
 
             List<ProductType> lp = new List<ProductType>();
             if (BIons)

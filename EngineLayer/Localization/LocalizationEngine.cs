@@ -11,7 +11,7 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private readonly IEnumerable<SingleScanManyPeptidesMatch> allResultingIdentifications;
+        private readonly IEnumerable<Psm> allResultingIdentifications;
         private readonly List<ProductType> lp;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
@@ -20,7 +20,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<SingleScanManyPeptidesMatch> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;
@@ -44,7 +44,7 @@ namespace EngineLayer
                     var ionMasses = representative.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
-                    SingleScanManyPeptidesMatch.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch);
+                    Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch);
                     MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
                 }
 
@@ -56,7 +56,7 @@ namespace EngineLayer
                     var gg = localizedPeptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
                     double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                    var score = SingleScanManyPeptidesMatch.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch);
+                    var score = Psm.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch);
                     localizedScores.Add(score);
                 }
 

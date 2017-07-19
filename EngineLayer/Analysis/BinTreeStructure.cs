@@ -24,7 +24,7 @@ namespace EngineLayer.Analysis
 
         #region Public Methods
 
-        public void GenerateBins(List<SingleScanManyPeptidesMatch> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<Psm> targetAndDecoyMatches, double dc)
         {
             List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();

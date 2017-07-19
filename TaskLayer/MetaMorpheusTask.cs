@@ -293,19 +293,19 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal void WritePsmsToTsv(IEnumerable<SingleScanManyPeptidesMatch> items, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WritePsmsToTsv(IEnumerable<Psm> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".psmtsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(SingleScanManyPeptidesMatch.GetTabSeparatedHeader());
+                output.WriteLine(Psm.GetTabSeparatedHeader());
                 foreach (var heh in items)
                     output.WriteLine(heh);
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        protected internal void WriteMzidentml(IEnumerable<SingleScanManyPeptidesMatch> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, MassDiffAcceptor searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
+        protected internal void WriteMzidentml(IEnumerable<Psm> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, MassDiffAcceptor searchMode, Tolerance productTolerance, int missedCleavages, string outputFolder, string fileName, List<string> nestedIds)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.MostProbableProteinInfo.PeptidesWithSetModifications).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
@@ -485,7 +485,7 @@ namespace TaskLayer
             int p_index = 0;
             Dictionary<PeptideWithSetModifications, Tuple<int, int, List<string>>> peptide_ids = new Dictionary<PeptideWithSetModifications, Tuple<int, int, List<string>>>(); //key is peptide, value is <peptide id for that peptide, peptide evidence id>
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
-            foreach (SingleScanManyPeptidesMatch psm in items)
+            foreach (Psm psm in items)
             {
                 PeptideWithSetModifications peptide = psm.MostProbableProteinInfo.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
                 Tuple<int, int, List<string>> peptide_id;

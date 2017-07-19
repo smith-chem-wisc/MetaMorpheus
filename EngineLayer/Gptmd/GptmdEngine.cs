@@ -11,7 +11,7 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
-        private readonly List<SingleScanManyPeptidesMatch> allIdentifications;
+        private readonly List<Psm> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
         private readonly Tolerance precursorMassTolerance;
@@ -20,7 +20,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<SingleScanManyPeptidesMatch> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public GptmdEngine(List<Psm> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.allIdentifications = allIdentifications;
             this.gptmdModifications = gptmdModifications;

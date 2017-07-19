@@ -22,9 +22,9 @@ namespace Test
             IMzPeak peak = new MzPeak(4, 4);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scann = myMsDataFile.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, peak, 1, null);
-            SingleScanManyPeptidesMatch psm = new SingleScanManyPeptidesMatch(pepWithSetMods.CompactPeptide, 1, 2, 3, scan);
+            Psm psm = new Psm(pepWithSetMods.CompactPeptide, 1, 2, 3, scan);
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SingleScanManyPeptidesMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
@@ -33,17 +33,17 @@ namespace Test
 
             psm.ResolveProteinsAndMostProbablePeptide(matching);
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SingleScanManyPeptidesMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
-            new LocalizationEngine(new List<SingleScanManyPeptidesMatch> { psm }, lp, myMsDataFile, fragmentTolerance, null).Run();
+            new LocalizationEngine(new List<Psm> { psm }, lp, myMsDataFile, fragmentTolerance, null).Run();
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SingleScanManyPeptidesMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
             psm.SetValues(6, 6, 6, 6, 6, 6);
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SingleScanManyPeptidesMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
         }
 
         #endregion Public Methods

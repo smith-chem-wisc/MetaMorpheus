@@ -10,7 +10,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class SingleScanManyPeptidesMatch
+    public class Psm
     {
 
         #region Public Fields
@@ -29,7 +29,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SingleScanManyPeptidesMatch(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public Psm(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.Score = score;
             this.ScanIndex = scanIndex;
@@ -287,7 +287,7 @@ namespace EngineLayer
             notches.Add(v);
         }
 
-        internal void Add(SingleScanManyPeptidesMatch psmParent)
+        internal void Add(Psm psmParent)
         {
             for (int i = 0; i < psmParent.compactPeptides.Count; i++)
             {

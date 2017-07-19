@@ -37,7 +37,7 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            SingleScanManyPeptidesMatch newPsm = new SingleScanManyPeptidesMatch(ps.CompactPeptide, 0, 0, 2, scan);
+            Psm newPsm = new Psm(ps.CompactPeptide, 0, 0, 2, scan);
 
             Assert.IsNull(newPsm.MostProbableProteinInfo);
 
@@ -49,7 +49,7 @@ namespace Test
 
             newPsm.ResolveProteinsAndMostProbablePeptide(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<SingleScanManyPeptidesMatch> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
+            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
             f.Run();
 
             // Was single peak!!!

@@ -5,7 +5,7 @@ using Chemistry;
 
 namespace EngineLayer.CrosslinkSearch
 {
-    public class PsmCross : SingleScanManyPeptidesMatch
+    public class PsmCross : Psm
     {
         #region Private Fields
 

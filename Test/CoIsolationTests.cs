@@ -78,7 +78,7 @@ namespace Test
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
 
-            new SequencesToActualProteinPeptidesEngine(new List<SingleScanManyPeptidesMatch>[] { new List<SingleScanManyPeptidesMatch> { searchResults.Psms[0][0], searchResults.Psms[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0], searchResults.Psms[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
             
             Assert.AreEqual("NNNK", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
             Assert.AreEqual("NDNK", searchResults.Psms[0][1].MostProbableProteinInfo.BaseSequence);
