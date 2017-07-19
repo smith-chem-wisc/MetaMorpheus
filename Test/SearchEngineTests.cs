@@ -55,7 +55,7 @@ namespace Test
 
             new SequencesToActualProteinPeptidesEngine(new List<SingleScanManyPeptidesMatch>[] { new List<SingleScanManyPeptidesMatch> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
-            Assert.AreEqual("QQQ", searchResults.Psms[0][0].Pli.BaseSequence);
+            Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
 
         [Test]
@@ -96,7 +96,7 @@ namespace Test
 
             new SequencesToActualProteinPeptidesEngine(new List<SingleScanManyPeptidesMatch>[] { new List<SingleScanManyPeptidesMatch> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
-            Assert.AreEqual("QXQ", searchResults.Psms[0][0].Pli.BaseSequence);
+            Assert.AreEqual("QXQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
 
         [Test]
@@ -157,7 +157,7 @@ namespace Test
 
             new SequencesToActualProteinPeptidesEngine(new List<SingleScanManyPeptidesMatch>[] { new List<SingleScanManyPeptidesMatch> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
-            Assert.AreEqual("QQQ", searchResults.Psms[0][0].Pli.BaseSequence);
+            Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
 
         [Test]

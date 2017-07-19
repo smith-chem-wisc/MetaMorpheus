@@ -64,7 +64,7 @@ namespace EngineLayer
         public string FullFilePath { get; }
         public int ScanIndex { get; }
         public int NumAmbiguous { get { return compactPeptides.Count; } }
-        public ProteinLinkedInfo Pli { get; private set; }
+        public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
         public double PeptideMonoisotopicMass { get; internal set; }
         public FdrInfo FdrInfo { get; set; }
         public LocalizationResults LocalizationResults { get; internal set; }
@@ -207,8 +207,8 @@ namespace EngineLayer
             for (int i = 0; i < compactPeptides.Count; i++)
             {
                 var candidatePli = new ProteinLinkedInfo(matching[compactPeptides[i]], notches[i]);
-                if (Pli == null || FirstIsPreferable(candidatePli, Pli))
-                    Pli = candidatePli;
+                if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
+                    MostProbableProteinInfo = candidatePli;
             }
         }
 
@@ -230,11 +230,11 @@ namespace EngineLayer
             sb.Append(string.Join("|", QuantIntensity) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            if (Pli != null)
+            if (MostProbableProteinInfo != null)
             {
-                sb.Append(Pli.ToString() + '\t');
-                sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-                sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+                sb.Append(MostProbableProteinInfo.ToString() + '\t');
+                sb.Append((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+                sb.Append(((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass) / MostProbableProteinInfo.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             }
             else
                 sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');

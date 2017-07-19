@@ -202,7 +202,7 @@ namespace EngineLayer.Calibration
                 int ms2scanNumber = identification.ScanNumber;
                 int peptideCharge = identification.ScanPrecursorCharge;
 
-                var representativeSinglePeptide = identification.Pli.PeptidesWithSetModifications.First();
+                var representativeSinglePeptide = identification.MostProbableProteinInfo.PeptidesWithSetModifications.First();
 
                 // Get the peptide, don't forget to add the modifications!!!!
                 var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;

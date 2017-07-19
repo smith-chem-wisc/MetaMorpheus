@@ -104,10 +104,10 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
-    <Compile Include="AllowedIntervalWithNotch.cs" />
+    <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisResults.cs" />
-    <Compile Include="CrosslinkerType.cs" />
+    <Compile Include="CrosslinkSearch\CrosslinkerType.cs" />
     <Compile Include="CrosslinkSearch\BestPeptideScoreNotch.cs" />
     <Compile Include="CrosslinkSearch\CrosslinkSearchEngine.cs" />
     <Compile Include="CrosslinkSearch\CrosslinkSearchEngine2.cs" />
@@ -115,15 +115,15 @@
     <Compile Include="CrosslinkSearch\MatchedIonInfo.cs" />
     <Compile Include="CrosslinkSearch\PsmCross.cs" />
     <Compile Include="FdrInfo.cs" />
-    <Compile Include="LocalizationEngineResults.cs" />
-    <Compile Include="LocalizationResults.cs" />
+    <Compile Include="Localization\LocalizationEngineResults.cs" />
+    <Compile Include="Localization\LocalizationResults.cs" />
     <Compile Include="MatchedIonMassesListPositiveIsMatch.cs" />
-    <Compile Include="ModificationAnalysisEngine.cs" />
-    <Compile Include="ModificationAnalysisResults.cs" />
-    <Compile Include="ProteinAnalysisEngine.cs" />
-    <Compile Include="ProteinAnalysisResults.cs" />
+    <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
+    <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
+    <Compile Include="ProteinAnalysis\ProteinAnalysisEngine.cs" />
+    <Compile Include="ProteinAnalysis\ProteinAnalysisResults.cs" />
     <Compile Include="SearchType.cs" />
-    <Compile Include="LocalizationEngine.cs" />
+    <Compile Include="Localization\LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
     <Compile Include="ClassicSearch\ScanWithIndexAndNotchInfo.cs" />
     <Compile Include="EventArgs\MyRecursiveEventArgs.cs" />
@@ -159,7 +159,7 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="ProteinGroup.cs" />
+    <Compile Include="ProteinAnalysis\ProteinGroup.cs" />
     <Compile Include="PrecursorSearchModes\OpenMassDiffAcceptor.cs" />
     <Compile Include="PrecursorSearchModes\MassDiffAcceptor.cs" />
     <Compile Include="PrecursorSearchModes\SingleAbsoluteAroundZeroMassDiffAcceptor.cs" />
@@ -170,9 +170,9 @@
     <Compile Include="CalibrationEngine\CalibrationEngine.cs" />
     <Compile Include="EventArgs\StringEventArgs.cs" />
     <Compile Include="EventArgs\StringListEventArgs.cs" />
-    <Compile Include="SequencesToActualProteinPeptidesEngine.cs" />
-    <Compile Include="SequencesToActualProteinPeptidesEngineResults.cs" />
-    <Compile Include="XLSearchResults.cs" />
+    <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngine.cs" />
+    <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngineResults.cs" />
+    <Compile Include="CrosslinkSearch\XLSearchResults.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">

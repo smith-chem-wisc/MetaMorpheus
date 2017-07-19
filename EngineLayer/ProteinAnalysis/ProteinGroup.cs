@@ -231,7 +231,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.Pli.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.MostProbableProteinInfo.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
@@ -242,7 +242,7 @@ namespace EngineLayer
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
             {
-                foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
+                foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                 {
                     List<PeptideWithSetModifications> temp;
                     if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
@@ -391,7 +391,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.Pli.BaseSequence);
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.MostProbableProteinInfo.BaseSequence);
                 //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
@@ -402,8 +402,8 @@ namespace EngineLayer
                     // remove shared non-razor peptides
                     foreach (var psm in psmGroup)
                     {
-                        var uniques = psm.Pli.PeptidesWithSetModifications.Intersect(UniquePeptides);
-                        var razors = psm.Pli.PeptidesWithSetModifications.Intersect(RazorPeptides);
+                        var uniques = psm.MostProbableProteinInfo.PeptidesWithSetModifications.Intersect(UniquePeptides);
+                        var razors = psm.MostProbableProteinInfo.PeptidesWithSetModifications.Intersect(RazorPeptides);
 
                         if (!uniques.Any() && !razors.Any())
                             psmsToIgnore.Add(psm);
@@ -445,7 +445,7 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
         {
             var allPsmsForThisFile = new HashSet<SingleScanManyPeptidesMatch>(this.AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
-            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.Pli.PeptidesWithSetModifications));
+            var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.MostProbableProteinInfo.PeptidesWithSetModifications));
             var allUniquePeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.UniquePeptides.Intersect(allPeptidesForThisFile));
             var allRazorPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(this.RazorPeptides.Intersect(allPeptidesForThisFile));
 

@@ -291,7 +291,7 @@ namespace EngineLayer
             {
                 if (psm.FdrInfo.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                     {
                         HashSet<SingleScanManyPeptidesMatch> psmsForThisPeptide;
 

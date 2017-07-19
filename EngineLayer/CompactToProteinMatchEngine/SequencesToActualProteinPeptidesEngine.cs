@@ -113,7 +113,7 @@ namespace EngineLayer
                 {
                     foreach (var huh in allPsms[j])
                     {
-                        if (huh != null && huh.Pli == null)
+                        if (huh != null && huh.MostProbableProteinInfo == null)
                             huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                     }
                 }

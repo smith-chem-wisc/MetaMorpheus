@@ -56,8 +56,8 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < ids.Count; i++)
             {
                 var item = ids[i];
-                var isDecoy = item.Pli.IsDecoy;
-                int notch = item.Pli.Notch;
+                var isDecoy = item.MostProbableProteinInfo.IsDecoy;
+                int notch = item.MostProbableProteinInfo.Notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -86,7 +86,7 @@ namespace EngineLayer.Analysis
                 else if (id.FdrInfo.QValue < min_q_value)
                     min_q_value = id.FdrInfo.QValue;
 
-                int notch = id.Pli.Notch;
+                int notch = id.MostProbableProteinInfo.Notch;
                 if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
                     id.FdrInfo.QValueNotch = min_q_value_notch[notch];
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])

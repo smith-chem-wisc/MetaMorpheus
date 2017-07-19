@@ -155,10 +155,10 @@ namespace EngineLayer.CrosslinkAnalysis
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
                 var huh = newPsms[myScanWithMassIndex].Item1;
-                if (huh != null && huh.Pli == null)
+                if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                 var huh1 = newPsms[myScanWithMassIndex].Item2;
-                if (huh1 != null && huh1.Pli == null)
+                if (huh1 != null && huh1.MostProbableProteinInfo == null)
                     huh1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                 newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
@@ -288,8 +288,8 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 var item1 = ids[i].Item1; var item2 = ids[i].Item2;
 
-                var isDecoy1 = item1.Pli.IsDecoy; var isDecoy2 = item1.Pli.IsDecoy;
-                int notch1 = item1.Pli.Notch; int notch2 = item1.Pli.Notch;
+                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
+                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;
                 else

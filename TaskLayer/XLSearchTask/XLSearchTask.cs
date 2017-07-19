@@ -353,7 +353,7 @@ namespace TaskLayer
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsmsXLTuple, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }).Run();
 
             WriteCrosslinkToTsv(allPsmsXLTuple, OutputFolder, "xl_all", new List<string> { taskId });
-            var allPsmsXLTupleFDR = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).Where(p => p.Item1.Pli.IsDecoy != true && p.Item2.Pli.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            var allPsmsXLTupleFDR = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
 
             return myTaskResults;
@@ -457,7 +457,7 @@ namespace TaskLayer
                     "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tTotalScore\tMass diff\tQValue");
                 foreach (var item in items)
                 {
-                    var x = item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
+                    var x = item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
                     output.WriteLine(
                         item.Item1.FullFilePath
                         + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
@@ -465,22 +465,22 @@ namespace TaskLayer
                         + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                         + "\t"
-                        + "\t" + item.Item1.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.Pli.BaseSequence
-                        + "\t" + item.Item1.Pli.FullSequence
-                        + "\t" + item.Item1.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
+                        + "\t" + item.Item1.MostProbableProteinInfo.FullSequence
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
-                        + "\t" + item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.Pli.BaseSequence
-                        + "\t" + item.Item2.Pli.FullSequence
-                        + "\t" + item.Item2.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
+                        + "\t" + item.Item2.MostProbableProteinInfo.FullSequence
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.Pli.PeptideMonoisotopicMass - item.Item1.Pli.PeptideMonoisotopicMass)
+                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass)
                         + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
                 }
             }

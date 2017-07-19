@@ -52,7 +52,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => b.Item3.Pli.IsDecoy);
+                return uniquePSMs.Values.Count(b => b.Item3.MostProbableProteinInfo.IsDecoy);
             }
         }
 
@@ -68,7 +68,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.Pli.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
+                return uniquePSMs.Values.Count(b => !b.Item3.MostProbableProteinInfo.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
             }
         }
 
@@ -93,14 +93,14 @@ namespace EngineLayer.Analysis
 
         internal void Add(SingleScanManyPeptidesMatch ok)
         {
-            if (uniquePSMs.ContainsKey(ok.Pli.FullSequence))
+            if (uniquePSMs.ContainsKey(ok.MostProbableProteinInfo.FullSequence))
             {
-                var current = uniquePSMs[ok.Pli.FullSequence];
+                var current = uniquePSMs[ok.MostProbableProteinInfo.FullSequence];
                 if (current.Item3.Score < ok.Score)
-                    uniquePSMs[ok.Pli.FullSequence] = new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok);
+                    uniquePSMs[ok.MostProbableProteinInfo.FullSequence] = new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok);
             }
             else
-                uniquePSMs.Add(ok.Pli.FullSequence, new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok));
+                uniquePSMs.Add(ok.MostProbableProteinInfo.FullSequence, new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok));
         }
 
         #endregion Internal Methods

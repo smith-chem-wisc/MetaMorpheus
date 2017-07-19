@@ -39,7 +39,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
             SingleScanManyPeptidesMatch newPsm = new SingleScanManyPeptidesMatch(ps.CompactPeptide, 0, 0, 2, scan);
 
-            Assert.IsNull(newPsm.Pli);
+            Assert.IsNull(newPsm.MostProbableProteinInfo);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>

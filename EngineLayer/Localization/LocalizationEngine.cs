@@ -37,7 +37,7 @@ namespace EngineLayer
             foreach (var ok in allResultingIdentifications)
             {
                 var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
-                var representative = ok.Pli.PeptidesWithSetModifications.First();
+                var representative = ok.MostProbableProteinInfo.PeptidesWithSetModifications.First();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 foreach (var huh in lp)
                 {
