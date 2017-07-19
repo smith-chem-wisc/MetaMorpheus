@@ -9,7 +9,7 @@ namespace MetaMorpheusGUI
         public ProteinDbForDataGrid(string fileName)
         {
             Use = true;
-            FileName = fileName;
+            FilePath = fileName;
             if (fileName.ToUpper().Contains("contaminant".ToUpper())
                 || fileName.Contains("cRAP"))
                 Contaminant = true;
@@ -19,7 +19,7 @@ namespace MetaMorpheusGUI
         {
             Use = true;
             Contaminant = uu.IsContaminant;
-            FileName = uu.FileName;
+            FilePath = uu.FilePath;
         }
 
         #endregion Public Constructors
@@ -28,7 +28,7 @@ namespace MetaMorpheusGUI
 
         public bool Use { get; set; }
         public bool Contaminant { get; set; }
-        public string FileName { get; }
+        public string FilePath { get; }
         public bool InProgress { get; private set; }
 
         #endregion Public Properties

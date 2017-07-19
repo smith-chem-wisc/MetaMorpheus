@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnalysisEngineTest.cs" />
+    <Compile Include="SlicedTest.cs" />
     <Compile Include="FakeMsDataFile.cs" />
     <Compile Include="LocalizationTest.cs" />
     <Compile Include="MyPeptideTest.cs" />
@@ -124,6 +125,15 @@
   <ItemGroup>
     <None Include="packages.config">
       <SubType>Designer</SubType>
+    </None>
+    <None Include="SearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="sliced-db.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="sliced-raw.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>

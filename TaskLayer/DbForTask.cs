@@ -6,7 +6,7 @@
 
         public DbForTask(string fileName, bool isContaminant)
         {
-            FileName = fileName;
+            FilePath = fileName;
             IsContaminant = isContaminant;
         }
 
@@ -14,7 +14,7 @@
 
         #region Public Properties
 
-        public string FileName { get; }
+        public string FilePath { get; }
         public bool IsContaminant { get; }
 
         #endregion Public Properties

@@ -1,0 +1,45 @@
+﻿using Nett;
+using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TaskLayer;
+
+namespace Test
+{
+    [TestFixture]
+    public class SlicedTest
+    {
+
+        #region Public Methods
+
+        [Test]
+        public static void SlicedTest1()
+        {
+            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
+            EverythingRunnerEngine a = new EverythingRunnerEngine(new List<Tuple<string, MetaMorpheusTask>> { new Tuple<string, MetaMorpheusTask>("Task", task) }, new List<string> { raw }, new List<DbForTask> { db });
+
+            a.Run();
+
+            var thisTaskOutputFolder = MySetUpClass.outputFolder;
+
+            var peaks = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_5ppmAroundZero_QuantifiedPeaks.tsv");
+
+            Assert.AreEqual(2, File.ReadLines(peaks).Count());
+
+            var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs_5ppmAroundZero.psmtsv");
+
+            Assert.AreEqual(3, File.ReadLines(psms).Count());
+            var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "aggregateProteinGroups_5ppmAroundZero.tsv");
+
+            Assert.AreEqual(2, File.ReadLines(protGroups).Count());
+        }
+
+        #endregion Public Methods
+
+    }
+}
