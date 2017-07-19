@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskLayer", "TaskLayer\Task
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineLayer", "EngineLayer\EngineLayer.csproj", "{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyBenchmarkk", "MyBenchmarkk\MyBenchmarkk.csproj", "{5894FC74-EA0F-49AA-84C3-45913C286862}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,12 +49,6 @@ Global
 		{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}.TestAndRelease|Any CPU.Build.0 = Release|Any CPU
 		{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}.TestAndReleaseLinux|Any CPU.ActiveCfg = Release|Any CPU
 		{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}.TestAndReleaseLinux|Any CPU.Build.0 = Release|Any CPU
-		{5894FC74-EA0F-49AA-84C3-45913C286862}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5894FC74-EA0F-49AA-84C3-45913C286862}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5894FC74-EA0F-49AA-84C3-45913C286862}.TestAndRelease|Any CPU.ActiveCfg = Release|Any CPU
-		{5894FC74-EA0F-49AA-84C3-45913C286862}.TestAndRelease|Any CPU.Build.0 = Release|Any CPU
-		{5894FC74-EA0F-49AA-84C3-45913C286862}.TestAndReleaseLinux|Any CPU.ActiveCfg = Release|Any CPU
-		{5894FC74-EA0F-49AA-84C3-45913C286862}.TestAndReleaseLinux|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
