@@ -228,7 +228,7 @@ namespace TaskLayer
                     file.WriteLine("Spectra files:");
                     file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
                     file.WriteLine("XML files:");
-                    file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FileName)));
+                    file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
                 }
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }

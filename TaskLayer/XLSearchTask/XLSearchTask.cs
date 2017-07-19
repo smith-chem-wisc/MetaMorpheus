@@ -227,7 +227,7 @@ namespace TaskLayer
 
             Status("Loading proteins...", new List<string> { taskId });
             Dictionary<string, Modification> unknownModifications;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FileName, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (BIons)
@@ -387,7 +387,7 @@ namespace TaskLayer
 
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
-            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FileName), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+            var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             return folder;
@@ -407,7 +407,7 @@ namespace TaskLayer
             // In every database location...
             foreach (var ok in dbFilenameList)
             {
-                var baseDir = Path.GetDirectoryName(ok.FileName);
+                var baseDir = Path.GetDirectoryName(ok.FilePath);
                 var directory = new DirectoryInfo(baseDir);
                 DirectoryInfo[] directories = directory.GetDirectories();
 
