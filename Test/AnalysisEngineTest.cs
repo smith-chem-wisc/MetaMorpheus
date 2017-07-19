@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using EngineLayer.Analysis;
-using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -41,7 +40,7 @@ namespace Test
                 i++;
             }
 
-            List<PsmParent>[] newPsms = new List<PsmParent>[1];
+            List<Psm>[] newPsms = new List<Psm>[1];
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
@@ -49,18 +48,18 @@ namespace Test
 
             PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
             HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), modsDictionary);
+            CompactPeptide compactPeptide1 = new CompactPeptide(value1.First());
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
             PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), modsDictionary);
+            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First());
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
             PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), modsDictionary);
+            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First());
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
             //newPsms[0] = new List<PsmParent>[] { new List<PsmParent>{ new PsmModern(compactPeptide1, null, 1,  1, 2, 2, 1,1, 1, 1, 3,0) },
@@ -75,17 +74,17 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakB, 1, null);
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakC, 1, null);
 
-            PsmParent matchA = new PsmClassic(value1.First(), 0, 0, 0, scanA);
-            PsmParent matchB = new PsmClassic(value2.First(), 0, 0, 0, scanB);
-            PsmParent matchC = new PsmClassic(value3.First(), 0, 0, 0, scanC);
+            Psm matchA = new Psm(compactPeptide1, 0, 0, 0, scanA);
+            Psm matchB = new Psm(compactPeptide2, 0, 0, 0, scanB);
+            Psm matchC = new Psm(compactPeptide3, 0, 0, 0, scanC);
 
-            newPsms[0] = new List<PsmParent> { matchA, matchB, matchC };
+            newPsms[0] = new List<Psm> { matchA, matchB, matchC };
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            Action<List<PsmParent>, string, List<string>> action2 = (List<PsmParent> l, string s, List<string> sdf) => {; };
+            Action<List<Psm>, string, List<string>> action2 = (List<Psm> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
@@ -100,7 +99,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, modsDictionary, proteinList, searchModes, protease, 2, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 1024, null);
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 2, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 1024, null);
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 

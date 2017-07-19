@@ -12,6 +12,7 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
+
         #region Private Fields
 
         private static bool inProgress;
@@ -90,11 +91,11 @@ namespace MetaMorpheusCommandLine
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "GptmdTask", ye3));
                             break;
+
                         case "XLSearch":
                             var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "XLSearchTask", ye4));
                             break;
-
                     }
                 }
                 List<string> startingRawFilenameList = p.Object.Spectra;
@@ -184,6 +185,7 @@ namespace MetaMorpheusCommandLine
 
         public class ApplicationArguments
         {
+
             #region Public Properties
 
             public List<string> Tasks { get; set; }
@@ -191,8 +193,10 @@ namespace MetaMorpheusCommandLine
             public List<string> Spectra { get; set; }
 
             #endregion Public Properties
+
         }
 
         #endregion Public Classes
+
     }
 }

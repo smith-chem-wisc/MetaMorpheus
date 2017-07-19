@@ -12,8 +12,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
-        private readonly List<PsmParent>[] allPsms;
-        private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
+        private readonly List<Psm>[] allPsms;
         private readonly List<Protein> proteinList;
         private readonly List<MassDiffAcceptor> massDiffAcceptors;
         private readonly Protease protease;
@@ -29,11 +28,10 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, Dictionary<ModificationWithMass, ushort> modsDictionary, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
-            this.modsDictionary = modsDictionary;
             this.allPsms = allPsms;
             this.protease = protease;
             this.maxMissedCleavages = maxMissedCleavages;
@@ -64,9 +62,9 @@ namespace EngineLayer
                     foreach (var psm in psmListForAspecificSerchMode)
                         if (psm != null)
                         {
-                            var cp = psm.GetCompactPeptide(modsDictionary);
-                            if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                            foreach (var cp in psm.compactPeptides)
+                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                                    compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
                         }
             //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             int totalProteins = proteinList.Count;
@@ -80,12 +78,10 @@ namespace EngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                     {
-                        if (peptideWithPossibleModifications.Length <= 1)
-                            continue;
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
                             HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, modsDictionary), out v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
                                 v.Add(peptideWithSetModifications);
                         }
                     }
@@ -117,8 +113,8 @@ namespace EngineLayer
                 {
                     foreach (var huh in allPsms[j])
                     {
-                        if (huh != null && huh.Pli == null)
-                            huh.SetProteinLinkedInfo(compactPeptideToProteinPeptideMatching, modsDictionary);
+                        if (huh != null && huh.MostProbableProteinInfo == null)
+                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                     }
                 }
             }

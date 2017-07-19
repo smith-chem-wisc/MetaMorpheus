@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -10,14 +10,27 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public abstract class PsmParent
+    public class Psm
     {
 
-        #region Protected Constructors
+        #region Public Fields
 
-        protected PsmParent(int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, double peptideMonoisotopicMass)
+        public List<CompactPeptide> compactPeptides = new List<CompactPeptide>();
+
+        public List<int> notches = new List<int>();
+
+        #endregion Public Fields
+
+        #region Private Fields
+
+        private const double tolInDaForPreferringHavingMods = 0.03;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public Psm(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
-            this.Notch = notch;
             this.Score = score;
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -30,17 +43,16 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
             this.QuantIntensity = new double[1];
-            this.PeptideMonoisotopicMass = peptideMonoisotopicMass;
+            Add(peptide, notch);
         }
 
-        #endregion Protected Constructors
+        #endregion Public Constructors
 
         #region Public Properties
 
         public double[] QuantIntensity { get; set; }
         public double MostAbundantMass { get; set; }
-        public int Notch { get; }
-        public double Score { get; }
+        public double Score { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -51,8 +63,8 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public int NumAmbiguous { get; set; }
-        public ProteinLinkedInfo Pli { get; private set; }
+        public int NumAmbiguous { get { return compactPeptides.Count; } }
+        public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
         public double PeptideMonoisotopicMass { get; internal set; }
         public FdrInfo FdrInfo { get; set; }
         public LocalizationResults LocalizationResults { get; internal set; }
@@ -163,17 +175,15 @@ namespace EngineLayer
             sb.Append("Precursor Intensity" + '\t');
             sb.Append("Precursor Mass" + '\t');
             sb.Append("Score" + '\t');
-            sb.Append("Notch" + '\t');
             sb.Append("Quantification Intensity" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
             sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
-            sb.Append(LocalizationResults.GetTabSeparatedHeader() + '\t');
-
-            // Need info from both current and from Pli
-            sb.Append("Improvement Possible" + '\t');
             sb.Append("Mass Diff (Da)" + '\t');
             sb.Append("Mass Diff (ppm)" + '\t');
+
+            sb.Append(LocalizationResults.GetTabSeparatedHeader() + '\t');
+            sb.Append("Improvement Possible" + '\t');
 
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
@@ -185,11 +195,21 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public abstract CompactPeptide GetCompactPeptide(Dictionary<ModificationWithMass, ushort> modsDictionary);
-
-        public void SetProteinLinkedInfo(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
         {
-            Pli = new ProteinLinkedInfo(matching[GetCompactPeptide(modsDictionary)]);
+            compactPeptides = new List<CompactPeptide> { correspondingCompactPeptide };
+            Score = score;
+            notches = new List<int> { v };
+        }
+
+        public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
+        {
+            for (int i = 0; i < compactPeptides.Count; i++)
+            {
+                var candidatePli = new ProteinLinkedInfo(matching[compactPeptides[i]], notches[i]);
+                if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
+                    MostProbableProteinInfo = candidatePli;
+            }
         }
 
         public override string ToString()
@@ -207,11 +227,18 @@ namespace EngineLayer
             sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(Notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(string.Join("|", QuantIntensity) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append(Pli.ToString() + '\t');
+            if (MostProbableProteinInfo != null)
+            {
+                sb.Append(MostProbableProteinInfo.ToString() + '\t');
+                sb.Append((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+                sb.Append(((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass) / MostProbableProteinInfo.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            }
+            else
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+
             if (LocalizationResults != null)
             {
                 sb.Append(LocalizationResults.ToString() + '\t');
@@ -221,15 +248,18 @@ namespace EngineLayer
             {
                 sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
             }
-            sb.Append((ScanPrecursorMass - Pli.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(FdrInfo.cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(FdrInfo.cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
+            if (FdrInfo != null)
+            {
+                sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
+                sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
+                sb.Append(FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
+                sb.Append(FdrInfo.cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
+                sb.Append(FdrInfo.cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
+                sb.Append(FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
+            }
+            else
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
             return sb.ToString();
         }
@@ -248,6 +278,74 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
+        #region Internal Methods
+
+        internal void Add(CompactPeptide compactPeptide, int v)
+        {
+            compactPeptides.Add(compactPeptide);
+            notches.Add(v);
+        }
+
+        internal void Add(Psm psmParent)
+        {
+            for (int i = 0; i < psmParent.compactPeptides.Count; i++)
+            {
+                Add(psmParent.compactPeptides[i], psmParent.notches[i]);
+            }
+        }
+
+        #endregion Internal Methods
+
+        #region Private Methods
+
+        private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
+        {
+            if (firstPli.IsDecoy && !secondPli.IsDecoy)
+                return true;
+            if (!firstPli.IsDecoy && secondPli.IsDecoy)
+                return false;
+
+            // Score is same, need to see if accepts and if prefer the new one
+            var first = firstPli.PeptidesWithSetModifications.First();
+            var second = secondPli.PeptidesWithSetModifications.First();
+
+            // Prefer to be at zero rather than fewer modifications
+            if ((Math.Abs(first.MonoisotopicMass - ScanPrecursorMass) < tolInDaForPreferringHavingMods)
+                && (Math.Abs(second.MonoisotopicMass - ScanPrecursorMass) > tolInDaForPreferringHavingMods))
+                return true;
+            if ((Math.Abs(second.MonoisotopicMass - ScanPrecursorMass) < tolInDaForPreferringHavingMods)
+                && (Math.Abs(first.MonoisotopicMass - ScanPrecursorMass) > tolInDaForPreferringHavingMods))
+                return false;
+
+            //int firstVarMods = first.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
+            //int secondVarMods = second.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
+
+            // Want the lowest number of localizeable mods!!! Even at the expense of many variable and fixed mods.
+            //if (first.NumMods - firstVarMods - first.numFixedMods < second.NumMods - secondVarMods - second.numFixedMods)
+            //    return true;
+            //if (first.NumMods - firstVarMods - first.numFixedMods > second.NumMods - secondVarMods - second.numFixedMods)
+            //    return false;
+
+            // If have same number of localizeable mods, pick the lowest number of localizeable + variable mods
+            if (first.NumMods - first.numFixedMods < second.NumMods - second.numFixedMods)
+                return true;
+            if (first.NumMods - first.numFixedMods > second.NumMods - second.numFixedMods)
+                return false;
+
+            // If have same numbers of localizeable and variable mods, prefer not to have substitutions and removals!
+            int firstNumRazor = first.allModsOneIsNterminus.Count(b => b.Value.modificationType.Equals("substitution") || b.Value.modificationType.Equals("missing") || b.Value.modificationType.Equals("trickySubstitution"));
+            int secondNumRazor = second.allModsOneIsNterminus.Count(b => b.Value.modificationType.Equals("substitution") || b.Value.modificationType.Equals("missing") || b.Value.modificationType.Equals("trickySubstitution"));
+
+            if (firstNumRazor < secondNumRazor)
+                return true;
+            if (firstNumRazor > secondNumRazor)
+                return false;
+
+            return true;
+        }
+
+        #endregion Private Methods
 
     }
 }

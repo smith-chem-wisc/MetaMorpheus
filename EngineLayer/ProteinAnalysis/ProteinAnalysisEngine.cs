@@ -1,6 +1,7 @@
 ﻿using Proteomics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,13 +17,13 @@ namespace EngineLayer
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
-        private readonly IEnumerable<PsmParent>[] newPsms;
+        private readonly IEnumerable<Psm>[] newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinAnalysisEngine(List<PsmParent>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinAnalysisEngine(List<Psm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
@@ -115,10 +116,9 @@ namespace EngineLayer
                     HashSet<Protein> proteinListHere;
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.BaseSequence.Select(b => char.ConvertFromUtf32(b)));
+                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b=>b.ToString(CultureInfo.InvariantCulture))+peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture));
                     else
                         pepSequence = compactPeptideToFullSeqMatch[peptide];
-
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out proteinListHere))
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });
                     else
@@ -281,22 +281,22 @@ namespace EngineLayer
             return proteinGroups;
         }
 
-        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<PsmParent> psmList)
+        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<Psm> psmList)
         {
             Status("Scoring protein groups...", nestedIds);
 
             // add each protein groups PSMs
-            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PsmParent>>();
+            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<Psm>>();
             foreach (var psm in psmList)
             {
                 if (psm.FdrInfo.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.Pli.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                     {
-                        HashSet<PsmParent> psmsForThisPeptide;
+                        HashSet<Psm> psmsForThisPeptide;
 
                         if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
-                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PsmParent> { psm });
+                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
                         else
                             psmsForThisPeptide.Add(psm);
                     }
@@ -309,7 +309,7 @@ namespace EngineLayer
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    HashSet<PsmParent> psms;
+                    HashSet<Psm> psms;
                     if (peptideToPsmMatching.TryGetValue(peptide, out psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else

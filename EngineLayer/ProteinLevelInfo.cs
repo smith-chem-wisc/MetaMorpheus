@@ -10,8 +10,9 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet)
+        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet, int notch)
         {
+            Notch = notch;
             PeptidesWithSetModifications = hashSet;
             IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);
             IsContaminant = PeptidesWithSetModifications.Any(bb => bb.Protein.IsContaminant);
@@ -33,6 +34,7 @@ namespace EngineLayer
         public string FullSequence { get; }
         public string BaseSequence { get; }
         public int MissedCleavages { get; }
+        public int Notch { get; }
         public double PeptideMonoisotopicMass { get; }
         public int NumVariableMods { get; }
         public string SequenceWithChemicalFormulas { get; }
@@ -76,14 +78,14 @@ namespace EngineLayer
             if (s.Length > 32000)
                 s = "too many";
             sb.Append(s + "\t");
+            
+            sb.Append(BaseSequence + "\t");
+            sb.Append(FullSequence + "\t");
 
-            var representative = PeptidesWithSetModifications.First();
-
-            sb.Append(representative.BaseSequence + "\t");
-            sb.Append(representative.Sequence + "\t");
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Notch.ToString(CultureInfo.InvariantCulture) + '\t');
 
             if (IsDecoy)
                 sb.Append("D");
@@ -114,9 +116,10 @@ namespace EngineLayer
             // Single info, common for all peptides/proteins
             sb.Append("Base Sequence" + '\t');
             sb.Append("Full Sequence" + '\t');
-            sb.Append("Variable Mods" + '\t');
+            sb.Append("Num Variable Mods" + '\t');
             sb.Append("Missed Cleavages" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
+            sb.Append("Notch" + '\t');
             sb.Append("Decoy/Contaminant/Target");
             return sb.ToString();
         }
