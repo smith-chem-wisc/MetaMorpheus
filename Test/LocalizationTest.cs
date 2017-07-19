@@ -50,7 +50,7 @@ namespace Test
 
             newPsm.SetProteinLinkedInfo(matching, modsDictionary);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
+            LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
             f.Run();
 
             // Was single peak!!!

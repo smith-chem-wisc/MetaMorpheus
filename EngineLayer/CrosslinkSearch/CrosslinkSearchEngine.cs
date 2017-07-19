@@ -433,7 +433,7 @@ namespace EngineLayer.CrosslinkSearch
             foreach (var pmm in pmmhList)
             {
                 var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = PsmParent.MatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, matchedIonMassesListPositiveIsMatch.MatchedIonMz);
+                double pmmScore = PsmParent.MatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, matchedIonMassesListPositiveIsMatch.MatchedIonMz, false, 0,new List<ProductType>());
                 miil.Add(matchedIonMassesListPositiveIsMatch);
                 scoreList.Add(pmmScore);
             }
