@@ -18,7 +18,6 @@ namespace Test
 
         #region Public Fields
 
-        public static string outputFolder = "";
         public static bool hasPrunedRun = false;
 
         #endregion Public Fields
@@ -343,12 +342,11 @@ namespace Test
             #endregion MZML File
 
             //run!
-            EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();
 
-            string outputFolderInThisTest = outputFolder;
-            string final = Path.Combine(outputFolder, "task1", "okkkpruned.xml");
+            string outputFolderInThisTest = MySetUpClass.outputFolder;
+            string final = Path.Combine(MySetUpClass.outputFolder, "task1", "okkkpruned.xml");
             //string[] files = Directory.GetFiles(fileAtPath);
             //string file = fileAtPath;
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, new List<Modification>(), false, new List<string>(), out ok);
@@ -445,15 +443,14 @@ namespace Test
 
             #region run
 
-            EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
-            string outputFolderInThisTest = outputFolder;
+            string outputFolderInThisTest = MySetUpClass.outputFolder;
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
             engine.Run();
 
             List<string> found = new List<string>();
             string line;
 
-            using (StreamReader file = new StreamReader(Path.Combine(outputFolder, "TestUnique", "results.txt")))
+            using (StreamReader file = new StreamReader(Path.Combine(MySetUpClass.outputFolder, "TestUnique", "results.txt")))
             {
                 while ((line = file.ReadLine()) != null)
                 {
@@ -471,14 +468,6 @@ namespace Test
 
         #endregion Public Methods
 
-        #region Private Methods
-
-        private static void SuccessfullyFinishedAllTasks(object sender, string rootOutputFolderPath)
-        {
-            outputFolder = rootOutputFolderPath;
-        }
-
-        #endregion Private Methods
 
     }
 }
