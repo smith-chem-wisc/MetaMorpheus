@@ -1,6 +1,7 @@
 ﻿using Proteomics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -114,8 +115,10 @@ namespace EngineLayer
                 {
                     HashSet<Protein> proteinListHere;
                     string pepSequence;
-                    pepSequence = compactPeptideToFullSeqMatch[peptide];
-
+                    if (!treatModPeptidesAsDifferentPeptides)
+                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b=>b.ToString(CultureInfo.InvariantCulture))+peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture));
+                    else
+                        pepSequence = compactPeptideToFullSeqMatch[peptide];
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out proteinListHere))
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });
                     else
