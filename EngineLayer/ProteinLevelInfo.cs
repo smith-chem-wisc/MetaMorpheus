@@ -78,11 +78,10 @@ namespace EngineLayer
             if (s.Length > 32000)
                 s = "too many";
             sb.Append(s + "\t");
+            
+            sb.Append(BaseSequence + "\t");
+            sb.Append(FullSequence + "\t");
 
-            var representative = PeptidesWithSetModifications.First();
-
-            sb.Append(representative.BaseSequence + "\t");
-            sb.Append(representative.Sequence + "\t");
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
@@ -117,7 +116,7 @@ namespace EngineLayer
             // Single info, common for all peptides/proteins
             sb.Append("Base Sequence" + '\t');
             sb.Append("Full Sequence" + '\t');
-            sb.Append("Variable Mods" + '\t');
+            sb.Append("Num Variable Mods" + '\t');
             sb.Append("Missed Cleavages" + '\t');
             sb.Append("Peptide Monoisotopic Mass" + '\t');
             sb.Append("Notch" + '\t');

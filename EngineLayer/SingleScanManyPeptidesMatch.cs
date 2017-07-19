@@ -10,7 +10,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class PsmParent
+    public class SingleScanManyPeptidesMatch
     {
 
         #region Public Fields
@@ -29,7 +29,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public PsmParent(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public SingleScanManyPeptidesMatch(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.Score = score;
             this.ScanIndex = scanIndex;
@@ -287,7 +287,7 @@ namespace EngineLayer
             notches.Add(v);
         }
 
-        internal void Add(PsmParent psmParent)
+        internal void Add(SingleScanManyPeptidesMatch psmParent)
         {
             for (int i = 0; i < psmParent.compactPeptides.Count; i++)
             {
@@ -299,16 +299,16 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private bool FirstIsPreferable(ProteinLinkedInfo candidatePli, ProteinLinkedInfo mostProbable)
+        private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
         {
-            if (candidatePli.IsDecoy && !mostProbable.IsDecoy)
+            if (firstPli.IsDecoy && !secondPli.IsDecoy)
                 return true;
-            if (!candidatePli.IsDecoy && mostProbable.IsDecoy)
+            if (!firstPli.IsDecoy && secondPli.IsDecoy)
                 return false;
 
             // Score is same, need to see if accepts and if prefer the new one
-            var first = candidatePli.PeptidesWithSetModifications.First();
-            var second = mostProbable.PeptidesWithSetModifications.First();
+            var first = firstPli.PeptidesWithSetModifications.First();
+            var second = secondPli.PeptidesWithSetModifications.First();
 
             // Prefer to be at zero rather than fewer modifications
             if ((Math.Abs(first.MonoisotopicMass - ScanPrecursorMass) < tolInDaForPreferringHavingMods)

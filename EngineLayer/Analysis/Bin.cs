@@ -21,7 +21,7 @@ namespace EngineLayer.Analysis
         public int pepClocCount;
         public int protNlocCount;
         public int protClocCount;
-        public Dictionary<string, Tuple<string, string, PsmParent>> uniquePSMs;
+        public Dictionary<string, Tuple<string, string, SingleScanManyPeptidesMatch>> uniquePSMs;
         public Dictionary<string, int> modsInCommon;
 
         #endregion Public Fields
@@ -31,7 +31,7 @@ namespace EngineLayer.Analysis
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            uniquePSMs = new Dictionary<string, Tuple<string, string, PsmParent>>();
+            uniquePSMs = new Dictionary<string, Tuple<string, string, SingleScanManyPeptidesMatch>>();
         }
 
         #endregion Public Constructors
@@ -91,16 +91,16 @@ namespace EngineLayer.Analysis
 
         #region Internal Methods
 
-        internal void Add(PsmParent ok)
+        internal void Add(SingleScanManyPeptidesMatch ok)
         {
             if (uniquePSMs.ContainsKey(ok.Pli.FullSequence))
             {
                 var current = uniquePSMs[ok.Pli.FullSequence];
                 if (current.Item3.Score < ok.Score)
-                    uniquePSMs[ok.Pli.FullSequence] = new Tuple<string, string, PsmParent>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok);
+                    uniquePSMs[ok.Pli.FullSequence] = new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok);
             }
             else
-                uniquePSMs.Add(ok.Pli.FullSequence, new Tuple<string, string, PsmParent>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok));
+                uniquePSMs.Add(ok.Pli.FullSequence, new Tuple<string, string, SingleScanManyPeptidesMatch>(ok.Pli.BaseSequence, ok.Pli.FullSequence, ok));
         }
 
         #endregion Internal Methods

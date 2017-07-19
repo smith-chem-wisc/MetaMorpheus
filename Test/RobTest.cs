@@ -125,7 +125,7 @@ namespace Test
 
             // apply parsimony to dictionary
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            ProteinAnalysisEngine ae = new ProteinAnalysisEngine(new List<PsmParent>[0], dictionary, null, true, false, null);
+            ProteinAnalysisEngine ae = new ProteinAnalysisEngine(new List<SingleScanManyPeptidesMatch>[0], dictionary, null, true, false, null);
             ae.ApplyProteinParsimony(out proteinGroups);
 
             var parsimonyProteinList = new List<Protein>();
@@ -144,7 +144,7 @@ namespace Test
             }
 
             // builds psm list to match to peptides
-            List<PsmParent> psms = new List<PsmParent>();
+            List<SingleScanManyPeptidesMatch> psms = new List<SingleScanManyPeptidesMatch>();
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfb = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, new MzPeak(2, 2), 0, "File");
@@ -155,15 +155,15 @@ namespace Test
                 {
                     switch (peptide.BaseSequence)
                     {
-                        case "A": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 10, 0, scan)); break;
-                        case "B": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 9, 0, scan)); break;
-                        case "C": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 8, 0, scan)); break;
-                        case "D": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 7, 0, scan)); break;
-                        case "E": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 6, 0, scan)); break;
-                        case "F": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 5, 0, scan)); break;
-                        case "G": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 4, 0, scan)); break;
-                        case "H": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 3, 0, scan)); break;
-                        case "I": psms.Add(new PsmParent(peptide.CompactPeptide, 0, 2, 0, scan)); break;
+                        case "A": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 10, 0, scan)); break;
+                        case "B": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 9, 0, scan)); break;
+                        case "C": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 8, 0, scan)); break;
+                        case "D": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 7, 0, scan)); break;
+                        case "E": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 6, 0, scan)); break;
+                        case "F": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 5, 0, scan)); break;
+                        case "G": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 4, 0, scan)); break;
+                        case "H": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 3, 0, scan)); break;
+                        case "I": psms.Add(new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 2, 0, scan)); break;
                     }
                 }
             }
@@ -327,11 +327,11 @@ namespace Test
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
 
-            var psms = new List<PsmParent>();
+            var psms = new List<SingleScanManyPeptidesMatch>();
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfkj = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, new MzPeak(2, 2), 1, "TestDataFile");
-            var psm = new PsmParent(peptide.CompactPeptide, 0, 0, 0, scan);
+            var psm = new SingleScanManyPeptidesMatch(peptide.CompactPeptide, 0, 0, 0, scan);
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -417,7 +417,7 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            ProteinAnalysisEngine engine = new ProteinAnalysisEngine(new List<PsmParent>[0], compactPeptideToProteinPeptideMatching, null, true, true, new List<string> { "ff" });
+            ProteinAnalysisEngine engine = new ProteinAnalysisEngine(new List<SingleScanManyPeptidesMatch>[0], compactPeptideToProteinPeptideMatching, null, true, true, new List<string> { "ff" });
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             proteinGroups = engine.ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(), peptideList);
 
@@ -427,15 +427,15 @@ namespace Test
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            var match1 = new PsmParent(peptideList.ElementAt(0).CompactPeptide, 0, 10, 0, ms2scan)
+            var match1 = new SingleScanManyPeptidesMatch(peptideList.ElementAt(0).CompactPeptide, 0, 10, 0, ms2scan)
             {
                 FdrInfo = new FdrInfo()
             };
-            var match2 = new PsmParent(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
+            var match2 = new SingleScanManyPeptidesMatch(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
             {
                 FdrInfo = new FdrInfo()
             };
-            var match3 = new PsmParent(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
+            var match3 = new SingleScanManyPeptidesMatch(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
             {
                 FdrInfo = new FdrInfo()
             };
@@ -443,7 +443,7 @@ namespace Test
             match2.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
             match3.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
 
-            List<PsmParent> psms = new List<PsmParent>
+            List<SingleScanManyPeptidesMatch> psms = new List<SingleScanManyPeptidesMatch>
             {
                 match1,
                 match2,

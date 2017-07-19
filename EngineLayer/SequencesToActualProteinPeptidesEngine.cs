@@ -12,7 +12,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
-        private readonly List<PsmParent>[] allPsms;
+        private readonly List<SingleScanManyPeptidesMatch>[] allPsms;
         private readonly List<Protein> proteinList;
         private readonly List<MassDiffAcceptor> massDiffAcceptors;
         private readonly Protease protease;
@@ -28,7 +28,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<PsmParent>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<SingleScanManyPeptidesMatch>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;

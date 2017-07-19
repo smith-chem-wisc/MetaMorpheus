@@ -21,14 +21,14 @@ namespace Test
         [Test]
         public static void TestGptmdEngine()
         {
-            List<PsmParent> allResultingIdentifications = null;
+            List<SingleScanManyPeptidesMatch> allResultingIdentifications = null;
             ModificationMotif motifN;
             ModificationMotif.TryGetMotif("N", out motifN);
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
-            allResultingIdentifications = new List<PsmParent>();
+            allResultingIdentifications = new List<SingleScanManyPeptidesMatch>();
             var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
@@ -43,7 +43,7 @@ namespace Test
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            PsmParent newPsm = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            SingleScanManyPeptidesMatch newPsm = new SingleScanManyPeptidesMatch(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
@@ -66,7 +66,7 @@ namespace Test
         [Test]
         public static void TestCombos()
         {
-            List<PsmParent> allIdentifications = null;
+            List<SingleScanManyPeptidesMatch> allIdentifications = null;
             ModificationMotif motifN;
             ModificationMotif.TryGetMotif("N", out motifN);
             ModificationMotif motifP;
@@ -85,8 +85,8 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            PsmParent match = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
-            PsmParent newPsm = new PsmParent(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            SingleScanManyPeptidesMatch match = new SingleScanManyPeptidesMatch(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            SingleScanManyPeptidesMatch newPsm = new SingleScanManyPeptidesMatch(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
@@ -99,7 +99,7 @@ namespace Test
             match.ResolveProteinsAndMostProbablePeptide(matching);
 
             match.SetValues(1, 0, 0, 1, 0, 0);
-            allIdentifications = new List<PsmParent> { match };
+            allIdentifications = new List<SingleScanManyPeptidesMatch> { match };
 
             var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
             var res = (GptmdResults)engine.Run();

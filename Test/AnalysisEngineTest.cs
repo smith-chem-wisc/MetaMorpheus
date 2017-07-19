@@ -40,7 +40,7 @@ namespace Test
                 i++;
             }
 
-            List<PsmParent>[] newPsms = new List<PsmParent>[1];
+            List<SingleScanManyPeptidesMatch>[] newPsms = new List<SingleScanManyPeptidesMatch>[1];
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
@@ -74,17 +74,17 @@ namespace Test
             Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(3, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakB, 1, null);
             Ms2ScanWithSpecificMass scanC = new Ms2ScanWithSpecificMass(new MzmlScanWithPrecursor(4, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null, null), peakC, 1, null);
 
-            PsmParent matchA = new PsmParent(compactPeptide1, 0, 0, 0, scanA);
-            PsmParent matchB = new PsmParent(compactPeptide2, 0, 0, 0, scanB);
-            PsmParent matchC = new PsmParent(compactPeptide3, 0, 0, 0, scanC);
+            SingleScanManyPeptidesMatch matchA = new SingleScanManyPeptidesMatch(compactPeptide1, 0, 0, 0, scanA);
+            SingleScanManyPeptidesMatch matchB = new SingleScanManyPeptidesMatch(compactPeptide2, 0, 0, 0, scanB);
+            SingleScanManyPeptidesMatch matchC = new SingleScanManyPeptidesMatch(compactPeptide3, 0, 0, 0, scanC);
 
-            newPsms[0] = new List<PsmParent> { matchA, matchB, matchC };
+            newPsms[0] = new List<SingleScanManyPeptidesMatch> { matchA, matchB, matchC };
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            Action<List<PsmParent>, string, List<string>> action2 = (List<PsmParent> l, string s, List<string> sdf) => {; };
+            Action<List<SingleScanManyPeptidesMatch>, string, List<string>> action2 = (List<SingleScanManyPeptidesMatch> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;

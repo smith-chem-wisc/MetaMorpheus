@@ -50,9 +50,9 @@ namespace EngineLayer.ModernSearch
             Status("In modern search engine...", nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            PsmParent[][] newPsms = new PsmParent[searchModes.Count][];
+            SingleScanManyPeptidesMatch[][] newPsms = new SingleScanManyPeptidesMatch[searchModes.Count][];
             for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new PsmParent[listOfSortedms2Scans.Length];
+                newPsms[i] = new SingleScanManyPeptidesMatch[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -127,7 +127,7 @@ namespace EngineLayer.ModernSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            newPsms[j][i] = new PsmParent(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            newPsms[j][i] = new SingleScanManyPeptidesMatch(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
                                 newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);

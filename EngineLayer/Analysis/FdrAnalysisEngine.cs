@@ -7,14 +7,14 @@ namespace EngineLayer.Analysis
 
         #region Private Fields
 
-        private readonly IEnumerable<PsmParent>[] newPsms;
+        private readonly IEnumerable<SingleScanManyPeptidesMatch>[] newPsms;
         private readonly List<MassDiffAcceptor> searchModes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<PsmParent>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<SingleScanManyPeptidesMatch>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
@@ -41,10 +41,10 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<PsmParent> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, MassDiffAcceptor sm)
+        private static List<SingleScanManyPeptidesMatch> DoFalseDiscoveryRateAnalysis(IEnumerable<SingleScanManyPeptidesMatch> items, MassDiffAcceptor sm)
         {
-            var ids = new List<PsmParent>();
-            foreach (PsmParent item in items)
+            var ids = new List<SingleScanManyPeptidesMatch>();
+            foreach (SingleScanManyPeptidesMatch item in items)
                 ids.Add(item);
 
             int cumulative_target = 0;
@@ -80,7 +80,7 @@ namespace EngineLayer.Analysis
 
             for (int i = ids.Count - 1; i >= 0; i--)
             {
-                PsmParent id = ids[i];
+                SingleScanManyPeptidesMatch id = ids[i];
                 if (id.FdrInfo.QValue > min_q_value)
                     id.FdrInfo.QValue = min_q_value;
                 else if (id.FdrInfo.QValue < min_q_value)

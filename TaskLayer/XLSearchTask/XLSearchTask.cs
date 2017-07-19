@@ -189,9 +189,9 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
 
-            List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count];
+            List<SingleScanManyPeptidesMatch>[] allPsms = new List<SingleScanManyPeptidesMatch>[MassDiffAcceptors.Count];
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                allPsms[searchModeIndex] = new List<PsmParent>();
+                allPsms[searchModeIndex] = new List<SingleScanManyPeptidesMatch>();
             List<Tuple<PsmCross, PsmCross>> allPsmsXLTuple = new List<Tuple<PsmCross, PsmCross>>();
             List<PsmCross> allPsmsXL = new List<PsmCross>();
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();

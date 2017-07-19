@@ -11,13 +11,13 @@
         public readonly double totalIonCurrent;
         public readonly double injectionTime;
         public readonly double isolationMz;
-        public readonly PsmParent identification;
+        public readonly SingleScanManyPeptidesMatch identification;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public LabeledMs2DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double isolationMz, double label, PsmParent identification)
+        public LabeledMs2DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double isolationMz, double label, SingleScanManyPeptidesMatch identification)
         {
             this.mz = mz;
             this.rt = rt;

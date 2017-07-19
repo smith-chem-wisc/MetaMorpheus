@@ -9,13 +9,13 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly List<MassDiffAcceptor> searchModes;
-        private readonly List<PsmParent>[] newPsms;
+        private readonly List<SingleScanManyPeptidesMatch>[] newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModificationAnalysisEngine(List<PsmParent>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<SingleScanManyPeptidesMatch>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.searchModes = searchModes;
             this.newPsms = newPsms;
