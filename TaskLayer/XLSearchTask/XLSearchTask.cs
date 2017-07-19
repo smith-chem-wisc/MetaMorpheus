@@ -67,7 +67,7 @@ namespace TaskLayer
             MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             ConserveMemory = false;
-            MaxDegreeOfParallelism = null;
+            MaxDegreeOfParallelism = 1;
             CrosslinkerType = CrosslinkerType.DSS;
             CrosslinkSearchTopNum = 50;
             CrosslinkSearchWithAllBeta = false;

@@ -45,7 +45,7 @@ namespace TaskLayer
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
-            MaxDegreeOfParallelism = null;
+            MaxDegreeOfParallelism = 1;
             ConserveMemory = false;
 
             WriteIntermediateFiles = false;

@@ -67,7 +67,7 @@ namespace TaskLayer
             MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             ConserveMemory = false;
-            MaxDegreeOfParallelism = null;
+            MaxDegreeOfParallelism = 1;
 
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
