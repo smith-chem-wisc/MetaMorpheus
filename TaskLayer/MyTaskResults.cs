@@ -56,7 +56,7 @@ namespace TaskLayer
                 if (newDatabases != null && newDatabases.Any())
                 {
                     sb.AppendLine("New databases: ");
-                    sb.AppendLine(string.Join(Environment.NewLine + "\t", newDatabases.Select(b => b.FileName)).ToString());
+                    sb.AppendLine(string.Join(Environment.NewLine + "\t", newDatabases.Select(b => b.FilePath)).ToString());
                 }
                 sb.AppendLine();
                 sb.AppendLine();
