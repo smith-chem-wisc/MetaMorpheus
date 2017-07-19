@@ -7,14 +7,14 @@ namespace EngineLayer.Analysis
 
         #region Private Fields
 
-        private readonly IEnumerable<Psm>[] newPsms;
+        private readonly IEnumerable<PsmParent>[] newPsms;
         private readonly List<MassDiffAcceptor> searchModes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<Psm>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<PsmParent>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
@@ -41,10 +41,10 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, MassDiffAcceptor sm)
+        private static List<PsmParent> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, MassDiffAcceptor sm)
         {
-            var ids = new List<Psm>();
-            foreach (Psm item in items)
+            var ids = new List<PsmParent>();
+            foreach (PsmParent item in items)
                 ids.Add(item);
 
             int cumulative_target = 0;
@@ -56,8 +56,8 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < ids.Count; i++)
             {
                 var item = ids[i];
-                var isDecoy = item.MostProbableProteinInfo.IsDecoy;
-                int notch = item.MostProbableProteinInfo.Notch;
+                var isDecoy = item.Pli.IsDecoy;
+                int notch = item.Notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -80,13 +80,13 @@ namespace EngineLayer.Analysis
 
             for (int i = ids.Count - 1; i >= 0; i--)
             {
-                Psm id = ids[i];
+                PsmParent id = ids[i];
                 if (id.FdrInfo.QValue > min_q_value)
                     id.FdrInfo.QValue = min_q_value;
                 else if (id.FdrInfo.QValue < min_q_value)
                     min_q_value = id.FdrInfo.QValue;
 
-                int notch = id.MostProbableProteinInfo.Notch;
+                int notch = id.Notch;
                 if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
                     id.FdrInfo.QValueNotch = min_q_value_notch[notch];
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])

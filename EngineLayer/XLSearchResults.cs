@@ -1,22 +1,25 @@
 ﻿using System.Text;
+using EngineLayer.CrosslinkSearch;
+using System.Collections.Generic;
+using System;
 
 namespace EngineLayer
 {
-    public class SearchResults : MetaMorpheusEngineResults
+    public class XLSearchResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors
 
-        public SearchResults(PsmParent[][] psms, MetaMorpheusEngine searchParams) : base(searchParams)
+        public XLSearchResults(List<Tuple<PsmCross, PsmCross>> xlpsms, MetaMorpheusEngine searchParams) : base(searchParams)
         {
-            Psms = psms;
+            XLPsms = xlpsms;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public PsmParent[][] Psms { get; }
+        public List<Tuple<PsmCross, PsmCross>> XLPsms { get; }
 
         #endregion Public Properties
 

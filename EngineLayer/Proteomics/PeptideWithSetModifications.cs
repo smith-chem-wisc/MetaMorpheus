@@ -7,6 +7,18 @@ using System.Text;
 
 namespace EngineLayer
 {
+    internal struct MetaMorpheusFragment
+    {
+
+        #region Public Fields
+
+        public int index;
+        public double mass;
+
+        #endregion Public Fields
+
+    }
+
     public class PeptideWithSetModifications : Peptide
     {
 
@@ -20,21 +32,24 @@ namespace EngineLayer
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+        private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private readonly PeptideWithPossibleModifications modPep;
+        private double? monoisotopicMass;
         private string sequence;
+        private PeptideFragmentMasses p;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
-        private object lockObj = new object();
 
-        private CompactPeptide compactPeptide;
-        private double? monoisotopicMass;
+        private object lockObj = new object();
 
         #endregion Private Fields
 
         #region Internal Constructors
 
         internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+                                                                                                    : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
@@ -51,18 +66,6 @@ namespace EngineLayer
         #endregion Internal Constructors
 
         #region Public Properties
-
-        public CompactPeptide CompactPeptide
-        {
-            get
-            {
-                if (compactPeptide == null)
-                {
-                    compactPeptide = new CompactPeptide(this);
-                }
-                return compactPeptide;
-            }
-        }
 
         public double MonoisotopicMass
         {
@@ -201,6 +204,66 @@ namespace EngineLayer
             return hm;
         }
 
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
+        {
+            int massLen = 0;
+            bool containsAdot = productTypes.Contains(ProductType.Adot);
+            bool containsB = productTypes.Contains(ProductType.B);
+            bool containsC = productTypes.Contains(ProductType.C);
+            bool containsX = productTypes.Contains(ProductType.X);
+            bool containsY = productTypes.Contains(ProductType.Y);
+            bool containsZdot = productTypes.Contains(ProductType.Zdot);
+
+            lock (lockObj)
+                if (p == null)
+                    ComputeFragmentMasses();
+
+            if (containsAdot)
+                throw new NotImplementedException();
+            if (containsB)
+                massLen += p.nTerminalMasses.Count(b => b.index > 1);
+            if (containsC)
+                massLen += p.nTerminalMasses.Count;
+            if (containsX)
+                throw new NotImplementedException();
+            if (containsY)
+                massLen += p.cTerminalMasses.Count;
+            if (containsZdot)
+                massLen += p.cTerminalMasses.Count;
+
+            double[] massesToReturn = new double[massLen];
+
+            int i = 0;
+            foreach (var hm in p.nTerminalMasses)
+            {
+                if (hm.index > 1 && containsB)
+                {
+                    massesToReturn[i] = hm.mass;
+                    i++;
+                }
+                if (containsC)
+                {
+                    massesToReturn[i] = hm.mass + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                    i++;
+                }
+            }
+            foreach (var hm in p.cTerminalMasses)
+            {
+                if (containsY)
+                {
+                    massesToReturn[i] = hm.mass + waterMonoisotopicMass;
+                    i++;
+                }
+                if (containsZdot)
+                {
+                    massesToReturn[i] = hm.mass + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                    i++;
+                }
+            }
+
+            return massesToReturn;
+        }
+
         public override bool Equals(object obj)
         {
             var q = obj as PeptideWithSetModifications;
@@ -213,6 +276,101 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
+        #region Private Methods
+
+        /// <summary>
+        /// Computes fragment masses from both termini. Neutral losses are accounted for! Does NOT include the last residue!
+        /// </summary>
+        private void ComputeFragmentMasses()
+        {
+            p = new PeptideFragmentMasses();
+
+            ModificationWithMass pep_n_term_variable_mod;
+            double theMass = 0;
+            if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                foreach (double nl in pep_n_term_variable_mod.neutralLosses)
+                    theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
+            else
+                theMass = 0;
+            p.nTerminalMasses = ComputeFollowingFragmentMasses(theMass, 1, 1).ToList();
+
+            ModificationWithMass pep_c_term_variable_mod;
+            theMass = 0;
+            if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                foreach (double nl in pep_c_term_variable_mod.neutralLosses)
+                    theMass = pep_c_term_variable_mod.monoisotopicMass - nl;
+            else
+                theMass = 0;
+            p.cTerminalMasses = ComputeFollowingFragmentMasses(theMass, Length, -1).ToList();
+        }
+
+        private IEnumerable<MetaMorpheusFragment> ComputeFollowingFragmentMasses(double prevMass, int oneBasedIndexToLookAt, int direction)
+        {
+            ModificationWithMass residue_variable_mod = null;
+            do
+            {
+                prevMass += Residue.ResidueMonoisotopicMass[this[oneBasedIndexToLookAt - 1]];
+
+                allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
+                if (residue_variable_mod == null)
+                {
+                    var theFrag = new MetaMorpheusFragment()
+                    {
+                        mass = prevMass,
+                        index = oneBasedIndexToLookAt
+                    };
+                    yield return theFrag;
+                }
+                else if (residue_variable_mod.neutralLosses.Count == 1)
+                {
+                    prevMass += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLosses.First();
+                    var theFrag = new MetaMorpheusFragment()
+                    {
+                        mass = prevMass,
+                        index = oneBasedIndexToLookAt
+                    };
+                    yield return theFrag;
+                }
+                else
+                {
+                    foreach (double nl in residue_variable_mod.neutralLosses)
+                    {
+                        var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
+                        var theFrag = new MetaMorpheusFragment()
+                        {
+                            mass = theMass,
+                            index = oneBasedIndexToLookAt
+                        };
+                        yield return theFrag;
+                        if ((direction == 1 && oneBasedIndexToLookAt + direction < Length) ||
+                            (direction == -1 && oneBasedIndexToLookAt + direction > 1))
+                            foreach (var nextMass in ComputeFollowingFragmentMasses(theMass, oneBasedIndexToLookAt + direction, direction))
+                                yield return nextMass;
+                    }
+                    break;
+                }
+                oneBasedIndexToLookAt += direction;
+            } while ((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < Length && direction == 1));
+        }
+
+        #endregion Private Methods
+
+        #region Private Classes
+
+        private class PeptideFragmentMasses
+        {
+
+            #region Internal Fields
+
+            internal List<MetaMorpheusFragment> cTerminalMasses;
+            internal List<MetaMorpheusFragment> nTerminalMasses;
+
+            #endregion Internal Fields
+
+        }
+
+        #endregion Private Classes
 
     }
 }

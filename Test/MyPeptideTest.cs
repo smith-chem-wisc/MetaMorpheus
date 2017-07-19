@@ -33,12 +33,12 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = ye[0].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
-            foreach (var huh in pep2.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep2.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
         }
 
@@ -53,14 +53,14 @@ namespace Test
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var massArray = thePep.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
 
             Assert.Less(score, 4);
             Assert.Greater(score, 3);
@@ -76,14 +76,14 @@ namespace Test
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var massArray = thePep.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
 
             Assert.Less(score, 2);
             Assert.Greater(score, 1);
@@ -99,14 +99,14 @@ namespace Test
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var massArray = thePep.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
 
             Assert.Less(score, 2);
             Assert.Greater(score, 1);
@@ -120,14 +120,14 @@ namespace Test
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
+            var massArray = thePep.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, 3, 4 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch);
+            var score = PsmParent.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
 
             Assert.AreEqual(0, score);
         }
@@ -155,12 +155,12 @@ namespace Test
             Assert.AreEqual(2, ye.Count);
             var pep1 = ye[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsNaN(pep2.MonoisotopicMass);
-            var cool = pep2.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y });
+            var cool = pep2.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);
             Assert.IsTrue(double.IsNaN(cool[1]));
             Assert.IsTrue(double.IsNaN(cool[2]));

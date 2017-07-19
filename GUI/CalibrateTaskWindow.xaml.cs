@@ -72,6 +72,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceTextBox.Text = task.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             precursorMassToleranceComboBox.SelectedIndex = task.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
 
+            
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
@@ -263,5 +264,9 @@ namespace MetaMorpheusGUI
 
         #endregion Private Methods
 
+        private void nonLinearCalibCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace EngineLayer.Gptmd
 
         #region Private Fields
 
-        private readonly List<Psm> allIdentifications;
+        private readonly List<PsmParent> allIdentifications;
         private readonly IEnumerable<Tuple<double, double>> combos;
         private readonly List<ModificationWithMass> gptmdModifications;
         private readonly Tolerance precursorMassTolerance;
@@ -20,7 +20,7 @@ namespace EngineLayer.Gptmd
 
         #region Public Constructors
 
-        public GptmdEngine(List<Psm> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance, List<string> nestedIds) : base(nestedIds)
+        public GptmdEngine(List<PsmParent> allIdentifications, List<ModificationWithMass> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Tolerance precursorMassTolerance, List<string> nestedIds) : base(nestedIds)
         {
             this.allIdentifications = allIdentifications;
             this.gptmdModifications = gptmdModifications;
@@ -69,10 +69,10 @@ namespace EngineLayer.Gptmd
             int modsAdded = 0;
             // Look at all confident identifications (with notch q value less than 0.01)
             // Of those only targets (do not add modifications for decoy peptides)
-            foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.MostProbableProteinInfo.IsDecoy))
+            foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.Pli.IsDecoy))
             {
-                var baseSequence = ye.MostProbableProteinInfo.BaseSequence;
-                foreach (var peptide in ye.MostProbableProteinInfo.PeptidesWithSetModifications)
+                var baseSequence = ye.Pli.BaseSequence;
+                foreach (var peptide in ye.Pli.PeptidesWithSetModifications)
                     foreach (ModificationWithMass mod in GetPossibleMods(ye.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {
                         var proteinAcession = peptide.Protein.Accession;

@@ -67,7 +67,7 @@ namespace TaskLayer
             MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             ConserveMemory = false;
-            MaxDegreeOfParallelism = 1;
+            MaxDegreeOfParallelism = null;
             CrosslinkerType = CrosslinkerType.DSS;
             CrosslinkSearchTopNum = 50;
             CrosslinkSearchWithAllBeta = false;
@@ -189,9 +189,9 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
 
-            List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
+            List<PsmParent>[] allPsms = new List<PsmParent>[MassDiffAcceptors.Count];
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                allPsms[searchModeIndex] = new List<Psm>();
+                allPsms[searchModeIndex] = new List<PsmParent>();
             List<Tuple<PsmCross, PsmCross>> allPsmsXLTuple = new List<Tuple<PsmCross, PsmCross>>();
             List<PsmCross> allPsmsXL = new List<PsmCross>();
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
@@ -246,7 +246,7 @@ namespace TaskLayer
             #region Generate indices for modern search
 
             Status("Getting fragment dictionary...", new List<string> { taskId });
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, modsDictionary, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
             Dictionary<float, List<int>> fragmentIndexDict;
@@ -320,9 +320,9 @@ namespace TaskLayer
                 Status("Starting search...", thisId);
                 SearchResults searchResults;
                 if (SearchType == SearchType.Classic)
-                    searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior.Variable).Run());
+                    searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, false).Run());
                 else
-                    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
+                    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, false, new List<ProductType>()).Run()));
                 CrosslinkSearchResults xlsearchResults;
                 if (CrosslinkSearchWithAllBeta)
                     xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
@@ -353,7 +353,7 @@ namespace TaskLayer
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsmsXLTuple, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }).Run();
 
             WriteCrosslinkToTsv(allPsmsXLTuple, OutputFolder, "xl_all", new List<string> { taskId });
-            var allPsmsXLTupleFDR = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            var allPsmsXLTupleFDR = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).Where(p => p.Item1.Pli.IsDecoy != true && p.Item2.Pli.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
 
             return myTaskResults;
@@ -457,7 +457,7 @@ namespace TaskLayer
                     "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tTotalScore\tMass diff\tQValue");
                 foreach (var item in items)
                 {
-                    var x = item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
+                    var x = item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
                     output.WriteLine(
                         item.Item1.FullFilePath
                         + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
@@ -465,22 +465,22 @@ namespace TaskLayer
                         + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                         + "\t"
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.FullSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.Pli.BaseSequence
+                        + "\t" + item.Item1.Pli.FullSequence
+                        + "\t" + item.Item1.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.FullSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.Pli.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.Pli.BaseSequence
+                        + "\t" + item.Item2.Pli.FullSequence
+                        + "\t" + item.Item2.Pli.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass)
+                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.Pli.PeptideMonoisotopicMass - item.Item1.Pli.PeptideMonoisotopicMass)
                         + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
                 }
             }
