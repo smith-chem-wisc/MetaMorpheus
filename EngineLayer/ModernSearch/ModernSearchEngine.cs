@@ -61,9 +61,9 @@ namespace EngineLayer.ModernSearch
             var peptideIndexCount = peptideIndex.Count;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
-                CompactPeptide[] bestPeptides = new CompactPeptide[searchModesCount];
+                List<CompactPeptide>[] bestPeptides = new List<CompactPeptide>[searchModesCount];
                 double[] bestScores = new double[searchModesCount];
-                int[] bestNotches = new int[searchModesCount];
+                List<int>[] bestNotches = new List<int>[searchModesCount];
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -92,11 +92,10 @@ namespace EngineLayer.ModernSearch
                                 {
                                     // Score is same, need to see if accepts and if prefer the new one
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0 && FirstIsPreferableWithoutScore(candidatePeptide, bestPeptides[j], thisScanprecursorMass))
+                                    if (notch >= 0)
                                     {
-                                        bestPeptides[j] = candidatePeptide;
-                                        bestScores[j] = consideredScore;
-                                        bestNotches[j] = notch;
+                                        bestPeptides[j].Add(candidatePeptide);
+                                        bestNotches[j].Add(notch);
                                     }
                                 }
                                 else if (currentBestScore < consideredScore)
@@ -105,9 +104,9 @@ namespace EngineLayer.ModernSearch
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
-                                        bestPeptides[j] = candidatePeptide;
+                                        bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
                                         bestScores[j] = consideredScore;
-                                        bestNotches[j] = notch;
+                                        bestNotches[j] = new List<int> { notch };
                                     }
                                 }
                             }
@@ -117,19 +116,22 @@ namespace EngineLayer.ModernSearch
                                 int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                 if (notch >= 0)
                                 {
-                                    bestPeptides[j] = candidatePeptide;
+                                    bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
                                     bestScores[j] = consideredScore;
-                                    bestNotches[j] = notch;
+                                    bestNotches[j] = new List<int> { notch };
                                 }
                             }
                         }
                     }
                     for (int j = 0; j < searchModesCount; j++)
                     {
-                        CompactPeptide theBestPeptide = bestPeptides[j];
-                        if (theBestPeptide != null)
+                        if (bestPeptides[j] != null)
                         {
-                            newPsms[j][i] = new PsmParent(theBestPeptide, bestNotches[j], bestScores[j], i, thisScan);
+                            newPsms[j][i] = new PsmParent(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            for (int k = 1; k < bestPeptides[j].Count; k++)
+                            {
+                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                            }
                         }
                     }
                 }
@@ -150,17 +152,6 @@ namespace EngineLayer.ModernSearch
         #endregion Protected Methods
 
         #region Private Methods
-
-        // Want this to return false more!! So less computation is done. So second is preferable more often.
-        private static bool FirstIsPreferableWithoutScore(CompactPeptide first, CompactPeptide second, double pm)
-        {
-            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods)
-                return true;
-            if (Math.Abs(first.MonoisotopicMassIncludingFixedMods - pm) > tolInDaForPreferringHavingMods && Math.Abs(second.MonoisotopicMassIncludingFixedMods - pm) < tolInDaForPreferringHavingMods)
-                return false;
-
-            return false;
-        }
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
         {

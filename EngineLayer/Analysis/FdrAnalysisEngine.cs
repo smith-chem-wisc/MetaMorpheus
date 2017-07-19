@@ -57,7 +57,7 @@ namespace EngineLayer.Analysis
             {
                 var item = ids[i];
                 var isDecoy = item.Pli.IsDecoy;
-                int notch = item.Notch;
+                int notch = item.Pli.Notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -86,7 +86,7 @@ namespace EngineLayer.Analysis
                 else if (id.FdrInfo.QValue < min_q_value)
                     min_q_value = id.FdrInfo.QValue;
 
-                int notch = id.Notch;
+                int notch = id.Pli.Notch;
                 if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
                     id.FdrInfo.QValueNotch = min_q_value_notch[notch];
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])

@@ -167,20 +167,6 @@ namespace Test
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var localizeableModifications = new List<ModificationWithMass>();
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            foreach (var mod in fixedModifications)
-                modsDictionary.Add(mod, 0);
-            int ii = 1;
-            foreach (var mod in variableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
-            foreach (var mod in localizeableModifications)
-            {
-                modsDictionary.Add(mod, (ushort)ii);
-                ii++;
-            }
 
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
@@ -219,7 +205,7 @@ namespace Test
 
             new SequencesToActualProteinPeptidesEngine(new List<PsmParent>[] { new List<PsmParent> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
-            Assert.AreEqual("QXQ", searchResults.Psms[0][0].Pli.BaseSequence);
+            Assert.AreEqual(3, searchResults.Psms[0][0].NumAmbiguous);
         }
 
         #endregion Public Methods

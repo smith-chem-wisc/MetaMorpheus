@@ -132,9 +132,9 @@ namespace EngineLayer.ClassicSearch
                                         else
                                         {
                                             if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score);
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
                                             else if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide);
+                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch);
                                         }
                                     }
                                 }
@@ -155,7 +155,7 @@ namespace EngineLayer.ClassicSearch
                                     if (psms[searchModeIndex][i].Score - outerPsms[searchModeIndex][i].Score > 1e-9)
                                         outerPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                     else if (psms[searchModeIndex][i].Score - outerPsms[searchModeIndex][i].Score > -1e-9)
-                                        outerPsms[searchModeIndex][i].Add(psms[searchModeIndex][i].compactPeptides);
+                                        outerPsms[searchModeIndex][i].Add(psms[searchModeIndex][i]);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

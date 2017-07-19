@@ -17,6 +17,8 @@ namespace EngineLayer
 
         public List<CompactPeptide> compactPeptides = new List<CompactPeptide>();
 
+        public List<int> notches = new List<int>();
+
         #endregion Public Fields
 
         #region Private Fields
@@ -29,7 +31,6 @@ namespace EngineLayer
 
         public PsmParent(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
-            this.Notch = notch;
             this.Score = score;
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
@@ -42,7 +43,7 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
             this.QuantIntensity = new double[1];
-            Add(peptide);
+            Add(peptide, notch);
         }
 
         #endregion Public Constructors
@@ -51,7 +52,6 @@ namespace EngineLayer
 
         public double[] QuantIntensity { get; set; }
         public double MostAbundantMass { get; set; }
-        public int Notch { get; }
         public double Score { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
@@ -63,7 +63,7 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-        public int NumAmbiguous { get; set; }
+        public int NumAmbiguous { get { return compactPeptides.Count; } }
         public ProteinLinkedInfo Pli { get; private set; }
         public double PeptideMonoisotopicMass { get; internal set; }
         public FdrInfo FdrInfo { get; set; }
@@ -175,7 +175,6 @@ namespace EngineLayer
             sb.Append("Precursor Intensity" + '\t');
             sb.Append("Precursor Mass" + '\t');
             sb.Append("Score" + '\t');
-            sb.Append("Notch" + '\t');
             sb.Append("Quantification Intensity" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
@@ -196,22 +195,18 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void Replace(CompactPeptide correspondingCompactPeptide, double score)
+        public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
         {
             compactPeptides = new List<CompactPeptide> { correspondingCompactPeptide };
             Score = score;
-        }
-
-        public void Add(CompactPeptide correspondingCompactPeptide)
-        {
-            compactPeptides.Add(correspondingCompactPeptide);
+            notches = new List<int> { v };
         }
 
         public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
         {
-            foreach (var compactPeptide in compactPeptides)
+            for (int i = 0; i < compactPeptides.Count; i++)
             {
-                var candidatePli = new ProteinLinkedInfo(matching[compactPeptide]);
+                var candidatePli = new ProteinLinkedInfo(matching[compactPeptides[i]], notches[i]);
                 if (Pli == null || FirstIsPreferable(candidatePli, Pli))
                     Pli = candidatePli;
             }
@@ -232,9 +227,8 @@ namespace EngineLayer
             sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(Notch.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(string.Join("|", QuantIntensity) + '\t');
-            sb.Append(compactPeptides.Count.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             if (Pli != null)
             {
@@ -243,7 +237,7 @@ namespace EngineLayer
                 sb.Append(((ScanPrecursorMass - Pli.PeptideMonoisotopicMass) / Pli.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             }
             else
-                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
 
             if (LocalizationResults != null)
             {
@@ -287,10 +281,18 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal void Add(List<CompactPeptide> compactPeptides)
+        internal void Add(CompactPeptide compactPeptide, int v)
         {
-            foreach (var compactPeptide in compactPeptides)
-                Add(compactPeptide);
+            compactPeptides.Add(compactPeptide);
+            notches.Add(v);
+        }
+
+        internal void Add(PsmParent psmParent)
+        {
+            for (int i = 0; i < psmParent.compactPeptides.Count; i++)
+            {
+                Add(psmParent.compactPeptides[i], psmParent.notches[i]);
+            }
         }
 
         #endregion Internal Methods
