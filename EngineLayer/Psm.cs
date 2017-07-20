@@ -319,8 +319,7 @@ namespace EngineLayer
 
         internal void Add(CompactPeptide compactPeptide, int v)
         {
-            if (!compactPeptides.ContainsKey(compactPeptide))
-                compactPeptides.Add(compactPeptide, v);
+            compactPeptides[compactPeptide] = v;
         }
 
         internal void Add(Psm psmParent)
