@@ -64,7 +64,7 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumAmbiguous { get { return compactPeptides.Count; } }
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
-        public FdrInfo FdrInfo { get; set; }
+        public FdrInfo FdrInfo { get; private set; }
         public LocalizationResults LocalizationResults { get; internal set; }
 
         #endregion Public Properties
@@ -301,7 +301,7 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void SetValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
         {
             FdrInfo = new FdrInfo()
             {
