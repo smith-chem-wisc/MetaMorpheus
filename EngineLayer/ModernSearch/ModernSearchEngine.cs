@@ -163,13 +163,23 @@ namespace EngineLayer.ModernSearch
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
-            List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
-            for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+            if (!addCompIons)
             {
-                experimentalPeaks.Add(spectrum.MassSpectrum[i]);
+                for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                {
+                    var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
+                    var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                    GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
+                }
             }
-            if (addCompIons)
-            {
+            else
+            { 
+                List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
+                for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                {
+                    experimentalPeaks.Add(spectrum.MassSpectrum[i]);
+                }
+
                 //If HCD
                 if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
                 {
@@ -186,51 +196,58 @@ namespace EngineLayer.ModernSearch
                         experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 100)));
                     }
                 }
-            }
-            IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
 
-            foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
-            {
-                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
-                float closestPeak;
-                var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
-                if (ipos < 0)
-                    ipos = ~ipos;
+                IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
 
-                if (ipos > 0)
+                foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
                 {
-                    var downIpos = ipos - 1;
-                    // Try down
-                    while (downIpos >= 0)
-                    {
-                        closestPeak = keys[downIpos];
-                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
-                        {
-                            foreach (var heh in fragmentIndex[downIpos])
-                                peptideScores[heh] += theAdd;
-                        }
-                        else
-                            break;
-                        downIpos--;
-                    }
+                    var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
+                    var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
+                    GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
                 }
-                if (ipos < keys.Length)
+            }
+
+        }
+
+        private void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores)
+        {
+            float closestPeak;
+            var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
+            if (ipos < 0)
+                ipos = ~ipos;
+
+            if (ipos > 0)
+            {
+                var downIpos = ipos - 1;
+                // Try down
+                while (downIpos >= 0)
                 {
-                    var upIpos = ipos;
-                    // Try here and up
-                    while (upIpos < keys.Length)
+                    closestPeak = keys[downIpos];
+                    if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
                     {
-                        closestPeak = keys[upIpos];
-                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
-                        {
-                            foreach (var heh in fragmentIndex[upIpos])
-                                peptideScores[heh] += theAdd;
-                        }
-                        else
-                            break;
-                        upIpos++;
+                        foreach (var heh in fragmentIndex[downIpos])
+                            peptideScores[heh] += theAdd;
                     }
+                    else
+                        break;
+                    downIpos--;
+                }
+            }
+            if (ipos < keys.Length)
+            {
+                var upIpos = ipos;
+                // Try here and up
+                while (upIpos < keys.Length)
+                {
+                    closestPeak = keys[upIpos];
+                    if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                    {
+                        foreach (var heh in fragmentIndex[upIpos])
+                            peptideScores[heh] += theAdd;
+                    }
+                    else
+                        break;
+                    upIpos++;
                 }
             }
         }
