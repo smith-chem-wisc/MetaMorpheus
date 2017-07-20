@@ -290,15 +290,15 @@ namespace TaskLayer
             );
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            Status("Ordering and grouping psms...", taskId);
-            for (int j = 0; j < allPsms.Length; j++)
-                allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
-
             // Group and order psms
             Status("Matching peptides to proteins...", taskId);
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+
+            Status("Ordering and grouping psms...", taskId);
+            for (int j = 0; j < allPsms.Length; j++)
+                allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
             if (DoLocalizationAnalysis)
             {
