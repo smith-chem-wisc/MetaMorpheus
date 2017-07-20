@@ -93,6 +93,8 @@ namespace TaskLayer
 
         public Protease Protease { get; set; }
 
+        public bool addCompIons { get; set; }
+
         public bool BIons { get; set; }
 
         public bool YIons { get; set; }
@@ -272,7 +274,7 @@ namespace TaskLayer
                     if (SearchType == SearchType.Classic)
                         searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior).Run());
                     else
-                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
+                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.addCompIons, ionTypes).Run()));
 
                     myFileManager.DoneWithFile(origDataFile);
 

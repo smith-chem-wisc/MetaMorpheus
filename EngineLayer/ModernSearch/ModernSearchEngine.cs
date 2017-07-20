@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace EngineLayer.ModernSearch
 {
@@ -27,11 +28,15 @@ namespace EngineLayer.ModernSearch
 
         private readonly List<MassDiffAcceptor> searchModes;
 
+        private readonly bool addCompIons;
+
+        private readonly List<ProductType> lp;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
@@ -39,6 +44,8 @@ namespace EngineLayer.ModernSearch
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
             this.searchModes = searchModes;
+            this.addCompIons = addCompIons;
+            this.lp = lp;
         }
 
         #endregion Public Constructors
@@ -70,7 +77,8 @@ namespace EngineLayer.ModernSearch
                     var thisScan = listOfSortedms2Scans[i];
                     var thisScanprecursorMass = thisScan.PrecursorMass;
                     Array.Clear(fullPeptideScores, 0, peptideIndexCount);
-                    CalculatePeptideScores(thisScan.TheScan, fullPeptideScores);
+                    double thePrecursorMass = thisScan.PrecursorMass;
+                    CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
 
                     Array.Clear(bestPeptides, 0, searchModesCount);
                     Array.Clear(bestScores, 0, searchModesCount);
@@ -153,12 +161,38 @@ namespace EngineLayer.ModernSearch
 
         #region Private Methods
 
-        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
+        private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
+            List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                experimentalPeaks.Add(spectrum.MassSpectrum[i]);
+            }
+            if (addCompIons)
+            {
+                //If HCD
+                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                {
+                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    {
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity / 3)));
+                    }
+                }
+                //If ETD
+                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                {
+                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    {
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 3)));
+                    }
+                }
+            }
+            IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
+
+            foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
+            {
+                var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
                 float closestPeak;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
