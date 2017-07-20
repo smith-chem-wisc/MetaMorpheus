@@ -40,11 +40,13 @@ namespace EngineLayer.ClassicSearch
         private readonly bool conserveMemory;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
+        private readonly bool addCompIons;
+
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, InitiatorMethionineBehavior initiatorMethionineBehavior) : base(nestedIds)
+        public ClassicSearchEngine(Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, InitiatorMethionineBehavior initiatorMethionineBehavior, bool addCompIons) : base(nestedIds)
         {
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.myScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
@@ -61,6 +63,7 @@ namespace EngineLayer.ClassicSearch
             this.lp = lp;
             this.conserveMemory = conserveMemory;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
+            this.addCompIons = addCompIons;
         }
 
         #endregion Public Constructors
@@ -124,7 +127,8 @@ namespace EngineLayer.ClassicSearch
                                 var searchMode = searchModes[searchModeIndex];
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                                 {
-                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch);
+                                    double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
+                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
                                     if (score > 1)
                                     {
                                         if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
