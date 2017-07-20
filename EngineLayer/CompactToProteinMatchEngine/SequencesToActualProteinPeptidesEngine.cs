@@ -63,8 +63,8 @@ namespace EngineLayer
                         if (psm != null)
                         {
                             foreach (var cp in psm.compactPeptides)
-                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                    compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
+                                    compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
                         }
             //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             int totalProteins = proteinList.Count;
