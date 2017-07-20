@@ -59,7 +59,7 @@ namespace EngineLayer
                 s = "too many";
             sb.Append(s + "\t");
 
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join("|", b.Protein.GeneNames.Select(c => c.Item1 + " " + c.Item2))));
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item2))));
             if (s.Length > 32000)
                 s = "too many";
             sb.Append(s + "\t");

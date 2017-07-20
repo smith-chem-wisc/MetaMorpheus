@@ -276,7 +276,7 @@ namespace EngineLayer
                 sb.Append(((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass) / MostProbableProteinInfo.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             }
             else
-                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
 
             if (LocalizationResults != null)
             {
