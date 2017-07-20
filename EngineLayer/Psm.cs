@@ -40,7 +40,6 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            this.QuantIntensity = new double[1];
             Add(peptide, notch);
         }
 
@@ -48,7 +47,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public double[] QuantIntensity { get; set; }
+        public double QuantIntensity { get; set; }
         public double MostAbundantMass { get; set; }
         public double Score { get; private set; }
         public int ScanNumber { get; }
@@ -212,7 +211,6 @@ namespace EngineLayer
             sb.Append("Precursor Intensity" + '\t');
             sb.Append("Precursor Mass" + '\t');
             sb.Append("Score" + '\t');
-            sb.Append("Quantification Intensity" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
             sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
@@ -266,7 +264,6 @@ namespace EngineLayer
             sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(string.Join("|", QuantIntensity) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             if (MostProbableProteinInfo != null)

@@ -93,7 +93,7 @@ namespace TaskLayer
 
         public Protease Protease { get; set; }
 
-        public bool addCompIons { get; set; }
+        public bool AddCompIons { get; set; }
 
         public bool BIons { get; set; }
 
@@ -272,9 +272,9 @@ namespace TaskLayer
                     Status("Starting search...", thisId);
                     SearchResults searchResults;
                     if (SearchType == SearchType.Classic)
-                        searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.addCompIons).Run());
+                        searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons).Run());
                     else
-                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.addCompIons, ionTypes).Run()));
+                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes).Run()));
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -308,7 +308,7 @@ namespace TaskLayer
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.addCompIons);
+                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.AddCompIons);
                     localizationEngine.Run();
                     myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
@@ -387,7 +387,7 @@ namespace TaskLayer
                             int j = Array.IndexOf(FlashLfqEngine.filePaths, file.Key);
 
                             foreach (var psm in file)
-                                psm.QuantIntensity[0] = summedPeak.intensitiesByFile[j];
+                                psm.QuantIntensity = summedPeak.intensitiesByFile[j];
                         }
                     }
                 }

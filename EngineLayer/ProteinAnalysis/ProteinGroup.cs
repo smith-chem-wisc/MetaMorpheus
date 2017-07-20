@@ -375,19 +375,16 @@ namespace EngineLayer
                 FileNames = psmsGroupedByFile.Select(p => p.Key).Distinct().ToList();
                 IntensitiesByFile = new double[FileNames.Count][];
 
-                int quantType = AllPsmsBelowOnePercentFDR.First().QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
                 for (int i = 0; i < FileNames.Count; i++)
-                    IntensitiesByFile[i] = new double[quantType];
+                    IntensitiesByFile[i] = new double[1];
             }
 
             for (int file = 0; file < FileNames.Count; file++)
             {
-                var quantType = IntensitiesByFile[file].Length;
-
                 var thisFilesPsms = psmsGroupedByFile.FirstOrDefault(p => p.Key.Equals(FileNames[file]));
                 if (thisFilesPsms == null)
                 {
-                    IntensitiesByFile[file] = new double[quantType];
+                    IntensitiesByFile[file] = new double[1];
                     continue;
                 }
 
@@ -424,8 +421,7 @@ namespace EngineLayer
                     psmsForThisBaseSeq = psmsForThisBaseSeq.Except(psmsToIgnore).ToList();
 
                     if (psmsForThisBaseSeq.Any())
-                        for (int q = 0; q < quantType; q++)
-                            IntensitiesByFile[file][q] += psmsForThisBaseSeq.Select(p => p.QuantIntensity[q]).Max();
+                        IntensitiesByFile[file][0] += psmsForThisBaseSeq.Select(p => p.QuantIntensity).Max();
                 }
             }
         }
@@ -435,9 +431,8 @@ namespace EngineLayer
             this.FileNames = fileNames;
             IntensitiesByFile = new double[FileNames.Count][];
 
-            int quantType = AllPsmsBelowOnePercentFDR.First().QuantIntensity.Length; // length 1 is LFQ, length 10 is TMT
             for (int i = 0; i < FileNames.Count; i++)
-                IntensitiesByFile[i] = new double[quantType];
+                IntensitiesByFile[i] = new double[1];
 
             Quantify();
         }
