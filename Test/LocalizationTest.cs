@@ -49,7 +49,7 @@ namespace Test
 
             newPsm.ResolveProteinsAndMostProbablePeptide(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
+            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
             f.Run();
 
             // Was single peak!!!

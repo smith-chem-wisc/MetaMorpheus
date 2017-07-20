@@ -73,7 +73,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static double MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesListPositiveIsMatch)
+        public static double MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesListPositiveIsMatch, bool addComp, double precursorMass, List<ProductType> lp)
         {
             var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
             if (TotalProductsHere == 0)
@@ -84,6 +84,45 @@ namespace EngineLayer
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
+
+            if (addComp)
+            {
+                List<MzPeak> complementaryPeaks = new List<MzPeak>();
+
+                //keep original peeks
+                for (int i = 0; i < experimental_mzs.Length; i++)
+                {
+                    complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i]));
+                }
+                //If HCD
+                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                {
+                    for (int i = 0; i < experimental_mzs.Length; i++)
+                    {
+                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 100)));
+                    }
+                }
+                //If ETD
+                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                {
+                    for (int i = 0; i < experimental_mzs.Length; i++)
+                    {
+                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 100)));
+                    }
+                }
+
+                IEnumerable<MzPeak> sortedPeaksMZ = complementaryPeaks.OrderBy(x => x.Mz);
+                experimental_mzs = new double[sortedPeaksMZ.Count()];
+                experimental_intensities = new double[sortedPeaksMZ.Count()];
+                int index = 0;
+                foreach (MzPeak peak in sortedPeaksMZ)
+                {
+                    experimental_mzs[index] = peak.Mz;
+                    experimental_intensities[index] = peak.Intensity;
+                    index++;
+                }
+            }
+
             int num_experimental_peaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;

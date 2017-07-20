@@ -98,6 +98,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddCompIonsTest.cs" />
     <Compile Include="AnalysisEngineTest.cs" />
     <Compile Include="SlicedTest.cs" />
     <Compile Include="FakeMsDataFile.cs" />
