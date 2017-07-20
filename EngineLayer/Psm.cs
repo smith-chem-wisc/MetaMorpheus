@@ -92,14 +92,14 @@ namespace EngineLayer
                 //keep original peeks
                 for (int i = 0; i < experimental_mzs.Length; i++)
                 {
-                    complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i] / 3));
+                    complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i]));
                 }
                 //If HCD
                 if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
                 {
                     for (int i = 0; i < experimental_mzs.Length; i++)
                     {
-                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 3)));
+                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 100)));
                     }
                 }
                 //If ETD
@@ -107,7 +107,7 @@ namespace EngineLayer
                 {
                     for (int i = 0; i < experimental_mzs.Length; i++)
                     {
-                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 3)));
+                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 100)));
                     }
                 }
 

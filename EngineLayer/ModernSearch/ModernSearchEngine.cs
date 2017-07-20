@@ -175,7 +175,7 @@ namespace EngineLayer.ModernSearch
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
-                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity / 3)));
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity / 100)));
                     }
                 }
                 //If ETD
@@ -183,7 +183,7 @@ namespace EngineLayer.ModernSearch
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
-                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 3)));
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 100)));
                     }
                 }
             }
