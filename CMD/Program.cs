@@ -98,8 +98,8 @@ namespace MetaMorpheusCommandLine
                             break;
                     }
                 }
-                List<string> startingRawFilenameList = p.Object.Spectra;
-                List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(b, IsContaminant(b))).ToList();
+                List<string> startingRawFilenameList = p.Object.Spectra.Select(b => Path.GetFullPath(b)).ToList();
+                List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
                 EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
                 a.Run();
             }
@@ -112,7 +112,6 @@ namespace MetaMorpheusCommandLine
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");
             Console.WriteLine("\t-d --databases List of database files");
-            return;
         }
 
         private static bool IsContaminant(string b)
