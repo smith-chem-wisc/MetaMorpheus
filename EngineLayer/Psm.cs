@@ -13,15 +13,10 @@ namespace EngineLayer
     public class Psm
     {
 
-        #region Public Fields
-
-        public Dictionary<CompactPeptide, int> compactPeptides = new Dictionary<CompactPeptide, int>();
-
-        #endregion Public Fields
-
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
+        private Dictionary<CompactPeptide, int> compactPeptides = new Dictionary<CompactPeptide, int>();
 
         #endregion Private Fields
 
@@ -47,8 +42,15 @@ namespace EngineLayer
 
         #region Public Properties
 
+        public IEnumerable<KeyValuePair<CompactPeptide, int>> CompactPeptides
+        {
+            get
+            {
+                return compactPeptides.AsEnumerable();
+            }
+        }
+
         public double QuantIntensity { get; set; }
-        public double MostAbundantMass { get; set; }
         public double Score { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
@@ -62,7 +64,6 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumAmbiguous { get { return compactPeptides.Count; } }
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
-        public double PeptideMonoisotopicMass { get; internal set; }
         public FdrInfo FdrInfo { get; set; }
         public LocalizationResults LocalizationResults { get; internal set; }
 
