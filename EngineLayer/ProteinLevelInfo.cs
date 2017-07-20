@@ -59,6 +59,11 @@ namespace EngineLayer
                 s = "too many";
             sb.Append(s + "\t");
 
+            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item2))));
+            if (s.Length > 32000)
+                s = "too many";
+            sb.Append(s + "\t");
+
             s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
             if (s.Length > 32000)
                 s = "too many";
@@ -78,7 +83,7 @@ namespace EngineLayer
             if (s.Length > 32000)
                 s = "too many";
             sb.Append(s + "\t");
-            
+
             sb.Append(BaseSequence + "\t");
             sb.Append(FullSequence + "\t");
 
@@ -108,6 +113,7 @@ namespace EngineLayer
             // Could have MANY options
             sb.Append("Protein Accession" + '\t');
             sb.Append("Protein Name" + '\t');
+            sb.Append("Gene Name" + '\t');
             sb.Append("Peptide Description" + '\t');
             sb.Append("Start and End Residues In Protein" + '\t');
             sb.Append("Previous Amino Acid" + '\t');

@@ -15,9 +15,7 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public List<CompactPeptide> compactPeptides = new List<CompactPeptide>();
-
-        public List<int> notches = new List<int>();
+        public Dictionary<CompactPeptide, int> compactPeptides = new Dictionary<CompactPeptide, int>();
 
         #endregion Public Fields
 
@@ -236,16 +234,18 @@ namespace EngineLayer
 
         public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
         {
-            compactPeptides = new List<CompactPeptide> { correspondingCompactPeptide };
+            compactPeptides = new Dictionary<CompactPeptide, int>
+            {
+                { correspondingCompactPeptide, v }
+            };
             Score = score;
-            notches = new List<int> { v };
         }
 
         public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
         {
-            for (int i = 0; i < compactPeptides.Count; i++)
+            foreach (var ok in compactPeptides)
             {
-                var candidatePli = new ProteinLinkedInfo(matching[compactPeptides[i]], notches[i]);
+                var candidatePli = new ProteinLinkedInfo(matching[ok.Key], ok.Value);
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
@@ -276,7 +276,7 @@ namespace EngineLayer
                 sb.Append(((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass) / MostProbableProteinInfo.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
             }
             else
-                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
 
             if (LocalizationResults != null)
             {
@@ -322,16 +322,14 @@ namespace EngineLayer
 
         internal void Add(CompactPeptide compactPeptide, int v)
         {
-            compactPeptides.Add(compactPeptide);
-            notches.Add(v);
+            if (!compactPeptides.ContainsKey(compactPeptide))
+                compactPeptides.Add(compactPeptide, v);
         }
 
         internal void Add(Psm psmParent)
         {
-            for (int i = 0; i < psmParent.compactPeptides.Count; i++)
-            {
-                Add(psmParent.compactPeptides[i], psmParent.notches[i]);
-            }
+            foreach (var kvp in psmParent.compactPeptides)
+                Add(kvp.Key, kvp.Value);
         }
 
         #endregion Internal Methods
