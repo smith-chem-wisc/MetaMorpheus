@@ -4,7 +4,6 @@ using System;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using System.Linq;
 
 namespace EngineLayer.CrosslinkSearch
 {
