@@ -47,7 +47,7 @@ namespace TaskLayer
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = ProductMassTolerance = new AbsoluteTolerance(0.01);
+            ProductMassTolerance = new AbsoluteTolerance(0.01);
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -67,7 +67,7 @@ namespace TaskLayer
             MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             ConserveMemory = false;
-            MaxDegreeOfParallelism = 1;
+            MaxDegreeOfParallelism = null;
             CrosslinkerType = CrosslinkerType.DSS;
             CrosslinkSearchTopNum = 50;
             CrosslinkSearchWithAllBeta = false;
@@ -80,7 +80,7 @@ namespace TaskLayer
             XLprecusorMsTl = new AbsoluteTolerance(0.01);
 
             // Deconvolution stuff
-            DoPrecursorDeconvolution = true;
+            DoPrecursorDeconvolution = false;
             UseProvidedPrecursorInfo = true;
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
@@ -453,8 +453,8 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tTotalScore\tMass diff\tQValue");
+                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore\tPep1 topPos" +
+                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tPep2 topPos\tTotalScore\tMass diff\tQValue");
                 foreach (var item in items)
                 {
                     var x = item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
@@ -470,6 +470,7 @@ namespace TaskLayer
                         + "\t" + item.Item1.MostProbableProteinInfo.FullSequence
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
@@ -477,6 +478,7 @@ namespace TaskLayer
                         + "\t" + item.Item2.MostProbableProteinInfo.FullSequence
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)

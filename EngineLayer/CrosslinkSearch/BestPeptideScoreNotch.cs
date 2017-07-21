@@ -11,5 +11,6 @@
             BestScore = bestScore;
             BestNotch = bestNotch;
         }
+        public int[] topPosition { get; set; }
     }
 }

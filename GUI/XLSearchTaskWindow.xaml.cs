@@ -106,6 +106,9 @@ namespace MetaMorpheusGUI
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
+            cbbXLprecusorMsTl.Items.Add("Absolute");
+            cbbXLprecusorMsTl.Items.Add("Ppm");
+
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    cbbXLprecusorMsTl.Items.Add(toleranceUnit);
 
@@ -115,6 +118,9 @@ namespace MetaMorpheusGUI
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+
+            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Ppm");
 
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    productMassToleranceComboBox.Items.Add(toleranceUnit);
