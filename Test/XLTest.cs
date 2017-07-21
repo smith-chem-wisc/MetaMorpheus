@@ -1,16 +1,8 @@
-﻿using Chemistry;
-using EngineLayer;
-using IO.MzML;
-using MassSpectrometry;
-using MzLibUtil;
+﻿using EngineLayer;
 using NUnit.Framework;
-
 using Proteomics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
-using static Chemistry.PeriodicTable;
 using EngineLayer.CrosslinkSearch;
 
 
