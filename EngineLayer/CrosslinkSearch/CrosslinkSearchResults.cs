@@ -26,15 +26,15 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Public Properties
 
-        #region Public Methods
+        //#region Public Methods
 
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.Append(base.ToString());
-            return sb.ToString();
-        }
+        //public override string ToString()
+        //{
+        //    var sb = new StringBuilder();
+        //    sb.Append(base.ToString());
+        //    return sb.ToString();
+        //}
 
-        #endregion Public Methods
+        //#endregion Public Methods
     }
 }
