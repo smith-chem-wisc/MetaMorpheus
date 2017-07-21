@@ -35,7 +35,6 @@ namespace Test
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
             foreach (var huh in pep1.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
-
             var pep2 = ye[1].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
             foreach (var huh in pep2.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
