@@ -172,6 +172,7 @@ namespace EngineLayer.CrosslinkSearch
                                 var psmCross2 = new PsmCross(crosslinkPeptidePair.Item2.BestPeptide, crosslinkPeptidePair.Item2.BestNotch, crosslinkPeptidePair.Item2.BestScore, i, thisScan);
                                 if (PsmCross.xlPosCal(psmCross1.CompactPeptide, crosslinker) != null && PsmCross.xlPosCal(psmCross2.CompactPeptide, crosslinker) != null )
                                 {
+                                    psmCross1.topPosition = crosslinkPeptidePairList.First().Item1.topPosition;
                                     XLCalculateTotalProductMassesMightHave(thisScan, psmCross1);
                                     XLCalculateTotalProductMassesMightHave(thisScan, psmCross2);
                                     var currentTuplePair = new Tuple<PsmCross, PsmCross>(psmCross1, psmCross2);
@@ -263,6 +264,7 @@ namespace EngineLayer.CrosslinkSearch
                     if (XLprecusorMsTl.Within(theScan.PrecursorMass, x + y + crosslinker.TotalMass))
                     {
                         Tuple<BestPeptideScoreNotch, BestPeptideScoreNotch> BestPeptideScoreNotchPair = new Tuple<BestPeptideScoreNotch, BestPeptideScoreNotch>(theScanBestPeptide[ind], theScanBestPeptide[inx]);
+                        BestPeptideScoreNotchPair.Item1.topPosition = new int[]{ind, inx};
                         bestPeptideScoreNotchList.Add(BestPeptideScoreNotchPair);
                         return bestPeptideScoreNotchList;
                     }
@@ -387,26 +389,18 @@ namespace EngineLayer.CrosslinkSearch
                 pmmhList.Add(pmmhCurr);
             }
 
-
-            //If the peptide did contain the crosslink amino acid
-            //if (pos != -1)
-            //{
             List<double> scoreList = new List<double>();
             List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
             foreach (var pmm in pmmhList)
             {
                 var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = Psm.MatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, matchedIonMassesListPositiveIsMatch.MatchedIonMz);
+                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
                 miil.Add(matchedIonMassesListPositiveIsMatch);
                 scoreList.Add(pmmScore);
             }
 
-            pmmhTop = pmmhList[scoreList.IndexOf(scoreList.Max())];
-            //psmCross.pmmh = pmmhNew;
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
-            //}
-
         }
 
         #endregion Private Methods

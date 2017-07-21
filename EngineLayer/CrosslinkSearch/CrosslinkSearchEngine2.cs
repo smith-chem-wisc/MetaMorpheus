@@ -404,26 +404,18 @@ namespace EngineLayer.CrosslinkSearch
                 pmmhList.Add(pmmhCurr);
             }
 
-
-            //If the peptide did contain the crosslink amino acid
-            //if (pos != -1)
-            //{
             List<double> scoreList = new List<double>();
             List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
             foreach (var pmm in pmmhList)
             {
                 var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = Psm.MatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, matchedIonMassesListPositiveIsMatch.MatchedIonMz);
+                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
                 miil.Add(matchedIonMassesListPositiveIsMatch);
                 scoreList.Add(pmmScore);
             }
 
-            pmmhTop = pmmhList[scoreList.IndexOf(scoreList.Max())];
-            //psmCross.pmmh = pmmhNew;
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
-            //}
-
         }
 
         private List<Tuple<PsmCross, PsmCross>> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory = false)
@@ -550,7 +542,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (outerPsms[i] != null)
                 {
-                    //XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i]);
+                    XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i]);
                     newPsmsTopTuple.Add(new Tuple<PsmCross, PsmCross>(selectedPsmParent[i], outerPsms[i]));
                 }
             }

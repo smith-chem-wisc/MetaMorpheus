@@ -33,7 +33,9 @@ namespace EngineLayer.CrosslinkSearch
         public MatchedIonInfo matchedIonInfo { get; set; }
         public double NScore { get; set; }
         public double XLTotalScore { get; set; }
-        
+
+        public int[] topPosition { get; set; }
+
 
         //Compute ProductMassesMightHave: the theoritical masses of psmCross
         #region ProductMassesMightHave
