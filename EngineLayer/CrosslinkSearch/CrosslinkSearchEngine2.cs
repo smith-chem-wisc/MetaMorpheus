@@ -641,6 +641,7 @@ namespace EngineLayer.CrosslinkSearch
             // index of the first element that is larger than value
             return index;
         }
+        
         #endregion Private Methods
     }
 }
