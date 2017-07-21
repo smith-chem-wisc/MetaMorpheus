@@ -76,7 +76,7 @@ namespace TaskLayer
             UdXLkerShortMass = null;
             UdXLkerLongMass = null;
             UdXLkerTotalMass = null;
-            UdXLkerResidue = null;
+            UdXLkerResidue = 'K';
             XLprecusorMsTl = new AbsoluteTolerance(0.01);
 
             // Deconvolution stuff
@@ -137,7 +137,7 @@ namespace TaskLayer
         public double? UdXLkerTotalMass { get; set; }
         public double? UdXLkerShortMass { get; set; }
         public double? UdXLkerLongMass { get; set; }
-        public string UdXLkerResidue { get; set; }
+        public char UdXLkerResidue { get; set; }
         public Tolerance XLprecusorMsTl { get; set; }
 
         #endregion Public Properties

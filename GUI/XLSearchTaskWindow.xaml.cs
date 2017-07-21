@@ -160,7 +160,7 @@ namespace MetaMorpheusGUI
             txtUdXLkerTotalMs.Text = task.UdXLkerTotalMass.HasValue ? task.UdXLkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerShortMass.Text = task.UdXLkerShortMass.HasValue ? task.UdXLkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerLongMass.Text = task.UdXLkerLongMass.HasValue ? task.UdXLkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerAminoAcid.Text = task.UdXLkerResidue;
+            txtUdXLkerAminoAcid.Text = task.UdXLkerResidue.ToString();
             cbbXLprecusorMsTl.SelectedIndex = task.XLprecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLPrecusorMsTl.Text = task.XLprecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
