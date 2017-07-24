@@ -46,7 +46,7 @@ namespace TaskLayer
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             MaxDegreeOfParallelism = 1;
-            ConserveMemory = false;
+            ConserveMemory = true;
 
             WriteIntermediateFiles = false;
 

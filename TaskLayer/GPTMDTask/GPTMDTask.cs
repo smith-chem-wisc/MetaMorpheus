@@ -49,7 +49,7 @@ namespace TaskLayer
             b.modificationType.Equals("PeptideTermMod") ||
             b.modificationType.Equals("Metal") ||
             b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-            ConserveMemory = false;
+            ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
 
             DoPrecursorDeconvolution = true;
