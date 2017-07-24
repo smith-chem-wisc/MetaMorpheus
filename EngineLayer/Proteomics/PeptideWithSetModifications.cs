@@ -41,11 +41,11 @@ namespace EngineLayer
             this.numFixedMods = numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications oldPWSM, PeptideWithSetModifications pepwithSetModsWithNewProtein) : base(pepwithSetModsWithNewProtein.Protein, pepwithSetModsWithNewProtein.OneBasedStartResidueInProtein, pepwithSetModsWithNewProtein.OneBasedEndResidueInProtein)
+        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
         {
-            this.modPep = oldPWSM.modPep;
-            this.allModsOneIsNterminus = oldPWSM.allModsOneIsNterminus;
-            this.numFixedMods = oldPWSM.numFixedMods;
+            this.modPep = everythingElseFromThisOne.modPep;
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
+            this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
         #endregion Internal Constructors
@@ -204,7 +204,13 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             var q = obj as PeptideWithSetModifications;
-            return q != null && q.Sequence.Equals(Sequence) && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein && q.Protein.Equals(Protein);
+            //foreach (var ok in q.allModsOneIsNterminus)
+            //    if (!allModsOneIsNterminus.Contains(ok))
+            //        return false;
+            return q != null
+                && q.Sequence.Equals(Sequence)
+                && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein
+                && q.Protein.Equals(Protein);
         }
 
         public override int GetHashCode()

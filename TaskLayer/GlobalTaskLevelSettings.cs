@@ -37,9 +37,9 @@ namespace TaskLayer
             foreach (var ye in enumerable)
             {
                 if (string.IsNullOrEmpty(ye.modificationType) || string.IsNullOrEmpty(ye.id))
-                    throw new Exception(ye.ToString() + Environment.NewLine + " has null or empty modification type");
+                    throw new MetaMorpheusException(ye.ToString() + Environment.NewLine + " has null or empty modification type");
                 if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType) && !b.Equals(ye)))
-                    throw new Exception(ye.ToString() + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)));
+                    throw new MetaMorpheusException("Modification id and type are equal, but some fields are not! Please modify/remove one of the modifications: " + Environment.NewLine + Environment.NewLine + ye.ToString() + Environment.NewLine + Environment.NewLine + " has same and id and modification type as " + Environment.NewLine + Environment.NewLine + AllModsKnown.First(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)) + Environment.NewLine + Environment.NewLine);
                 else if (AllModsKnown.Any(b => b.id.Equals(ye.id) && b.modificationType.Equals(ye.modificationType)))
                     continue;
                 else

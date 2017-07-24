@@ -198,7 +198,7 @@ namespace TaskLayer
                     break;
 
                 default:
-                    throw new Exception("Could not parse search mode string");
+                    throw new MetaMorpheusException("Could not parse search mode string");
             }
             return ye;
         }
