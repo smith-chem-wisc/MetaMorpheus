@@ -358,7 +358,7 @@ namespace TaskLayer
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
                 if (!FlashLfqEngine.ReadPeriodicTable())
-                    throw new Exception("Quantification error - could not find periodic table file");
+                    throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
                 if (!FlashLfqEngine.ParseArgs(new string[] {
                         "--ppm " + QuantifyPpmTol,
@@ -366,7 +366,7 @@ namespace TaskLayer
                         "--pau false",
                         "--mbr " + MatchBetweenRuns }
                     ))
-                    throw new Exception("Quantification error - Could not pass parameters to quantification engine");
+                    throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
                 var psmsBelowOnePercentFdr = allPsms.SelectMany(v => v).Where(p => p.FdrInfo.QValue < 0.01 && !p.MostProbableProteinInfo.IsDecoy);
                 foreach (var psm in psmsBelowOnePercentFdr)
