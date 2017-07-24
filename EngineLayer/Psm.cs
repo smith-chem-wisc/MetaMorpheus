@@ -13,15 +13,10 @@ namespace EngineLayer
     public class Psm
     {
 
-        #region Public Fields
-
-        public Dictionary<CompactPeptide, int> compactPeptides = new Dictionary<CompactPeptide, int>();
-
-        #endregion Public Fields
-
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
+        private Dictionary<CompactPeptide, int> compactPeptides = new Dictionary<CompactPeptide, int>();
 
         #endregion Private Fields
 
@@ -40,7 +35,6 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            this.QuantIntensity = new double[1];
             Add(peptide, notch);
         }
 
@@ -48,8 +42,15 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public double[] QuantIntensity { get; set; }
-        public double MostAbundantMass { get; set; }
+        public IEnumerable<KeyValuePair<CompactPeptide, int>> CompactPeptides
+        {
+            get
+            {
+                return compactPeptides.AsEnumerable();
+            }
+        }
+
+        public double QuantIntensity { get; set; }
         public double Score { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
@@ -63,8 +64,7 @@ namespace EngineLayer
         public int ScanIndex { get; }
         public int NumAmbiguous { get { return compactPeptides.Count; } }
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
-        public double PeptideMonoisotopicMass { get; internal set; }
-        public FdrInfo FdrInfo { get; set; }
+        public FdrInfo FdrInfo { get; private set; }
         public LocalizationResults LocalizationResults { get; internal set; }
 
         #endregion Public Properties
@@ -212,7 +212,6 @@ namespace EngineLayer
             sb.Append("Precursor Intensity" + '\t');
             sb.Append("Precursor Mass" + '\t');
             sb.Append("Score" + '\t');
-            sb.Append("Quantification Intensity" + '\t');
             sb.Append("Ambiguous Matches" + '\t');
 
             sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
@@ -266,7 +265,6 @@ namespace EngineLayer
             sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
             sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(string.Join("|", QuantIntensity) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
             if (MostProbableProteinInfo != null)
@@ -303,7 +301,7 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void SetValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
+        public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
         {
             FdrInfo = new FdrInfo()
             {
@@ -322,8 +320,7 @@ namespace EngineLayer
 
         internal void Add(CompactPeptide compactPeptide, int v)
         {
-            if (!compactPeptides.ContainsKey(compactPeptide))
-                compactPeptides.Add(compactPeptide, v);
+            compactPeptides[compactPeptide] = v;
         }
 
         internal void Add(Psm psmParent)

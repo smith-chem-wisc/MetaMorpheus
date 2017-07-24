@@ -174,7 +174,7 @@ namespace Test
             foreach (var hm in psms)
             {
                 hm.ResolveProteinsAndMostProbablePeptide(initialDictionary);
-                hm.FdrInfo = new FdrInfo();
+                hm.SetFdrValues(0, 0, 0, 0, 0, 0);
             }
 
             //Console.WriteLine(psms.Count);
@@ -429,16 +429,16 @@ namespace Test
 
             var match1 = new Psm(peptideList.ElementAt(0).CompactPeptide, 0, 10, 0, ms2scan)
             {
-                FdrInfo = new FdrInfo()
             };
+            match1.SetFdrValues(0, 0, 0, 0, 0, 0);
             var match2 = new Psm(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
             {
-                FdrInfo = new FdrInfo()
             };
+            match2.SetFdrValues(0, 0, 0, 0, 0, 0);
             var match3 = new Psm(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
             {
-                FdrInfo = new FdrInfo()
             };
+            match3.SetFdrValues(0, 0, 0, 0, 0, 0);
             match1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
             match2.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
             match3.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);

@@ -304,8 +304,8 @@ namespace EngineLayer.CrosslinkAnalysis
                 //double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / (cumulative_target_per_notch[notch] + cumulative_decoy_per_notch[notch]);
                 //item1.SetValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
                 //item2.SetValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
-                item1.SetValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-                item2.SetValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
             }
 
             double min_q_value = double.PositiveInfinity;

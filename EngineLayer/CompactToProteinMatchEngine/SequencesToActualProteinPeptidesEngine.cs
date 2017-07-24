@@ -62,7 +62,7 @@ namespace EngineLayer
                     foreach (var psm in psmListForAspecificSerchMode)
                         if (psm != null)
                         {
-                            foreach (var cp in psm.compactPeptides)
+                            foreach (var cp in psm.CompactPeptides)
                                 if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
                                     compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
                         }
