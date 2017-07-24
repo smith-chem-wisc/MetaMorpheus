@@ -296,9 +296,40 @@ namespace TaskLayer
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
+            ProteinParsimonyResults proteinAnalysisResults = null;
+            if (DoParsimony)
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
+
+            Status("Resolving most probable peptide...", new List<string> { taskId });
+            for (int j = 0; j < MassDiffAcceptors.Count; j++)
+            {
+                if (allPsms[j] != null)
+                {
+                    foreach (var huh in allPsms[j])
+                    {
+                        if (huh != null && huh.MostProbableProteinInfo == null)
+                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                    }
+                }
+            }
+
             Status("Ordering and grouping psms...", taskId);
             for (int j = 0; j < allPsms.Length; j++)
                 allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
+
+            Status("Running FDR analysis...", taskId);
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
+
+            List<ProteinGroup>[] proteinGroupsHere = new List<ProteinGroup>[MassDiffAcceptors.Count];
+
+            if (DoParsimony)
+            {
+                for (int j = 0; j < MassDiffAcceptors.Count; j++)
+                {
+                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run();
+                    proteinGroupsHere[j] = ressdf.sortedAndScoredProteinGroups;
+                }
+            }
 
             if (DoLocalizationAnalysis)
             {
@@ -318,15 +349,7 @@ namespace TaskLayer
                     allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.LocalizationResults.MatchedIonMassesListPositiveIsMatch)).Select(b => b.First()).ToList();
             }
 
-            Status("Running FDR analysis...", taskId);
-
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
-
             new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
-
-            ProteinAnalysisResults proteinAnalysisResults = null;
-            if (DoParsimony)
-                proteinAnalysisResults = (ProteinAnalysisResults)(new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run());
 
             if (DoQuantification)
             {
@@ -444,13 +467,13 @@ namespace TaskLayer
                 if (DoParsimony)
                 {
                     // aggregate protein group file
-                    foreach (var pg in proteinAnalysisResults.ProteinGroups[j])
+                    foreach (var pg in proteinGroupsHere[j])
                     {
                         if (pg.ProteinGroupScore != 0)
                             pg.AggregateQuantifyHelper(currentRawFileList);
                     }
 
-                    WriteProteinGroupsToTsv(proteinAnalysisResults.ProteinGroups[j], OutputFolder, "aggregateProteinGroups_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+                    WriteProteinGroupsToTsv(proteinGroupsHere[j], OutputFolder, "aggregateProteinGroups_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
 
                     // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                     foreach (var fullFilePath in currentRawFileList)
@@ -458,7 +481,7 @@ namespace TaskLayer
                         var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                         var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
-                        foreach (var pg in proteinAnalysisResults.ProteinGroups[j])
+                        foreach (var pg in proteinGroupsHere[j])
                         {
                             var subsetPg = pg.ConstructSubsetProteinGroup(fullFilePath);
                             subsetPg.Score();
@@ -470,7 +493,7 @@ namespace TaskLayer
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        subsetProteinGroupsForThisFile = new ProteinAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatching, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).DoProteinFdr(subsetProteinGroupsForThisFile);
+                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, allPsms[j], MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });

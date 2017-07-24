@@ -21,27 +21,27 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy)
+        public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications)
         {
             ModificationWithMass pep_n_term_variable_mod;
             double theMass = 0;
-            if (yyy.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
                 foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                     theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
             else
                 theMass = 0;
-            NTerminalMasses = ComputeFollowingFragmentMasses(yyy, theMass, 1, 1).ToArray();
+            NTerminalMasses = ComputeFollowingFragmentMasses(peptideWithSetModifications, theMass, 1, 1).ToArray();
 
             ModificationWithMass pep_c_term_variable_mod;
             theMass = 0;
-            if (yyy.allModsOneIsNterminus.TryGetValue(yyy.Length + 2, out pep_c_term_variable_mod))
+            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out pep_c_term_variable_mod))
                 foreach (double nl in pep_c_term_variable_mod.neutralLosses)
                     theMass = pep_c_term_variable_mod.monoisotopicMass - nl;
             else
                 theMass = 0;
-            CTerminalMasses = ComputeFollowingFragmentMasses(yyy, theMass, yyy.Length, -1).ToArray();
+            CTerminalMasses = ComputeFollowingFragmentMasses(peptideWithSetModifications, theMass, peptideWithSetModifications.Length, -1).ToArray();
 
-            MonoisotopicMassIncludingFixedMods = yyy.MonoisotopicMass;
+            MonoisotopicMassIncludingFixedMods = peptideWithSetModifications.MonoisotopicMass;
         }
 
         #endregion Public Constructors

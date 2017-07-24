@@ -53,7 +53,11 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            foreach (var huh in searchResults.Psms[0])
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -94,7 +98,11 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            foreach (var huh in searchResults.Psms[0])
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QXQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -155,7 +163,11 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            foreach (var huh in searchResults.Psms[0])
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }

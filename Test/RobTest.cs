@@ -124,9 +124,9 @@ namespace Test
             }
 
             // apply parsimony to dictionary
-            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            ProteinAnalysisEngine ae = new ProteinAnalysisEngine(new List<Psm>[0], dictionary, null, true, false, null);
-            ae.ApplyProteinParsimony(out proteinGroups);
+            ProteinParsimonyEngine ae = new ProteinParsimonyEngine(dictionary, true, false, null);
+            var hah = (ProteinParsimonyResults)ae.Run();
+            var proteinGroups = hah.ProteinGroups;
 
             var parsimonyProteinList = new List<Protein>();
             var parsimonyBaseSequences = new List<string>();
@@ -183,8 +183,9 @@ namespace Test
             //    Console.WriteLine(ok);
             //}
 
-            ae.ScoreProteinGroups(proteinGroups, psms);
-            proteinGroups = ae.DoProteinFdr(proteinGroups);
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) }, true, false, null);
+            var ok = (ProteinScoringAndFdrResults)f.Run();
+            proteinGroups = ok.sortedAndScoredProteinGroups;
 
             //prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
@@ -417,9 +418,9 @@ namespace Test
             compactPeptideToProteinPeptideMatching.Add(compactPeptide2mod, value2mod);
             compactPeptideToProteinPeptideMatching.Add(compactPeptide3mod, value3mod);
 
-            ProteinAnalysisEngine engine = new ProteinAnalysisEngine(new List<Psm>[0], compactPeptideToProteinPeptideMatching, null, true, true, new List<string> { "ff" });
-            List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
-            proteinGroups = engine.ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(), peptideList);
+            ProteinParsimonyEngine engine = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, true, true, new List<string> { "ff" });
+            var cool = (ProteinParsimonyResults)engine.Run();
+            var proteinGroups = cool.ProteinGroups;
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> jdfk = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
             Ms2ScanWithSpecificMass ms2scan = new Ms2ScanWithSpecificMass(jdfk, new MzPeak(2, 2), 0, "File");
@@ -449,7 +450,9 @@ namespace Test
                 match2,
                 match3
             };
-            engine.ScoreProteinGroups(proteinGroups, psms);
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) }, false, false, null);
+            f.Run();
+
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
         }
 

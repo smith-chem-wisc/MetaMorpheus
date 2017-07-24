@@ -106,18 +106,6 @@ namespace EngineLayer
 
             #endregion Match Seqeunces to PeptideWithSetModifications
 
-            //Status("Computing info about actual peptides with modifications...", new List<string> { taskId });
-            for (int j = 0; j < massDiffAcceptors.Count; j++)
-            {
-                if (allPsms[j] != null)
-                {
-                    foreach (var huh in allPsms[j])
-                    {
-                        if (huh != null && huh.MostProbableProteinInfo == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
-                    }
-                }
-            }
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 

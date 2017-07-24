@@ -103,6 +103,10 @@ namespace Test
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
+            foreach (var huh in newPsms[0])
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+
             FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchModes, new List<string> { "ff" });
 
             engine.Run();
