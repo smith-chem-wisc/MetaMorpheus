@@ -12,7 +12,6 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
@@ -20,9 +19,8 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
         {
-            this.noOneHitWonders = noOneHitWonders;
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
@@ -123,7 +121,7 @@ namespace EngineLayer
                     HashSet<Protein> proteinListHere;
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture)) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture));
+                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
                     else
                         pepSequence = compactPeptideToFullSeqMatch[peptide];
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out proteinListHere))

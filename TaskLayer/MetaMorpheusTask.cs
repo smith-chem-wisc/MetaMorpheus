@@ -880,7 +880,7 @@ namespace TaskLayer
 
         protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId);
 
-        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds)
+        protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {
             if (items != null)
             {
@@ -888,7 +888,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(items.First().TabSeparatedHeader);
+                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader(FileNames));
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
