@@ -24,12 +24,20 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * G-PTM-D: Post-translational modification (PTM) discovery framework, which expands the scope of peptide identifications to include both known and unknown PTMs.
 * Quantification: Ultrafast quantification of peptide abundances is enabled. Values reported are from the intensity of the most intense and most abundant isotopic form.
 
-## Requirements
+## System Requirements
 
-* .raw or .mzML file in centroid mode
-* MS2 resolution of 15,000
 * 16 GB of RAM is recommended
-* For thermo .RAW files: Need to have [Thermo MSFileReader 3.1 SP2](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed.
+* For thermo .RAW files: Need to have [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed.
+
+
+## Spectra Requirements
+
+* One of the following formats:
+   * .raw
+   * .mzML file in centroid mode
+* MS2 resolution of 15,000
+
+## Database Requirements
 
 
 ## Test Installation (Windows GUI)
