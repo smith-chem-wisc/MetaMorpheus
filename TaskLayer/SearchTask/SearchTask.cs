@@ -36,7 +36,7 @@ namespace TaskLayer
             // Set default values here:
             DoParsimony = false;
             NoOneHitWonders = false;
-            ModPeptidesAreUnique = false;
+            ModPeptidesAreUnique = true;
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchDecoy = true;
