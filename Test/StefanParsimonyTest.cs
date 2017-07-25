@@ -126,7 +126,7 @@ namespace Test
         [Test]
         public static void ParsimonyWeirdCatch()
         {
-            Protein protein1 = new Protein("MATSIK", "protein1");
+            Protein protein1 = new Protein("MATSIK", "protein1", isDecoy: true);
             Protein protein2 = new Protein("MATSLK", "protein2");
             Protein protein3 = new Protein("MTASIK", "protein3");
 
@@ -152,11 +152,14 @@ namespace Test
                 {compactPeptide3, new HashSet<PeptideWithSetModifications>{pep3} }
             };
 
-            new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
+            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
+
+            // Only 1 because the target is removed!!!
+            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
+            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
+
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide3].Count);
         }
 
