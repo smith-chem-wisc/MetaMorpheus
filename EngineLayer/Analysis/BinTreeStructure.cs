@@ -233,7 +233,7 @@ namespace EngineLayer.Analysis
                             inModLevel--;
                             if (inModLevel == 0)
                             {
-                                if (!currentMod.StartsWith("f:"))
+                                if (!currentMod.StartsWith("Common Fixed:"))
                                     modsHere.Add(currentMod);
                                 currentMod = "";
                             }
