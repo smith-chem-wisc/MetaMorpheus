@@ -60,7 +60,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 2. Select "New Calibrate Task" tab and enter the appropriate search parameters, using slightly liberal mass tolerances (10-20 ppm). Then "Add the Calibration Task".
 3. Select "New GPTMD Task" tab. Use tighter parent mass tolerance than you would in your typical search. Specify the G-PTM-D modifications that you think may be present in your sample. Many typical modifications are pre-selected. Then "Add the GPTMD Task".
 4. Select "New Search Task" tab. Specify the search paramters. High-resolution data that has been calibrated can frequently use a parent mass tolerance of 5ppm or less. Specify the Post-Search-Parameters (e.g. protein parsimony, quantification). Then "Add the Search Task".
-5. Select "Run all tasks!". Results can be viewed as the come up.
+5. Select "Run all tasks!". Results can be viewed as they come up.
 
 ## Test Installation (Windows Command Line)
 
