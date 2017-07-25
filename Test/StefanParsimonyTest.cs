@@ -32,7 +32,7 @@ namespace Test
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
             bool modPeptidesAreUnique = true;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, noOneHitWonders, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
@@ -59,7 +59,7 @@ namespace Test
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
             bool modPeptidesAreUnique = false;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, noOneHitWonders, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
@@ -86,7 +86,7 @@ namespace Test
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
             bool modPeptidesAreUnique = true;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, noOneHitWonders, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
@@ -113,7 +113,7 @@ namespace Test
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
             bool modPeptidesAreUnique = false;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, noOneHitWonders, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
             pae.Run();
 
             Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
@@ -121,6 +121,43 @@ namespace Test
 
             Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
             Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
+        }
+
+        [Test]
+        public static void ParsimonyWeirdCatch()
+        {
+            Protein protein1 = new Protein("MATSIK", "protein1");
+            Protein protein2 = new Protein("MATSLK", "protein2");
+            Protein protein3 = new Protein("MTASIK", "protein3");
+
+            IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
+            var from1 = protein1.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from2 = protein2.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from3 = protein3.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+
+            List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
+            PeptideWithSetModifications pep1 = from1.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
+            PeptideWithSetModifications pep2 = from2.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
+            PeptideWithSetModifications pep3 = from3.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
+
+            CompactPeptide compactPeptide1 = pep1.CompactPeptide;
+            CompactPeptide compactPeptide2 = pep2.CompactPeptide;
+            CompactPeptide compactPeptide3 = pep3.CompactPeptide;
+
+            Assert.AreEqual(compactPeptide1, compactPeptide2);
+
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            {
+                {compactPeptide1, new HashSet<PeptideWithSetModifications>{pep1, pep2} },
+                {compactPeptide3, new HashSet<PeptideWithSetModifications>{pep3} }
+            };
+
+            new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
+
+            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
+            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
+            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
+            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide3].Count);
         }
 
         #endregion Public Methods

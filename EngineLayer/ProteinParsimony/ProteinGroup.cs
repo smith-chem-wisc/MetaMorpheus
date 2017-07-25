@@ -55,59 +55,71 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public string TabSeparatedHeader
-        {
-            get
-            {
-                var sb = new StringBuilder();
-                sb.Append("Protein Accession" + '\t');
-                sb.Append("Gene" + '\t');
-                sb.Append("Protein Full Name" + '\t');
-                sb.Append("Number of proteins in group" + '\t');
-                sb.Append("Unique peptides" + '\t');
-                sb.Append("Shared peptides" + '\t');
-                sb.Append("Razor peptides" + '\t');
-                sb.Append("Number of peptides" + '\t');
-                sb.Append("Number of unique peptides" + '\t');
-                sb.Append("Sequence coverage %" + '\t');
-                sb.Append("Sequence coverage" + '\t');
-                sb.Append("Sequence coverage w Mods" + '\t');
-                sb.Append("Modification Info List" + "\t");
-                if (FileNames != null && IntensitiesByFile != null)
-                {
-                    for (int i = 0; i < FileNames.Count; i++)
-                        sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
-                }
-                sb.Append("Number of PSMs" + '\t');
-                sb.Append("Summed MetaMorpheus Score" + '\t');
-                sb.Append("Decoy/Contaminant/Target" + '\t');
-                sb.Append("Cumulative Target" + '\t');
-                sb.Append("Cumulative Decoy" + '\t');
-                sb.Append("Q-Value (%)");
-                return sb.ToString();
-            }
-        }
-
         public double ProteinGroupScore { get; set; }
+
         public HashSet<Protein> Proteins { get; set; }
+
         public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
+
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
+
         public HashSet<PeptideWithSetModifications> RazorPeptides { get; set; }
+
         public HashSet<Psm> AllPsmsBelowOnePercentFDR { get; set; }
+
         public List<double> SequenceCoveragePercent { get; private set; }
+
         public List<string> SequenceCoverageDisplayList { get; private set; }
+
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
+
         public double QValue { get; set; }
+
         public int CumulativeTarget { get; set; }
+
         public int CumulativeDecoy { get; set; }
+
         public double[] IntensitiesByFile { get; set; }
+
         public bool DisplayModsOnPeptides { get; set; }
+
         public List<string> ModsInfo { get; private set; }
+
         public List<string> FileNames { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
+
+        public static string GetTabSeparatedHeader(List<string> FileNames)
+        {
+            var sb = new StringBuilder();
+            sb.Append("Protein Accession" + '\t');
+            sb.Append("Gene" + '\t');
+            sb.Append("Protein Full Name" + '\t');
+            sb.Append("Number of proteins in group" + '\t');
+            sb.Append("Unique peptides" + '\t');
+            sb.Append("Shared peptides" + '\t');
+            sb.Append("Razor peptides" + '\t');
+            sb.Append("Number of peptides" + '\t');
+            sb.Append("Number of unique peptides" + '\t');
+            sb.Append("Sequence coverage %" + '\t');
+            sb.Append("Sequence coverage" + '\t');
+            sb.Append("Sequence coverage w Mods" + '\t');
+            sb.Append("Modification Info List" + "\t");
+            if (FileNames != null)
+            {
+                for (int i = 0; i < FileNames.Count; i++)
+                    sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
+            }
+            sb.Append("Number of PSMs" + '\t');
+            sb.Append("Summed MetaMorpheus Score" + '\t');
+            sb.Append("Decoy/Contaminant/Target" + '\t');
+            sb.Append("Cumulative Target" + '\t');
+            sb.Append("Cumulative Decoy" + '\t');
+            sb.Append("Q-Value (%)");
+            return sb.ToString();
+        }
 
         public override string ToString()
         {
