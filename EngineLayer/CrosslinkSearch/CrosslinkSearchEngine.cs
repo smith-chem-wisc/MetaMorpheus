@@ -283,8 +283,9 @@ namespace EngineLayer.CrosslinkSearch
             int pos = -1;
             List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
 
-            PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker);
-            foreach (var ipos in PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker))
+            var linkPos = PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker);
+            linkPos.Add(0);
+            foreach (var ipos in linkPos)
             {
                 pos = ipos;
                 ProductMassesMightHave pmmhCurr = new ProductMassesMightHave();
