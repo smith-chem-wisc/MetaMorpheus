@@ -104,6 +104,7 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
+    <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
@@ -121,10 +122,11 @@
     <Compile Include="MatchedIonMassesListPositiveIsMatch.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
-    <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrEngine.cs" />
-    <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrResults.cs" />
+    <Compile Include="ProteinParsimony\ProteinGroup.cs" />
     <Compile Include="ProteinParsimony\ProteinParsimonyEngine.cs" />
     <Compile Include="ProteinParsimony\ProteinParsimonyResults.cs" />
+    <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrEngine.cs" />
+    <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrResults.cs" />
     <Compile Include="SearchType.cs" />
     <Compile Include="Localization\LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
@@ -162,7 +164,6 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
-    <Compile Include="ProteinParsimony\ProteinGroup.cs" />
     <Compile Include="PrecursorSearchModes\OpenMassDiffAcceptor.cs" />
     <Compile Include="PrecursorSearchModes\MassDiffAcceptor.cs" />
     <Compile Include="PrecursorSearchModes\SingleAbsoluteAroundZeroMassDiffAcceptor.cs" />
