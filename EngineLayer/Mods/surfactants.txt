@@ -1,15 +1,15 @@
-﻿Fatty acids
-ID   CHDH
+﻿Surfactants
+ID   Hydrogen Tetradecyl Sulfate
 TG   D
 PP   Anywhere.
 MM   294.183109
 CF   H26 C17 O4
-MT   FattyAcid
+MT   Surfactant
 //
-ID   CHDHminus2methylenes
+ID   Hydrogen Dodecyl Sulfate
 TG   D
 PP   Anywhere.
 MM   266.151809
 CF   H22 C15 O4
-MT   FattyAcid
+MT   Surfactant
 //
