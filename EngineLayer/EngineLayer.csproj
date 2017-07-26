@@ -206,7 +206,7 @@
     <Content Include="Mods\detachers.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Mods\fattyacids.txt">
+    <Content Include="Mods\surfactants.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Mods\glyco.txt">
