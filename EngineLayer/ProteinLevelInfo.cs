@@ -49,9 +49,9 @@ namespace EngineLayer
         {
             StringBuilder sb = new StringBuilder();
 
-            var s = PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture) + "\t";
+            sb.Append(PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture) + "\t");
 
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
+            var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
             if (s.Length > 32000)
                 s = "too many";
             sb.Append(s + "\t");
