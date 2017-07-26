@@ -113,8 +113,8 @@ namespace EngineLayer.CrosslinkAnalysis
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                     {
-                        if (peptideWithPossibleModifications.Length <= 1)
-                            continue;
+                        //if (peptideWithPossibleModifications.Length <= 1)
+                        //    continue;
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
                         {
                             HashSet<PeptideWithSetModifications> v;
@@ -159,63 +159,12 @@ namespace EngineLayer.CrosslinkAnalysis
                 newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 
-            newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
-            //Calculate Crosslink peptide FDR
-            //var CrosslinkOrderedPsmCrossWithPeptides = newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
-            //var CrosslinkOrderedPsmsWithFDR = CrosslinkDoFalseDiscoveryRateAnalysis(CrosslinkOrderedPsmCrossWithPeptides, XLsearchMode);
-
             return myAnalysisResults;
         }
 
         #endregion Protected Methods
 
         #region Private Methods
-
-        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
-        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
-        {
-            var ids = new List<Tuple<PsmCross, PsmCross>>();
-            foreach (var item in items)
-            {
-                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
-            }
-
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-
-            int[] cumulative_target_per_notch = new int[sm.NumNotches];
-            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
-
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
-                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
-                if (isDecoy1 || isDecoy2)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i].Item1;
-                if (id.FdrInfo.QValue > min_q_value)
-                    id.FdrInfo.QValue = min_q_value;
-                else if (id.FdrInfo.QValue < min_q_value)
-                    min_q_value = id.FdrInfo.QValue;
-            }
-
-            return ids;
-        }
 
         /*Calculate n-score based on the equation from xlinkx
         private double XLCalculateNScore(int N, int n, int la, int lb, int ftotal, int ionType, double tolerance)
