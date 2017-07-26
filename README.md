@@ -24,12 +24,20 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * G-PTM-D: Post-translational modification (PTM) discovery framework, which expands the scope of peptide identifications to include both known and unknown PTMs.
 * Quantification: Ultrafast quantification of peptide abundances is enabled. Values reported are from the intensity of the most intense and most abundant isotopic form.
 
-## Requirements
+## System Requirements
 
-* .raw or .mzML file in centroid mode
-* MS2 resolution of 15,000
 * 16 GB of RAM is recommended
-* For thermo .RAW files: Need to have [Thermo MSFileReader 3.1 SP2](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed.
+* For thermo .RAW files: Need to have [Thermo MSFileReader](https://thermo.flexnetoperations.com/control/thmo/search?query=MSFileReader) installed.
+
+
+## Spectra Requirements
+
+* One of the following formats:
+   * .raw
+   * .mzML file in centroid mode
+* MS2 resolution of 15,000
+
+## Database Requirements
 
 
 ## Test Installation (Windows GUI)
@@ -52,7 +60,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 2. Select "New Calibrate Task" tab and enter the appropriate search parameters, using slightly liberal mass tolerances (10-20 ppm). Then "Add the Calibration Task".
 3. Select "New GPTMD Task" tab. Use tighter parent mass tolerance than you would in your typical search. Specify the G-PTM-D modifications that you think may be present in your sample. Many typical modifications are pre-selected. Then "Add the GPTMD Task".
 4. Select "New Search Task" tab. Specify the search paramters. High-resolution data that has been calibrated can frequently use a parent mass tolerance of 5ppm or less. Specify the Post-Search-Parameters (e.g. protein parsimony, quantification). Then "Add the Search Task".
-5. Select "Run all tasks!". Results can be viewed as the come up.
+5. Select "Run all tasks!". Results can be viewed as they come up.
 
 ## Test Installation (Windows Command Line)
 
