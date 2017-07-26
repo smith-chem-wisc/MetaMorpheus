@@ -311,6 +311,8 @@ namespace TaskLayer
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.MostProbableProteinInfo.PeptidesWithSetModifications).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
             List<string> filenames = items.Select(i => i.FullFilePath).Distinct().ToList();
+            Dictionary<string, string> database_reference = new Dictionary<string, string>();
+            List<string> databases = proteins.Select(p => p.DatabaseFilePath).Distinct().ToList();
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.NewLineChars = "\n";
             settings.Indent = true;
@@ -361,12 +363,65 @@ namespace TaskLayer
                     }
                 }
             }};
+            _mzid.DataCollection = new mzIdentML110.Generated.DataCollectionType()
+            {
+                AnalysisData = new mzIdentML110.Generated.AnalysisDataType()
+                {
+                    SpectrumIdentificationList = new mzIdentML110.Generated.SpectrumIdentificationListType[1]
+        {
+                        new mzIdentML110.Generated.SpectrumIdentificationListType()
+                        {
+                            id = "SIL",
+                            SpectrumIdentificationResult = new mzIdentML110.Generated.SpectrumIdentificationResultType[items.Count()]
+                        }
+        }
+                },
+                Inputs = new mzIdentML110.Generated.InputsType()
+                {
+                    SearchDatabase = new mzIdentML110.Generated.SearchDatabaseType[databases.Count()],
+                    SpectraData = new mzIdentML110.Generated.SpectraDataType[filenames.Count]
+                }
+            };
+
             _mzid.SequenceCollection = new mzIdentML110.Generated.SequenceCollectionType()
             {
                 Peptide = new mzIdentML110.Generated.PeptideType[peptides.Count],
                 DBSequence = new mzIdentML110.Generated.DBSequenceType[proteins.Count],
                 PeptideEvidence = new mzIdentML110.Generated.PeptideEvidenceType[peptides.Count]
             };
+
+            _mzid.AnalysisCollection = new mzIdentML110.Generated.AnalysisCollectionType()
+            {
+                SpectrumIdentification = new mzIdentML110.Generated.SpectrumIdentificationType[1]
+                {
+                    new mzIdentML110.Generated.SpectrumIdentificationType()
+                    {
+                        id = "SI",
+                        spectrumIdentificationList_ref = "SIL",
+                        spectrumIdentificationProtocol_ref = "SIP",
+                        InputSpectra = new mzIdentML110.Generated.InputSpectraType[filenames.Count],
+                        SearchDatabaseRef = new mzIdentML110.Generated.SearchDatabaseRefType[databases.Count]
+                    }
+                }
+            };
+
+            int database_index = 0;
+            foreach (string database in databases)
+            {
+                _mzid.DataCollection.Inputs.SearchDatabase[database_index] = new mzIdentML110.Generated.SearchDatabaseType()
+                {
+                    id = "SDB_" + database_index,
+                    location = database,
+
+                };
+                database_reference.Add(database, "SDB_" + database_index);
+                _mzid.AnalysisCollection.SpectrumIdentification[0].SearchDatabaseRef[database_index] = new mzIdentML110.Generated.SearchDatabaseRefType()
+                {
+                    searchDatabase_ref = "SDB_" + database_index
+                };
+                database_index++;
+            }
+
             int protein_index = 0;
             foreach (Protein protein in proteins)
             {
@@ -375,7 +430,7 @@ namespace TaskLayer
                     id = "DBS_" + protein.Accession,
                     lengthSpecified = true,
                     length = protein.Length,
-                    searchDatabase_ref =  "SDB_1", //TODO: SPECIFIC DATABASE THE PROTEIN CAME FROM? NULL FOR FOR PROTEINS
+                    searchDatabase_ref = database_reference[protein.DatabaseFilePath],
                     accession = protein.Accession,
                     Seq = protein.BaseSequence,
                     cvParam = new mzIdentML110.Generated.CVParamType[1]
@@ -393,65 +448,6 @@ namespace TaskLayer
                 protein_index++;
             }
 
-            _mzid.DataCollection = new mzIdentML110.Generated.DataCollectionType()
-            {
-                AnalysisData = new mzIdentML110.Generated.AnalysisDataType()
-                {
-                    SpectrumIdentificationList = new mzIdentML110.Generated.SpectrumIdentificationListType[1]
-                    {
-                        new mzIdentML110.Generated.SpectrumIdentificationListType()
-                        {
-                            id = "SIL",
-                            SpectrumIdentificationResult = new mzIdentML110.Generated.SpectrumIdentificationResultType[items.Count()]
-                        }
-                    }
-                },
-                Inputs = new mzIdentML110.Generated.InputsType()
-                {
-                    //TODO: SEPARATE SEARCH DATABASES IF MULTIPLE DATABASES ENTERED
-                    SearchDatabase = new mzIdentML110.Generated.SearchDatabaseType[1]
-                    {
-                        new mzIdentML110.Generated.SearchDatabaseType()
-                        {
-                         id = "SDB_1",
-                            FileFormat = new mzIdentML110.Generated.FileFormatType()
-                            {
-                                cvParam = new mzIdentML110.Generated.CVParamType()
-                                {
-                                    accession = "MS:1002660",
-                                    name = "UniProtKB XML sequence format",
-                                    cvRef = "PSI-MS"
-                                }
-                            },
-                            DatabaseName = new mzIdentML110.Generated.ParamType()
-                            {
-                                Item = new mzIdentML110.Generated.CVParamType()
-                                {
-                                    accession = "MS:1001073",
-                                    name = "database type amino acid",
-                                    cvRef = "PSI-MS"
-                                }
-                            },
-                        }
-                    },
-                    SpectraData = new mzIdentML110.Generated.SpectraDataType[filenames.Count]
-                }
-            };
-
-            _mzid.AnalysisCollection = new mzIdentML110.Generated.AnalysisCollectionType()
-            {
-                SpectrumIdentification = new mzIdentML110.Generated.SpectrumIdentificationType[1]
-                {
-                    new mzIdentML110.Generated.SpectrumIdentificationType()
-                    {
-                        id = "SI",
-                        spectrumIdentificationList_ref = "SIL",
-                        spectrumIdentificationProtocol_ref = "SIP",
-                        InputSpectra = new mzIdentML110.Generated.InputSpectraType[filenames.Count],
-                        SearchDatabaseRef = new mzIdentML110.Generated.SearchDatabaseRefType[proteins.Count]
-                    }
-                }
-            };
 
             Dictionary<string, int> spectral_ids = new Dictionary<string, int>(); //key is datafile, value is datafile's id
             int spectra_data_id = 0;
@@ -779,12 +775,6 @@ namespace TaskLayer
                         }
                     }
                 }
-            };
-
-            //TODO: SEARCH DATABASE FOR EACH PROTEIN DATABASE INPUT
-            _mzid.AnalysisCollection.SpectrumIdentification[0].SearchDatabaseRef[0] = new mzIdentML110.Generated.SearchDatabaseRefType()
-            {
-                searchDatabase_ref = "SDB_1"
             };
 
             if (groups != null)
