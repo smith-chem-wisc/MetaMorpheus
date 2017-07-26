@@ -129,36 +129,12 @@ namespace TaskLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
+            sb.AppendLine(
+                "The initiator methionine behavior is set to "
                 + InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("protease: " + Protease);
-            sb.AppendLine("bIons: " + BIons);
-            sb.AppendLine("yIons: " + YIons);
-            sb.AppendLine("cIons: " + CIons);
-            sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("SearchType: " + SearchType);
-            sb.AppendLine("doParsimony: " + DoParsimony);
-            if (DoParsimony)
-            {
-                sb.AppendLine("modifiedPeptidesAreUnique: " + ModPeptidesAreUnique);
-                sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
-            }
-            sb.AppendLine("quantify: " + DoQuantification);
-            if (DoQuantification)
-                sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
-            sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
-            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModsFixed));
-            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModsLocalize));
-            sb.AppendLine("searchDecoy: " + SearchDecoy);
-            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-            sb.AppendLine("searchModes: ");
-            sb.Append(string.Join(Environment.NewLine, MassDiffAcceptors.Select(b => "\t" + b.FileNameAddition)));
+                + MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                );
             return sb.ToString();
         }
 
