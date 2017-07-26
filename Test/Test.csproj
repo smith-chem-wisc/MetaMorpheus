@@ -123,6 +123,7 @@
     <Compile Include="TestToml.cs" />
     <Compile Include="TestScan.cs" />
     <Compile Include="MyEngineTest.cs" />
+    <Compile Include="XLTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

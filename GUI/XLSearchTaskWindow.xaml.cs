@@ -106,6 +106,9 @@ namespace MetaMorpheusGUI
             foreach (string crosslinkerName in Enum.GetNames(typeof(CrosslinkerType)))
                 cbCrosslinker.Items.Add(crosslinkerName);
 
+            cbbXLprecusorMsTl.Items.Add("Absolute");
+            cbbXLprecusorMsTl.Items.Add("Ppm");
+
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    cbbXLprecusorMsTl.Items.Add(toleranceUnit);
 
@@ -115,6 +118,9 @@ namespace MetaMorpheusGUI
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
+
+            productMassToleranceComboBox.Items.Add("Absolute");
+            productMassToleranceComboBox.Items.Add("Ppm");
 
             //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
             //    productMassToleranceComboBox.Items.Add(toleranceUnit);
@@ -160,7 +166,7 @@ namespace MetaMorpheusGUI
             txtUdXLkerTotalMs.Text = task.UdXLkerTotalMass.HasValue ? task.UdXLkerTotalMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerShortMass.Text = task.UdXLkerShortMass.HasValue ? task.UdXLkerShortMass.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtUdXLkerLongMass.Text = task.UdXLkerLongMass.HasValue ? task.UdXLkerLongMass.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtUdXLkerAminoAcid.Text = task.UdXLkerResidue;
+            txtUdXLkerAminoAcid.Text = task.UdXLkerResidue.ToString();
             cbbXLprecusorMsTl.SelectedIndex = task.XLprecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLPrecusorMsTl.Text = task.XLprecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
