@@ -159,10 +159,10 @@ namespace EngineLayer.CrosslinkAnalysis
                 newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 
-
+            newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
             //Calculate Crosslink peptide FDR
-            var CrosslinkOrderedPsmCrossWithPeptides = newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
-            var CrosslinkOrderedPsmsWithFDR = CrosslinkDoFalseDiscoveryRateAnalysis(CrosslinkOrderedPsmCrossWithPeptides, XLsearchMode);
+            //var CrosslinkOrderedPsmCrossWithPeptides = newPsms.OrderByDescending(b => b.Item1.XLTotalScore).ToList();
+            //var CrosslinkOrderedPsmsWithFDR = CrosslinkDoFalseDiscoveryRateAnalysis(CrosslinkOrderedPsmCrossWithPeptides, XLsearchMode);
 
             return myAnalysisResults;
         }
@@ -217,7 +217,7 @@ namespace EngineLayer.CrosslinkAnalysis
             return ids;
         }
 
-        //Calculate n-score based on the equation from xlinkx
+        /*Calculate n-score based on the equation from xlinkx
         private double XLCalculateNScore(int N, int n, int la, int lb, int ftotal, int ionType, double tolerance)
         {
             double x = 1 / 111.1 * ionType * tolerance * 2;
@@ -234,7 +234,7 @@ namespace EngineLayer.CrosslinkAnalysis
             p = 1 - px;
             return p * N;
         }
-
+        */
         #endregion Private Methods
 
     }
