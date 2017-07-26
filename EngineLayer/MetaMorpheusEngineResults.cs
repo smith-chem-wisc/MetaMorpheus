@@ -33,7 +33,7 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(GetType().Name);
-            sb.AppendLine(string.Join(",", MyEngine.nestedIds));
+            sb.AppendLine(MyEngine.GetId());
             sb.Append("Time to run: " + Time);
             return sb.ToString();
         }

@@ -9,7 +9,7 @@ namespace EngineLayer
 
         #region Private Fields
 
-        private Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch;
+        private readonly Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch;
 
         #endregion Private Fields
 
@@ -65,7 +65,7 @@ namespace EngineLayer
 
         public override int GetHashCode()
         {
-            return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count();
+            return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);
         }
 
         #endregion Public Methods
