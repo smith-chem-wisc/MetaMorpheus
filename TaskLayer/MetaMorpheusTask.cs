@@ -342,7 +342,7 @@ namespace TaskLayer
             {
                 id = "UO",
                 fullName = "UNIT-ONTOLOGY",
-                uri = "http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/unit.obo"
+                uri = "http://www.unimod.org/obo/unimod.obo"
             }
             };
 
@@ -412,7 +412,15 @@ namespace TaskLayer
                 {
                     id = "SDB_" + database_index,
                     location = database,
-
+                    DatabaseName = new mzIdentML110.Generated.ParamType()
+                    {
+                        Item = new mzIdentML110.Generated.CVParamType()
+                        {
+                            accession = "MS:1001073",
+                            name = "database type amino acid",
+                            cvRef = "PSI-MS"
+                        }
+                    }
                 };
                 database_reference.Add(database, "SDB_" + database_index);
                 _mzid.AnalysisCollection.SpectrumIdentification[0].SearchDatabaseRef[database_index] = new mzIdentML110.Generated.SearchDatabaseRefType()
