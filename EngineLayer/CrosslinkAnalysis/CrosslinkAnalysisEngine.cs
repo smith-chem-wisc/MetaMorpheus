@@ -199,8 +199,8 @@ namespace EngineLayer.CrosslinkAnalysis
 
 
                 double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                item1.SetValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-                item2.SetValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
             }
 
             double min_q_value = double.PositiveInfinity;
