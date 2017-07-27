@@ -294,8 +294,7 @@ namespace EngineLayer
                     s = "too many";
                 sb.Append("\t" + s);
             }
-
-            // These assume that the peptides int each hashset share identical infos
+            
             if (compactPeptides.First().Value.Item2 != null)
             {
                 {
@@ -380,59 +379,32 @@ namespace EngineLayer
                     sb.Append("\t" + "T");
 
                 sb.Append("\t" + string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
+
+                {
+                    var first = CompactPeptides.First().Value.Item2.First().Protein.TabSeparatedString();
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.Protein.TabSeparatedString().Equals(first))))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c=>c.Protein.TabSeparatedString())));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             // These outputs require a single compact peptide. These we expect may be different for the same compact peptide
             if (compactPeptides.Count == 1 && compactPeptides.First().Value.Item2 != null)
             {
-                var PeptidesWithSetModifications = compactPeptides.First().Value.Item2;
 
-                {
-                    var first = PeptidesWithSetModifications.First().Protein.Accession;
-                    if (PeptidesWithSetModifications.All(b => b.Protein.Accession.Equals(first)))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
-                {
-                    var first = PeptidesWithSetModifications.First().Protein.FullName;
-                    if ((first == null && PeptidesWithSetModifications.All(b => b.Protein.FullName == null)) || (first != null && PeptidesWithSetModifications.All(b => first.Equals(b.Protein.FullName))))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
-                {
-                    var first = string.Join(",", PeptidesWithSetModifications.First().Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2));
-                    if (PeptidesWithSetModifications.All(b => first.Equals(string.Join(",", b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2)))))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2))));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
+                var PeptidesWithSetModifications = compactPeptides.First().Value.Item2;
                 {
                     var first = PeptidesWithSetModifications.First().PeptideDescription;
                     if (PeptidesWithSetModifications.All(b => b.PeptideDescription.Equals(first)))
@@ -492,7 +464,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (LocalizationResults != null)
