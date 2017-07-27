@@ -271,18 +271,18 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
 
-            sb.Append(Path.GetFileNameWithoutExtension(FullFilePath) + '\t');
-            sb.Append(ScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PrecursorScanNumber.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScanPrecursorMonoisotopicPeak.Mz.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
+            sb.Append(Path.GetFileNameWithoutExtension(FullFilePath));
+            sb.Append('\t' + ScanNumber.ToString(CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + PrecursorScanNumber.ToString(CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Mz.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
+            sb.Append('\t' + NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture));
 
             var firstNotch = compactPeptides.First().Value.Item1;
             if (compactPeptides.All(b => b.Value.Item1.Equals(firstNotch)))
@@ -443,15 +443,15 @@ namespace EngineLayer
 
             if (FdrInfo != null)
             {
-                sb.Append(FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture) + '\t');
-                sb.Append(FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture) + '\t');
-                sb.Append(FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture) + '\t');
-                sb.Append(FdrInfo.cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture) + '\t');
-                sb.Append(FdrInfo.cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture) + '\t');
-                sb.Append(FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.cumulativeTarget.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.cumulativeDecoy.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.cumulativeTargetNotch.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.cumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture));
+                sb.Append('\t' + FdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture));
             }
             else
-                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
 
             return sb.ToString();
         }
