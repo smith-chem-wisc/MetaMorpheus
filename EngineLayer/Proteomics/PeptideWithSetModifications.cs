@@ -182,6 +182,8 @@ namespace EngineLayer
             }
         }
 
+        public int NumVariableMods { get { return this.NumMods - this.numFixedMods; } }
+
         #endregion Public Properties
 
         #region Public Methods

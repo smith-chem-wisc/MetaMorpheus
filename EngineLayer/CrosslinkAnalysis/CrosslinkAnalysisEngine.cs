@@ -152,10 +152,10 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 var huh = newPsms[myScanWithMassIndex].Item1;
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                    huh.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
                 var huh1 = newPsms[myScanWithMassIndex].Item2;
                 if (huh1 != null && huh1.MostProbableProteinInfo == null)
-                    huh1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                    huh1.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
                 newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 
@@ -163,8 +163,6 @@ namespace EngineLayer.CrosslinkAnalysis
         }
 
         #endregion Protected Methods
-
-        #region Private Methods
 
         /*Calculate n-score based on the equation from xlinkx
         private double XLCalculateNScore(int N, int n, int la, int lb, int ftotal, int ionType, double tolerance)
@@ -184,7 +182,5 @@ namespace EngineLayer.CrosslinkAnalysis
             return p * N;
         }
         */
-        #endregion Private Methods
-
     }
 }

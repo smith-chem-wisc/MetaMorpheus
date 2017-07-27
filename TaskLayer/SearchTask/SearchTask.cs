@@ -284,7 +284,7 @@ namespace TaskLayer
                     foreach (var huh in allPsms[j])
                     {
                         if (huh != null && huh.MostProbableProteinInfo == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                            huh.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
                     }
                 }
             }

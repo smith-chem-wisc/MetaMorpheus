@@ -16,7 +16,7 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
-        private Dictionary<CompactPeptide, int> compactPeptides = new Dictionary<CompactPeptide, int>();
+        private Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
 
@@ -42,16 +42,6 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public IEnumerable<KeyValuePair<CompactPeptide, int>> CompactPeptides
-        {
-            get
-            {
-                return compactPeptides.AsEnumerable();
-            }
-        }
-
-        public double QuantIntensity { get; set; }
-        public double Score { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -62,10 +52,18 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
+
+        public IEnumerable<KeyValuePair<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
+
         public int NumAmbiguous { get { return compactPeptides.Count; } }
-        public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
+
         public FdrInfo FdrInfo { get; private set; }
+        public double Score { get; private set; }
+
         public LocalizationResults LocalizationResults { get; internal set; }
+        public double QuantIntensity { get; set; }
+
+        public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
 
         #endregion Public Properties
 
@@ -201,50 +199,69 @@ namespace EngineLayer
         public static string GetTabSeparatedHeader()
         {
             var sb = new StringBuilder();
-            sb.Append("File Name" + '\t');
-            sb.Append("Scan Number" + '\t');
-            sb.Append("Scan Retention Time" + '\t');
-            sb.Append("Num Experimental Peaks" + '\t');
-            sb.Append("Total Ion Current" + '\t');
-            sb.Append("Precursor Scan Number" + '\t');
-            sb.Append("Precursor Charge" + '\t');
-            sb.Append("Precursor MZ" + '\t');
-            sb.Append("Precursor Intensity" + '\t');
-            sb.Append("Precursor Mass" + '\t');
-            sb.Append("Score" + '\t');
-            sb.Append("Ambiguous Matches" + '\t');
+            sb.Append("File Name");
+            sb.Append('\t' + "Scan Number");
+            sb.Append('\t' + "Scan Retention Time");
+            sb.Append('\t' + "Num Experimental Peaks");
+            sb.Append('\t' + "Total Ion Current");
+            sb.Append('\t' + "Precursor Scan Number");
+            sb.Append('\t' + "Precursor Charge");
+            sb.Append('\t' + "Precursor MZ");
+            sb.Append('\t' + "Precursor Intensity");
+            sb.Append('\t' + "Precursor Mass");
+            sb.Append('\t' + "Score");
+            sb.Append('\t' + "Compact Peptide Matches");
 
-            sb.Append(ProteinLinkedInfo.GetTabSeparatedHeader() + '\t');
-            sb.Append("Mass Diff (Da)" + '\t');
-            sb.Append("Mass Diff (ppm)" + '\t');
+            // Single info, common for all peptides/proteins in most cases...
+            sb.Append('\t' + "Notch");
+            sb.Append('\t' + "Base Sequence");
+            sb.Append('\t' + "Full Sequence");
+            sb.Append('\t' + "Num Variable Mods");
+            sb.Append('\t' + "Missed Cleavages");
+            sb.Append('\t' + "Peptide Monoisotopic Mass");
+            sb.Append('\t' + "Mass Diff (Da)");
+            sb.Append('\t' + "Mass Diff (ppm)");
+            sb.Append('\t' + "Decoy/Contaminant/Target");
 
-            sb.Append(LocalizationResults.GetTabSeparatedHeader() + '\t');
-            sb.Append("Improvement Possible" + '\t');
+            // Could have MANY options
+            sb.Append('\t' + "Identical Sequence Ambiguity");
+            sb.Append('\t' + "Protein Accession");
+            sb.Append('\t' + "Protein Name");
+            sb.Append('\t' + "Gene Name");
+            sb.Append('\t' + "Peptide Description");
+            sb.Append('\t' + "Start and End Residues In Protein");
+            sb.Append('\t' + "Previous Amino Acid");
+            sb.Append('\t' + "Next Amino Acid");
 
-            sb.Append("Cumulative Target" + '\t');
-            sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("QValue" + '\t');
-            sb.Append("Cumulative Target Notch" + '\t');
-            sb.Append("Cumulative Decoy Notch" + '\t');
-            sb.Append("QValue Notch");
+            sb.Append('\t' + LocalizationResults.GetTabSeparatedHeader());
+            sb.Append('\t' + "Improvement Possible");
+
+            sb.Append('\t' + "Cumulative Target");
+            sb.Append('\t' + "Cumulative Decoy");
+            sb.Append('\t' + "QValue");
+            sb.Append('\t' + "Cumulative Target Notch");
+            sb.Append('\t' + "Cumulative Decoy Notch");
+            sb.Append('\t' + "QValue Notch");
 
             return sb.ToString();
         }
 
         public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
         {
-            compactPeptides = new Dictionary<CompactPeptide, int>
+            compactPeptides = new Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>
             {
-                { correspondingCompactPeptide, v }
+                { correspondingCompactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(v,null)}
             };
             Score = score;
         }
 
-        public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
+        public void AssignProteinsToCompactPeptides(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
         {
-            foreach (var ok in compactPeptides)
+            foreach (var ok in compactPeptides.Keys.ToList())
             {
-                var candidatePli = new ProteinLinkedInfo(matching[ok.Key], ok.Value);
+                compactPeptides[ok] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[ok].Item1, matching[ok]);
+
+                var candidatePli = new ProteinLinkedInfo(matching[ok], compactPeptides[ok].Item1);
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
@@ -267,23 +284,161 @@ namespace EngineLayer
             sb.Append(Score.ToString("F3", CultureInfo.InvariantCulture) + '\t');
             sb.Append(NumAmbiguous.ToString("F5", CultureInfo.InvariantCulture) + '\t');
 
-            if (MostProbableProteinInfo != null)
+            var firstNotch = compactPeptides.First().Value.Item1;
+            if (compactPeptides.All(b => b.Value.Item1.Equals(firstNotch)))
+                sb.Append(firstNotch.ToString(CultureInfo.InvariantCulture) + "\t");
+            else
             {
-                sb.Append(MostProbableProteinInfo.ToString() + '\t');
-                sb.Append((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture) + '\t');
-                sb.Append(((ScanPrecursorMass - MostProbableProteinInfo.PeptideMonoisotopicMass) / MostProbableProteinInfo.PeptideMonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture) + '\t');
+                var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item1.ToString(CultureInfo.InvariantCulture)));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append(s + "\t");
+            }
+
+            // These assume that the peptides int each hashset share identical infos
+            if (compactPeptides.First().Value.Item2 != null)
+            {
+                {
+                    var firstBaseSeq = compactPeptides.First().Value.Item2.First().BaseSequence;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.BaseSequence.Equals(firstBaseSeq))))
+                        sb.Append("\t" + firstBaseSeq);
+                    else
+                    {
+                        var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.First().BaseSequence));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                    }
+                }
+                {
+                    var firstFullSequence = compactPeptides.First().Value.Item2.First().Sequence;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.Sequence.Equals(firstFullSequence))))
+                        sb.Append("\t" + firstFullSequence);
+                    else
+                    {
+                        var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.First().Sequence));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                    }
+                }
+                {
+                    var firstNumVariableMods = compactPeptides.First().Value.Item2.First().NumVariableMods;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.NumVariableMods.Equals(firstNumVariableMods))))
+                        sb.Append("\t" + firstNumVariableMods.ToString(CultureInfo.InvariantCulture));
+                    else
+                    {
+                        var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.First().NumVariableMods.ToString(CultureInfo.InvariantCulture)));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                    }
+                }
+                {
+                    var firstMissedCleavages = compactPeptides.First().Value.Item2.First().MissedCleavages;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.MissedCleavages.Equals(firstMissedCleavages))))
+                        sb.Append("\t" + firstMissedCleavages.ToString(CultureInfo.InvariantCulture));
+                    else
+                    {
+                        var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.First().MissedCleavages.ToString(CultureInfo.InvariantCulture)));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                    }
+                }
+                {
+                    var firstMass = compactPeptides.First().Value.Item2.First().MonoisotopicMass;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.MonoisotopicMass.Equals(firstMass))))
+                    {
+                        sb.Append("\t" + firstMass.ToString("F5", CultureInfo.InvariantCulture));
+                        sb.Append("\t" + (ScanPrecursorMass - firstMass).ToString("F5", CultureInfo.InvariantCulture));
+                        sb.Append("\t" + ((ScanPrecursorMass - firstMass) / firstMass * 1e6).ToString("F5", CultureInfo.InvariantCulture));
+                    }
+                    else
+                    {
+                        var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.First().MonoisotopicMass.ToString(CultureInfo.InvariantCulture)));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                        s = string.Join(" or ", compactPeptides.Select(b => (ScanPrecursorMass - b.Value.Item2.First().MonoisotopicMass).ToString("F5", CultureInfo.InvariantCulture)));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                        s = string.Join(" or ", compactPeptides.Select(b => ((ScanPrecursorMass - b.Value.Item2.First().MonoisotopicMass) / b.Value.Item2.First().MonoisotopicMass * 1e6).ToString("F5", CultureInfo.InvariantCulture)));
+                        if (s.Length > 32000)
+                            s = "too many";
+                        sb.Append("\t" + s);
+                    }
+                }
+
+                // Unambiguous info
+                if (compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy)))
+                    sb.Append("\t" + "D");
+                else if (compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsContaminant)))
+                    sb.Append("\t" + "C");
+                else
+                    sb.Append("\t" + "T");
             }
             else
-                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+            {
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+            }
+
+            // These outputs require a single compact peptide. These we expect may be different for the same compact peptide
+            if (compactPeptides.Count == 1 && compactPeptides.First().Value.Item2 != null)
+            {
+                var PeptidesWithSetModifications = compactPeptides.First().Value.Item2;
+
+                sb.Append("\t" + PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture));
+
+                var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+
+                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+
+                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2))));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+
+                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+
+                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]"));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+
+                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+
+                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
+                if (s.Length > 32000)
+                    s = "too many";
+                sb.Append("\t" + s);
+            }
+            else
+            {
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+            }
 
             if (LocalizationResults != null)
             {
-                sb.Append(LocalizationResults.ToString() + '\t');
-                sb.Append((LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture) + '\t');
+                sb.Append('\t' + LocalizationResults.ToString());
+                sb.Append('\t' + (LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
             }
             else
             {
-                sb.Append(" " + '\t' + " " + '\t' + " " + '\t' + " " + '\t');
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (FdrInfo != null)
@@ -320,13 +475,13 @@ namespace EngineLayer
 
         internal void Add(CompactPeptide compactPeptide, int v)
         {
-            compactPeptides[compactPeptide] = v;
+            compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(v, null);
         }
 
         internal void Add(Psm psmParent)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                Add(kvp.Key, kvp.Value);
+                Add(kvp.Key, kvp.Value.Item1);
         }
 
         #endregion Internal Methods
