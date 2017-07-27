@@ -417,7 +417,7 @@ namespace EngineLayer
                     }
                 }
                 {
-                    var first = CompactPeptides.First().Value.Item2.First().OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + CompactPeptides.First().Value.Item2.First().OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]";
+                    var first = "[" + CompactPeptides.First().Value.Item2.First().OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + CompactPeptides.First().Value.Item2.First().OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]";
                     if (compactPeptides.All(c => c.Value.Item2.All(b => first.Equals("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))))
                     {
                         sb.Append("\t" + first);
