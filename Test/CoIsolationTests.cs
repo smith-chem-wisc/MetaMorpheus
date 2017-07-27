@@ -82,7 +82,7 @@ namespace Test
             foreach (var huh in searchResults.Psms[0])
             {
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.AssignProteinsToCompactPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
+                    huh.ResolveProteinsAndMostProbablePeptide(ojdfkj.CompactPeptideToProteinPeptideMatching);
             }
 
             Assert.AreEqual("NNNK", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);

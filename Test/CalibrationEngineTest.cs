@@ -42,7 +42,7 @@ namespace Test
                 {pepWithSetMods.CompactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.AssignProteinsToCompactPeptides(matching);
+            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
             identifications.Add(newPsm);
@@ -76,7 +76,7 @@ namespace Test
                 {pepWithSetMods.CompactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.AssignProteinsToCompactPeptides(matching);
+            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
 

@@ -152,10 +152,10 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 var huh = newPsms[myScanWithMassIndex].Item1;
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
+                    huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                 var huh1 = newPsms[myScanWithMassIndex].Item2;
                 if (huh1 != null && huh1.MostProbableProteinInfo == null)
-                    huh1.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
+                    huh1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
                 newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 

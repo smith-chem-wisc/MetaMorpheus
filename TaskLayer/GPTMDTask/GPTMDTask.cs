@@ -195,7 +195,7 @@ namespace TaskLayer
 
             foreach (var huh in allPsms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatchingTest);
+                    huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatchingTest);
 
             allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 

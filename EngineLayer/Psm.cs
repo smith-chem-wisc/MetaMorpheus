@@ -255,7 +255,7 @@ namespace EngineLayer
             Score = score;
         }
 
-        public void AssignProteinsToCompactPeptides(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
+        public void ResolveProteinsAndMostProbablePeptide(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var ok in compactPeptides.Keys.ToList())
             {

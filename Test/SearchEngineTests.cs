@@ -57,7 +57,7 @@ namespace Test
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.AssignProteinsToCompactPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -102,7 +102,7 @@ namespace Test
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.AssignProteinsToCompactPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QXQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -167,7 +167,7 @@ namespace Test
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.AssignProteinsToCompactPeptides(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }

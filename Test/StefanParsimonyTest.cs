@@ -266,7 +266,7 @@ namespace Test
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
 
-            psm1.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
+            psm1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
 
             bool noOneHitWonders = false;
 

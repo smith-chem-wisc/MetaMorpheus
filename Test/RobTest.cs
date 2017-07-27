@@ -173,7 +173,7 @@ namespace Test
 
             foreach (var hm in psms)
             {
-                hm.AssignProteinsToCompactPeptides(initialDictionary);
+                hm.ResolveProteinsAndMostProbablePeptide(initialDictionary);
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0);
             }
 
@@ -342,7 +342,7 @@ namespace Test
                 {peptide.CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptide} }
             };
 
-            psm.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
+            psm.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
 
             psms.Add(psm);
 
@@ -440,9 +440,9 @@ namespace Test
             {
             };
             match3.SetFdrValues(0, 0, 0, 0, 0, 0);
-            match1.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
-            match2.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
-            match3.AssignProteinsToCompactPeptides(compactPeptideToProteinPeptideMatching);
+            match1.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+            match2.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+            match3.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
 
             List<Psm> psms = new List<Psm>
             {
