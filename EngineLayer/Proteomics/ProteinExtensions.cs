@@ -185,7 +185,7 @@ namespace EngineLayer
 
         public static string TabSeparatedString(this Protein protein)
         {
-            return protein.Accession + "\t" + protein.FullName + "\t" + string.Join(",", protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2));
+            return protein.Accession + "|" + protein.FullName + "|" + string.Join(",", protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2));
         }
 
         #endregion Public Methods
