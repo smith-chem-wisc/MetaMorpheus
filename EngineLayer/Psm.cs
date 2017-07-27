@@ -407,7 +407,7 @@ namespace EngineLayer
                 }
                 {
                     var first = PeptidesWithSetModifications.First().Protein.FullName;
-                    if (PeptidesWithSetModifications.All(b => b.Protein.FullName.Equals(first)))
+                    if ((first == null && PeptidesWithSetModifications.All(b => b.Protein.FullName == null)) || (first != null && PeptidesWithSetModifications.All(b => first.Equals(b.Protein.FullName))))
                     {
                         sb.Append("\t" + first);
                     }
