@@ -391,40 +391,104 @@ namespace EngineLayer
 
                 sb.Append("\t" + PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture));
 
-                var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
-
-                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
-
-                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2))));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
-
-                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
-
-                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]"));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
-
-                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
-
-                s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
-                if (s.Length > 32000)
-                    s = "too many";
-                sb.Append("\t" + s);
+                {
+                    var first = PeptidesWithSetModifications.First().Protein.Accession;
+                    if (PeptidesWithSetModifications.All(b => b.Protein.Accession.Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = PeptidesWithSetModifications.First().Protein.FullName;
+                    if (PeptidesWithSetModifications.All(b => b.Protein.FullName.Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = PeptidesWithSetModifications.First().Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2);
+                    if (PeptidesWithSetModifications.All(b => b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2).Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2)));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = PeptidesWithSetModifications.First().PeptideDescription;
+                    if (PeptidesWithSetModifications.All(b => b.PeptideDescription.Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + " to " + PeptidesWithSetModifications.First().OneBasedEndResidueInProtein + "]";
+                    if (PeptidesWithSetModifications.All(b => ("[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]").Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => ("[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = PeptidesWithSetModifications.First().PreviousAminoAcid;
+                    if (PeptidesWithSetModifications.All(b => b.PreviousAminoAcid.Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = PeptidesWithSetModifications.First().NextAminoAcid;
+                    if (PeptidesWithSetModifications.All(b => b.NextAminoAcid.Equals(first)))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
             }
             else
             {
