@@ -146,36 +146,6 @@ namespace TaskLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
-                + InitiatorMethionineBehavior
-                + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("protease: " + Protease);
-            sb.AppendLine("bIons: " + BIons);
-            sb.AppendLine("yIons: " + YIons);
-            sb.AppendLine("cIons: " + CIons);
-            sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("SearchType: " + SearchType);
-            sb.AppendLine("doParsimony: " + DoParsimony);
-            if (DoParsimony)
-            {
-                sb.AppendLine("modifiedPeptidesAreUnique: " + ModPeptidesAreUnique);
-                sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
-            }
-            sb.AppendLine("quantify: " + DoQuantification);
-            if (DoQuantification)
-                sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
-            sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
-            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModsFixed));
-            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModsLocalize));
-            sb.AppendLine("searchDecoy: " + SearchDecoy);
-            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-            sb.AppendLine("searchModes: ");
-            sb.Append(string.Join(Environment.NewLine, MassDiffAcceptors.Select(b => "\t" + b.FileNameAddition)));
             return sb.ToString();
         }
 
@@ -383,6 +353,51 @@ namespace TaskLayer
             return false;
         }
 
+        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
+        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
+        {
+            var ids = new List<Tuple<PsmCross, PsmCross>>();
+            foreach (var item in items)
+            {
+                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
+            }
+
+            int cumulative_target = 0;
+            int cumulative_decoy = 0;
+
+            int[] cumulative_target_per_notch = new int[sm.NumNotches];
+            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
+
+            for (int i = 0; i < ids.Count; i++)
+            {
+                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
+
+                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
+                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
+                if (isDecoy1 || isDecoy2)
+                    cumulative_decoy++;
+                else
+                    cumulative_target++;
+
+                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+            }
+
+            double min_q_value = double.PositiveInfinity;
+
+            for (int i = ids.Count - 1; i >= 0; i--)
+            {
+                PsmCross id = ids[i].Item1;
+                if (id.FdrInfo.QValue > min_q_value)
+                    id.FdrInfo.QValue = min_q_value;
+                else if (id.FdrInfo.QValue < min_q_value)
+                    min_q_value = id.FdrInfo.QValue;
+            }
+
+            return ids;
+        }
+
         private int GetOneBasedIndexInProtein(int oneIsNterminus, PeptideWithSetModifications peptideWithSetModifications)
         {
             if (oneIsNterminus == 1)
@@ -496,52 +511,6 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
-        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
-        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
-        {
-            var ids = new List<Tuple<PsmCross, PsmCross>>();
-            foreach (var item in items)
-            {
-                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
-            }
-
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-
-            int[] cumulative_target_per_notch = new int[sm.NumNotches];
-            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
-
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
-                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
-                if (isDecoy1 || isDecoy2)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i].Item1;
-                if (id.FdrInfo.QValue > min_q_value)
-                    id.FdrInfo.QValue = min_q_value;
-                else if (id.FdrInfo.QValue < min_q_value)
-                    min_q_value = id.FdrInfo.QValue;
-            }
-
-            return ids;
-        }
-        
         #endregion Private Methods
 
     }

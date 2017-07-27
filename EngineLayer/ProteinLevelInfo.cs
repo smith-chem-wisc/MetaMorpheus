@@ -49,6 +49,8 @@ namespace EngineLayer
         {
             StringBuilder sb = new StringBuilder();
 
+            sb.Append(PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture) + "\t");
+
             var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
             if (s.Length > 32000)
                 s = "too many";
@@ -111,6 +113,7 @@ namespace EngineLayer
             var sb = new StringBuilder();
 
             // Could have MANY options
+            sb.Append("Same Sequence Ambiguity" + '\t');
             sb.Append("Protein Accession" + '\t');
             sb.Append("Protein Name" + '\t');
             sb.Append("Gene Name" + '\t');
