@@ -294,7 +294,7 @@ namespace EngineLayer
                     s = "too many";
                 sb.Append("\t" + s);
             }
-            
+
             if (compactPeptides.First().Value.Item2 != null)
             {
                 {
@@ -388,7 +388,71 @@ namespace EngineLayer
                     }
                     else
                     {
-                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c=>c.Protein.TabSeparatedString())));
+                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => c.Protein.Accession)));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                        st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => c.Protein.FullName)));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                        st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => string.Join(",", c.Protein.GeneNames.Select(d => d.Item1 + ":" + d.Item2)))));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = CompactPeptides.First().Value.Item2.First().PeptideDescription;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.PeptideDescription.Equals(first))))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => c.PeptideDescription)));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = CompactPeptides.First().Value.Item2.First().OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + CompactPeptides.First().Value.Item2.First().OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]";
+                    if (compactPeptides.All(c => c.Value.Item2.All(b => first.Equals("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => ("[" + c.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + c.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]"))));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = CompactPeptides.First().Value.Item2.First().NextAminoAcid;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.NextAminoAcid.Equals(first))))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => c.NextAminoAcid)));
+                        if (st.Length > 32000)
+                            st = "too many";
+                        sb.Append("\t" + st);
+                    }
+                }
+                {
+                    var first = CompactPeptides.First().Value.Item2.First().PreviousAminoAcid;
+                    if (compactPeptides.All(b => b.Value.Item2.All(c => c.PreviousAminoAcid.Equals(first))))
+                    {
+                        sb.Append("\t" + first);
+                    }
+                    else
+                    {
+                        var st = string.Join(" or ", CompactPeptides.SelectMany(b => b.Value.Item2.Select(c => c.PreviousAminoAcid)));
                         if (st.Length > 32000)
                             st = "too many";
                         sb.Append("\t" + st);
@@ -397,74 +461,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
-            }
-
-            // These outputs require a single compact peptide. These we expect may be different for the same compact peptide
-            if (compactPeptides.Count == 1 && compactPeptides.First().Value.Item2 != null)
-            {
-
-                var PeptidesWithSetModifications = compactPeptides.First().Value.Item2;
-                {
-                    var first = PeptidesWithSetModifications.First().PeptideDescription;
-                    if (PeptidesWithSetModifications.All(b => b.PeptideDescription.Equals(first)))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
-                {
-                    var first = PeptidesWithSetModifications.First().OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + PeptidesWithSetModifications.First().OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]";
-                    if (PeptidesWithSetModifications.All(b => first.Equals("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]")))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]")));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
-                {
-                    var first = PeptidesWithSetModifications.First().PreviousAminoAcid;
-                    if (PeptidesWithSetModifications.All(b => b.PreviousAminoAcid.Equals(first)))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
-                {
-                    var first = PeptidesWithSetModifications.First().NextAminoAcid;
-                    if (PeptidesWithSetModifications.All(b => b.NextAminoAcid.Equals(first)))
-                    {
-                        sb.Append("\t" + first);
-                    }
-                    else
-                    {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
-                        if (st.Length > 32000)
-                            st = "too many";
-                        sb.Append("\t" + st);
-                    }
-                }
-            }
-            else
-            {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (LocalizationResults != null)
