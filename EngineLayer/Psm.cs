@@ -286,13 +286,13 @@ namespace EngineLayer
 
             var firstNotch = compactPeptides.First().Value.Item1;
             if (compactPeptides.All(b => b.Value.Item1.Equals(firstNotch)))
-                sb.Append(firstNotch.ToString(CultureInfo.InvariantCulture) + "\t");
+                sb.Append("\t" + firstNotch.ToString(CultureInfo.InvariantCulture));
             else
             {
                 var s = string.Join(" or ", compactPeptides.Select(b => b.Value.Item1.ToString(CultureInfo.InvariantCulture)));
                 if (s.Length > 32000)
                     s = "too many";
-                sb.Append(s + "\t");
+                sb.Append("\t" + s);
             }
 
             // These assume that the peptides int each hashset share identical infos
