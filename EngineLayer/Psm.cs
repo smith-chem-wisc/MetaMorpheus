@@ -420,14 +420,14 @@ namespace EngineLayer
                     }
                 }
                 {
-                    var first = PeptidesWithSetModifications.First().Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2);
-                    if (PeptidesWithSetModifications.All(b => b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2).Equals(first)))
+                    var first = string.Join(",", PeptidesWithSetModifications.First().Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2));
+                    if (PeptidesWithSetModifications.All(b => first.Equals(string.Join(",", b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2)))))
                     {
                         sb.Append("\t" + first);
                     }
                     else
                     {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2)));
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2))));
                         if (st.Length > 32000)
                             st = "too many";
                         sb.Append("\t" + st);
@@ -448,14 +448,14 @@ namespace EngineLayer
                     }
                 }
                 {
-                    var first = PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + " to " + PeptidesWithSetModifications.First().OneBasedEndResidueInProtein + "]";
-                    if (PeptidesWithSetModifications.All(b => ("[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]").Equals(first)))
+                    var first = PeptidesWithSetModifications.First().OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + PeptidesWithSetModifications.First().OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]";
+                    if (PeptidesWithSetModifications.All(b => first.Equals("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]")))
                     {
                         sb.Append("\t" + first);
                     }
                     else
                     {
-                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => ("[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]")));
+                        var st = string.Join(" or ", PeptidesWithSetModifications.Select(b => ("[" + b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture) + " to " + b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture) + "]")));
                         if (st.Length > 32000)
                             st = "too many";
                         sb.Append("\t" + st);
