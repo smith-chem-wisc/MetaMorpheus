@@ -371,25 +371,25 @@ namespace EngineLayer
                     }
                 }
 
-                // Unambiguous info
+                // Unambiguous
                 if (compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy)))
                     sb.Append("\t" + "D");
                 else if (compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsContaminant)))
                     sb.Append("\t" + "C");
                 else
                     sb.Append("\t" + "T");
+
+                sb.Append("\t" + string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             // These outputs require a single compact peptide. These we expect may be different for the same compact peptide
             if (compactPeptides.Count == 1 && compactPeptides.First().Value.Item2 != null)
             {
                 var PeptidesWithSetModifications = compactPeptides.First().Value.Item2;
-
-                sb.Append("\t" + PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture));
 
                 {
                     var first = PeptidesWithSetModifications.First().Protein.Accession;
@@ -492,7 +492,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (LocalizationResults != null)
