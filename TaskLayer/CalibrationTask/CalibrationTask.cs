@@ -211,7 +211,7 @@ namespace TaskLayer
                     NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     Status("Loading spectra file " + origDataFile + "...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                    if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);

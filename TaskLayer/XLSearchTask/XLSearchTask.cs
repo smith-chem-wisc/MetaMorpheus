@@ -489,7 +489,7 @@ namespace TaskLayer
                         + "\t"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.FullSequence
+                        + "\t" + item.Item1.FullSequence
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
@@ -497,7 +497,7 @@ namespace TaskLayer
                         + "\t"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.FullSequence
+                        + "\t" + item.Item2.FullSequence
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)

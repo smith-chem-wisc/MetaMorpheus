@@ -93,14 +93,17 @@ namespace EngineLayer.Analysis
 
         internal void Add(Psm ok)
         {
-            if (uniquePSMs.ContainsKey(ok.MostProbableProteinInfo.FullSequence))
+            if (ok.FullSequence != null)
             {
-                var current = uniquePSMs[ok.MostProbableProteinInfo.FullSequence];
-                if (current.Item3.Score < ok.Score)
-                    uniquePSMs[ok.MostProbableProteinInfo.FullSequence] = new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok);
+                if (uniquePSMs.ContainsKey(ok.FullSequence))
+                {
+                    var current = uniquePSMs[ok.FullSequence];
+                    if (current.Item3.Score < ok.Score)
+                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.FullSequence, ok);
+                }
+                else
+                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.FullSequence, ok));
             }
-            else
-                uniquePSMs.Add(ok.MostProbableProteinInfo.FullSequence, new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.MostProbableProteinInfo.FullSequence, ok));
         }
 
         #endregion Internal Methods

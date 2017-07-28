@@ -43,7 +43,7 @@ namespace TaskLayer
                 {
                     try
                     {
-                        if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                        if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                             myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile);
                         else
                             myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
