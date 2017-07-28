@@ -252,7 +252,7 @@ namespace TaskLayer
                     if (WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.MostProbableProteinInfo.IsDecoy).ToList();
+                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
                     Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };
@@ -307,7 +307,7 @@ namespace TaskLayer
                     if (WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeNonLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.MostProbableProteinInfo.IsDecoy).ToList();
+                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
                     Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };

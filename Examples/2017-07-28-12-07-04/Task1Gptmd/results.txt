@@ -1,0 +1,169 @@
+MetaMorpheus: Not a release version
+Time to run task: 00:00:00.9248998
+
+
+--------------------------------------------------
+
+
+New files:
+New databases: 
+C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\2017-07-28-12-07-04\Task1Gptmd\mouse-10GPTMD.xml
+
+
+--------------------------------------------------
+
+
+Modifications added: 379
+Mods types and counts:
+	Methyl on V	32
+	Methyl on E	27
+	Sodium on D	24
+	Methyl on D	19
+	Sodium on E	19
+	Water loss	18
+	Methyl on S	17
+	Methyl on R	15
+	Zinc on D	12
+	Zinc on E	12
+	DiMethyl on A	11
+	Carbamidomethyl	11
+	DiMethyl on R	8
+	Hex on R	8
+	Hex on Y	8
+	Methyl on K	7
+	Carbamidomethyl of peptide N term	7
+	Deamidation on Q	7
+	Methyl on H	7
+	Hex on S	7
+	Methyl on N	6
+	Acetyllysine	6
+	DiMethyl on K	5
+	Oxidation and then loss of oxidized M side chain	5
+	DiMethyl on N	4
+	Sulfonation on S	4
+	Deamidation on N	4
+	Carbon Adduct	4
+	Hex	4
+	Hex(2)HexNAc(2) on S	4
+	Carboxymethyl	3
+	Acetylserine	3
+	Hex on K	3
+	Phospho on S	3
+	Calcium on D	3
+	Oxidation on E	3
+	Methyl on Q	3
+	HexNAc on S	3
+	Glucuronyl on S	2
+	Glucuronyl on T	2
+	dHex on S	2
+	Topaquinone	2
+	Hex on T	2
+	Oxidation on F	2
+	Oxidation on V	2
+	Palmitoylation on K	2
+	Palmitoylation on S	2
+	Trioxidation of C	1
+	Fe[II] on E	1
+	Hex on C	1
+	dHex on T	1
+	Tryptophan oxidation to hydroxykynurenin	1
+	Hex(2)HexNAc(2) on Nxs	1
+	Hex on Nxs	1
+	Calcium on E	1
+	Oxidation on Y	1
+	Oxidation on W	1
+	Oxidation on D	1
+	Oxidation on H	1
+	Formylation	1
+	HexNAc on T	1
+	Hex(2)HexNAc(2) on T	1
+
+
+
+--------------------------------------------------
+
+
+Engine Results:
+
+SearchResults
+Task1Gptmd,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:00.1419643
+
+SequencesToActualProteinPeptidesEngineResults
+Task1Gptmd
+Time to run: 00:00:00.0686179
+CompactPeptideToProteinPeptideMatching.Count: 762
+
+FdrAnalysisResults
+Task1Gptmd
+Time to run: 00:00:00.0028861
+
+GptmdResults
+Task1Gptmd
+Time to run: 00:00:00.0164893
+Modifications trying to add: 379
+Proteins trying to expand: 10
+Mods types and counts:
+	Methyl on V	32
+	Methyl on E	27
+	Sodium on D	24
+	Sodium on E	19
+	Methyl on D	19
+	Water loss	18
+	Methyl on S	17
+	Methyl on R	15
+	Zinc on D	12
+	Zinc on E	12
+	Carbamidomethyl	11
+	DiMethyl on A	11
+	DiMethyl on R	8
+	Hex on R	8
+	Hex on Y	8
+	Carbamidomethyl of peptide N term	7
+	Deamidation on Q	7
+	Methyl on H	7
+	Methyl on K	7
+	Hex on S	7
+	Methyl on N	6
+	Acetyllysine	6
+	Oxidation and then loss of oxidized M side chain	5
+	DiMethyl on K	5
+	Sulfonation on S	4
+	Carbon Adduct	4
+	Deamidation on N	4
+	DiMethyl on N	4
+	Hex	4
+	Hex(2)HexNAc(2) on S	4
+	Phospho on S	3
+	Calcium on D	3
+	Oxidation on E	3
+	Methyl on Q	3
+	Carboxymethyl	3
+	Hex on K	3
+	Acetylserine	3
+	HexNAc on S	3
+	Oxidation on F	2
+	Oxidation on V	2
+	Hex on T	2
+	Glucuronyl on S	2
+	Glucuronyl on T	2
+	Palmitoylation on K	2
+	Palmitoylation on S	2
+	dHex on S	2
+	Topaquinone	2
+	Calcium on E	1
+	Oxidation on Y	1
+	Oxidation on W	1
+	Oxidation on D	1
+	Oxidation on H	1
+	Hex(2)HexNAc(2) on Nxs	1
+	Hex on Nxs	1
+	Formylation	1
+	HexNAc on T	1
+	Hex(2)HexNAc(2) on T	1
+	Trioxidation of C	1
+	Fe[II] on E	1
+	Hex on C	1
+	dHex on T	1
+	Tryptophan oxidation to hydroxykynurenin	1
+

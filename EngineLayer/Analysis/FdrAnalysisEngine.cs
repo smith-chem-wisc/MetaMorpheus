@@ -56,7 +56,7 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < ids.Count; i++)
             {
                 var item = ids[i];
-                var isDecoy = item.MostProbableProteinInfo.IsDecoy;
+                var isDecoy = item.IsDecoy;
                 int notch = item.MostProbableProteinInfo.Notch;
                 if (isDecoy)
                     cumulative_decoy++;

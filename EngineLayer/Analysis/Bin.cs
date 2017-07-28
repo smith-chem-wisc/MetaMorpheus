@@ -52,7 +52,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => b.Item3.MostProbableProteinInfo.IsDecoy);
+                return uniquePSMs.Values.Count(b => b.Item3.IsDecoy);
             }
         }
 
@@ -68,7 +68,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.MostProbableProteinInfo.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
+                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
             }
         }
 

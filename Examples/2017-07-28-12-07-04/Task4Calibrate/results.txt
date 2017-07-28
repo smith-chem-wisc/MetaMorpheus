@@ -1,0 +1,124 @@
+MetaMorpheus: Not a release version
+Time to run task: 00:00:12.2577480
+
+
+--------------------------------------------------
+
+
+New files:
+New spectra: 
+
+C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\2017-07-28-12-07-04\Task4Calibrate\example-Calibrated.mzML
+
+
+--------------------------------------------------
+
+
+C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+	Before Calib: MS1 (Th): (-5.12654790661787E-05, 0.000445077409425064)
+	Before Calib: MS2 (Th): (-0.000297377140203646, 0.0022493725860389)
+	After Linear: MS1 (Th): (-1.00529747256268E-05, 0.000443112581065679)
+	After Linear: MS2 (Th): (-0.000126769012403322, 0.00210047094440287)
+	After NonLin: MS1 (Th): (-9.70514739660399E-06, 0.000306639722530436)
+	After NonLin: MS2 (Th): (4.48777798508155E-05, 0.00177284625744232)
+
+
+
+
+--------------------------------------------------
+
+
+Engine Results:
+
+SearchResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:01.3644473
+
+SequencesToActualProteinPeptidesEngineResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:00.5314558
+CompactPeptideToProteinPeptideMatching.Count: 912
+
+FdrAnalysisResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:00.0000639
+
+CalibrationResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:01.4193851
+		Round 1
+			Training points: 867
+			Ms1meanSd: (-5.12654790661787E-05, 0.000445077409425064)
+			Ms1MassChargeSeen: 2487
+			Ms1MassChargeSeenAndIgnoredBecause too many: 0
+			Ms2meanSd: (-0.000297377140203646, 0.0022493725860389)
+			Ms2MassChargeSeen: 1209
+			Ms2MassChargeSeenAndIgnoredBecause too many: 0
+			Ms1Calibration function: Linear numFeatures: 2 transform num outputs: 2
+			Ms2Calibration function: Constant a = -0.000251013517612364
+		Round 2
+			Training points: 863
+			Ms1meanSd: (-1.00529747256268E-05, 0.000443112581065679)
+			Ms1MassChargeSeen: 2488
+			Ms1MassChargeSeenAndIgnoredBecause too many: 0
+			Ms2meanSd: (-0.000126769012403322, 0.00210047094440287)
+			Ms2MassChargeSeen: 1202
+			Ms2MassChargeSeenAndIgnoredBecause too many: 0
+
+
+SearchResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:01.2905679
+
+SequencesToActualProteinPeptidesEngineResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:00.5258159
+CompactPeptideToProteinPeptideMatching.Count: 911
+
+FdrAnalysisResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:00.0000646
+
+CalibrationResults
+Task4Calibrate,Individual Spectra Files,C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+Time to run: 00:00:06.6055785
+		Round 1
+			Training points: 863
+			Ms1meanSd: (-1.00529747256268E-05, 0.000443112581065679)
+			Ms1MassChargeSeen: 2488
+			Ms1MassChargeSeenAndIgnoredBecause too many: 0
+			Ms2meanSd: (-0.000126769012403322, 0.00210047094440287)
+			Ms2MassChargeSeen: 1202
+			Ms2MassChargeSeenAndIgnoredBecause too many: 0
+			Ms1Calibration function: Identity
+			Ms2Calibration function: Identity
+		Round 2
+			Training points: 863
+			Ms1meanSd: (-1.00529747256268E-05, 0.000443112581065679)
+			Ms1MassChargeSeen: 2488
+			Ms1MassChargeSeenAndIgnoredBecause too many: 0
+			Ms2meanSd: (-0.000126769012403322, 0.00210047094440287)
+			Ms2MassChargeSeen: 1202
+			Ms2MassChargeSeenAndIgnoredBecause too many: 0
+			Ms1Calibration function: RandomForestCalibrationFunctionTrue,True,False,False,False
+			Ms2Calibration function: RandomForestCalibrationFunctionTrue,True,True,True,True,True
+		Round 3
+			Training points: 864
+			Ms1meanSd: (2.44768157107567E-05, 0.000337223302671183)
+			Ms1MassChargeSeen: 2495
+			Ms1MassChargeSeenAndIgnoredBecause too many: 0
+			Ms2meanSd: (4.48777798508155E-05, 0.00177284625744232)
+			Ms2MassChargeSeen: 1204
+			Ms2MassChargeSeenAndIgnoredBecause too many: 0
+			Ms1Calibration function: RandomForestCalibrationFunctionTrue,True,False,False,False
+			Ms2Calibration function: Identity
+		Round 4
+			Training points: 862
+			Ms1meanSd: (-9.70514739660399E-06, 0.000306639722530436)
+			Ms1MassChargeSeen: 2490
+			Ms1MassChargeSeenAndIgnoredBecause too many: 0
+			Ms2meanSd: (4.48777798508155E-05, 0.00177284625744232)
+			Ms2MassChargeSeen: 1204
+			Ms2MassChargeSeenAndIgnoredBecause too many: 0
+
+

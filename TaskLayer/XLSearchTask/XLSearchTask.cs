@@ -326,11 +326,11 @@ namespace TaskLayer
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
 
             var interPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
-            interPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            interPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.IsDecoy != true && p.Item2.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(interPsmsXLTupleFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
 
             var intraPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
-            intraPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            intraPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.IsDecoy != true && p.Item2.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(intraPsmsXLTupleFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
 
             return myTaskResults;
@@ -372,7 +372,7 @@ namespace TaskLayer
             {
                 var item1 = ids[i].Item1; var item2 = ids[i].Item2;
 
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
+                var isDecoy1 = item1.IsDecoy; var isDecoy2 = item1.IsDecoy;
                 int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;

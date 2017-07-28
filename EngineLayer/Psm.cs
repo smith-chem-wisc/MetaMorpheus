@@ -64,6 +64,7 @@ namespace EngineLayer
         public double QuantIntensity { get; set; }
 
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
+        public bool IsDecoy { get; private set; }
 
         #endregion Public Properties
 
@@ -264,6 +265,7 @@ namespace EngineLayer
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
+            IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
         }
 
         public override string ToString()
@@ -306,7 +308,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NextAminoAcid.ToString())));
 
                 // Unambiguous
-                if (compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy)))
+                if (IsDecoy)
                     sb.Append("\t" + "D");
                 else if (compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsContaminant)))
                     sb.Append("\t" + "C");

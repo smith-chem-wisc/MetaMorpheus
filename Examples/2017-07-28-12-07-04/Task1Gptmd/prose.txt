@@ -1,0 +1,10 @@
+MetaMorpheus version NOT A RELEASE is used to run a Gptmd task on 1 spectra files.
+Gptmd
+The initiator methionine behavior is set to Variable and the maximum number of allowed missed cleavages is 2
+
+
+taskId: Task1Gptmd
+Spectra files:
+	C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\example.mzML
+XML files:
+	C:\Users\stepa\Source\Repos\MetaMorpheus\Examples\mouse-10.xml
