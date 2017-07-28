@@ -31,7 +31,7 @@ namespace Test
                 { pepWithSetMods.CompactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
 
-            psm.ResolveProteinsAndMostProbablePeptide(matching);
+            psm.MatchToProteinLinkedPeptides(matching);
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 

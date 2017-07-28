@@ -52,7 +52,7 @@ namespace Test
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
-            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
             allResultingIdentifications.Add(newPsm);
@@ -96,7 +96,7 @@ namespace Test
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            match.ResolveProteinsAndMostProbablePeptide(matching);
+            match.MatchToProteinLinkedPeptides(matching);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0);
             allIdentifications = new List<Psm> { match };

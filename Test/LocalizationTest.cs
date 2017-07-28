@@ -57,7 +57,7 @@ namespace Test
                 {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
             LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
             f.Run();
