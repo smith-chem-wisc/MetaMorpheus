@@ -1,11 +1,11 @@
 language: csharp
-solution: mzCal.sln
+solution: MetaMorpheus.sln
 install:
 - nuget restore MetaMorpheus.sln
 - nuget install NUnit.Console -OutputDirectory testrunner
 matrix:
   include:
-    - dotnet: 1.0.1
+    - dotnet: 1.0.4
       mono: none
     - mono: latest
 script:
