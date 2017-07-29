@@ -1,9 +1,9 @@
 language: csharp
 solution: MetaMorpheus.sln
 install:
-- if [ -z "${DOTNETCORE}" ]; then nuget restore
-- if [ -n "${DOTNETCORE}" ]; then dotnet restore
-- if [ -z "${DOTNETCORE}" ]; then nuget install NUnit.Console -OutputDirectory testrunner
+- if [ -n "${DOTNETCORE}" ]; then nuget restore
+- if [ -z "${DOTNETCORE}" ]; then dotnet restore
+- if [ -n "${DOTNETCORE}" ]; then nuget install NUnit.Console -OutputDirectory testrunner
 matrix:
   include:
     - dotnet: 1.0.4
