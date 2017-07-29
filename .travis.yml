@@ -1,12 +1,13 @@
 language: csharp
 solution: MetaMorpheus.sln
 install:
-- nuget restore MetaMorpheus.sln
-- nuget install NUnit.Console -OutputDirectory testrunner
+- if [ -z "${DOTNETCORE}" ]; then nuget restore MetaMorpheus.sln
+- if [ -z "${DOTNETCORE}" ]; then nuget install NUnit.Console -OutputDirectory testrunner
 matrix:
   include:
     - dotnet: 1.0.4
       mono: none
+      env: DOTNETCORE=1
     - mono: latest
 script:
 - echo $TRAVIS_TAG 
