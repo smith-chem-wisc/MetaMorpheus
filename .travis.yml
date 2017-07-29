@@ -3,6 +3,11 @@ solution: mzCal.sln
 install:
 - nuget restore MetaMorpheus.sln
 - nuget install NUnit.Console -OutputDirectory testrunner
+matrix:
+  include:
+    - dotnet: 1.0.1
+      mono: none
+    - mono: latest
 script:
 - echo $TRAVIS_TAG 
 - cat CMD/Properties/AssemblyInfo.cs
