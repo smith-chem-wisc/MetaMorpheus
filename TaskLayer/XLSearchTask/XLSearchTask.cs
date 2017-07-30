@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace TaskLayer
 {
-    public class XLSearchTask : MetaMorpheusTask
+    public partial class XLSearchTask : MetaMorpheusTask
     {
 
         #region Private Fields
@@ -354,6 +354,10 @@ namespace TaskLayer
 
             var allPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(allPsmsXLTuple, new OpenSearchMode());
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
+            if (allPsmsXLTupleFDR.Count!=0)
+            {
+                WritePepXML(allPsmsXLTupleFDR, dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, "test", new List<string> { taskId });
+            }
 
             var interPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
             interPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
@@ -452,48 +456,6 @@ namespace TaskLayer
             }
 
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
-        }
-
-        private void WriteCrosslinkToTsv(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, List<string> nestedIds)
-        {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".mytsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore\tPep1 topPos" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tPep2 topPos\tTotalScore\tMass diff\tQValue");
-                foreach (var item in items)
-                {
-                    var x = item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
-                    output.WriteLine(
-                        item.Item1.FullFilePath
-                        + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
-                        + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t"
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.FullSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
-                        //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t"
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.FullSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)
-                        //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
-
-                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass)
-                        + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
-                }
-            }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
         }
 
         //Calculate the FDR of crosslinked peptide FP/(FP+TP)
