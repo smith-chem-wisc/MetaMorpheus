@@ -16,9 +16,10 @@ script:
 - if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' CMD/Properties/AssemblyInfo.cs ; fi
 - if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' EngineLayer/Properties/AssemblyInfo.cs ; fi
 - cat CMD/Properties/AssemblyInfo.cs
-- xbuild /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln
-- mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
-- tar -zcvf MonoCommandLine.tar.gz -C CMD/bin/Release .
+- if [ -z "${DOTNETCORE}" ]; xbuild /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln ; fi
+- if [ -n "${DOTNETCORE}" ]; dotnet build ; fi
+- if [ -z "${DOTNETCORE}" ];  mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll ; fi
+- if [ -z "${DOTNETCORE}" ];  tar -zcvf MonoCommandLine.tar.gz -C CMD/bin/Release . ; fi
 deploy:
   provider: releases
   api_key:
