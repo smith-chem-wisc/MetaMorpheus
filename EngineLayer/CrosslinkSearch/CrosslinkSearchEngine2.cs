@@ -28,8 +28,6 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly List<CompactPeptide> peptideIndex;
 
-        private readonly MassDiffAcceptor searchMode;
-
         private readonly List<ProductType> lp;
         //Crosslink parameters
 
@@ -37,6 +35,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLprecusorMsTl;
+        private readonly Tolerance XLBetaPrecusorMsTl;
 
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly List<Protein> proteinList;
@@ -50,6 +49,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly int maxModIsoforms;
+        private MassDiffAcceptor XLBetaSearchMode;
 
         //AnalysisEngine parameters 
         //private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
@@ -58,18 +58,19 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine2(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, MassDiffAcceptor searchMode, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, Protease protease, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, int maxModIsoforms, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine2(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance,  CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, Protease protease, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, int maxModIsoforms, List<string> nestedIds) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
-            this.searchMode = searchMode;
+
             this.crosslinker = crosslinker;
             this.CrosslinkSearchTopNum = CrosslinkSearchTopNum;
             this.CrosslinkSearchWithCrosslinkerMod = CrosslinkSearchWithCrosslinkerMod;
             this.XLprecusorMsTl = XLprecusorMsTl;
+            this.XLBetaPrecusorMsTl = XLBetaPrecusorMsTl;
             //AnalysisEngine parameters
             this.modsDictionary = modsDictionary;
             this.lp = lp;
@@ -90,6 +91,11 @@ namespace EngineLayer.CrosslinkSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             MassDiffAcceptor XLsearchMode = new OpenSearchMode();
+            MassDiffAcceptor XLBetaSearchMode = new SinglePpmAroundZeroSearchMode(XLBetaPrecusorMsTl.Value);
+            if (XLBetaPrecusorMsTl.ToString().Contains("Absolute"))
+            {
+                XLBetaSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLBetaPrecusorMsTl.Value);
+            }
 
             Status("In crosslink search engine...", nestedIds);
 
@@ -427,6 +433,7 @@ namespace EngineLayer.CrosslinkSearch
 
         private List<Tuple<PsmCross, PsmCross>> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory = false)
         {
+
             double[] selectedScanPrecusor = selectedScan.Select(p => p.PrecursorMass).ToArray();
             double[] AlphaPeptidePrecusor = selectedPsmParent.Select(p => (double)p.CompactPeptide.MonoisotopicMassIncludingFixedMods).ToArray();
             double[] BetaPeptidePrecusor = selectedScanPrecusor.Zip(AlphaPeptidePrecusor, (one, two) => one - two - crosslinker.TotalMass).ToArray();
@@ -482,7 +489,7 @@ namespace EngineLayer.CrosslinkSearch
                             Array.Sort(productMasses);
                             var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(productMasses.Length);
 
-                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, searchMode, selectedScan).ToList())
+                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
                                 //if (!yyy.BaseSequence.Contains(crosslinker.CrosslinkerModSite))
                                 //{

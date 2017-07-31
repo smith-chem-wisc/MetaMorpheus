@@ -62,8 +62,6 @@ namespace TaskLayer
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
 
-            MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-
             ConserveMemory = false;
             MaxDegreeOfParallelism = null;
             CrosslinkerType = CrosslinkerType.DSS;
@@ -75,7 +73,8 @@ namespace TaskLayer
             UdXLkerLongMass = null;
             UdXLkerTotalMass = null;
             UdXLkerResidue = 'K';
-            XLprecusorMsTl = new AbsoluteTolerance(0.01);
+            XLprecusorMsTl = new PpmTolerance(10);
+            XLBetaPrecusorMsTl = new PpmTolerance(10);
 
             // Deconvolution stuff
             DoPrecursorDeconvolution = false;
@@ -116,7 +115,7 @@ namespace TaskLayer
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchDecoy { get; set; }
-        public List<MassDiffAcceptor> MassDiffAcceptors { get; set; }
+
         public bool ConserveMemory { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
@@ -137,6 +136,7 @@ namespace TaskLayer
         public double? UdXLkerLongMass { get; set; }
         public char UdXLkerResidue { get; set; }
         public Tolerance XLprecusorMsTl { get; set; }
+        public Tolerance XLBetaPrecusorMsTl { get; set; }
 
         #endregion Public Properties
 
@@ -158,24 +158,16 @@ namespace TaskLayer
             sb.AppendLine("yIons: " + YIons);
             sb.AppendLine("cIons: " + CIons);
             sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("SearchType: " + SearchType);
-            sb.AppendLine("doParsimony: " + DoParsimony);
-            if (DoParsimony)
-            {
-                sb.AppendLine("modifiedPeptidesAreUnique: " + ModPeptidesAreUnique);
-                sb.AppendLine("requireTwoPeptidesToIdProtein: " + NoOneHitWonders);
-            }
-            sb.AppendLine("quantify: " + DoQuantification);
-            if (DoQuantification)
-                sb.AppendLine("quantify ppm tolerance: " + QuantifyPpmTol);
-            sb.AppendLine("doHistogramAnalysis: " + DoHistogramAnalysis);
+
             sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModsFixed));
             sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModsVariable));
             sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModsLocalize));
             sb.AppendLine("searchDecoy: " + SearchDecoy);
             sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-            sb.AppendLine("searchModes: ");
-            sb.Append(string.Join(Environment.NewLine, MassDiffAcceptors.Select(b => "\t" + b.FileNameAddition)));
+
+            sb.AppendLine("Crosslink Precusor mass tolerance: " + XLprecusorMsTl);
+            sb.AppendLine("Beta Precusor mass tolerance: " + XLBetaPrecusorMsTl);
+
             return sb.ToString();
         }
 
@@ -319,9 +311,9 @@ namespace TaskLayer
                 //    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
                 CrosslinkSearchResults xlsearchResults;
                 if (CrosslinkSearchWithAllBeta)
-                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
+                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance,  crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
                 else
-                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, ionTypes, modsDictionary, thisId).Run());
+                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run());
 
                 myFileManager.DoneWithFile(origDataFile);
 

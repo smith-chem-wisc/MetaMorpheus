@@ -26,13 +26,12 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly List<CompactPeptide> peptideIndex;
 
-        private readonly MassDiffAcceptor searchMode;
-
         //Crosslink parameters
         private CrosslinkerTypeClass crosslinker;
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLprecusorMsTl;
+        private readonly Tolerance XLBetaPrecusorMsTl;
 
         private readonly List<ProductType> lp;
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
@@ -41,18 +40,18 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, MassDiffAcceptor searchMode, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
             this.fragmentTolerance = fragmentTolerance;
-            this.searchMode = searchMode;
             this.crosslinker = crosslinker;
             this.CrosslinkSearchTopNum = CrosslinkSearchTopNum;
             this.CrosslinkSearchWithCrosslinkerMod = CrosslinkSearchWithCrosslinkerMod;
             this.XLprecusorMsTl = XLprecusorMsTl;
+            this.XLBetaPrecusorMsTl = XLBetaPrecusorMsTl;
             //AnalysisEngine parameters
             this.lp = lp;
             this.modsDictionary = modsDictionary;

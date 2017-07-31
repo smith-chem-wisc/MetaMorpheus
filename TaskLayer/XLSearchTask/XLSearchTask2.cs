@@ -144,7 +144,7 @@ namespace TaskLayer
                              new pepXML.Generated.nameValueType{ name = "Max Peptide Len", value = MaxPeptideLength.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Product Mass Tolerance", value = ProductMassTolerance.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Ions to search", value = "B "+ BIons.ToString() + " Y " + YIons.ToString() + " C " +CIons.ToString() + " Z " + ZdotIons.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Allowed Precusor Mass Difference", value =  MassDiffAcceptors[0].FileNameAddition},
+                             new pepXML.Generated.nameValueType{ name = "Allowed Beta Precusor Mass Difference", value =  XLBetaPrecusorMsTl.ToString()},
 
                              new pepXML.Generated.nameValueType{ name = "Fixed Modifications", value = modsFixed },
                              new pepXML.Generated.nameValueType{ name = "Variable Modificaions", value = modsVar },
