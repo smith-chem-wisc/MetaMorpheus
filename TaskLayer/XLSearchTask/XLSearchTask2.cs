@@ -32,20 +32,18 @@ namespace TaskLayer
                         + "\t"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.FullSequence + "(" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + "0"
-                        //+ "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.FullSequence + "(" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + "0"
-                        //+ "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
@@ -59,7 +57,7 @@ namespace TaskLayer
         private void WritePepXML(List<Tuple<PsmCross, PsmCross>> items, List<DbForTask> dbFilenameList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, string outputFolder, string fileName, List<string> nestedIds)
         {
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
-            var _pepxml = new pepXML.Generated.msms_pipeline_analysis() { };
+            var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
 
             #region Add element to pepXML
             _pepxml.date = DateTime.Now;

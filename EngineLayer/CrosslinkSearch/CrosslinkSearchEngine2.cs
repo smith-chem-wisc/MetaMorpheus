@@ -195,6 +195,10 @@ namespace EngineLayer.CrosslinkSearch
                                 currentScanPsmParent.Add(new PsmCross(bestPeptide.BestPeptide, bestPeptide.BestNotch, bestPeptide.BestScore, i, thisScan));
                             }
                         }
+                        for (int itop = 0; itop < currentScanPsmParent.Count; itop++)
+                        {
+                            currentScanPsmParent[itop].topPosition = new int[] { itop, 0 };
+                        }
                         newPsmsTop[i] = currentScanPsmParent;
                     }
                 }

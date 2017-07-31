@@ -352,7 +352,11 @@ namespace TaskLayer
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
             if (allPsmsXLTupleFDR.Count!=0)
             {
-                WritePepXML(allPsmsXLTupleFDR, dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, "test", new List<string> { taskId });
+                foreach (var fullFilePath in currentRawFileList)
+                {
+                    string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
+                    WritePepXML(allPsmsXLTupleFDR.Where(p => p.Item1.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                }
             }
 
             var interPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
@@ -474,7 +478,6 @@ namespace TaskLayer
                 var item1 = ids[i].Item1; var item2 = ids[i].Item2;
 
                 var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
-                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;
                 else
