@@ -61,7 +61,7 @@ namespace EngineLayer
             var cp = obj as CompactPeptide;
             if (cp == null)
                 return false;
-            return (CTerminalMasses.SequenceEqual(cp.CTerminalMasses) &&
+            return (MonoisotopicMassIncludingFixedMods.Equals(cp.MonoisotopicMassIncludingFixedMods) && CTerminalMasses.SequenceEqual(cp.CTerminalMasses) &&
                 NTerminalMasses.SequenceEqual(cp.NTerminalMasses));
         }
 
