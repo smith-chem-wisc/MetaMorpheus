@@ -97,15 +97,15 @@ namespace EngineLayer
             sb.Append("Protein Accession" + '\t');
             sb.Append("Gene" + '\t');
             sb.Append("Protein Full Name" + '\t');
-            sb.Append("Number of proteins in group" + '\t');
-            sb.Append("Unique peptides" + '\t');
-            sb.Append("Shared peptides" + '\t');
-            sb.Append("Razor peptides" + '\t');
-            sb.Append("Number of peptides" + '\t');
-            sb.Append("Number of unique peptides" + '\t');
-            sb.Append("Sequence coverage %" + '\t');
-            sb.Append("Sequence coverage" + '\t');
-            sb.Append("Sequence coverage w Mods" + '\t');
+            sb.Append("Number of Proteins in Group" + '\t');
+            sb.Append("Unique Peptides" + '\t');
+            sb.Append("Shared Peptides" + '\t');
+            sb.Append("Razor Peptides" + '\t');
+            sb.Append("Number of Peptides" + '\t');
+            sb.Append("Number of Unique Peptides" + '\t');
+            sb.Append("Sequence Coverage %" + '\t');
+            sb.Append("Sequence Coverage" + '\t');
+            sb.Append("Sequence Coverage w Mods" + '\t');
             sb.Append("Modification Info List" + "\t");
             if (FileNames != null)
             {
