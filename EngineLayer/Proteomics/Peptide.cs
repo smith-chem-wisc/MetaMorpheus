@@ -26,13 +26,13 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public Protein Protein { get; private set; }
-        public int OneBasedStartResidueInProtein { get; private set; }
-        public int OneBasedEndResidueInProtein { get; private set; }
+        public Protein Protein { get; }
+        public int OneBasedStartResidueInProtein { get; }
+        public int OneBasedEndResidueInProtein { get; }
 
         public virtual string PeptideDescription { get; protected set; }
 
-        public int Length { get; private set; }
+        public int Length { get; }
 
         public virtual char PreviousAminoAcid
         {

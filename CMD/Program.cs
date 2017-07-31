@@ -12,6 +12,7 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
+
         #region Private Fields
 
         private static bool inProgress;
@@ -90,10 +91,15 @@ namespace MetaMorpheusCommandLine
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "GptmdTask", ye3));
                             break;
+
+                        case "XLSearch":
+                            var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            taskList.Add(new Tuple<string, MetaMorpheusTask>("Task" + (i + 1) + "XLSearchTask", ye4));
+                            break;
                     }
                 }
-                List<string> startingRawFilenameList = p.Object.Spectra;
-                List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(b, IsContaminant(b))).ToList();
+                List<string> startingRawFilenameList = p.Object.Spectra.Select(b => Path.GetFullPath(b)).ToList();
+                List<DbForTask> startingXmlDbFilenameList = p.Object.Databases.Select(b => new DbForTask(Path.GetFullPath(b), IsContaminant(b))).ToList();
                 EverythingRunnerEngine a = new EverythingRunnerEngine(taskList, startingRawFilenameList, startingXmlDbFilenameList);
                 a.Run();
             }
@@ -106,7 +112,6 @@ namespace MetaMorpheusCommandLine
             Console.WriteLine("\t-t --tasks     List of task poml files");
             Console.WriteLine("\t-s --spectra   List of spectra files");
             Console.WriteLine("\t-d --databases List of database files");
-            return;
         }
 
         private static bool IsContaminant(string b)
@@ -179,6 +184,7 @@ namespace MetaMorpheusCommandLine
 
         public class ApplicationArguments
         {
+
             #region Public Properties
 
             public List<string> Tasks { get; set; }
@@ -186,8 +192,10 @@ namespace MetaMorpheusCommandLine
             public List<string> Spectra { get; set; }
 
             #endregion Public Properties
+
         }
 
         #endregion Public Classes
+
     }
 }

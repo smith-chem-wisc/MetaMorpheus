@@ -1,4 +1,5 @@
-﻿using Proteomics;
+﻿using Chemistry;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,59 +10,49 @@ namespace EngineLayer
     public class CompactPeptide
     {
 
-        #region Public Fields
+        #region Private Fields
 
-        public readonly byte[] BaseSequence;
-        public readonly ushort varMod1Type;
-        public readonly ushort varMod1Loc;
-        public readonly ushort varMod2Type;
-        public readonly ushort varMod2Loc;
-        public readonly ushort varMod3Type;
-        public readonly ushort varMod3Loc;
-        public double MonoisotopicMassIncludingFixedMods;
+        private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+        private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+        private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
-        #endregion Public Fields
+        #endregion Private Fields
 
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy, Dictionary<ModificationWithMass, ushort> modsDictionary)
+        public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications)
         {
-            varMod1Type = 0;
-            varMod1Loc = 0;
-            varMod2Type = 0;
-            varMod2Loc = 0;
-            varMod3Type = 0;
-            varMod3Loc = 0;
-            foreach (var kvpp in yyy.allModsOneIsNterminus)
-            {
-                var ok = modsDictionary[kvpp.Value];
-                if (ok > 0)
-                {
-                    ushort oneBasedLoc = (ushort)kvpp.Key;
-                    var mod = kvpp.Value;
-                    if (varMod1Type == 0)
-                    {
-                        varMod1Type = ok;
-                        varMod1Loc = oneBasedLoc;
-                    }
-                    else if (varMod2Type == 0)
-                    {
-                        varMod2Type = ok;
-                        varMod2Loc = oneBasedLoc;
-                    }
-                    else
-                    {
-                        varMod3Type = ok;
-                        varMod3Loc = oneBasedLoc;
-                    }
-                }
-            }
-            MonoisotopicMassIncludingFixedMods = yyy.MonoisotopicMass;
+            ModificationWithMass pep_n_term_variable_mod;
+            double theMass = 0;
+            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                foreach (double nl in pep_n_term_variable_mod.neutralLosses)
+                    theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
+            else
+                theMass = 0;
+            NTerminalMasses = ComputeFollowingFragmentMasses(peptideWithSetModifications, theMass, 1, 1).ToArray();
 
-            BaseSequence = yyy.BaseSequence.Select(b => (byte)b).ToArray();
+            ModificationWithMass pep_c_term_variable_mod;
+            theMass = 0;
+            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out pep_c_term_variable_mod))
+                foreach (double nl in pep_c_term_variable_mod.neutralLosses)
+                    theMass = pep_c_term_variable_mod.monoisotopicMass - nl;
+            else
+                theMass = 0;
+            CTerminalMasses = ComputeFollowingFragmentMasses(peptideWithSetModifications, theMass, peptideWithSetModifications.Length, -1).ToArray();
+
+            MonoisotopicMassIncludingFixedMods = peptideWithSetModifications.MonoisotopicMass;
         }
 
         #endregion Public Constructors
+
+        #region Public Properties
+
+        public double[] CTerminalMasses { get; }
+        public double[] NTerminalMasses { get; }
+        public double MonoisotopicMassIncludingFixedMods { get; }
+
+        #endregion Public Properties
 
         #region Public Methods
 
@@ -70,13 +61,8 @@ namespace EngineLayer
             var cp = obj as CompactPeptide;
             if (cp == null)
                 return false;
-            return (BaseSequence.SequenceEqual(cp.BaseSequence) &&
-                    varMod1Type == cp.varMod1Type &&
-                    varMod1Loc == cp.varMod1Loc &&
-                    varMod2Type == cp.varMod2Type &&
-                    varMod2Loc == cp.varMod2Loc &&
-                    varMod3Type == cp.varMod3Type &&
-                    varMod3Loc == cp.varMod3Loc);
+            return (CTerminalMasses.SequenceEqual(cp.CTerminalMasses) &&
+                NTerminalMasses.SequenceEqual(cp.NTerminalMasses));
         }
 
         public override int GetHashCode()
@@ -84,13 +70,111 @@ namespace EngineLayer
             unchecked
             {
                 var result = 0;
-                foreach (byte b in BaseSequence)
-                    result = (result * 31) ^ b;
+                foreach (double b in CTerminalMasses)
+                    result = (result * 31) ^ b.GetHashCode();
                 return result;
             }
         }
 
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
+        {
+            int massLen = 0;
+            bool containsAdot = productTypes.Contains(ProductType.Adot);
+            bool containsB = productTypes.Contains(ProductType.B);
+            bool containsC = productTypes.Contains(ProductType.C);
+            bool containsX = productTypes.Contains(ProductType.X);
+            bool containsY = productTypes.Contains(ProductType.Y);
+            bool containsZdot = productTypes.Contains(ProductType.Zdot);
+
+            if (containsAdot)
+                throw new NotImplementedException();
+            if (containsB)
+                massLen += NTerminalMasses.Length - 1;
+            if (containsC)
+                massLen += NTerminalMasses.Length;
+            if (containsX)
+                throw new NotImplementedException();
+            if (containsY)
+                massLen += CTerminalMasses.Length;
+            if (containsZdot)
+                massLen += CTerminalMasses.Length;
+
+            double[] massesToReturn = new double[massLen];
+
+            int i = 0;
+            for (int j = 0; j < NTerminalMasses.Length; j++)
+            {
+                var hm = NTerminalMasses[j];
+                if (containsB)
+                {
+                    if (j > 0)
+                    {
+                        massesToReturn[i] = hm;
+                        i++;
+                    }
+                }
+                if (containsC)
+                {
+                    massesToReturn[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                    i++;
+                }
+            }
+            for (int j = 0; j < CTerminalMasses.Length; j++)
+            {
+                var hm = CTerminalMasses[j];
+                if (containsY)
+                {
+                    massesToReturn[i] = hm + waterMonoisotopicMass;
+                    i++;
+                }
+                if (containsZdot)
+                {
+                    massesToReturn[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                    i++;
+                }
+            }
+            return massesToReturn;
+        }
+
         #endregion Public Methods
+
+        #region Private Methods
+
+        private IEnumerable<double> ComputeFollowingFragmentMasses(PeptideWithSetModifications yyy, double prevMass, int oneBasedIndexToLookAt, int direction)
+        {
+            ModificationWithMass residue_variable_mod = null;
+            do
+            {
+                prevMass += Residue.ResidueMonoisotopicMass[yyy[oneBasedIndexToLookAt - 1]];
+
+                yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
+                if (residue_variable_mod == null)
+                {
+                    yield return prevMass;
+                }
+                else if (residue_variable_mod.neutralLosses.Count == 1)
+                {
+                    prevMass += residue_variable_mod.monoisotopicMass - residue_variable_mod.neutralLosses.First();
+                    yield return prevMass;
+                }
+                else
+                {
+                    foreach (double nl in residue_variable_mod.neutralLosses)
+                    {
+                        var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
+                        yield return theMass;
+                        if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
+                            (direction == -1 && oneBasedIndexToLookAt + direction > 1))
+                            foreach (var nextMass in ComputeFollowingFragmentMasses(yyy, theMass, oneBasedIndexToLookAt + direction, direction))
+                                yield return nextMass;
+                    }
+                    break;
+                }
+                oneBasedIndexToLookAt += direction;
+            } while ((oneBasedIndexToLookAt > 1 && direction == -1) || (oneBasedIndexToLookAt < yyy.Length && direction == 1));
+        }
+
+        #endregion Private Methods
 
     }
 }

@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -53,15 +54,18 @@ namespace Test
 
             var myMsDataFile = new FakeMsDataFile(Scans);
 
-            bool useProvidedPrecursorInfo = true;
-            bool findAllPrecursors = true;
-            var intensityRatio = 50;
-            var listOfSortedms2Scans = MetaMorpheusEngine.GetMs2Scans(myMsDataFile, findAllPrecursors, useProvidedPrecursorInfo, intensityRatio, null).OrderBy(b => b.PrecursorMass).ToArray();
+            bool DoPrecursorDeconvolution = true;
+            bool UseProvidedPrecursorInfo = true;
+            double DeconvolutionIntensityRatio = 50;
+            int DeconvolutionMaxAssumedChargeState = 10;
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
             int maximumMissedCleavages = 2;
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false);
+            var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, false);
             var searchResults = (SearchResults)engine.Run();
 
             // Single search mode
@@ -72,8 +76,17 @@ namespace Test
 
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
-            Assert.AreEqual("NNNK", (searchResults.Psms[0][0] as PsmClassic).ps.BaseSequence);
-            Assert.AreEqual("NDNK", (searchResults.Psms[0][1] as PsmClassic).ps.BaseSequence);
+
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0], searchResults.Psms[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+
+            foreach (var huh in searchResults.Psms[0])
+            {
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.MatchToProteinLinkedPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
+            }
+
+            Assert.AreEqual("NNNK", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("NDNK", searchResults.Psms[0][1].MostProbableProteinInfo.BaseSequence);
         }
 
         #endregion Public Methods

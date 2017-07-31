@@ -2,6 +2,7 @@
 {
     public class LabeledMs2DataPoint : IHasInputsAndOutputs
     {
+
         #region Public Fields
 
         public readonly double mz;
@@ -10,13 +11,13 @@
         public readonly double totalIonCurrent;
         public readonly double injectionTime;
         public readonly double isolationMz;
-        public readonly PsmParent identification;
+        public readonly Psm identification;
 
         #endregion Public Fields
 
         #region Public Constructors
 
-        public LabeledMs2DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double isolationMz, double label, PsmParent identification)
+        public LabeledMs2DataPoint(double mz, double rt, double intensity, double totalIonCurrent, double? injectionTime, double isolationMz, double label, Psm identification)
         {
             this.mz = mz;
             this.rt = rt;
@@ -38,5 +39,6 @@
         public double[] Inputs { get; private set; }
 
         #endregion Public Properties
+
     }
 }

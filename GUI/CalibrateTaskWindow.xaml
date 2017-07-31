@@ -6,7 +6,12 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="CalibrateTaskWindow" Width="750" Height="750"  WindowStartupLocation="CenterScreen">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                 <Expander x:Name="SearchModeExpander">
@@ -165,13 +170,15 @@
                 <Expander x:Name="CalibrationExpander">
                     <StackPanel>
                         <CheckBox x:Name="nonLinearCalibCheckBox" Content="Non-Linear Calibration" />
+                        <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
                     </StackPanel>
                 </Expander>
             </GroupBox>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-                <Button x:Name="saveButton" Content="Save Calibrate Task" Click="SaveButton_Click" FontSize="24" Margin="10" />
-            </StackPanel>
         </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="saveButton" Content="Save Calibrate Task" Click="SaveButton_Click" FontSize="24"/>
+        </StackPanel>
+    </Grid>
 </Window>

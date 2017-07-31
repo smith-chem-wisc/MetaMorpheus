@@ -1,12 +1,12 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -15,6 +15,15 @@ namespace Test
     {
 
         #region Public Methods
+
+        [Test]
+        public static void TestNonSpecific()
+        {
+            Protease p = GlobalTaskLevelSettings.ProteaseDictionary["non-specific"];
+            Protein prot = new Protein("MABCDEFGH", null);
+
+            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(p, 8, 1, 9, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Count());
+        }
 
         [Test]
         public static void TestLocalization()
@@ -38,19 +47,19 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            PsmParent newPsm = new PsmClassic(ps, 0, 0, 2, scan);
+            Psm newPsm = new Psm(ps.CompactPeptide, 0, 0, 2, scan);
 
-            Assert.IsNull(newPsm.Pli);
+            Assert.IsNull(newPsm.MostProbableProteinInfo);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
             {
-                {newPsm.GetCompactPeptide(modsDictionary), new HashSet<PeptideWithSetModifications>{ ps} }
+                {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.SetProteinLinkedInfo(matching, modsDictionary);
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PsmParent> { newPsm }, lp, myMsDataFile, fragmentTolerance, null);
+            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
             f.Run();
 
             // Was single peak!!!

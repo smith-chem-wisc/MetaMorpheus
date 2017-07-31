@@ -25,7 +25,6 @@ namespace EngineLayer.Indexing
 
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly List<ModificationWithMass> variableModifications;
-        private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
@@ -34,12 +33,11 @@ namespace EngineLayer.Indexing
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Dictionary<ModificationWithMass, ushort> modsDictionary, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            this.modsDictionary = modsDictionary;
             this.protease = protease;
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.maximumMissedCleavages = maximumMissedCleavages;
@@ -59,7 +57,6 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
-            sb.AppendLine("Number of mods known: " + modsDictionary.Count);
             sb.AppendLine("lp: " + string.Join(",", lp));
             sb.AppendLine("protease: " + protease);
             sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
@@ -93,9 +90,6 @@ namespace EngineLayer.Indexing
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.Length <= 1)
-                            continue;
-
                         if (peptide.NumKnownPossibleLocMods == 0)
                         {
                             lock (level3_observed)
@@ -123,7 +117,7 @@ namespace EngineLayer.Indexing
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy, modsDictionary);
+                            var ps = new CompactPeptide(yyy);
 
                             int index;
                             lock (myDictionary)
@@ -132,7 +126,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in yyy.ProductMassesMightHaveDuplicatesAndNaNs(lp))
+                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

@@ -7,14 +7,14 @@ namespace EngineLayer.Analysis
 
         #region Private Fields
 
-        private readonly IEnumerable<PsmParent>[] newPsms;
+        private readonly IEnumerable<Psm>[] newPsms;
         private readonly List<MassDiffAcceptor> searchModes;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public FdrAnalysisEngine(List<PsmParent>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public FdrAnalysisEngine(List<Psm>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
@@ -41,10 +41,10 @@ namespace EngineLayer.Analysis
 
         #region Private Methods
 
-        private static List<PsmParent> DoFalseDiscoveryRateAnalysis(IEnumerable<PsmParent> items, MassDiffAcceptor sm)
+        private static List<Psm> DoFalseDiscoveryRateAnalysis(IEnumerable<Psm> items, MassDiffAcceptor sm)
         {
-            var ids = new List<PsmParent>();
-            foreach (PsmParent item in items)
+            var ids = new List<Psm>();
+            foreach (Psm item in items)
                 ids.Add(item);
 
             int cumulative_target = 0;
@@ -56,8 +56,8 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < ids.Count; i++)
             {
                 var item = ids[i];
-                var isDecoy = item.Pli.IsDecoy;
-                int notch = item.Notch;
+                var isDecoy = item.MostProbableProteinInfo.IsDecoy;
+                int notch = item.MostProbableProteinInfo.Notch;
                 if (isDecoy)
                     cumulative_decoy++;
                 else
@@ -70,7 +70,7 @@ namespace EngineLayer.Analysis
 
                 double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
                 double temp_q_value_for_notch = (double)cumulative_decoy_per_notch[notch] / (cumulative_target_per_notch[notch] + cumulative_decoy_per_notch[notch]);
-                item.SetValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
+                item.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, cumulative_target_per_notch[notch], cumulative_decoy_per_notch[notch], temp_q_value_for_notch);
             }
 
             double min_q_value = double.PositiveInfinity;
@@ -80,13 +80,13 @@ namespace EngineLayer.Analysis
 
             for (int i = ids.Count - 1; i >= 0; i--)
             {
-                PsmParent id = ids[i];
+                Psm id = ids[i];
                 if (id.FdrInfo.QValue > min_q_value)
                     id.FdrInfo.QValue = min_q_value;
                 else if (id.FdrInfo.QValue < min_q_value)
                     min_q_value = id.FdrInfo.QValue;
 
-                int notch = id.Notch;
+                int notch = id.MostProbableProteinInfo.Notch;
                 if (id.FdrInfo.QValueNotch > min_q_value_notch[notch])
                     id.FdrInfo.QValueNotch = min_q_value_notch[notch];
                 else if (id.FdrInfo.QValueNotch < min_q_value_notch[notch])

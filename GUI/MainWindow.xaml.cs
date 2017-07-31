@@ -57,11 +57,12 @@ namespace MetaMorpheusGUI
             GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
             GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
 
-            EverythingRunnerEngine.newDbsHandler += AddNewDB;
-            EverythingRunnerEngine.newSpectrasHandler += AddNewSpectra;
-            EverythingRunnerEngine.startingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
-            EverythingRunnerEngine.finishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
-            EverythingRunnerEngine.warnHandler += EverythingRunnerEngine_warnHandler;
+            EverythingRunnerEngine.NewDbsHandler += AddNewDB;
+            EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
+            EverythingRunnerEngine.StartingAllTasksEngineHandler += NewSuccessfullyStartingAllTasks;
+            EverythingRunnerEngine.FinishedAllTasksEngineHandler += NewSuccessfullyFinishedAllTasks;
+            EverythingRunnerEngine.WarnHandler += EverythingRunnerEngine_warnHandler;
+            EverythingRunnerEngine.FinishedWritingAllResultsFileHandler += EverythingRunnerEngine_FinishedWritingAllResultsFileHandler;
 
             MetaMorpheusTask.StartingSingleTaskHander += Po_startingSingleTaskHander;
             MetaMorpheusTask.FinishedSingleTaskHandler += Po_finishedSingleTaskHandler;
@@ -82,6 +83,20 @@ namespace MetaMorpheusGUI
         #endregion Public Constructors
 
         #region Private Methods
+
+        private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, string e)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(sender, e)));
+            }
+            else
+            {
+                dynamicTasksObservableCollection.Add(new InRunTask("All Task Results", null));
+                dynamicTasksObservableCollection.Last().Progress = 100;
+                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e));
+            }
+        }
 
         private void EverythingRunnerEngine_warnHandler(object sender, StringEventArgs e)
         {
@@ -208,23 +223,7 @@ namespace MetaMorpheusGUI
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                 {
-                    ProteinDbForDataGrid uu = new ProteinDbForDataGrid(filepath);
-                    if (!ExistDa(proteinDbObservableCollection, uu))
-                    {
-                        proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(filepath).Equals(".fasta"))
-                        {
-                            try
-                            {
-                                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
-                            }
-                            catch (Exception ee)
-                            {
-                                MessageBox.Show(ee.ToString());
-                                Application.Current.Shutdown();
-                            }
-                        }
-                    }
+                    AddAFile(filepath);
                 }
             dataGridXMLs.Items.Refresh();
         }
@@ -241,8 +240,7 @@ namespace MetaMorpheusGUI
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames)
                 {
-                    RawDataForDataGrid zz = new RawDataForDataGrid(rawDataFromSelected);
-                    if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
+                    AddAFile(rawDataFromSelected);
                 }
             dataGridDatafiles.Items.Refresh();
         }
@@ -282,7 +280,24 @@ namespace MetaMorpheusGUI
                 case ".xml":
                 case ".gz":
                 case ".fasta":
-                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
+
+                    ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
+                    if (!ExistDa(proteinDbObservableCollection, uu))
+                    {
+                        proteinDbObservableCollection.Add(uu);
+                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta"))
+                        {
+                            try
+                            {
+                                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                            }
+                            catch (Exception ee)
+                            {
+                                MessageBox.Show(ee.ToString());
+                                Application.Current.Shutdown();
+                            }
+                        }
+                    }
                     break;
 
                 case ".toml":
@@ -302,6 +317,11 @@ namespace MetaMorpheusGUI
                         case "Gptmd":
                             var ye3 = Toml.ReadFile<GptmdTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
                             staticTasksObservableCollection.Add(new PreRunTask(ye3));
+                            break;
+
+                        case "XLSearch":
+                            var ye4 = Toml.ReadFile<XLSearchTask>(draggedFilePath, MetaMorpheusTask.tomlConfig);
+                            staticTasksObservableCollection.Add(new PreRunTask(ye4));
                             break;
                     }
                     break;
@@ -325,7 +345,7 @@ namespace MetaMorpheusGUI
                 dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FileName, b.Contaminant)).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList());
             var t = new Thread(() => a.Run())
             {
                 IsBackground = true
@@ -379,6 +399,16 @@ namespace MetaMorpheusGUI
         private void AddGPTMDTaskButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new GptmdTaskWindow();
+            if (dialog.ShowDialog() == true)
+            {
+                staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
+                UpdateTaskGuiStuff();
+            }
+        }
+
+        private void btnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
             {
                 staticTasksObservableCollection.Add(new PreRunTask(dialog.TheTask));
@@ -517,6 +547,7 @@ namespace MetaMorpheusGUI
                 addCalibrateTaskButton.IsEnabled = false;
                 addGPTMDTaskButton.IsEnabled = false;
                 addSearchTaskButton.IsEnabled = false;
+                btnAddCrosslinkSearch.IsEnabled = false;
 
                 AddXML.IsEnabled = false;
                 ClearXML.IsEnabled = false;
@@ -578,6 +609,7 @@ namespace MetaMorpheusGUI
             addCalibrateTaskButton.IsEnabled = true;
             addGPTMDTaskButton.IsEnabled = true;
             addSearchTaskButton.IsEnabled = true;
+            btnAddCrosslinkSearch.IsEnabled = true;
             ResetTasksButton.IsEnabled = false;
 
             proteinDatabasesGroupBox.IsEnabled = true;
@@ -613,6 +645,11 @@ namespace MetaMorpheusGUI
                         var calibratedialog = new CalibrateTaskWindow(preRunTask.metaMorpheusTask as CalibrationTask);
                         calibratedialog.ShowDialog();
                         return;
+
+                    case MyTask.XLSearch:
+                        var XLSearchdialog = new XLSearchTaskWindow(preRunTask.metaMorpheusTask as XLSearchTask);
+                        XLSearchdialog.ShowDialog();
+                        return;
                 }
 
             if (a.SelectedItem is OutputFileForTreeView fileThing)
@@ -633,24 +670,7 @@ namespace MetaMorpheusGUI
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var tomlFromSelected in openFileDialog1.FileNames)
                 {
-                    var uhum = Toml.ReadFile(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                    switch (uhum.Get<string>("TaskType"))
-                    {
-                        case "Search":
-                            var ye1 = Toml.ReadFile<SearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye1));
-                            break;
-
-                        case "Calibrate":
-                            var ye2 = Toml.ReadFile<CalibrationTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye2));
-                            break;
-
-                        case "Gptmd":
-                            var ye3 = Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye3));
-                            break;
-                    }
+                    AddAFile(tomlFromSelected);
                 }
             UpdateTaskGuiStuff();
         }
@@ -669,7 +689,7 @@ namespace MetaMorpheusGUI
         private bool ExistDa(ObservableCollection<ProteinDbForDataGrid> pDOC, ProteinDbForDataGrid uuu)
         {
             foreach (ProteinDbForDataGrid pdoc in pDOC)
-                if (pdoc.FileName == uuu.FileName) { return true; }
+                if (pdoc.FilePath == uuu.FilePath) { return true; }
             return false;
         }
 

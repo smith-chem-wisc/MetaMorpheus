@@ -164,14 +164,19 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
+            addCompIonCheckBox.IsChecked = task.AddCompIons;
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
-            deconvolutePrecursors.IsChecked = task.FindAllPrecursors;
+            deconvolutePrecursors.IsChecked = task.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
+
+            DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
+            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
+            DeconvolutionMassToleranceInPpmTextBox.Text = task.DeconvolutionMassTolerance.Value.ToString();
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -280,14 +285,19 @@ namespace MetaMorpheusGUI
             else
                 TheTask.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
+            TheTask.AddCompIons = addCompIonCheckBox.IsChecked.Value;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
 
-            TheTask.FindAllPrecursors = deconvolutePrecursors.IsChecked.Value;
+            TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+            TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

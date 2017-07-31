@@ -10,6 +10,7 @@ namespace Test
 {
     internal class TestDataFile : MsDataFile<IMzmlScan>
     {
+
         #region Public Constructors
 
         public TestDataFile() : base(2)
@@ -38,7 +39,7 @@ namespace Test
                 var intensities1 = new double[] { 1, 1, 1 };
                 var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
 
-                ScansHere.Add(new MzmlScan(2 * i + 1, MassSpectrum1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Orbitrap, 1000, 1));
+                ScansHere.Add(new MzmlScan(2 * i + 1, MassSpectrum1, 1, true, Polarity.Positive, 2 * i, new MzLibUtil.MzRange(0, 10000), "FTMS", MZAnalyzerType.Orbitrap, 1000, 1));
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
@@ -47,7 +48,7 @@ namespace Test
                     additionalMassesArray = new List<double> { 260.08307817722, 397.14199003569, 498.18966850487, 612.23259594625, 683.2697097314, 146.10552769922, 217.14264148437 };
                 else
                     additionalMassesArray = new List<double>();
-                foreach (var aok in pepWithSetMods.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Concat(additionalMassesArray))
+                foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Concat(additionalMassesArray))
                 {
                     mz2.Add(aok.ToMz(1));
                     mz2.Add((aok + 1.003).ToMz(1));
@@ -55,7 +56,7 @@ namespace Test
                     intensities2.Add(1);
                 }
                 var MassSpectrum2 = new MzmlMzSpectrum(mz2.OrderBy(b => b).ToArray(), intensities2.ToArray(), false);
-                ScansHere.Add(new MzmlScanWithPrecursor(2 * i + 2, MassSpectrum2, 2, true, Polarity.Positive, 2 * i + 1, new MzLibUtil.MzRange(0, 10000), "df", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 2 * i + 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1));
+                ScansHere.Add(new MzmlScanWithPrecursor(2 * i + 2, MassSpectrum2, 2, true, Polarity.Positive, 2 * i + 1, new MzLibUtil.MzRange(0, 10000), "FTMS", MZAnalyzerType.Orbitrap, 234734, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 2, DissociationType.HCD, 2 * i + 1, pepWithSetMods.MonoisotopicMass.ToMz(2), 1));
             }
             Scans = ScansHere.ToArray();
         }
@@ -70,7 +71,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -94,7 +95,7 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 {
                     var t1 = aok.ToMz(1);
                     var c = 0.0000001;
@@ -128,7 +129,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -173,5 +174,6 @@ namespace Test
         }
 
         #endregion Public Methods
+
     }
 }
