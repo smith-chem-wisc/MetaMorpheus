@@ -75,7 +75,7 @@ namespace EngineLayer.Analysis
 
             double min_q_value = double.PositiveInfinity;
             double[] min_q_value_notch = new double[sm.NumNotches + 1];
-            for (int i = 0; i < sm.NumNotches; i++)
+            for (int i = 0; i < sm.NumNotches + 1; i++)
                 min_q_value_notch[i] = double.PositiveInfinity;
 
             for (int i = ids.Count - 1; i >= 0; i--)
