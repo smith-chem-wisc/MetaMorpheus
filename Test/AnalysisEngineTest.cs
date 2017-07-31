@@ -105,7 +105,7 @@ namespace Test
 
             foreach (var huh in newPsms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
             FdrAnalysisEngine engine = new FdrAnalysisEngine(newPsms, searchModes, new List<string> { "ff" });
 

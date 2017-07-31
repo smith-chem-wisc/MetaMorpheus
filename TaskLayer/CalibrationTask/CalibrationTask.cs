@@ -9,6 +9,7 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -96,23 +97,12 @@ namespace TaskLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
+            sb.AppendLine(
+                "The initiator methionine behavior is set to "
                 + InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("protease: " + Protease);
-            sb.AppendLine("bIons: " + BIons);
-            sb.AppendLine("yIons: " + YIons);
-            sb.AppendLine("cIons: " + CIons);
-            sb.AppendLine("zdotIons: " + ZdotIons);
-            //sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModListsFixed));
-            //sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModListsVariable));
-            //sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModListsLocalize));
-            sb.AppendLine("PrecursorMassTolerance: " + PrecursorMassTolerance);
-            sb.Append("ProductMassTolerance: " + ProductMassTolerance);
+                + MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                );
             return sb.ToString();
         }
 
@@ -221,7 +211,7 @@ namespace TaskLayer
                     NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     Status("Loading spectra file " + origDataFile + "...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                    if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
@@ -252,7 +242,7 @@ namespace TaskLayer
 
                     foreach (var huh in allPsms[0])
                         if (huh != null && huh.MostProbableProteinInfo == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
+                            huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 
                     allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
@@ -262,7 +252,7 @@ namespace TaskLayer
                     if (WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.MostProbableProteinInfo.IsDecoy).ToList();
+                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
                     Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };
@@ -308,7 +298,7 @@ namespace TaskLayer
 
                     foreach (var huh in allPsms[0])
                         if (huh != null && huh.MostProbableProteinInfo == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatchingTest);
+                            huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatchingTest);
 
                     allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
@@ -317,7 +307,7 @@ namespace TaskLayer
                     if (WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeNonLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.MostProbableProteinInfo.IsDecoy).ToList();
+                    var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
                     Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };
@@ -356,7 +346,7 @@ namespace TaskLayer
 
                     foreach (var huh in allPsms[0])
                         if (huh != null && huh.MostProbableProteinInfo == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatchingTest);
+                            huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatchingTest);
 
                     // Group and order psms
                     allPsms[0] = searchResultsAfterCalib.Psms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();

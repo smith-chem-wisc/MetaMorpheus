@@ -57,7 +57,7 @@ namespace Test
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -102,7 +102,7 @@ namespace Test
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QXQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -167,7 +167,7 @@ namespace Test
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
-                    huh.ResolveProteinsAndMostProbablePeptide(hah.CompactPeptideToProteinPeptideMatching);
+                    huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
             Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
         }
@@ -217,7 +217,7 @@ namespace Test
 
             new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
-            Assert.AreEqual(3, searchResults.Psms[0][0].NumAmbiguous);
+            Assert.AreEqual(3, searchResults.Psms[0][0].NumDifferentCompactPeptides);
         }
 
         #endregion Public Methods
