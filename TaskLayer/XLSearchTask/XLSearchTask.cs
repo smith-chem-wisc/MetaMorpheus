@@ -373,7 +373,7 @@ namespace TaskLayer
                 var item1 = ids[i].Item1; var item2 = ids[i].Item2;
 
                 var isDecoy1 = item1.IsDecoy; var isDecoy2 = item1.IsDecoy;
-                int notch1 = item1.MostProbableProteinInfo.Notch; int notch2 = item1.MostProbableProteinInfo.Notch;
+                int notch1 = item1.Notch.Value; int notch2 = item1.Notch.Value;
                 if (isDecoy1 || isDecoy2)
                     cumulative_decoy++;
                 else

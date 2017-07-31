@@ -10,16 +10,14 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet, int notch)
+        public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet)
         {
-            Notch = notch;
             PeptidesWithSetModifications = hashSet;
             IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);
             IsContaminant = PeptidesWithSetModifications.Any(bb => bb.Protein.IsContaminant);
             var representative = PeptidesWithSetModifications.First();
 
             PeptideMonoisotopicMass = representative.MonoisotopicMass;
-            FullSequence = representative.Sequence;
             BaseSequence = representative.BaseSequence;
             MissedCleavages = representative.MissedCleavages;
             NumVariableMods = representative.NumMods - representative.numFixedMods;
@@ -31,10 +29,8 @@ namespace EngineLayer
         #region Public Properties
 
         public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; }
-        public string FullSequence { get; }
         public string BaseSequence { get; }
         public int MissedCleavages { get; }
-        public int Notch { get; }
         public double PeptideMonoisotopicMass { get; }
         public int NumVariableMods { get; }
         public string SequenceWithChemicalFormulas { get; }
@@ -87,12 +83,10 @@ namespace EngineLayer
             sb.Append(s + "\t");
 
             sb.Append(BaseSequence + "\t");
-            sb.Append(FullSequence + "\t");
 
             sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
             sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-            sb.Append(Notch.ToString(CultureInfo.InvariantCulture) + '\t');
 
             if (IsDecoy)
                 sb.Append("D");

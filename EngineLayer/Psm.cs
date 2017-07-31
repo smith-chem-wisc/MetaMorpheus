@@ -66,6 +66,7 @@ namespace EngineLayer
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
+        public int? Notch { get; private set; }
 
         #endregion Public Properties
 
@@ -262,13 +263,15 @@ namespace EngineLayer
             {
                 compactPeptides[ok] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[ok].Item1, matching[ok]);
 
-                var candidatePli = new ProteinLinkedInfo(matching[ok], compactPeptides[ok].Item1);
+                var candidatePli = new ProteinLinkedInfo(matching[ok]);
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
-            
+
             FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
+
+            Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
         public override string ToString()
@@ -286,7 +289,7 @@ namespace EngineLayer
             sb.Append('\t' + ScanPrecursorMonoisotopicPeak.Intensity.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
-            sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1))); // Notch
+            sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch
             sb.Append('\t' + NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture));
 
             if (compactPeptides.First().Value.Item2 != null)
@@ -361,14 +364,14 @@ namespace EngineLayer
             };
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void Add(CompactPeptide compactPeptide, int v)
+        public void Add(CompactPeptide compactPeptide, int v)
         {
             compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(v, null);
         }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal void Add(Psm psmParent)
         {
