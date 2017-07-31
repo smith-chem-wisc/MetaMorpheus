@@ -204,7 +204,7 @@ namespace TaskLayer
             return ye;
         }
 
-        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentXmlDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
+        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
             StartingSingleTask(taskId);
 
@@ -229,7 +229,7 @@ namespace TaskLayer
                     file.WriteLine("Spectra files:");
                     file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
                     file.WriteLine("XML files:");
-                    file.Write(string.Join(Environment.NewLine, currentXmlDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
+                    file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
                 }
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }
@@ -253,7 +253,7 @@ namespace TaskLayer
 #endif
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            RunSpecific(output_folder, currentXmlDbFilenameList, currentRawDataFilenameList, taskId);
+            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilenameList, taskId);
             stopWatch.Stop();
             myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
