@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -14,14 +13,10 @@ namespace EngineLayer
         {
             PeptidesWithSetModifications = hashSet;
             IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);
-            IsContaminant = PeptidesWithSetModifications.Any(bb => bb.Protein.IsContaminant);
             var representative = PeptidesWithSetModifications.First();
 
             PeptideMonoisotopicMass = representative.MonoisotopicMass;
             BaseSequence = representative.BaseSequence;
-            MissedCleavages = representative.MissedCleavages;
-            NumVariableMods = representative.NumMods - representative.numFixedMods;
-            SequenceWithChemicalFormulas = representative.SequenceWithChemicalFormulas;
         }
 
         #endregion Public Constructors
@@ -30,75 +25,10 @@ namespace EngineLayer
 
         public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; }
         public string BaseSequence { get; }
-        public int MissedCleavages { get; }
         public double PeptideMonoisotopicMass { get; }
-        public int NumVariableMods { get; }
-        public string SequenceWithChemicalFormulas { get; }
-        public bool IsContaminant { get; }
         public bool IsDecoy { get; }
 
         #endregion Public Properties
-
-        #region Public Methods
-
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append(PeptidesWithSetModifications.Count.ToString(CultureInfo.InvariantCulture) + "\t");
-
-            var s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.Accession));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.Protein.FullName));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => string.Join(",", b.Protein.GeneNames.Select(c => c.Item2))));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PeptideDescription));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => "[" + b.OneBasedStartResidueInProtein + " to " + b.OneBasedEndResidueInProtein + "]"));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.PreviousAminoAcid));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            s = string.Join(" or ", PeptidesWithSetModifications.Select(b => b.NextAminoAcid));
-            if (s.Length > 32000)
-                s = "too many";
-            sb.Append(s + "\t");
-
-            sb.Append(BaseSequence + "\t");
-
-            sb.Append(NumVariableMods.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(MissedCleavages.ToString(CultureInfo.InvariantCulture) + '\t');
-            sb.Append(PeptideMonoisotopicMass.ToString("F5", CultureInfo.InvariantCulture) + '\t');
-
-            if (IsDecoy)
-                sb.Append("D");
-            else if (IsContaminant)
-                sb.Append("C");
-            else
-                sb.Append("T");
-
-            return sb.ToString();
-        }
-
-        #endregion Public Methods
 
         #region Internal Methods
 
