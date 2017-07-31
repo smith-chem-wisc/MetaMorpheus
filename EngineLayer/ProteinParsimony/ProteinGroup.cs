@@ -105,7 +105,7 @@ namespace EngineLayer
             sb.Append("Number of Unique Peptides" + '\t');
             sb.Append("Sequence Coverage %" + '\t');
             sb.Append("Sequence Coverage" + '\t');
-            sb.Append("Sequence Coverage w Mods" + '\t');
+            sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Modification Info List" + "\t");
             if (FileNames != null)
             {
@@ -113,11 +113,11 @@ namespace EngineLayer
                     sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
             }
             sb.Append("Number of PSMs" + '\t');
-            sb.Append("Summed MetaMorpheus Score" + '\t');
+            sb.Append("Summed Score" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("Q-Value (%)");
+            sb.Append("QValue");
             return sb.ToString();
         }
 
