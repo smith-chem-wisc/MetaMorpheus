@@ -7,7 +7,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
-using System.Text.RegularExpressions;
 
 namespace TaskLayer
 {
@@ -64,7 +63,7 @@ namespace TaskLayer
 
             #region Add element to pepXML
             _pepxml.date = DateTime.Now;
-            _pepxml.summary_xml = items[0].Item1.FullFilePath + ".pep.xml";            
+            _pepxml.summary_xml = items[0].Item1.FullFilePath + ".pep.xml";              
 
             string proteaseC = ""; string proteaseNC = "";
             foreach (var x in Protease.SequencesInducingCleavage) { proteaseC += x; }
@@ -154,11 +153,7 @@ namespace TaskLayer
                              new pepXML.Generated.nameValueType{ name = "Localize All Modifications", value = LocalizeAll.ToString() },
                          }
                      }
-
                  },
-                 
-                 //spectrum_query = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query[],
-
                  }
              };
 

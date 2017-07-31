@@ -186,10 +186,6 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
             myTaskResults = new MyTaskResults(this);
-
-            List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
-            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                allPsms[searchModeIndex] = new List<Psm>();
             List<Tuple<PsmCross, PsmCross>> allPsmsXLTuple = new List<Tuple<PsmCross, PsmCross>>();
             List<PsmCross> allPsmsXL = new List<PsmCross>();
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
