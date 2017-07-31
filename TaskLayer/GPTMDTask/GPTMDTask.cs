@@ -170,7 +170,7 @@ namespace TaskLayer
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 lock (lock1) // Lock because reading is sequential
                 {
-                    if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                    if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
