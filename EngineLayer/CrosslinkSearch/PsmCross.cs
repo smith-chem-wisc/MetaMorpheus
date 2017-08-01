@@ -32,7 +32,7 @@ namespace EngineLayer.CrosslinkSearch
         public MatchedIonInfo matchedIonInfo { get; set; }
         public double NScore { get; set; }
         public double XLTotalScore { get; set; }
-
+        public int xlpos { get; set; }
         public int[] topPosition { get; set; }
 
 
@@ -69,6 +69,8 @@ namespace EngineLayer.CrosslinkSearch
 
             ProductMassesMightHave productMassMightHave = new ProductMassesMightHave(massLen);
             int i = 0;
+            int ib = 0;
+            int ic = 0;
             for (int j = 0; j < compactPeptide.NTerminalMasses.Length; j++)
             {
                 var hm = compactPeptide.NTerminalMasses[j];
@@ -77,31 +79,37 @@ namespace EngineLayer.CrosslinkSearch
                     if (j > 0)
                     {
                         productMassMightHave.ProductMz[i] = hm;
-                        productMassMightHave.ProductName[i] = "b" + i.ToString();
+                        productMassMightHave.ProductName[i] = "b" + (ib+2).ToString();
                         i++;
+                        ib++;
                     }
                 }
                 if (containsC)
                 {
                     productMassMightHave.ProductMz[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
-                    productMassMightHave.ProductName[i] = "c" + i.ToString();
+                    productMassMightHave.ProductName[i] = "c" + (ic+1).ToString();
                     i++;
+                    ic++;
                 }
             }
+            int iy = compactPeptide.CTerminalMasses.Length-1;
+            int iz = compactPeptide.CTerminalMasses.Length - 1;
             for (int j = 0; j < compactPeptide.CTerminalMasses.Length; j++)
             {
                 var hm = compactPeptide.CTerminalMasses[j];
                 if (containsY)
                 {
                     productMassMightHave.ProductMz[i] = hm + waterMonoisotopicMass;
-                    productMassMightHave.ProductName[i] = "y" + (compactPeptide.CTerminalMasses.Length + 2 - i).ToString();
+                    productMassMightHave.ProductName[i] = "y" + (compactPeptide.CTerminalMasses.Length - iy).ToString();
                     i++;
+                    iy--;
                 }
                 if (containsZdot)
                 {
                     productMassMightHave.ProductMz[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
-                    productMassMightHave.ProductName[i] = "z" + (compactPeptide.CTerminalMasses.Length + 2 - i).ToString();
+                    productMassMightHave.ProductName[i] = "z" + (compactPeptide.CTerminalMasses.Length  - iz).ToString();
                     i++;
+                    iz--;
                 }
             }
             return productMassMightHave;
