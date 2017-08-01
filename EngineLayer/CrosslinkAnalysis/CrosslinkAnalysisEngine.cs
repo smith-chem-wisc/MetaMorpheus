@@ -156,7 +156,6 @@ namespace EngineLayer.CrosslinkAnalysis
                 var huh1 = newPsms[myScanWithMassIndex].Item2;
                 if (huh1 != null && huh1.MostProbableProteinInfo == null)
                     huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                //newPsms[myScanWithMassIndex].Item1.XLTotalScore = newPsms[myScanWithMassIndex].Item1.XLBestScore + newPsms[myScanWithMassIndex].Item2.XLBestScore;
             }
 
             return myAnalysisResults;
