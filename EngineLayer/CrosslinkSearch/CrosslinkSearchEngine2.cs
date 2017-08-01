@@ -456,8 +456,8 @@ namespace EngineLayer.CrosslinkSearch
             int old_progress = 0;
 
             Status("Starting xlclassic search loop...", nestedIds);
-            Parallel.ForEach(Partitioner.Create(0, 1), partitionRange =>
-            //Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
+            //Parallel.ForEach(Partitioner.Create(0, 1), partitionRange =>
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
                 var psms = new PsmCross[selectedScan.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)

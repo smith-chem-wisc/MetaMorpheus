@@ -45,7 +45,7 @@ namespace TaskLayer
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            ProductMassTolerance = new PpmTolerance(10);
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -123,8 +123,6 @@ namespace TaskLayer
 
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
-
-        public SearchType SearchType { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
