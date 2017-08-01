@@ -37,7 +37,7 @@ namespace Test
 
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("D", out motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, ModificationSites.Any, 10, null, new List<double> { 0 }, null, null);
+            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10, null, new List<double> { 0 }, null, null);
 
             var possMod1 = prot1.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep1_0 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();

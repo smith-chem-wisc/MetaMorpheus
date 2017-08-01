@@ -364,7 +364,7 @@ namespace Test
 
             ModificationMotif motif;
             ModificationMotif.TryGetMotif("S", out motif);
-            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, ModificationSites.Any, ChemicalFormula.ParseFormula("H"), PeriodicTable.GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, "HaHa"));
+            variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, ChemicalFormula.ParseFormula("H"), PeriodicTable.GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, "HaHa"));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
