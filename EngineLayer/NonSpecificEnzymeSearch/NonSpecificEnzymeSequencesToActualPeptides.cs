@@ -56,14 +56,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 foreach (var cp in psm.compactPeptides)
                                 {
                                     List<double> ld = new List<double>();
-                                    if (compactPeptideToMassMatching.TryGetValue(cp, out ld))
+                                    if (compactPeptideToMassMatching.TryGetValue(cp.Key, out ld))
                                     {
                                         ld.Add(psm.ScanPrecursorMass);
                                     }
                                     else
                                     {
-                                        compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>()); //populate dictionary with all keys
-                                        compactPeptideToMassMatching.Add(cp, new List<double> { psm.ScanPrecursorMass });
+                                        compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>()); //populate dictionary with all keys
+                                        compactPeptideToMassMatching.Add(cp.Key, new List<double> { psm.ScanPrecursorMass });
                                     }
                                 }
                             }
@@ -379,11 +379,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 List<CompactPeptide> keysToUpdate = new List<CompactPeptide>();
                                 foreach (var cp in psm.compactPeptides)
                                 {
-                                    keysToUpdate.Add(cp);
+                                    keysToUpdate.Add(cp.Key);
                                 }
 
                                 foreach (CompactPeptide keyToUpdate in keysToUpdate)
                                 {
+                                    Tuple<int, HashSet<PeptideWithSetModifications>> tempTuple;
+                                    psm.compactPeptides.TryGetValue(keyToUpdate, out tempTuple);
                                     psm.compactPeptides.Remove(keyToUpdate);
                                     //get new CompactPeptide
                                     HashSet<CompactPeptideWithMass> tempCWPMHashSet;
@@ -394,9 +396,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                             if (Math.Abs((psm.ScanPrecursorMass - cpwm.precursorMass) / (cpwm.precursorMass) * 1e6) < precursorTolerance)
                                             {
                                                 CompactPeptide newKey = new CompactPeptide(keyToUpdate.CTerminalMasses, keyToUpdate.NTerminalMasses, cpwm.precursorMass, keyToUpdate.addCompIons);
-                                                if (!psm.compactPeptides.Contains(newKey))
+                                                if (!psm.compactPeptides.ContainsKey(newKey))
                                                 {
-                                                    psm.compactPeptides.Add(newKey);
+                                                    psm.compactPeptides.Add(newKey, tempTuple);
                                                 }
                                                 HashSet<PeptideWithSetModifications> localTempPWSMHashSet;
                                                 if (CPWMtoPWSM.TryGetValue(cpwm, out localTempPWSMHashSet))
@@ -421,18 +423,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     throw new MissingMemberException("There was an incorrect mass calculation resulting in the loss of scan " + psm.ScanNumber);
                                 }
                             }
-                //Status("Computing info about actual peptides with modifications...", new List<string> { taskId });
-                for (int j = 0; j < massDiffAcceptors.Count; j++)
-                {
-                    if (allPsms[j] != null)
-                    {
-                        foreach (var huh in allPsms[j])
-                        {
-                            if (huh != null && huh.MostProbableProteinInfo == null)
-                                huh.ResolveProteinsAndMostProbablePeptide(MHCOutput);
-                        }
-                    }
-                }
+
                 return new SequencesToActualProteinPeptidesEngineResults(this, MHCOutput);
             }
             else //fusion peptides
@@ -450,8 +441,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             if (psm != null)
                             {
                                 foreach (var cp in psm.compactPeptides)
-                                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                        compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
+                                        compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
                             }
                 //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
                 int totalProteins = proteinList.Count;
@@ -492,18 +483,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 });
 
                 #endregion Match Sequences to PeptideWithSetModifications
-                //Status("Computing info about actual peptides with modifications...", new List<string> { taskId });
-                for (int j = 0; j < massDiffAcceptors.Count; j++)
-                {
-                    if (allPsms[j] != null)
-                    {
-                        foreach (var huh in allPsms[j])
-                        {
-                            if (huh != null && huh.MostProbableProteinInfo == null)
-                                huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
-                        }
-                    }
-                }
+
                 return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
             }
         }
