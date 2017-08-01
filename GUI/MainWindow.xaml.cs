@@ -45,7 +45,7 @@ namespace MetaMorpheusGUI
 
             try
             {
-                foreach (var modFile in Directory.GetFiles(@"Mods"))
+                foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
                     GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
             catch (Exception e)
