@@ -29,6 +29,22 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
+        public TestDataFile(string slightlyLargerDataFile):base(2)
+        {
+            var mz1 = new double[] { 50, 60, 70, 80, 90, 630.27216.ToMz(2) };
+            var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum1 = new MzmlMzSpectrum(mz1, intensities1, false);
+
+            var ScansHere = new List<IMzmlScan> { new MzmlScan(1, MassSpectrum1, 1, true, Polarity.Positive, 1, new MzLibUtil.MzRange(0, 10000), "ff", MZAnalyzerType.Unknown, 1000, 1) };
+            var mz2 = new double[] { 50, 60, 70, 76.0393, 133.0608, 147.0764, 190.0822, 247.1037, 257.1244, 258.127, 275.1350, 385.1830, 442.2045, 630.27216 };
+            var intensities2 = new double[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            var MassSpectrum2 = new MzmlMzSpectrum(mz2, intensities2, false);
+            ScansHere.Add(new MzmlScanWithPrecursor(2, MassSpectrum2, 2, true, Polarity.Positive, 2,
+                new MzLibUtil.MzRange(0, 10000), "f", MZAnalyzerType.Unknown, 100000, 630.27216.ToMz(2), 2, 1, 630.27216.ToMz(2), 2, DissociationType.HCD, 1, 630.27216.ToMz(2), 1));
+
+            Scans = ScansHere.ToArray();
+        }
+
         public TestDataFile(List<PeptideWithSetModifications> pepWithSetModss, bool additionalMasses = false) : base(pepWithSetModss.Count * 2)
         {
             var ScansHere = new List<IMzmlScan>();
