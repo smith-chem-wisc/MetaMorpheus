@@ -109,8 +109,8 @@ namespace MetaMorpheusGUI
             cbbXLprecusorMsTl.Items.Add("Absolute");
             cbbXLprecusorMsTl.Items.Add("Ppm");
 
-            //foreach (string toleranceUnit in Enum.GetNames(typeof(ToleranceUnit)))
-            //    cbbXLprecusorMsTl.Items.Add(toleranceUnit);
+            cbbXLBetaprecusorMsTl.Items.Add("Absolute");
+            cbbXLBetaprecusorMsTl.Items.Add("Ppm");
 
             foreach (Protease protease in GlobalTaskLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
@@ -149,10 +149,6 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
-
-            foreach (var uu in GlobalTaskLevelSettings.SearchModesKnown)
-                SearchModesForThisTask.Add(new SearchModeForDataGrid(uu));
-            searchModesDataGrid.DataContext = SearchModesForThisTask;
         }
 
         private void UpdateFieldsFromTask(XLSearchTask task)
@@ -169,6 +165,8 @@ namespace MetaMorpheusGUI
             txtUdXLkerAminoAcid.Text = task.UdXLkerResidue.ToString();
             cbbXLprecusorMsTl.SelectedIndex = task.XLprecusorMsTl is AbsoluteTolerance ? 0 : 1;
             txtXLPrecusorMsTl.Text = task.XLprecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
+            cbbXLBetaprecusorMsTl.SelectedIndex = task.XLprecusorMsTl is AbsoluteTolerance ? 0 : 1;
+            txtXLBetaPrecusorMsTl.Text = task.XLprecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
@@ -256,11 +254,6 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
-
-            foreach (var cool in task.MassDiffAcceptors)
-                SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(cool.FileNameAddition)).Use = true;
-
-            searchModesDataGrid.Items.Refresh();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -277,6 +270,12 @@ namespace MetaMorpheusGUI
                 TheTask.XLprecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
             else
                 TheTask.XLprecusorMsTl = new PpmTolerance(double.Parse(txtXLPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+
+            if (cbbXLBetaprecusorMsTl.SelectedIndex == 0)
+                TheTask.XLBetaPrecusorMsTl = new AbsoluteTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+            else
+                TheTask.XLBetaPrecusorMsTl = new PpmTolerance(double.Parse(txtXLBetaPrecusorMsTl.Text, CultureInfo.InvariantCulture));
+
             if (TheTask.CrosslinkerType == CrosslinkerType.UserDefined)
             {
                 TheTask.UdXLkerName = txtUdXLKerName.Text;
@@ -320,24 +319,7 @@ namespace MetaMorpheusGUI
                     TheTask.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.MassDiffAcceptors = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList();
-
             DialogResult = true;
-        }
-
-        private void AddNewAllowedPrecursorMassDiffsButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var ye = MetaMorpheusTask.ParseSearchMode(newAllowedPrecursorMassDiffsTextBox.Text);
-                GlobalTaskLevelSettings.SearchModesKnown.Add(ye);
-                SearchModesForThisTask.Add(new SearchModeForDataGrid(ye));
-                searchModesDataGrid.Items.Refresh();
-            }
-            catch
-            {
-                MessageBox.Show("Examples:" + Environment.NewLine + "name dot 5 ppm 0,1.003,2.006" + Environment.NewLine + "name interval [-4;-3],[-0.5;0.5],[101;102]", "Error parsing search mode text box", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
         }
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
