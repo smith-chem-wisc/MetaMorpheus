@@ -182,6 +182,8 @@ namespace EngineLayer
             }
         }
 
+        public int NumVariableMods { get { return this.NumMods - this.numFixedMods; } }
+
         #endregion Public Properties
 
         #region Public Methods
@@ -204,7 +206,13 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             var q = obj as PeptideWithSetModifications;
-            return q != null && q.Sequence.Equals(Sequence) && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein && q.Protein.Equals(Protein);
+            //foreach (var ok in q.allModsOneIsNterminus)
+            //    if (!allModsOneIsNterminus.Contains(ok))
+            //        return false;
+            return q != null
+                && q.Sequence.Equals(Sequence)
+                && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein
+                && q.Protein.Equals(Protein);
         }
 
         public override int GetHashCode()

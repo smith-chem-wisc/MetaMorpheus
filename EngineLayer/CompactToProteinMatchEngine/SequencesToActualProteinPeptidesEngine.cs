@@ -65,9 +65,9 @@ namespace EngineLayer
                         foreach (var psm in psmListForAspecificSerchMode)
                             if (psm != null)
                             {
-                                foreach (var cp in psm.compactPeptides)
-                                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                        compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                                foreach (var cp in psm.CompactPeptides)
+                                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
+                                        compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
                             }
                 //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
                 int totalProteins = proteinList.Count;
@@ -101,8 +101,8 @@ namespace EngineLayer
                         var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                         if (new_progress > old_progress)
                         {
-                        //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
-                        old_progress = new_progress;
+                            //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
+                            old_progress = new_progress;
                         }
                     }
                 });
@@ -130,7 +130,7 @@ namespace EngineLayer
             }
         }
 
-    private bool isSearchMHC(Protease protease)
+        private bool isSearchMHC(Protease protease)
         {
             if (protease.Name.Contains("single"))
             {
