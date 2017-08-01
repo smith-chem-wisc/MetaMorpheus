@@ -251,17 +251,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass, PpmTolerance precursorTolerance)
         {
-            if (spectrum.OneBasedScanNumber == 10575)
-            { }
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
                 var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
-                if (spectrum.OneBasedScanNumber == 10575)
-                {
-                    if (experimentalPeakInDaltons > 586)
-                    { }
-                }
                 GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, fragmentTolerance);
             }
             if (addCompIons)
@@ -285,11 +278,55 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 }
 
                 IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
-                AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(fragmentTolerance.Value + thePrecursorMass / 1000000 * precursorTolerance.Value);
+                //propogation of error from precursor mass and complementary product mass
+                AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(fragmentTolerance.Value,2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value,2)));
                 foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
                 {
                     var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
                     GeneratePeptideScores(theAdd, experimentalPeak.Mz, peptideScores, expandedFragmentTolerance);
+                }
+            }
+        }
+
+        private void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores, Tolerance fragmentTolerance)
+        {
+            float closestPeak;
+            var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
+            if (ipos < 0)
+                ipos = ~ipos;
+
+            if (ipos > 0)
+            {
+                var downIpos = ipos - 1;
+                // Try down
+                while (downIpos >= 0)
+                {
+                    closestPeak = keys[downIpos];
+                    if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                    {
+                        foreach (var heh in fragmentIndex[downIpos])
+                            peptideScores[heh] += theAdd;
+                    }
+                    else
+                        break;
+                    downIpos--;
+                }
+            }
+            if (ipos < keys.Length)
+            {
+                var upIpos = ipos;
+                // Try here and up
+                while (upIpos < keys.Length)
+                {
+                    closestPeak = keys[upIpos];
+                    if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                    {
+                        foreach (var heh in fragmentIndex[upIpos])
+                            peptideScores[heh] += theAdd;
+                    }
+                    else
+                        break;
+                    upIpos++;
                 }
             }
         }

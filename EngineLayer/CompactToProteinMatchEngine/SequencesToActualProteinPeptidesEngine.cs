@@ -120,7 +120,7 @@ namespace EngineLayer
 
         private bool isSearchMHC(Protease protease)
         {
-            if (protease.Name.Contains("single"))
+            if (protease.Name.Contains("single") && massDiffAcceptors.Count() > 1)
             {
                 return true;
             }

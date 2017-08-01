@@ -11,22 +11,25 @@ namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 
-        private readonly List<int>[] fragmentIndex;
+        #endregion Private Fields
+
+        #region Public Fields
+
+        public readonly List<int>[] fragmentIndex;
 
         public readonly Tolerance fragmentTolerance;
 
-        private readonly float[] keys;
+        public readonly float[] keys;
 
-        public readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans; 
+        public readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
 
         public readonly List<CompactPeptide> peptideIndex;
 
-        public readonly List<MassDiffAcceptor> searchModes; 
+        public readonly List<MassDiffAcceptor> searchModes;
 
         public readonly bool addCompIons;
 
@@ -38,7 +41,7 @@ namespace EngineLayer.ModernSearch
 
         public readonly int? minPeptideLength;
 
-        #endregion Private Fields
+        #endregion Public Fields
 
         #region Public Constructors
 
@@ -179,15 +182,52 @@ namespace EngineLayer.ModernSearch
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
-            for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+            if (!addCompIons)
             {
-                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
-                GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, fragmentTolerance);
+                for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                {
+                    var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
+                    var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                    GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
+                }
+            }
+            else
+            {
+                List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
+                for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                {
+                    experimentalPeaks.Add(spectrum.MassSpectrum[i]);
+                }
+
+                //If HCD
+                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                {
+                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    {
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity / 100)));
+                    }
+                }
+                //If ETD
+                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                {
+                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                    {
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 3), (spectrum.MassSpectrum[i].Intensity / 100)));
+                    }
+                }
+
+                IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
+
+                foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
+                {
+                    var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
+                    var experimentalPeakInDaltons = experimentalPeak.Mz - Constants.protonMass;
+                    GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
+                }
             }
         }
 
-        public void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores, Tolerance fragmentTolerance)
+        private void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores)
         {
             float closestPeak;
             var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
@@ -229,10 +269,10 @@ namespace EngineLayer.ModernSearch
                 }
             }
         }
-
+        
         private bool isSearchMHC(Protease protease)
         {
-            if (protease.Name.Contains("single"))
+            if (protease.Name.Contains("single") && searchModes.Count()>1)
             {
                 return true;
             }
