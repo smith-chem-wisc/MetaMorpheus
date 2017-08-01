@@ -491,10 +491,6 @@ namespace EngineLayer.CrosslinkSearch
 
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
-                                //if (!yyy.BaseSequence.Contains(crosslinker.CrosslinkerModSite))
-                                //{
-                                //    break;
-                                //}
                                 var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, fragmentTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
                                 if (score > 1)
                                 {
@@ -557,6 +553,7 @@ namespace EngineLayer.CrosslinkSearch
                 if (outerPsms[i] != null)
                 {
                     XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i]);
+                    selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
                     newPsmsTopTuple.Add(new Tuple<PsmCross, PsmCross>(selectedPsmParent[i], outerPsms[i]));
                 }
             }
