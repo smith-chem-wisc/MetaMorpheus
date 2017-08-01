@@ -492,7 +492,7 @@ namespace EngineLayer.CrosslinkSearch
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, InitiatorMethionineBehavior.Variable, fixedModifications, false).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.Length <= 1)

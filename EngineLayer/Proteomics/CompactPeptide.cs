@@ -19,10 +19,17 @@ namespace EngineLayer
 
         #endregion Private Fields
 
+        #region Public Fields
+
+        public readonly bool addCompIons;
+
+        #endregion Public Fields
+
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications yyy)
+        public CompactPeptide(PeptideWithSetModifications yyy, bool addCompIons)
         {
+            this.addCompIons = addCompIons;
             ModificationWithMass pep_n_term_variable_mod;
             double theMass = 0;
             if (yyy.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
@@ -44,6 +51,14 @@ namespace EngineLayer
             MonoisotopicMassIncludingFixedMods = yyy.MonoisotopicMass;
         }
 
+        public CompactPeptide(double[] CTerminalMasses, double[] NTerminalMasses, double MonoisotopicMassIncludingFixedMods, bool addCompIons)
+        {
+            this.CTerminalMasses = CTerminalMasses;
+            this.NTerminalMasses = NTerminalMasses;
+            this.MonoisotopicMassIncludingFixedMods = MonoisotopicMassIncludingFixedMods;
+            this.addCompIons = addCompIons;
+        }
+
         #endregion Public Constructors
 
         #region Public Properties
@@ -62,7 +77,7 @@ namespace EngineLayer
             if (cp == null)
                 return false;
             return (CTerminalMasses.SequenceEqual(cp.CTerminalMasses) &&
-                NTerminalMasses.SequenceEqual(cp.NTerminalMasses));
+                NTerminalMasses.SequenceEqual(cp.NTerminalMasses) && MonoisotopicMassIncludingFixedMods.Equals(cp.MonoisotopicMassIncludingFixedMods));
         }
 
         public override int GetHashCode()
@@ -89,7 +104,14 @@ namespace EngineLayer
             if (containsAdot)
                 throw new NotImplementedException();
             if (containsB)
-                massLen += NTerminalMasses.Length - 1;
+                if (addCompIons)
+                {
+                    massLen += NTerminalMasses.Length;
+                }
+                else
+                {
+                    massLen += NTerminalMasses.Length - 1;
+                }
             if (containsC)
                 massLen += NTerminalMasses.Length;
             if (containsX)
@@ -107,7 +129,12 @@ namespace EngineLayer
                 var hm = NTerminalMasses[j];
                 if (containsB)
                 {
-                    if (j > 0)
+                    if (addCompIons)
+                    {
+                        massesToReturn[i] = hm;
+                        i++;
+                    }
+                    else if (j > 0)
                     {
                         massesToReturn[i] = hm;
                         i++;

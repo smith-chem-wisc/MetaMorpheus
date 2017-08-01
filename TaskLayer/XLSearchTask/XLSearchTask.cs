@@ -246,7 +246,7 @@ namespace TaskLayer
             #region Generate indices for modern search
 
             Status("Getting fragment dictionary...", new List<string> { taskId });
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, false);
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
             Dictionary<float, List<int>> fragmentIndexDict;
@@ -322,7 +322,7 @@ namespace TaskLayer
                 if (SearchType == SearchType.Classic)
                     searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior.Variable, false).Run());
                 else
-                    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, false, new List<ProductType>()).Run()));
+                    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, false, new List<ProductType>(), Protease, MinPeptideLength).Run()));
                 CrosslinkSearchResults xlsearchResults;
                 if (CrosslinkSearchWithAllBeta)
                     xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());

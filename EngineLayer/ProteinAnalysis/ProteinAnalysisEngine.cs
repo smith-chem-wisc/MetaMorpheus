@@ -58,7 +58,7 @@ namespace EngineLayer
                             foreach (var missingProtein in missingProteins)
                             {
                                 var templatePepWithSetMod = baseseq.SelectMany(p => p.Value).First(v => v.Protein.Equals(missingProtein));
-                                compactPeptideToProteinPeptideMatching[compactPeptide.Key].Add(new PeptideWithSetModifications(compactPeptide.Value.First(), templatePepWithSetMod));
+                                compactPeptideToProteinPeptideMatching[compactPeptide.Key].Add(new PeptideWithSetModifications(compactPeptide.Value.First(), templatePepWithSetMod, false));
                             }
                         }
                     }

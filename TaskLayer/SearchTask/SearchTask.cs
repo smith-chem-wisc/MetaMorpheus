@@ -210,7 +210,7 @@ namespace TaskLayer
                 #region Generate indices for modern search
 
                 Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, addCompIons);
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
                 Dictionary<float, List<int>> fragmentIndexDict;
@@ -274,7 +274,7 @@ namespace TaskLayer
                     if (SearchType == SearchType.Classic)
                         searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.addCompIons).Run());
                     else
-                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.addCompIons, ionTypes).Run()));
+                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.addCompIons, ionTypes, Protease, MinPeptideLength).Run()));
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -296,7 +296,7 @@ namespace TaskLayer
 
             // Group and order psms
             Status("Matching peptides to proteins...", taskId);
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, addCompIons, ionTypes);
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 

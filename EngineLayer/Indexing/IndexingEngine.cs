@@ -28,12 +28,13 @@ namespace EngineLayer.Indexing
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
         private readonly List<ProductType> lp;
+        private readonly bool addCompIons;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool addCompIons) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -45,6 +46,7 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
+            this.addCompIons = addCompIons;
         }
 
         #endregion Public Constructors
@@ -87,7 +89,7 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, addCompIons).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.NumKnownPossibleLocMods == 0)
@@ -117,7 +119,7 @@ namespace EngineLayer.Indexing
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy);
+                            var ps = new CompactPeptide(yyy, addCompIons);
 
                             int index;
                             lock (myDictionary)

@@ -14,13 +14,13 @@ namespace EngineLayer
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
+        public readonly PeptideWithPossibleModifications modPep;
 
         #endregion Public Fields
 
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private readonly PeptideWithPossibleModifications modPep;
         private string sequence;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
@@ -33,19 +33,19 @@ namespace EngineLayer
 
         #region Internal Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, bool addCompIons)
+                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein, addCompIons)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications oldPWSM, PeptideWithSetModifications pepwithSetModsWithNewProtein) : base(pepwithSetModsWithNewProtein.Protein, pepwithSetModsWithNewProtein.OneBasedStartResidueInProtein, pepwithSetModsWithNewProtein.OneBasedEndResidueInProtein)
+        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne, bool addCompIons) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein, addCompIons)
         {
-            this.modPep = oldPWSM.modPep;
-            this.allModsOneIsNterminus = oldPWSM.allModsOneIsNterminus;
-            this.numFixedMods = oldPWSM.numFixedMods;
+            this.modPep = everythingElseFromThisOne.modPep;
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
+            this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
         #endregion Internal Constructors
@@ -58,7 +58,7 @@ namespace EngineLayer
             {
                 if (compactPeptide == null)
                 {
-                    compactPeptide = new CompactPeptide(this);
+                    compactPeptide = new CompactPeptide(this, addCompIons);
                 }
                 return compactPeptide;
             }
@@ -197,7 +197,7 @@ namespace EngineLayer
                 vvv.Remove(j + 2);
             }
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
+            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods, addCompIons);
             return hm;
         }
 

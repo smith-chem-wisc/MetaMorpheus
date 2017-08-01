@@ -104,6 +104,9 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
+    <Compile Include="NonSpecificEnzymeSearch\CompactPeptideWithMass.cs" />
+    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
+    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />
     <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisResults.cs" />
