@@ -61,7 +61,7 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications, false).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
@@ -84,7 +84,7 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications, false).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
             var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
@@ -138,7 +138,7 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications, false).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
@@ -161,7 +161,7 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications, false).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
             var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
@@ -231,7 +231,7 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-                var targetDigested = theProteins[0].Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 1, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+                var targetDigested = theProteins[0].Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 1, null, null, InitiatorMethionineBehavior.Retain, fixedModifications, false).ToList();
 
                 ModificationMotif motif;
                 ModificationMotif.TryGetMotif("T", out motif);
@@ -325,7 +325,7 @@ namespace Test
             //now write MZML file
             Dictionary<string, Modification> ok;
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
-            var digestedList = protein[0].Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }, false).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
@@ -429,7 +429,7 @@ namespace Test
             //now write MZML file
             Dictionary<string, Modification> ok;
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
-            var digestedList = protein[0].Digest(testUnique.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(testUnique.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }, false).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];

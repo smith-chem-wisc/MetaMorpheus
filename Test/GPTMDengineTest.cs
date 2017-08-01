@@ -39,7 +39,7 @@ namespace Test
             var parentProtein = new Protein("NNNNN", "accession");
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
+            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), false).First();
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
@@ -81,7 +81,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, new MzPeak((651.297638557 + 21.981943 + 15.994915).ToMz(1), 1), 1, null);
 
             var parentProtein = new Protein("NNNPPP", "accession");
-            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
+            var modPep = parentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), false).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
