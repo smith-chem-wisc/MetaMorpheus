@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace TaskLayer
 {
-    public class XLSearchTask : MetaMorpheusTask
+    public partial class XLSearchTask : MetaMorpheusTask
     {
 
         #region Private Fields
@@ -45,7 +45,7 @@ namespace TaskLayer
             Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            ProductMassTolerance = new PpmTolerance(10);
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -62,8 +62,6 @@ namespace TaskLayer
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
 
-            MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-
             ConserveMemory = false;
             MaxDegreeOfParallelism = null;
             CrosslinkerType = CrosslinkerType.DSS;
@@ -75,7 +73,8 @@ namespace TaskLayer
             UdXLkerLongMass = null;
             UdXLkerTotalMass = null;
             UdXLkerResidue = 'K';
-            XLprecusorMsTl = new AbsoluteTolerance(0.01);
+            XLprecusorMsTl = new PpmTolerance(10);
+            XLBetaPrecusorMsTl = new PpmTolerance(10);
 
             // Deconvolution stuff
             DoPrecursorDeconvolution = false;
@@ -116,7 +115,7 @@ namespace TaskLayer
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchDecoy { get; set; }
-        public List<MassDiffAcceptor> MassDiffAcceptors { get; set; }
+
         public bool ConserveMemory { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
@@ -124,8 +123,6 @@ namespace TaskLayer
 
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
-
-        public SearchType SearchType { get; set; }
 
         public CrosslinkerType CrosslinkerType { get; set; }
         public int CrosslinkSearchTopNum { get; set; }
@@ -137,6 +134,7 @@ namespace TaskLayer
         public double? UdXLkerLongMass { get; set; }
         public char UdXLkerResidue { get; set; }
         public Tolerance XLprecusorMsTl { get; set; }
+        public Tolerance XLBetaPrecusorMsTl { get; set; }
 
         #endregion Public Properties
 
@@ -146,6 +144,28 @@ namespace TaskLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
+            sb.AppendLine("The initiator methionine behavior is set to "
+                + InitiatorMethionineBehavior
+                + " and the maximum number of allowed missed cleavages is "
+                + MaxMissedCleavages);
+            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
+            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
+            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
+            sb.AppendLine("protease: " + Protease);
+            sb.AppendLine("bIons: " + BIons);
+            sb.AppendLine("yIons: " + YIons);
+            sb.AppendLine("cIons: " + CIons);
+            sb.AppendLine("zdotIons: " + ZdotIons);
+
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModsFixed));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModsVariable));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModsLocalize));
+            sb.AppendLine("searchDecoy: " + SearchDecoy);
+            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
+
+            sb.AppendLine("Crosslink Precusor mass tolerance: " + XLprecusorMsTl);
+            sb.AppendLine("Beta Precusor mass tolerance: " + XLBetaPrecusorMsTl);
+
             return sb.ToString();
         }
 
@@ -156,10 +176,6 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
             myTaskResults = new MyTaskResults(this);
-
-            List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
-            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                allPsms[searchModeIndex] = new List<Psm>();
             List<Tuple<PsmCross, PsmCross>> allPsmsXLTuple = new List<Tuple<PsmCross, PsmCross>>();
             List<PsmCross> allPsmsXL = new List<PsmCross>();
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
@@ -286,23 +302,18 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 Status("Starting search...", thisId);
-                //SearchResults searchResults;
-                //if (SearchType == SearchType.Classic)
-                //    searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior.Variable).Run());
-                //else
-                //    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId).Run()));
+
                 CrosslinkSearchResults xlsearchResults;
                 if (CrosslinkSearchWithAllBeta)
-                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
+                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance,  crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
                 else
-                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors[0], crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, ionTypes, modsDictionary, thisId).Run());
+                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run());
 
                 myFileManager.DoneWithFile(origDataFile);
 
                 lock (lock2)
                 {
-                    //for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                    //    allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
+
                     allPsmsXLTuple.AddRange(xlsearchResults.NewPsms);
                     foreach (var item in xlsearchResults.NewPsms)
                     {
@@ -320,17 +331,24 @@ namespace TaskLayer
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsmsXLTuple, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }).Run();
             allPsmsXLTuple = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).ToList();
-            //WriteCrosslinkToTsv(allPsmsXLTuple, OutputFolder, "xl_all", new List<string> { taskId });
 
             var allPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(allPsmsXLTuple, new OpenSearchMode());
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
+            if (allPsmsXLTupleFDR.Count!=0)
+            {
+                foreach (var fullFilePath in currentRawFileList)
+                {
+                    string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
+                    WritePepXML(allPsmsXLTupleFDR.Where(p => p.Item1.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                }
+            }
 
             var interPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
-            interPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.IsDecoy != true && p.Item2.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            interPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(interPsmsXLTupleFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
 
             var intraPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
-            intraPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.IsDecoy != true && p.Item2.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
+            intraPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(intraPsmsXLTupleFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
 
             return myTaskResults;
@@ -351,50 +369,6 @@ namespace TaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
-        }
-
-        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
-        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
-        {
-            var ids = new List<Tuple<PsmCross, PsmCross>>();
-            foreach (var item in items)
-            {
-                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
-            }
-
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-
-            int[] cumulative_target_per_notch = new int[sm.NumNotches];
-            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
-
-                var isDecoy1 = item1.IsDecoy; var isDecoy2 = item1.IsDecoy;
-                if (isDecoy1 || isDecoy2)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i].Item1;
-                if (id.FdrInfo.QValue > min_q_value)
-                    id.FdrInfo.QValue = min_q_value;
-                else if (id.FdrInfo.QValue < min_q_value)
-                    min_q_value = id.FdrInfo.QValue;
-            }
-
-            return ids;
         }
 
         private int GetOneBasedIndexInProtein(int oneIsNterminus, PeptideWithSetModifications peptideWithSetModifications)
@@ -468,48 +442,51 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
         }
 
-        private void WriteCrosslinkToTsv(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, List<string> nestedIds)
+        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
+        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
         {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".mytsv");
-            using (StreamWriter output = new StreamWriter(writtenFile))
+            var ids = new List<Tuple<PsmCross, PsmCross>>();
+            foreach (var item in items)
             {
-                output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence\tPep1 mass\tPep1 XLBestScore\tPep1 topPos" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence\tPep2 mass\tPep2 XLBestScore\tPep2 topPos\tTotalScore\tMass diff\tQValue");
-                foreach (var item in items)
-                {
-                    var x = item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
-                    output.WriteLine(
-                        item.Item1.FullFilePath
-                        + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.ScanPrecursorMonoisotopicPeak.ToString() //CultureInfo.InvariantCulture
-                        + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t"
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item1.FullSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
-                        //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t"
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
-                        + "\t" + item.Item2.FullSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)
-                        //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
-
-                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass)
-                        + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
-                }
+                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
             }
-            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
-        }
 
+            int cumulative_target = 0;
+            int cumulative_decoy = 0;
+
+            int[] cumulative_target_per_notch = new int[sm.NumNotches];
+            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
+
+            for (int i = 0; i < ids.Count; i++)
+            {
+                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
+
+                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
+                if (isDecoy1 || isDecoy2)
+                    cumulative_decoy++;
+                else
+                    cumulative_target++;
+
+
+                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+            }
+
+            double min_q_value = double.PositiveInfinity;
+
+            for (int i = ids.Count - 1; i >= 0; i--)
+            {
+                PsmCross id = ids[i].Item1;
+                if (id.FdrInfo.QValue > min_q_value)
+                    id.FdrInfo.QValue = min_q_value;
+                else if (id.FdrInfo.QValue < min_q_value)
+                    min_q_value = id.FdrInfo.QValue;
+            }
+
+            return ids;
+        }
+        
         #endregion Private Methods
 
     }

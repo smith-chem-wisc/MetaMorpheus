@@ -231,6 +231,8 @@ namespace Test
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
 
             CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1);
+            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2);
+            Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
             CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3);
 
             List<Psm>[] newPsms = new List<Psm>[1];

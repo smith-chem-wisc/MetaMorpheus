@@ -61,8 +61,11 @@ namespace EngineLayer
             var cp = obj as CompactPeptide;
             if (cp == null)
                 return false;
-            return (CTerminalMasses.SequenceEqual(cp.CTerminalMasses) &&
-                NTerminalMasses.SequenceEqual(cp.NTerminalMasses));
+            return (
+                ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                );
         }
 
         public override int GetHashCode()
