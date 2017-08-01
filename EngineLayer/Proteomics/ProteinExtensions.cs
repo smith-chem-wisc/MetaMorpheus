@@ -1,6 +1,7 @@
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer
 {
@@ -29,7 +30,7 @@ namespace EngineLayer
                             // Retain!
                             if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || i != 0 || protein[0] != 'M')
                             {
-                                if((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength ) &&
+                                if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
                                 {
                                     yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full", allKnownFixedModifications);
@@ -162,8 +163,8 @@ namespace EngineLayer
                 }
                 if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
                 {
-                    if ((!minPeptidesLength.HasValue || protein.Length-1 >= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || protein.Length-1 <= maxPeptidesLength))
+                    if ((!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || protein.Length - 1 <= maxPeptidesLength))
                     {
                         yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
                     }
@@ -181,6 +182,12 @@ namespace EngineLayer
                     }
             }
         }
+
+        public static string TabSeparatedString(this Protein protein)
+        {
+            return protein.Accession + "\t" + protein.FullName + "\t" + string.Join(",", protein.GeneNames.Select(c => c.Item1 + ":" + c.Item2));
+        }
+
         #endregion Public Methods
 
     }

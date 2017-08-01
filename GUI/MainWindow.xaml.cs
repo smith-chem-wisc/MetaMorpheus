@@ -45,7 +45,7 @@ namespace MetaMorpheusGUI
 
             try
             {
-                foreach (var modFile in Directory.GetFiles(@"Mods"))
+                foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
                     GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
             catch (Exception e)
@@ -223,23 +223,7 @@ namespace MetaMorpheusGUI
             if (openPicker.ShowDialog() == true)
                 foreach (var filepath in openPicker.FileNames)
                 {
-                    ProteinDbForDataGrid uu = new ProteinDbForDataGrid(filepath);
-                    if (!ExistDa(proteinDbObservableCollection, uu))
-                    {
-                        proteinDbObservableCollection.Add(uu);
-                        if (!Path.GetExtension(filepath).Equals(".fasta"))
-                        {
-                            try
-                            {
-                                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(filepath).OfType<ModificationWithLocation>());
-                            }
-                            catch (Exception ee)
-                            {
-                                MessageBox.Show(ee.ToString());
-                                Application.Current.Shutdown();
-                            }
-                        }
-                    }
+                    AddAFile(filepath);
                 }
             dataGridXMLs.Items.Refresh();
         }
@@ -256,8 +240,7 @@ namespace MetaMorpheusGUI
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var rawDataFromSelected in openFileDialog1.FileNames)
                 {
-                    RawDataForDataGrid zz = new RawDataForDataGrid(rawDataFromSelected);
-                    if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
+                    AddAFile(rawDataFromSelected);
                 }
             dataGridDatafiles.Items.Refresh();
         }
@@ -297,7 +280,24 @@ namespace MetaMorpheusGUI
                 case ".xml":
                 case ".gz":
                 case ".fasta":
-                    proteinDbObservableCollection.Add(new ProteinDbForDataGrid(draggedFilePath));
+
+                    ProteinDbForDataGrid uu = new ProteinDbForDataGrid(draggedFilePath);
+                    if (!ExistDa(proteinDbObservableCollection, uu))
+                    {
+                        proteinDbObservableCollection.Add(uu);
+                        if (!Path.GetExtension(draggedFilePath).Equals(".fasta"))
+                        {
+                            try
+                            {
+                                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                            }
+                            catch (Exception ee)
+                            {
+                                MessageBox.Show(ee.ToString());
+                                Application.Current.Shutdown();
+                            }
+                        }
+                    }
                     break;
 
                 case ".toml":
@@ -670,29 +670,7 @@ namespace MetaMorpheusGUI
             if (openFileDialog1.ShowDialog() == true)
                 foreach (var tomlFromSelected in openFileDialog1.FileNames)
                 {
-                    var uhum = Toml.ReadFile(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                    switch (uhum.Get<string>("TaskType"))
-                    {
-                        case "Search":
-                            var ye1 = Toml.ReadFile<SearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye1));
-                            break;
-
-                        case "Calibrate":
-                            var ye2 = Toml.ReadFile<CalibrationTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye2));
-                            break;
-
-                        case "Gptmd":
-                            var ye3 = Toml.ReadFile<GptmdTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye3));
-                            break;
-
-                        case "XLSearch":
-                            var ye4 = Toml.ReadFile<XLSearchTask>(tomlFromSelected, MetaMorpheusTask.tomlConfig);
-                            staticTasksObservableCollection.Add(new PreRunTask(ye4));
-                            break;
-                    }
+                    AddAFile(tomlFromSelected);
                 }
             UpdateTaskGuiStuff();
         }

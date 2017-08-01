@@ -7,11 +7,11 @@ namespace EngineLayer
     public abstract class MetaMorpheusEngine
     {
 
-        #region Public Fields
+        #region Protected Fields
 
-        public readonly List<string> nestedIds;
+        protected readonly List<string> nestedIds;
 
-        #endregion Public Fields
+        #endregion Protected Fields
 
         #region Protected Constructors
 
@@ -51,6 +51,15 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
+
+        #region Internal Methods
+
+        internal string GetId()
+        {
+            return string.Join(",", nestedIds);
+        }
+
+        #endregion Internal Methods
 
         #region Protected Methods
 

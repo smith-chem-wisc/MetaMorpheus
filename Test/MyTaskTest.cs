@@ -32,7 +32,10 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalTaskLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-            CalibrationTask task1 = new CalibrationTask();
+            CalibrationTask task1 = new CalibrationTask()
+            {
+                WriteIntermediateFiles = true
+            };
             GptmdTask task2 = new GptmdTask();
 
             SearchTask task3 = new SearchTask()
@@ -467,7 +470,6 @@ namespace Test
         }
 
         #endregion Public Methods
-
 
     }
 }

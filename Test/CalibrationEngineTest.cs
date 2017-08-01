@@ -42,9 +42,9 @@ namespace Test
                 {pepWithSetMods.CompactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
-            newPsm.SetValues(1, 0, 0, 1, 0, 0);
+            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
             identifications.Add(newPsm);
 
             int minMS1isotopicPeaksNeededForConfirmedIdentification = 3;
@@ -76,9 +76,9 @@ namespace Test
                 {pepWithSetMods.CompactPeptide, new HashSet<PeptideWithSetModifications>{ pepWithSetMods } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
-            newPsm.SetValues(1, 0, 0, 1, 0, 0);
+            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
 
             var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<Psm> { newPsm }, 3, 2, 10, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();
             Assert.IsTrue(res is CalibrationResults);

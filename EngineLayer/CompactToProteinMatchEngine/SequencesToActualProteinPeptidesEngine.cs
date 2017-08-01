@@ -62,9 +62,9 @@ namespace EngineLayer
                     foreach (var psm in psmListForAspecificSerchMode)
                         if (psm != null)
                         {
-                            foreach (var cp in psm.compactPeptides)
-                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                                    compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                            foreach (var cp in psm.CompactPeptides)
+                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
+                                    compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
                         }
             //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             int totalProteins = proteinList.Count;
@@ -106,18 +106,6 @@ namespace EngineLayer
 
             #endregion Match Seqeunces to PeptideWithSetModifications
 
-            //Status("Computing info about actual peptides with modifications...", new List<string> { taskId });
-            for (int j = 0; j < massDiffAcceptors.Count; j++)
-            {
-                if (allPsms[j] != null)
-                {
-                    foreach (var huh in allPsms[j])
-                    {
-                        if (huh != null && huh.MostProbableProteinInfo == null)
-                            huh.ResolveProteinsAndMostProbablePeptide(compactPeptideToProteinPeptideMatching);
-                    }
-                }
-            }
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 

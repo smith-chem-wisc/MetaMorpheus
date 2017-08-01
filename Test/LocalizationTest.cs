@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -14,6 +15,15 @@ namespace Test
     {
 
         #region Public Methods
+
+        [Test]
+        public static void TestNonSpecific()
+        {
+            Protease p = GlobalTaskLevelSettings.ProteaseDictionary["non-specific"];
+            Protein prot = new Protein("MABCDEFGH", null);
+
+            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(p, 8, 1, 9, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Count());
+        }
 
         [Test]
         public static void TestLocalization()
@@ -47,7 +57,7 @@ namespace Test
                 {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
-            newPsm.ResolveProteinsAndMostProbablePeptide(matching);
+            newPsm.MatchToProteinLinkedPeptides(matching);
 
             LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
             f.Run();

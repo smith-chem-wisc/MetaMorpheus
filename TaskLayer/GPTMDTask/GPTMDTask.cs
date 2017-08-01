@@ -9,6 +9,7 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -49,7 +50,7 @@ namespace TaskLayer
             b.modificationType.Equals("PeptideTermMod") ||
             b.modificationType.Equals("Metal") ||
             b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-            ConserveMemory = false;
+            ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
 
             DoPrecursorDeconvolution = true;
@@ -95,20 +96,12 @@ namespace TaskLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
-            sb.AppendLine("The initiator methionine behavior is set to "
+            sb.AppendLine(
+                "The initiator methionine behavior is set to "
                 + InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("protease: " + Protease);
-            sb.AppendLine("bIons: " + BIons);
-            sb.AppendLine("yIons: " + YIons);
-            sb.AppendLine("cIons: " + CIons);
-            sb.AppendLine("zdotIons: " + ZdotIons);
-            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
-            sb.Append("PrecursorMassTolerance: " + PrecursorMassTolerance);
+                + MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                );
             return sb.ToString();
         }
 
@@ -177,7 +170,7 @@ namespace TaskLayer
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 lock (lock1) // Lock because reading is sequential
                 {
-                    if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                    if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                         myMsDataFile = Mzml.LoadAllStaticData(origDataFile);
                     else
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
@@ -196,11 +189,15 @@ namespace TaskLayer
 
             // Group and order psms
 
-            allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
-
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
+
+            foreach (var huh in allPsms[0])
+                if (huh != null && huh.MostProbableProteinInfo == null)
+                    huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatchingTest);
+
+            allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
 
             new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId }).Run();
 

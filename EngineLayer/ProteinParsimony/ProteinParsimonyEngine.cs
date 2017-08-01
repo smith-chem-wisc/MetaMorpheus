@@ -7,62 +7,67 @@ using System.Threading.Tasks;
 
 namespace EngineLayer
 {
-    public class ProteinAnalysisEngine : MetaMorpheusEngine
+    public class ProteinParsimonyEngine : MetaMorpheusEngine
     {
 
         #region Private Fields
 
-        private readonly List<MassDiffAcceptor> searchModes;
-        private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
-
-        private readonly IEnumerable<Psm>[] newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinAnalysisEngine(List<Psm>[] newPsms, Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
         {
-            this.newPsms = newPsms;
-            this.searchModes = searchModes;
-            this.noOneHitWonders = noOneHitWonders;
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 
         #endregion Public Constructors
 
-        #region Public Methods
+        #region Protected Methods
 
-        public void ApplyProteinParsimony(out List<ProteinGroup> proteinGroups)
+        protected override MetaMorpheusEngineResults RunSpecific()
+        {
+            ProteinParsimonyResults myAnalysisResults = new ProteinParsimonyResults(this);
+            Status("Running protein analysis engine!", nestedIds);
+
+            Status("Applying protein parsimony...", nestedIds);
+            myAnalysisResults.ProteinGroups = ApplyProteinParsimony();
+            return myAnalysisResults;
+        }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
+        private List<ProteinGroup> ApplyProteinParsimony()
         {
             // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
             if (!treatModPeptidesAsDifferentPeptides)
             {
-                var groups = compactPeptideToProteinPeptideMatching.GroupBy(p => p.Value.First().BaseSequence);
-
-                foreach (var baseseq in groups)
+                Dictionary<string, List<PeptideWithSetModifications>> baseSeqToPeptideMatch = new Dictionary<string, List<PeptideWithSetModifications>>();
+                foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
                 {
-                    var proteinsForAllCompactPeptidesWithThisBaseSeq = baseseq.SelectMany(p => p.Value.Select(v => v.Protein)).Distinct().ToList();
-
-                    foreach (var compactPeptide in baseseq)
-                    {
-                        var proteinsHere = compactPeptide.Value.Select(p => p.Protein).Distinct();
-
-                        if (proteinsHere.Count() != proteinsForAllCompactPeptidesWithThisBaseSeq.Count)
-                        {
-                            var missingProteins = proteinsForAllCompactPeptidesWithThisBaseSeq.Except(proteinsHere);
-
-                            foreach (var missingProtein in missingProteins)
-                            {
-                                var templatePepWithSetMod = baseseq.SelectMany(p => p.Value).First(v => v.Protein.Equals(missingProtein));
-                                compactPeptideToProteinPeptideMatching[compactPeptide.Key].Add(new PeptideWithSetModifications(compactPeptide.Value.First(), templatePepWithSetMod));
-                            }
-                        }
-                    }
+                    List<PeptideWithSetModifications> value;
+                    if (baseSeqToPeptideMatch.TryGetValue(peptide.BaseSequence, out value))
+                        value.Add(peptide);
+                    else
+                        baseSeqToPeptideMatch[peptide.BaseSequence] = new List<PeptideWithSetModifications> { peptide };
                 }
+
+                foreach (var ok in compactPeptideToProteinPeptideMatching)
+                    foreach (var modsFromThisOne in ok.Value.ToList())
+                        foreach (var peptideToAdd in baseSeqToPeptideMatch[modsFromThisOne.BaseSequence])
+                        {
+                            ok.Value.Add(peptideToAdd);
+                            var anotherPeptideToAdd = new PeptideWithSetModifications(modsFromThisOne, peptideToAdd);
+                            ok.Value.Add(anotherPeptideToAdd);
+                            var anotherPeptideToAdd2 = new PeptideWithSetModifications(peptideToAdd, modsFromThisOne);
+                            ok.Value.Add(anotherPeptideToAdd2);
+                        }
             }
 
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
@@ -116,7 +121,7 @@ namespace EngineLayer
                     HashSet<Protein> proteinListHere;
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b=>b.ToString(CultureInfo.InvariantCulture))+peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture));
+                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
                     else
                         pepSequence = compactPeptideToFullSeqMatch[peptide];
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out proteinListHere))
@@ -244,12 +249,12 @@ namespace EngineLayer
             foreach (var kvp in compactPeptideToProteinPeptideMatching)
                 kvp.Value.RemoveWhere(p => !parsimonyProteinList.ContainsKey(p.Protein));
 
-            proteinGroups = ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
-
             Status("Finished Parsimony", nestedIds);
+
+            return ConstructProteinGroups(new HashSet<PeptideWithSetModifications>(proteinsWithUniquePeptides.Values.SelectMany(p => p)), new HashSet<PeptideWithSetModifications>(compactPeptideToProteinPeptideMatching.Values.SelectMany(p => p)));
         }
 
-        public List<ProteinGroup> ConstructProteinGroups(HashSet<PeptideWithSetModifications> uniquePeptides, HashSet<PeptideWithSetModifications> allPeptides)
+        private List<ProteinGroup> ConstructProteinGroups(HashSet<PeptideWithSetModifications> uniquePeptides, HashSet<PeptideWithSetModifications> allPeptides)
         {
             List<ProteinGroup> proteinGroups = new List<ProteinGroup>();
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
@@ -281,172 +286,7 @@ namespace EngineLayer
             return proteinGroups;
         }
 
-        public void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<Psm> psmList)
-        {
-            Status("Scoring protein groups...", nestedIds);
-
-            // add each protein groups PSMs
-            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<Psm>>();
-            foreach (var psm in psmList)
-            {
-                if (psm.FdrInfo.QValue <= 0.01)
-                {
-                    foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
-                    {
-                        HashSet<Psm> psmsForThisPeptide;
-
-                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
-                            peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
-                        else
-                            psmsForThisPeptide.Add(psm);
-                    }
-                }
-            }
-
-            foreach (var proteinGroup in proteinGroups)
-            {
-                List<PeptideWithSetModifications> pepsToRemove = new List<PeptideWithSetModifications>();
-                foreach (var peptide in proteinGroup.AllPeptides)
-                {
-                    // build PSM list for scoring
-                    HashSet<Psm> psms;
-                    if (peptideToPsmMatching.TryGetValue(peptide, out psms))
-                        proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
-                    else
-                        pepsToRemove.Add(peptide);
-                }
-
-                proteinGroup.AllPeptides.ExceptWith(pepsToRemove);
-                proteinGroup.UniquePeptides.ExceptWith(pepsToRemove);
-            }
-
-            // score the group
-            foreach (var proteinGroup in proteinGroups)
-                proteinGroup.Score();
-
-            // merge protein groups that are indistinguishable after scoring
-            var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
-            for (int i = 0; i < (pg.Count - 1); i++)
-            {
-                if (pg[i].ProteinGroupScore == pg[i + 1].ProteinGroupScore && pg[i].ProteinGroupScore != 0)
-                {
-                    var pgsWithThisScore = pg.Where(p => p.ProteinGroupScore == pg[i].ProteinGroupScore).ToList();
-
-                    // check to make sure they have the same peptides, then merge them
-                    foreach (var p in pgsWithThisScore)
-                    {
-                        var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
-                        var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
-
-                        if (p != pg[i] && seqs1.SetEquals(seqs2))
-                        {
-                            pg[i].MergeProteinGroupWith(p);
-                        }
-                    }
-                }
-            }
-
-            // remove empty protein groups (peptides were too poor quality or group was merged)
-            proteinGroups.RemoveAll(p => p.ProteinGroupScore == 0);
-
-            // calculate sequence coverage
-            foreach (var proteinGroup in proteinGroups)
-                proteinGroup.CalculateSequenceCoverage();
-
-            // distribute razor peptides
-            var sharedPepWithProteinGroups = new Dictionary<string, HashSet<ProteinGroup>>();
-            var seqToPeptide = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
-            foreach (var proteinGroup in proteinGroups)
-            {
-                var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
-                foreach (var sharedPep in sharedPeps)
-                {
-                    HashSet<ProteinGroup> v;
-                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out v))
-                        v.Add(proteinGroup);
-                    else
-                        sharedPepWithProteinGroups.Add(sharedPep.Sequence, new HashSet<ProteinGroup> { proteinGroup });
-
-                    HashSet<PeptideWithSetModifications> v1;
-                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out v1))
-                        v1.Add(sharedPep);
-                    else
-                        seqToPeptide.Add(sharedPep.Sequence, new HashSet<PeptideWithSetModifications> { sharedPep });
-                }
-            }
-
-            foreach (var kvp in sharedPepWithProteinGroups)
-            {
-                int i = kvp.Value.Select(p => p.AllPeptides.Select(x => x.BaseSequence).Count()).Max();
-                HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Count() == i));
-                foreach (var proteinGroup in t)
-                {
-                    var peptides = seqToPeptide[kvp.Key];
-                    proteinGroup.RazorPeptides.UnionWith(peptides.Where(p => proteinGroup.Proteins.Contains(p.Protein)));
-                }
-            }
-        }
-
-        public List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)
-        {
-            Status("Calculating protein FDR...", nestedIds);
-
-            if (noOneHitWonders)
-            {
-                if (treatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
-                else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
-            }
-
-            // order protein groups by score
-            var sortedProteinGroups = proteinGroups.OrderByDescending(b => b.ProteinGroupScore).ToList();
-
-            // do fdr
-            int cumulativeTarget = 0;
-            int cumulativeDecoy = 0;
-            foreach (var proteinGroup in sortedProteinGroups)
-            {
-                if (proteinGroup.isDecoy)
-                    cumulativeDecoy++;
-                else
-                    cumulativeTarget++;
-
-                proteinGroup.CumulativeTarget = cumulativeTarget;
-                proteinGroup.CumulativeDecoy = cumulativeDecoy;
-                proteinGroup.QValue = ((double)cumulativeDecoy / (cumulativeTarget + cumulativeDecoy));
-            }
-
-            return sortedProteinGroups;
-        }
-
-        #endregion Public Methods
-
-        #region Protected Methods
-
-        protected override MetaMorpheusEngineResults RunSpecific()
-        {
-            ProteinAnalysisResults myAnalysisResults = new ProteinAnalysisResults(this);
-            Status("Running protein analysis engine!", nestedIds);
-
-            List<ProteinGroup>[] proteinGroups = null;
-            Status("Applying protein parsimony...", nestedIds);
-            proteinGroups = new List<ProteinGroup>[searchModes.Count];
-            // TODO**: make this faster (only apply parsimony once but make multiple instances of the same ProteinGroups
-            for (int i = 0; i < searchModes.Count; i++)
-                ApplyProteinParsimony(out proteinGroups[i]);
-
-            for (int j = 0; j < searchModes.Count; j++)
-            {
-                ScoreProteinGroups(proteinGroups[j], newPsms[j]);
-                proteinGroups[j] = DoProteinFdr(proteinGroups[j]);
-            }
-
-            myAnalysisResults.ProteinGroups = proteinGroups;
-            return myAnalysisResults;
-        }
-
-        #endregion Protected Methods
+        #endregion Private Methods
 
     }
 }

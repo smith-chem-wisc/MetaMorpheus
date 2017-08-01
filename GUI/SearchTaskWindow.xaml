@@ -19,7 +19,7 @@
                             <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
                             <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
                             <StackPanel Orientation="Horizontal" Margin="5">
-                                <Label Content="Decsonvolution Intensity Ratio " />
+                                <Label Content="Deconvolution Intensity Ratio " />
                                 <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
