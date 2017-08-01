@@ -16,7 +16,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            bool classicAntigens = false;
             double precursorTolerance = 0;
             if (massDiffAcceptors.Count() > 1)
             {
@@ -25,14 +24,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     string name = massDiffAcceptors[0].ToString();
                     int index = name.IndexOf("ppmAroundZero");
                     precursorTolerance = Convert.ToDouble(name.Substring(0, index));
-                    classicAntigens = true;
                 }
                 else if (massDiffAcceptors[1].ToString().Contains("ppmAroundZero"))
                 {
                     string name = massDiffAcceptors[1].ToString();
                     int index = name.IndexOf("ppmAroundZero");
                     precursorTolerance = Convert.ToDouble(name.Substring(0, index));
-                    classicAntigens = true;
                 }
             }
             else { throw new MetaMorpheusException("Multiple searches required to run fast nonspecific enzyme searches"); }

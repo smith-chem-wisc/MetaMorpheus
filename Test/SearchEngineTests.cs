@@ -350,6 +350,5 @@ namespace Test
             Assert.AreEqual("QQQGGGG", searchResults.Psms[1][0].MostProbableProteinInfo.BaseSequence);
         }
         #endregion Public Methods
-
     }
 }
