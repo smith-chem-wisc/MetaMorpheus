@@ -182,7 +182,7 @@ namespace Test
             IEnumerable<double> neutralLosses = null;
             IEnumerable<double> diagnosticIons = null;
             string modificationType = "customModType";
-            ModificationSites modificationSites = ModificationSites.Any;
+            TerminusLocalization modificationSites = TerminusLocalization.Any;
             List<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>
             {
                 new ModificationWithMass("CH2 on Glycine", null, motif1, modificationSites, monoisotopicMass, externalDatabaseReferences, neutralLosses, diagnosticIons, modificationType)

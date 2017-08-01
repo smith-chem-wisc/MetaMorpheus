@@ -58,13 +58,13 @@ namespace EngineLayer
             {
                 // Check if can be a n-term mod
                 if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, 1, this.Length, this.OneBasedStartResidueInProtein)
-                    && (variable_modification.terminusLocalization == ModificationSites.NProt || variable_modification.terminusLocalization == ModificationSites.NPep))
+                    && (variable_modification.terminusLocalization == TerminusLocalization.NProt || variable_modification.terminusLocalization == TerminusLocalization.NPep))
                     pep_n_term_variable_mods.Add(variable_modification);
 
                 for (int r = 0; r < Length; r++)
                 {
                     if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
-                        && variable_modification.terminusLocalization == ModificationSites.Any)
+                        && variable_modification.terminusLocalization == TerminusLocalization.Any)
                     {
                         UniqueModificationsCollection residue_variable_mods;
                         if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
@@ -81,7 +81,7 @@ namespace EngineLayer
                 }
                 // Check if can be a c-term mod
                 if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1)
-                    && (variable_modification.terminusLocalization == ModificationSites.ProtC || variable_modification.terminusLocalization == ModificationSites.PepC))
+                    && (variable_modification.terminusLocalization == TerminusLocalization.ProtC || variable_modification.terminusLocalization == TerminusLocalization.PepC))
                     pep_c_term_variable_mods.Add(variable_modification);
             }
 
@@ -99,7 +99,7 @@ namespace EngineLayer
                             // Check if can be a n-term mod
                             if (locInPeptide == 1
                                 && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, 1, this.Length, this.OneBasedStartResidueInProtein)
-                                && (variable_modification.terminusLocalization == ModificationSites.NProt || variable_modification.terminusLocalization == ModificationSites.NPep)
+                                && (variable_modification.terminusLocalization == TerminusLocalization.NProt || variable_modification.terminusLocalization == TerminusLocalization.NPep)
                                 && !this.Protein.IsDecoy)
                                 pep_n_term_variable_mods.Add(variable_modification);
 
@@ -107,7 +107,7 @@ namespace EngineLayer
                             {
                                 if (locInPeptide == r + 1
                                     && (Protein.IsDecoy || (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
-                                    && variable_modification.terminusLocalization == ModificationSites.Any)))
+                                    && variable_modification.terminusLocalization == TerminusLocalization.Any)))
                                 {
                                     UniqueModificationsCollection residue_variable_mods;
                                     if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
@@ -125,7 +125,7 @@ namespace EngineLayer
                             // Check if can be a c-term mod
                             if (locInPeptide == Length
                                 && Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, Length, this.Length, this.OneBasedStartResidueInProtein + Length - 1)
-                                && (variable_modification.terminusLocalization == ModificationSites.ProtC || variable_modification.terminusLocalization == ModificationSites.PepC)
+                                && (variable_modification.terminusLocalization == TerminusLocalization.ProtC || variable_modification.terminusLocalization == TerminusLocalization.PepC)
                                 && !this.Protein.IsDecoy)
                                 pep_c_term_variable_mods.Add(variable_modification);
                         }
@@ -244,20 +244,20 @@ namespace EngineLayer
             {
                 switch (mod.terminusLocalization)
                 {
-                    case ModificationSites.NProt:
-                    case ModificationSites.NPep:
+                    case TerminusLocalization.NProt:
+                    case TerminusLocalization.NPep:
                         if (Gptmd.GptmdEngine.ModFits(mod, this.Protein, 1, this.Length, this.OneBasedStartResidueInProtein))
                             fixedModsOneIsNterminus[1] = mod;
                         break;
 
-                    case ModificationSites.Any:
+                    case TerminusLocalization.Any:
                         for (int i = 2; i <= Length + 1; i++)
                             if (Gptmd.GptmdEngine.ModFits(mod, this.Protein, i - 1, this.Length, this.OneBasedStartResidueInProtein + i - 2))
                                 fixedModsOneIsNterminus[i] = mod;
                         break;
 
-                    case ModificationSites.PepC:
-                    case ModificationSites.ProtC:
+                    case TerminusLocalization.PepC:
+                    case TerminusLocalization.ProtC:
                         if (Gptmd.GptmdEngine.ModFits(mod, this.Protein, this.Length, this.Length, this.OneBasedStartResidueInProtein + this.Length - 1))
                             fixedModsOneIsNterminus[this.Length + 2] = mod;
                         break;

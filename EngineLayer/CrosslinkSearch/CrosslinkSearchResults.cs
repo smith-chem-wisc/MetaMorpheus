@@ -25,16 +25,5 @@ namespace EngineLayer.CrosslinkSearch
         public List<Tuple<PsmCross, PsmCross>> NewPsms { get; private set; }
 
         #endregion Public Properties
-
-        //#region Public Methods
-
-        //public override string ToString()
-        //{
-        //    var sb = new StringBuilder();
-        //    sb.Append(base.ToString());
-        //    return sb.ToString();
-        //}
-
-        //#endregion Public Methods
     }
 }
