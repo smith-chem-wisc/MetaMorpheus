@@ -69,7 +69,7 @@ namespace EngineLayer.Gptmd
             int modsAdded = 0;
             // Look at all confident identifications (with notch q value less than 0.01)
             // Of those only targets (do not add modifications for decoy peptides)
-            foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.MostProbableProteinInfo.IsDecoy))
+            foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.IsDecoy))
             {
                 var baseSequence = ye.MostProbableProteinInfo.BaseSequence;
                 foreach (var peptide in ye.MostProbableProteinInfo.PeptidesWithSetModifications)

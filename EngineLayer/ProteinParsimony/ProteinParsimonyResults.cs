@@ -4,12 +4,12 @@ using System.Text;
 
 namespace EngineLayer
 {
-    public class ProteinAnalysisResults : MetaMorpheusEngineResults
+    public class ProteinParsimonyResults : MetaMorpheusEngineResults
     {
 
         #region Public Constructors
 
-        public ProteinAnalysisResults(ProteinAnalysisEngine proteinAnalysisEngine) : base(proteinAnalysisEngine)
+        public ProteinParsimonyResults(ProteinParsimonyEngine proteinAnalysisEngine) : base(proteinAnalysisEngine)
         {
         }
 
@@ -17,7 +17,7 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public List<ProteinGroup>[] ProteinGroups { get; set; }
+        public List<ProteinGroup> ProteinGroups { get; set; }
 
         #endregion Public Properties
 
@@ -30,15 +30,12 @@ namespace EngineLayer
             if (ProteinGroups != null && ProteinGroups.Any(s => s != null))
             {
                 var numProteinsList = new List<int>();
-                for (int i = 0; i < ProteinGroups.Length; i++)
+                if (ProteinGroups == null)
+                    numProteinsList.Add(0);
+                else
                 {
-                    if (ProteinGroups[i] == null)
-                        numProteinsList.Add(0);
-                    else
-                    {
-                        int j = ProteinGroups[i].FindIndex(c => (c.QValue >= 0.01));
-                        numProteinsList.Add(j);
-                    }
+                    int j = ProteinGroups.FindIndex(c => (c.QValue >= 0.01));
+                    numProteinsList.Add(j);
                 }
 
                 sb.Append("All proteins within 1% FDR: " + string.Join(", ", numProteinsList));

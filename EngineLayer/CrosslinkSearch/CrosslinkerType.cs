@@ -17,7 +17,7 @@
         public double TotalMass { get; set; }
         public double CleaveMassShort { get; set; }
         public double CleaveMassLong { get; set; }
-        public string CrosslinkerModSite;
+        public char CrosslinkerModSite;
 
         public CrosslinkerTypeClass SelectCrosslinker(CrosslinkerType name)
         {
@@ -29,7 +29,7 @@
                 TotalMass = 158.0038;
                 CleaveMassShort = 54.01056;
                 CleaveMassLong = 103.9932;
-                CrosslinkerModSite = "K";
+                CrosslinkerModSite = 'K';
                 /*Residue.TryGetResidue("K", out CrosslinkerModSite)*/
                 ;
             }
@@ -56,7 +56,7 @@
                 CrosslinkerName = "DSS";
                 Cleavable = false;
                 TotalMass = 138.06808;
-                CrosslinkerModSite = "K";
+                CrosslinkerModSite = 'K';
                 //Residue.TryGetResidue("K", out CrosslinkerModSite);
             }
             //if (name == CrosslinkerType.DTSSP)

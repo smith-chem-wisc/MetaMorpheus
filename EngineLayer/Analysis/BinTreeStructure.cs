@@ -158,7 +158,7 @@ namespace EngineLayer.Analysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.MostProbableProteinInfo.IsDecoy))
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
                 {
                     var ya = hm.Value.Item3.LocalizationResults.MatchedIonMassesListPositiveIsMatch;
                     if (ya.ContainsKey(ProductType.B)
@@ -174,9 +174,9 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in FinalBins)
             {
-                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.MostProbableProteinInfo.IsDecoy);
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.MostProbableProteinInfo.IsDecoy && b.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.Count == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.Count == 1) / numTarget;
             }
         }
 
@@ -184,9 +184,9 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in FinalBins)
             {
-                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.MostProbableProteinInfo.IsDecoy);
+                var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.MostProbableProteinInfo.IsDecoy).Select(b => (double)b.Item3.MostProbableProteinInfo.BaseSequence.Length));
+                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.MostProbableProteinInfo.BaseSequence.Length));
             }
         }
 
@@ -195,7 +195,7 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
             {
                 bin.AAsInCommon = new Dictionary<char, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.MostProbableProteinInfo.IsDecoy))
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     var chars = new HashSet<char>();
                     for (int i = 0; i < hehe.Item1.Count(); i++)
@@ -214,7 +214,7 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
             {
                 bin.modsInCommon = new Dictionary<string, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.MostProbableProteinInfo.IsDecoy))
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy))
                 {
                     int inModLevel = 0;
                     string currentMod = "";
@@ -233,7 +233,7 @@ namespace EngineLayer.Analysis
                             inModLevel--;
                             if (inModLevel == 0)
                             {
-                                if (!currentMod.StartsWith("f:"))
+                                if (!currentMod.StartsWith("Common Fixed:"))
                                     modsHere.Add(currentMod);
                                 currentMod = "";
                             }
@@ -261,7 +261,7 @@ namespace EngineLayer.Analysis
                 foreach (var hehe in bin.uniquePSMs.Values)
                 {
                     double bestScore = hehe.Item3.LocalizationResults.LocalizedScores.Max();
-                    if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.MostProbableProteinInfo.IsDecoy)
+                    if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
                             if (bestScore - hehe.Item3.LocalizationResults.LocalizedScores[i] < 0.5)

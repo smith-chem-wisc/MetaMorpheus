@@ -14,11 +14,21 @@
       <cvParam accession="MS:1000799" value="mzLib" />
     </software>
   </softwareList>
-  <instrumentConfigurationList />
+  <instrumentConfigurationList count="1">
+    <instrumentConfiguration id="IC1">
+      <componentList count="3">
+        <source order="1" />
+        <analyzer order="2">
+          <cvParam cvRef="MS" accession="MS:1000484" />
+        </analyzer>
+        <detector order="3" />
+      </componentList>
+    </instrumentConfiguration>
+  </instrumentConfigurationList>
   <dataProcessingList count="1">
     <dataProcessing id="mzLibProcessing" />
   </dataProcessingList>
-  <run>
+  <run defaultInstrumentConfigurationRef="IC1">
     <spectrumList count="366" defaultDataProcessingRef="mzLibProcessing">
       <spectrum id="26939" index="1" defaultArrayLength="1729">
         <cvParam accession="MS:1000579" />

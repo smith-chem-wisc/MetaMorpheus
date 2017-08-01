@@ -164,7 +164,7 @@ namespace MetaMorpheusGUI
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
-            addCompIonCheckBox.IsChecked = task.addCompIons;
+            addCompIonCheckBox.IsChecked = task.AddCompIons;
             bCheckBox.IsChecked = task.BIons;
             yCheckBox.IsChecked = task.YIons;
             cCheckBox.IsChecked = task.CIons;
@@ -285,7 +285,7 @@ namespace MetaMorpheusGUI
             else
                 TheTask.ProductMassTolerance = new PpmTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
 
-            TheTask.addCompIons = addCompIonCheckBox.IsChecked.Value;
+            TheTask.AddCompIons = addCompIonCheckBox.IsChecked.Value;
             TheTask.BIons = bCheckBox.IsChecked.Value;
             TheTask.YIons = yCheckBox.IsChecked.Value;
             TheTask.CIons = cCheckBox.IsChecked.Value;

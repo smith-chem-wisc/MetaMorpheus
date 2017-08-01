@@ -201,6 +201,8 @@ namespace EngineLayer.Calibration
                 // Each identification has an MS2 spectrum attached to it.
                 int ms2scanNumber = identification.ScanNumber;
                 int peptideCharge = identification.ScanPrecursorCharge;
+                if (identification.NumDifferentCompactPeptides != 1)
+                    continue;
 
                 var representativeSinglePeptide = identification.MostProbableProteinInfo.PeptidesWithSetModifications.First();
 
