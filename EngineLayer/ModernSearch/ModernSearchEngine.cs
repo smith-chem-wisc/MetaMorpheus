@@ -17,31 +17,31 @@ namespace EngineLayer.ModernSearch
 
         #endregion Private Fields
 
-        #region Public Fields
+        #region Protected Fields
 
-        public readonly List<int>[] fragmentIndex;
+        protected readonly List<int>[] fragmentIndex;
 
-        public readonly Tolerance fragmentTolerance;
+        protected readonly Tolerance fragmentTolerance;
 
-        public readonly float[] keys;
+        protected readonly float[] keys;
 
-        public readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
+        protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
 
-        public readonly List<CompactPeptide> peptideIndex;
+        protected readonly List<CompactPeptide> peptideIndex;
 
-        public readonly List<MassDiffAcceptor> searchModes;
+        protected readonly List<MassDiffAcceptor> searchModes;
 
-        public readonly bool addCompIons;
+        protected readonly bool addCompIons;
 
-        public readonly List<ProductType> lp;
+        protected readonly List<ProductType> lp;
 
-        public readonly Protease protease;
+        protected readonly Protease protease;
 
-        public readonly bool searchMHC;
+        protected readonly bool searchMHC;
 
-        public readonly int? minPeptideLength;
+        protected readonly int? minPeptideLength;
 
-        #endregion Public Fields
+        #endregion Protected Fields
 
         #region Public Constructors
 

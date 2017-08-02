@@ -9,21 +9,21 @@ namespace EngineLayer
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
 
-        #region Public Fields
-        public const int max_mods_for_peptide = 3;
-        public readonly int maxMissedCleavages;
-        public readonly int? minPeptideLength;
-        public readonly int? maxPeptideLength;
-        public readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-        public readonly List<ModificationWithMass> fixedModifications;
-        public readonly List<ModificationWithMass> variableModifications;
-        public readonly int maxModificationIsoforms; public readonly List<Psm>[] allPsms;
-        public readonly List<Protein> proteinList;
-        public readonly List<MassDiffAcceptor> massDiffAcceptors;
-        public readonly Protease protease; public readonly bool addCompIons;
-        public readonly bool isMHCSearch;
-        public readonly List<ProductType> lp;
-        #endregion Public Fields
+        #region Protected Fields
+        protected const int max_mods_for_peptide = 3;
+        protected readonly int maxMissedCleavages;
+        protected readonly int? minPeptideLength;
+        protected readonly int? maxPeptideLength;
+        protected readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
+        protected readonly List<ModificationWithMass> fixedModifications;
+        protected readonly List<ModificationWithMass> variableModifications;
+        protected readonly int maxModificationIsoforms; public readonly List<Psm>[] allPsms;
+        protected readonly List<Protein> proteinList;
+        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
+        protected readonly Protease protease; public readonly bool addCompIons;
+        protected readonly bool isMHCSearch;
+        protected readonly List<ProductType> lp;
+        #endregion Protected Fields
 
         #region Public Constructors
 
