@@ -16,8 +16,8 @@ namespace EngineLayer
 
         #region Internal Constructors
 
-        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications, bool addCompIons)
-            : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein, addCompIons)
+        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications)
+            : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
         {
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
@@ -25,8 +25,8 @@ namespace EngineLayer
             this.NumKnownPossibleLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
 
-        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods, bool addCompIons)
-: base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein, addCompIons)
+        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods)
+: base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
         {
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
@@ -143,7 +143,7 @@ namespace EngineLayer
                         numFixedMods++;
                         kvp.Add(ok.Key, ok.Value);
                     }
-                yield return new PeptideWithSetModifications(this, kvp, numFixedMods, addCompIons);
+                yield return new PeptideWithSetModifications(this, kvp, numFixedMods);
                 variable_modification_isoforms++;
                 if (variable_modification_isoforms == maximumVariableModificationIsoforms)
                     yield break;

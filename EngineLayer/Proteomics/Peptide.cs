@@ -14,12 +14,11 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, bool addCompIons)
+        protected Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein)
         {
             this.Protein = protein;
             this.OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
             this.OneBasedEndResidueInProtein = oneBasedEndResidueInProtein;
-            this.addCompIons = addCompIons;
             Length = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
         }
 
@@ -30,7 +29,6 @@ namespace EngineLayer
         public Protein Protein { get; }
         public int OneBasedStartResidueInProtein { get; }
         public int OneBasedEndResidueInProtein { get; }
-        public bool addCompIons { get; }
 
         public virtual string PeptideDescription { get; protected set; }
 

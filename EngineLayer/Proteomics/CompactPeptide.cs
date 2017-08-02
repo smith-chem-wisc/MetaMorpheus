@@ -19,17 +19,10 @@ namespace EngineLayer
 
         #endregion Private Fields
 
-        #region Public Fields
-
-        public readonly bool addCompIons;
-
-        #endregion Public Fields
-
         #region Public Constructors
 
-        public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications, bool addCompIons)
+        public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications)
         {
-            this.addCompIons = addCompIons;
             ModificationWithMass pep_n_term_variable_mod;
             double theMass = 0;
             if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
@@ -51,12 +44,11 @@ namespace EngineLayer
             MonoisotopicMassIncludingFixedMods = peptideWithSetModifications.MonoisotopicMass;
         }
 
-        public CompactPeptide(double[] CTerminalMasses, double[] NTerminalMasses, double MonoisotopicMassIncludingFixedMods, bool addCompIons)
+        public CompactPeptide(double[] CTerminalMasses, double[] NTerminalMasses, double MonoisotopicMassIncludingFixedMods)
         {
             this.CTerminalMasses = CTerminalMasses;
             this.NTerminalMasses = NTerminalMasses;
             this.MonoisotopicMassIncludingFixedMods = MonoisotopicMassIncludingFixedMods;
-            this.addCompIons = addCompIons;
         }
 
         #endregion Public Constructors
@@ -94,7 +86,7 @@ namespace EngineLayer
             }
         }
 
-        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes, bool addCompIons)
         {
             int massLen = 0;
             bool containsAdot = productTypes.Contains(ProductType.Adot);

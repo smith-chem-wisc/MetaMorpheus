@@ -26,10 +26,8 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-
         private readonly List<ProductType> lp;
         private readonly bool addCompIons;
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -89,7 +87,7 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, addCompIons).ToList();
+                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
                         if (peptide.NumKnownPossibleLocMods == 0)
@@ -119,7 +117,7 @@ namespace EngineLayer.Indexing
                                 }
                             }
 
-                            var ps = new CompactPeptide(yyy, addCompIons);
+                            var ps = new CompactPeptide(yyy);
 
                             int index;
                             lock (myDictionary)
@@ -128,7 +126,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp))
+                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp, addCompIons))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

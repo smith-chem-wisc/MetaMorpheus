@@ -131,9 +131,9 @@ namespace Test
             Protein protein3 = new Protein("MTASIK", "protein3");
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            var from1 = protein1.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications, false).First();
-            var from2 = protein2.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications, false).First();
-            var from3 = protein3.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications, false).First();
+            var from1 = protein1.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from2 = protein2.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from3 = protein3.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             PeptideWithSetModifications pep1 = from1.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
@@ -213,27 +213,27 @@ namespace Test
             int? maxPeptidesLength = null;
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
 
-            var prot1List = protein1.Digest(protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, false);
+            var prot1List = protein1.Digest(protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications1 = prot1List.First();
             int maxModsForPeptide = 1;
             int maximumVariableModificationIsoforms = 2;
             var pep1list = pepWithPossibleModifications1.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepWithSetModifications1 = pep1list.First();
 
-            var prot2List = protein2.Digest(protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, false);
+            var prot2List = protein2.Digest(protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications2 = prot2List.First();
             var pep2list = pepWithPossibleModifications2.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepWithSetModifications2 = pep2list.First();
 
-            var prot3List = protein3.Digest(protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, false);
+            var prot3List = protein3.Digest(protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications3 = prot3List.First();
             var pep3list = pepWithPossibleModifications3.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide).ToList();
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
 
-            CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1, false);
-            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2, false);
+            CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1);
+            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2);
             Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
-            CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3, false);
+            CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3);
 
             List<Psm>[] newPsms = new List<Psm>[1];
             string fullFilePath = null;

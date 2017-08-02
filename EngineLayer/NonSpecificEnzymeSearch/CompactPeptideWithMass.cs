@@ -14,7 +14,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        public readonly bool addCompIons;
         #endregion Private Fields
 
         #region Public Constructors
@@ -25,12 +24,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             this.precursorMass = precursorMass;
         }
 
-        public CompactPeptideWithMass(double[] CTerminalMasses, double[] NTerminalMasses, double MonoisotopicMassIncludingFixedMods, bool addCompIons)
+        public CompactPeptideWithMass(double[] CTerminalMasses, double[] NTerminalMasses, double MonoisotopicMassIncludingFixedMods)
         {
             this.CTerminalMasses = CTerminalMasses;
             this.NTerminalMasses = NTerminalMasses;
             this.MonoisotopicMassIncludingFixedMods = MonoisotopicMassIncludingFixedMods;
-            this.addCompIons = addCompIons;
         }
 
         #endregion Public Constructors

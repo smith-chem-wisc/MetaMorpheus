@@ -25,7 +25,7 @@ namespace Test
             List<Psm>[] newPsms = new List<Psm>[1];
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
-            var digested = p.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, new List<ModificationWithMass>(), false).ToList();
+            var digested = p.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, new List<ModificationWithMass>()).ToList();
 
             PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
             PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
@@ -34,22 +34,22 @@ namespace Test
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 
-            CompactPeptide peptide1 = new CompactPeptide(pep1, false);
+            CompactPeptide peptide1 = new CompactPeptide(pep1);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan1 = t.GetOneBasedScan(2) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, new MzPeak(peptide1.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
             Psm psm1 = new Psm(peptide1, 0, 3, 0, scan1);
 
-            CompactPeptide peptide2 = new CompactPeptide(pep2, false);
+            CompactPeptide peptide2 = new CompactPeptide(pep2);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan2 = t.GetOneBasedScan(4) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
             Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, new MzPeak(peptide2.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
             Psm psm2 = new Psm(peptide2, 1, 2, 1, scan2);
 
-            CompactPeptide peptide3 = new CompactPeptide(pep3, false);
+            CompactPeptide peptide3 = new CompactPeptide(pep3);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan3 = t.GetOneBasedScan(6) as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, new MzPeak(peptide3.MonoisotopicMassIncludingFixedMods.ToMz(1), 1), 1, null);
             Psm psm3 = new Psm(peptide3, 0, 1, 2, scan3);
 
-            CompactPeptide peptide4 = new CompactPeptide(pep4, false);
+            CompactPeptide peptide4 = new CompactPeptide(pep4);
             psm3.Add(peptide4, 1);
 
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>

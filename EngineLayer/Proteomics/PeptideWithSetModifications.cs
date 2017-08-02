@@ -33,15 +33,15 @@ namespace EngineLayer
 
         #region Internal Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, bool addCompIons)
-                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein, addCompIons)
+        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.modPep = modPep;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne, bool addCompIons) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein, addCompIons)
+        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
         {
             this.modPep = everythingElseFromThisOne.modPep;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
@@ -58,7 +58,7 @@ namespace EngineLayer
             {
                 if (compactPeptide == null)
                 {
-                    compactPeptide = new CompactPeptide(this, addCompIons);
+                    compactPeptide = new CompactPeptide(this);
                 }
                 return compactPeptide;
             }
@@ -200,7 +200,7 @@ namespace EngineLayer
             }
 
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods, addCompIons);
+            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
 
             return hm;
         }

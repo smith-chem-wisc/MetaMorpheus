@@ -63,9 +63,9 @@ namespace EngineLayer
                         foreach (var peptideToAdd in baseSeqToPeptideMatch[modsFromThisOne.BaseSequence])
                         {
                             ok.Value.Add(peptideToAdd);
-                            var anotherPeptideToAdd = new PeptideWithSetModifications(modsFromThisOne, peptideToAdd, false);
+                            var anotherPeptideToAdd = new PeptideWithSetModifications(modsFromThisOne, peptideToAdd);
                             ok.Value.Add(anotherPeptideToAdd);
-                            var anotherPeptideToAdd2 = new PeptideWithSetModifications(peptideToAdd, modsFromThisOne, false);
+                            var anotherPeptideToAdd2 = new PeptideWithSetModifications(peptideToAdd, modsFromThisOne);
                             ok.Value.Add(anotherPeptideToAdd2);
                         }
             }

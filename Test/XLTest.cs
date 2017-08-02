@@ -18,7 +18,7 @@ namespace Test
         {
             var prot = new Protein("MNNNKQQQQ", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            var ye = prot.Digest(protease, 1, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>(), false).ToList();
+            var ye = prot.Digest(protease, 1, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).ToList();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
 
