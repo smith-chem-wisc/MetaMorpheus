@@ -44,10 +44,10 @@ namespace EngineLayer
             MonoisotopicMassIncludingFixedMods = peptideWithSetModifications.MonoisotopicMass;
         }
 
-        public CompactPeptide(double[] CTerminalMasses, double[] NTerminalMasses, double MonoisotopicMassIncludingFixedMods)
+        public CompactPeptide(CompactPeptide cp, double MonoisotopicMassIncludingFixedMods)
         {
-            this.CTerminalMasses = CTerminalMasses;
-            this.NTerminalMasses = NTerminalMasses;
+            this.CTerminalMasses = cp.CTerminalMasses;
+            this.NTerminalMasses = cp.NTerminalMasses;
             this.MonoisotopicMassIncludingFixedMods = MonoisotopicMassIncludingFixedMods;
         }
 
@@ -86,11 +86,12 @@ namespace EngineLayer
             }
         }
 
-        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes, bool addCompIons)
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
             int massLen = 0;
             bool containsAdot = productTypes.Contains(ProductType.Adot);
             bool containsB = productTypes.Contains(ProductType.B);
+            bool containsBnoB1 = productTypes.Contains(ProductType.BnoB1ions);
             bool containsC = productTypes.Contains(ProductType.C);
             bool containsX = productTypes.Contains(ProductType.X);
             bool containsY = productTypes.Contains(ProductType.Y);
@@ -98,17 +99,10 @@ namespace EngineLayer
 
             if (containsAdot)
                 throw new NotImplementedException();
-            if (containsB)
-            {
-                if (addCompIons)
-                {
-                    massLen += NTerminalMasses.Length;
-                }
-                else
-                {
-                    massLen += NTerminalMasses.Length - 1;
-                }
-            }
+            if (containsBnoB1)
+                massLen += NTerminalMasses.Length - 1;
+            if(containsB)
+                massLen += NTerminalMasses.Length;
             if (containsC)
                 massLen += NTerminalMasses.Length;
             if (containsX)
@@ -124,18 +118,18 @@ namespace EngineLayer
             for (int j = 0; j < NTerminalMasses.Length; j++)
             {
                 var hm = NTerminalMasses[j];
-                if (containsB)
+                if (containsBnoB1)
                 {
                     if (j > 0)
                     {
                         massesToReturn[i] = hm;
                         i++;
                     }
-                    else if (addCompIons)
-                    {
-                        massesToReturn[i] = hm;
-                        i++;
-                    }
+                }
+                if(containsB)
+                {
+                    massesToReturn[i] = hm;
+                    i++;
                 }
                 if (containsC)
                 {

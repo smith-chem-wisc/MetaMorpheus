@@ -230,7 +230,7 @@ namespace TaskLayer
             #region Generate indices for modern search
 
             Status("Getting fragment dictionary...", new List<string> { taskId });
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, false);
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
             Dictionary<float, List<int>> fragmentIndexDict;

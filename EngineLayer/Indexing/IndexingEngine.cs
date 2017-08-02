@@ -27,12 +27,11 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> variableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<ProductType> lp;
-        private readonly bool addCompIons;
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool addCompIons) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -44,7 +43,6 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
-            this.addCompIons = addCompIons;
         }
 
         #endregion Public Constructors
@@ -126,7 +124,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(ps);
                             }
 
-                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp, addCompIons))
+                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

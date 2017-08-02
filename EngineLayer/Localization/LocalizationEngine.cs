@@ -44,7 +44,7 @@ namespace EngineLayer
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
                 {
-                    var ionMasses = representative.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh }, addCompIons);
+                    var ionMasses = representative.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
                     Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
@@ -56,7 +56,7 @@ namespace EngineLayer
                 {
                     PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ok.ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var gg = localizedPeptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp, addCompIons);
+                    var gg = localizedPeptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
                     double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
                     var score = Psm.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);

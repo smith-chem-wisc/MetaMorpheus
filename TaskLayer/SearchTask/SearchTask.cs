@@ -169,8 +169,10 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (BIons)
+            if (BIons & AddCompIons)
                 ionTypes.Add(ProductType.B);
+            else if (BIons)
+                ionTypes.Add(ProductType.BnoB1ions);
             if (YIons)
                 ionTypes.Add(ProductType.Y);
             if (ZdotIons)
@@ -186,7 +188,7 @@ namespace TaskLayer
                 #region Generate indices for modern search
 
                 Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, AddCompIons);
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
                 Dictionary<float, List<int>> fragmentIndexDict;

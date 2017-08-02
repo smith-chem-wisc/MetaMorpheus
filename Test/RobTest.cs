@@ -290,11 +290,11 @@ namespace Test
 
             foreach (var peptide in peptides)
             {
-                CfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.C }, false));
-                ZdotfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Zdot }, false));
-                BfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B }, false));
-                YfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y }, false));
-                BYfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }, false));
+                CfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
             double[] testB;
             Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
