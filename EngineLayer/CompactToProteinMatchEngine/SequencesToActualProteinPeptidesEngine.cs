@@ -17,7 +17,8 @@ namespace EngineLayer
         protected readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
-        protected readonly int maxModificationIsoforms; public readonly List<Psm>[] allPsms;
+        protected readonly int maxModificationIsoforms;
+        protected readonly List<Psm>[] allPsms;
         protected readonly List<Protein> proteinList;
         protected readonly List<MassDiffAcceptor> massDiffAcceptors;
         protected readonly Protease protease;
