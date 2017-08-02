@@ -396,7 +396,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.MostProbableProteinInfo.BaseSequence);
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.BaseSequence);
                 //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
