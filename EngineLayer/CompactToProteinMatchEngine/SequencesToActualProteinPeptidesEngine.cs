@@ -20,14 +20,13 @@ namespace EngineLayer
         protected readonly int maxModificationIsoforms; public readonly List<Psm>[] allPsms;
         protected readonly List<Protein> proteinList;
         protected readonly List<MassDiffAcceptor> massDiffAcceptors;
-        protected readonly Protease protease; public readonly bool addCompIons;
-        protected readonly bool isMHCSearch;
-        protected readonly List<ProductType> lp;
+        protected readonly Protease protease;
+        protected readonly bool addCompIons;
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, bool addCompIons, List<ProductType> lp) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, bool addCompIons) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
