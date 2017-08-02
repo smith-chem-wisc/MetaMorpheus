@@ -60,16 +60,6 @@ namespace EngineLayer
             }
         }
 
-        public string BaseLeucineSequence
-        {
-            get
-            {
-                if (baseLeucineSequence == null)
-                    baseLeucineSequence = Protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length).Replace('I', 'L');
-                return baseLeucineSequence;
-            }
-        }
-
         #endregion Public Properties
 
         #region Public Indexers
