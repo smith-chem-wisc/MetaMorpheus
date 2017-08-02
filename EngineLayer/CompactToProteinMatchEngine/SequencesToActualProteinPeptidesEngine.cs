@@ -41,8 +41,6 @@ namespace EngineLayer
             this.variableModifications = variableModifications;
             this.maxModificationIsoforms = maxModificationIsoforms;
             this.addCompIons = addCompIons;
-            this.isMHCSearch = isSearchMHC(protease);
-            this.lp = lp;
         }
 
         #endregion Public Constructors
@@ -52,82 +50,62 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-            if (!isMHCSearch)
-            {
-                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
 
-                #region Match Seqeunces to PeptideWithSetModifications
+            #region Match Seqeunces to PeptideWithSetModifications
 
-                //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-                //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
-                foreach (var psmListForAspecificSerchMode in allPsms)
-                    if (psmListForAspecificSerchMode != null)
-                        foreach (var psm in psmListForAspecificSerchMode)
-                            if (psm != null)
-                            {
-                                foreach (var cp in psm.CompactPeptides)
-                                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
-                                        compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
-                            }
-                //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-                int totalProteins = proteinList.Count;
-                int proteinsSeen = 0;
-                int old_progress = 0;
-                var obj = new object();
-                //Status("Adding possible sources to peptide dictionary...", new List<string> { taskId });
-                Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
-                {
-                    Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
-                    for (int i = fff.Item1; i < fff.Item2; i++)
-                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
+            //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
+            //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
+            foreach (var psmListForAspecificSerchMode in allPsms)
+                if (psmListForAspecificSerchMode != null)
+                    foreach (var psm in psmListForAspecificSerchMode)
+                        if (psm != null)
                         {
-                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
-                            {
-                                HashSet<PeptideWithSetModifications> v;
-                                if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
-                                    v.Add(peptideWithSetModifications);
-                            }
+                            foreach (var cp in psm.CompactPeptides)
+                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
+                                    compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
                         }
-                    lock (obj)
+            //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
+            int totalProteins = proteinList.Count;
+            int proteinsSeen = 0;
+            int old_progress = 0;
+            var obj = new object();
+            //Status("Adding possible sources to peptide dictionary...", new List<string> { taskId });
+            Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
+            {
+                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
+                for (int i = fff.Item1; i < fff.Item2; i++)
+                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                     {
-                        foreach (var ye in local)
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
                             HashSet<PeptideWithSetModifications> v;
-                            if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
-                                foreach (var huh in ye.Value)
-                                    v.Add(huh);
-                        }
-                        proteinsSeen += fff.Item2 - fff.Item1;
-                        var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
-                        if (new_progress > old_progress)
-                        {
-                            //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
-                            old_progress = new_progress;
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
+                                v.Add(peptideWithSetModifications);
                         }
                     }
-                });
+                lock (obj)
+                {
+                    foreach (var ye in local)
+                    {
+                        HashSet<PeptideWithSetModifications> v;
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                            foreach (var huh in ye.Value)
+                                v.Add(huh);
+                    }
+                    proteinsSeen += fff.Item2 - fff.Item1;
+                    var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
+                    if (new_progress > old_progress)
+                    {
+                            //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
+                            old_progress = new_progress;
+                    }
+                }
+            });
 
-                #endregion Match Seqeunces to PeptideWithSetModifications
+            #endregion Match Seqeunces to PeptideWithSetModifications
 
-                return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
-            }
-            else
-            {
-                NonSpecificEnzymeSearch.NonSpecificEnzymeSequencesToActualPeptides NSESTAP = new NonSpecificEnzymeSearch.NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds, addCompIons, lp);
-                return NSESTAP.Run();
-            }
-        }
-
-        private bool isSearchMHC(Protease protease)
-        {
-            if (protease.Name.Contains("single") && massDiffAcceptors.Count() > 1)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 
         #endregion Protected Methods

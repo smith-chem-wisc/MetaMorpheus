@@ -8,7 +8,7 @@ using Chemistry;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
-    class NonSpecificEnzymeSequencesToActualPeptides : SequencesToActualProteinPeptidesEngine
+    public class NonSpecificEnzymeSequencesToActualPeptides : SequencesToActualProteinPeptidesEngine
     {
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 

@@ -186,9 +186,12 @@ namespace TaskLayer
             List<int>[] fragmentIndex = null;
             if (SearchType == SearchType.Modern)
             {
+                if (Protease.Name.Contains("single") && MassDiffAcceptors.Count() > 1)
+                    SearchType = SearchType.NonSpecific;
+
                 #region Generate indices for modern search
 
-                Status("Getting fragment dictionary...", new List<string> { taskId });
+                    Status("Getting fragment dictionary...", new List<string> { taskId });
                 var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
@@ -252,9 +255,9 @@ namespace TaskLayer
                 SearchResults searchResults;
                 if (SearchType == SearchType.Classic)
                     searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons).Run());
-                else if (Protease.Name.Contains("single") && MassDiffAcceptors.Count() > 1)
+                else if(SearchType==SearchType.NonSpecific)
                     searchResults = ((SearchResults)(new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength).Run()));
-                else
+                else//if(SearchType==SearchType.Modern)
                     searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes).Run()));
 
                 myFileManager.DoneWithFile(origDataFile);
@@ -273,9 +276,19 @@ namespace TaskLayer
 
             // Group and order psms
             Status("Matching peptides to proteins...", taskId);
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, AddCompIons, ionTypes);
-            var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            if (SearchType == SearchType.NonSpecific)
+            {
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, AddCompIons, ionTypes);
+                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+            }
+            else
+            {
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, AddCompIons, ionTypes);
+                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+            }
 
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (DoParsimony)
