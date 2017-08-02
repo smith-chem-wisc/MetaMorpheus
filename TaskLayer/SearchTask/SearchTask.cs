@@ -367,12 +367,12 @@ namespace TaskLayer
                 // assign quantities to PSMs
                 Dictionary<string, List<Psm>> baseseqToPsm = new Dictionary<string, List<Psm>>();
                 List<Psm> list;
-                foreach (var psm in psmsBelowOnePercentFdr)
+                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.BaseSequence != null))
                 {
-                    if (baseseqToPsm.TryGetValue(psm.MostProbableProteinInfo.BaseSequence, out list))
+                    if (baseseqToPsm.TryGetValue(psm.BaseSequence, out list))
                         list.Add(psm);
                     else
-                        baseseqToPsm.Add(psm.MostProbableProteinInfo.BaseSequence, new List<Psm>() { psm });
+                        baseseqToPsm.Add(psm.BaseSequence, new List<Psm>() { psm });
                 }
 
                 var summedPeaks = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");

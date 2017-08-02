@@ -59,7 +59,7 @@ namespace Test
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
-            Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("QQQ", searchResults.Psms[0][0].BaseSequence);
         }
 
         [Test]
@@ -104,7 +104,7 @@ namespace Test
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
-            Assert.AreEqual("QXQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("QXQ", searchResults.Psms[0][0].BaseSequence);
         }
 
         [Test]
@@ -169,7 +169,7 @@ namespace Test
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
-            Assert.AreEqual("QQQ", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("QQQ", searchResults.Psms[0][0].BaseSequence);
         }
 
         [Test]
