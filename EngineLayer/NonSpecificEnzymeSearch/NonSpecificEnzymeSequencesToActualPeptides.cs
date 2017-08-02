@@ -62,6 +62,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                         }
             //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
+
+            //CP==CompactPeptide
+            //CPWM==CompactPeptideWithMass (Patched to respresent a double)
+            //PWSM==PeptideWithSetModification
             Dictionary<CompactPeptide, HashSet<double>> CPtoCPWM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<double>()); //cannot populate values yet, as we want the theoretical masses of the peptides
             Dictionary<double, HashSet<PeptideWithSetModifications>> CPWMtoPWSM = new Dictionary<double, HashSet<PeptideWithSetModifications>>();
             int totalProteins = proteinList.Count;
@@ -89,8 +93,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                         }
                     }
-                        //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
-                        Dictionary<CompactPeptide, HashSet<double>> localCPtoCPWM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<double>());
+                    //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
+                    //CP==CompactPeptide
+                    //CPWM==CompactPeptideWithMass (Patched to respresent a double)
+                    //PWSM==PeptideWithSetModificationDictionary
+                    Dictionary<CompactPeptide, HashSet<double>> localCPtoCPWM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<double>());
                     Dictionary<double, HashSet<PeptideWithSetModifications>> localCPWMtoPWSM = new Dictionary<double, HashSet<PeptideWithSetModifications>>();
                     foreach (KeyValuePair<CompactPeptide, HashSet<PeptideWithSetModifications>> kvp in localCPtoPWSM)
                     {
@@ -99,8 +106,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                             foreach (PeptideWithSetModifications pwsm in kvp.Value)
                             {
-                                    //Determine if the precursor mass can be obtained within the acceptable margin of error.
-                                    ModificationWithMass pep_n_term_variable_mod;
+                                //Determine if the precursor mass can be obtained within the acceptable margin of error.
+                                ModificationWithMass pep_n_term_variable_mod;
                                 double initialMass = 0;
                                 if (pwsm.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
                                     foreach (double nl in pep_n_term_variable_mod.neutralLosses)
@@ -215,8 +222,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
                 {
-                        //Digest protein into large peptide fragments and store in local1
-                        Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
+                    //Digest protein into large peptide fragments and store in local1
+                    Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
                         foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
@@ -229,8 +236,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                         }
                     }
-                        //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
-                        Dictionary<CompactPeptide, HashSet<double>> localCPtoCPWM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<double>());
+                    //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
+                    //CP==CompactPeptide
+                    //CPWM==CompactPeptideWithMass (Patched to respresent a double)
+                    //PWSM==PeptideWithSetModificationDictionary
+                    Dictionary<CompactPeptide, HashSet<double>> localCPtoCPWM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<double>());
                     Dictionary<double, HashSet<PeptideWithSetModifications>> localCPWMtoPWSM = new Dictionary<double, HashSet<PeptideWithSetModifications>>();
                     foreach (KeyValuePair<CompactPeptide, HashSet<PeptideWithSetModifications>> kvp in localCPtoPWSM)
                     {
