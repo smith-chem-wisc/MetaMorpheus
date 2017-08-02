@@ -68,6 +68,7 @@ namespace EngineLayer
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
+        public int? PeptideLength { get; private set; }
 
         #endregion Public Properties
 
@@ -268,11 +269,14 @@ namespace EngineLayer
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
+
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
 
             FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
 
             BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
+
+            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
