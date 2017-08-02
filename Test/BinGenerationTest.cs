@@ -26,7 +26,8 @@ namespace Test
                 DoHistogramAnalysis = true,
                 MassDiffAcceptors = massDiffAcceptors,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                SearchDecoy = false
+                SearchDecoy = false,
+                DoParsimony = true
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");

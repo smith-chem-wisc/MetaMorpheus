@@ -8,7 +8,6 @@ namespace EngineLayer
         #region Private Fields
 
         private string baseSequence;
-        private string baseLeucineSequence;
 
         #endregion Private Fields
 

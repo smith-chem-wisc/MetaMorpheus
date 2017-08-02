@@ -243,7 +243,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.MostProbableProteinInfo.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
