@@ -35,17 +35,11 @@ namespace EngineLayer.ModernSearch
 
         protected readonly List<ProductType> lp;
 
-        protected readonly Protease protease;
-
-        protected readonly bool searchMHC;
-
-        protected readonly int? minPeptideLength;
-
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength) : base(nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
@@ -55,9 +49,6 @@ namespace EngineLayer.ModernSearch
             this.searchModes = searchModes;
             this.addCompIons = addCompIons;
             this.lp = lp;
-            this.protease = protease;
-            this.searchMHC = isSearchMHC(protease);
-            this.minPeptideLength = minPeptideLength;
         }
 
         #endregion Public Constructors
@@ -66,76 +57,62 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            if (!searchMHC)
+            Status("In modern search engine...", nestedIds);
+
+            var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
+            Psm[][] newPsms = new Psm[searchModes.Count][];
+            for (int i = 0; i < searchModes.Count; i++)
+                newPsms[i] = new Psm[listOfSortedms2Scans.Length];
+
+            var searchModesCount = searchModes.Count;
+            var outputObject = new object();
+            int scansSeen = 0;
+            int old_progress = 0;
+            var peptideIndexCount = peptideIndex.Count;
+            Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
-                Status("In modern search engine...", nestedIds);
-
-                var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-                Psm[][] newPsms = new Psm[searchModes.Count][];
-                for (int i = 0; i < searchModes.Count; i++)
-                    newPsms[i] = new Psm[listOfSortedms2Scans.Length];
-
-                var searchModesCount = searchModes.Count;
-                var outputObject = new object();
-                int scansSeen = 0;
-                int old_progress = 0;
-                var peptideIndexCount = peptideIndex.Count;
-                Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
+                List<CompactPeptide>[] bestPeptides = new List<CompactPeptide>[searchModesCount];
+                double[] bestScores = new double[searchModesCount];
+                List<int>[] bestNotches = new List<int>[searchModesCount];
+                double[] fullPeptideScores = new double[peptideIndexCount];
+                for (int i = fff.Item1; i < fff.Item2; i++)
                 {
-                    List<CompactPeptide>[] bestPeptides = new List<CompactPeptide>[searchModesCount];
-                    double[] bestScores = new double[searchModesCount];
-                    List<int>[] bestNotches = new List<int>[searchModesCount];
-                    double[] fullPeptideScores = new double[peptideIndexCount];
-                    for (int i = fff.Item1; i < fff.Item2; i++)
+                    var thisScan = listOfSortedms2Scans[i];
+                    var thisScanprecursorMass = thisScan.PrecursorMass;
+                    Array.Clear(fullPeptideScores, 0, peptideIndexCount);
+                    double thePrecursorMass = thisScan.PrecursorMass;
+                    CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
+
+                    Array.Clear(bestPeptides, 0, searchModesCount);
+                    Array.Clear(bestScores, 0, searchModesCount);
+                    Array.Clear(bestNotches, 0, searchModesCount);
+
+                    for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
-                        var thisScan = listOfSortedms2Scans[i];
-                        var thisScanprecursorMass = thisScan.PrecursorMass;
-                        Array.Clear(fullPeptideScores, 0, peptideIndexCount);
-                        double thePrecursorMass = thisScan.PrecursorMass;
-                        CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
-
-                        Array.Clear(bestPeptides, 0, searchModesCount);
-                        Array.Clear(bestScores, 0, searchModesCount);
-                        Array.Clear(bestNotches, 0, searchModesCount);
-
-                        for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
+                        var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
+                        CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
+                        for (int j = 0; j < searchModesCount; j++)
                         {
-                            var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                            for (int j = 0; j < searchModesCount; j++)
-                            {
                                 // Check if makes sense to add due to peptidescore!
                                 var searchMode = searchModes[j];
-                                double currentBestScore = bestScores[j];
-                                if (currentBestScore > 1)
-                                {
+                            double currentBestScore = bestScores[j];
+                            if (currentBestScore > 1)
+                            {
                                     // Existed! Need to compare with old match
                                     if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
-                                    {
+                                {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                        if (notch >= 0)
-                                        {
-                                            bestPeptides[j].Add(candidatePeptide);
-                                            bestNotches[j].Add(notch);
-                                        }
-                                    }
-                                    else if (currentBestScore < consideredScore)
+                                    if (notch >= 0)
                                     {
-                                        // Score is better, only make sure it is acceptable
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                        if (notch >= 0)
-                                        {
-                                            bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
-                                            bestScores[j] = consideredScore;
-                                            bestNotches[j] = new List<int> { notch };
-                                        }
+                                        bestPeptides[j].Add(candidatePeptide);
+                                        bestNotches[j].Add(notch);
                                     }
                                 }
-                                // Did not exist! Only make sure that it is acceptable
-                                else
+                                else if (currentBestScore < consideredScore)
                                 {
-                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                        // Score is better, only make sure it is acceptable
+                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
                                         bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
@@ -144,37 +121,43 @@ namespace EngineLayer.ModernSearch
                                     }
                                 }
                             }
-                        }
-                        for (int j = 0; j < searchModesCount; j++)
-                        {
-                            if (bestPeptides[j] != null)
+                                // Did not exist! Only make sure that it is acceptable
+                                else
                             {
-                                newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
-                                for (int k = 1; k < bestPeptides[j].Count; k++)
+                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                if (notch >= 0)
                                 {
-                                    newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                                    bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
+                                    bestScores[j] = consideredScore;
+                                    bestNotches[j] = new List<int> { notch };
                                 }
                             }
                         }
                     }
-                    lock (outputObject)
+                    for (int j = 0; j < searchModesCount; j++)
                     {
-                        scansSeen += fff.Item2 - fff.Item1;
-                        var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
-                        if (new_progress > old_progress)
+                        if (bestPeptides[j] != null)
                         {
-                            ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
-                            old_progress = new_progress;
+                            newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            for (int k = 1; k < bestPeptides[j].Count; k++)
+                            {
+                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                            }
                         }
                     }
-                });
-                return new SearchResults(newPsms, this);
-            }
-            else
-            {
-                NonSpecificEnzymeSearch.NonSpecificEnzymeEngine NSEE = new NonSpecificEnzymeSearch.NonSpecificEnzymeEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, protease, minPeptideLength);
-                return NSEE.Run();
-            }
+                }
+                lock (outputObject)
+                {
+                    scansSeen += fff.Item2 - fff.Item1;
+                    var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
+                    if (new_progress > old_progress)
+                    {
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
+                        old_progress = new_progress;
+                    }
+                }
+            });
+            return new SearchResults(newPsms, this);
         }
         #endregion Protected Methods
 
@@ -270,18 +253,6 @@ namespace EngineLayer.ModernSearch
             }
         }
         
-        private bool isSearchMHC(Protease protease)
-        {
-            if (protease.Name.Contains("single") && searchModes.Count()>1)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         #endregion Private Methods
 
     }

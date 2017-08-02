@@ -9,14 +9,21 @@ using System.Linq;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
-    class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
+    public class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
     {
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private Protease protease;
+        private int? minPeptideLength;
 
-        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, protease, minPeptideLength) { }
+
+        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp)
+        {
+            this.protease = protease;
+            this.minPeptideLength = minPeptideLength;
+        }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -82,11 +89,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
-
-                                //if (thisScan.TheScan.OneBasedScanNumber == 20467)
-                                //{ if (possibleWinningPeptideIndex == 11)
-                                //    { }
-                                //}
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
