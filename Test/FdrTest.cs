@@ -52,7 +52,7 @@ namespace Test
             CompactPeptide peptide4 = new CompactPeptide(pep4);
             psm3.Add(peptide4, 1);
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {
                     peptide1, new HashSet<PeptideWithSetModifications>{ pep1 }

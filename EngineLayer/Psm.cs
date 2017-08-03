@@ -21,7 +21,7 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        public Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Public Fields
 
@@ -58,7 +58,7 @@ namespace EngineLayer
         public string FullFilePath { get; }
         public int ScanIndex { get; }
 
-        public IEnumerable<KeyValuePair<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
+        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
 
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
 
@@ -255,14 +255,14 @@ namespace EngineLayer
 
         public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
         {
-            compactPeptides = new Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>
+            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
             {
                 { correspondingCompactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(v,null)}
             };
             Score = score;
         }
 
-        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
+        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var ok in compactPeptides.Keys.ToList())
             {
@@ -369,7 +369,7 @@ namespace EngineLayer
             };
         }
 
-        public void Add(CompactPeptide compactPeptide, int v)
+        public void Add(CompactPeptideBase compactPeptide, int v)
         {
             compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(v, null);
         }

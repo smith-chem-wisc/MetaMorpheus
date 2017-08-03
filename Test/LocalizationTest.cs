@@ -52,7 +52,7 @@ namespace Test
             Assert.IsNull(newPsm.MostProbableProteinInfo);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
             };
