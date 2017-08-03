@@ -80,8 +80,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods2 = setList2[0];
 
             var dictHere = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("E", out motif);
+            ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
