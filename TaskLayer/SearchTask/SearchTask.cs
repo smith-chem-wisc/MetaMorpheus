@@ -61,6 +61,8 @@ namespace TaskLayer
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
+            DisposeOfFileWhenDone = true;
+
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
 
