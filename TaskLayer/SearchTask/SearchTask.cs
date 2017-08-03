@@ -69,6 +69,8 @@ namespace TaskLayer
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
 
+            DisposeOfFileWhenDone = true;
+
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
@@ -81,6 +83,7 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public bool DisposeOfFileWhenDone { get; set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
@@ -227,7 +230,7 @@ namespace TaskLayer
             }
 
             object lock2 = new object();
-            MyFileManager myFileManager = new MyFileManager();
+            MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
             Status("Searching files...", taskId);
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
