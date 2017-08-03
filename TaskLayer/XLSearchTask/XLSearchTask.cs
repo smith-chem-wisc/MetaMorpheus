@@ -270,7 +270,7 @@ namespace TaskLayer
             #endregion Generate indices for modern search
 
             object lock2 = new object();
-            MyFileManager myFileManager = new MyFileManager();
+            MyFileManager myFileManager = new MyFileManager(true);
             Status("Searching files...", taskId);
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
@@ -305,7 +305,7 @@ namespace TaskLayer
 
                 CrosslinkSearchResults xlsearchResults;
                 if (CrosslinkSearchWithAllBeta)
-                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance,  crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
+                    xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine2(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run());
                 else
                     xlsearchResults = ((CrosslinkSearchResults)new CrosslinkSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run());
 
@@ -313,7 +313,6 @@ namespace TaskLayer
 
                 lock (lock2)
                 {
-
                     allPsmsXLTuple.AddRange(xlsearchResults.NewPsms);
                     foreach (var item in xlsearchResults.NewPsms)
                     {
@@ -334,7 +333,7 @@ namespace TaskLayer
 
             var allPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(allPsmsXLTuple, new OpenSearchMode());
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
-            if (allPsmsXLTupleFDR.Count!=0)
+            if (allPsmsXLTupleFDR.Count != 0)
             {
                 foreach (var fullFilePath in currentRawFileList)
                 {
@@ -369,6 +368,50 @@ namespace TaskLayer
                 if (reader.ReadToEnd().Equals(indexEngine.ToString()))
                     return true;
             return false;
+        }
+
+        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
+        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
+        {
+            var ids = new List<Tuple<PsmCross, PsmCross>>();
+            foreach (var item in items)
+            {
+                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
+            }
+
+            int cumulative_target = 0;
+            int cumulative_decoy = 0;
+
+            int[] cumulative_target_per_notch = new int[sm.NumNotches];
+            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
+
+            for (int i = 0; i < ids.Count; i++)
+            {
+                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
+
+                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
+                if (isDecoy1 || isDecoy2)
+                    cumulative_decoy++;
+                else
+                    cumulative_target++;
+
+                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
+                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
+            }
+
+            double min_q_value = double.PositiveInfinity;
+
+            for (int i = ids.Count - 1; i >= 0; i--)
+            {
+                PsmCross id = ids[i].Item1;
+                if (id.FdrInfo.QValue > min_q_value)
+                    id.FdrInfo.QValue = min_q_value;
+                else if (id.FdrInfo.QValue < min_q_value)
+                    min_q_value = id.FdrInfo.QValue;
+            }
+
+            return ids;
         }
 
         private int GetOneBasedIndexInProtein(int oneIsNterminus, PeptideWithSetModifications peptideWithSetModifications)
@@ -442,51 +485,6 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(peptideIndexFile, new List<string> { taskId });
         }
 
-        //Calculate the FDR of crosslinked peptide FP/(FP+TP)
-        private static List<Tuple<PsmCross, PsmCross>> CrosslinkDoFalseDiscoveryRateAnalysis(List<Tuple<PsmCross, PsmCross>> items, MassDiffAcceptor sm)
-        {
-            var ids = new List<Tuple<PsmCross, PsmCross>>();
-            foreach (var item in items)
-            {
-                ids.Add(new Tuple<PsmCross, PsmCross>(item.Item1, item.Item2));
-            }
-
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-
-            int[] cumulative_target_per_notch = new int[sm.NumNotches];
-            int[] cumulative_decoy_per_notch = new int[sm.NumNotches];
-
-            for (int i = 0; i < ids.Count; i++)
-            {
-                var item1 = ids[i].Item1; var item2 = ids[i].Item2;
-
-                var isDecoy1 = item1.MostProbableProteinInfo.IsDecoy; var isDecoy2 = item1.MostProbableProteinInfo.IsDecoy;
-                if (isDecoy1 || isDecoy2)
-                    cumulative_decoy++;
-                else
-                    cumulative_target++;
-
-
-                double temp_q_value = (double)cumulative_decoy / (cumulative_target + cumulative_decoy);
-                item1.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-                item2.SetFdrValues(cumulative_target, cumulative_decoy, temp_q_value, 0, 0, 0);
-            }
-
-            double min_q_value = double.PositiveInfinity;
-
-            for (int i = ids.Count - 1; i >= 0; i--)
-            {
-                PsmCross id = ids[i].Item1;
-                if (id.FdrInfo.QValue > min_q_value)
-                    id.FdrInfo.QValue = min_q_value;
-                else if (id.FdrInfo.QValue < min_q_value)
-                    min_q_value = id.FdrInfo.QValue;
-            }
-
-            return ids;
-        }
-        
         #endregion Private Methods
 
     }

@@ -120,6 +120,7 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
+        public bool DisposeOfFileWhenDone { get; set; }
 
         #endregion Public Properties
 
@@ -227,7 +228,7 @@ namespace TaskLayer
             }
 
             object lock2 = new object();
-            MyFileManager myFileManager = new MyFileManager();
+            MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
             Status("Searching files...", taskId);
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
