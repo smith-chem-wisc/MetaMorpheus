@@ -7,7 +7,7 @@ using System.Linq;
 namespace EngineLayer
 {
     [Serializable]
-    public class CompactPeptide : CompactPeptideBase 
+    public class CompactPeptide : CompactPeptideBase
     {
         #region Public Constructors
 
@@ -35,13 +35,5 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
-        #region Public Properties
-
-        public override double[] CTerminalMasses { get; }
-        public override double[] NTerminalMasses { get; }
-        public override double MonoisotopicMassIncludingFixedMods { get; }
-
-        #endregion Public Properties 
     }
 }

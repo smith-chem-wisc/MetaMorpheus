@@ -23,16 +23,11 @@ namespace EngineLayer
 
         #region Public Fields
 
-        public abstract double[] CTerminalMasses { get; }
-        public abstract double[] NTerminalMasses { get; }
-        public abstract double MonoisotopicMassIncludingFixedMods { get; }
+        public double[] CTerminalMasses { get; protected set; }
+        public double[] NTerminalMasses { get; protected set; }
+        public double MonoisotopicMassIncludingFixedMods { get; protected set; }
 
         #endregion Public Fields
-
-        public CompactPeptideBase()
-        {
-
-        }
 
         public override bool Equals(object obj)
         {
