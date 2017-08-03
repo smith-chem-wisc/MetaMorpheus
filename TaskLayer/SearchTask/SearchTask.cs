@@ -71,6 +71,8 @@ namespace TaskLayer
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
 
+            DisposeOfFileWhenDone = true;
+
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
@@ -83,6 +85,7 @@ namespace TaskLayer
 
         #region Public Properties
 
+        public bool DisposeOfFileWhenDone { get; set; }
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
         public int MaxMissedCleavages { get; set; }
