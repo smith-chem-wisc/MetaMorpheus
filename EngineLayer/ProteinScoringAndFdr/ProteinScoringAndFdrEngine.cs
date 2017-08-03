@@ -58,9 +58,7 @@ namespace EngineLayer
                 {
                     foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                     {
-                        HashSet<Psm> psmsForThisPeptide;
-
-                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
+                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<Psm> psmsForThisPeptide))
                             peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
                         else
                             psmsForThisPeptide.Add(psm);
@@ -74,8 +72,7 @@ namespace EngineLayer
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    HashSet<Psm> psms;
-                    if (peptideToPsmMatching.TryGetValue(peptide, out psms))
+                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<Psm> psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else
                         pepsToRemove.Add(peptide);

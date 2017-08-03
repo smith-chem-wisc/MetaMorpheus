@@ -102,10 +102,10 @@ namespace Test
             var pep1 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep2 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).Last();
 
-            List<PeptideWithSetModifications> pepsWithSetMods1 = new List<PeptideWithSetModifications> { pep1 };
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(pepsWithSetMods1);
-            List<PeptideWithSetModifications> pepsWithSetMods2 = new List<PeptideWithSetModifications> { pep2 };
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(pepsWithSetMods2);
+            List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
+            List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(listForFile1);
+            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile2 = new TestDataFile(listForFile2);
 
             List<Protein> proteinList = new List<Protein> { prot1 };
 

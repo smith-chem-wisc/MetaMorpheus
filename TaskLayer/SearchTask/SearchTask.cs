@@ -459,6 +459,8 @@ namespace TaskLayer
                     // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                     foreach (var fullFilePath in currentRawFileList)
                     {
+                        List<Psm> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+
                         var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                         var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
@@ -474,11 +476,11 @@ namespace TaskLayer
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, allPsms[j], MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
+                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                        WriteMzidentml(psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, MassDiffAcceptors[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, MassDiffAcceptors[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }
