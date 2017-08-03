@@ -60,12 +60,13 @@ namespace TaskLayer
         private void WritePepXML(List<Tuple<PsmCross, PsmCross>> items, List<DbForTask> dbFilenameList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, string outputFolder, string fileName, List<string> nestedIds)
         {
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
-            var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
+            var _pepxml = new pepXML.Generated.msms_pipeline_analysis()
+            {
+                #region Add element to pepXML
 
-            #region Add element to pepXML
-
-            _pepxml.date = DateTime.Now;
-            _pepxml.summary_xml = items[0].Item1.FullFilePath + ".pep.xml";
+                date = DateTime.Now,
+                summary_xml = items[0].Item1.FullFilePath + ".pep.xml"
+            };
 
             string proteaseC = ""; string proteaseNC = "";
             foreach (var x in Protease.SequencesInducingCleavage) { proteaseC += x; }
@@ -76,8 +77,7 @@ namespace TaskLayer
             foreach (var x in ListOfModsFixed) { modsFixed += x.Item2 + "."; }
             foreach (var x in ListOfModsVariable) { modsVar += x.Item2 + "."; }
 
-            Dictionary<string, Modification> unknownModifications;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].Item1.FullFilePath);

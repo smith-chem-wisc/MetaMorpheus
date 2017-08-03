@@ -123,14 +123,12 @@ namespace EngineLayer
                 var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
                 foreach (var sharedPep in sharedPeps)
                 {
-                    HashSet<ProteinGroup> v;
-                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out v))
+                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out HashSet<ProteinGroup> v))
                         v.Add(proteinGroup);
                     else
                         sharedPepWithProteinGroups.Add(sharedPep.Sequence, new HashSet<ProteinGroup> { proteinGroup });
 
-                    HashSet<PeptideWithSetModifications> v1;
-                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out v1))
+                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out HashSet<PeptideWithSetModifications> v1))
                         v1.Add(sharedPep);
                     else
                         seqToPeptide.Add(sharedPep.Sequence, new HashSet<PeptideWithSetModifications> { sharedPep });

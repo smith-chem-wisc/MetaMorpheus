@@ -210,8 +210,7 @@ namespace TaskLayer
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            Dictionary<string, Modification> unknownModifications;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (BIons)
