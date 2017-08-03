@@ -11,8 +11,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
     public class NonSpecificEnzymeSequencesToActualPeptides : SequencesToActualProteinPeptidesEngine
     {
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private TerminusType terminusType;
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds) { }
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds)
+        {
+            this.terminusType = terminusType;
+        }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -32,7 +36,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     precursorTolerance = Convert.ToDouble(name.Substring(0, index));
                 }
             }
-            else { throw new MetaMorpheusException("Multiple searches required to run fast nonspecific enzyme searches"); }
+            else { throw new MetaMorpheusException("Multiple searches required to run NonSpecific Search"); }
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             Dictionary<CompactPeptide, List<double>> compactPeptideToMassMatching = new Dictionary<CompactPeptide, List<double>>();
@@ -75,7 +79,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //Status("Adding possible sources to peptide dictionary...", new List<string> { taskId });
             //Populate the dictionary with possible sources for those ions
             //particularly tricky for single proteases, since each is more scan specific.
-            if (protease.Name.Equals("singleN"))
+            if (terminusType==TerminusType.N)
             {
                 Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
                 {
@@ -218,7 +222,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                 });
             }
-            else //if protease.Name.Equals("singleC")
+            else //if (terminusType==TerminusType.C)
             {
                 Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
                 {

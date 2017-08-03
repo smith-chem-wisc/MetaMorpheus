@@ -53,6 +53,7 @@ namespace TaskLayer
             YIons = true;
             ZdotIons = false;
             CIons = false;
+            TerminusType = TerminusType.N;
             FlashLfqEngine = new FlashLFQEngine();
 
             LocalizeAll = true;
@@ -121,7 +122,7 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
-
+        public TerminusType TerminusType { get; set; }
         #endregion Public Properties
 
         #region Public Methods
@@ -184,11 +185,8 @@ namespace TaskLayer
             List<CompactPeptide> peptideIndex = null;
             float[] keys = null;
             List<int>[] fragmentIndex = null;
-            if (SearchType == SearchType.Modern)
+            if (SearchType == SearchType.Modern | SearchType==SearchType.NonSpecific)
             {
-                if (Protease.Name.Contains("single") && MassDiffAcceptors.Count() > 1)
-                    SearchType = SearchType.NonSpecific;
-
                 #region Generate indices for modern search
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
@@ -256,7 +254,7 @@ namespace TaskLayer
                 if (SearchType == SearchType.Classic)
                     searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons).Run());
                 else if(SearchType==SearchType.NonSpecific)
-                    searchResults = ((SearchResults)(new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength).Run()));
+                    searchResults = ((SearchResults)(new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, TerminusType).Run()));
                 else//if(SearchType==SearchType.Modern)
                     searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes).Run()));
 
@@ -279,7 +277,7 @@ namespace TaskLayer
             Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
             if (SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, TerminusType);
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }

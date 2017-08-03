@@ -148,6 +148,9 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
+            nonSpecificSearchRadioButton.IsChecked = task.SearchType == SearchType.NonSpecific;
+            NTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.N;
+            CTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.C;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.DoQuantification;
@@ -266,7 +269,13 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.SearchType = classicSearchRadioButton.IsChecked.Value ? SearchType.Classic : SearchType.Modern;
+            if (classicSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.Classic;
+            else if (modernSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.Modern;
+            else //if (nonSpecificSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.NonSpecific;
+            TheTask.TerminusType = (NTerminusCheckBox.IsChecked.Value) ? TerminusType.N : TerminusType.C;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.DoQuantification = checkBoxQuantification.IsChecked.Value;

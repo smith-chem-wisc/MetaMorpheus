@@ -17,12 +17,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private Protease protease;
         private int? minPeptideLength;
+        private TerminusType terminusType;
 
-
-        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp)
+        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
+            this.terminusType = terminusType;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -85,7 +86,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4)
+                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -95,7 +96,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
-                                        double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, protease);
+                                        double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
                                         if (precursorMass > 1)
                                         {
                                             //CompactPeptide cp = new CompactPeptide(candidatePeptide.NTerminalMasses, candidatePeptide.CTerminalMasses, precursorMass, addCompIons);
@@ -106,7 +107,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     else if (currentBestScore < consideredScore)
                                     {
                                         // Score is better, only make sure it is acceptable
-                                        double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, protease);
+                                        double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
                                         if (precursorMass > 1)
                                         {
                                             // CompactPeptide cp = new CompactPeptide(candidatePeptide.NTerminalMasses, candidatePeptide.CTerminalMasses, precursorMass, addCompIons);
@@ -120,7 +121,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 // Did not exist! Only make sure that it is acceptable
                                 else
                                 {
-                                    double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, protease);
+                                    double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
                                     if (precursorMass > 1)
                                     {
                                         //CompactPeptide cp = new CompactPeptide(candidatePeptide.NTerminalMasses, candidatePeptide.CTerminalMasses, precursorMass, addCompIons);
@@ -140,7 +141,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4)
+                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -212,11 +213,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new SearchResults(newPsms, this);
         }
 
-        private double Accepts(double scanPrecursorMass, CompactPeptide peptide, PpmTolerance precursorTolerance, Protease protease)
+        private double Accepts(double scanPrecursorMass, CompactPeptide peptide, PpmTolerance precursorTolerance, TerminusType terminusType)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = minPeptideLength ?? 0;
-            if (protease.Name.Equals("singleN"))
+            if (terminusType==TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)
                 {
@@ -228,7 +229,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 }
 
             }
-            else//if singleC
+            else//if (terminusType==TerminusType.C)
             {
                 for (int i = localminPeptideLength; i < peptide.CTerminalMasses.Count(); i++)
                 {
