@@ -125,7 +125,6 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
-        public bool DisposeOfFileWhenDone { get; set; }
 
         #endregion Public Properties
 
