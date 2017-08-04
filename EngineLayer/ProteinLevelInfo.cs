@@ -15,7 +15,6 @@ namespace EngineLayer
             var representative = PeptidesWithSetModifications.First();
 
             PeptideMonoisotopicMass = representative.MonoisotopicMass;
-            BaseSequence = representative.BaseSequence;
         }
 
         #endregion Public Constructors
@@ -23,7 +22,6 @@ namespace EngineLayer
         #region Public Properties
 
         public HashSet<PeptideWithSetModifications> PeptidesWithSetModifications { get; }
-        public string BaseSequence { get; }
         public double PeptideMonoisotopicMass { get; }
         public bool IsDecoy { get; }
 

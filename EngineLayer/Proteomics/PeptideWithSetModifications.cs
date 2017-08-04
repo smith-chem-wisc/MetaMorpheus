@@ -206,13 +206,10 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             var q = obj as PeptideWithSetModifications;
-            //foreach (var ok in q.allModsOneIsNterminus)
-            //    if (!allModsOneIsNterminus.Contains(ok))
-            //        return false;
             return q != null
                 && q.Sequence.Equals(Sequence)
                 && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein
-                && q.Protein.Equals(Protein);
+                && q.Protein.Accession.Equals(Protein.Accession);
         }
 
         public override int GetHashCode()

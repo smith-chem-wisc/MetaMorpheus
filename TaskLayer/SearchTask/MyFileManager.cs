@@ -25,9 +25,7 @@ namespace TaskLayer
 
         public MyFileManager(bool disposeOfFileWhenDone)
         {
-            {
-                this.disposeOfFileWhenDone = disposeOfFileWhenDone;
-            }
+            this.disposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
         #endregion Public Constructors

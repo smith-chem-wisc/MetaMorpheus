@@ -12,6 +12,9 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
+
+        #region Private Methods
+
         private void WriteCrosslinkToTsv(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             var writtenFile = Path.Combine(outputFolder, fileName + ".mytsv");
@@ -31,7 +34,7 @@ namespace TaskLayer
                         + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
+                        + "\t" + item.Item1.BaseSequence
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
@@ -39,7 +42,7 @@ namespace TaskLayer
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
+                        + "\t" + item.Item2.BaseSequence
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
@@ -57,11 +60,13 @@ namespace TaskLayer
         private void WritePepXML(List<Tuple<PsmCross, PsmCross>> items, List<DbForTask> dbFilenameList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, string outputFolder, string fileName, List<string> nestedIds)
         {
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
-            var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
+            var _pepxml = new pepXML.Generated.msms_pipeline_analysis()
+            {
+                #region Add element to pepXML
 
-            #region Add element to pepXML
-            _pepxml.date = DateTime.Now;
-            _pepxml.summary_xml = items[0].Item1.FullFilePath + ".pep.xml";              
+                date = DateTime.Now,
+                summary_xml = items[0].Item1.FullFilePath + ".pep.xml"
+            };
 
             string proteaseC = ""; string proteaseNC = "";
             foreach (var x in Protease.SequencesInducingCleavage) { proteaseC += x; }
@@ -72,8 +77,7 @@ namespace TaskLayer
             foreach (var x in ListOfModsFixed) { modsFixed += x.Item2 + "."; }
             foreach (var x in ListOfModsVariable) { modsVar += x.Item2 + "."; }
 
-            Dictionary<string, Modification> unknownModifications;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].Item1.FullFilePath);
@@ -85,7 +89,7 @@ namespace TaskLayer
                  {
                  base_name = filePathNoExtension,
                  raw_data_type = "raw",
-                 raw_data = ".mzML",                 
+                 raw_data = ".mzML",
                  sample_enzyme = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzyme()
                  {
                      name = Protease.Name,
@@ -165,7 +169,7 @@ namespace TaskLayer
                     end_scan = Convert.ToUInt32(items[i].Item1.ScanNumber),
                     precursor_neutral_mass = (float)items[i].Item1.ScanPrecursorMonoisotopicPeak.Mz * items[i].Item1.ScanPrecursorCharge,
                     assumed_charge = items[i].Item1.ScanPrecursorCharge.ToString(),
-                    index = Convert.ToUInt32(i+1),
+                    index = Convert.ToUInt32(i + 1),
                     retention_time_sec = (float)items[i].Item1.ScanRetentionTime,
                     search_result = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result[1]
                     {
@@ -180,7 +184,7 @@ namespace TaskLayer
                                     calc_neutral_pep_mass = (float)items[i].Item1.ScanPrecursorMonoisotopicPeak.Mz * items[i].Item1.ScanPrecursorCharge,
                                     massdiff = (items[i].Item1.ScanPrecursorMass - items[i].Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - items[i].Item1.MostProbableProteinInfo.PeptideMonoisotopicMass - crosslinker.TotalMass).ToString(),
                                     xlink_typeSpecified = true,
-                                    xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.xl,                                   
+                                    xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.xl,
                                     xlink = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink
                                     {
                                         identifier = crosslinker.CrosslinkerName,
@@ -189,7 +193,7 @@ namespace TaskLayer
                                         {
                                             new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                                             {
-                                                peptide = items[i].Item1.MostProbableProteinInfo.BaseSequence,
+                                                peptide = items[i].Item1.BaseSequence,
                                                 peptide_prev_aa = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().PreviousAminoAcid.ToString(),
                                                 peptide_next_aa = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().NextAminoAcid.ToString(),
                                                 protein = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Protein.Accession,
@@ -206,7 +210,7 @@ namespace TaskLayer
                                             },
                                             new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                                             {
-                                                peptide = items[i].Item2.MostProbableProteinInfo.BaseSequence,
+                                                peptide = items[i].Item2.BaseSequence,
                                                 peptide_prev_aa = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().PreviousAminoAcid.ToString(),
                                                 peptide_next_aa = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().NextAminoAcid.ToString(),
                                                 protein = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Protein.Accession,
@@ -235,6 +239,7 @@ namespace TaskLayer
                 };
 
                 #region mods infomation
+
                 int modsFixedNum1 = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Count;
                 int modsFixedNum2 = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Count;
                 if (modsFixedNum1 != 0)
@@ -294,7 +299,6 @@ namespace TaskLayer
                 }
                 if (modsFixedNum2 != 0)
                 {
-
                     modsFixedNum2 = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Count;
                     if (modsFixedNum2 == 1)
                     {
@@ -348,17 +352,19 @@ namespace TaskLayer
                         _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[1].modification_info.mod_aminoacid_mass[j].position = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Keys.ToList()[j].ToString();
                     }
                 }
-                #endregion
+
+                #endregion mods infomation
             }
 
-
-            #endregion
+            #endregion Add element to pepXML
 
             TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.xml"));
             _indexedSerializer.Serialize(writer, _pepxml);
             writer.Close();
             SucessfullyFinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
-
         }
+
+        #endregion Private Methods
+
     }
 }

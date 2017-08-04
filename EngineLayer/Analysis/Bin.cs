@@ -99,10 +99,10 @@ namespace EngineLayer.Analysis
                 {
                     var current = uniquePSMs[ok.FullSequence];
                     if (current.Item3.Score < ok.Score)
-                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.FullSequence, ok);
+                        uniquePSMs[ok.FullSequence] = new Tuple<string, string, Psm>(ok.BaseSequence, ok.FullSequence, ok);
                 }
                 else
-                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, Psm>(ok.MostProbableProteinInfo.BaseSequence, ok.FullSequence, ok));
+                    uniquePSMs.Add(ok.FullSequence, new Tuple<string, string, Psm>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
 

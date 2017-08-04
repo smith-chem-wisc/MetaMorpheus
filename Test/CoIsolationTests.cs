@@ -85,8 +85,8 @@ namespace Test
                     huh.MatchToProteinLinkedPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
             }
 
-            Assert.AreEqual("NNNK", searchResults.Psms[0][0].MostProbableProteinInfo.BaseSequence);
-            Assert.AreEqual("NDNK", searchResults.Psms[0][1].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("NNNK", searchResults.Psms[0][0].BaseSequence);
+            Assert.AreEqual("NDNK", searchResults.Psms[0][1].BaseSequence);
         }
 
         #endregion Public Methods
