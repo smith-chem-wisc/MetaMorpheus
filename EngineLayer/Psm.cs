@@ -17,13 +17,9 @@ namespace EngineLayer
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 
-        #endregion Private Fields
-
-        #region Public Fields
-
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
-        #endregion Public Fields
+        #endregion Private Fields
 
         #region Public Constructors
 

@@ -10,6 +10,7 @@ namespace EngineLayer
     {
 
         #region Protected Fields
+
         protected const int max_mods_for_peptide = 3;
         protected readonly int maxMissedCleavages;
         protected readonly int? minPeptideLength;
@@ -22,6 +23,7 @@ namespace EngineLayer
         protected readonly List<Protein> proteinList;
         protected readonly List<MassDiffAcceptor> massDiffAcceptors;
         protected readonly Protease protease;
+
         #endregion Protected Fields
 
         #region Public Constructors
@@ -95,8 +97,8 @@ namespace EngineLayer
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
                     {
-                            //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
-                            old_progress = new_progress;
+                        //ReportProgress(new ProgressEventArgs(new_progress, "In adding possible sources to peptide dictionary loop", nestedIds));
+                        old_progress = new_progress;
                     }
                 }
             });

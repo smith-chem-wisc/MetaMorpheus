@@ -29,7 +29,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public TestDataFile(string slightlyLargerDataFile):base(2)
+        public TestDataFile(string slightlyLargerDataFile) : base(2)
         {
             var mz1 = new double[] { 50, 60, 70, 80, 90, 630.27216.ToMz(2) };
             var intensities1 = new double[] { 1, 1, 1, 1, 1, 1 };

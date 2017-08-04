@@ -33,6 +33,7 @@ namespace EngineLayer
             this.thisDictionaryOfFixedMods = thisDictionaryOfFixedMods;
             this.NumKnownPossibleLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
+
         #endregion Internal Constructors
 
         #region Public Properties

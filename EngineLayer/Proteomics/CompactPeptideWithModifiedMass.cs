@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EngineLayer
 {
     [Serializable]
-    class CompactPeptideWithModifiedMass : CompactPeptideBase
+    internal class CompactPeptideWithModifiedMass : CompactPeptideBase
     {
+
         #region Public Constructors
-        public double modifiedMass { get; set; }
 
         public CompactPeptideWithModifiedMass(CompactPeptideBase cp, double MonoisotopicMassIncludingFixedMods)
         {
@@ -22,9 +18,20 @@ namespace EngineLayer
 
         #endregion Public Constructors
 
+        #region Public Properties
+
+        public double modifiedMass { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
         public void AssignCorrectMass()
         {
             this.MonoisotopicMassIncludingFixedMods = this.modifiedMass;
         }
+
+        #endregion Public Methods
+
     }
 }

@@ -1,7 +1,5 @@
-﻿using Chemistry;
-using Proteomics;
+﻿using Proteomics;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
@@ -9,6 +7,7 @@ namespace EngineLayer
     [Serializable]
     public class CompactPeptide : CompactPeptideBase
     {
+
         #region Public Constructors
 
         public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications)
@@ -35,5 +34,6 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
+
     }
 }

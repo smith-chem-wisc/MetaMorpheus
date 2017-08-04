@@ -128,6 +128,7 @@ namespace TaskLayer
 
         public SearchType SearchType { get; set; }
         public TerminusType TerminusType { get; set; }
+
         #endregion Public Properties
 
         #region Public Methods
@@ -190,11 +191,11 @@ namespace TaskLayer
             List<CompactPeptide> peptideIndex = null;
             float[] keys = null;
             List<int>[] fragmentIndex = null;
-            if (SearchType == SearchType.Modern | SearchType==SearchType.NonSpecific)
+            if (SearchType == SearchType.Modern | SearchType == SearchType.NonSpecific)
             {
                 #region Generate indices for modern search
 
-                    Status("Getting fragment dictionary...", new List<string> { taskId });
+                Status("Getting fragment dictionary...", new List<string> { taskId });
                 var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
@@ -258,7 +259,7 @@ namespace TaskLayer
                 SearchResults searchResults;
                 if (SearchType == SearchType.Classic)
                     searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons).Run());
-                else if(SearchType==SearchType.NonSpecific)
+                else if (SearchType == SearchType.NonSpecific)
                     searchResults = ((SearchResults)(new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, TerminusType).Run()));
                 else//if(SearchType==SearchType.Modern)
                     searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes).Run()));

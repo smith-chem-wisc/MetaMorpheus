@@ -75,7 +75,7 @@ namespace Test
             FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes, nestedIds);
 
             fdr.Run();
-            
+
             Assert.AreEqual(2, searchModes[0].NumNotches);
             Assert.AreEqual(0, newPsms[0][0].FdrInfo.cumulativeDecoyNotch);
             Assert.AreEqual(1, newPsms[0][0].FdrInfo.cumulativeTargetNotch);
@@ -90,7 +90,6 @@ namespace Test
             Assert.AreEqual(2, newPsms[0][1].FdrInfo.cumulativeTarget);
             Assert.AreEqual(0, newPsms[0][2].FdrInfo.cumulativeDecoy);
             Assert.AreEqual(3, newPsms[0][2].FdrInfo.cumulativeTarget);
-
         }
 
         #endregion Public Methods

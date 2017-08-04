@@ -4,13 +4,16 @@ using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
     {
+
+        #region Private Fields
+
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
@@ -19,12 +22,20 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private int? minPeptideLength;
         private TerminusType terminusType;
 
+        #endregion Private Fields
+
+        #region Public Constructors
+
         public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
             this.terminusType = terminusType;
         }
+
+        #endregion Public Constructors
+
+        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -213,11 +224,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new SearchResults(newPsms, this);
         }
 
+        #endregion Protected Methods
+
+        #region Private Methods
+
         private double Accepts(double scanPrecursorMass, CompactPeptide peptide, PpmTolerance precursorTolerance, TerminusType terminusType)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
             int localminPeptideLength = minPeptideLength ?? 0;
-            if (terminusType==TerminusType.N)
+            if (terminusType == TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)
                 {
@@ -227,7 +242,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
-
             }
             else//if (terminusType==TerminusType.C)
             {
@@ -282,7 +296,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                 IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
                 //propogation of error from precursor mass and complementary product mass
-                AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(fragmentTolerance.Value,2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value,2)));
+                AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(fragmentTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
                 foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
                 {
                     var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
@@ -333,5 +347,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 }
             }
         }
+
+        #endregion Private Methods
+
     }
 }

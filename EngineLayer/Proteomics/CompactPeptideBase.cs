@@ -1,10 +1,8 @@
-﻿using System;
+﻿using Chemistry;
+using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Chemistry;
-using Proteomics;
 
 namespace EngineLayer
 {
@@ -21,13 +19,15 @@ namespace EngineLayer
 
         #endregion Protected Fields
 
-        #region Public Fields
+        #region Public Properties
 
         public double[] CTerminalMasses { get; protected set; }
         public double[] NTerminalMasses { get; protected set; }
         public double MonoisotopicMassIncludingFixedMods { get; protected set; }
 
-        #endregion Public Fields
+        #endregion Public Properties
+
+        #region Public Methods
 
         public override bool Equals(object obj)
         {
@@ -51,8 +51,6 @@ namespace EngineLayer
                 return result;
             }
         }
-
-        #region Public Methods
 
         public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
@@ -161,5 +159,6 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
+
     }
 }

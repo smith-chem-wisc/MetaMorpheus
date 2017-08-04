@@ -4,38 +4,32 @@ using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
+
+        #region Protected Fields
+
+        protected readonly List<int>[] fragmentIndex;
+        protected readonly Tolerance fragmentTolerance;
+        protected readonly float[] keys;
+        protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
+        protected readonly List<CompactPeptide> peptideIndex;
+        protected readonly List<MassDiffAcceptor> searchModes;
+        protected readonly bool addCompIons;
+        protected readonly List<ProductType> lp;
+
+        #endregion Protected Fields
+
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 
         #endregion Private Fields
-
-        #region Protected Fields
-
-        protected readonly List<int>[] fragmentIndex;
-
-        protected readonly Tolerance fragmentTolerance;
-
-        protected readonly float[] keys;
-
-        protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
-
-        protected readonly List<CompactPeptide> peptideIndex;
-
-        protected readonly List<MassDiffAcceptor> searchModes;
-
-        protected readonly bool addCompIons;
-
-        protected readonly List<ProductType> lp;
-
-        #endregion Protected Fields
 
         #region Public Constructors
 
@@ -93,16 +87,16 @@ namespace EngineLayer.ModernSearch
                         CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                         for (int j = 0; j < searchModesCount; j++)
                         {
-                                // Check if makes sense to add due to peptidescore!
-                                var searchMode = searchModes[j];
+                            // Check if makes sense to add due to peptidescore!
+                            var searchMode = searchModes[j];
                             double currentBestScore = bestScores[j];
                             if (currentBestScore > 1)
                             {
-                                    // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                // Existed! Need to compare with old match
+                                if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                 {
-                                        // Score is same, need to see if accepts and if prefer the new one
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    // Score is same, need to see if accepts and if prefer the new one
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
                                         bestPeptides[j].Add(candidatePeptide);
@@ -111,8 +105,8 @@ namespace EngineLayer.ModernSearch
                                 }
                                 else if (currentBestScore < consideredScore)
                                 {
-                                        // Score is better, only make sure it is acceptable
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                    // Score is better, only make sure it is acceptable
+                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
                                         bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
@@ -121,8 +115,8 @@ namespace EngineLayer.ModernSearch
                                     }
                                 }
                             }
-                                // Did not exist! Only make sure that it is acceptable
-                                else
+                            // Did not exist! Only make sure that it is acceptable
+                            else
                             {
                                 int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                 if (notch >= 0)
@@ -159,6 +153,7 @@ namespace EngineLayer.ModernSearch
             });
             return new SearchResults(newPsms, this);
         }
+
         #endregion Protected Methods
 
         #region Private Methods
@@ -252,7 +247,7 @@ namespace EngineLayer.ModernSearch
                 }
             }
         }
-        
+
         #endregion Private Methods
 
     }

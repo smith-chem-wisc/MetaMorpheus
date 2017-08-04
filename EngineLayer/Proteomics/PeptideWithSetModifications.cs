@@ -20,11 +20,11 @@ namespace EngineLayer
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private readonly PeptideWithPossibleModifications modPep;
         private string sequence;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-        private readonly PeptideWithPossibleModifications modPep;
         private CompactPeptide compactPeptide;
         private double? monoisotopicMass;
 
