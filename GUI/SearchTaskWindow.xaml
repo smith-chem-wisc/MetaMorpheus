@@ -30,6 +30,7 @@
                                 <Label Content="Deconvolution Mass Tolerance in PPM" />
                                 <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45"/>
                             </StackPanel>
+                            <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
                     </Expander>
                 </GroupBox>
@@ -96,7 +97,7 @@
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
-                            <GroupBox Header="Fragment Ion Search Parameters" HorizontalAlignment="Right" Width="728">
+                            <GroupBox Header="Fragment Ion Search Parameters">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />

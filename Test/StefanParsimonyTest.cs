@@ -182,7 +182,7 @@ namespace Test
             IEnumerable<double> neutralLosses = null;
             IEnumerable<double> diagnosticIons = null;
             string modificationType = "customModType";
-            ModificationSites modificationSites = ModificationSites.Any;
+            TerminusLocalization modificationSites = TerminusLocalization.Any;
             List<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>
             {
                 new ModificationWithMass("CH2 on Glycine", null, motif1, modificationSites, monoisotopicMass, externalDatabaseReferences, neutralLosses, diagnosticIons, modificationType)
@@ -231,6 +231,8 @@ namespace Test
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
 
             CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1);
+            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2);
+            Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
             CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3);
 
             List<Psm>[] newPsms = new List<Psm>[1];

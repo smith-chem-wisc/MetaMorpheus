@@ -198,7 +198,7 @@ namespace EngineLayer
                 massOfExistingMod = modToReplace.monoisotopicMass;
                 vvv.Remove(j + 2);
             }
-            vvv.Add(j + 2, new ModificationWithMass(null, null, null, ModificationSites.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
+            vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
             var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
             return hm;
         }
@@ -206,13 +206,10 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             var q = obj as PeptideWithSetModifications;
-            //foreach (var ok in q.allModsOneIsNterminus)
-            //    if (!allModsOneIsNterminus.Contains(ok))
-            //        return false;
             return q != null
                 && q.Sequence.Equals(Sequence)
                 && q.OneBasedStartResidueInProtein == OneBasedStartResidueInProtein
-                && q.Protein.Equals(Protein);
+                && q.Protein.Accession.Equals(Protein.Accession);
         }
 
         public override int GetHashCode()

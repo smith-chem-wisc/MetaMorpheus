@@ -47,13 +47,13 @@ namespace EngineLayer.Gptmd
                     return false;
                 indexUp++;
             }
-            if (attemptToLocalize.terminusLocalization == ModificationSites.NProt && (proteinOneBasedIndex > 2))
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NProt && (proteinOneBasedIndex > 2))
                 return false;
-            if (attemptToLocalize.terminusLocalization == ModificationSites.NPep && peptideOneBasedIndex > 1)
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.NPep && peptideOneBasedIndex > 1)
                 return false;
-            if (attemptToLocalize.terminusLocalization == ModificationSites.PepC && peptideOneBasedIndex < peptideLength)
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.PepC && peptideOneBasedIndex < peptideLength)
                 return false;
-            if (attemptToLocalize.terminusLocalization == ModificationSites.ProtC && proteinOneBasedIndex < protein.Length)
+            if (attemptToLocalize.terminusLocalization == TerminusLocalization.ProtC && proteinOneBasedIndex < protein.Length)
                 return false;
             return true;
         }
@@ -71,15 +71,14 @@ namespace EngineLayer.Gptmd
             // Of those only targets (do not add modifications for decoy peptides)
             foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.IsDecoy))
             {
-                var baseSequence = ye.MostProbableProteinInfo.BaseSequence;
                 foreach (var peptide in ye.MostProbableProteinInfo.PeptidesWithSetModifications)
                     foreach (ModificationWithMass mod in GetPossibleMods(ye.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {
                         var proteinAcession = peptide.Protein.Accession;
-                        for (int i = 0; i < baseSequence.Length; i++)
+                        for (int i = 0; i < peptide.Length; i++)
                         {
                             int indexInProtein = peptide.OneBasedStartResidueInProtein + i;
-                            if (ModFits(mod, peptide.Protein, i + 1, baseSequence.Length, indexInProtein))
+                            if (ModFits(mod, peptide.Protein, i + 1, peptide.Length, indexInProtein))
                             {
                                 if (!Mods.ContainsKey(proteinAcession))
                                     Mods[proteinAcession] = new HashSet<Tuple<int, Modification>>();
