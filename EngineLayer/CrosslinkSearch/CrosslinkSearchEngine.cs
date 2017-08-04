@@ -301,6 +301,7 @@ namespace EngineLayer.CrosslinkSearch
                 for (int i = 0; i < pmmh.ProductMz.Length; i++)
                 {
                     var cr = pmmh.ProductName[i][0];
+                    //get the position of amino acid
                     var nm = Int32.Parse(System.Text.RegularExpressions.Regex.Match(pmmh.ProductName[i], @"\d+").Value);                    
                     if ((cr == 'b' || cr == 'c') && nm < ipos + 1)
                     {
@@ -403,6 +404,10 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
             psmCross.xlpos = pmmhList[scoreList.IndexOf(scoreList.Max())].xlpos + 1;
+            if (crosslinker.Cleavable)
+            {
+                psmCross.parentIonNum = psmCross.matchedIonInfo.MatchedIonName.Count(p => p.Contains("s")) + psmCross.matchedIonInfo.MatchedIonName.Count(p => p.Contains("l"));
+            }
         }
 
         #endregion Private Methods

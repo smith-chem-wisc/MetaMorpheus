@@ -34,6 +34,7 @@ namespace EngineLayer.CrosslinkSearch
         public double XLTotalScore { get; set; }
         public int xlpos { get; set; }
         public int[] topPosition { get; set; }
+        public int parentIonNum { get; set; }
 
 
         //Compute ProductMassesMightHave: the theoritical masses of psmCross

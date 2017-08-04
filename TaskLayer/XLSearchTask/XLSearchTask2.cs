@@ -19,10 +19,9 @@ namespace TaskLayer
             {
                 output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
                     "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence(crosslink site)\tPep1 mass\tPep1 XLBestScore\tPep1 topPos" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence(crosslink site)\tPep2 mass\tPep2 XLBestScore\tPep2 topPos\tTotalScore\tMass diff\tQValue");
+                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence(crosslink site)\tPep2 mass\tPep2 XLBestScore\tPep2 topPos\tTotalScore\tMass diff\tQValue\tParentIons");
                 foreach (var item in items)
                 {
-                    var x = item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession);
                     output.WriteLine(
                         item.Item1.FullFilePath
                         + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
@@ -48,7 +47,80 @@ namespace TaskLayer
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
                         + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass)
-                        + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
+                        + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item1.parentIonNum + item.Item2.parentIonNum).ToString(CultureInfo.InvariantCulture)
+                        );
+                }
+            }
+            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+        }
+
+        private void WriteCrosslinkToTxtForCLMSVault(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, CrosslinkerTypeClass crosslinker, List<string> nestedIds)
+        {
+            var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Scan Number\tRet Time\tObs Mass\tCharge\tPSM Mass\tPPM Error\tScore\tdScore\tPep.Diff." +
+                    "\tPeptide #1\tLink #1\tProtein #1" +
+                    "\tPeptide #2\tLink #2\tProtein #2\tLinker Mass");
+                foreach (var item in items)
+                {
+                    output.WriteLine(
+                        item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.ScanPrecursorMass.ToString() //CultureInfo.InvariantCulture
+                        + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass + crosslinker.TotalMass).ToString(CultureInfo.InvariantCulture)
+                        + "\t" + ((item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass - crosslinker.TotalMass) / item.Item1.ScanPrecursorMass*10E6).ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item1.Score + item.Item2.Score).ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass - crosslinker.TotalMass).ToString(CultureInfo.InvariantCulture)
+
+                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence
+                        + "\t" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+
+                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence
+                        + "\t" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + crosslinker.TotalMass.ToString(CultureInfo.InvariantCulture)
+                        );
+                }
+            }
+            SucessfullyFinishedWritingFile(writtenFile, nestedIds);
+        }
+
+        private void WriteCrosslinkToTxtForPercolator(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, CrosslinkerTypeClass crosslinker, List<string> nestedIds)
+        {
+            var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("SpecId\tLabel\tScannr\tScore\tdScore\tNormRank\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum" +
+                    "\tPeptide\tProtein" );
+                foreach (var item in items)
+                {
+                    string x = "T"; string label = "1";
+                    if (item.Item1.IsDecoy || item.Item2.IsDecoy)
+                    {
+                        x = "D"; label = "-1";
+                    }
+                    output.WriteLine(
+                        x + "-" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture) + "-" + item.Item1.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + label
+                        + "\t" + item.Item1.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item1.Score + item.Item2.Score).ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + ((item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass - crosslinker.TotalMass) / item.Item1.ScanPrecursorMass * 10E6).ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.MostProbableProteinInfo.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.MostProbableProteinInfo.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + (item.Item2.MostProbableProteinInfo.BaseSequence.Length + item.Item1.MostProbableProteinInfo.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
+                        + "\t" + "-." + item.Item1.MostProbableProteinInfo.BaseSequence + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + "--" + item.Item2.MostProbableProteinInfo.BaseSequence + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ".-"
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
+                        );
                 }
             }
             SucessfullyFinishedWritingFile(writtenFile, nestedIds);
@@ -360,5 +432,7 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
 
         }
+
+
     }
 }
