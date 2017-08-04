@@ -247,10 +247,10 @@ namespace TaskLayer
             #endregion write TOML
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-#if !DEBUG
+//#if !DEBUG
             try
             {
-#endif
+//#endif
             var stopWatch = new Stopwatch();
             stopWatch.Start();
             RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilenameList, taskId);
@@ -264,8 +264,7 @@ namespace TaskLayer
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
             FinishedSingleTask(taskId);
-
-#if !DEBUG
+//#if !DEBUG
             }
             catch (Exception e)
             {
@@ -284,7 +283,7 @@ namespace TaskLayer
                 }
                 throw;
             }
-#endif
+//#endif
 
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return myTaskResults;
