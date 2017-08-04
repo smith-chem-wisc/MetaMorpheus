@@ -135,14 +135,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (index >= 0 && (!minPeptideLength.HasValue | index >= minPeptideLength))
                                     {
                                         //generate correct sequence
-                                        Dictionary<int, ModificationWithMass> updatedAllModsOneIsNTerminus = new Dictionary<int, ModificationWithMass>();
-                                        foreach (KeyValuePair<int, ModificationWithMass> kvpMods in pwsm.allModsOneIsNterminus)
-                                        {
-                                            if (kvpMods.Key <= index)
-                                            {
-                                                updatedAllModsOneIsNTerminus.Add(kvpMods.Key, kvpMods.Value);
-                                            }
-                                        }
                                         PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedStartResidueInProtein + index - 1);
                                         double modifiedMass = finalMass[0];
                                         HashSet<PeptideWithSetModifications> tempPWSMHashSet;
@@ -251,14 +243,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (index >= 0 && (!minPeptideLength.HasValue | (pwsm.OneBasedEndResidueInProtein - (pwsm.OneBasedStartResidueInProtein + index - 2)) >= minPeptideLength))
                                     {
                                         //generate correct sequence
-                                        Dictionary<int, ModificationWithMass> updatedAllModsOneIsNTerminus = new Dictionary<int, ModificationWithMass>();
-                                        foreach (KeyValuePair<int, ModificationWithMass> kvpMods in pwsm.allModsOneIsNterminus)
-                                        {
-                                            if (kvpMods.Key >= index)
-                                            {
-                                                updatedAllModsOneIsNTerminus.Add(kvpMods.Key, kvpMods.Value);
-                                            }
-                                        }
                                         PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.OneBasedEndResidueInProtein);
                                         double modifiedMass = finalMass[0];
                                         HashSet<PeptideWithSetModifications> tempPWSMHashSet;
