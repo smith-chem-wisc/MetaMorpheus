@@ -63,6 +63,8 @@ namespace TaskLayer
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
+            DisposeOfFileWhenDone = true;
+
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
 
@@ -364,8 +366,8 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
                 var psmsBelowOnePercentFdr = allPsms.SelectMany(v => v).Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy);
-                foreach (var psm in psmsBelowOnePercentFdr)
-                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.MostProbableProteinInfo.BaseSequence, psm.FullSequence, psm.MostProbableProteinInfo.PeptideMonoisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.MostProbableProteinInfo.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
+                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.BaseSequence != null))
+                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.MostProbableProteinInfo.PeptideMonoisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.MostProbableProteinInfo.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
 
                 FlashLfqEngine.ConstructBinsFromIdentifications();
 
@@ -386,12 +388,12 @@ namespace TaskLayer
                 // assign quantities to PSMs
                 Dictionary<string, List<Psm>> baseseqToPsm = new Dictionary<string, List<Psm>>();
                 List<Psm> list;
-                foreach (var psm in psmsBelowOnePercentFdr)
+                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.BaseSequence != null))
                 {
-                    if (baseseqToPsm.TryGetValue(psm.MostProbableProteinInfo.BaseSequence, out list))
+                    if (baseseqToPsm.TryGetValue(psm.BaseSequence, out list))
                         list.Add(psm);
                     else
-                        baseseqToPsm.Add(psm.MostProbableProteinInfo.BaseSequence, new List<Psm>() { psm });
+                        baseseqToPsm.Add(psm.BaseSequence, new List<Psm>() { psm });
                 }
 
                 var summedPeaks = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");
@@ -473,6 +475,8 @@ namespace TaskLayer
                     // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                     foreach (var fullFilePath in currentRawFileList)
                     {
+                        List<Psm> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+
                         var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                         var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
@@ -488,11 +492,11 @@ namespace TaskLayer
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, allPsms[j], MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
+                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                        WriteMzidentml(psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList(), subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, MassDiffAcceptors[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, MassDiffAcceptors[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }

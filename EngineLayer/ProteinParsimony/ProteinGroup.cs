@@ -243,7 +243,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.MostProbableProteinInfo.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
@@ -396,7 +396,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.MostProbableProteinInfo.BaseSequence);
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.BaseSequence);
                 //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)
