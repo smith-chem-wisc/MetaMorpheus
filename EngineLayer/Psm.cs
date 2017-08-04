@@ -16,13 +16,14 @@ namespace EngineLayer
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
-        private Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+
+        private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public Psm(CompactPeptide peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
             this.Score = score;
             this.ScanIndex = scanIndex;
@@ -53,7 +54,7 @@ namespace EngineLayer
         public string FullFilePath { get; }
         public int ScanIndex { get; }
 
-        public IEnumerable<KeyValuePair<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
+        public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
 
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
 
@@ -67,6 +68,8 @@ namespace EngineLayer
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
         public int? Notch { get; private set; }
+        public string BaseSequence { get; private set; }
+        public int? PeptideLength { get; private set; }
 
         #endregion Public Properties
 
@@ -250,14 +253,14 @@ namespace EngineLayer
 
         public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
         {
-            compactPeptides = new Dictionary<CompactPeptide, Tuple<int, HashSet<PeptideWithSetModifications>>>
+            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
             {
                 { correspondingCompactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(v,null)}
             };
             Score = score;
         }
 
-        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching)
+        public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var ok in compactPeptides.Keys.ToList())
             {
@@ -267,9 +270,14 @@ namespace EngineLayer
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
+
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
 
             FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;
+
+            BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
+
+            PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
@@ -364,7 +372,7 @@ namespace EngineLayer
             };
         }
 
-        public void Add(CompactPeptide compactPeptide, int v)
+        public void Add(CompactPeptideBase compactPeptide, int v)
         {
             compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(v, null);
         }

@@ -46,7 +46,7 @@ namespace Test
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {peptidesWithSetModifications.First().CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
@@ -88,7 +88,7 @@ namespace Test
             Psm match = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {peptidesWithSetModifications.First().CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };

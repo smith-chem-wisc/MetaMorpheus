@@ -313,9 +313,11 @@ namespace TaskLayer
             List<string> filenames = items.Select(i => i.FullFilePath).Distinct().ToList();
             Dictionary<string, string> database_reference = new Dictionary<string, string>();
             List<string> databases = proteins.Select(p => p.DatabaseFilePath).Distinct().ToList();
-            XmlWriterSettings settings = new XmlWriterSettings();
-            settings.NewLineChars = "\n";
-            settings.Indent = true;
+            XmlWriterSettings settings = new XmlWriterSettings()
+            {
+                NewLineChars = "\n",
+                Indent = true
+            };
             XmlSerializer _indexedSerializer = new XmlSerializer(typeof(mzIdentML110.Generated.MzIdentMLType));
             var _mzid = new mzIdentML110.Generated.MzIdentMLType()
             {

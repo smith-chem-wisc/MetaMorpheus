@@ -1,6 +1,7 @@
 ProductMassTolerance = "±0.0100 Absolute"
 ClassicSearch = true
-DoParsimony = false
+DoParsimony = true 
+DoQuantification = true 
 NoOneHitWonders = false
 Quantify = false
 QuantifyRtTol = 3.0
@@ -18,3 +19,6 @@ BIons = true
 YIons = true
 ZdotIons = false
 CIons = false
+DisposeOfFileWhenDone = false 
+WritePrunedDatabase = true 
+DoLocalizationAnalysis = true

@@ -8,7 +8,6 @@ namespace EngineLayer
         #region Private Fields
 
         private string baseSequence;
-        private string baseLeucineSequence;
 
         #endregion Private Fields
 
@@ -57,16 +56,6 @@ namespace EngineLayer
                 if (baseSequence == null)
                     baseSequence = Protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length);
                 return baseSequence;
-            }
-        }
-
-        public string BaseLeucineSequence
-        {
-            get
-            {
-                if (baseLeucineSequence == null)
-                    baseLeucineSequence = Protein.BaseSequence.Substring(OneBasedStartResidueInProtein - 1, Length).Replace('I', 'L');
-                return baseLeucineSequence;
             }
         }
 
