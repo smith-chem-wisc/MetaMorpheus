@@ -25,7 +25,6 @@ namespace EngineLayer
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-
         private CompactPeptide compactPeptide;
         private double? monoisotopicMass;
 
@@ -46,6 +45,11 @@ namespace EngineLayer
             this.modPep = everythingElseFromThisOne.modPep;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
             this.numFixedMods = modsFromThisOne.numFixedMods;
+        }
+
+        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
+        {
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key >= proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein && b.Key <= proteinOneBasedEnd - modsFromThisOne.OneBasedEndResidueInProtein).ToDictionary(b => b.Key, b => b.Value);
         }
 
         #endregion Internal Constructors
@@ -198,8 +202,10 @@ namespace EngineLayer
                 massOfExistingMod = modToReplace.monoisotopicMass;
                 vvv.Remove(j + 2);
             }
+
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
             var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
+
             return hm;
         }
 

@@ -3,6 +3,7 @@
     public enum SearchType
     {
         Classic,
-        Modern
+        Modern,
+        NonSpecific
     }
 }

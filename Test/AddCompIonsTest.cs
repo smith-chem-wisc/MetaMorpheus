@@ -1,22 +1,21 @@
 ﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.Indexing;
+using EngineLayer.ModernSearch;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
-using EngineLayer.ModernSearch;
-using EngineLayer.Indexing;
-
-
 
 namespace Test
 {
     [TestFixture]
-    class AddCompIonsTest
+    internal class AddCompIonsTest
     {
+
         #region Public Methods
 
         [Test]
@@ -59,7 +58,6 @@ namespace Test
             Assert.AreEqual(searchResults.Psms[0][0].ScanNumber, searchResults2.Psms[0][0].ScanNumber);
 
             Assert.IsTrue(searchResults2.Psms[0][0].Score < searchResults.Psms[0][0].Score * 2 && searchResults2.Psms[0][0].Score + 2 > searchResults.Psms[0][0].Score * 2);
-
         }
 
         [Test]
@@ -88,7 +86,7 @@ namespace Test
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>());
@@ -119,7 +117,7 @@ namespace Test
 
             Assert.IsTrue(searchResults2.Psms[0][0].Score > 1);
 
-           Assert.AreEqual(searchResults.Psms[0][0].ScanNumber, searchResults2.Psms[0][0].ScanNumber);
+            Assert.AreEqual(searchResults.Psms[0][0].ScanNumber, searchResults2.Psms[0][0].ScanNumber);
 
             Assert.IsTrue(searchResults2.Psms[0][0].Score < searchResults.Psms[0][0].Score * 2 && searchResults2.Psms[0][0].Score + 2 > searchResults.Psms[0][0].Score * 2);
         }
@@ -130,13 +128,15 @@ namespace Test
             TestDataFile t = new TestDataFile();
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
             double precursorMass = 300;
-            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764,  precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
+            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             double[] matchedIonMassesListPositiveIsMatch = new double[sorted_theoretical_product_masses_for_this_peptide.Count()];
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             double scoreT = Psm.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, true, precursorMass, lp);
             double scoreF = Psm.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, false, precursorMass, lp);
             Assert.IsTrue(scoreT < scoreF * 2 && scoreT + 1 > scoreF * 2);
         }
+
         #endregion Public Methods
+
     }
 }
