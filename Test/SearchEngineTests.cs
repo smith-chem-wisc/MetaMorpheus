@@ -277,13 +277,14 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[1][0].Score > 4);
             Assert.AreEqual(2, searchResults.Psms[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.N).Run();
+           var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.N).Run();
 
             foreach (var huh in searchResults.Psms[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
-            Assert.AreEqual("QQQGGGG", searchResults.Psms[1][0].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("QQQGGGG", searchResults.Psms[1][0].BaseSequence);
+
         }
 
         [Test]
@@ -348,8 +349,9 @@ namespace Test
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(hah.CompactPeptideToProteinPeptideMatching);
 
-            Assert.AreEqual("QQQGGGG", searchResults.Psms[1][0].MostProbableProteinInfo.BaseSequence);
+            Assert.AreEqual("QQQGGGG", searchResults.Psms[1][0].BaseSequence);
         }
         #endregion Public Methods
     }
 }
+ 
