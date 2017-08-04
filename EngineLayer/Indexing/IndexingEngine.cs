@@ -26,7 +26,6 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-
         private readonly List<ProductType> lp;
 
         #endregion Private Fields

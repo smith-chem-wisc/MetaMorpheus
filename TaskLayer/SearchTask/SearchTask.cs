@@ -3,6 +3,7 @@ using EngineLayer.Analysis;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
@@ -52,6 +53,7 @@ namespace TaskLayer
             YIons = true;
             ZdotIons = false;
             CIons = false;
+            TerminusType = TerminusType.N;
             FlashLfqEngine = new FlashLFQEngine();
 
             LocalizeAll = true;
@@ -125,6 +127,7 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
 
         public SearchType SearchType { get; set; }
+        public TerminusType TerminusType { get; set; }
 
         #endregion Public Properties
 
@@ -174,8 +177,10 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (BIons)
+            if (BIons & AddCompIons)
                 ionTypes.Add(ProductType.B);
+            else if (BIons)
+                ionTypes.Add(ProductType.BnoB1ions);
             if (YIons)
                 ionTypes.Add(ProductType.Y);
             if (ZdotIons)
@@ -186,7 +191,7 @@ namespace TaskLayer
             List<CompactPeptide> peptideIndex = null;
             float[] keys = null;
             List<int>[] fragmentIndex = null;
-            if (SearchType == SearchType.Modern)
+            if (SearchType == SearchType.Modern | SearchType == SearchType.NonSpecific)
             {
                 #region Generate indices for modern search
 
@@ -239,43 +244,55 @@ namespace TaskLayer
                 parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
             double completedFiles = 0;
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            {
+                var origDataFile = currentRawFileList[spectraFileIndex];
+
+                var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
+                NewCollection(Path.GetFileName(origDataFile), thisId);
+                Status("Loading spectra file...", thisId);
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+
+                Status("Getting ms2 scans...", thisId);
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+                Status("Starting search...", thisId);
+                SearchResults searchResults;
+                if (SearchType == SearchType.Classic)
+                    searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons).Run());
+                else if (SearchType == SearchType.NonSpecific)
+                    searchResults = ((SearchResults)(new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, TerminusType).Run()));
+                else//if(SearchType==SearchType.Modern)
+                    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes).Run()));
+
+                myFileManager.DoneWithFile(origDataFile);
+
+                lock (lock2)
                 {
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-
-                    var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
-                    NewCollection(Path.GetFileName(origDataFile), thisId);
-                    Status("Loading spectra file...", thisId);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-
-                    Status("Getting ms2 scans...", thisId);
-                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-                    Status("Starting search...", thisId);
-                    SearchResults searchResults;
-                    if (SearchType == SearchType.Classic)
-                        searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons).Run());
-                    else
-                        searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes).Run()));
-
-                    myFileManager.DoneWithFile(origDataFile);
-
-                    lock (lock2)
-                    {
-                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                            allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
-                    }
-                    ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
-                    completedFiles++;
-                    ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+                    for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
+                        allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
                 }
+                ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                completedFiles++;
+                ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+            }
             );
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
             // Group and order psms
             Status("Matching peptides to proteins...", taskId);
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
-            var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            if (SearchType == SearchType.NonSpecific)
+            {
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, TerminusType);
+                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+            }
+            else
+            {
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId });
+                var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
+                compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
+            }
 
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (DoParsimony)

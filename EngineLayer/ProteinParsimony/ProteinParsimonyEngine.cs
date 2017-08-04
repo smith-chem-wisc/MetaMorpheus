@@ -13,13 +13,13 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        private readonly Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
         {
             this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -70,8 +70,8 @@ namespace EngineLayer
                         }
             }
 
-            var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptide>>();
-            var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptide>>();
+            var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptideBase>>();
+            var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptideBase>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
 
             // peptide matched to fullseq (used depending on user preference)
@@ -104,9 +104,9 @@ namespace EngineLayer
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    HashSet<CompactPeptide> peptides;
+                    HashSet<CompactPeptideBase> peptides;
                     if (!proteinToPeptidesMatching.TryGetValue(peptide.Protein, out peptides))
-                        proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<CompactPeptide>() { kvp.Key });
+                        proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<CompactPeptideBase>() { kvp.Key });
                     else
                         peptides.Add(kvp.Key);
                 }
@@ -218,7 +218,7 @@ namespace EngineLayer
             // add indistinguishable proteins
             var proteinsGroupedByNumPeptides = proteinToPeptidesMatching.GroupBy(p => p.Value.Count);
             var parsimonyProteinsGroupedByNumPeptides = parsimonyProteinList.GroupBy(p => p.Value.Count);
-            var indistinguishableProteins = new ConcurrentDictionary<Protein, HashSet<CompactPeptide>>();
+            var indistinguishableProteins = new ConcurrentDictionary<Protein, HashSet<CompactPeptideBase>>();
 
             foreach (var group in proteinsGroupedByNumPeptides)
             {
