@@ -178,7 +178,7 @@ namespace TaskLayer
             myTaskResults = new MyTaskResults(this);
             List<Tuple<PsmCross, PsmCross>> allPsmsXLTuple = new List<Tuple<PsmCross, PsmCross>>();
             List<PsmCross> allPsmsXL = new List<PsmCross>();
-            var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
             Status("Loading modifications...", taskId);
 

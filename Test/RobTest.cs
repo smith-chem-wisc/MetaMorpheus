@@ -74,7 +74,7 @@ namespace Test
             }
 
             // creates the initial dictionary of "peptide" and "virtual peptide" matches
-            var dictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            var dictionary = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             CompactPeptide[] peptides = new CompactPeptide[peptideList.Count];
             HashSet<PeptideWithSetModifications>[] virtualPeptideSets = new HashSet<PeptideWithSetModifications>[peptideList.Count];
 
@@ -112,10 +112,10 @@ namespace Test
             }
 
             // copy for comparison later
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> initialDictionary = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             foreach (var kvp in dictionary)
             {
-                CompactPeptide cp = kvp.Key;
+                CompactPeptideBase cp = kvp.Key;
                 HashSet<PeptideWithSetModifications> peps = new HashSet<PeptideWithSetModifications>();
                 foreach (var pep in kvp.Value)
                     peps.Add(pep);
@@ -337,7 +337,7 @@ namespace Test
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {peptide.CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptide} }
             };
@@ -369,7 +369,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>
             {
                 {variableModifications.Last(), 1 }

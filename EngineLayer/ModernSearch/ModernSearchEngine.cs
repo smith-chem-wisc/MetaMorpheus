@@ -4,33 +4,30 @@ using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
 
+        #region Protected Fields
+
+        protected readonly List<int>[] fragmentIndex;
+        protected readonly Tolerance fragmentTolerance;
+        protected readonly float[] keys;
+        protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
+        protected readonly List<CompactPeptide> peptideIndex;
+        protected readonly List<MassDiffAcceptor> searchModes;
+        protected readonly bool addCompIons;
+        protected readonly List<ProductType> lp;
+
+        #endregion Protected Fields
+
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
-
-        private readonly List<int>[] fragmentIndex;
-
-        private readonly Tolerance fragmentTolerance;
-
-        private readonly float[] keys;
-
-        private readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
-
-        private readonly List<CompactPeptide> peptideIndex;
-
-        private readonly List<MassDiffAcceptor> searchModes;
-
-        private readonly bool addCompIons;
-
-        private readonly List<ProductType> lp;
 
         #endregion Private Fields
 
@@ -173,7 +170,7 @@ namespace EngineLayer.ModernSearch
                 }
             }
             else
-            { 
+            {
                 List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
                 for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                 {
@@ -206,7 +203,6 @@ namespace EngineLayer.ModernSearch
                     GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
                 }
             }
-
         }
 
         private void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores)
