@@ -14,7 +14,6 @@ namespace EngineLayer
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
-        public readonly PeptideWithPossibleModifications modPep;
 
         #endregion Public Fields
 
@@ -25,7 +24,7 @@ namespace EngineLayer
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-
+        private readonly PeptideWithPossibleModifications modPep;
         private CompactPeptide compactPeptide;
         private double? monoisotopicMass;
 

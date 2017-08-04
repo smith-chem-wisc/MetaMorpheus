@@ -63,7 +63,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             var peptideIndexCount = peptideIndex.Count;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
-                List<CompactPeptide>[] bestPeptides = new List<CompactPeptide>[searchModesCount];
+                List<CompactPeptideBase>[] bestPeptides = new List<CompactPeptideBase>[searchModesCount];
                 double[] bestScores = new double[searchModesCount];
                 List<int>[] bestNotches = new List<int>[searchModesCount];
                 double[] fullPeptideScores = new double[peptideIndexCount];
@@ -99,8 +99,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
                                         if (precursorMass > 1)
                                         {
-                                            //CompactPeptide cp = new CompactPeptide(candidatePeptide.NTerminalMasses, candidatePeptide.CTerminalMasses, precursorMass, addCompIons);
-                                            bestPeptides[openSearchIndex].Add(candidatePeptide);
+                                            CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                            bestPeptides[openSearchIndex].Add(cp);
                                             bestNotches[openSearchIndex].Add(0);
                                         }
                                     }
@@ -110,8 +110,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
                                         if (precursorMass > 1)
                                         {
-                                            // CompactPeptide cp = new CompactPeptide(candidatePeptide.NTerminalMasses, candidatePeptide.CTerminalMasses, precursorMass, addCompIons);
-                                            bestPeptides[openSearchIndex] = new List<CompactPeptide> { candidatePeptide };
+                                            CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                            bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                             bestScores[openSearchIndex] = consideredScore;
                                             bestNotches[openSearchIndex] = new List<int> { 0 };
                                             currentBestScore = consideredScore;
@@ -124,8 +124,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
                                     if (precursorMass > 1)
                                     {
-                                        //CompactPeptide cp = new CompactPeptide(candidatePeptide.NTerminalMasses, candidatePeptide.CTerminalMasses, precursorMass, addCompIons);
-                                        bestPeptides[openSearchIndex] = new List<CompactPeptide> { candidatePeptide };
+                                        CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                        bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                         bestScores[openSearchIndex] = consideredScore;
                                         bestNotches[openSearchIndex] = new List<int> { 0 };
                                         currentBestScore = consideredScore;
@@ -134,7 +134,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                         }
                     }
-                    else //if looking for fusion peptides
+                    else //(assumes open search)
                     {
                         double currentBestScore = bestScores[openSearchIndex];
                         var searchMode = searchModes[openSearchIndex];
@@ -165,7 +165,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                         if (notch >= 0)
                                         {
-                                            bestPeptides[openSearchIndex] = new List<CompactPeptide> { candidatePeptide };
+                                            bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { candidatePeptide };
                                             bestScores[openSearchIndex] = consideredScore;
                                             bestNotches[openSearchIndex] = new List<int> { notch };
                                             currentBestScore = consideredScore;
@@ -178,7 +178,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
-                                        bestPeptides[openSearchIndex] = new List<CompactPeptide> { candidatePeptide };
+                                        bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { candidatePeptide };
                                         bestScores[openSearchIndex] = consideredScore;
                                         bestNotches[openSearchIndex] = new List<int> { notch };
                                         currentBestScore = consideredScore;
