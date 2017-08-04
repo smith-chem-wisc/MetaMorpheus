@@ -1,22 +1,33 @@
-﻿using System;
+﻿using Chemistry;
 using Proteomics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Chemistry;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeSequencesToActualPeptides : SequencesToActualProteinPeptidesEngine
     {
+
+        #region Private Fields
+
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private TerminusType terminusType;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds)
         {
             this.terminusType = terminusType;
         }
+
+        #endregion Public Constructors
+
+        #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -44,7 +55,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
 
-
             //Looking at the search results, generate a dictionary of keys for each unique CompactPeptide with empty values
             foreach (var psmListForASpecificSearchMode in allPsms) //should only be one
                 if (psmListForASpecificSearchMode != null)
@@ -71,7 +81,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //CPWM==CompactPeptideWithMass (Patched to respresent a double)
             //PWSM==PeptideWithSetModification
             HashSet<CompactPeptideBase> PsmCPWMs = new HashSet<CompactPeptideBase>(from b in compactPeptideToProteinPeptideMatching select b.Key);
-            Dictionary <CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             int totalProteins = proteinList.Count;
             int proteinsSeen = 0;
             int old_progress = 0;
@@ -101,7 +111,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //CP==CompactPeptide
                     //CPWM==CompactPeptideWithMass (Patched to respresent a double)
                     //PWSM==PeptideWithSetModificationDictionary
-                    Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>> localCPWMtoPWSM = new Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>>(); 
+                    Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>> localCPWMtoPWSM = new Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>>();
                     foreach (KeyValuePair<CompactPeptideBase, HashSet<PeptideWithSetModifications>> kvp in localCPtoPWSM) //foreach theoretical kvp
                     {
                         List<double> listScanPrecursorMasses;
@@ -117,7 +127,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         initialMass = pep_n_term_variable_mod.monoisotopicMass - nl;
                                 else
                                     initialMass = 0;
-                                double[] finalMass = new double[1]; 
+                                double[] finalMass = new double[1];
                                 foreach (double precursorMass in listScanPrecursorMasses) //foreach precursor
                                 {
                                     finalMass[0] = initialMass + waterMonoisotopicMass; //This is the starting mass of the final mass
@@ -125,16 +135,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (index >= 0 && (!minPeptideLength.HasValue | index >= minPeptideLength))
                                     {
                                         //generate correct sequence
-                                        Dictionary <int, ModificationWithMass > updatedAllModsOneIsNTerminus= new Dictionary<int, ModificationWithMass>();
-                                        foreach(KeyValuePair<int, ModificationWithMass> kvpMods in pwsm.allModsOneIsNterminus)
+                                        Dictionary<int, ModificationWithMass> updatedAllModsOneIsNTerminus = new Dictionary<int, ModificationWithMass>();
+                                        foreach (KeyValuePair<int, ModificationWithMass> kvpMods in pwsm.allModsOneIsNterminus)
                                         {
-                                            if(kvpMods.Key<=index)
+                                            if (kvpMods.Key <= index)
                                             {
                                                 updatedAllModsOneIsNTerminus.Add(kvpMods.Key, kvpMods.Value);
                                             }
                                         }
-                                        PeptideWithPossibleModifications tempPWPM = new PeptideWithPossibleModifications(pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.Protein, 0, pwsm.PeptideDescription, updatedAllModsOneIsNTerminus);
-                                        PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(tempPWPM, updatedAllModsOneIsNTerminus, pwsm.numFixedMods);
+                                        PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedStartResidueInProtein + index - 1);
                                         double modifiedMass = finalMass[0];
                                         HashSet<PeptideWithSetModifications> tempPWSMHashSet;
                                         CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
@@ -183,7 +192,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
 
                         //Everything has been populated!
-                        //now need to 
+                        //now need to
                         //record progress
                         proteinsSeen += fff.Item2 - fff.Item1;
                         var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
@@ -217,7 +226,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //CP==CompactPeptide
                     //CPWM==CompactPeptideWithMass (Patched to respresent a double)
                     //PWSM==PeptideWithSetModificationDictionary
-                    Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>> localCPWMtoPWSM = new Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>>(); 
+                    Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>> localCPWMtoPWSM = new Dictionary<CompactPeptideWithModifiedMass, HashSet<PeptideWithSetModifications>>();
                     foreach (KeyValuePair<CompactPeptideBase, HashSet<PeptideWithSetModifications>> kvp in localCPtoPWSM) //foreach theoretical kvp
                     {
                         List<double> listScanPrecursorMasses;
@@ -250,8 +259,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                                 updatedAllModsOneIsNTerminus.Add(kvpMods.Key, kvpMods.Value);
                                             }
                                         }
-                                        PeptideWithPossibleModifications tempPWPM = new PeptideWithPossibleModifications(pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.OneBasedEndResidueInProtein, pwsm.Protein, 0, pwsm.PeptideDescription, updatedAllModsOneIsNTerminus);
-                                        PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(tempPWPM, updatedAllModsOneIsNTerminus, pwsm.numFixedMods);
+                                        PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.OneBasedEndResidueInProtein);
                                         double modifiedMass = finalMass[0];
                                         HashSet<PeptideWithSetModifications> tempPWSMHashSet;
                                         CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
@@ -302,7 +310,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
 
                         //Everything has been populated!
-                        //now need to 
+                        //now need to
                         //record progress
                         proteinsSeen += fff.Item2 - fff.Item1;
                         var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
@@ -327,6 +335,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
             return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
 
         private int ComputePeptideIndexes(PeptideWithSetModifications yyy, double[] prevMass, int oneBasedIndexToLookAt, int direction, double precursorMass, double ppmTolerance)
         {
@@ -370,5 +382,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             } while ((oneBasedIndexToLookAt >= 1 && direction == -1) || (oneBasedIndexToLookAt <= yyy.Length && direction == 1));
             return -1;
         }
+
+        #endregion Private Methods
+
     }
 }

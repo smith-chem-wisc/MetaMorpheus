@@ -8,11 +8,11 @@ namespace EngineLayer
     public class PeptideWithPossibleModifications : Peptide
     {
 
-        #region Public Fields
+        #region Private Fields
 
-        public readonly Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods;
+        private readonly Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods;
 
-        #endregion Public Fields
+        #endregion Private Fields
 
         #region Internal Constructors
 
@@ -22,15 +22,6 @@ namespace EngineLayer
             this.MissedCleavages = missedCleavages;
             this.PeptideDescription = peptideDescription;
             thisDictionaryOfFixedMods = AddFixedMods(allKnownFixedModifications);
-            this.NumKnownPossibleLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
-        }
-
-        internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods)
-: base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
-        {
-            this.MissedCleavages = missedCleavages;
-            this.PeptideDescription = peptideDescription;
-            this.thisDictionaryOfFixedMods = thisDictionaryOfFixedMods;
             this.NumKnownPossibleLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
 
