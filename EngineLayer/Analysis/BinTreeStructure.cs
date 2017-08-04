@@ -186,7 +186,7 @@ namespace EngineLayer.Analysis
             {
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Select(b => (double)b.Item3.MostProbableProteinInfo.BaseSequence.Length));
+                    bin.MedianLength = Statistics.Median(bin.uniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Where(b => b.Item3.PeptideLength.HasValue).Select(b => (double)b.Item3.PeptideLength.Value));
             }
         }
 

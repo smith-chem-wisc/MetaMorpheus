@@ -58,9 +58,7 @@ namespace EngineLayer
                 {
                     foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                     {
-                        HashSet<Psm> psmsForThisPeptide;
-
-                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out psmsForThisPeptide))
+                        if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<Psm> psmsForThisPeptide))
                             peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
                         else
                             psmsForThisPeptide.Add(psm);
@@ -74,8 +72,7 @@ namespace EngineLayer
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    HashSet<Psm> psms;
-                    if (peptideToPsmMatching.TryGetValue(peptide, out psms))
+                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<Psm> psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else
                         pepsToRemove.Add(peptide);
@@ -126,14 +123,12 @@ namespace EngineLayer
                 var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
                 foreach (var sharedPep in sharedPeps)
                 {
-                    HashSet<ProteinGroup> v;
-                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out v))
+                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out HashSet<ProteinGroup> v))
                         v.Add(proteinGroup);
                     else
                         sharedPepWithProteinGroups.Add(sharedPep.Sequence, new HashSet<ProteinGroup> { proteinGroup });
 
-                    HashSet<PeptideWithSetModifications> v1;
-                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out v1))
+                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out HashSet<PeptideWithSetModifications> v1))
                         v1.Add(sharedPep);
                     else
                         seqToPeptide.Add(sharedPep.Sequence, new HashSet<PeptideWithSetModifications> { sharedPep });

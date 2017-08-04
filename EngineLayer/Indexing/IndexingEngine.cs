@@ -75,8 +75,7 @@ namespace EngineLayer.Indexing
             var myDictionary = new List<CompactPeptide>();
             var myFragmentDictionary = new Dictionary<float, List<int>>(100000);
             int totalProteins = proteinList.Count;
-            var level3_observed = new HashSet<string>();
-            var level4_observed = new HashSet<string>();
+            var observed_sequences = new HashSet<CompactPeptide>();
             int proteinsSeen = 0;
             int old_progress = 0;
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
@@ -88,43 +87,29 @@ namespace EngineLayer.Indexing
                     var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        if (peptide.NumKnownPossibleLocMods == 0)
-                        {
-                            lock (level3_observed)
-                            {
-                                var hc = peptide.BaseLeucineSequence;
-                                var observed = level3_observed.Contains(hc);
-                                if (observed)
-                                    continue;
-                                level3_observed.Add(hc);
-                            }
-                        }
-
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            if (peptide.NumKnownPossibleLocMods > 0)
+                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var observed = observed_sequences.Contains(correspondingCompactPeptide);
+                            if (observed)
+                                continue;
+                            lock (observed_sequences)
                             {
-                                lock (level4_observed)
-                                {
-                                    var hc = yyy.Sequence;
-                                    var observed = level4_observed.Contains(hc);
-                                    if (observed)
-                                        continue;
-                                    level4_observed.Add(hc);
-                                }
+                                observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                if (observed)
+                                    continue;
+                                observed_sequences.Add(correspondingCompactPeptide);
                             }
-
-                            var ps = new CompactPeptide(yyy);
 
                             int index;
                             lock (myDictionary)
                             {
                                 index = myDictionary.Count;
-                                myDictionary.Add(ps);
+                                myDictionary.Add(correspondingCompactPeptide);
                             }
 
-                            foreach (var huhu in ps.ProductMassesMightHaveDuplicatesAndNaNs(lp))
+                            foreach (var huhu in correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

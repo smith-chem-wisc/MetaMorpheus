@@ -18,3 +18,4 @@ BIons = true
 YIons = true
 ZdotIons = false
 CIons = false
+DisposeOfFileWhenDone = false 
