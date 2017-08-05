@@ -406,7 +406,14 @@ namespace EngineLayer.CrosslinkSearch
             psmCross.xlpos = pmmhList[scoreList.IndexOf(scoreList.Max())].xlpos + 1;
             if (crosslinker.Cleavable)
             {
-                psmCross.parentIonNum = psmCross.matchedIonInfo.MatchedIonName.Count(p => p.Contains("s")) + psmCross.matchedIonInfo.MatchedIonName.Count(p => p.Contains("l"));
+                if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepS"))
+                {
+                    psmCross.parentIonExist += "PepS";
+                }
+                if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepL"))
+                {
+                    psmCross.parentIonExist += "PepL";
+                }
             }
         }
 

@@ -414,6 +414,7 @@ namespace EngineLayer.CrosslinkSearch
                 pmmhCurr.ProductName = y.ToArray();
                 Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
                 pmmhList.Add(pmmhCurr);
+
             }
 
             List<double> scoreList = new List<double>();
