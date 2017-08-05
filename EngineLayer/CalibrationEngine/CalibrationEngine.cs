@@ -303,7 +303,6 @@ namespace EngineLayer.Calibration
             };
             foreach (var transform in transforms)
             {
-                //Console.WriteLine("trying linear!");
                 try
                 {
                     var ms1regressorLinear = new LinearCalibrationFunctionMathNet(transform);
@@ -317,7 +316,6 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    //Console.WriteLine("errored!");
                 }
 
                 try
@@ -333,7 +331,6 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    //Console.WriteLine("errored!");
                 }
             }
 
