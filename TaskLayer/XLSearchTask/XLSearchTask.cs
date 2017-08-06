@@ -330,6 +330,7 @@ namespace TaskLayer
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsmsXLTuple, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }).Run();
             allPsmsXLTuple = allPsmsXLTuple.OrderByDescending(p => p.Item1.XLTotalScore).ToList();
 
+            //Write All Psms and pepxml
             var allPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(allPsmsXLTuple, new OpenSearchMode());
             WriteCrosslinkToTsv(allPsmsXLTupleFDR, OutputFolder, "xl_fdr", new List<string> { taskId });
             if (allPsmsXLTupleFDR.Count != 0)
@@ -341,18 +342,23 @@ namespace TaskLayer
                 }
             }
 
+            //Write Inter Psms FDR
             var interPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
             interPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(interPsmsXLTupleFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
-            WriteCrosslinkToTxtForCLMSVault(interPsmsXLTupleFDR, OutputFolder, "xl_intra_fdr", crosslinker, new List<string> { taskId });
+            WriteCrosslinkToTxtForCLMSVault(interPsmsXLTupleFDR, OutputFolder, "xl_inter_fdr_CLMSVault", crosslinker, new List<string> { taskId });
 
+            var interPsmsXLTuple = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.Item1.ScanNumber).ToList();
+            WriteCrosslinkToTxtForPercolator(interPsmsXLTuple, OutputFolder, "xl_inter_perc", crosslinker, new List<string> { taskId });
+
+            //Write Intra Psms FDR
             var intraPsmsXLTupleFDR = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).ToList();
-            var intraPsmsXLTuple = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.Item1.ScanNumber).ToList();
-            WriteCrosslinkToTxtForPercolator(intraPsmsXLTuple, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
-
             intraPsmsXLTupleFDR = CrosslinkDoFalseDiscoveryRateAnalysis(intraPsmsXLTupleFDR, new OpenSearchMode()).Where(p => p.Item1.MostProbableProteinInfo.IsDecoy != true && p.Item2.MostProbableProteinInfo.IsDecoy != true && p.Item1.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(intraPsmsXLTupleFDR, OutputFolder, "xl_intra_fdr", new List<string> { taskId });
-            WriteCrosslinkToTxtForCLMSVault(intraPsmsXLTupleFDR, OutputFolder, "xl_intra_fdr", crosslinker, new List<string> { taskId });
+            WriteCrosslinkToTxtForCLMSVault(intraPsmsXLTupleFDR, OutputFolder, "xl_intra_fdr_CLMSVault", crosslinker, new List<string> { taskId });
+
+            var intraPsmsXLTuple = allPsmsXLTuple.Where(p => p.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() == p.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderBy(p => p.Item1.ScanNumber).ToList();
+            WriteCrosslinkToTxtForPercolator(intraPsmsXLTuple, OutputFolder, "xl_intra_perc", crosslinker, new List<string> { taskId });
 
             return myTaskResults;
         }

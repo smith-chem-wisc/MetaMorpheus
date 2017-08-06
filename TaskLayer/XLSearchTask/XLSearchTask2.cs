@@ -358,6 +358,35 @@ namespace TaskLayer
                         }
                         };
                     }
+                    if (modsFixedNum1 == 5)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[5]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum1 == 6)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[6]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
                     for (int j = 0; j < modsFixedNum1; j++)
                     {
                         _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info.mod_aminoacid_mass[j].mass = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j];
@@ -407,6 +436,35 @@ namespace TaskLayer
                         {
                             mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[4]
                         {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum2 == 5)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[1].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[5]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum2 == 6)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[1].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[6]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
                             new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
                             new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
                             new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
