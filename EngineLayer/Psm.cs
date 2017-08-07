@@ -97,7 +97,7 @@ namespace EngineLayer
                     complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i]));
                 }
                 //If HCD
-                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
                 {
                     for (int i = 0; i < experimental_mzs.Length; i++)
                     {
@@ -105,7 +105,7 @@ namespace EngineLayer
                     }
                 }
                 //If ETD
-                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
                 {
                     for (int i = 0; i < experimental_mzs.Length; i++)
                     {
