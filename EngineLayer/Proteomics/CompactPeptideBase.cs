@@ -24,7 +24,13 @@ namespace EngineLayer
         public double[] CTerminalMasses { get; protected set; }
         public double[] NTerminalMasses { get; protected set; }
         public double MonoisotopicMassIncludingFixedMods { get; protected set; }
-
+      //  public Int32 result = 0;
+                //      if (result == 0)
+                //{
+                //    foreach (double b in CTerminalMasses)
+                //        result = (result* 31) ^ b.GetHashCode();
+                //}
+                //return result;
         #endregion Public Properties
 
         #region Public Methods
@@ -34,6 +40,20 @@ namespace EngineLayer
             var cp = obj as CompactPeptideBase;
             if (cp == null)
                 return false;
+            if(CTerminalMasses.Count()==1|cp.CTerminalMasses.Count()==1)
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    );
+            }
+            else if (NTerminalMasses.Count()==1 | cp.NTerminalMasses.Count() == 1)
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    );
+            }
             return (
                 ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
                 && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
@@ -46,13 +66,21 @@ namespace EngineLayer
             unchecked
             {
                 var result = 0;
-                foreach (double b in CTerminalMasses)
-                    result = (result * 31) ^ b.GetHashCode();
+                if (CTerminalMasses.Count() == 1)
+                {
+                    foreach (double b in NTerminalMasses)
+                        result = (result * 31) ^ b.GetHashCode();
+                }
+                else
+                {
+                    foreach (double b in CTerminalMasses)
+                        result = (result * 31) ^ b.GetHashCode();
+                }
                 return result;
             }
         }
 
-        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes, bool trimCompactPeptide)
         {
             int massLen = 0;
             bool containsAdot = productTypes.Contains(ProductType.Adot);
@@ -62,6 +90,14 @@ namespace EngineLayer
             bool containsX = productTypes.Contains(ProductType.X);
             bool containsY = productTypes.Contains(ProductType.Y);
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
+
+            if (trimCompactPeptide)
+            {
+                if (!(containsB | containsBnoB1 | containsC))
+                    NTerminalMasses = new double[1];
+                if (!(containsY | containsZdot))
+                    CTerminalMasses = new double[1];
+            }
 
             if (containsAdot)
                 throw new NotImplementedException();

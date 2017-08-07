@@ -1,6 +1,7 @@
 ﻿using Proteomics;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
@@ -12,8 +13,8 @@ namespace EngineLayer
 
         public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications)
         {
-            ModificationWithMass pep_n_term_variable_mod;
             double theMass = 0;
+            ModificationWithMass pep_n_term_variable_mod;
             if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
                 foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                     theMass = pep_n_term_variable_mod.monoisotopicMass - nl;

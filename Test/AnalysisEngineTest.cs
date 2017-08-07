@@ -99,7 +99,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 2, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 1024, null);
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 2, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 1024, null, new List<ProductType> { ProductType.B, ProductType.Y });
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 

@@ -77,7 +77,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0], searchResults.Psms[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0], searchResults.Psms[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B, ProductType.Y }).Run();
 
             foreach (var huh in searchResults.Psms[0])
             {

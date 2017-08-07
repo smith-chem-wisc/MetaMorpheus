@@ -262,7 +262,7 @@ namespace Test
 
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
 
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, massDiffAcceptors, protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, variableModifications, maximumVariableModificationIsoforms, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, massDiffAcceptors, protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, variableModifications, maximumVariableModificationIsoforms, new List<string>(), new List<ProductType> { ProductType.B, ProductType.Y });
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
 

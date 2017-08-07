@@ -20,7 +20,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType, List<ProductType> lp) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds, lp)
         {
             this.terminusType = terminusType;
         }
@@ -101,8 +101,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                             {
+                                CompactPeptide cp = new CompactPeptide(peptideWithSetModifications);
+                                cp.ProductMassesMightHaveDuplicatesAndNaNs(lp, true);
                                 HashSet<PeptideWithSetModifications> v;
-                                if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
+                                if (localCPtoPWSM.TryGetValue(cp, out v))
                                     v.Add(peptideWithSetModifications);
                             }
                         }

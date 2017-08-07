@@ -110,7 +110,7 @@ namespace EngineLayer.Indexing
                                 myDictionary.Add(correspondingCompactPeptide);
                             }
 
-                            foreach (var huhu in correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp))
+                            foreach (var huhu in correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp, true))
                             {
                                 if (!double.IsNaN(huhu))
                                 {

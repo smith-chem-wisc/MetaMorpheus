@@ -484,7 +484,7 @@ namespace EngineLayer.CrosslinkSearch
                                 }
                             }
 
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp, false);
                             //var productNames = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).ProductName;
                             Array.Sort(productMasses);
                             var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(productMasses.Length);

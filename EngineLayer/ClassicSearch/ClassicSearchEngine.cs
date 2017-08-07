@@ -118,7 +118,7 @@ namespace EngineLayer.ClassicSearch
                                 }
                             }
 
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp, false);
                             Array.Sort(productMasses);
                             double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
