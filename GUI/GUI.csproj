@@ -81,14 +81,7 @@
       <HintPath>..\packages\mzLib.1.0.209\lib\Spectra.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -208,10 +201,6 @@
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">
       <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
       <Name>EngineLayer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CMD\CMD.csproj">
-      <Project>{DD89EF8C-A47A-4C6B-97BF-01B81D48847C}</Project>
-      <Name>CMD</Name>
     </ProjectReference>
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>

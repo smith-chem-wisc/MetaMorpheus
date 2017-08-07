@@ -81,14 +81,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
     <Reference Include="Thermo, Version=1.0.209.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.209\lib\Thermo.dll</HintPath>
     </Reference>
@@ -148,10 +140,6 @@
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">
       <Project>{A9A105AF-E6C4-40E8-AA7D-5E6FAB72542A}</Project>
       <Name>EngineLayer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CMD\CMD.csproj">
-      <Project>{dd89ef8c-a47a-4c6b-97bf-01b81d48847c}</Project>
-      <Name>CMD</Name>
     </ProjectReference>
     <ProjectReference Include="..\TaskLayer\TaskLayer.csproj">
       <Project>{04B0EE7D-5FD3-47A5-ABAA-658D177E4229}</Project>
