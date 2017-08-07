@@ -39,7 +39,7 @@ namespace EngineLayer
                 Dictionary<string, int> modsSeen = new Dictionary<string, int>();
                 Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
 
-                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.MostProbableProteinInfo.IsDecoy).GroupBy(b => b.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
+                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).GroupBy(b => b.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
                 {
                     var singlePeptide = highConfidencePSM.MostProbableProteinInfo.PeptidesWithSetModifications.First();
                     var modsIdentified = singlePeptide.allModsOneIsNterminus;

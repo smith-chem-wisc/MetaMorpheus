@@ -146,7 +146,7 @@ namespace Test
 
             Assert.AreEqual(compactPeptide1, compactPeptide2);
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {compactPeptide1, new HashSet<PeptideWithSetModifications>{pep1, pep2} },
                 {compactPeptide3, new HashSet<PeptideWithSetModifications>{pep3} }
@@ -167,7 +167,7 @@ namespace Test
 
         #region Private Methods
 
-        private static Tuple<List<Psm>[], Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptide, CompactPeptide> GetInfo(bool localizeable)
+        private static Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             // Alanine = Glycine + CH2
             Protein protein1 = new Protein("MA", "protein1");
@@ -182,7 +182,7 @@ namespace Test
             IEnumerable<double> neutralLosses = null;
             IEnumerable<double> diagnosticIons = null;
             string modificationType = "customModType";
-            ModificationSites modificationSites = ModificationSites.Any;
+            TerminusLocalization modificationSites = TerminusLocalization.Any;
             List<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>
             {
                 new ModificationWithMass("CH2 on Glycine", null, motif1, modificationSites, monoisotopicMass, externalDatabaseReferences, neutralLosses, diagnosticIons, modificationType)
@@ -231,6 +231,8 @@ namespace Test
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
 
             CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1);
+            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2);
+            Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
             CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3);
 
             List<Psm>[] newPsms = new List<Psm>[1];
@@ -270,7 +272,7 @@ namespace Test
 
             bool noOneHitWonders = false;
 
-            return new Tuple<List<Psm>[], Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptide, CompactPeptide>
+            return new Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase>
             (
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );

@@ -4,6 +4,7 @@
     {
         public double[] ProductMz { get; set; }
         public string[] ProductName { get; set; }
+        public int xlpos { get; set; }
 
         public ProductMassesMightHave(int length)
         {

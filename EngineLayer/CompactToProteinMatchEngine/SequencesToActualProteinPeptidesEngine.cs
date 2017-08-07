@@ -9,22 +9,22 @@ namespace EngineLayer
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
 
-        #region Private Fields
+        #region Protected Fields
 
-        private const int max_mods_for_peptide = 3;
-        private readonly List<Psm>[] allPsms;
-        private readonly List<Protein> proteinList;
-        private readonly List<MassDiffAcceptor> massDiffAcceptors;
-        private readonly Protease protease;
-        private readonly int maxMissedCleavages;
-        private readonly int? minPeptideLength;
-        private readonly int? maxPeptideLength;
-        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-        private readonly List<ModificationWithMass> fixedModifications;
-        private readonly List<ModificationWithMass> variableModifications;
-        private readonly int maxModificationIsoforms;
+        protected const int max_mods_for_peptide = 3;
+        protected readonly int maxMissedCleavages;
+        protected readonly int? minPeptideLength;
+        protected readonly int? maxPeptideLength;
+        protected readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
+        protected readonly List<ModificationWithMass> fixedModifications;
+        protected readonly List<ModificationWithMass> variableModifications;
+        protected readonly int maxModificationIsoforms;
+        protected readonly List<Psm>[] allPsms;
+        protected readonly List<Protein> proteinList;
+        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
+        protected readonly Protease protease;
 
-        #endregion Private Fields
+        #endregion Protected Fields
 
         #region Public Constructors
 
@@ -50,8 +50,7 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
-
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
             #region Match Seqeunces to PeptideWithSetModifications
 
@@ -74,7 +73,7 @@ namespace EngineLayer
             //Status("Adding possible sources to peptide dictionary...", new List<string> { taskId });
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
+                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                     {

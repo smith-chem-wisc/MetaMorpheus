@@ -148,6 +148,9 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
+            nonSpecificSearchRadioButton.IsChecked = task.SearchType == SearchType.NonSpecific;
+            NTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.N;
+            CTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.C;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.DoQuantification;
@@ -173,6 +176,7 @@ namespace MetaMorpheusGUI
             deconvolutePrecursors.IsChecked = task.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
+            disposeOfFilesWhenDone.IsChecked = task.DisposeOfFileWhenDone;
 
             DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
@@ -266,7 +270,13 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.SearchType = classicSearchRadioButton.IsChecked.Value ? SearchType.Classic : SearchType.Modern;
+            if (classicSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.Classic;
+            else if (modernSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.Modern;
+            else //if (nonSpecificSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.NonSpecific;
+            TheTask.TerminusType = (NTerminusCheckBox.IsChecked.Value) ? TerminusType.N : TerminusType.C;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.DoQuantification = checkBoxQuantification.IsChecked.Value;
@@ -298,7 +308,7 @@ namespace MetaMorpheusGUI
             TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
-
+            TheTask.DisposeOfFileWhenDone = disposeOfFilesWhenDone.IsChecked.Value;
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 TheTask.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));

@@ -24,7 +24,7 @@ namespace Test
             List<Psm> allResultingIdentifications = null;
             ModificationMotif motifN;
             ModificationMotif.TryGetMotif("N", out motifN);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
@@ -46,7 +46,7 @@ namespace Test
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {peptidesWithSetModifications.First().CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
@@ -71,8 +71,8 @@ namespace Test
             ModificationMotif.TryGetMotif("N", out motifN);
             ModificationMotif motifP;
             ModificationMotif.TryGetMotif("P", out motifP);
-            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, ModificationSites.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
-                                                                      new ModificationWithMass("16", null, motifP, ModificationSites.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
+            var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, TerminusLocalization.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
+                                                                      new ModificationWithMass("16", null, motifP, TerminusLocalization.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
             Tolerance precursorMassTolerance = new PpmTolerance(10);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
@@ -88,7 +88,7 @@ namespace Test
             Psm match = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
                 {peptidesWithSetModifications.First().CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };

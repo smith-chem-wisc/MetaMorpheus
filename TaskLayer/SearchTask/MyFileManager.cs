@@ -13,6 +13,7 @@ namespace TaskLayer
 
         #region Private Fields
 
+        private readonly bool disposeOfFileWhenDone;
         private Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>> myMsDataFiles = new Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>>();
         private Dictionary<string, bool> inUse = new Dictionary<string, bool>();
 
@@ -22,8 +23,9 @@ namespace TaskLayer
 
         #region Public Constructors
 
-        public MyFileManager()
+        public MyFileManager(bool disposeOfFileWhenDone)
         {
+            this.disposeOfFileWhenDone = disposeOfFileWhenDone;
         }
 
         #endregion Public Constructors
@@ -43,7 +45,7 @@ namespace TaskLayer
                 {
                     try
                     {
-                        if (Path.GetExtension(origDataFile).Equals(".mzML"))
+                        if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
                             myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile);
                         else
                             myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
@@ -64,6 +66,8 @@ namespace TaskLayer
         internal void DoneWithFile(string origDataFile)
         {
             inUse[origDataFile] = false;
+            if (disposeOfFileWhenDone)
+                myMsDataFiles[origDataFile] = null;
         }
 
         #endregion Internal Methods

@@ -97,15 +97,15 @@ namespace EngineLayer
             sb.Append("Protein Accession" + '\t');
             sb.Append("Gene" + '\t');
             sb.Append("Protein Full Name" + '\t');
-            sb.Append("Number of proteins in group" + '\t');
-            sb.Append("Unique peptides" + '\t');
-            sb.Append("Shared peptides" + '\t');
-            sb.Append("Razor peptides" + '\t');
-            sb.Append("Number of peptides" + '\t');
-            sb.Append("Number of unique peptides" + '\t');
-            sb.Append("Sequence coverage %" + '\t');
-            sb.Append("Sequence coverage" + '\t');
-            sb.Append("Sequence coverage w Mods" + '\t');
+            sb.Append("Number of Proteins in Group" + '\t');
+            sb.Append("Unique Peptides" + '\t');
+            sb.Append("Shared Peptides" + '\t');
+            sb.Append("Razor Peptides" + '\t');
+            sb.Append("Number of Peptides" + '\t');
+            sb.Append("Number of Unique Peptides" + '\t');
+            sb.Append("Sequence Coverage %" + '\t');
+            sb.Append("Sequence Coverage" + '\t');
+            sb.Append("Sequence Coverage with Mods" + '\t');
             sb.Append("Modification Info List" + "\t");
             if (FileNames != null)
             {
@@ -113,11 +113,11 @@ namespace EngineLayer
                     sb.Append("Intensity_" + System.IO.Path.GetFileNameWithoutExtension(FileNames[i]) + '\t');
             }
             sb.Append("Number of PSMs" + '\t');
-            sb.Append("Summed MetaMorpheus Score" + '\t');
+            sb.Append("Summed Score" + '\t');
             sb.Append("Decoy/Contaminant/Target" + '\t');
             sb.Append("Cumulative Target" + '\t');
             sb.Append("Cumulative Decoy" + '\t');
-            sb.Append("Q-Value (%)");
+            sb.Append("QValue");
             return sb.ToString();
         }
 
@@ -243,7 +243,7 @@ namespace EngineLayer
         public void Score()
         {
             // sum the scores of the best PSM per base sequence
-            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.MostProbableProteinInfo.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
+            ProteinGroupScore = AllPsmsBelowOnePercentFDR.GroupBy(p => p.BaseSequence).Select(p => p.Select(x => x.Score).Max()).Sum();
         }
 
         public void CalculateSequenceCoverage()
@@ -396,7 +396,7 @@ namespace EngineLayer
                     continue;
                 }
 
-                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.MostProbableProteinInfo.BaseSequence);
+                var psmsGroupedByBaseSequence = thisFilesPsms.GroupBy(p => p.BaseSequence);
                 //var acceptedModTypesForProteinQuantification = new HashSet<string> { "Oxidation of M", "Carbamidomethyl of C", "TMT_tag_lysine", "TMT_tag_terminal" };
 
                 foreach (var psmGroup in psmsGroupedByBaseSequence)

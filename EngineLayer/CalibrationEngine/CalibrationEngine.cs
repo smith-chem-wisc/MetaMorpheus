@@ -201,6 +201,8 @@ namespace EngineLayer.Calibration
                 // Each identification has an MS2 spectrum attached to it.
                 int ms2scanNumber = identification.ScanNumber;
                 int peptideCharge = identification.ScanPrecursorCharge;
+                if (identification.NumDifferentCompactPeptides != 1)
+                    continue;
 
                 var representativeSinglePeptide = identification.MostProbableProteinInfo.PeptidesWithSetModifications.First();
 
@@ -301,7 +303,6 @@ namespace EngineLayer.Calibration
             };
             foreach (var transform in transforms)
             {
-                //Console.WriteLine("trying linear!");
                 try
                 {
                     var ms1regressorLinear = new LinearCalibrationFunctionMathNet(transform);
@@ -315,7 +316,6 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    //Console.WriteLine("errored!");
                 }
 
                 try
@@ -331,7 +331,6 @@ namespace EngineLayer.Calibration
                 }
                 catch
                 {
-                    //Console.WriteLine("errored!");
                 }
             }
 
