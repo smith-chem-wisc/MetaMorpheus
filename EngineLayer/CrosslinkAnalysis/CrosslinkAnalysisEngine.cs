@@ -32,7 +32,6 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
-        //Draw Control
         private readonly CrosslinkerTypeClass crosslinker;
 
         private Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
@@ -40,7 +39,7 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #endregion Private Fields
 
-        //private bool draw = true;
+
 
         #region Public Constructors
 
