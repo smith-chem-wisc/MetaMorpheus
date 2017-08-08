@@ -139,9 +139,9 @@ namespace Test
             PeptideWithSetModifications pep2 = from2.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
             PeptideWithSetModifications pep3 = from3.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
 
-            CompactPeptide compactPeptide1 = pep1.CompactPeptide();
-            CompactPeptide compactPeptide2 = pep2.CompactPeptide();
-            CompactPeptide compactPeptide3 = pep3.CompactPeptide();
+            CompactPeptide compactPeptide1 = pep1.CompactPeptide(TerminusType.None);
+            CompactPeptide compactPeptide2 = pep2.CompactPeptide(TerminusType.None);
+            CompactPeptide compactPeptide3 = pep3.CompactPeptide(TerminusType.None);
 
             Assert.AreEqual(compactPeptide1, compactPeptide2);
 

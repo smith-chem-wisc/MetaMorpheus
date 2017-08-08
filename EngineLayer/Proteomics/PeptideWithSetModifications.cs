@@ -55,14 +55,6 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public CompactPeptide CompactPeptide()
-        {
-            if (compactPeptide == null)
-            {
-                compactPeptide = new CompactPeptide(this);
-            }
-            return compactPeptide;
-        }
         public CompactPeptide CompactPeptide(TerminusType terminusType)
         {
             if (compactPeptide == null)

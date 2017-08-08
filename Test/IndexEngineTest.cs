@@ -51,7 +51,7 @@ namespace Test
                 Assert.AreEqual(1, dfdfse.Count);
                 foreach (var kjdfk in dfdfse)
                 {
-                    Assert.Contains(kjdfk.CompactPeptide(), results.PeptideIndex);
+                    Assert.Contains(kjdfk.CompactPeptide(TerminusType.None), results.PeptideIndex);
                 }
             }
         }
