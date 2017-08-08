@@ -54,9 +54,9 @@ namespace TaskLayer
             YIons = true;
             ZdotIons = false;
             CIons = false;
-            TerminusType = TerminusType.None;
+            //TerminusType = TerminusType.None;
             FlashLfqEngine = new FlashLFQEngine();
-
+            //SearchType = SearchType.Classic;
             LocalizeAll = true;
             DoLocalizationAnalysis = true;
 
