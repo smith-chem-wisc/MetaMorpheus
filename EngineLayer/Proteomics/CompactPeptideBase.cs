@@ -33,25 +33,28 @@ namespace EngineLayer
             var cp = obj as CompactPeptideBase;
             if (cp == null)
                 return false;
-            if(CTerminalMasses.Count()==1 || cp.CTerminalMasses.Count()==1)
+            if (CTerminalMasses.Count() == 1 || cp.CTerminalMasses.Count() == 1)
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
                     && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
-            else if (NTerminalMasses.Count()==1 || cp.NTerminalMasses.Count() == 1)
+            else if (NTerminalMasses.Count() == 1 || cp.NTerminalMasses.Count() == 1)
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
                     && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
                     );
             }
-            return (
-                ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
-                );
+            else
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    );
+            }
         }
 
         public override int GetHashCode()
