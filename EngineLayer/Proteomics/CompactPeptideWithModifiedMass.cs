@@ -5,7 +5,6 @@ namespace EngineLayer
     [Serializable]
     internal class CompactPeptideWithModifiedMass : CompactPeptideBase
     {
-
         #region Public Constructors
 
         public CompactPeptideWithModifiedMass(CompactPeptideBase cp, double MonoisotopicMassIncludingFixedMods)
@@ -13,14 +12,14 @@ namespace EngineLayer
             this.CTerminalMasses = cp.CTerminalMasses;
             this.NTerminalMasses = cp.NTerminalMasses;
             this.MonoisotopicMassIncludingFixedMods = cp.MonoisotopicMassIncludingFixedMods;
-            this.modifiedMass = MonoisotopicMassIncludingFixedMods;
+            this.ModifiedMass = MonoisotopicMassIncludingFixedMods;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public double modifiedMass { get; set; }
+        public double ModifiedMass { get; set; }
 
         #endregion Public Properties
 
@@ -28,10 +27,9 @@ namespace EngineLayer
 
         public void AssignCorrectMass()
         {
-            this.MonoisotopicMassIncludingFixedMods = this.modifiedMass;
+            this.MonoisotopicMassIncludingFixedMods = this.ModifiedMass;
         }
 
         #endregion Public Methods
-
     }
 }

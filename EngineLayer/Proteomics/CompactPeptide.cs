@@ -8,23 +8,21 @@ namespace EngineLayer
     [Serializable]
     public class CompactPeptide : CompactPeptideBase
     {
-
         #region Public Constructors
 
         public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications)
         {
             double theMass = 0;
-            ModificationWithMass pep_n_term_variable_mod;
-            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+
+            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                 foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                     theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
             else
                 theMass = 0;
             NTerminalMasses = ComputeFollowingFragmentMasses(peptideWithSetModifications, theMass, 1, 1).ToArray();
 
-            ModificationWithMass pep_c_term_variable_mod;
             theMass = 0;
-            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out pep_c_term_variable_mod))
+            if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                 foreach (double nl in pep_c_term_variable_mod.neutralLosses)
                     theMass = pep_c_term_variable_mod.monoisotopicMass - nl;
             else
@@ -41,8 +39,7 @@ namespace EngineLayer
             CTerminalMasses = new double[1];
             if (terminusType==TerminusType.None | terminusType == TerminusType.N)
             {
-                ModificationWithMass pep_n_term_variable_mod;
-                if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                     foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                         theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
                 else
@@ -51,9 +48,8 @@ namespace EngineLayer
             }
             if (terminusType == TerminusType.None | terminusType == TerminusType.C)
             {
-                ModificationWithMass pep_c_term_variable_mod;
                 theMass = 0;
-                if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out pep_c_term_variable_mod))
+                if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                     foreach (double nl in pep_c_term_variable_mod.neutralLosses)
                         theMass = pep_c_term_variable_mod.monoisotopicMass - nl;
                 else
@@ -64,6 +60,5 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
     }
 }

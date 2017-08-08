@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly IEnumerable<Psm> newPsms;
@@ -181,6 +180,5 @@ namespace EngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

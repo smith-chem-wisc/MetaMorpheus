@@ -7,7 +7,6 @@ namespace Test
     [TestFixture]
     public class TestToml
     {
-
         #region Public Methods
 
         [Test]
@@ -37,6 +36,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

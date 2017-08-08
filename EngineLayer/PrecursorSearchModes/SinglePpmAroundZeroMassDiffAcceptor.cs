@@ -6,7 +6,6 @@ namespace EngineLayer
 {
     public class SinglePpmAroundZeroSearchMode : MassDiffAcceptor
     {
-
         #region Private Fields
 
         private readonly double ppmTolerance;
@@ -41,6 +40,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

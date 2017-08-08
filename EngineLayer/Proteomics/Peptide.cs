@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public abstract class Peptide
     {
-
         #region Private Fields
 
         private string baseSequence;
@@ -13,12 +12,13 @@ namespace EngineLayer
 
         #region Protected Constructors
 
-        protected Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein)
+        protected Peptide(Protein protein, int oneBasedStartResidueInProtein, int oneBasedEndResidueInProtein, string peptideDescription = null)
         {
-            this.Protein = protein;
-            this.OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
-            this.OneBasedEndResidueInProtein = oneBasedEndResidueInProtein;
+            Protein = protein;
+            OneBasedStartResidueInProtein = oneBasedStartResidueInProtein;
+            OneBasedEndResidueInProtein = oneBasedEndResidueInProtein;
             Length = OneBasedEndResidueInProtein - OneBasedStartResidueInProtein + 1;
+            PeptideDescription = peptideDescription;
         }
 
         #endregion Protected Constructors
@@ -29,7 +29,7 @@ namespace EngineLayer
         public int OneBasedStartResidueInProtein { get; }
         public int OneBasedEndResidueInProtein { get; }
 
-        public virtual string PeptideDescription { get; protected set; }
+        public string PeptideDescription { get; }
 
         public int Length { get; }
 
@@ -72,6 +72,5 @@ namespace EngineLayer
         }
 
         #endregion Public Indexers
-
     }
 }

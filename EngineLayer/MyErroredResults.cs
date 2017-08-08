@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public class MyErroredResults : MetaMorpheusEngineResults
     {
-
         #region Private Fields
 
         private readonly string errorString;
@@ -31,6 +30,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

@@ -2,9 +2,7 @@
 {
     public class ProductMassesMightHave
     {
-        public double[] ProductMz { get; set; }
-        public string[] ProductName { get; set; }
-        public int xlpos { get; set; }
+        #region Public Constructors
 
         public ProductMassesMightHave(int length)
         {
@@ -15,5 +13,15 @@
         public ProductMassesMightHave()
         {
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public double[] ProductMz { get; set; }
+        public string[] ProductName { get; set; }
+        public int Xlpos { get; set; }
+
+        #endregion Public Properties
     }
 }

@@ -8,7 +8,6 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
-
         #region Protected Fields
 
         protected const int max_mods_for_peptide = 3;
@@ -81,10 +80,8 @@ namespace EngineLayer
                     {
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
-                            CompactPeptide cp = new CompactPeptide(peptideWithSetModifications);
-                            cp.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                            HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(cp, out v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out HashSet<PeptideWithSetModifications> v))
+
                                 v.Add(peptideWithSetModifications);
                         }
                     }
@@ -92,8 +89,7 @@ namespace EngineLayer
                 {
                     foreach (var ye in local)
                     {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                     }
@@ -113,6 +109,5 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }

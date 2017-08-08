@@ -9,7 +9,6 @@ namespace EngineLayer
     [Serializable]
     public abstract class CompactPeptideBase
     {
-
         #region Protected Fields
 
         protected static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
@@ -187,6 +186,5 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }

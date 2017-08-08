@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class Protease
     {
-
         #region Public Constructors
 
         public Protease(string name, IEnumerable<string> sequencesInducingCleavage, IEnumerable<string> sequencesPreventingCleavage, TerminusType cleavageTerminus, CleavageSpecificity cleavageSpecificity, string psiMSAccessionNumber, string psiMSName, string siteRegexp)
@@ -80,6 +79,5 @@ namespace EngineLayer
         }
 
         #endregion Internal Methods
-
     }
 }

@@ -25,6 +25,7 @@ namespace EngineLayer.Calibration
 
         internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
+            // Does nothing because this is the identity calibration function
         }
 
         #endregion Internal Methods

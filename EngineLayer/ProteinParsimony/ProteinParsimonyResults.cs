@@ -6,7 +6,6 @@ namespace EngineLayer
 {
     public class ProteinParsimonyResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public ProteinParsimonyResults(ProteinParsimonyEngine proteinAnalysisEngine) : base(proteinAnalysisEngine)
@@ -44,6 +43,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

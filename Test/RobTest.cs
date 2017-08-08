@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     public class RobTest
     {
-
         #region Public Methods
 
         [Test]
@@ -296,17 +295,13 @@ namespace Test
                 YfragmentMasses.Add(peptide, peptide.CompactPeptide().ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y }));
                 BYfragmentMasses.Add(peptide, peptide.CompactPeptide().ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
-            double[] testB;
-            Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out testB));
+            Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out double[] testB));
 
-            double[] testY;
-            Assert.That(YfragmentMasses.TryGetValue(peptides.First(), out testY));
+            Assert.That(YfragmentMasses.TryGetValue(peptides.First(), out double[] testY));
 
-            double[] testC;
-            Assert.That(CfragmentMasses.TryGetValue(peptides.First(), out testC));
+            Assert.That(CfragmentMasses.TryGetValue(peptides.First(), out double[] testC));
 
-            double[] testZ;
-            Assert.That(ZdotfragmentMasses.TryGetValue(peptides.First(), out testZ));
+            Assert.That(ZdotfragmentMasses.TryGetValue(peptides.First(), out double[] testZ));
         }
 
         [Test]
@@ -362,8 +357,7 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("S", out motif);
+            ModificationMotif.TryGetMotif("S", out ModificationMotif motif);
             variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, ChemicalFormula.ParseFormula("H"), PeriodicTable.GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, "HaHa"));
 
             var proteinList = new List<Protein> { new Protein("MNNNSKQQQ", "accession") };
@@ -465,6 +459,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }
