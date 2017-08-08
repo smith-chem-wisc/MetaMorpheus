@@ -32,7 +32,7 @@ namespace Test
 
             var psms = Path.Combine(thisTaskOutputFolder, "Task", "sliced-raw_PSMs_5ppmAroundZero.psmtsv");
 
-            Assert.AreEqual(3, File.ReadLines(psms).Count());
+            Assert.AreEqual(5, File.ReadLines(psms).Count());
             var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "aggregateProteinGroups_5ppmAroundZero.tsv");
 
             Assert.AreEqual(2, File.ReadLines(protGroups).Count());

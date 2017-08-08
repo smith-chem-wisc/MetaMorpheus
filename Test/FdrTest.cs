@@ -49,7 +49,7 @@ namespace Test
             Psm psm3 = new Psm(peptide3, 0, 1, 2, scan3);
 
             CompactPeptide peptide4 = new CompactPeptide(pep4);
-            psm3.Add(peptide4, 1);
+            psm3.AddOrReplace(peptide4, 1, 1);
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
@@ -57,13 +57,13 @@ namespace Test
                     peptide1, new HashSet<PeptideWithSetModifications>{ pep1 }
                 },
                 {
-                     peptide2, new HashSet<PeptideWithSetModifications>{ pep2 }
+                    peptide2, new HashSet<PeptideWithSetModifications>{ pep2 }
                 },
                 {
-                      peptide3, new HashSet<PeptideWithSetModifications>{ pep3 }
+                    peptide3, new HashSet<PeptideWithSetModifications>{ pep3 }
                 },
                 {
-                       peptide4, new HashSet<PeptideWithSetModifications>{ pep4 }
+                    peptide4, new HashSet<PeptideWithSetModifications>{ pep4 }
                 },
             };
             psm1.MatchToProteinLinkedPeptides(matching);

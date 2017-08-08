@@ -75,7 +75,7 @@ namespace EngineLayer.ClassicSearch
 
             int totalProteins = proteinList.Count;
 
-            var observed_sequences = new HashSet<CompactPeptide>();
+            var observedPeptides = new HashSet<CompactPeptide>();
 
             Status("Getting ms2 scans...", nestedIds);
 
@@ -105,15 +105,15 @@ namespace EngineLayer.ClassicSearch
                             var correspondingCompactPeptide = yyy.CompactPeptide;
                             if (!conserveMemory)
                             {
-                                var observed = observed_sequences.Contains(correspondingCompactPeptide);
-                                if (observed)
+                                var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
+                                if (peptideWasObserved)
                                     continue;
-                                lock (observed_sequences)
+                                lock (observedPeptides)
                                 {
-                                    observed = observed_sequences.Contains(correspondingCompactPeptide);
-                                    if (observed)
+                                    peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
+                                    if (peptideWasObserved)
                                         continue;
-                                    observed_sequences.Add(correspondingCompactPeptide);
+                                    observedPeptides.Add(correspondingCompactPeptide);
                                 }
                             }
 
@@ -128,18 +128,11 @@ namespace EngineLayer.ClassicSearch
                                 {
                                     double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                                     var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, productMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
-                                    if (score > 1)
-                                    {
-                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                        else
-                                        {
-                                            if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > 1e-9)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Replace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
-                                            else if (score - psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Score > -1e-9)
-                                                psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].Add(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch);
-                                        }
-                                    }
+
+                                    if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
+                                        psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
+                                    else
+                                        psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
                                 }
                             }
                         }

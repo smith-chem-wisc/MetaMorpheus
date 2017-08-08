@@ -204,7 +204,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                                newPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }
