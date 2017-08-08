@@ -159,6 +159,7 @@ namespace MetaMorpheusGUI
             checkBoxMatchBetweenRuns.IsChecked = task.MatchBetweenRuns;
             modPepsAreUnique.IsChecked = task.ModPeptidesAreUnique;
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
+            checkBoxTarget.IsChecked = task.SearchTarget;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.MinPeptideLength.HasValue ? task.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -284,6 +285,7 @@ namespace MetaMorpheusGUI
             TheTask.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
             TheTask.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
