@@ -157,9 +157,10 @@ namespace EngineLayer.Indexing
 
         #region Private Methods
 
-        private TerminusType IdentifyTerminusType(List<ProductType> lp)
+        public TerminusType IdentifyTerminusType(List<ProductType> lp)
         {
-            if ((lp.Contains(ProductType.B) || lp.Contains(ProductType.BnoB1ions) || lp.Contains(ProductType.C)) && (lp.Contains(ProductType.Y) || lp.Contains(ProductType.Zdot)))
+            if ((lp.Contains(ProductType.B) || lp.Contains(ProductType.BnoB1ions) || lp.Contains(ProductType.C)) 
+                && (lp.Contains(ProductType.Y) || lp.Contains(ProductType.Zdot)))
             {
                 return TerminusType.None;
             }

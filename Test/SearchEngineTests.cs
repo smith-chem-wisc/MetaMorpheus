@@ -53,7 +53,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B, ProductType.Y }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -98,7 +98,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B, ProductType.Y }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -163,7 +163,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B, ProductType.Y }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -215,7 +215,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B, ProductType.Y }).Run();
+            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
 
             Assert.AreEqual(3, searchResults.Psms[0][0].NumDifferentCompactPeptides);
         }
@@ -276,7 +276,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[1][0].Score > 4);
             Assert.AreEqual(2, searchResults.Psms[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.N, new List<ProductType> { ProductType.B }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B }).Run();
 
             foreach (var huh in searchResults.Psms[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -341,7 +341,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[1][0].Score > 4);
             Assert.AreEqual(2, searchResults.Psms[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.C, new List<ProductType> {ProductType.Y }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> {ProductType.Y }).Run();
 
             foreach (var huh in searchResults.Psms[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
