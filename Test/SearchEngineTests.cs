@@ -276,7 +276,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[1][0].Score > 4);
             Assert.AreEqual(2, searchResults.Psms[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> { ProductType.B }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.N).Run();
 
             foreach (var huh in searchResults.Psms[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -341,7 +341,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[1][0].Score > 4);
             Assert.AreEqual(2, searchResults.Psms[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), new List<ProductType> {ProductType.Y }).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { searchResults.Psms[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.C).Run();
 
             foreach (var huh in searchResults.Psms[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)

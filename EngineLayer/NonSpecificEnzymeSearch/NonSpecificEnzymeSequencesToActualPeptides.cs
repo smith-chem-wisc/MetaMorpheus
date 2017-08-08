@@ -14,16 +14,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private TerminusType terminusType;
-        private readonly List<ProductType> lp;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, List<ProductType> lp) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds)
         {
-            this.terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
-            this.lp = lp;
+            this.terminusType = terminusType;
         }
 
         #endregion Public Constructors
