@@ -101,8 +101,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                             {
-                                CompactPeptide cp = new CompactPeptide(peptideWithSetModifications);
-                                cp.ProductMassesMightHaveDuplicatesAndNaNs(lp, true);
+                                CompactPeptide cp = new CompactPeptide(peptideWithSetModifications, terminusType);
+                                cp.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                                 HashSet<PeptideWithSetModifications> v;
                                 if (localCPtoPWSM.TryGetValue(cp, out v))
                                     v.Add(peptideWithSetModifications);
@@ -211,7 +211,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                             {
                                 HashSet<PeptideWithSetModifications> v;
-                                if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
+                                if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out v))
                                     v.Add(peptideWithSetModifications);
                             }
                         }

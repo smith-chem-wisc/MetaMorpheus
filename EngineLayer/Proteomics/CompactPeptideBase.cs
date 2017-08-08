@@ -80,7 +80,7 @@ namespace EngineLayer
             }
         }
 
-        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes, bool trimCompactPeptide)
+        public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
             int massLen = 0;
             bool containsAdot = productTypes.Contains(ProductType.Adot);
@@ -90,14 +90,6 @@ namespace EngineLayer
             bool containsX = productTypes.Contains(ProductType.X);
             bool containsY = productTypes.Contains(ProductType.Y);
             bool containsZdot = productTypes.Contains(ProductType.Zdot);
-
-            if (trimCompactPeptide)
-            {
-                if (!(containsB | containsBnoB1 | containsC))
-                    NTerminalMasses = new double[1];
-                if (!(containsY | containsZdot))
-                    CTerminalMasses = new double[1];
-            }
 
             if (containsAdot)
                 throw new NotImplementedException();

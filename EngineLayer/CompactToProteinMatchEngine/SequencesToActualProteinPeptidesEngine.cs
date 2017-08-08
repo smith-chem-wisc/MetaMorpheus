@@ -82,7 +82,7 @@ namespace EngineLayer
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
                             CompactPeptide cp = new CompactPeptide(peptideWithSetModifications);
-                            cp.ProductMassesMightHaveDuplicatesAndNaNs(lp, true);
+                            cp.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                             HashSet<PeptideWithSetModifications> v;
                             if (local.TryGetValue(cp, out v))
                                 v.Add(peptideWithSetModifications);

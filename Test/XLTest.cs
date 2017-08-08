@@ -28,22 +28,22 @@ namespace Test
             crosslinker.SelectCrosslinker(CrosslinkerType.DSS);
             Assert.AreEqual(crosslinker.CrosslinkerModSite, 'K');
             Assert.AreEqual(Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass, 128.09496301518999, 1e-9);
-            var n = pep.CompactPeptide.NTerminalMasses;
-            var c = pep.CompactPeptide.CTerminalMasses;
+            var n = pep.CompactPeptide().NTerminalMasses;
+            var c = pep.CompactPeptide().CTerminalMasses;
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c[0], 128.09496301518999);
-            var x = PsmCross.xlPosCal(pep.CompactPeptide, crosslinker).ToArray();
+            var x = PsmCross.xlPosCal(pep.CompactPeptide(), crosslinker).ToArray();
             Assert.AreEqual(x[0], 4);
 
             var pep2 = ye[2].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.AreEqual(pep2.BaseSequence, "MNNNKQQQQ");
-            var n2 = pep2.CompactPeptide.NTerminalMasses;
-            var c2 = pep2.CompactPeptide.CTerminalMasses;
+            var n2 = pep2.CompactPeptide().NTerminalMasses;
+            var c2 = pep2.CompactPeptide().CTerminalMasses;
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
             Assert.AreEqual(n2[4] - n2[3] , 128.09496301518999, 1e-9);
-            var x2 = PsmCross.xlPosCal(pep2.CompactPeptide, crosslinker).ToArray();
+            var x2 = PsmCross.xlPosCal(pep2.CompactPeptide(), crosslinker).ToArray();
             Assert.AreEqual(x2[0], 4);
         }
 

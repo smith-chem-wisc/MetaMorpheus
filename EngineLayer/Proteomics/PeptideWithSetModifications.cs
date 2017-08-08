@@ -56,16 +56,21 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public CompactPeptide CompactPeptide
+        public CompactPeptide CompactPeptide()
         {
-            get
+            if (compactPeptide == null)
             {
-                if (compactPeptide == null)
-                {
-                    compactPeptide = new CompactPeptide(this);
-                }
-                return compactPeptide;
+                compactPeptide = new CompactPeptide(this);
             }
+            return compactPeptide;
+        }
+        public CompactPeptide CompactPeptide(TerminusType terminusType)
+        {
+            if (compactPeptide == null)
+            {
+                compactPeptide = new CompactPeptide(this, terminusType);
+            }
+            return compactPeptide;
         }
 
         public double MonoisotopicMass

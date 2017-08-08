@@ -469,7 +469,7 @@ namespace EngineLayer.CrosslinkSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var correspondingCompactPeptide = yyy.CompactPeptide();
                             if (!conserveMemory)
                             {
                                 var observed = observed_sequences.Contains(correspondingCompactPeptide);
@@ -484,7 +484,7 @@ namespace EngineLayer.CrosslinkSearch
                                 }
                             }
 
-                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp, false);
+                            var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                             //var productNames = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp).ProductName;
                             Array.Sort(productMasses);
                             var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(productMasses.Length);
