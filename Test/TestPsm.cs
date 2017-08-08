@@ -36,7 +36,7 @@ namespace Test
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
-            new LocalizationEngine(new List<Psm> { psm }, lp, myMsDataFile, fragmentTolerance, null, false).Run();
+            new LocalizationEngine(new List<Psm> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 

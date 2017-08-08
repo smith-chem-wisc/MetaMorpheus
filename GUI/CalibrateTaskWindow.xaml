@@ -72,7 +72,11 @@
                             <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
                             <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
                         </StackPanel>
-                    </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                            <TextBox x:Name="minScoreAllowed" Width="45" />
+                        </StackPanel>
+                        </StackPanel>
                 </Expander>
             </GroupBox>
             <GroupBox Header="Modifications" DockPanel.Dock="Top">

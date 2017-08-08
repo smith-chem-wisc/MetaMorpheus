@@ -88,6 +88,8 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
 
+            minScoreAllowed.Text = task.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+
             foreach (var mod in task.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -260,6 +262,7 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)

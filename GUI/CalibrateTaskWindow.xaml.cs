@@ -82,6 +82,8 @@ namespace MetaMorpheusGUI
 
             writeIntermediateFilesCheckBox.IsChecked = task.WriteIntermediateFiles;
 
+            minScoreAllowed.Text = task.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
+
             foreach (var mod in task.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -214,6 +216,7 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 

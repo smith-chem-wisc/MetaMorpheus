@@ -57,6 +57,7 @@ namespace TaskLayer
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
             DeconvolutionMassTolerance = new PpmTolerance(5);
+            ScoreCutoff = 5;
         }
 
         #endregion Public Constructors
@@ -86,6 +87,7 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsGptmd { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
         public Tolerance PrecursorMassTolerance { get; set; }
+        public double ScoreCutoff { get; set; }
 
         #endregion Public Properties
 
@@ -176,7 +178,7 @@ namespace TaskLayer
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-                var searchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false).Run();
+                var searchResults = (SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff).Run();
                 lock (lock2)
                 {
                     allPsms[0].AddRange(searchResults.Psms[0]);

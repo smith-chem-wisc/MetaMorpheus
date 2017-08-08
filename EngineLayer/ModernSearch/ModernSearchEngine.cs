@@ -27,12 +27,13 @@ namespace EngineLayer.ModernSearch
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
+        private readonly double scoreCutoff;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp) : base(nestedIds)
+        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff) : base(nestedIds)
         {
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
@@ -42,6 +43,7 @@ namespace EngineLayer.ModernSearch
             this.searchModes = searchModes;
             this.addCompIons = addCompIons;
             this.lp = lp;
+            this.scoreCutoff = scoreCutoff;
         }
 
         #endregion Public Constructors
@@ -129,7 +131,7 @@ namespace EngineLayer.ModernSearch
                     }
                     for (int j = 0; j < searchModesCount; j++)
                     {
-                        if (bestPeptides[j] != null)
+                        if (bestPeptides[j] != null && bestScores[j] > scoreCutoff)
                         {
                             newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
