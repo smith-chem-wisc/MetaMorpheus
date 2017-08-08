@@ -53,9 +53,8 @@ namespace TaskLayer
             YIons = true;
             ZdotIons = false;
             CIons = false;
-            //TerminusType = TerminusType.None;
             FlashLfqEngine = new FlashLFQEngine();
-            //SearchType = SearchType.Classic;
+
             LocalizeAll = true;
             DoLocalizationAnalysis = true;
 
@@ -193,12 +192,12 @@ namespace TaskLayer
             List<CompactPeptide> peptideIndex = null;
             float[] keys = null;
             List<int>[] fragmentIndex = null;
-            if (SearchType == SearchType.Modern | SearchType == SearchType.NonSpecific)
+            if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
             {
                 #region Generate indices for modern search
 
                 Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, TerminusType);
+                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
                 string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
                 Dictionary<float, List<int>> fragmentIndexDict;
