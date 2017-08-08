@@ -21,7 +21,6 @@ namespace TaskLayer
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
-        private readonly TerminusType terminusType = TerminusType.None;
         private FlashLFQEngine FlashLfqEngine;
 
         #endregion Private Fields
@@ -228,7 +227,7 @@ namespace TaskLayer
             #region Generate indices for modern search
 
             Status("Getting fragment dictionary...", new List<string> { taskId });
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, terminusType);
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
             Dictionary<float, List<int>> fragmentIndexDict;
