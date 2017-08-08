@@ -1,6 +1,6 @@
-﻿using System;
+﻿using EngineLayer.CrosslinkSearch;
+using System;
 using System.Collections.Generic;
-using EngineLayer.CrosslinkSearch;
 
 namespace EngineLayer.CrosslinkAnalysis
 {
@@ -19,6 +19,5 @@ namespace EngineLayer.CrosslinkAnalysis
         public List<Tuple<PsmCross, PsmCross>> AllResultingIdentificationFdrPairs { get; set; }
 
         #endregion Public Properties
-
     }
 }

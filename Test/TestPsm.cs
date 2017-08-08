@@ -11,7 +11,6 @@ namespace Test
     [TestFixture]
     public class TestPsm
     {
-
         #region Public Methods
 
         [Test]
@@ -37,7 +36,8 @@ namespace Test
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             List<ProductType> lp = new List<ProductType> { ProductType.B };
-            new LocalizationEngine(new List<Psm> { psm }, lp, myMsDataFile, fragmentTolerance, null, false, TerminusType.None).Run();
+
+            new LocalizationEngine(new List<Psm> { psm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false, TerminusType.None).Run();
 
             Assert.AreEqual(psm.ToString().Count(f => f == '\t'), Psm.GetTabSeparatedHeader().Count(f => f == '\t'));
 
@@ -47,6 +47,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

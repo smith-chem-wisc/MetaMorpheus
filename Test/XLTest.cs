@@ -1,10 +1,9 @@
 ﻿using EngineLayer;
+using EngineLayer.CrosslinkSearch;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using EngineLayer.CrosslinkSearch;
-
 
 namespace Test
 {
@@ -47,6 +46,6 @@ namespace Test
             Assert.AreEqual(x2[0], 4);
         }
 
-        #endregion
+        #endregion Public Methods
     }
 }

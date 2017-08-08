@@ -2,7 +2,6 @@
 {
     public class LabeledMs1DataPoint : IHasInputsAndOutputs
     {
-
         #region Public Fields
 
         public readonly double mz;
@@ -37,6 +36,5 @@
         public double[] Inputs { get; private set; }
 
         #endregion Public Properties
-
     }
 }

@@ -10,7 +10,6 @@ namespace EngineLayer
 {
     public class GlobalEngineLevelSettings
     {
-
         #region Private Fields
 
         private static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
@@ -37,6 +36,8 @@ namespace EngineLayer
             }
 
             MetaMorpheusVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (MetaMorpheusVersion.Equals("1.0.0.0"))
+                MetaMorpheusVersion = "Not a release version";
         }
 
         #endregion Public Constructors
@@ -49,6 +50,5 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
 
         #endregion Public Properties
-
     }
 }

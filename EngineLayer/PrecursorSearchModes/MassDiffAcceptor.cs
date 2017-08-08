@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public abstract class MassDiffAcceptor
     {
-
         #region Protected Constructors
 
         protected MassDiffAcceptor(string fileNameAddition)
@@ -35,6 +34,5 @@ namespace EngineLayer
         public abstract IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
 
         #endregion Public Methods
-
     }
 }

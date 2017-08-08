@@ -10,7 +10,6 @@ namespace TaskLayer
 {
     internal class MyFileManager
     {
-
         #region Private Fields
 
         private readonly bool disposeOfFileWhenDone;
@@ -34,8 +33,7 @@ namespace TaskLayer
 
         internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile)
         {
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value;
-            if (myMsDataFiles.TryGetValue(origDataFile, out value) && value != null)
+            if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
                 return value;
 
             // By now know that need to load this file!!!
@@ -71,6 +69,5 @@ namespace TaskLayer
         }
 
         #endregion Internal Methods
-
     }
 }

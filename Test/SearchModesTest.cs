@@ -9,7 +9,6 @@ namespace Test
     [TestFixture]
     public class SearchModesTest
     {
-
         #region Public Methods
 
         [Test]
@@ -85,7 +84,6 @@ namespace Test
         // Accept if scanPrecursorMass*peptideMass>=1.
         private class TestSearchMode : MassDiffAcceptor
         {
-
             #region Public Constructors
 
             public TestSearchMode(string fileNameAddition) : base(fileNameAddition)
@@ -107,10 +105,8 @@ namespace Test
             }
 
             #endregion Public Methods
-
         }
 
         #endregion Private Classes
-
     }
 }

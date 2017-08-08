@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class MetaMorpheusEngineResults
     {
-
         #region Internal Fields
 
         internal TimeSpan Time;
@@ -39,6 +38,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

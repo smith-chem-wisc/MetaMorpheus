@@ -11,7 +11,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
     {
-
         #region Private Fields
 
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
@@ -26,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp)
+        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, 1)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -205,7 +204,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                                newPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }
@@ -349,6 +348,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         }
 
         #endregion Private Methods
-
     }
 }

@@ -8,7 +8,6 @@ namespace EngineLayer
 {
     public class LocalizationEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly IEnumerable<Psm> allResultingIdentifications;
@@ -71,6 +70,5 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }

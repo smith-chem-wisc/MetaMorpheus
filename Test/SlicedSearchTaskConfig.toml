@@ -32,3 +32,4 @@ UseProvidedPrecursorInfo = true
 DeconvolutionIntensityRatio = 4.0
 DeconvolutionMaxAssumedChargeState = 10
 DeconvolutionMassTolerance = "±5.0000 PPM"
+ScoreCutoff = 1.0

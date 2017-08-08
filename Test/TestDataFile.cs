@@ -10,7 +10,6 @@ namespace Test
 {
     internal class TestDataFile : MsDataFile<IMzmlScan>
     {
-
         #region Public Constructors
 
         public TestDataFile() : base(2)
@@ -190,6 +189,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

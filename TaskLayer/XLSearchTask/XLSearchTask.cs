@@ -18,7 +18,6 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
-
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
@@ -485,6 +484,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

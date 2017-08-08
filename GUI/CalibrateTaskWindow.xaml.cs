@@ -17,7 +17,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
-
         #region Private Fields
 
         private readonly ObservableCollection<ModTypeForTreeView> fixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
@@ -82,6 +81,8 @@ namespace MetaMorpheusGUI
             nonLinearCalibCheckBox.IsChecked = task.NonLinearCalibration;
 
             writeIntermediateFilesCheckBox.IsChecked = task.WriteIntermediateFiles;
+
+            minScoreAllowed.Text = task.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -215,6 +216,7 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.WriteIntermediateFiles = writeIntermediateFilesCheckBox.IsChecked.Value;
 
@@ -262,6 +264,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 }

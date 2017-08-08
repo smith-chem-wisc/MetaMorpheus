@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     public static class ProteinExtensions
     {
-
         #region Public Methods
 
         public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, Protease protease, int maximumMissedCleavages, int? minPeptidesLength, int? maxPeptidesLength, InitiatorMethionineBehavior initiatorMethionineBehavior, IEnumerable<ModificationWithMass> allKnownFixedModifications)
@@ -142,6 +141,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }
