@@ -177,7 +177,7 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (BIons & AddCompIons)
+            if (BIons && AddCompIons)
                 ionTypes.Add(ProductType.B);
             else if (BIons)
                 ionTypes.Add(ProductType.BnoB1ions);
