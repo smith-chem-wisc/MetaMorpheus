@@ -36,6 +36,8 @@ namespace EngineLayer
             }
 
             MetaMorpheusVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (MetaMorpheusVersion.Equals("1.0.0.0"))
+                MetaMorpheusVersion = "Not a release version";
         }
 
         #endregion Public Constructors
