@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     internal class AddCompIonsTest
     {
-
         #region Public Methods
 
         [Test]
@@ -137,6 +136,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

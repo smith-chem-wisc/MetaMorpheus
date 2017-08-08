@@ -12,7 +12,6 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
-
         #region Private Fields
 
         private static bool inProgress;
@@ -184,7 +183,6 @@ namespace MetaMorpheusCommandLine
 
         public class ApplicationArguments
         {
-
             #region Public Properties
 
             public List<string> Tasks { get; set; }
@@ -192,10 +190,8 @@ namespace MetaMorpheusCommandLine
             public List<string> Spectra { get; set; }
 
             #endregion Public Properties
-
         }
 
         #endregion Public Classes
-
     }
 }

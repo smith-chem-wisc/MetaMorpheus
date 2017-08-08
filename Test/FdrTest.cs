@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public class FdrTest
     {
-
         #region Public Methods
 
         [Test]
@@ -93,6 +92,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

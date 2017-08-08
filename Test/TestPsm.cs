@@ -11,7 +11,6 @@ namespace Test
     [TestFixture]
     public class TestPsm
     {
-
         #region Public Methods
 
         [Test]
@@ -47,6 +46,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

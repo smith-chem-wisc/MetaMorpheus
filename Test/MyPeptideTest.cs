@@ -17,7 +17,6 @@ namespace Test
     [TestFixture]
     public class MyPeptideTest
     {
-
         #region Public Methods
 
         [Test]
@@ -45,8 +44,7 @@ namespace Test
         public static void TestIdenticalPeaks()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
             var prot = new Protein("MMMM", null, null, mods);
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
@@ -69,8 +67,7 @@ namespace Test
         public static void TestLastPeaks()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, mods);
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
@@ -92,8 +89,7 @@ namespace Test
         public static void TestVeryCloseExperimentals()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, mods);
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
@@ -173,8 +169,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, TerminusLocalization.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
@@ -194,8 +189,7 @@ namespace Test
             var prot = new Protein("M", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             List<ModificationWithMass> fixedMods = new List<ModificationWithMass>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             fixedMods.Add(new ModificationWithMassAndCf("PepNmod", null, motif, TerminusLocalization.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             fixedMods.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
@@ -215,8 +209,7 @@ namespace Test
         [Test]
         public static void TestDigestIndices()
         {
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("X", out motif);
+            ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             Modification mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
             {
@@ -239,8 +232,7 @@ namespace Test
         [Test]
         public static void TestDigestDecoy()
         {
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("Abcdefg", out motif);
+            ModificationMotif.TryGetMotif("Abcdefg", out ModificationMotif motif);
             Modification mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
             {
@@ -288,6 +280,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

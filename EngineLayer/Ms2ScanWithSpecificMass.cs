@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass
     {
-
         #region Public Constructors
 
         public Ms2ScanWithSpecificMass(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan, IMzPeak precursorMonoisotopicPeak, int precursorCharge, string fullFilePath)
@@ -29,6 +28,5 @@ namespace EngineLayer
         public string FullFilePath { get; }
 
         #endregion Public Properties
-
     }
 }

@@ -1,10 +1,9 @@
 ﻿using EngineLayer;
+using EngineLayer.CrosslinkSearch;
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using EngineLayer.CrosslinkSearch;
-
 
 namespace Test
 {
@@ -33,7 +32,7 @@ namespace Test
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
             Assert.AreEqual(c[0], 128.09496301518999);
-            var x = PsmCross.xlPosCal(pep.CompactPeptide, crosslinker).ToArray();
+            var x = PsmCross.XlPosCal(pep.CompactPeptide, crosslinker).ToArray();
             Assert.AreEqual(x[0], 4);
 
             var pep2 = ye[2].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
@@ -42,11 +41,11 @@ namespace Test
             var c2 = pep2.CompactPeptide.CTerminalMasses;
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
-            Assert.AreEqual(n2[4] - n2[3] , 128.09496301518999, 1e-9);
-            var x2 = PsmCross.xlPosCal(pep2.CompactPeptide, crosslinker).ToArray();
+            Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-9);
+            var x2 = PsmCross.XlPosCal(pep2.CompactPeptide, crosslinker).ToArray();
             Assert.AreEqual(x2[0], 4);
         }
 
-        #endregion
+        #endregion Public Methods
     }
 }

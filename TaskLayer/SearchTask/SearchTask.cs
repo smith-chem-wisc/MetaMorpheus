@@ -21,7 +21,6 @@ namespace TaskLayer
 {
     public class SearchTask : MetaMorpheusTask
     {
-
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
@@ -173,8 +172,7 @@ namespace TaskLayer
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            Dictionary<string, Modification> unknownModifications;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (BIons & AddCompIons)
@@ -683,6 +681,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

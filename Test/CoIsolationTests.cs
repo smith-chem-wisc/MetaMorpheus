@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     public class CoIsolationTests
     {
-
         #region Public Methods
 
         [Test]
@@ -90,6 +89,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

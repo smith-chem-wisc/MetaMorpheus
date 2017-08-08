@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public class StefanParsimonyTest
     {
-
         #region Public Methods
 
         [Test]
@@ -174,10 +173,8 @@ namespace Test
             Protein protein2 = new Protein("MG", "protein2");
             Protein protein3;
             double monoisotopicMass = Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass;
-            ModificationMotif motif1;
-            ModificationMotif.TryGetMotif("G", out motif1);
-            ModificationMotif motif2;
-            ModificationMotif.TryGetMotif("A", out motif2);
+            ModificationMotif.TryGetMotif("G", out ModificationMotif motif1);
+            ModificationMotif.TryGetMotif("A", out ModificationMotif motif2);
             IDictionary<string, IList<string>> externalDatabaseReferences = null;
             IEnumerable<double> neutralLosses = null;
             IEnumerable<double> diagnosticIons = null;
@@ -279,6 +276,5 @@ namespace Test
         }
 
         #endregion Private Methods
-
     }
 }

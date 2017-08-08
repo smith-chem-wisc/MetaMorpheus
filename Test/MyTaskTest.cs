@@ -15,7 +15,6 @@ namespace Test
     [TestFixture]
     public class MyTaskTest
     {
-
         #region Public Fields
 
         public static bool hasPrunedRun = false;
@@ -156,8 +155,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods2 = setList2[0];
 
             var dictHere = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("E", out motif);
+            ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
@@ -195,8 +193,7 @@ namespace Test
             #region Setup tasks
 
             {
-                ModificationMotif motif;
-                ModificationMotif.TryGetMotif("T", out motif);
+                ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 GlobalTaskLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", null, motif, TerminusLocalization.Any, 229, null, null, null, "okType") });
                 task1 = new GptmdTask()
                 {
@@ -225,15 +222,13 @@ namespace Test
             #region Generate and write the mzml
 
             {
-                Dictionary<string, Modification> ok;
-                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
                 var targetDigested = theProteins[0].Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 1, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
-                ModificationMotif motif;
-                ModificationMotif.TryGetMotif("T", out motif);
+                ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 var okjhjf = targetDigested[0].GetPeptidesWithSetModifications(GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 1, 0).ToList();
                 PeptideWithSetModifications targetGood = okjhjf.First();
 
@@ -270,8 +265,7 @@ namespace Test
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                new Tuple<string, MetaMorpheusTask>("task1", task1)};
 
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("P", out motif);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             var connorMod = new ModificationWithMass("ConnorMod", null, motif, TerminusLocalization.Any, 10, null, null, null, "ConnorModType");
 
@@ -322,8 +316,7 @@ namespace Test
             #region MZML File
 
             //now write MZML file
-            Dictionary<string, Modification> ok;
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
@@ -377,8 +370,7 @@ namespace Test
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                new Tuple<string, MetaMorpheusTask>("TestUnique", testUnique)};
 
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("P", out motif);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             var testUniqeMod = new ModificationWithMass("testUniqeMod", null, motif, TerminusLocalization.Any, 10, null, null, null, "testUniqueModType");
 
@@ -426,8 +418,7 @@ namespace Test
             #region MZML setup
 
             //now write MZML file
-            Dictionary<string, Modification> ok;
-            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out ok);
+            var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(testUnique.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
@@ -469,6 +460,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

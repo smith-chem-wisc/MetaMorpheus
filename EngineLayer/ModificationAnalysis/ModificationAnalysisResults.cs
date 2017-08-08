@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     internal class ModificationAnalysisResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public ModificationAnalysisResults(ModificationAnalysisEngine modificationAnalysisEngine) : base(modificationAnalysisEngine)
@@ -40,6 +39,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

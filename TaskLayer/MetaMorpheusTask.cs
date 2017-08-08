@@ -28,7 +28,6 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
-
         #region Public Fields
 
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
@@ -503,9 +502,8 @@ namespace TaskLayer
             foreach (Psm psm in items)
             {
                 PeptideWithSetModifications peptide = psm.MostProbableProteinInfo.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
-                Tuple<int, int, List<string>> peptide_id;
                 //if first peptide on list hasn't been added, add peptide and peptide evidence
-                if (!peptide_ids.TryGetValue(peptide, out peptide_id))
+                if (!peptide_ids.TryGetValue(peptide, out Tuple<int, int, List<string>> peptide_id))
                 {
                     peptide_id = new Tuple<int, int, List<string>>(p_index, 0, new List<string>());
                     p_index++;
@@ -564,8 +562,7 @@ namespace TaskLayer
                     }
                 }
 
-                Tuple<int, int> scan_result_scan_item;
-                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
+                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), out Tuple<int, int> scan_result_scan_item)) //check to see if scan has already been added
                 {
                     scan_result_scan_item = new Tuple<int, int>(sir_id, 0);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1] = new mzIdentML110.Generated.SpectrumIdentificationResultType()
@@ -1051,6 +1048,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

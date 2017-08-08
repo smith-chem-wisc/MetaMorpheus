@@ -70,7 +70,7 @@
                             <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                                <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                                <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>
@@ -190,7 +190,7 @@
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
-            <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click" FontSize="24"  />
+            <Button x:Name="saveButton" Content="Save GPTMD task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>
     </Grid>
 </Window>

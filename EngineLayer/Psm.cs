@@ -12,7 +12,6 @@ namespace EngineLayer
 {
     public class Psm
     {
-
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
@@ -493,6 +492,5 @@ namespace EngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

@@ -11,7 +11,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
     {
-
         #region Private Fields
 
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
@@ -349,6 +348,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         }
 
         #endregion Private Methods
-
     }
 }

@@ -9,7 +9,6 @@ namespace EngineLayer.Analysis
 {
     public class BinTreeStructure
     {
-
         #region Private Fields
 
         private const int minAdditionalPsmsInBin = 1;
@@ -316,8 +315,7 @@ namespace EngineLayer.Analysis
                 var ok = new HashSet<string>();
                 foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
                 {
-                    var theMod = hm as ModificationWithMass;
-                    if (theMod != null && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
+                    if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
                         ok.Add(hm.id);
                 }
                 bin.uniprotID = string.Join(" or ", ok);
@@ -352,8 +350,7 @@ namespace EngineLayer.Analysis
                 var ok = new HashSet<string>();
                 for (char c = 'A'; c <= 'Z'; c++)
                 {
-                    Residue residue;
-                    if (Residue.TryGetResidue(c, out residue))
+                    if (Residue.TryGetResidue(c, out Residue residue))
                     {
                         if (Math.Abs(residue.MonoisotopicMass - bin.MassShift) <= v)
                             ok.Add("Add " + residue.Name);
@@ -361,8 +358,7 @@ namespace EngineLayer.Analysis
                             ok.Add("Remove " + residue.Name);
                         for (char cc = 'A'; cc <= 'Z'; cc++)
                         {
-                            Residue residueCC;
-                            if (Residue.TryGetResidue(cc, out residueCC))
+                            if (Residue.TryGetResidue(cc, out Residue residueCC))
                             {
                                 if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - bin.MassShift) <= v)
                                     ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
@@ -406,6 +402,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Private Methods
-
     }
 }

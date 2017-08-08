@@ -18,7 +18,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-
         #region Private Fields
 
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
@@ -84,7 +83,7 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
-        private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, string e)
+        private void EverythingRunnerEngine_FinishedWritingAllResultsFileHandler(object sender, StringEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -94,7 +93,7 @@ namespace MetaMorpheusGUI
             {
                 dynamicTasksObservableCollection.Add(new InRunTask("All Task Results", null));
                 dynamicTasksObservableCollection.Last().Progress = 100;
-                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e));
+                dynamicTasksObservableCollection.Last().Children.Add(new OutputFileForTreeView(e.s));
             }
         }
 
@@ -406,7 +405,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void btnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
+        private void BtnAddCrosslinkSearch_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new XLSearchTaskWindow();
             if (dialog.ShowDialog() == true)
@@ -559,7 +558,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void NewSuccessfullyFinishedAllTasks(object sender, string e)
+        private void NewSuccessfullyFinishedAllTasks(object sender, StringEventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
@@ -701,6 +700,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 }

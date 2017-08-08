@@ -8,7 +8,6 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly List<Psm> allIdentifications;
@@ -129,6 +128,5 @@ namespace EngineLayer.Gptmd
         }
 
         #endregion Private Methods
-
     }
 }

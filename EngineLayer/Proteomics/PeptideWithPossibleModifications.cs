@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     public class PeptideWithPossibleModifications : Peptide
     {
-
         #region Private Fields
 
         private readonly Dictionary<int, ModificationWithMass> thisDictionaryOfFixedMods;
@@ -17,10 +16,9 @@ namespace EngineLayer
         #region Internal Constructors
 
         internal PeptideWithPossibleModifications(int oneBasedStartResidueNumberInProtein, int oneBasedEndResidueNumberInProtein, Protein parentProtein, int missedCleavages, string peptideDescription, IEnumerable<ModificationWithMass> allKnownFixedModifications)
-            : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein)
+            : base(parentProtein, oneBasedStartResidueNumberInProtein, oneBasedEndResidueNumberInProtein, peptideDescription)
         {
             this.MissedCleavages = missedCleavages;
-            this.PeptideDescription = peptideDescription;
             thisDictionaryOfFixedMods = AddFixedMods(allKnownFixedModifications);
             this.NumKnownPossibleLocMods = this.Protein.OneBasedPossibleLocalizedModifications.Count(kvp => kvp.Key >= OneBasedStartResidueInProtein && kvp.Key <= OneBasedEndResidueInProtein);
         }
@@ -58,8 +56,7 @@ namespace EngineLayer
                     if (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                         && variable_modification.terminusLocalization == TerminusLocalization.Any)
                     {
-                        UniqueModificationsCollection residue_variable_mods;
-                        if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
+                        if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out UniqueModificationsCollection residue_variable_mods))
                         {
                             residue_variable_mods = new UniqueModificationsCollection
                             {
@@ -85,8 +82,7 @@ namespace EngineLayer
                     int locInPeptide = kvp.Key - OneBasedStartResidueInProtein + 1;
                     foreach (Modification modMaybeWithMass in kvp.Value)
                     {
-                        ModificationWithMass variable_modification = modMaybeWithMass as ModificationWithMass;
-                        if (variable_modification != null)
+                        if (modMaybeWithMass is ModificationWithMass variable_modification)
                         {
                             // Check if can be a n-term mod
                             if (locInPeptide == 1
@@ -101,8 +97,7 @@ namespace EngineLayer
                                     && (Protein.IsDecoy || (Gptmd.GptmdEngine.ModFits(variable_modification, this.Protein, r + 1, this.Length, this.OneBasedStartResidueInProtein + r)
                                     && variable_modification.terminusLocalization == TerminusLocalization.Any)))
                                 {
-                                    UniqueModificationsCollection residue_variable_mods;
-                                    if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out residue_variable_mods))
+                                    if (!two_based_possible_variable_and_localizeable_modifications.TryGetValue(r + 2, out UniqueModificationsCollection residue_variable_mods))
                                     {
                                         residue_variable_mods = new UniqueModificationsCollection
                                         {
@@ -264,7 +259,6 @@ namespace EngineLayer
 
         protected sealed class UniqueModificationsCollection : List<ModificationWithMass>
         {
-
             #region Internal Methods
 
             internal new void Add(ModificationWithMass mod)
@@ -276,10 +270,8 @@ namespace EngineLayer
             }
 
             #endregion Internal Methods
-
         }
 
         #endregion Protected Classes
-
     }
 }

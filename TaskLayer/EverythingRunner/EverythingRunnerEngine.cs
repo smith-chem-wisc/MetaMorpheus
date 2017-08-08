@@ -11,7 +11,6 @@ namespace TaskLayer
 {
     public class EverythingRunnerEngine
     {
-
         #region Private Fields
 
         private readonly List<Tuple<string, MetaMorpheusTask>> taskList;
@@ -33,11 +32,11 @@ namespace TaskLayer
 
         #region Public Events
 
-        public static event EventHandler<string> FinishedWritingAllResultsFileHandler;
+        public static event EventHandler<StringEventArgs> FinishedWritingAllResultsFileHandler;
 
         public static event EventHandler StartingAllTasksEngineHandler;
 
-        public static event EventHandler<string> FinishedAllTasksEngineHandler;
+        public static event EventHandler<StringEventArgs> FinishedAllTasksEngineHandler;
 
         public static event EventHandler<XmlForTaskListEventArgs> NewDbsHandler;
 
@@ -120,7 +119,7 @@ namespace TaskLayer
                 file.WriteLine("Total time: " + stopWatch.Elapsed);
                 file.Write(allResultsText.ToString());
             }
-            FinishedWritingAllResultsFileHandler?.Invoke(this, resultsFileName);
+            FinishedWritingAllResultsFileHandler?.Invoke(this, new StringEventArgs(resultsFileName, null));
 
             FinishedAllTasks(rootOutputDir);
         }
@@ -141,7 +140,7 @@ namespace TaskLayer
 
         private void FinishedAllTasks(string rootOutputDir)
         {
-            FinishedAllTasksEngineHandler?.Invoke(this, rootOutputDir);
+            FinishedAllTasksEngineHandler?.Invoke(this, new StringEventArgs(rootOutputDir, null));
         }
 
         private void NewSpectras(List<string> newSpectra)
@@ -155,6 +154,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

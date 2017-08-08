@@ -22,20 +22,20 @@
                                 <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="1*"/>
-                                <RowDefinition Height="1*"/>
-                                <RowDefinition Height="1*"/>
-                                <RowDefinition Height="1*"/>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
                             </Grid.RowDefinitions>
-                            <CheckBox x:Name="ckbSearchWithXLAllBeta" Grid.Row="0" Grid.Column="0" Content="Search with All possible Beta peptides"/>
+                            <CheckBox x:Name="ckbSearchWithXLAllBeta" Grid.Row="0" Grid.Column="0" Content="Search with All possible Beta peptides" />
                                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1">
-                                    <Label x:Name="lblXLBetaMsTl" Content="Beta Peptide Precusor mass tolerance"/>
-                                    <TextBox x:Name="txtXLBetaPrecusorMsTl" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}"/>
-                                    <ComboBox x:Name="cbbXLBetaprecusorMsTl" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}"/>
+                                    <Label x:Name="lblXLBetaMsTl" Content="Beta Peptide Precusor mass tolerance" />
+                                    <TextBox x:Name="txtXLBetaPrecusorMsTl" Width="45" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
+                                    <ComboBox x:Name="cbbXLBetaprecusorMsTl" IsEnabled="{Binding IsChecked, ElementName=ckbSearchWithXLAllBeta}" />
                                 </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="0">
                                 <Label x:Name="lblXLprecusorMsTl"  Content="Crosslink Precusor mass tolerance" />
-                                <TextBox x:Name="txtXLPrecusorMsTl" Width="45"/>
+                                <TextBox x:Name="txtXLPrecusorMsTl" Width="45" />
                                 <ComboBox x:Name="cbbXLprecusorMsTl" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="0">
@@ -44,7 +44,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1">
                                 <Label x:Name="lblXLTopNum" Content="Search Top matches" />
-                                <TextBox x:Name="txtXLTopNum" Width="45"/>
+                                <TextBox x:Name="txtXLTopNum" Width="45" />
                             </StackPanel>
                         </Grid>
                         <GroupBox>
@@ -63,20 +63,19 @@
                                             <RowDefinition Height="1*" />
                                             <RowDefinition Height="1*" />
                                         </Grid.RowDefinitions>
-                                        <Label x:Name="lblUdXLkerName" Content="Crosslinker Name" Grid.Column="0" Grid.Row="0"/>
-                                        <TextBox x:Name="txtUdXLKerName" Width="60" Grid.Column="1" Grid.Row="0"/>
-                                        <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="0" Grid.Row="1"/>
-                                        <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" Grid.Column="0" Grid.Row="2"/>
-                                        <TextBox x:Name="txtUdXLkerTotalMs" Width="60" Grid.Column="1" Grid.Row="2"/>
-                                        <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass" Grid.Column="0" Grid.Row="3"/>
-                                        <TextBox x:Name="txtUdXLkerShortMass" Width="60" Grid.Column="1" Grid.Row="3"/>
-                                        <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" Grid.Column="0" Grid.Row="4"/>
-                                        <TextBox x:Name="txtUdXLkerLongMass" Width="60" Grid.Column="1" Grid.Row="4"/>
-                                        <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acid" Grid.Column="0" Grid.Row="5"/>
-                                        <TextBox x:Name="txtUdXLkerAminoAcid" Width="60" Grid.Column="1" Grid.Row="5"/>
+                                        <Label x:Name="lblUdXLkerName" Content="Crosslinker Name" Grid.Column="0" Grid.Row="0" />
+                                        <TextBox x:Name="txtUdXLKerName" Width="60" Grid.Column="1" Grid.Row="0" />
+                                        <CheckBox x:Name="ckbUdXLkerCleavable" Content="Cleavable" Grid.Column="0" Grid.Row="1" />
+                                        <Label x:Name="lblUdXLkerTotalMass" Content="Crosslinker Total Mass" Grid.Column="0" Grid.Row="2" />
+                                        <TextBox x:Name="txtUdXLkerTotalMs" Width="60" Grid.Column="1" Grid.Row="2" />
+                                        <Label x:Name="lblUdXLkerShortMass" Content="Crosslinker Short Mass" Grid.Column="0" Grid.Row="3" />
+                                        <TextBox x:Name="txtUdXLkerShortMass" Width="60" Grid.Column="1" Grid.Row="3" />
+                                        <Label x:Name="lblUdXLkerLongMass" Content="Crosslinker Long Mass" Grid.Column="0" Grid.Row="4" />
+                                        <TextBox x:Name="txtUdXLkerLongMass" Width="60" Grid.Column="1" Grid.Row="4" />
+                                        <Label x:Name="lblUdXLkerAminoAcid" Content="Crosslinker Amino Acid" Grid.Column="0" Grid.Row="5" />
+                                        <TextBox x:Name="txtUdXLkerAminoAcid" Width="60" Grid.Column="1" Grid.Row="5" />
                                     </Grid>
                                 </StackPanel>
-
                             </Expander>
                         </GroupBox>
                     </StackPanel>

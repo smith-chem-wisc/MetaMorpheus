@@ -11,7 +11,6 @@ namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
-
         #region Protected Fields
 
         protected readonly List<int>[] fragmentIndex;
@@ -249,6 +248,5 @@ namespace EngineLayer.ModernSearch
         }
 
         #endregion Private Methods
-
     }
 }

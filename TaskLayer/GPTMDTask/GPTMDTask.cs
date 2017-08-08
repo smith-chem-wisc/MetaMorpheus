@@ -20,7 +20,6 @@ namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
-
         #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
@@ -267,6 +266,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

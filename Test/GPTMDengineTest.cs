@@ -15,15 +15,13 @@ namespace Test
     [TestFixture]
     public class GptmdEngineTest
     {
-
         #region Public Methods
 
         [Test]
         public static void TestGptmdEngine()
         {
             List<Psm> allResultingIdentifications = null;
-            ModificationMotif motifN;
-            ModificationMotif.TryGetMotif("N", out motifN);
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
@@ -67,10 +65,8 @@ namespace Test
         public static void TestCombos()
         {
             List<Psm> allIdentifications = null;
-            ModificationMotif motifN;
-            ModificationMotif.TryGetMotif("N", out motifN);
-            ModificationMotif motifP;
-            ModificationMotif.TryGetMotif("P", out motifP);
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, TerminusLocalization.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
                                                                       new ModificationWithMass("16", null, motifP, TerminusLocalization.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
@@ -110,6 +106,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

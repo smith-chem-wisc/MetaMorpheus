@@ -20,15 +20,15 @@
                             <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Intensity Ratio " />
-                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Max Assumed Charge State" />
-                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
                             </StackPanel>
                             <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
@@ -155,7 +155,7 @@
                             </GroupBox>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                                <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                                <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>

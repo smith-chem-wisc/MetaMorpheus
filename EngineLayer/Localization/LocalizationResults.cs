@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     public class LocalizationResults
     {
-
         #region Public Constructors
 
         public LocalizationResults(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch, List<double> localizedScores)
@@ -56,6 +55,5 @@ namespace EngineLayer
         }
 
         #endregion Internal Methods
-
     }
 }
