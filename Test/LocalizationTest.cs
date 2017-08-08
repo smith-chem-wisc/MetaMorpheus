@@ -13,7 +13,6 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
-
         #region Public Methods
 
         [Test]
@@ -70,6 +69,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

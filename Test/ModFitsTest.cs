@@ -8,14 +8,12 @@ namespace Test
     [TestFixture]
     public class ModFitsTest
     {
-
         #region Public Methods
 
         [Test]
         public static void TestModFits()
         {
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("X", out motif);
+            ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             ModificationWithMass attemptToLocalize = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
 
             Protein protein = new Protein("M", null);
@@ -70,6 +68,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

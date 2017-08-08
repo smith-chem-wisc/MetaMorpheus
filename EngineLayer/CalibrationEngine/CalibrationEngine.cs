@@ -11,7 +11,6 @@ namespace EngineLayer.Calibration
 {
     public class CalibrationEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private const double fineResolutionForIsotopeDistCalculation = 0.1;
@@ -347,8 +346,7 @@ namespace EngineLayer.Calibration
         {
             foreach (var a in myMsDataFile)
             {
-                var theScan = a as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>;
-                if (theScan != null)
+                if (a is IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> theScan)
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
@@ -581,6 +579,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Private Methods
-
     }
 }

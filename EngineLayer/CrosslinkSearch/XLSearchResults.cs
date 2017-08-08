@@ -1,13 +1,12 @@
-﻿using System.Text;
-using EngineLayer.CrosslinkSearch;
-using System.Collections.Generic;
+﻿using EngineLayer.CrosslinkSearch;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace EngineLayer
 {
     public class XLSearchResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public XLSearchResults(List<Tuple<PsmCross, PsmCross>> xlpsms, MetaMorpheusEngine searchParams) : base(searchParams)
@@ -33,6 +32,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

@@ -12,7 +12,6 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
-
         #region Private Methods
 
         private void WriteCrosslinkToTsv(List<Tuple<PsmCross, PsmCross>> items, string outputFolder, string fileName, List<string> nestedIds)
@@ -35,18 +34,18 @@ namespace TaskLayer
                         + "\t"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.BaseSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item1.Xlpos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.topPosition[0].ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.TopPosition[0].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.BaseSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item2.Xlpos.ToString(CultureInfo.InvariantCulture) + ")"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.topPosition[1].ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.TopPosition[1].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
@@ -205,7 +204,7 @@ namespace TaskLayer
                                                 xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
                                                     new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].Item1.XLBestScore.ToString() },
-                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].Item1.xlpos.ToString() },
+                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].Item1.Xlpos.ToString() },
                                                 }
                                             },
                                             new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
@@ -222,7 +221,7 @@ namespace TaskLayer
                                                 xlink_score = new pepXML.Generated.nameValueType[]
                                                 {
                                                     new pepXML.Generated.nameValueType{ name = "xlscore", value = items[i].Item2.XLBestScore.ToString() },
-                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].Item2.xlpos.ToString() },
+                                                    new pepXML.Generated.nameValueType{name = "link", value = items[i].Item2.Xlpos.ToString() },
                                                 }
                                             }
                                         }
@@ -365,6 +364,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

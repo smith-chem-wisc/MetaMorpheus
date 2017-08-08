@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public class SingleEngineFinishedEventArgs : EventArgs
     {
-
         #region Private Fields
 
         private readonly MetaMorpheusEngineResults myResults;
@@ -28,6 +27,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

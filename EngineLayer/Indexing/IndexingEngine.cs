@@ -10,7 +10,6 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
@@ -115,8 +114,7 @@ namespace EngineLayer.Indexing
                                 if (!double.IsNaN(huhu))
                                 {
                                     var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
-                                    List<int> value;
-                                    if (myInnerDictionary.TryGetValue(rounded, out value))
+                                    if (myInnerDictionary.TryGetValue(rounded, out List<int> value))
                                     {
                                         if (!value.Contains(index))
                                             value.Add(index);
@@ -132,10 +130,9 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var huhu in myInnerDictionary)
                     {
-                        List<int> value;
                         foreach (var hhhh in huhu.Value)
                         {
-                            if (myFragmentDictionary.TryGetValue(huhu.Key, out value))
+                            if (myFragmentDictionary.TryGetValue(huhu.Key, out List<int> value))
                                 value.Add(hhhh);
                             else
                                 myFragmentDictionary.Add(huhu.Key, new List<int> { hhhh });
@@ -155,6 +152,5 @@ namespace EngineLayer.Indexing
         }
 
         #endregion Protected Methods
-
     }
 }

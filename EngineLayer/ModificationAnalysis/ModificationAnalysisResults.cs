@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     internal class ModificationAnalysisResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public ModificationAnalysisResults(ModificationAnalysisEngine modificationAnalysisEngine) : base(modificationAnalysisEngine)
@@ -31,15 +30,14 @@ namespace EngineLayer
             sb.AppendLine(base.ToString());
             for (int i = 0; i < AllModsOnPeptides.Length; i++)
             {
-                sb.AppendLine("Search mode " + i + " Mods seen:");
+                sb.AppendLine("Search mode index:" + i + ". Unique mods seen below q-value 0.01:");
                 sb.AppendLine(string.Join(Environment.NewLine, AllModsSeen[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
-                sb.AppendLine("Search mode " + i + " Mods in database:");
+                sb.AppendLine("Search mode index:" + i + ". All mods in database limited to peptides observed in the results:");
                 sb.AppendLine(string.Join(Environment.NewLine, AllModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             return sb.ToString();
         }
 
         #endregion Public Methods
-
     }
 }

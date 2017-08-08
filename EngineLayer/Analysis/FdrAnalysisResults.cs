@@ -4,7 +4,6 @@ namespace EngineLayer.Analysis
 {
     public class FdrAnalysisResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public FdrAnalysisResults(FdrAnalysisEngine s) : base(s)
@@ -23,6 +22,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Public Methods
-
     }
 }

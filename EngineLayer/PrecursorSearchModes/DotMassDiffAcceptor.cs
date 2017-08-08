@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     public class DotMassDiffAcceptor : MassDiffAcceptor
     {
-
         #region Private Fields
 
         private readonly double[] acceptableSortedMassShifts;
@@ -57,6 +56,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }
