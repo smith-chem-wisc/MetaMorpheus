@@ -25,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, 1)
+        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, int cutoffScore) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -96,7 +96,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -151,7 +151,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
