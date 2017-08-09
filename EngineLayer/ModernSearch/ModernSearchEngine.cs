@@ -16,6 +16,7 @@ namespace EngineLayer.ModernSearch
         protected readonly List<int>[] fragmentIndex;
         protected readonly Tolerance fragmentTolerance;
         protected readonly float[] keys;
+        protected readonly Psm[][] globalPsms;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
         protected readonly List<CompactPeptide> peptideIndex;
         protected readonly List<MassDiffAcceptor> searchModes;
@@ -33,8 +34,9 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff) : base(nestedIds)
         {
+            this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
@@ -55,9 +57,6 @@ namespace EngineLayer.ModernSearch
             Status("In modern search engine...", nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            Psm[][] newPsms = new Psm[searchModes.Count][];
-            for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new Psm[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -136,10 +135,10 @@ namespace EngineLayer.ModernSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
+                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }

@@ -54,7 +54,7 @@ namespace TaskLayer
             ZdotIons = false;
             CIons = false;
             FlashLfqEngine = new FlashLFQEngine();
-
+            NumberOfDatabaseSearches = 1;
             LocalizeAll = true;
             DoLocalizationAnalysis = true;
 
@@ -98,6 +98,7 @@ namespace TaskLayer
 
         public int MaxModificationIsoforms { get; set; }
 
+        public int NumberOfDatabaseSearches { get; set; }
         public Protease Protease { get; set; }
 
         public bool AddCompIons { get; set; }
@@ -189,7 +190,6 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
-            int NumberOfDatabaseSearches = 1;
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
@@ -199,9 +199,7 @@ namespace TaskLayer
 
             for (int databaseSearchNumber = 0; databaseSearchNumber < NumberOfDatabaseSearches; databaseSearchNumber++)
             {
-                List<Protein> proteinListSubset = new List<Protein>();
-                for (int prot = databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches; prot < (databaseSearchNumber + 1) * proteinList.Count() / NumberOfDatabaseSearches; prot++)
-                    proteinListSubset.Add(proteinList[prot]);
+                List<Protein> proteinListSubset = proteinList.GetRange(databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches, (databaseSearchNumber + 1) * proteinList.Count() / NumberOfDatabaseSearches);
 
                 List<CompactPeptide> peptideIndex = null;
                 float[] keys = null;
@@ -266,14 +264,17 @@ namespace TaskLayer
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
+                    for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
+                        globalPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
+
                     Status("Starting search...", thisId);
                     MetaMorpheusEngineResults searchResults;
                     if (SearchType == SearchType.Classic)
-                        searchResults = (new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinListSubset, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run());
+                        searchResults = (new ClassicSearchEngine(globalPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinListSubset, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run());
                     else if (SearchType == SearchType.NonSpecific)
-                        searchResults = (new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run());
+                        searchResults = (new NonSpecificEnzymeEngine(globalPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run());
                     else//if(SearchType==SearchType.Modern)
-                        searchResults = (new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
+                        searchResults = (new ModernSearchEngine(globalPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
 
                     myFileManager.DoneWithFile(origDataFile);
 
