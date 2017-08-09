@@ -100,6 +100,7 @@
     <Compile Include="AnalysisEngineTest.cs" />
     <Compile Include="FdrTest.cs" />
     <Compile Include="BinGenerationTest.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="StefanParsimonyTest.cs" />
     <Compile Include="SlicedTest.cs" />
     <Compile Include="FakeMsDataFile.cs" />
