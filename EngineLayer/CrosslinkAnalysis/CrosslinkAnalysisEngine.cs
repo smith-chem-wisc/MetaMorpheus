@@ -116,7 +116,7 @@ namespace EngineLayer.CrosslinkAnalysis
                         //    continue;
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
                         {
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out HashSet<PeptideWithSetModifications> v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, TerminusType.None), out HashSet<PeptideWithSetModifications> v))
                                 v.Add(peptideWithSetModifications);
                         }
                     }

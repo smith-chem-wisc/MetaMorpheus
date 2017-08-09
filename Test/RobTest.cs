@@ -82,7 +82,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count; i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i));
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), TerminusType.None);
             }
 
             // creates protein list
@@ -154,15 +154,15 @@ namespace Test
                 {
                     switch (peptide.BaseSequence)
                     {
-                        case "A": psms.Add(new Psm(peptide.CompactPeptide, 0, 10, 0, scan)); break;
-                        case "B": psms.Add(new Psm(peptide.CompactPeptide, 0, 9, 0, scan)); break;
-                        case "C": psms.Add(new Psm(peptide.CompactPeptide, 0, 8, 0, scan)); break;
-                        case "D": psms.Add(new Psm(peptide.CompactPeptide, 0, 7, 0, scan)); break;
-                        case "E": psms.Add(new Psm(peptide.CompactPeptide, 0, 6, 0, scan)); break;
-                        case "F": psms.Add(new Psm(peptide.CompactPeptide, 0, 5, 0, scan)); break;
-                        case "G": psms.Add(new Psm(peptide.CompactPeptide, 0, 4, 0, scan)); break;
-                        case "H": psms.Add(new Psm(peptide.CompactPeptide, 0, 3, 0, scan)); break;
-                        case "I": psms.Add(new Psm(peptide.CompactPeptide, 0, 2, 0, scan)); break;
+                        case "A": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 10, 0, scan)); break;
+                        case "B": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 9, 0, scan)); break;
+                        case "C": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 8, 0, scan)); break;
+                        case "D": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 7, 0, scan)); break;
+                        case "E": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 6, 0, scan)); break;
+                        case "F": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 5, 0, scan)); break;
+                        case "G": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 4, 0, scan)); break;
+                        case "H": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 3, 0, scan)); break;
+                        case "I": psms.Add(new Psm(peptide.CompactPeptide(TerminusType.None), 0, 2, 0, scan)); break;
                     }
                 }
             }
@@ -289,11 +289,11 @@ namespace Test
 
             foreach (var peptide in peptides)
             {
-                CfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.C }));
-                ZdotfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Zdot }));
-                BfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B }));
-                YfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y }));
-                BYfragmentMasses.Add(peptide, peptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }));
+                CfragmentMasses.Add(peptide, peptide.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.C }));
+                ZdotfragmentMasses.Add(peptide, peptide.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Zdot }));
+                BfragmentMasses.Add(peptide, peptide.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B }));
+                YfragmentMasses.Add(peptide, peptide.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y }));
+                BYfragmentMasses.Add(peptide, peptide.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }));
             }
             Assert.That(BfragmentMasses.TryGetValue(peptides.First(), out double[] testB));
 
@@ -327,14 +327,14 @@ namespace Test
 
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfkj = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, new MzPeak(2, 2), 1, "TestDataFile");
-            var psm = new Psm(peptide.CompactPeptide, 0, 0, 0, scan);
+            var psm = new Psm(peptide.CompactPeptide(TerminusType.None), 0, 0, 0, scan);
 
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
-                {peptide.CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptide} }
+                {peptide.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptide} }
             };
 
             psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
@@ -371,25 +371,25 @@ namespace Test
 
             PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide1 = new CompactPeptide(value.First());
+            CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
             Assert.AreEqual("QQQ", value.First().Sequence);
 
             PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First());
+            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
             Assert.AreEqual("MNNNSK", value2.First().Sequence);
             HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
 
-            CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last());
+            CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last(), TerminusType.None);
             Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
 
             PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First());
+            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNSK", value3.First().Sequence);
             HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
 
-            CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last());
+            CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last(), TerminusType.None);
             Assert.AreEqual("NNNS[HaHa:resMod]K", value3mod.Last().Sequence);
 
             var peptideList = new HashSet<PeptideWithSetModifications>();
@@ -422,15 +422,15 @@ namespace Test
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
-            var match1 = new Psm(peptideList.ElementAt(0).CompactPeptide, 0, 10, 0, ms2scan)
+            var match1 = new Psm(peptideList.ElementAt(0).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
             match1.SetFdrValues(0, 0, 0, 0, 0, 0);
-            var match2 = new Psm(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
+            var match2 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
             match2.SetFdrValues(0, 0, 0, 0, 0, 0);
-            var match3 = new Psm(peptideList.ElementAt(1).CompactPeptide, 0, 10, 0, ms2scan)
+            var match3 = new Psm(peptideList.ElementAt(1).CompactPeptide(TerminusType.None), 0, 10, 0, ms2scan)
             {
             };
             match3.SetFdrValues(0, 0, 0, 0, 0, 0);

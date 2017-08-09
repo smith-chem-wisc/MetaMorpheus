@@ -28,29 +28,6 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public override bool Equals(object obj)
-        {
-            var cp = obj as CompactPeptideBase;
-            if (cp == null)
-                return false;
-            return (
-                ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
-                );
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var result = 0;
-                foreach (double b in CTerminalMasses)
-                    result = (result * 31) ^ b.GetHashCode();
-                return result;
-            }
-        }
-
         public double[] ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)
         {
             int massLen = 0;
@@ -80,43 +57,90 @@ namespace EngineLayer
             double[] massesToReturn = new double[massLen];
 
             int i = 0;
-            for (int j = 0; j < NTerminalMasses.Length; j++)
-            {
-                var hm = NTerminalMasses[j];
-                if (containsBnoB1)
+            if (NTerminalMasses != null)
+                for (int j = 0; j < NTerminalMasses.Length; j++)
                 {
-                    if (j > 0)
+                    var hm = NTerminalMasses[j];
+                    if (containsBnoB1 && j > 0)
                     {
                         massesToReturn[i] = hm;
                         i++;
                     }
+                    if (containsB)
+                    {
+                        massesToReturn[i] = hm;
+                        i++;
+                    }
+                    if (containsC)
+                    {
+                        massesToReturn[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                        i++;
+                    }
                 }
-                if (containsB)
+            if (CTerminalMasses != null)
+                for (int j = 0; j < CTerminalMasses.Length; j++)
                 {
-                    massesToReturn[i] = hm;
-                    i++;
+                    var hm = CTerminalMasses[j];
+                    if (containsY)
+                    {
+                        massesToReturn[i] = hm + waterMonoisotopicMass;
+                        i++;
+                    }
+                    if (containsZdot)
+                    {
+                        massesToReturn[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                        i++;
+                    }
                 }
-                if (containsC)
-                {
-                    massesToReturn[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
-                    i++;
-                }
-            }
-            for (int j = 0; j < CTerminalMasses.Length; j++)
-            {
-                var hm = CTerminalMasses[j];
-                if (containsY)
-                {
-                    massesToReturn[i] = hm + waterMonoisotopicMass;
-                    i++;
-                }
-                if (containsZdot)
-                {
-                    massesToReturn[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
-                    i++;
-                }
-            }
             return massesToReturn;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var cp = obj as CompactPeptideBase;
+            if (cp == null)
+                return false;
+            if (CTerminalMasses == null && cp.CTerminalMasses == null) //still not sure if it's || or &&
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    );
+            }
+            else if (NTerminalMasses == null && cp.NTerminalMasses == null)
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    );
+            }
+            else
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    );
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var result = 0;
+                if (CTerminalMasses == null)
+                {
+                    foreach (double b in NTerminalMasses)
+                        result = (result * 31) ^ b.GetHashCode();
+                }
+                else
+                {
+                    foreach (double b in CTerminalMasses)
+                        result = (result * 31) ^ b.GetHashCode();
+                }
+                return result;
+            }
         }
 
         #endregion Public Methods
