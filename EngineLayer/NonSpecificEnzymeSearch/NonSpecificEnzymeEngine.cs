@@ -220,7 +220,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                 }
             });
-            return new SearchResults(newPsms, this);
+            return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods

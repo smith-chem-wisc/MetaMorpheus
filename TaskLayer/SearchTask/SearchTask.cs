@@ -189,94 +189,105 @@ namespace TaskLayer
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
-            List<CompactPeptide> peptideIndex = null;
-            float[] keys = null;
-            List<int>[] fragmentIndex = null;
-            if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
-            {
-                #region Generate indices for modern search
-
-                Status("Getting fragment dictionary...", new List<string> { taskId });
-                var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
-                string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
-                Dictionary<float, List<int>> fragmentIndexDict;
-                if (pathToFolderWithIndices == null)
-                {
-                    var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
-                    Status("Writing params...", new List<string> { taskId });
-                    WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
-
-                    Status("Running Index Engine...", new List<string> { taskId });
-                    var indexResults = (IndexingResults)indexEngine.Run();
-                    peptideIndex = indexResults.PeptideIndex;
-                    fragmentIndexDict = indexResults.FragmentIndexDict;
-
-                    Status("Writing peptide index...", new List<string> { taskId });
-                    WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
-                    Status("Writing fragment index...", new List<string> { taskId });
-                    WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
-                }
-                else
-                {
-                    Status("Reading peptide index...", new List<string> { taskId });
-                    var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                    var ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                        peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
-
-                    Status("Reading fragment index...", new List<string> { taskId });
-                    messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-                    ser = new NetSerializer.Serializer(messageTypes);
-                    using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                        fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
-                }
-                keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
-                fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
-
-                #endregion Generate indices for modern search
-            }
-
-            object lock2 = new object();
-            MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
-            Status("Searching files...", taskId);
+            int NumberOfDatabaseSearches = 1;
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
-            double completedFiles = 0;
-            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+            MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
+
+            Psm[][] globalPsms = new Psm[MassDiffAcceptors.Count()][];
+
+            for (int databaseSearchNumber = 0; databaseSearchNumber < NumberOfDatabaseSearches; databaseSearchNumber++)
             {
-                var origDataFile = currentRawFileList[spectraFileIndex];
+                List<Protein> proteinListSubset = new List<Protein>();
+                for (int prot = databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches; prot < (databaseSearchNumber + 1) * proteinList.Count() / NumberOfDatabaseSearches; prot++)
+                    proteinListSubset.Add(proteinList[prot]);
 
-                var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
-                NewCollection(Path.GetFileName(origDataFile), thisId);
-                Status("Loading spectra file...", thisId);
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-
-                Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-                Status("Starting search...", thisId);
-                SearchResults searchResults;
-                if (SearchType == SearchType.Classic)
-                    searchResults = ((SearchResults)new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run());
-                else if (SearchType == SearchType.NonSpecific)
-                    searchResults = ((SearchResults)(new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run()));
-                else//if(SearchType==SearchType.Modern)
-                    searchResults = ((SearchResults)(new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run()));
-
-                myFileManager.DoneWithFile(origDataFile);
-
-                lock (lock2)
+                List<CompactPeptide> peptideIndex = null;
+                float[] keys = null;
+                List<int>[] fragmentIndex = null;
+                if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
                 {
-                    for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                        allPsms[searchModeIndex].AddRange(searchResults.Psms[searchModeIndex]);
+                    #region Generate indices for modern search
+
+                    Status("Getting fragment dictionary...", new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
+                    string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+                    Dictionary<float, List<int>> fragmentIndexDict;
+                    if (pathToFolderWithIndices == null)
+                    {
+                        var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
+                        Status("Writing params...", new List<string> { taskId });
+                        WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
+
+                        Status("Running Index Engine...", new List<string> { taskId });
+                        var indexResults = (IndexingResults)indexEngine.Run();
+                        peptideIndex = indexResults.PeptideIndex;
+                        fragmentIndexDict = indexResults.FragmentIndexDict;
+
+                        Status("Writing peptide index...", new List<string> { taskId });
+                        WritePeptideIndex(peptideIndex, Path.Combine(output_folderForIndices, "peptideIndex.ind"), taskId);
+                        Status("Writing fragment index...", new List<string> { taskId });
+                        WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
+                    }
+                    else
+                    {
+                        Status("Reading peptide index...", new List<string> { taskId });
+                        var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                        var ser = new NetSerializer.Serializer(messageTypes);
+                        using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                            peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+
+                        Status("Reading fragment index...", new List<string> { taskId });
+                        messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                        ser = new NetSerializer.Serializer(messageTypes);
+                        using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                            fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                    }
+                    keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
+                    fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
+
+                    #endregion Generate indices for modern search
                 }
-                ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
-                completedFiles++;
-                ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+
+                object lock2 = new object();
+                Status("Searching files...", taskId);
+                double completedFiles = 0;
+                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                {
+                    var origDataFile = currentRawFileList[spectraFileIndex];
+
+                    var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
+                    NewCollection(Path.GetFileName(origDataFile), thisId);
+                    Status("Loading spectra file...", thisId);
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+
+                    Status("Getting ms2 scans...", thisId);
+                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+                    Status("Starting search...", thisId);
+                    MetaMorpheusEngineResults searchResults;
+                    if (SearchType == SearchType.Classic)
+                        searchResults = (new ClassicSearchEngine(arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinListSubset, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run());
+                    else if (SearchType == SearchType.NonSpecific)
+                        searchResults = (new NonSpecificEnzymeEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run());
+                    else//if(SearchType==SearchType.Modern)
+                        searchResults = (new ModernSearchEngine(arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
+
+                    myFileManager.DoneWithFile(origDataFile);
+
+                    lock (lock2)
+                    {
+                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
+                            allPsms[searchModeIndex].AddRange(globalPsms[searchModeIndex]);
+                    }
+                    ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                    completedFiles++;
+                    ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+                }
+                );
             }
-            );
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
             // Group and order psms

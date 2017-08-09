@@ -168,7 +168,7 @@ namespace EngineLayer.ClassicSearch
                     }
                 }
             });
-            return new SearchResults(outerPsms, this);
+            return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods
