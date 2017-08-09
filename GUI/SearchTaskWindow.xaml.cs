@@ -270,30 +270,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (TheTask.SearchType == SearchType.NonSpecific)
-            {
-                if ((TheTask.BIons || TheTask.CIons) && (TheTask.YIons || TheTask.ZdotIons)) //NonSpecific does not expect multipe terminus types
-                {
-                    string ionsChosen = "";
-                    if (TheTask.BIons)
-                        ionsChosen += "B, ";
-                    if (TheTask.CIons)
-                        ionsChosen += "C, ";
-                    if (TheTask.YIons)
-                        ionsChosen += "Y, ";
-                    if (TheTask.ZdotIons)
-                        ionsChosen += "Zdot, ";
-                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
-                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
-                    return;
-                }
-                if (TheTask.Protease.Name.Equals("singleC") && (TheTask.BIons || TheTask.CIons))
-                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
-                else if (TheTask.Protease.Name.Equals("singleN") && (TheTask.YIons || TheTask.ZdotIons))
-                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
-                else if(!TheTask.Protease.Name.Contains("single"))
-                    MessageBox.Show("Warning: A 'single' type protease not assigned for a non-specific search");
-            }
             if (classicSearchRadioButton.IsChecked.Value)
                 TheTask.SearchType = SearchType.Classic;
             else if (modernSearchRadioButton.IsChecked.Value)
@@ -358,6 +334,33 @@ namespace MetaMorpheusGUI
             TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 TheTask.MaxDegreeOfParallelism = jsakdf;
+
+            if (TheTask.SearchType == SearchType.NonSpecific)
+            {
+                if ((TheTask.BIons || TheTask.CIons) && (TheTask.YIons || TheTask.ZdotIons)) //NonSpecific does not expect multipe terminus types
+                {
+                    string ionsChosen = "";
+                    if (TheTask.BIons)
+                        ionsChosen += "B, ";
+                    if (TheTask.CIons)
+                        ionsChosen += "C, ";
+                    if (TheTask.YIons)
+                        ionsChosen += "Y, ";
+                    if (TheTask.ZdotIons)
+                        ionsChosen += "Zdot, ";
+                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
+                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
+                    return;
+                }
+                if (TheTask.Protease.Name.Equals("singleC") && (TheTask.BIons || TheTask.CIons))
+                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
+                else if (TheTask.Protease.Name.Equals("singleN") && (TheTask.YIons || TheTask.ZdotIons))
+                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
+                else if (!TheTask.Protease.Name.Contains("single"))
+                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
+                else if (!TheTask.AddCompIons)
+                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+            }
 
             DialogResult = true;
         }
