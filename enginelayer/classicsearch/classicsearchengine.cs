@@ -104,7 +104,7 @@ namespace EngineLayer.ClassicSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide(TerminusType.None);
+                            var correspondingCompactPeptide = yyy.CompactPeptide(ProductTypeToTerminusType.IdentifyTerminusType(lp));
                             if (!conserveMemory)
                             {
                                 var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);

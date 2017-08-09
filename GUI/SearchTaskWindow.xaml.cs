@@ -148,7 +148,6 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchType == SearchType.NonSpecific;
-            nonSpecificSearchRadioButton.IsChecked = task.TerminusType != TerminusType.None;
             NTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.N;
             CTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.C;
             checkBoxParsimony.IsChecked = task.DoParsimony;
