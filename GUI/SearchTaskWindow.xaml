@@ -63,8 +63,6 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" />
-                                        <RadioButton x:Name="NTerminusCheckBox" Content="N-Terminus" GroupName="TerminusType" IsEnabled="{Binding IsChecked, ElementName=nonSpecificSearchRadioButton}" />
-                                        <RadioButton x:Name="CTerminusCheckBox" Content="C-Terminus" GroupName="TerminusType" IsEnabled="{Binding IsChecked, ElementName=nonSpecificSearchRadioButton}" />
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
