@@ -82,7 +82,7 @@ namespace Test
             // creates peptide list
             for (int i = 0; i < peptideList.Count; i++)
             {
-                peptides[i] = new CompactPeptide(peptideList.ElementAt(i));
+                peptides[i] = new CompactPeptide(peptideList.ElementAt(i), TerminusType.None);
             }
 
             // creates protein list
@@ -371,25 +371,25 @@ namespace Test
 
             PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide1 = new CompactPeptide(value.First());
+            CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
             Assert.AreEqual("QQQ", value.First().Sequence);
 
             PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First());
+            CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
             Assert.AreEqual("MNNNSK", value2.First().Sequence);
             HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
 
-            CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last());
+            CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last(), TerminusType.None);
             Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
 
             PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First());
+            CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNSK", value3.First().Sequence);
             HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
 
-            CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last());
+            CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last(), TerminusType.None);
             Assert.AreEqual("NNNS[HaHa:resMod]K", value3mod.Last().Sequence);
 
             var peptideList = new HashSet<PeptideWithSetModifications>();

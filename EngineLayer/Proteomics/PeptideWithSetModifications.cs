@@ -57,7 +57,7 @@ namespace EngineLayer
 
         public CompactPeptide CompactPeptide(TerminusType terminusType)
         {
-            if (compactPeptide == null)
+            if (compactPeptide==null)
             {
                 compactPeptide = new CompactPeptide(this, terminusType);
             }

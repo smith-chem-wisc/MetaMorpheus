@@ -2,7 +2,7 @@
 
 namespace EngineLayer
 {
-    static class ProductTypeToTerminusType
+    public static class ProductTypeToTerminusType
     {
         public static TerminusType IdentifyTerminusType(List<ProductType> lp)
         {

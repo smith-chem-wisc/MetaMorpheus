@@ -227,10 +227,10 @@ namespace Test
             var pep3list = pepWithPossibleModifications3.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide).ToList();
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
 
-            CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1);
-            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2);
+            CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1, TerminusType.None);
+            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2, TerminusType.None);
             Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
-            CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3);
+            CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3, TerminusType.None);
 
             List<Psm>[] newPsms = new List<Psm>[1];
             string fullFilePath = null;
@@ -259,7 +259,7 @@ namespace Test
 
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
 
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, massDiffAcceptors, protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, variableModifications, maximumVariableModificationIsoforms, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, massDiffAcceptors, protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, variableModifications, maximumVariableModificationIsoforms, new List<string>(), TerminusType.None);
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
 
