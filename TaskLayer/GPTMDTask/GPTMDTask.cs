@@ -181,7 +181,7 @@ namespace TaskLayer
                 Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
                 for (int aede = 0; aede < searchModes.Count; aede++)
                     allPsmsArray[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                var searchResults = new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff).Run();
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff).Run();
                 lock (lock2)
                 {
                     allPsms[0].AddRange(allPsmsArray[0]);

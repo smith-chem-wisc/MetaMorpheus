@@ -270,7 +270,7 @@ namespace TaskLayer
                     Status("Starting search...", thisId);
                     MetaMorpheusEngineResults searchResults;
                     if (SearchType == SearchType.Classic)
-                        searchResults = (new ClassicSearchEngine(globalPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinListSubset, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run());
+                        new ClassicSearchEngine(globalPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinListSubset, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run();
                     else if (SearchType == SearchType.NonSpecific)
                         searchResults = (new NonSpecificEnzymeEngine(globalPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run());
                     else//if(SearchType==SearchType.Modern)
