@@ -15,7 +15,6 @@ namespace EngineLayer
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
         private readonly bool addCompIons;
-        private readonly TerminusType terminusType;
 
         #endregion Private Fields
 
@@ -28,7 +27,6 @@ namespace EngineLayer
             this.myMsDataFile = myMsDataFile;
             this.fragmentTolerance = fragmentTolerance;
             this.addCompIons = addCompIons;
-            terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
         }
 
         #endregion Public Constructors
@@ -37,6 +35,7 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             foreach (var ok in allResultingIdentifications)
             {
                 var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();

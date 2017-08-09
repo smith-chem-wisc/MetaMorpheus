@@ -26,7 +26,6 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> variableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<ProductType> lp;
-        private readonly TerminusType terminusType;
 
         #endregion Private Fields
 
@@ -44,7 +43,6 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
-            this.terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
         }
 
         #endregion Public Constructors
@@ -80,6 +78,7 @@ namespace EngineLayer.Indexing
             var observed_sequences = new HashSet<CompactPeptide>();
             int proteinsSeen = 0;
             int old_progress = 0;
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);
