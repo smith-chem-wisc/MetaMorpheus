@@ -12,11 +12,11 @@ namespace EngineLayer
 
         public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications, TerminusType terminusType)
         {
-            double theMass = 0;
             NTerminalMasses = null;
             CTerminalMasses = null;
             if (terminusType==TerminusType.None || terminusType == TerminusType.N)
             {
+                double theMass = 0;
                 if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                     foreach (double nl in pep_n_term_variable_mod.neutralLosses)
                         theMass = pep_n_term_variable_mod.monoisotopicMass - nl;
@@ -26,7 +26,7 @@ namespace EngineLayer
             }
             if (terminusType == TerminusType.None || terminusType == TerminusType.C)
             {
-                theMass = 0;
+                double theMass = 0;
                 if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(peptideWithSetModifications.Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                     foreach (double nl in pep_c_term_variable_mod.neutralLosses)
                         theMass = pep_c_term_variable_mod.monoisotopicMass - nl;

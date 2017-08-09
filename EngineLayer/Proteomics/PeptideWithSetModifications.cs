@@ -24,7 +24,7 @@ namespace EngineLayer
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-        private Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
+        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private double? monoisotopicMass;
 
         #endregion Private Fields

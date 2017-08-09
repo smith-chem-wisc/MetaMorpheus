@@ -100,14 +100,14 @@ namespace EngineLayer
             var cp = obj as CompactPeptideBase;
             if (cp == null)
                 return false;
-            if (CTerminalMasses == null || cp.CTerminalMasses == null)
+            if (CTerminalMasses == null && cp.CTerminalMasses == null) //still not sure if it's || or &&
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
                     && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
-            else if (NTerminalMasses == null || cp.NTerminalMasses == null)
+            else if (NTerminalMasses == null && cp.NTerminalMasses == null)
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
