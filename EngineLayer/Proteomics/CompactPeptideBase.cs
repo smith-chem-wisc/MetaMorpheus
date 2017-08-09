@@ -57,39 +57,41 @@ namespace EngineLayer
             double[] massesToReturn = new double[massLen];
 
             int i = 0;
-            for (int j = 0; j < NTerminalMasses.Length; j++)
-            {
-                var hm = NTerminalMasses[j];
-                if (containsBnoB1 && j > 0)
+            if (NTerminalMasses != null)
+                for (int j = 0; j < NTerminalMasses.Length; j++)
                 {
-                    massesToReturn[i] = hm;
-                    i++;
+                    var hm = NTerminalMasses[j];
+                    if (containsBnoB1 && j > 0)
+                    {
+                        massesToReturn[i] = hm;
+                        i++;
+                    }
+                    if (containsB)
+                    {
+                        massesToReturn[i] = hm;
+                        i++;
+                    }
+                    if (containsC)
+                    {
+                        massesToReturn[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
+                        i++;
+                    }
                 }
-                if (containsB)
+            if (CTerminalMasses != null)
+                for (int j = 0; j < CTerminalMasses.Length; j++)
                 {
-                    massesToReturn[i] = hm;
-                    i++;
+                    var hm = CTerminalMasses[j];
+                    if (containsY)
+                    {
+                        massesToReturn[i] = hm + waterMonoisotopicMass;
+                        i++;
+                    }
+                    if (containsZdot)
+                    {
+                        massesToReturn[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
+                        i++;
+                    }
                 }
-                if (containsC)
-                {
-                    massesToReturn[i] = hm + nitrogenAtomMonoisotopicMass + 3 * hydrogenAtomMonoisotopicMass;
-                    i++;
-                }
-            }
-            for (int j = 0; j < CTerminalMasses.Length; j++)
-            {
-                var hm = CTerminalMasses[j];
-                if (containsY)
-                {
-                    massesToReturn[i] = hm + waterMonoisotopicMass;
-                    i++;
-                }
-                if (containsZdot)
-                {
-                    massesToReturn[i] = hm + oxygenAtomMonoisotopicMass - nitrogenAtomMonoisotopicMass;
-                    i++;
-                }
-            }
             return massesToReturn;
         }
 
@@ -98,14 +100,14 @@ namespace EngineLayer
             var cp = obj as CompactPeptideBase;
             if (cp == null)
                 return false;
-            if (CTerminalMasses.Count() == 1 || cp.CTerminalMasses.Count() == 1)
+            if (CTerminalMasses == null || cp.CTerminalMasses == null)
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
                     && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
-            else if (NTerminalMasses.Count() == 1 || cp.NTerminalMasses.Count() == 1)
+            else if (NTerminalMasses == null || cp.NTerminalMasses == null)
             {
                 return (
                     ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
@@ -127,7 +129,7 @@ namespace EngineLayer
             unchecked
             {
                 var result = 0;
-                if (CTerminalMasses.Count() == 1)
+                if (CTerminalMasses == null)
                 {
                     foreach (double b in NTerminalMasses)
                         result = (result * 31) ^ b.GetHashCode();

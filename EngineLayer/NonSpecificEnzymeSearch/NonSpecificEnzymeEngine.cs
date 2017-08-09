@@ -241,6 +241,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
+                //if the theoretical and experimental have the same mass
+                if (peptide.NTerminalMasses.Count() > localminPeptideLength)
+                {
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                    {
+                        return totalMass;
+                    }
+                }
             }
             else//if (terminusType==TerminusType.C)
             {
@@ -252,14 +261,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
-            }
-            //if the theoretical and experimental have the same mass
-            if (peptide.NTerminalMasses.Count() > localminPeptideLength)
-            {
-                double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
-                if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                //if the theoretical and experimental have the same mass
+                if (peptide.CTerminalMasses.Count() > localminPeptideLength)
                 {
-                    return totalMass;
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                    {
+                        return totalMass;
+                    }
                 }
             }
             return 0;

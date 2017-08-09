@@ -13,8 +13,8 @@ namespace EngineLayer
         public CompactPeptide(PeptideWithSetModifications peptideWithSetModifications, TerminusType terminusType)
         {
             double theMass = 0;
-            NTerminalMasses = new double[1];
-            CTerminalMasses = new double[1];
+            NTerminalMasses = null;
+            CTerminalMasses = null;
             if (terminusType==TerminusType.None || terminusType == TerminusType.N)
             {
                 if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
