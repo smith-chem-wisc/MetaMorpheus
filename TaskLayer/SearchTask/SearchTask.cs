@@ -236,7 +236,6 @@ namespace TaskLayer
 
                             if (pathToFolderWithIndices == null)
                             {
-
                                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                                 Status("Writing params...", new List<string> { taskId });
                                 WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
@@ -272,11 +271,10 @@ namespace TaskLayer
                         #endregion Generate indices for modern search               
 
                         Status("Searching files...", taskId);
-                        MetaMorpheusEngineResults searchResults;
                         if (SearchType == SearchType.NonSpecific)
-                            searchResults = (new NonSpecificEnzymeEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run());
+                            new NonSpecificEnzymeEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run();
                         else//if(SearchType==SearchType.Modern)
-                            searchResults = (new ModernSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
+                            new ModernSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run();
 
                         lock (psmLock)
                         {

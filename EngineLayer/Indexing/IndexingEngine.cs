@@ -44,7 +44,7 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
-            this.partition = new int[2] { currentPartition+1, totalPartitions };
+            this.partition = new int[] { currentPartition+1, totalPartitions };
         }
 
         #endregion Public Constructors
