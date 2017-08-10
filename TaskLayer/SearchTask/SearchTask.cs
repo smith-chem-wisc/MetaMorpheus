@@ -195,13 +195,16 @@ namespace TaskLayer
                 parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
 
-            Psm[][] localPsms = new Psm[MassDiffAcceptors.Count()][];
-            List<CompactPeptide> peptideIndex = null;
+            int completedFiles = 0;
+            object indexLock = new object();
+            object psmLock = new object();
 
             Status("Searching files...", taskId);
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
+                Psm[][] fileSpecificPsms = new Psm[MassDiffAcceptors.Count()][];
+                List<CompactPeptide> peptideIndex = null;
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -211,11 +214,7 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
-                    localPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
-
-                double completedFiles = 0;
-                object indexLock = new object();
-                object psmLock = new object();
+                    fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                 if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
                 {
@@ -272,14 +271,14 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run();
 
                         lock (psmLock)
                         {
                             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                                allPsms[searchModeIndex].AddRange(localPsms[searchModeIndex]);
+                                allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
                         }
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (databaseSearchNumber + 1) + "/" + NumberOfDatabaseSearches + "!", thisId));
                     }
@@ -287,22 +286,22 @@ namespace TaskLayer
                 else //If classic search
                 {
                     for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
-                        localPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
+                        fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
                     lock (psmLock)
                     {
                         for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                            allPsms[searchModeIndex].AddRange(localPsms[searchModeIndex]);
+                            allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
                     }
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
                 completedFiles++;
-                ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+                ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             });
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
@@ -657,7 +656,7 @@ namespace TaskLayer
             return folder;
         }
 
-        private void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName, string taskId)//, int databasePartition, int NumberOfDatabasePartitions)
+        private void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName, string taskId)
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {

@@ -363,9 +363,12 @@ namespace MetaMorpheusGUI
                 else if (!TheTask.AddCompIons)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
             }
+            if (TheTask.NumberOfDatabaseSearches == 0)
+            {
+                MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
+                return;
+            }
 
-            if(TheTask.NumberOfDatabaseSearches<1)
-                MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
 
             DialogResult = true;
         }
@@ -397,6 +400,30 @@ namespace MetaMorpheusGUI
             //    + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
             dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
+        }
+
+        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !TextBoxTextAllowed(e.Text);
+        }
+
+        private void textBoxValue_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(String)))
+            {
+                String Text1 = (String)e.DataObject.GetData(typeof(String));
+                if (!TextBoxTextAllowed(Text1)) e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+
+        private Boolean TextBoxTextAllowed(String Text2)
+        {
+            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
         #endregion Private Methods
