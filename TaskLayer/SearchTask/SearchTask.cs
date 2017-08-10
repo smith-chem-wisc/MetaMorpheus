@@ -198,26 +198,27 @@ namespace TaskLayer
             Psm[][] localPsms = new Psm[MassDiffAcceptors.Count()][];
             List<CompactPeptide> peptideIndex = null;
 
-            if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
+            Status("Searching files...", taskId);
+            Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
-                Status("Searching files...", taskId);
+                var origDataFile = currentRawFileList[spectraFileIndex];
+
+                var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
+                NewCollection(Path.GetFileName(origDataFile), thisId);
+                Status("Loading spectra file...", thisId);
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                Status("Getting ms2 scans...", thisId);
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
+                for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
+                    localPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
+
+                double completedFiles = 0;
                 object indexLock = new object();
                 object psmLock = new object();
-                double completedFiles = 0;
-                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+
+                if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
                 {
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-
-                    var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
-                    NewCollection(Path.GetFileName(origDataFile), thisId);
-                    Status("Loading spectra file...", thisId);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-                    Status("Getting ms2 scans...", thisId);
-                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
-                    for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
-                        localPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
-
                     for (int databaseSearchNumber = 0; databaseSearchNumber < NumberOfDatabaseSearches; databaseSearchNumber++)
                     {
                         List<Protein> proteinListSubset = proteinList.GetRange(databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches, ((databaseSearchNumber + 1) * proteinList.Count() / NumberOfDatabaseSearches) - (databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches));
@@ -276,7 +277,7 @@ namespace TaskLayer
                         else//if(SearchType==SearchType.Modern)
                             searchResults = (new ModernSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
 
-                    //    myFileManager.DoneWithFile(origDataFile);
+                        //    myFileManager.DoneWithFile(origDataFile);
 
                         lock (psmLock)
                         {
@@ -287,25 +288,9 @@ namespace TaskLayer
                         completedFiles++;
                         ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count * NumberOfDatabaseSearches, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                     }
-                });
-            }
-            else //If classic search
-            {
-                object lock2 = new object();
-                Status("Searching files...", taskId);
-                double completedFiles = 0;
-                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                }
+                else //If classic search
                 {
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-
-                    var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
-                    NewCollection(Path.GetFileName(origDataFile), thisId);
-                    Status("Loading spectra file...", thisId);
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-
-                    Status("Getting ms2 scans...", thisId);
-                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
                     for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
                         localPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
@@ -314,7 +299,7 @@ namespace TaskLayer
 
                     myFileManager.DoneWithFile(origDataFile);
 
-                    lock (lock2)
+                    lock (psmLock)
                     {
                         for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                             allPsms[searchModeIndex].AddRange(localPsms[searchModeIndex]);
@@ -323,8 +308,8 @@ namespace TaskLayer
                     completedFiles++;
                     ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                 }
-                );
-            }
+            });
+
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
             // Group and order psms
