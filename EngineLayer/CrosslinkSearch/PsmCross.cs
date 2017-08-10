@@ -396,7 +396,7 @@ namespace EngineLayer.CrosslinkSearch
                 int Charge2IonExist = 0;
                 for (int i = 0; i < psmCross.matchedIonInfo.MatchedIonName.Length; i++)
                 {
-                    if (psmCross.matchedIonInfo.MatchedIonName[i] != null && psmCross.matchedIonInfo.MatchedIonName[i].Contains("2"))
+                    if (psmCross.matchedIonInfo.MatchedIonName[i] != null && (psmCross.matchedIonInfo.MatchedIonName[i].Contains("t2") || psmCross.matchedIonInfo.MatchedIonName[i].Contains("t3")))
                     {
                         Charge2IonExist++;
                     }
