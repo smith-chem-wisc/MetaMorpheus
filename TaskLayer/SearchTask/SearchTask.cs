@@ -54,7 +54,7 @@ namespace TaskLayer
             ZdotIons = false;
             CIons = false;
             FlashLfqEngine = new FlashLFQEngine();
-            totalPartitions = 1;
+            TotalPartitions = 1;
             LocalizeAll = true;
             DoLocalizationAnalysis = true;
 
@@ -98,7 +98,7 @@ namespace TaskLayer
 
         public int MaxModificationIsoforms { get; set; }
 
-        public int totalPartitions { get; set; }
+        public int TotalPartitions { get; set; }
         public Protease Protease { get; set; }
 
         public bool AddCompIons { get; set; }
@@ -218,16 +218,16 @@ namespace TaskLayer
 
                 if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
                 {
-                    for (int currentPartition = 0; currentPartition < totalPartitions; currentPartition++)
+                    for (int currentPartition = 0; currentPartition < TotalPartitions; currentPartition++)
                     {
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / totalPartitions, ((currentPartition + 1) * proteinList.Count() / totalPartitions) - (currentPartition * proteinList.Count() / totalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / TotalPartitions, ((currentPartition + 1) * proteinList.Count() / TotalPartitions) - (currentPartition * proteinList.Count() / TotalPartitions));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, currentPartition, totalPartitions);
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, currentPartition, TotalPartitions);
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
@@ -271,16 +271,16 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, totalPartitions).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, totalPartitions).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions).Run();
 
                         lock (psmLock)
                         {
                             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                                 allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
                         }
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + totalPartitions + "!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + TotalPartitions + "!", thisId));
                     }
                 }
                 else //If classic search

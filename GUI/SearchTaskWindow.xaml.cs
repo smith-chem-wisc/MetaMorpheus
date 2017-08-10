@@ -171,7 +171,7 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
-            numberOfDatabaseSearchesTextBox.Text = task.totalPartitions.ToString(CultureInfo.InvariantCulture);
+            numberOfDatabaseSearchesTextBox.Text = task.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
@@ -302,7 +302,7 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
-            TheTask.totalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
 
             TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
@@ -363,7 +363,7 @@ namespace MetaMorpheusGUI
                 else if (!TheTask.AddCompIons)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
             }
-            if (TheTask.totalPartitions == 0)
+            if (TheTask.TotalPartitions == 0)
             {
                 MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
                 return;
@@ -402,7 +402,7 @@ namespace MetaMorpheusGUI
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
 
-        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        private static void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !TextBoxTextAllowed(e.Text);
         }
@@ -420,7 +420,7 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private Boolean TextBoxTextAllowed(String Text2)
+        private static Boolean TextBoxTextAllowed(String Text2)
         {
             return Array.TrueForAll<Char>(Text2.ToCharArray(),
                 delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
