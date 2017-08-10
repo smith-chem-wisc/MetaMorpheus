@@ -18,8 +18,8 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("File Name\tScan Numer\tPrecusor MZ\tPrecusor charge\tPrecusor mass" +
-                    "\tPep1\tPep1 Protein Access\tPep1 Base sequence\tPep1 Full sequence(crosslink site)\tPep1 mass\tPep1 Score\tPep1 XLBestScore\tPep1 topPos" +
-                    "\tPep2\tPep2 Protein Access\tPep2 Base sequence\tPep2 Full sequence(crosslink site)\tPep2 mass\tPep2 Score\tPep2 XLBestScore\tPep2 topPos" +
+                    "\tPep1\tPep1 Protein Access(Protein link site)\tPep1 Base sequence(crosslink site)\tPep1 Full sequence\tPep1 mass\tPep1 Score\tPep1 XLBestScore\tPep1 topPos" +
+                    "\tPep2\tPep2 Protein Access(Protein link site)\tPep2 Base sequence(crosslink site)\tPep2 Full sequence\tPep2 mass\tPep2 Score\tPep2 XLBestScore\tPep2 topPos" +
                     "\tTotalScore\tMass diff\tQValue\tParentIons\tCharge2Number\tLabel");
                 foreach (var item in items)
                 {
@@ -36,8 +36,9 @@ namespace TaskLayer
                         + "\t" + item.Item1.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item1.BaseSequence
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                               + "(" + (item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.Item1.xlpos - 1).ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item1.BaseSequence + "(" + item.Item1.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence 
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.XLBestScore.ToString(CultureInfo.InvariantCulture)
@@ -45,8 +46,9 @@ namespace TaskLayer
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
                         + "\t"
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
-                        + "\t" + item.Item2.BaseSequence
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                               + "(" + (item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().OneBasedStartResidueInProtein + item.Item2.xlpos - 1).ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item2.BaseSequence + "(" + item.Item2.xlpos.ToString(CultureInfo.InvariantCulture) + ")"
+                        + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence 
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.XLBestScore.ToString(CultureInfo.InvariantCulture)
