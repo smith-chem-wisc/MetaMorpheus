@@ -416,7 +416,7 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
                 var psmsBelowOnePercentFdr = allPsms.SelectMany(v => v).Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy);
-                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.BaseSequence != null))
+                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.FullSequence != null))
                     FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.MostProbableProteinInfo.PeptideMonoisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.MostProbableProteinInfo.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
 
                 FlashLfqEngine.ConstructBinsFromIdentifications();
@@ -431,10 +431,7 @@ namespace TaskLayer
                     GC.Collect();
                     ReportProgress(new ProgressEventArgs(100, "Done quantifying!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
                 });
-
-                if (FlashLfqEngine.mbr)
-                    FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
-
+                
                 // assign quantities to PSMs
                 Dictionary<string, List<Psm>> baseseqToPsm = new Dictionary<string, List<Psm>>();
                 List<Psm> list;
@@ -563,6 +560,9 @@ namespace TaskLayer
 
                     var summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");
                     WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+
+                    summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "FullSequence");
+                    WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
                 }
             }
 
