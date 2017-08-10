@@ -25,6 +25,7 @@ namespace Test
                 DoHistogramAnalysis = true,
                 MassDiffAcceptors = massDiffAcceptors,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                SearchTarget = true,
                 SearchDecoy = false,
                 DoParsimony = true,
                 DoQuantification = true

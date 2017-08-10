@@ -21,13 +21,13 @@ namespace EngineLayer.ModernSearch
         protected readonly List<MassDiffAcceptor> searchModes;
         protected readonly bool addCompIons;
         protected readonly List<ProductType> lp;
+        protected readonly double scoreCutoff;
 
         #endregion Protected Fields
 
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
-        private readonly double scoreCutoff;
 
         #endregion Private Fields
 
@@ -85,28 +85,42 @@ namespace EngineLayer.ModernSearch
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
                         var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                        CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                        for (int j = 0; j < searchModesCount; j++)
+                        if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                         {
-                            // Check if makes sense to add due to peptidescore!
-                            var searchMode = searchModes[j];
-                            double currentBestScore = bestScores[j];
-                            if (currentBestScore > 1)
+                            CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
+                            for (int j = 0; j < searchModesCount; j++)
                             {
-                                // Existed! Need to compare with old match
-                                if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                // Check if makes sense to add due to peptidescore!
+                                var searchMode = searchModes[j];
+                                double currentBestScore = bestScores[j];
+                                if (currentBestScore > 1)
                                 {
-                                    // Score is same, need to see if accepts and if prefer the new one
-                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0)
+                                    // Existed! Need to compare with old match
+                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                     {
-                                        bestPeptides[j].Add(candidatePeptide);
-                                        bestNotches[j].Add(notch);
+                                        // Score is same, need to see if accepts and if prefer the new one
+                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                        if (notch >= 0)
+                                        {
+                                            bestPeptides[j].Add(candidatePeptide);
+                                            bestNotches[j].Add(notch);
+                                        }
+                                    }
+                                    else if (currentBestScore < consideredScore)
+                                    {
+                                        // Score is better, only make sure it is acceptable
+                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                        if (notch >= 0)
+                                        {
+                                            bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
+                                            bestScores[j] = consideredScore;
+                                            bestNotches[j] = new List<int> { notch };
+                                        }
                                     }
                                 }
-                                else if (currentBestScore < consideredScore)
+                                // Did not exist! Only make sure that it is acceptable
+                                else
                                 {
-                                    // Score is better, only make sure it is acceptable
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
@@ -116,22 +130,11 @@ namespace EngineLayer.ModernSearch
                                     }
                                 }
                             }
-                            // Did not exist! Only make sure that it is acceptable
-                            else
-                            {
-                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                if (notch >= 0)
-                                {
-                                    bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
-                                    bestScores[j] = consideredScore;
-                                    bestNotches[j] = new List<int> { notch };
-                                }
-                            }
                         }
                     }
                     for (int j = 0; j < searchModesCount; j++)
                     {
-                        if (bestPeptides[j] != null && bestScores[j] > scoreCutoff)
+                        if (bestPeptides[j] != null)
                         {
                             newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)

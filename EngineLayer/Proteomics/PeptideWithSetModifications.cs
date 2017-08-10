@@ -24,7 +24,7 @@ namespace EngineLayer
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-        private CompactPeptide compactPeptide;
+        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private double? monoisotopicMass;
 
         #endregion Private Fields
@@ -55,15 +55,17 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public CompactPeptide CompactPeptide
+        public CompactPeptide CompactPeptide(TerminusType terminusType)
         {
-            get
+            if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
             {
-                if (compactPeptide == null)
-                {
-                    compactPeptide = new CompactPeptide(this);
-                }
-                return compactPeptide;
+                return compactPeptide;               
+            }
+            else
+            {
+                CompactPeptide cp = new CompactPeptide(this, terminusType);
+                compactPeptides.Add(terminusType, cp);
+                return cp;
             }
         }
 
