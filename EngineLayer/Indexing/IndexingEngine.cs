@@ -26,7 +26,8 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> variableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<ProductType> lp;
-        private readonly int[] partition;
+        private readonly int currentPartition;
+        private readonly int totalPartitions;
 
         #endregion Private Fields
 
@@ -44,7 +45,8 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
-            this.partition = new int[] { currentPartition+1, totalPartitions };
+            this.currentPartition = currentPartition+1;
+            this.totalPartitions = totalPartitions;
         }
 
         #endregion Public Constructors
@@ -54,7 +56,7 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Partitions: " + partition[0] + "/" + partition[1]);
+            sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);

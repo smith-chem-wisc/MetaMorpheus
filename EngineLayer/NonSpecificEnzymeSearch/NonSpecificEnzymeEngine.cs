@@ -25,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore)
+        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -38,7 +38,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine...", nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
             bool classicAntigens = false;
             double precursorToleranceDouble = 5;//default 5ppm
             int openSearchIndex = 0;
@@ -212,7 +212,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"+currentPartition+"/"+totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }

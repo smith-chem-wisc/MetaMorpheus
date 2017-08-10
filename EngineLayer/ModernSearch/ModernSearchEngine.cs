@@ -23,6 +23,8 @@ namespace EngineLayer.ModernSearch
         protected readonly bool addCompIons;
         protected readonly List<ProductType> lp;
         protected readonly double scoreCutoff;
+        protected readonly int currentPartition;
+        protected readonly int totalPartitions;
 
         #endregion Protected Fields
 
@@ -34,7 +36,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -46,6 +48,8 @@ namespace EngineLayer.ModernSearch
             this.addCompIons = addCompIons;
             this.lp = lp;
             this.scoreCutoff = scoreCutoff;
+            this.currentPartition = currentPartition + 1;
+            this.totalPartitions = totalPartitions;
         }
 
         #endregion Public Constructors
@@ -54,7 +58,7 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine...", nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
@@ -149,7 +153,7 @@ namespace EngineLayer.ModernSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop" + currentPartition + "/" + totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
