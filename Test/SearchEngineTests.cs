@@ -53,7 +53,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.None).Run();
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -98,7 +98,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.None).Run();
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -163,7 +163,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.None).Run();
 
             foreach (var huh in searchResults.Psms[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -215,7 +215,7 @@ namespace Test
             Assert.IsTrue(searchResults.Psms[0][0].Score > 1);
             Assert.AreEqual(2, searchResults.Psms[0][0].ScanNumber);
 
-            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>()).Run();
+            new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { searchResults.Psms[0][0] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.None).Run();
 
             Assert.AreEqual(3, searchResults.Psms[0][0].NumDifferentCompactPeptides);
         }
@@ -264,7 +264,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new NonSpecificEnzymeEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.B }, protease, 5, TerminusType.N);
+            var engine = new NonSpecificEnzymeEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.B }, protease, 5, TerminusType.N, 1);
             var searchResults = (SearchResults)engine.Run();
 
             // Single search mode
@@ -329,7 +329,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new NonSpecificEnzymeEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.Y }, protease, 5, TerminusType.C);
+            var engine = new NonSpecificEnzymeEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.Y }, protease, 5, TerminusType.C, 1);
             var searchResults = (SearchResults)engine.Run();
 
             // Single search mode

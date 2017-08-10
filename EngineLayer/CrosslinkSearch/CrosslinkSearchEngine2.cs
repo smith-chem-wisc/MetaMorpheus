@@ -464,7 +464,7 @@ namespace EngineLayer.CrosslinkSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var correspondingCompactPeptide = yyy.CompactPeptide(ProductTypeToTerminusType.IdentifyTerminusType(lp));
                             if (!conserveMemory)
                             {
                                 var observed = observed_sequences.Contains(correspondingCompactPeptide);

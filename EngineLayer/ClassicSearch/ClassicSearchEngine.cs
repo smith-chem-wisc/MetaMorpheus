@@ -88,7 +88,7 @@ namespace EngineLayer.ClassicSearch
             var lockObject = new object();
             int proteinsSeen = 0;
             int old_progress = 0;
-
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
@@ -104,7 +104,7 @@ namespace EngineLayer.ClassicSearch
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
                             if (!conserveMemory)
                             {
                                 var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);

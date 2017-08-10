@@ -78,6 +78,7 @@ namespace EngineLayer.Indexing
             var observed_sequences = new HashSet<CompactPeptide>();
             int proteinsSeen = 0;
             int old_progress = 0;
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);
@@ -90,7 +91,7 @@ namespace EngineLayer.Indexing
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
                             var observed = observed_sequences.Contains(correspondingCompactPeptide);
                             if (observed)
                                 continue;
@@ -152,5 +153,6 @@ namespace EngineLayer.Indexing
         }
 
         #endregion Protected Methods
+
     }
 }
