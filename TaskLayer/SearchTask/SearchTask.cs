@@ -202,7 +202,6 @@ namespace TaskLayer
             {
                 Status("Searching files...", taskId);
                 object indexLock = new object();
-                object spectraLock = new object();
                 object psmLock = new object();
                 double completedFiles = 0;
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
