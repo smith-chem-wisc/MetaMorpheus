@@ -882,10 +882,10 @@ namespace TaskLayer
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
+                return ProteinDbLoader.LoadProteinFasta(fileName, true, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, true, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected void ReportProgress(ProgressEventArgs v)
