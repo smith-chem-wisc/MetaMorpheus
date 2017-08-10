@@ -229,13 +229,14 @@ namespace TaskLayer
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, databaseSearchNumber, NumberOfDatabaseSearches);
-                        string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
-
                         Dictionary<float, List<int>> fragmentIndexDict;
-                        if (pathToFolderWithIndices == null)
+                        lock (indexLock)
                         {
-                            lock (indexLock)
+                            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+                            if (pathToFolderWithIndices == null)
                             {
+
                                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                                 Status("Writing params...", new List<string> { taskId });
                                 WriteIndexEngineParams(indexEngine, Path.Combine(output_folderForIndices, "indexEngine.params"), taskId);
@@ -250,20 +251,20 @@ namespace TaskLayer
                                 Status("Writing fragment index...", new List<string> { taskId });
                                 WriteFragmentIndexNetSerializer(fragmentIndexDict, Path.Combine(output_folderForIndices, "fragmentIndex.ind"), taskId);
                             }
-                        }
-                        else
-                        {
-                            Status("Reading peptide index...", new List<string> { taskId });
-                            var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
-                            var ser = new NetSerializer.Serializer(messageTypes);
-                            using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
-                                peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
+                            else
+                            {
+                                Status("Reading peptide index...", new List<string> { taskId });
+                                var messageTypes = GetSubclassesAndItself(typeof(List<CompactPeptide>));
+                                var ser = new NetSerializer.Serializer(messageTypes);
+                                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "peptideIndex.ind")))
+                                    peptideIndex = (List<CompactPeptide>)ser.Deserialize(file);
 
-                            Status("Reading fragment index...", new List<string> { taskId });
-                            messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
-                            ser = new NetSerializer.Serializer(messageTypes);
-                            using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
-                                fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                                Status("Reading fragment index...", new List<string> { taskId });
+                                messageTypes = GetSubclassesAndItself(typeof(Dictionary<float, List<int>>));
+                                ser = new NetSerializer.Serializer(messageTypes);
+                                using (var file = File.OpenRead(Path.Combine(pathToFolderWithIndices, "fragmentIndex.ind")))
+                                    fragmentIndexDict = (Dictionary<float, List<int>>)ser.Deserialize(file);
+                            }
                         }
                         keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                         fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
