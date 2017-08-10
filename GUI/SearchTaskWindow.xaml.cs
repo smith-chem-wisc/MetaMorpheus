@@ -364,6 +364,9 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
             }
 
+            if(TheTask.NumberOfDatabaseSearches<1)
+                MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+
             DialogResult = true;
         }
 

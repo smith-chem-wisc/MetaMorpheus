@@ -57,13 +57,13 @@
                                     <StackPanel Grid.Column="0">
                                         <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" />
                                         <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
-                                        <StackPanel Orientation="Horizontal" Margin="1">
-                                            <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox"  Width="45"/>
-                                        </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
+                                        <StackPanel Orientation="Horizontal" Margin="1">
+                                            <Label x:Name="label2" Content="Number of Database Partitions" />
+                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" Width="45"/>
+                                        </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" />

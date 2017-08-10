@@ -230,7 +230,7 @@ namespace TaskLayer
 
                 // Linear calibration
                 {
-                    Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
+                    Psm[][] allPsmsArray = new Psm[1][];
                     for (int aede = 0; aede < searchModes.Count; aede++)
                         allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
 
@@ -289,7 +289,7 @@ namespace TaskLayer
 
                     Status("Getting ms2 scans for second round...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-                    Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
+                    Psm[][] allPsmsArray = new Psm[1][];
                     for (int aede = 0; aede < searchModes.Count; aede++)
                         allPsmsArray[aede] = new Psm[listOfSortedms2ScansTest.Length];
                     var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff);
@@ -342,7 +342,7 @@ namespace TaskLayer
                 if (WriteIntermediateFiles)
                 {
                     var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-                    Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
+                    Psm[][] allPsmsArray = new Psm[1][];
                     for (int aede = 0; aede < searchModes.Count; aede++)
                         allPsmsArray[aede] = new Psm[ms2ScansAfterCalib.Length];
                     new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff).Run();
