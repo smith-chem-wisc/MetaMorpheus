@@ -200,7 +200,9 @@ namespace TaskLayer
 
             if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
             {
+                Status("Searching files...", taskId);
                 object indexLock = new object();
+                object spectraLock = new object();
                 object psmLock = new object();
                 double completedFiles = 0;
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
@@ -211,7 +213,6 @@ namespace TaskLayer
                     NewCollection(Path.GetFileName(origDataFile), thisId);
                     Status("Loading spectra file...", thisId);
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-
                     Status("Getting ms2 scans...", thisId);
                     Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -220,14 +221,14 @@ namespace TaskLayer
 
                     for (int databaseSearchNumber = 0; databaseSearchNumber < NumberOfDatabaseSearches; databaseSearchNumber++)
                     {
-                        List<Protein> proteinListSubset = proteinList.GetRange(databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches, (databaseSearchNumber + 1) * proteinList.Count() / NumberOfDatabaseSearches);
+                        List<Protein> proteinListSubset = proteinList.GetRange(databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches, ((databaseSearchNumber + 1) * proteinList.Count() / NumberOfDatabaseSearches) - (databaseSearchNumber * proteinList.Count() / NumberOfDatabaseSearches));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, databaseSearchNumber, NumberOfDatabaseSearches);
                         string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
                         Dictionary<float, List<int>> fragmentIndexDict;
@@ -276,16 +277,16 @@ namespace TaskLayer
                         else//if(SearchType==SearchType.Modern)
                             searchResults = (new ModernSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
 
-                        myFileManager.DoneWithFile(origDataFile);
+                    //    myFileManager.DoneWithFile(origDataFile);
 
                         lock (psmLock)
                         {
                             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                                 allPsms[searchModeIndex].AddRange(localPsms[searchModeIndex]);
                         }
-                        ReportProgress(new ProgressEventArgs(100, "Done with search "+(databaseSearchNumber+1)+"/"+NumberOfDatabaseSearches+"!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (databaseSearchNumber + 1) + "/" + NumberOfDatabaseSearches + "!", thisId));
                         completedFiles++;
-                        ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count*NumberOfDatabaseSearches, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
+                        ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count * NumberOfDatabaseSearches, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                     }
                 });
             }
@@ -677,7 +678,7 @@ namespace TaskLayer
             return folder;
         }
 
-        private void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName, string taskId)
+        private void WriteIndexEngineParams(IndexingEngine indexEngine, string fileName, string taskId)//, int databasePartition, int NumberOfDatabasePartitions)
         {
             using (StreamWriter output = new StreamWriter(fileName))
             {
