@@ -277,16 +277,12 @@ namespace TaskLayer
                         else//if(SearchType==SearchType.Modern)
                             searchResults = (new ModernSearchEngine(localPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff).Run());
 
-                        //    myFileManager.DoneWithFile(origDataFile);
-
                         lock (psmLock)
                         {
                             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                                 allPsms[searchModeIndex].AddRange(localPsms[searchModeIndex]);
                         }
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (databaseSearchNumber + 1) + "/" + NumberOfDatabaseSearches + "!", thisId));
-                        completedFiles++;
-                        ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count * NumberOfDatabaseSearches, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                     }
                 }
                 else //If classic search
@@ -305,9 +301,9 @@ namespace TaskLayer
                             allPsms[searchModeIndex].AddRange(localPsms[searchModeIndex]);
                     }
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
-                    completedFiles++;
-                    ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
                 }
+                completedFiles++;
+                ReportProgress(new ProgressEventArgs((int)completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             });
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
