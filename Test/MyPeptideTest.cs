@@ -17,7 +17,6 @@ namespace Test
     [TestFixture]
     public class MyPeptideTest
     {
-
         #region Public Methods
 
         [Test]
@@ -33,11 +32,11 @@ namespace Test
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var pep1 = ye[0].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
             var pep2 = ye[1].GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
             Assert.IsTrue(pep2.MonoisotopicMass > 0);
-            foreach (var huh in pep2.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep2.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
         }
 
@@ -45,14 +44,13 @@ namespace Test
         public static void TestIdenticalPeaks()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
             var prot = new Protein("MMMM", null, null, mods);
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
@@ -69,13 +67,12 @@ namespace Test
         public static void TestLastPeaks()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, mods);
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1 };
@@ -92,13 +89,12 @@ namespace Test
         public static void TestVeryCloseExperimentals()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, mods);
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
+            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
@@ -119,7 +115,7 @@ namespace Test
             var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
-            var massArray = thePep.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
+            var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
             double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
@@ -154,12 +150,12 @@ namespace Test
             Assert.AreEqual(2, ye.Count);
             var pep1 = ye[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsTrue(pep1.MonoisotopicMass > 0);
-            foreach (var huh in pep1.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var huh in pep1.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 Assert.IsTrue(huh > 0);
 
             var pep2 = ye[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             Assert.IsNaN(pep2.MonoisotopicMass);
-            var cool = pep2.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y });
+            var cool = pep2.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.Y });
             Assert.IsTrue(cool[0] > 0);
             Assert.IsTrue(double.IsNaN(cool[1]));
             Assert.IsTrue(double.IsNaN(cool[2]));
@@ -173,8 +169,7 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             var ye = prot.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             variableModifications.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             variableModifications.Add(new ModificationWithMassAndCf("pepNmod", null, motif, TerminusLocalization.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             variableModifications.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
@@ -194,8 +189,7 @@ namespace Test
             var prot = new Protein("M", null);
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             List<ModificationWithMass> fixedMods = new List<ModificationWithMass>();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("M", out motif);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             fixedMods.Add(new ModificationWithMassAndCf("ProtNmod", null, motif, TerminusLocalization.NProt, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             fixedMods.Add(new ModificationWithMassAndCf("PepNmod", null, motif, TerminusLocalization.NPep, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
             fixedMods.Add(new ModificationWithMassAndCf("resMod", null, motif, TerminusLocalization.Any, Chemistry.ChemicalFormula.ParseFormula("H"), GetElement(1).PrincipalIsotope.AtomicMass, null, new List<double> { 0 }, null, null));
@@ -215,8 +209,7 @@ namespace Test
         [Test]
         public static void TestDigestIndices()
         {
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("X", out motif);
+            ModificationMotif.TryGetMotif("X", out ModificationMotif motif);
             Modification mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
             {
@@ -239,8 +232,7 @@ namespace Test
         [Test]
         public static void TestDigestDecoy()
         {
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("Abcdefg", out motif);
+            ModificationMotif.TryGetMotif("Abcdefg", out ModificationMotif motif);
             Modification mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, double.NaN, null, new List<double> { double.NaN }, null, null);
             IDictionary<int, List<Modification>> modDict = new Dictionary<int, List<Modification>>
             {
@@ -288,6 +280,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

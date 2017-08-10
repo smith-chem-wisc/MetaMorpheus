@@ -11,7 +11,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 {
     public class NonSpecificEnzymeEngine : ModernSearch.ModernSearchEngine
     {
-
         #region Private Fields
 
         private static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
@@ -26,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp)
+        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -97,7 +96,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -152,7 +151,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -205,7 +204,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                                newPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }
@@ -242,6 +241,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
+                //if the theoretical and experimental have the same mass
+                if (peptide.NTerminalMasses.Count() > localminPeptideLength)
+                {
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                    {
+                        return totalMass;
+                    }
+                }
             }
             else//if (terminusType==TerminusType.C)
             {
@@ -253,14 +261,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
-            }
-            //if the theoretical and experimental have the same mass
-            if (peptide.NTerminalMasses.Count() > localminPeptideLength)
-            {
-                double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
-                if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                //if the theoretical and experimental have the same mass
+                if (peptide.CTerminalMasses.Count() > localminPeptideLength)
                 {
-                    return totalMass;
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                    {
+                        return totalMass;
+                    }
                 }
             }
             return 0;
@@ -349,6 +357,5 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         }
 
         #endregion Private Methods
-
     }
 }

@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngineResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public SequencesToActualProteinPeptidesEngineResults(MetaMorpheusEngine s, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching) : base(s)
@@ -32,6 +31,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

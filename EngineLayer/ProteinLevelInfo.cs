@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class ProteinLinkedInfo
     {
-
         #region Public Constructors
 
         public ProteinLinkedInfo(HashSet<PeptideWithSetModifications> hashSet)
@@ -26,6 +25,5 @@ namespace EngineLayer
         public bool IsDecoy { get; }
 
         #endregion Public Properties
-
     }
 }

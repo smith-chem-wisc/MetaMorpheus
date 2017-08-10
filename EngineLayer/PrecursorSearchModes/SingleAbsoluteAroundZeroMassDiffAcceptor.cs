@@ -6,7 +6,6 @@ namespace EngineLayer
 {
     public class SingleAbsoluteAroundZeroSearchMode : MassDiffAcceptor
     {
-
         #region Private Fields
 
         private readonly double value;
@@ -40,6 +39,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

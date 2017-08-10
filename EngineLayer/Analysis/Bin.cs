@@ -6,7 +6,6 @@ namespace EngineLayer.Analysis
 {
     public class Bin
     {
-
         #region Public Fields
 
         public string UnimodId = "-";
@@ -107,6 +106,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Internal Methods
-
     }
 }

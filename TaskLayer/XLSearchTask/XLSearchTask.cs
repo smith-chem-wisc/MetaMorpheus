@@ -18,11 +18,9 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
-
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
-
         private FlashLFQEngine FlashLfqEngine;
 
         #endregion Private Fields
@@ -135,7 +133,7 @@ namespace TaskLayer
         public char UdXLkerResidue { get; set; }
         public Tolerance XLprecusorMsTl { get; set; }
         public Tolerance XLBetaPrecusorMsTl { get; set; }
-
+        
         #endregion Public Properties
 
         #region Public Methods
@@ -485,6 +483,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

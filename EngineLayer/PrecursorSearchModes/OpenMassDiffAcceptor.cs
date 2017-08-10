@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class OpenSearchMode : MassDiffAcceptor
     {
-
         #region Public Constructors
 
         public OpenSearchMode() : base("OpenSearch")
@@ -32,6 +31,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

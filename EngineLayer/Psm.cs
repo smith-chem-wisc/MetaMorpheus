@@ -12,7 +12,6 @@ namespace EngineLayer
 {
     public class Psm
     {
-
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
@@ -25,7 +24,6 @@ namespace EngineLayer
 
         public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
         {
-            this.Score = score;
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
             this.ScanNumber = scan.TheScan.OneBasedScanNumber;
@@ -36,7 +34,7 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            Add(peptide, notch);
+            AddOrReplace(peptide, score, notch);
         }
 
         #endregion Public Constructors
@@ -251,13 +249,20 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void Replace(CompactPeptide correspondingCompactPeptide, double score, int v)
+        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch)
         {
-            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
+            if (score - Score > 1e-9)
             {
-                { correspondingCompactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(v,null)}
-            };
-            Score = score;
+                compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
+                {
+                    { compactPeptide, new  Tuple<int, HashSet<PeptideWithSetModifications>>(notch,null)}
+                };
+                Score = score;
+            }
+            else if (score - Score > -1e-9)
+            {
+                compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
+            }
         }
 
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
@@ -372,11 +377,6 @@ namespace EngineLayer
             };
         }
 
-        public void Add(CompactPeptideBase compactPeptide, int v)
-        {
-            compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(v, null);
-        }
-
         #endregion Public Methods
 
         #region Internal Methods
@@ -384,7 +384,7 @@ namespace EngineLayer
         internal void Add(Psm psmParent)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                Add(kvp.Key, kvp.Value.Item1);
+                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1);
         }
 
         #endregion Internal Methods
@@ -493,6 +493,5 @@ namespace EngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

@@ -10,7 +10,6 @@ namespace Test
 {
     internal class TestDataFile : MsDataFile<IMzmlScan>
     {
-
         #region Public Constructors
 
         public TestDataFile() : base(2)
@@ -64,7 +63,7 @@ namespace Test
                     additionalMassesArray = new List<double> { 260.08307817722, 397.14199003569, 498.18966850487, 612.23259594625, 683.2697097314, 146.10552769922, 217.14264148437 };
                 else
                     additionalMassesArray = new List<double>();
-                foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Concat(additionalMassesArray))
+                foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }).Concat(additionalMassesArray))
                 {
                     mz2.Add(aok.ToMz(1));
                     mz2.Add((aok + 1.003).ToMz(1));
@@ -87,7 +86,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -111,7 +110,7 @@ namespace Test
 
                 List<double> mz2 = new List<double>();
                 List<double> intensities2 = new List<double>();
-                foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+                foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
                 {
                     var t1 = aok.ToMz(1);
                     var c = 0.0000001;
@@ -145,7 +144,7 @@ namespace Test
 
             List<double> mz2 = new List<double>();
             List<double> intensities2 = new List<double>();
-            foreach (var aok in pepWithSetMods.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
+            foreach (var aok in pepWithSetMods.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y }))
             {
                 mz2.Add(aok.ToMz(1));
                 mz2.Add((aok + 1.003).ToMz(1));
@@ -190,6 +189,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

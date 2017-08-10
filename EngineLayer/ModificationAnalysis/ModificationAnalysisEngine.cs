@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class ModificationAnalysisEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly List<MassDiffAcceptor> searchModes;
@@ -68,6 +67,5 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
-
     }
 }
