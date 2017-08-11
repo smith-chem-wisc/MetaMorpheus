@@ -16,12 +16,15 @@ namespace EngineLayer.ModernSearch
         protected readonly List<int>[] fragmentIndex;
         protected readonly Tolerance fragmentTolerance;
         protected readonly float[] keys;
+        protected readonly Psm[][] globalPsms;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
         protected readonly List<CompactPeptide> peptideIndex;
         protected readonly List<MassDiffAcceptor> searchModes;
         protected readonly bool addCompIons;
         protected readonly List<ProductType> lp;
         protected readonly double scoreCutoff;
+        protected readonly int currentPartition;
+        protected readonly int totalPartitions;
 
         #endregion Protected Fields
 
@@ -33,8 +36,9 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions) : base(nestedIds)
         {
+            this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
@@ -44,6 +48,8 @@ namespace EngineLayer.ModernSearch
             this.addCompIons = addCompIons;
             this.lp = lp;
             this.scoreCutoff = scoreCutoff;
+            this.currentPartition = currentPartition + 1;
+            this.totalPartitions = totalPartitions;
         }
 
         #endregion Public Constructors
@@ -52,12 +58,9 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine...", nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            Psm[][] newPsms = new Psm[searchModes.Count][];
-            for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new Psm[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -136,10 +139,10 @@ namespace EngineLayer.ModernSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
+                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }
@@ -150,12 +153,12 @@ namespace EngineLayer.ModernSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop" + currentPartition + "/" + totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
             });
-            return new SearchResults(newPsms, this);
+            return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods

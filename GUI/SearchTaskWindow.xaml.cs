@@ -171,6 +171,7 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
+            numberOfDatabaseSearchesTextBox.Text = task.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
@@ -270,6 +271,68 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            #region Check Task Validity
+
+            if (nonSpecificSearchRadioButton.IsChecked.Value)
+            {
+                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value)) //NonSpecific does not expect multipe terminus types
+                {
+                    string ionsChosen = "";
+                    if (bCheckBox.IsChecked.Value)
+                        ionsChosen += "B, ";
+                    if (cCheckBox.IsChecked.Value)
+                        ionsChosen += "C, ";
+                    if (yCheckBox.IsChecked.Value)
+                        ionsChosen += "Y, ";
+                    if (zdotCheckBox.IsChecked.Value)
+                        ionsChosen += "Zdot, ";
+                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
+                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
+                    return;
+                }
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
+                else if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
+                else if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("single"))
+                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
+                else if (!addCompIonCheckBox.IsChecked.Value)
+                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+            }
+            if (int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture) == 0)
+            {
+                MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
+                return;
+            }
+            if(missedCleavagesTextBox.Text.Length==0)
+            {
+                MessageBox.Show("The number of missed cleavages was left empty. For no missed cleavages, please enter zero.");
+                return;
+            }
+            if (!double.TryParse(DeconvolutionIntensityRatioTextBox.Text, out double dir) || dir <= 0)
+            {
+                MessageBox.Show("The deconvolution intensity ratio contains unrecognized characters. \n You entered " + '"'+ DeconvolutionIntensityRatioTextBox.Text+'"' + "\n Please enter a positive number.");
+                return;
+            }
+            if (!double.TryParse(DeconvolutionMassToleranceInPpmTextBox.Text, out double dmtip) || dmtip <= 0)
+            {
+                MessageBox.Show("The deconvolution mass tolerance (in ppm) contains unrecognized characters. \n You entered " + '"' + DeconvolutionMassToleranceInPpmTextBox.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+            if (!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)
+            {
+                MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 0)
+            {
+                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+            #endregion Check Task Validity
+
+            #region Save Parameters
+
             if (classicSearchRadioButton.IsChecked.Value)
                 TheTask.SearchType = SearchType.Classic;
             else if (modernSearchRadioButton.IsChecked.Value)
@@ -301,6 +364,7 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            TheTask.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
 
             TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
@@ -335,32 +399,7 @@ namespace MetaMorpheusGUI
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 TheTask.MaxDegreeOfParallelism = jsakdf;
 
-            if (TheTask.SearchType == SearchType.NonSpecific)
-            {
-                if ((TheTask.BIons || TheTask.CIons) && (TheTask.YIons || TheTask.ZdotIons)) //NonSpecific does not expect multipe terminus types
-                {
-                    string ionsChosen = "";
-                    if (TheTask.BIons)
-                        ionsChosen += "B, ";
-                    if (TheTask.CIons)
-                        ionsChosen += "C, ";
-                    if (TheTask.YIons)
-                        ionsChosen += "Y, ";
-                    if (TheTask.ZdotIons)
-                        ionsChosen += "Zdot, ";
-                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
-                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
-                    return;
-                }
-                if (TheTask.Protease.Name.Equals("singleC") && (TheTask.BIons || TheTask.CIons))
-                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
-                else if (TheTask.Protease.Name.Equals("singleN") && (TheTask.YIons || TheTask.ZdotIons))
-                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
-                else if (!TheTask.Protease.Name.Contains("single"))
-                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
-                else if (!TheTask.AddCompIons)
-                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
-            }
+            #endregion Save Parameters
 
             DialogResult = true;
         }
@@ -392,6 +431,31 @@ namespace MetaMorpheusGUI
             //    + string.Join(",", ModFileListInWindow.Where(b => b.Localize).Select(b => b.FileName));
             dataContextForSearchTaskWindow.AnalysisExpanderTitle = "Some analysis properties...";
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
+        }
+
+        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !TextBoxIntAllowed(e.Text);
+        }
+
+        private void textBoxValue_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(typeof(String)))
+            {
+                String Text1 = (String)e.DataObject.GetData(typeof(String));
+                if (!TextBoxIntAllowed(Text1))
+                    e.CancelCommand();
+            }
+            else
+            {
+                e.CancelCommand();
+            }
+        }
+
+        private static Boolean TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
         #endregion Private Methods
