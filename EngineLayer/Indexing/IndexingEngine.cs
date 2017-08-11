@@ -28,12 +28,13 @@ namespace EngineLayer.Indexing
         private readonly List<ProductType> lp;
         private readonly int currentPartition;
         private readonly int totalPartitions;
+        private readonly bool searchDecoys;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, int currentPartition, int totalPartitions) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, int currentPartition, int totalPartitions, bool searchDecoys) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -47,6 +48,7 @@ namespace EngineLayer.Indexing
             this.lp = lp;
             this.currentPartition = currentPartition+1;
             this.totalPartitions = totalPartitions;
+            this.searchDecoys = searchDecoys;
         }
 
         #endregion Public Constructors
@@ -57,6 +59,7 @@ namespace EngineLayer.Indexing
         {
             var sb = new StringBuilder();
             sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Search Decoys: " + searchDecoys);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
