@@ -38,7 +38,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
+            Status("In nonspecific search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
             bool classicAntigens = false;
             double precursorToleranceDouble = 5;//default 5ppm
             int openSearchIndex = 0;
@@ -212,7 +212,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop"+currentPartition+"/"+totalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop"+currentPartition+"/"+totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }

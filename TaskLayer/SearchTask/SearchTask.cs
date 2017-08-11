@@ -204,7 +204,6 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 Psm[][] fileSpecificPsms = new Psm[MassDiffAcceptors.Count()][];
-                List<CompactPeptide> peptideIndex = null;
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -220,6 +219,7 @@ namespace TaskLayer
                 {
                     for (int currentPartition = 0; currentPartition < TotalPartitions; currentPartition++)
                     {
+                        List<CompactPeptide> peptideIndex = null;
                         List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / TotalPartitions, ((currentPartition + 1) * proteinList.Count() / TotalPartitions) - (currentPartition * proteinList.Count() / TotalPartitions));
 
                         float[] keys = null;

@@ -20,7 +20,7 @@
                             <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Intensity Ratio " />
-                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Max Assumed Charge State" />
@@ -28,7 +28,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
                             </StackPanel>
                             <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
@@ -115,7 +115,7 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
-                                            <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="PreviewIfInt" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" />
+                                            <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
@@ -162,7 +162,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
-                                <TextBox x:Name="minScoreAllowed" PreviewTextInput="PreviewIfInt" Width="45" />
+                                <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>
@@ -305,7 +305,7 @@
                                     </StackPanel>
                                     <StackPanel Margin="0" VerticalAlignment="Top"  Grid.Column="1">
                                         <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                        <TextBox x:Name="quantPpmTolerance" PreviewTextInput="PreviewIfInt" Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <TextBox x:Name="quantPpmTolerance" Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)" />
                                             </ToolTipService.ToolTip>
