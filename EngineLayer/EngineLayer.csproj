@@ -108,6 +108,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
+    <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />

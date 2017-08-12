@@ -8,12 +8,12 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Public Constructors
 
-        public CrosslinkSearchResults(List<Tuple<PsmCross, PsmCross>> newPsms, CrosslinkSearchEngine s) : base(s)
+        public CrosslinkSearchResults(List<PsmCross> newPsms, CrosslinkSearchEngine s) : base(s)
         {
             this.NewPsms = newPsms;
         }
 
-        public CrosslinkSearchResults(List<Tuple<PsmCross, PsmCross>> newPsms, CrosslinkSearchEngine2 s) : base(s)
+        public CrosslinkSearchResults(List<PsmCross> newPsms, CrosslinkSearchEngine2 s) : base(s)
         {
             this.NewPsms = newPsms;
         }
@@ -22,7 +22,7 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Public Properties
 
-        public List<Tuple<PsmCross, PsmCross>> NewPsms { get; private set; }
+        public List<PsmCross> NewPsms { get; private set; }
 
         #endregion Public Properties
     }

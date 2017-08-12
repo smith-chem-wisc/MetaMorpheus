@@ -50,6 +50,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly int maxModIsoforms;
         private MassDiffAcceptor XLBetaSearchMode;
+        private MassDiffAcceptor XLPrecusorSearchMode;
 
         //AnalysisEngine parameters 
         //private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
@@ -95,6 +96,11 @@ namespace EngineLayer.CrosslinkSearch
             if (XLBetaPrecusorMsTl.ToString().Contains("Absolute"))
             {
                 XLBetaSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLBetaPrecusorMsTl.Value);
+            }
+            XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(XLprecusorMsTl.Value);
+            if (XLBetaPrecusorMsTl.ToString().Contains("Absolute"))
+            {
+                XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLprecusorMsTl.Value);
             }
 
             Status("In crosslink search engine...", nestedIds);
@@ -229,7 +235,19 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     for (int j = 0; j < newPsmsTop[i].Count; j++)
                     {
-                        if (newPsmsTop[i][j].ScanPrecursorMass - newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass > 100 && PsmCross.xlPosCal(newPsmsTop[i][j].CompactPeptide, crosslinker)!=null)
+                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
+                        {
+
+                        }
+                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods + 156.0786) >= 0)
+                        {
+
+                        }
+                        if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods + 138.06808) >= 0)
+                        {
+
+                        }
+                        if (newPsmsTop[i][j].ScanPrecursorMass - newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass > 500 )
                         {
                             allAlphaPsms.Add(newPsmsTop[i][j]);
                         }

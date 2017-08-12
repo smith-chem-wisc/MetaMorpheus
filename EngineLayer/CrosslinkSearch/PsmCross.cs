@@ -31,12 +31,14 @@ namespace EngineLayer.CrosslinkSearch
         public double peptideMass { get; set; }
         public double XLBestScore { get; set; }
         public MatchedIonInfo matchedIonInfo { get; set; }
-        public double NScore { get; set; }
         public double XLTotalScore { get; set; }
         public int xlpos { get; set; }
         public int[] topPosition { get; set; }
         public string parentIonExist { get; set; }
         public int Charge2IonExist { get; set; }
+        public PsmCross BetaPsmCross { get; set; }
+        public PsmCrossType CrossType { get; set; }
+        public double dScore { get; set; }
 
 
         //Compute ProductMassesMightHave: the theoritical masses of psmCross
