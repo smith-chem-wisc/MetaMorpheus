@@ -228,6 +228,7 @@ namespace EngineLayer.CrosslinkSearch
 
             //Start search the Beta PsmCross
             List<PsmCross> allAlphaPsms = new List<PsmCross>();
+            List<PsmCross> AllCrossPsms = new List<PsmCross>();
             List<Ms2ScanWithSpecificMass> selectedMS2Scans = new List<Ms2ScanWithSpecificMass>();
             for (int i = 0; i < newPsmsTop.Length; i++)
             {
@@ -237,15 +238,21 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods) >= 0)
                         {
-
+                            newPsmsTop[i][j].XLTotalScore = newPsmsTop[i][j].Score;
+                            newPsmsTop[i][j].CrossType = PsmCrossType.Singe;
+                            AllCrossPsms.Add(newPsmsTop[i][j]);
                         }
                         if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods + 156.0786) >= 0)
                         {
-
+                            newPsmsTop[i][j].XLTotalScore = newPsmsTop[i][j].Score;
+                            newPsmsTop[i][j].CrossType = PsmCrossType.DeadEnd;
+                            AllCrossPsms.Add(newPsmsTop[i][j]);
                         }
                         if (XLPrecusorSearchMode.Accepts(newPsmsTop[i][j].ScanPrecursorMass, newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods + 138.06808) >= 0)
                         {
-
+                            newPsmsTop[i][j].XLTotalScore = newPsmsTop[i][j].Score;
+                            newPsmsTop[i][j].CrossType = PsmCrossType.Loop;
+                            AllCrossPsms.Add(newPsmsTop[i][j]);
                         }
                         if (newPsmsTop[i][j].ScanPrecursorMass - newPsmsTop[i][j].CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass > 500 )
                         {
@@ -259,10 +266,24 @@ namespace EngineLayer.CrosslinkSearch
                 selectedMS2Scans.Add(listOfSortedms2Scans[allAlphaPsms[i].ScanIndex]);
             }
             var xlPsmCross = ClassSearchTheBetaPeptide(selectedMS2Scans.ToArray(), allAlphaPsms.ToArray(), true);
-            var xlPsmCrossRe = (from c in xlPsmCross
-                                group c by c.Item1.ScanNumber into grp
-                                select grp.OrderByDescending(c => c.Item1.XLBestScore + c.Item2.XLBestScore).FirstOrDefault()).ToList();
-            return new CrosslinkSearchResults(xlPsmCrossRe, this);
+            AllCrossPsms.AddRange(xlPsmCross);
+            var AllCrossPsmsGroupOrder = (from c in AllCrossPsms
+                                group c by c.ScanNumber into grp
+                                  select grp.OrderByDescending(c => c.XLTotalScore).ToList()).ToList();
+            foreach (var item in AllCrossPsmsGroupOrder)
+            {            
+                if (item.Count > 1)
+                {
+                    item[0].dScore = item[0].XLTotalScore - item[1].XLTotalScore;
+                }
+                else { item[0].dScore = item[0].XLTotalScore; }
+            }
+            var AllCrossPsmsRe = AllCrossPsmsGroupOrder.Select(p => p.First()).ToList();
+
+            //var allAlphaPsmsRe = (from c in allAlphaPsms
+            //                    group c by c.ScanNumber into grp
+            //                    select grp.OrderByDescending(c => c.XLTotalScore).FirstOrDefault()).ToList();
+            return new CrosslinkSearchResults(AllCrossPsmsRe, this);
         }
 
         #endregion Protected Methods
@@ -317,11 +338,11 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        private List<Tuple<PsmCross, PsmCross>> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory = false)
+        private List<PsmCross> ClassSearchTheBetaPeptide(Ms2ScanWithSpecificMass[] selectedScan, PsmCross[] selectedPsmParent, bool conserveMemory = false)
         {
 
             double[] selectedScanPrecusor = selectedScan.Select(p => p.PrecursorMass).ToArray();
-            double[] AlphaPeptidePrecusor = selectedPsmParent.Select(p => (double)p.CompactPeptide.MonoisotopicMassIncludingFixedMods).ToArray();
+            double[] AlphaPeptidePrecusor = selectedPsmParent.Select(p => p.CompactPeptide.MonoisotopicMassIncludingFixedMods).ToArray();
             double[] BetaPeptidePrecusor = selectedScanPrecusor.Zip(AlphaPeptidePrecusor, (one, two) => one - two - crosslinker.TotalMass).ToArray();
             //Sort the BetaPeptidePrecusor which is necessary for the GetAcceptableScans
             Array.Sort(BetaPeptidePrecusor.ToArray(), selectedPsmParent);
@@ -381,7 +402,7 @@ namespace EngineLayer.CrosslinkSearch
                                 if (score > 1)
                                 {
                                     var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, fragmentTolerance);
+                                     PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, fragmentTolerance);
                                     double currentBestPsmLocalScore = 0;
                                     if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                     {
@@ -433,17 +454,18 @@ namespace EngineLayer.CrosslinkSearch
                 }
             });
 
-            List<Tuple<PsmCross, PsmCross>> newPsmsTopTuple = new List<Tuple<PsmCross, PsmCross>>();
+            List<PsmCross> newPsmsTop = new List<PsmCross>();
             for (int i = 0; i < outerPsms.Length; i++)
             {
                 if (outerPsms[i] != null)
                 {
                     PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], crosslinker,lp, fragmentTolerance);
                     selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
-                    newPsmsTopTuple.Add(new Tuple<PsmCross, PsmCross>(selectedPsmParent[i], outerPsms[i]));
+                    selectedPsmParent[i].BetaPsmCross = outerPsms[i];
+                    newPsmsTop.Add(selectedPsmParent[i]);
                 }
             }
-            return newPsmsTopTuple;
+            return newPsmsTop;
         }
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double[] myScanPrecursorMasses, double peptideMonoisotopicMass, MassDiffAcceptor searchMode, Ms2ScanWithSpecificMass[] selectedScan)
