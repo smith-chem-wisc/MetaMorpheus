@@ -138,7 +138,6 @@
     <Compile Include="GlobalEngineLevelSettings.cs" />
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
-    <Compile Include="SearchResults.cs" />
     <Compile Include="Proteomics\CleavageSpecificity.cs" />
     <Compile Include="Proteomics\CompactPeptide.cs" />
     <Compile Include="Proteomics\InitiatorMethionineBehavior.cs" />

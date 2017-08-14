@@ -12,6 +12,9 @@ script:
 - xbuild /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln
 - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
 - tar -zcvf MonoCommandLine.tar.gz -C CMD/bin/Release .
+- mono CMD/bin/Release/MetaMorpheusCommandLine.exe -t Examples/Task1SearchExample.toml Examples/Task2CalibrationExample.toml Examples/Task3SearchExample.toml Examples/Task4GptmdExample.toml Examples/Task5SearchExample.toml -s Examples/example.mzML -d Examples/mouse-10.xml
+- cd CMD/bin/Release
+- mono MetaMorpheusCommandLine.exe -t ../../../Examples/Task1SearchExample.toml ../../../Examples/Task2CalibrationExample.toml ../../../Examples/Task3SearchExample.toml ../../../Examples/Task4GptmdExample.toml ../../../Examples/Task5SearchExample.toml -s ../../../Examples/example.mzML -d ../../../Examples/mouse-10.xml
 deploy:
   provider: releases
   api_key:
