@@ -1,17 +1,25 @@
 language: csharp
-solution: mzCal.sln
+solution: MetaMorpheus.sln
 install:
-- nuget restore MetaMorpheus.sln
-- nuget install NUnit.Console -OutputDirectory testrunner
+- if [ -z "${DOTNETCORE}" ]; then nuget restore ; fi
+- if [ -n "${DOTNETCORE}" ]; then dotnet restore ; fi
+- if [ -z "${DOTNETCORE}" ]; then nuget install NUnit.Console -OutputDirectory testrunner ; fi
+matrix:
+  include:
+    - dotnet: 1.0.4
+      mono: none
+      env: DOTNETCORE=1
+    - mono: latest
 script:
 - echo $TRAVIS_TAG 
 - cat CMD/Properties/AssemblyInfo.cs
 - if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' CMD/Properties/AssemblyInfo.cs ; fi
 - if [ -n "${TRAVIS_TAG}" ]; then sed -i -- 's/1.0.0.0/'$TRAVIS_TAG'/g' EngineLayer/Properties/AssemblyInfo.cs ; fi
 - cat CMD/Properties/AssemblyInfo.cs
-- xbuild /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln
-- mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll
-- tar -zcvf MonoCommandLine.tar.gz -C CMD/bin/Release .
+- if [ -z "${DOTNETCORE}" ]; then xbuild /p:Configuration=TestAndReleaseLinux MetaMorpheus.sln ; fi
+- if [ -n "${DOTNETCORE}" ]; then dotnet build ; fi
+- if [ -z "${DOTNETCORE}" ]; then mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./Test/bin/Release/Test.dll ; fi
+- if [ -z "${DOTNETCORE}" ]; then tar -zcvf MonoCommandLine.tar.gz -C CMD/bin/Release . ; fi
 deploy:
   provider: releases
   api_key:
