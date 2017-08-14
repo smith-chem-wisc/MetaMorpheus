@@ -214,7 +214,7 @@ namespace EngineLayer.CrosslinkSearch
         //Compute if crosslink amino acid exist and return its position based on compactPeptide
         public static List<int> xlPosCal(CompactPeptide compactPeptide, CrosslinkerTypeClass crosslinker)
         {
-            Tolerance tolerance = new PpmTolerance(0.001);
+            Tolerance tolerance = new PpmTolerance(1);
             List<int> xlpos = new List<int>();
             if (tolerance.Within( compactPeptide.NTerminalMasses[0] , Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass))
             {
@@ -242,11 +242,12 @@ namespace EngineLayer.CrosslinkSearch
             int length = psmCross.CompactPeptide.NTerminalMasses.Length;
             var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
             ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
-            //int pos = -1;
+
             List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
 
             var linkPos = PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker);
-            linkPos.Add(0);
+            //linkPos.Add(0);
+
             foreach (var ipos in linkPos)
             {
                 //pos = ipos;

@@ -399,7 +399,7 @@ namespace EngineLayer.CrosslinkSearch
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
                                 var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, fragmentTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
-                                if (score > 1)
+                                if (score > 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count!=0)
                                 {
                                     var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
                                      PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, fragmentTolerance);
@@ -457,7 +457,7 @@ namespace EngineLayer.CrosslinkSearch
             List<PsmCross> newPsmsTop = new List<PsmCross>();
             for (int i = 0; i < outerPsms.Length; i++)
             {
-                if (outerPsms[i] != null)
+                if (outerPsms[i] != null && PsmCross.xlPosCal(selectedPsmParent[i].CompactPeptide, crosslinker).Count!=0)
                 {
                     PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], crosslinker,lp, fragmentTolerance);
                     selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
