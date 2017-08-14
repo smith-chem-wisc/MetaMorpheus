@@ -27,7 +27,9 @@ namespace EngineLayer
 
         public void AssignCorrectMass()
         {
+            double tempDouble = this.MonoisotopicMassIncludingFixedMods;
             this.MonoisotopicMassIncludingFixedMods = this.ModifiedMass;
+            this.ModifiedMass = tempDouble;
         }
 
         #endregion Public Methods
