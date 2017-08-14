@@ -292,9 +292,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 });
             }
             //with filled CPtoCPWM and CPWMtoPWSM, convert psm objects to corrected CP mass
-            foreach (var psmListForAspecificSerchMode in allPsms) //should only be one
-                if (psmListForAspecificSerchMode != null)
-                    foreach (var psm in psmListForAspecificSerchMode)
+            foreach (var psmListForASpecificSearchMode in allPsms) //should only be one
+                if (psmListForASpecificSearchMode != null)
+                    foreach (var psm in psmListForASpecificSearchMode)
                         if (psm != null)
                         {
                             foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in psm.CompactPeptides)
