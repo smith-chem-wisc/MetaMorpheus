@@ -229,7 +229,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop" + currentPartition + "/" + totalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop " + currentPartition + "/" + totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
