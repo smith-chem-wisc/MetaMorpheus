@@ -274,18 +274,7 @@ namespace EngineLayer
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
-            List<CompactPeptideBase> duplicateKeysToRemove = new List<CompactPeptideBase>();
-            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in compactPeptides)
-                if (kvp.Value.Item2 == null)
-                    duplicateKeysToRemove.Add(kvp.Key);
-            foreach (CompactPeptideBase cpKey in duplicateKeysToRemove)
-            {
-                compactPeptides.Remove(cpKey);
-                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
-                var candidatePli = new ProteinLinkedInfo(matching[cpKey]);
-                if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
-                    MostProbableProteinInfo = candidatePli;
-            }
+
             IsDecoy = compactPeptides.Any(b => b.Value.Item2.Any(c => c.Protein.IsDecoy));
 
             FullSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item2;

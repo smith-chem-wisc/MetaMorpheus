@@ -107,6 +107,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         if (precursorMass > 1)
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                            cp.AssignCorrectMass();
                                             bestPeptides[openSearchIndex].Add(cp);
                                             bestNotches[openSearchIndex].Add(0);
                                         }
@@ -118,6 +119,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         if (precursorMass > 1)
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                            cp.AssignCorrectMass();
                                             bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                             bestScores[openSearchIndex] = consideredScore;
                                             bestNotches[openSearchIndex] = new List<int> { 0 };
@@ -132,6 +134,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (precursorMass > 1)
                                     {
                                         CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                        cp.AssignCorrectMass();
                                         bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                         bestScores[openSearchIndex] = consideredScore;
                                         bestNotches[openSearchIndex] = new List<int> { 0 };
@@ -140,6 +143,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 }
                             }
                         }
+                        foreach (CompactPeptideBase cpb in bestPeptides[openSearchIndex])
+                            (cpb as CompactPeptideWithModifiedMass).AssignCorrectMass();
                     }
                     else //(assumes open search)
                     {
