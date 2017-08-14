@@ -51,6 +51,11 @@ namespace EngineLayer
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key >= proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein && b.Key <= proteinOneBasedEnd - modsFromThisOne.OneBasedEndResidueInProtein).ToDictionary(b => b.Key, b => b.Value);
         }
 
+        internal PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd):base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
+        {
+            this.numFixedMods = numFixedMods;
+            this.allModsOneIsNterminus = allModsOneIsNterminus;
+        }
         #endregion Internal Constructors
 
         #region Public Properties
@@ -124,7 +129,13 @@ namespace EngineLayer
 
         public int MissedCleavages
         {
-            get { return modPep.MissedCleavages; }
+            get
+            {
+                if (modPep == null)
+                    return 0;
+                else
+                    return modPep.MissedCleavages;
+            }
         }
 
         public string SequenceWithChemicalFormulas
@@ -190,7 +201,7 @@ namespace EngineLayer
             }
 
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
+            var hm = new PeptideWithSetModifications(vvv, numFixedMods, this, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein);
 
             return hm;
         }
