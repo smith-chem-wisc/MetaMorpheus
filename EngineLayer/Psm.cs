@@ -286,6 +286,14 @@ namespace EngineLayer
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
+        public bool CompactPeptidesContainsKey(CompactPeptideBase key)
+        {
+            if (compactPeptides.Keys.ToList().Contains(key))
+                return true;
+            else
+                return false;
+        }
+
         public override string ToString()
         {
             var sb = new StringBuilder();
