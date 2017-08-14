@@ -198,7 +198,7 @@ namespace TaskLayer
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatchingTest);
 
-            allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
+            allPsms[0] = allPsms[0].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId }).Run();
 

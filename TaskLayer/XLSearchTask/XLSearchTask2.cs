@@ -35,7 +35,7 @@ namespace TaskLayer
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.BaseSequence
                         + "\t" + item.Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item1.Xlpos.ToString(CultureInfo.InvariantCulture) + ")"
-                        + "\t" + item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item1.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.TopPosition[0].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item1.NScore.ToString(CultureInfo.InvariantCulture)
@@ -43,13 +43,13 @@ namespace TaskLayer
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.Select(p => p.Protein.Accession).First().ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.BaseSequence
                         + "\t" + item.Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence + "(" + item.Item2.Xlpos.ToString(CultureInfo.InvariantCulture) + ")"
-                        + "\t" + item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass.ToString(CultureInfo.InvariantCulture)
+                        + "\t" + item.Item2.PeptideMonisotopicMass.Value.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item2.Score.ToString(CultureInfo.InvariantCulture)
                         + "\t" + item.Item1.TopPosition[1].ToString(CultureInfo.InvariantCulture)
                         //+ "\t" + item.Item2.NScore.ToString(CultureInfo.InvariantCulture)
 
                         + "\t" + item.Item1.XLTotalScore.ToString(CultureInfo.InvariantCulture)
-                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - item.Item1.MostProbableProteinInfo.PeptideMonoisotopicMass)
+                        + "\t" + (item.Item1.ScanPrecursorMass - item.Item2.PeptideMonisotopicMass.Value - item.Item1.PeptideMonisotopicMass.Value)
                         + "\t" + item.Item1.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture));
                 }
             }
@@ -181,7 +181,7 @@ namespace TaskLayer
                                     hit_rank = 1,
                                     peptide = "-", peptide_prev_aa="-", peptide_next_aa="-", protein="-", num_tot_proteins = 1,
                                     calc_neutral_pep_mass = (float)items[i].Item1.ScanPrecursorMonoisotopicPeak.Mz * items[i].Item1.ScanPrecursorCharge,
-                                    massdiff = (items[i].Item1.ScanPrecursorMass - items[i].Item2.MostProbableProteinInfo.PeptideMonoisotopicMass - items[i].Item1.MostProbableProteinInfo.PeptideMonoisotopicMass - crosslinker.TotalMass).ToString(),
+                                    massdiff = (items[i].Item1.ScanPrecursorMass - items[i].Item2.PeptideMonisotopicMass.Value - items[i].Item1.PeptideMonisotopicMass.Value - crosslinker.TotalMass).ToString(),
                                     xlink_typeSpecified = true,
                                     xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.xl,
                                     xlink = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink
@@ -197,8 +197,8 @@ namespace TaskLayer
                                                 peptide_next_aa = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().NextAminoAcid.ToString(),
                                                 protein = items[i].Item1.MostProbableProteinInfo.PeptidesWithSetModifications.First().Protein.Accession,
                                                 num_tot_proteins = proteinTot/2,
-                                                calc_neutral_pep_mass = (float)items[i].Item1.MostProbableProteinInfo.PeptideMonoisotopicMass,
-                                                complement_mass = (float)(items[i].Item1.ScanPrecursorMass - items[i].Item1.MostProbableProteinInfo.PeptideMonoisotopicMass),
+                                                calc_neutral_pep_mass = (float)items[i].Item1.PeptideMonisotopicMass.Value,
+                                                complement_mass = (float)(items[i].Item1.ScanPrecursorMass - items[i].Item1.PeptideMonisotopicMass.Value),
                                                 designation = "alpha",
 
                                                 xlink_score = new pepXML.Generated.nameValueType[]
@@ -214,8 +214,8 @@ namespace TaskLayer
                                                 peptide_next_aa = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().NextAminoAcid.ToString(),
                                                 protein = items[i].Item2.MostProbableProteinInfo.PeptidesWithSetModifications.First().Protein.Accession,
                                                 num_tot_proteins = proteinTot,
-                                                calc_neutral_pep_mass = (float)items[i].Item2.MostProbableProteinInfo.PeptideMonoisotopicMass,
-                                                complement_mass = (float)(items[i].Item1.ScanPrecursorMass - items[i].Item2.MostProbableProteinInfo.PeptideMonoisotopicMass),
+                                                calc_neutral_pep_mass = (float)items[i].Item2.PeptideMonisotopicMass.Value,
+                                                complement_mass = (float)(items[i].Item1.ScanPrecursorMass - items[i].Item2.PeptideMonisotopicMass.Value),
                                                 designation = "beta",
 
                                                 xlink_score = new pepXML.Generated.nameValueType[]

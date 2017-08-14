@@ -314,7 +314,7 @@ namespace TaskLayer
 
             Status("Ordering and grouping psms...", taskId);
             for (int j = 0; j < allPsms.Length; j++)
-                allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => Math.Abs(b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass)).GroupBy(b => new Tuple<string, int, double>(b.FullFilePath, b.ScanNumber, b.MostProbableProteinInfo.PeptideMonoisotopicMass)).Select(b => b.First()).ToList();
+                allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             Status("Running FDR analysis...", taskId);
             var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
@@ -356,7 +356,7 @@ namespace TaskLayer
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
-                if (!FlashLfqEngine.ReadPeriodicTable())
+                if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
                     throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
                 if (!FlashLfqEngine.ParseArgs(new string[] {
@@ -368,8 +368,8 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
                 var psmsBelowOnePercentFdr = allPsms.SelectMany(v => v).Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy);
-                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.FullSequence != null))
-                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.MostProbableProteinInfo.PeptideMonoisotopicMass, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.MostProbableProteinInfo.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
+                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.FullSequence != null && b.PeptideMonisotopicMass != null))
+                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.MostProbableProteinInfo.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
 
                 FlashLfqEngine.ConstructBinsFromIdentifications();
 
@@ -383,7 +383,7 @@ namespace TaskLayer
                     GC.Collect();
                     ReportProgress(new ProgressEventArgs(100, "Done quantifying!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
                 });
-                
+
                 // assign quantities to PSMs
                 Dictionary<string, List<Psm>> baseseqToPsm = new Dictionary<string, List<Psm>>();
                 List<Psm> list;

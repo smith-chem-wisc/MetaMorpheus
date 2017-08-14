@@ -589,8 +589,6 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeak.Mz, 5),
-                    calculatedMassToCharge = Math.Round(psm.MostProbableProteinInfo.PeptideMonoisotopicMass.ToMz(psm.ScanPrecursorCharge), 5),
-                    calculatedMassToChargeSpecified = true,
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     peptide_ref = "P_" + peptide_id.Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.MostProbableProteinInfo.PeptidesWithSetModifications.Count],
@@ -612,6 +610,11 @@ namespace TaskLayer
                         }
                     }
                 };
+                if (psm.PeptideMonisotopicMass.HasValue)
+                {
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToCharge = Math.Round(psm.PeptideMonisotopicMass.Value.ToMz(psm.ScanPrecursorCharge), 5);
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToChargeSpecified = true;
+                }
 
                 int pe = 0;
                 foreach (PeptideWithSetModifications p in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
