@@ -109,7 +109,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
                                             cp.SwapMonoisotopicMassWithModifiedMass();
-                                            if (!bestPeptides[openSearchIndex].Contains(cp))
+                                            if (bestPeptides[openSearchIndex] == null || !bestPeptides[openSearchIndex].Contains(cp))
                                             {
                                                 bestPeptides[openSearchIndex].Add(cp);
                                                 bestNotches[openSearchIndex].Add(0);
