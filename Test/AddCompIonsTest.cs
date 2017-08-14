@@ -41,22 +41,27 @@ namespace Test
             int? minPeptideLength = null;
             int? maxPeptideLength = null;
             int maximumVariableModificationIsoforms = 4096;
-            var engine = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, false, 1);
-            var searchResults = (SearchResults)engine.Run();
-            var engine2 = new ClassicSearchEngine(listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, true, 1);
-            var searchResults2 = (SearchResults)engine2.Run();
+
+            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
+            for (int aede = 0; aede < searchModes.Count; aede++)
+                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, false, 1).Run();
+            Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
+            for (int aede = 0; aede < searchModes.Count; aede++)
+                allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, true, 1).Run();
 
             // Single search mode
-            Assert.AreEqual(searchResults.Psms.Length, searchResults2.Psms.Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(searchResults.Psms[0].Length, searchResults2.Psms[0].Length);
+            Assert.AreEqual(allPsmsArray[0].Length, allPsmsArray2[0].Length);
 
-            Assert.IsTrue(searchResults2.Psms[0][0].Score > 1);
+            Assert.IsTrue(allPsmsArray2[0][0].Score > 1);
 
-            Assert.AreEqual(searchResults.Psms[0][0].ScanNumber, searchResults2.Psms[0][0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0][0].ScanNumber, allPsmsArray2[0][0].ScanNumber);
 
-            Assert.IsTrue(searchResults2.Psms[0][0].Score < searchResults.Psms[0][0].Score * 2 && searchResults2.Psms[0][0].Score + 2 > searchResults.Psms[0][0].Score * 2);
+            Assert.IsTrue(allPsmsArray2[0][0].Score < allPsmsArray[0][0].Score * 2 && allPsmsArray2[0][0].Score + 2 > allPsmsArray[0][0].Score * 2);
         }
 
         [Test]
@@ -88,7 +93,7 @@ namespace Test
             var protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), 1, 1, true);
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -103,22 +108,27 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            var engine = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), false, new List<ProductType> { ProductType.B, ProductType.Y }, 1);
-            var searchResults = (SearchResults)engine.Run();
-            var engine2 = new ModernSearchEngine(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.B, ProductType.Y }, 1);
-            var searchResults2 = (SearchResults)engine2.Run();
+            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
+            for (int aede = 0; aede < searchModes.Count; aede++)
+                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), false, new List<ProductType> { ProductType.B, ProductType.Y }, 1, 0, 1).Run();
+            Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
+            for (int aede = 0; aede < searchModes.Count; aede++)
+                allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.B, ProductType.Y }, 1, 0, 1).Run();
+
 
             // Single search mode
-            Assert.AreEqual(searchResults.Psms.Length, searchResults2.Psms.Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(searchResults.Psms[0].Length, searchResults2.Psms[0].Length);
+            Assert.AreEqual(allPsmsArray[0].Length, allPsmsArray2[0].Length);
 
-            Assert.IsTrue(searchResults2.Psms[0][0].Score > 1);
+            Assert.IsTrue(allPsmsArray2[0][0].Score > 1);
 
-            Assert.AreEqual(searchResults.Psms[0][0].ScanNumber, searchResults2.Psms[0][0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0][0].ScanNumber, allPsmsArray2[0][0].ScanNumber);
 
-            Assert.IsTrue(searchResults2.Psms[0][0].Score < searchResults.Psms[0][0].Score * 2 && searchResults2.Psms[0][0].Score + 2 > searchResults.Psms[0][0].Score * 2);
+            Assert.IsTrue(allPsmsArray2[0][0].Score < allPsmsArray[0][0].Score * 2 && allPsmsArray2[0][0].Score + 2 > allPsmsArray[0][0].Score * 2);
         }
 
         [Test]

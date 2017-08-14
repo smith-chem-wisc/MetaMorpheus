@@ -37,7 +37,7 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null, 1, 1, true);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
@@ -51,7 +51,7 @@ namespace Test
                 Assert.AreEqual(1, dfdfse.Count);
                 foreach (var kjdfk in dfdfse)
                 {
-                    Assert.Contains(kjdfk.CompactPeptide, results.PeptideIndex);
+                    Assert.Contains(kjdfk.CompactPeptide(TerminusType.None), results.PeptideIndex);
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null, 1, 1, true);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(1, results.PeptideIndex.Count);

@@ -25,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType) : base(listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, 1)
+        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -38,7 +38,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine...", nestedIds);
+            Status("In nonspecific search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
             bool classicAntigens = false;
             double precursorToleranceDouble = 5;//default 5ppm
             int openSearchIndex = 0;
@@ -62,9 +62,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
             PpmTolerance precursorTolerance = new PpmTolerance(precursorToleranceDouble);
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            Psm[][] newPsms = new Psm[searchModes.Count][];
-            for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new Psm[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -96,7 +93,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -151,7 +148,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > 4) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -201,10 +198,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
+                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }
@@ -215,12 +212,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop"+currentPartition+"/"+totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
             });
-            return new SearchResults(newPsms, this);
+            return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods
@@ -241,6 +238,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
+                //if the theoretical and experimental have the same mass
+                if (peptide.NTerminalMasses.Count() > localminPeptideLength)
+                {
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                    {
+                        return totalMass;
+                    }
+                }
             }
             else//if (terminusType==TerminusType.C)
             {
@@ -252,14 +258,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         return theoMass;
                     }
                 }
-            }
-            //if the theoretical and experimental have the same mass
-            if (peptide.NTerminalMasses.Count() > localminPeptideLength)
-            {
-                double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
-                if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                //if the theoretical and experimental have the same mass
+                if (peptide.CTerminalMasses.Count() > localminPeptideLength)
                 {
-                    return totalMass;
+                    double totalMass = peptide.MonoisotopicMassIncludingFixedMods;// + Constants.protonMass;
+                    if (Math.Abs((scanPrecursorMass - totalMass) / (totalMass) * 1e6) < precursorTolerance.Value)
+                    {
+                        return totalMass;
+                    }
                 }
             }
             return 0;
