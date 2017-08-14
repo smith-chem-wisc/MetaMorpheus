@@ -246,7 +246,7 @@ namespace EngineLayer.CrosslinkSearch
         //Targetting function: to find two peptides that in the Top matched peptides
         private PsmCross FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int i)
         {
-            List<PsmCross> bestPsmCrossList = null;
+            List<PsmCross> bestPsmCrossList = new List<PsmCross>();
             PsmCross bestPsmCross = null;
             for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
             {
@@ -333,7 +333,7 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
 
-            if (bestPsmCrossList != null)
+            if (bestPsmCrossList.Count != 0)
             {
                 bestPsmCross = bestPsmCrossList.OrderByDescending(p => p.XLTotalScore).First();
                 if (bestPsmCrossList.Count > 1)

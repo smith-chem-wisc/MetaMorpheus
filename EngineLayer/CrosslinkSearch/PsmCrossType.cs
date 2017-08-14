@@ -4,8 +4,6 @@
     {
         Singe,
         Cross,
-        Intra,
-        Inter,
         DeadEnd,
         Loop
     }

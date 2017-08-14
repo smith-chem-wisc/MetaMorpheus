@@ -150,9 +150,12 @@ namespace EngineLayer.CrosslinkAnalysis
                 var huh = newPsms[myScanWithMassIndex];
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
-                if (huh1 != null && huh1.MostProbableProteinInfo == null)
-                    huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                if (huh !=null)
+                {
+                    var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
+                    if (huh1 != null && huh1.MostProbableProteinInfo == null)
+                        huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }             
             }
 
             return myAnalysisResults;
