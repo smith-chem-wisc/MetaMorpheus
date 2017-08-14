@@ -88,8 +88,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     if (classicAntigens)
                     {
-                        var searchMode = searchModes[openSearchIndex];
                         double currentBestScore = bestScores[openSearchIndex];
+                        if (globalPsms[openSearchIndex][i] != null)
+                            currentBestScore = globalPsms[openSearchIndex][i].Score;
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
@@ -207,8 +208,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
-                            for (int k = 1; k < bestPeptides[j].Count; k++)
+                            int startIndex = 0;
+
+                            if (globalPsms[j][i] == null)
+                            {
+                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                                startIndex = 1;
+                            }
+
+                            for (int k=startIndex;  k < bestPeptides[j].Count; k++)
                             {
                                 globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
