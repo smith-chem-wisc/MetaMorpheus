@@ -108,8 +108,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
                                             cp.SwapMonoisotopicMassWithModifiedMass();
-                                            bestPeptides[openSearchIndex].Add(cp);
-                                            bestNotches[openSearchIndex].Add(0);
+                                            if (!bestPeptides[openSearchIndex].Contains(cp))
+                                            {
+                                                bestPeptides[openSearchIndex].Add(cp);
+                                                bestNotches[openSearchIndex].Add(0);
+                                            }
                                         }
                                     }
                                     else if (currentBestScore < consideredScore)
@@ -143,8 +146,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 }
                             }
                         }
-                        foreach (CompactPeptideBase cpb in bestPeptides[openSearchIndex])
-                            (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
+                        if (bestPeptides[openSearchIndex] != null)
+                            foreach (CompactPeptideBase cpb in bestPeptides[openSearchIndex])
+                                (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                     }
                     else //(assumes open search)
                     {
@@ -217,7 +221,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop"+currentPartition+"/"+totalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop" + currentPartition + "/" + totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
