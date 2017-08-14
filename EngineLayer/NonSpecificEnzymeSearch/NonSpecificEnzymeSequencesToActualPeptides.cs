@@ -130,7 +130,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedStartResidueInProtein + index - 1);
                                         double modifiedMass = finalMass[0];
                                         CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
-                                        tempCPWM.AssignCorrectMass();
+                                        tempCPWM.SwapMonoisotopicMassWithModifiedMass();
                                         if (localCPWMtoPWSM.TryGetValue(tempCPWM, out HashSet<PeptideWithSetModifications> tempPWSMHashSet))
                                         {
                                             tempPWSMHashSet.Add(tempPWSM);
@@ -233,7 +233,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.OneBasedEndResidueInProtein);
                                         double modifiedMass = finalMass[0];
                                         CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
-                                        tempCPWM.AssignCorrectMass();
+                                        tempCPWM.SwapMonoisotopicMassWithModifiedMass();
                                         if (localCPWMtoPWSM.TryGetValue(tempCPWM, out HashSet<PeptideWithSetModifications> tempPWSMHashSet))
                                         {
                                             tempPWSMHashSet.Add(tempPWSM);
@@ -299,7 +299,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in psm.CompactPeptides)
                             {
-                                (kvp.Key as CompactPeptideWithModifiedMass).AssignCorrectMass();
+                                (kvp.Key as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                             }
                         }
             return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
