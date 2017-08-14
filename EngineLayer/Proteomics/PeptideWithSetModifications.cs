@@ -13,13 +13,13 @@ namespace EngineLayer
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
+        public readonly int? missedCleavages;
 
         #endregion Public Fields
 
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private readonly PeptideWithPossibleModifications modPep;
         private string sequence;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
@@ -34,25 +34,27 @@ namespace EngineLayer
         internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
                                                                                                             : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
-            this.modPep = modPep;
+            this.missedCleavages = modPep.MissedCleavages;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }
 
         internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
         {
-            this.modPep = everythingElseFromThisOne.modPep;
+            this.missedCleavages = everythingElseFromThisOne.missedCleavages;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
         internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
+            this.missedCleavages = modsFromThisOne.missedCleavages;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key >= proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein && b.Key <= proteinOneBasedEnd - modsFromThisOne.OneBasedEndResidueInProtein).ToDictionary(b => b.Key, b => b.Value);
         }
 
-        internal PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd):base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
+        internal PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, int? missedCleavages):base(protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
+            this.missedCleavages = missedCleavages;
             this.numFixedMods = numFixedMods;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
         }
@@ -127,17 +129,6 @@ namespace EngineLayer
             }
         }
 
-        public int MissedCleavages
-        {
-            get
-            {
-                if (modPep == null)
-                    return 0;
-                else
-                    return modPep.MissedCleavages;
-            }
-        }
-
         public string SequenceWithChemicalFormulas
         {
             get
@@ -201,7 +192,7 @@ namespace EngineLayer
             }
 
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(vvv, numFixedMods, this, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein);
+            var hm = new PeptideWithSetModifications(vvv, numFixedMods, this.Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, this.missedCleavages);
 
             return hm;
         }
