@@ -291,10 +291,29 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     foreach (var psm in psmListForASpecificSearchMode)
                         if (psm != null)
                         {
+                            List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
                             foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in psm.CompactPeptides)
                             {
                                 (kvp.Key as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
+                                //Change CPWM to reflect actual CP
+                                if(CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> misplacedPWSMs))
+                                {
+                                    kvp.Key.CropTerminalMasses(terminusType);
+                                    Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
+                                    if (!cps.Contains(tempTuple))
+                                        cps.Add(tempTuple);
+                                    if(CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> wellPlacedPWSMs))
+                                    {
+                                        foreach (PeptideWithSetModifications PWSM in misplacedPWSMs)
+                                            wellPlacedPWSMs.Add(PWSM);
+                                    }
+                                    else
+                                    {
+                                        CPWMtoPWSM.Add(kvp.Key, misplacedPWSMs);
+                                    }
+                                }
                             }
+                            psm.ReplaceAndAdd(cps);
                         }
             return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
         }
