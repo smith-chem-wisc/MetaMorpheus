@@ -292,12 +292,17 @@ namespace MetaMorpheusGUI
                 }
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
-                else if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
-                else if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("single"))
+                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("single"))
                     MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
-                else if (!addCompIonCheckBox.IsChecked.Value)
+                if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+                if (SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList().Count != 2)
+                {
+                    MessageBox.Show("Non-specific searches require two searches: An open search and a narrow search");
+                    return;
+                }
             }
             if (int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture) == 0)
             {
