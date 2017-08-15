@@ -266,6 +266,13 @@ namespace EngineLayer
             }
         }
 
+        public void ReplaceAndAdd(List<Tuple<CompactPeptideBase, int>> cps)
+        {
+            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+            foreach (Tuple<CompactPeptideBase, int> cp in cps)
+                compactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
+        }
+
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
             foreach (var cpKey in compactPeptides.Keys.ToList())
