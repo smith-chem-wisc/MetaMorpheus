@@ -37,7 +37,8 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null, 1, 1, true);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, new List<string>(), 1, 1, true);
+
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
@@ -81,7 +82,8 @@ namespace Test
 
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null, 1, 1, true);
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, new List<string>(), 1, 1, true);
+
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(1, results.PeptideIndex.Count);

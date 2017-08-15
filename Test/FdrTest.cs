@@ -20,7 +20,7 @@ namespace Test
         public static void FdrTestMethod()
         {
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5)) };
-            List<string> nestedIds = null;
+            List<string> nestedIds = new List<string>();
             List<Psm>[] newPsms = new List<Psm>[1];
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
