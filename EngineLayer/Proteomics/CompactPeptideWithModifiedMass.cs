@@ -25,9 +25,11 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public void AssignCorrectMass()
+        public void SwapMonoisotopicMassWithModifiedMass()
         {
+            double tempDouble = this.MonoisotopicMassIncludingFixedMods;
             this.MonoisotopicMassIncludingFixedMods = this.ModifiedMass;
+            this.ModifiedMass = tempDouble;
         }
 
         #endregion Public Methods
