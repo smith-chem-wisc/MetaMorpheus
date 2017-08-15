@@ -271,13 +271,13 @@ namespace EngineLayer.Analysis
                         if (hehe.Item3.LocalizationResults.LocalizedScores.Max() - hehe.Item3.LocalizationResults.LocalizedScores[0] < 0.5)
                         {
                             bin.pepNlocCount++;
-                            if (hehe.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                            if (hehe.Item3.OneBasedStartResidueInProtein.HasValue && hehe.Item3.OneBasedStartResidueInProtein.Value <= 2)
                                 bin.protNlocCount++;
                         }
                         if (hehe.Item3.LocalizationResults.LocalizedScores.Max() - hehe.Item3.LocalizationResults.LocalizedScores.Last() < 0.5)
                         {
                             bin.pepClocCount++;
-                            if (hehe.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                            if (hehe.Item3.OneBasedEndResidueInProtein.HasValue && hehe.Item3.ProteinLength.HasValue && hehe.Item3.OneBasedEndResidueInProtein.Value == hehe.Item3.ProteinLength.Value)
                                 bin.protClocCount++;
                         }
                     }

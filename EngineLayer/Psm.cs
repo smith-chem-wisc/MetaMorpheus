@@ -68,7 +68,10 @@ namespace EngineLayer
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
         public int? PeptideLength { get; private set; }
+        public int? OneBasedStartResidueInProtein { get; private set; }
+        public int? OneBasedEndResidueInProtein { get; private set; }
         public double? PeptideMonisotopicMass { get; private set; }
+        public int? ProteinLength { get; private set; }
 
         #endregion Public Properties
 
@@ -283,6 +286,12 @@ namespace EngineLayer
             BaseSequence = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item2;
 
             PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
+
+            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
+
+            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
+
+            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
 
             PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
 
