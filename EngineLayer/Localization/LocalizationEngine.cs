@@ -36,20 +36,26 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
-            foreach (var ok in allResultingIdentifications)
+            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
-                var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
-                var representative = ok.MostProbableProteinInfo.PeptidesWithSetModifications.First();
+                var matchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
                 {
-                    var ionMasses = representative.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
+                    var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
                     Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
-                    MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
+                    matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
                 }
+
+                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
+
+                if (ok.FullSequence == null)
+                    continue;
+
+                var representative = ok.CompactPeptides.First().Value.Item2.First();
 
                 var localizedScores = new List<double>();
                 for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
@@ -63,7 +69,7 @@ namespace EngineLayer
                     localizedScores.Add(score);
                 }
 
-                ok.LocalizationResults = new LocalizationResults(MatchedIonDictPositiveIsMatch, localizedScores);
+                ok.LocalizedScores = localizedScores;
             }
             return new LocalizationEngineResults(this);
         }

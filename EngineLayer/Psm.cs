@@ -59,7 +59,6 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
 
-        public LocalizationResults LocalizationResults { get; internal set; }
         public double QuantIntensity { get; set; }
 
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
@@ -68,7 +67,12 @@ namespace EngineLayer
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
         public int? PeptideLength { get; private set; }
+        public int? OneBasedStartResidueInProtein { get; private set; }
+        public int? OneBasedEndResidueInProtein { get; private set; }
         public double? PeptideMonisotopicMass { get; private set; }
+        public int? ProteinLength { get; private set; }
+        public List<double> LocalizedScores { get; internal set; }
+        public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
 
         #endregion Public Properties
 
@@ -237,7 +241,10 @@ namespace EngineLayer
             sb.Append('\t' + "Next Amino Acid");
             sb.Append('\t' + "Decoy/Contaminant/Target");
 
-            sb.Append('\t' + LocalizationResults.GetTabSeparatedHeader());
+            sb.Append('\t' + "Matched Ion Counts");
+            sb.Append('\t' + "Matched Ion Masses");
+
+            sb.Append('\t' + "Localized Scores");
             sb.Append('\t' + "Improvement Possible");
 
             sb.Append('\t' + "Cumulative Target");
@@ -291,6 +298,12 @@ namespace EngineLayer
 
             PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
 
+            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
+
+            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
+
+            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
+
             PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
@@ -326,7 +339,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages ?? -1)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
@@ -353,14 +366,28 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (LocalizationResults != null)
+            if (MatchedIonDictPositiveIsMatch != null)
             {
-                sb.Append('\t' + LocalizationResults.ToString());
-                sb.Append('\t' + (LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append('\t' + string.Join(";", MatchedIonDictPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))));
+
+                sb.Append('\t' + "[");
+                foreach (var kvp in MatchedIonDictPositiveIsMatch)
+                    sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " ");
+            }
+
+            if (LocalizedScores != null)
+            {
+                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]");
+                sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                sb.Append('\t' + " " + '\t' + " ");
             }
 
             if (FdrInfo != null)

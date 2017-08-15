@@ -224,6 +224,7 @@ namespace TaskLayer
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
+
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
@@ -267,7 +268,7 @@ namespace TaskLayer
                         keys = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Key).ToArray();
                         fragmentIndex = fragmentIndexDict.OrderBy(b => b.Key).Select(b => b.Value).ToArray();
 
-                        #endregion Generate indices for modern search               
+                        #endregion Generate indices for modern search
 
                         Status("Searching files...", taskId);
                         if (SearchType == SearchType.NonSpecific)
@@ -369,7 +370,7 @@ namespace TaskLayer
                 });
                 Status("Grouping by matched ions...", taskId);
                 for (int j = 0; j < allPsms.Length; j++)
-                    allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.LocalizationResults.MatchedIonMassesListPositiveIsMatch)).Select(b => b.First()).ToList();
+                    allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictPositiveIsMatch)).Select(b => b.First()).ToList();
             }
 
             new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
