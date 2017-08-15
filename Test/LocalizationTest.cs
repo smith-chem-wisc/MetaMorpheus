@@ -31,8 +31,7 @@ namespace Test
 
             Protein parentProteinForMatch = new Protein("MEK", null);
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("E", out motif);
+            ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(variableModifications, 2, 1).ToList();
@@ -58,7 +57,7 @@ namespace Test
 
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
+            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
             f.Run();
 
             // Was single peak!!!
