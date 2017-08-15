@@ -88,8 +88,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                     if (classicAntigens)
                     {
-                        var searchMode = searchModes[openSearchIndex];
                         double currentBestScore = bestScores[openSearchIndex];
+                        if (globalPsms[openSearchIndex][i] != null)
+                            currentBestScore = globalPsms[openSearchIndex][i].Score;
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
@@ -107,8 +108,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         if (precursorMass > 1)
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
-                                            bestPeptides[openSearchIndex].Add(cp);
-                                            bestNotches[openSearchIndex].Add(0);
+                                            cp.SwapMonoisotopicMassWithModifiedMass();
+                                            if (bestPeptides[openSearchIndex] == null)
+                                            {
+                                                bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
+                                                bestScores[openSearchIndex] = consideredScore;
+                                                bestNotches[openSearchIndex] = new List<int> { 0 };
+                                            }
+                                            else if(!bestPeptides[openSearchIndex].Contains(cp) && (globalPsms[openSearchIndex][i] == null || !globalPsms[openSearchIndex][i].CompactPeptidesContainsKey(cp)))
+                                            { 
+                                                bestPeptides[openSearchIndex].Add(cp);
+                                                bestNotches[openSearchIndex].Add(0);
+                                            }
                                         }
                                     }
                                     else if (currentBestScore < consideredScore)
@@ -118,6 +129,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         if (precursorMass > 1)
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                            cp.SwapMonoisotopicMassWithModifiedMass();
                                             bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                             bestScores[openSearchIndex] = consideredScore;
                                             bestNotches[openSearchIndex] = new List<int> { 0 };
@@ -132,6 +144,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (precursorMass > 1)
                                     {
                                         CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                        cp.SwapMonoisotopicMassWithModifiedMass();
                                         bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                         bestScores[openSearchIndex] = consideredScore;
                                         bestNotches[openSearchIndex] = new List<int> { 0 };
@@ -140,6 +153,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 }
                             }
                         }
+                        if (bestPeptides[openSearchIndex] != null)
+                            foreach (CompactPeptideBase cpb in bestPeptides[openSearchIndex])
+                                (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                     }
                     else //(assumes open search)
                     {
@@ -198,8 +214,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
-                            for (int k = 1; k < bestPeptides[j].Count; k++)
+                            int startIndex = 0;
+
+                            if (globalPsms[j][i] == null)
+                            {
+                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                                startIndex = 1;
+                            }
+
+                            for (int k=startIndex;  k < bestPeptides[j].Count; k++)
                             {
                                 globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
@@ -212,7 +235,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop"+currentPartition+"/"+totalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop " + currentPartition + "/" + totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }

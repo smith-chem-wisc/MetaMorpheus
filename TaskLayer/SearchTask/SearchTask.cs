@@ -275,11 +275,6 @@ namespace TaskLayer
                         else//if(SearchType==SearchType.Modern)
                             new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions).Run();
 
-                        lock (psmLock)
-                        {
-                            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                                allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
-                        }
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + TotalPartitions + "!", thisId));
                     }
                 }
@@ -293,13 +288,15 @@ namespace TaskLayer
 
                     myFileManager.DoneWithFile(origDataFile);
 
-                    lock (psmLock)
-                    {
-                        for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
-                            allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
-                    }
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
+
+                lock (psmLock)
+                {
+                    for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
+                        allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
+                }
+
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             });
