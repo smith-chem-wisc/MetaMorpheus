@@ -12,7 +12,6 @@ namespace MetaMorpheusCommandLine
 {
     internal static class Program
     {
-
         #region Private Fields
 
         private static bool inProgress;
@@ -23,10 +22,7 @@ namespace MetaMorpheusCommandLine
 
         private static void Main(string[] args)
         {
-            if (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0"))
-                Console.WriteLine("Not a release version");
-            else
-                Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
+            Console.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion);
 
             var p = new FluentCommandLineParser<ApplicationArguments>();
 
@@ -184,7 +180,6 @@ namespace MetaMorpheusCommandLine
 
         public class ApplicationArguments
         {
-
             #region Public Properties
 
             public List<string> Tasks { get; set; }
@@ -192,10 +187,8 @@ namespace MetaMorpheusCommandLine
             public List<string> Spectra { get; set; }
 
             #endregion Public Properties
-
         }
 
         #endregion Public Classes
-
     }
 }

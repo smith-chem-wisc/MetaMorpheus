@@ -18,7 +18,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
-
         #region Private Fields
 
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
@@ -149,8 +148,6 @@ namespace MetaMorpheusGUI
             classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
             nonSpecificSearchRadioButton.IsChecked = task.SearchType == SearchType.NonSpecific;
-            NTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.N;
-            CTerminusCheckBox.IsChecked = task.TerminusType == TerminusType.C;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.DoQuantification;
@@ -158,6 +155,7 @@ namespace MetaMorpheusGUI
             checkBoxMatchBetweenRuns.IsChecked = task.MatchBetweenRuns;
             modPepsAreUnique.IsChecked = task.ModPeptidesAreUnique;
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
+            checkBoxTarget.IsChecked = task.SearchTarget;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.MinPeptideLength.HasValue ? task.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -181,6 +179,8 @@ namespace MetaMorpheusGUI
             DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.DeconvolutionMassTolerance.Value.ToString();
+
+            minScoreAllowed.Text = task.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -276,13 +276,13 @@ namespace MetaMorpheusGUI
                 TheTask.SearchType = SearchType.Modern;
             else //if (nonSpecificSearchRadioButton.IsChecked.Value)
                 TheTask.SearchType = SearchType.NonSpecific;
-            TheTask.TerminusType = (NTerminusCheckBox.IsChecked.Value) ? TerminusType.N : TerminusType.C;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.DoQuantification = checkBoxQuantification.IsChecked.Value;
             TheTask.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
             TheTask.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -304,6 +304,8 @@ namespace MetaMorpheusGUI
 
             TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+            TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
@@ -332,6 +334,33 @@ namespace MetaMorpheusGUI
             TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 TheTask.MaxDegreeOfParallelism = jsakdf;
+
+            if (TheTask.SearchType == SearchType.NonSpecific)
+            {
+                if ((TheTask.BIons || TheTask.CIons) && (TheTask.YIons || TheTask.ZdotIons)) //NonSpecific does not expect multipe terminus types
+                {
+                    string ionsChosen = "";
+                    if (TheTask.BIons)
+                        ionsChosen += "B, ";
+                    if (TheTask.CIons)
+                        ionsChosen += "C, ";
+                    if (TheTask.YIons)
+                        ionsChosen += "Y, ";
+                    if (TheTask.ZdotIons)
+                        ionsChosen += "Zdot, ";
+                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
+                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
+                    return;
+                }
+                if (TheTask.Protease.Name.Equals("singleC") && (TheTask.BIons || TheTask.CIons))
+                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
+                else if (TheTask.Protease.Name.Equals("singleN") && (TheTask.YIons || TheTask.ZdotIons))
+                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
+                else if (!TheTask.Protease.Name.Contains("single"))
+                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
+                else if (!TheTask.AddCompIons)
+                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+            }
 
             DialogResult = true;
         }
@@ -366,12 +395,10 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Private Methods
-
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
     {
-
         #region Private Fields
 
         private string expanderTitle;
@@ -439,6 +466,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Protected Methods
-
     }
 }

@@ -4,7 +4,6 @@ namespace EngineLayer.Analysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly IEnumerable<Psm>[] newPsms;
@@ -97,6 +96,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Private Methods
-
     }
 }

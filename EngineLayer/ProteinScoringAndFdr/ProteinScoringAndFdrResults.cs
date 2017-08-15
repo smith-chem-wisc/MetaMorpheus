@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public class ProteinScoringAndFdrResults : MetaMorpheusEngineResults
     {
-
         #region Public Fields
 
         public List<ProteinGroup> sortedAndScoredProteinGroups;
@@ -18,6 +17,5 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
     }
 }

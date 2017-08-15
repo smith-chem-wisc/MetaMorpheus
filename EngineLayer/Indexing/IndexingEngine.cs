@@ -10,7 +10,6 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
@@ -79,6 +78,7 @@ namespace EngineLayer.Indexing
             var observed_sequences = new HashSet<CompactPeptide>();
             int proteinsSeen = 0;
             int old_progress = 0;
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);
@@ -91,7 +91,7 @@ namespace EngineLayer.Indexing
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
                             var observed = observed_sequences.Contains(correspondingCompactPeptide);
                             if (observed)
                                 continue;
@@ -115,8 +115,7 @@ namespace EngineLayer.Indexing
                                 if (!double.IsNaN(huhu))
                                 {
                                     var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
-                                    List<int> value;
-                                    if (myInnerDictionary.TryGetValue(rounded, out value))
+                                    if (myInnerDictionary.TryGetValue(rounded, out List<int> value))
                                     {
                                         if (!value.Contains(index))
                                             value.Add(index);
@@ -132,10 +131,9 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var huhu in myInnerDictionary)
                     {
-                        List<int> value;
                         foreach (var hhhh in huhu.Value)
                         {
-                            if (myFragmentDictionary.TryGetValue(huhu.Key, out value))
+                            if (myFragmentDictionary.TryGetValue(huhu.Key, out List<int> value))
                                 value.Add(hhhh);
                             else
                                 myFragmentDictionary.Add(huhu.Key, new List<int> { hhhh });

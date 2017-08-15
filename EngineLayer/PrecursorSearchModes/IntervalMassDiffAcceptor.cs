@@ -7,7 +7,6 @@ namespace EngineLayer
 {
     public class IntervalMassDiffAcceptor : MassDiffAcceptor
     {
-
         #region Private Fields
 
         private readonly List<DoubleRange> intervals;
@@ -54,6 +53,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

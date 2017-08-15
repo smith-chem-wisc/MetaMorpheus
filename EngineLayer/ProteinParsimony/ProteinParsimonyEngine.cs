@@ -9,7 +9,6 @@ namespace EngineLayer
 {
     public class ProteinParsimonyEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly bool treatModPeptidesAsDifferentPeptides;
@@ -51,8 +50,7 @@ namespace EngineLayer
                 Dictionary<string, List<PeptideWithSetModifications>> baseSeqToPeptideMatch = new Dictionary<string, List<PeptideWithSetModifications>>();
                 foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
                 {
-                    List<PeptideWithSetModifications> value;
-                    if (baseSeqToPeptideMatch.TryGetValue(peptide.BaseSequence, out value))
+                    if (baseSeqToPeptideMatch.TryGetValue(peptide.BaseSequence, out List<PeptideWithSetModifications> value))
                         value.Add(peptide);
                     else
                         baseSeqToPeptideMatch[peptide.BaseSequence] = new List<PeptideWithSetModifications> { peptide };
@@ -83,8 +81,7 @@ namespace EngineLayer
                 HashSet<Protein> proteinsAssociatedWithThisPeptide = new HashSet<Protein>(kvp.Value.Select(p => p.Protein));
                 if (proteinsAssociatedWithThisPeptide.Count == 1)
                 {
-                    HashSet<PeptideWithSetModifications> peptides;
-                    if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out peptides))
+                    if (!proteinsWithUniquePeptides.TryGetValue(kvp.Value.First().Protein, out HashSet<PeptideWithSetModifications> peptides))
                         proteinsWithUniquePeptides.Add(kvp.Value.First().Protein, new HashSet<PeptideWithSetModifications>(kvp.Value));
                     else
                         peptides.UnionWith(kvp.Value);
@@ -104,8 +101,7 @@ namespace EngineLayer
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    HashSet<CompactPeptideBase> peptides;
-                    if (!proteinToPeptidesMatching.TryGetValue(peptide.Protein, out peptides))
+                    if (!proteinToPeptidesMatching.TryGetValue(peptide.Protein, out HashSet<CompactPeptideBase> peptides))
                         proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<CompactPeptideBase>() { kvp.Key });
                     else
                         peptides.Add(kvp.Key);
@@ -118,13 +114,12 @@ namespace EngineLayer
             {
                 foreach (var peptide in kvp.Value)
                 {
-                    HashSet<Protein> proteinListHere;
                     string pepSequence;
                     if (!treatModPeptidesAsDifferentPeptides)
                         pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
                     else
                         pepSequence = compactPeptideToFullSeqMatch[peptide];
-                    if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out proteinListHere))
+                    if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out HashSet<Protein> proteinListHere))
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });
                     else
                         proteinListHere.Add(kvp.Key);
@@ -137,8 +132,7 @@ namespace EngineLayer
             {
                 foreach (var protein in kvp.Value)
                 {
-                    HashSet<string> newPeptideBaseSeqs;
-                    if (algDictionary.TryGetValue(protein, out newPeptideBaseSeqs))
+                    if (algDictionary.TryGetValue(protein, out HashSet<string> newPeptideBaseSeqs))
                         newPeptideBaseSeqs.Add(kvp.Key);
                     else
                         algDictionary.Add(protein, new HashSet<string> { kvp.Key });
@@ -261,8 +255,7 @@ namespace EngineLayer
 
             foreach (var peptide in allPeptides)
             {
-                HashSet<PeptideWithSetModifications> peptidesHere;
-                if (proteinToPeptidesMatching.TryGetValue(peptide.Protein, out peptidesHere))
+                if (proteinToPeptidesMatching.TryGetValue(peptide.Protein, out HashSet<PeptideWithSetModifications> peptidesHere))
                     peptidesHere.Add(peptide);
                 else
                     proteinToPeptidesMatching.Add(peptide.Protein, new HashSet<PeptideWithSetModifications> { peptide });
@@ -287,6 +280,5 @@ namespace EngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

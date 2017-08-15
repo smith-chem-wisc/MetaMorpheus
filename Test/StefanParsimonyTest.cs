@@ -12,7 +12,6 @@ namespace Test
     [TestFixture]
     public class StefanParsimonyTest
     {
-
         #region Public Methods
 
         [Test]
@@ -140,9 +139,9 @@ namespace Test
             PeptideWithSetModifications pep2 = from2.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
             PeptideWithSetModifications pep3 = from3.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
 
-            CompactPeptide compactPeptide1 = pep1.CompactPeptide;
-            CompactPeptide compactPeptide2 = pep2.CompactPeptide;
-            CompactPeptide compactPeptide3 = pep3.CompactPeptide;
+            CompactPeptide compactPeptide1 = pep1.CompactPeptide(TerminusType.None);
+            CompactPeptide compactPeptide2 = pep2.CompactPeptide(TerminusType.None);
+            CompactPeptide compactPeptide3 = pep3.CompactPeptide(TerminusType.None);
 
             Assert.AreEqual(compactPeptide1, compactPeptide2);
 
@@ -174,10 +173,8 @@ namespace Test
             Protein protein2 = new Protein("MG", "protein2");
             Protein protein3;
             double monoisotopicMass = Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass;
-            ModificationMotif motif1;
-            ModificationMotif.TryGetMotif("G", out motif1);
-            ModificationMotif motif2;
-            ModificationMotif.TryGetMotif("A", out motif2);
+            ModificationMotif.TryGetMotif("G", out ModificationMotif motif1);
+            ModificationMotif.TryGetMotif("A", out ModificationMotif motif2);
             IDictionary<string, IList<string>> externalDatabaseReferences = null;
             IEnumerable<double> neutralLosses = null;
             IEnumerable<double> diagnosticIons = null;
@@ -230,10 +227,10 @@ namespace Test
             var pep3list = pepWithPossibleModifications3.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide).ToList();
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
 
-            CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1);
-            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2);
+            CompactPeptide compactPeptide1 = new CompactPeptide(pepWithSetModifications1, TerminusType.None);
+            CompactPeptide compactPeptideDuplicate = new CompactPeptide(pepWithSetModifications2, TerminusType.None);
             Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
-            CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3);
+            CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3, TerminusType.None);
 
             List<Psm>[] newPsms = new List<Psm>[1];
             string fullFilePath = null;
@@ -262,7 +259,7 @@ namespace Test
 
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
 
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, massDiffAcceptors, protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, variableModifications, maximumVariableModificationIsoforms, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, massDiffAcceptors, protease, maximumMissedCleavages, minPeptidesLength, maxPeptidesLength, initiatorMethionineBehavior, allKnownFixedModifications, variableModifications, maximumVariableModificationIsoforms, new List<string>(), TerminusType.None);
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;
 
@@ -279,6 +276,5 @@ namespace Test
         }
 
         #endregion Private Methods
-
     }
 }

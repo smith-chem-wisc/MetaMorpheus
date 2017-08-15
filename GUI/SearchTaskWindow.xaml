@@ -20,15 +20,15 @@
                             <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Intensity Ratio " />
-                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Max Assumed Charge State" />
-                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
                             </StackPanel>
                             <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
@@ -63,8 +63,6 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" />
-                                        <RadioButton x:Name="NTerminusCheckBox" Content="N-Terminus" GroupName="TerminusType" IsEnabled="{Binding IsChecked, ElementName=nonSpecificSearchRadioButton}" />
-                                        <RadioButton x:Name="CTerminusCheckBox" Content="C-Terminus" GroupName="TerminusType" IsEnabled="{Binding IsChecked, ElementName=nonSpecificSearchRadioButton}" />
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -75,7 +73,8 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
+                                        <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
+                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top"/>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
                                             <TextBox x:Name="missedCleavagesTextBox"  Width="45" />
@@ -155,7 +154,11 @@
                             </GroupBox>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                                <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                                <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>

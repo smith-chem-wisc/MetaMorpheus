@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public class SearchResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public SearchResults(Psm[][] psms, MetaMorpheusEngine searchParams) : base(searchParams)
@@ -30,6 +29,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

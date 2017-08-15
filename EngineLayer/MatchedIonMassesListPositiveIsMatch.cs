@@ -6,7 +6,6 @@ namespace EngineLayer
 {
     public class MatchedIonMassesListPositiveIsMatch : IEnumerable<KeyValuePair<ProductType, double[]>>
     {
-
         #region Private Fields
 
         private readonly Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch;
@@ -78,6 +77,5 @@ namespace EngineLayer
         }
 
         #endregion Internal Methods
-
     }
 }

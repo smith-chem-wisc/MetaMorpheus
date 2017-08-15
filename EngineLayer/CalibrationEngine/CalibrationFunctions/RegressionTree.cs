@@ -7,7 +7,6 @@ namespace EngineLayer.Calibration
 {
     internal class RegressionTree : CalibrationFunction
     {
-
         #region Private Fields
 
         private readonly int level;
@@ -131,6 +130,5 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Internal Methods
-
     }
 }

@@ -12,7 +12,6 @@ namespace EngineLayer.CrosslinkAnalysis
 {
     public class CrosslinkAnalysisEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
@@ -117,8 +116,7 @@ namespace EngineLayer.CrosslinkAnalysis
                         //    continue;
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
                         {
-                            HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, TerminusType.None), out HashSet<PeptideWithSetModifications> v))
                                 v.Add(peptideWithSetModifications);
                         }
                     }
@@ -126,8 +124,7 @@ namespace EngineLayer.CrosslinkAnalysis
                 {
                     foreach (var ye in local)
                     {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                     }

@@ -11,7 +11,6 @@ namespace Test
     [TestFixture]
     public class SlicedTest
     {
-
         #region Public Methods
 
         [Test]
@@ -40,6 +39,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

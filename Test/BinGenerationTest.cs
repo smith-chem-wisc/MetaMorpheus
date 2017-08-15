@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public class BinGenerationTest
     {
-
         #region Public Methods
 
         [Test]
@@ -26,6 +25,7 @@ namespace Test
                 DoHistogramAnalysis = true,
                 MassDiffAcceptors = massDiffAcceptors,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                SearchTarget = true,
                 SearchDecoy = false,
                 DoParsimony = true,
                 DoQuantification = true
@@ -126,6 +126,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

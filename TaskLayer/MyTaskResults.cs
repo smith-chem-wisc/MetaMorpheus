@@ -7,7 +7,6 @@ namespace TaskLayer
 {
     public class MyTaskResults
     {
-
         #region Public Fields
 
         public List<string> newSpectra;
@@ -95,6 +94,5 @@ namespace TaskLayer
         }
 
         #endregion Internal Methods
-
     }
 }

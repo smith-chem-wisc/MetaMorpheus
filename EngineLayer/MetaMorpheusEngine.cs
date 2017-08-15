@@ -6,7 +6,6 @@ namespace EngineLayer
 {
     public abstract class MetaMorpheusEngine
     {
-
         #region Protected Fields
 
         protected readonly List<string> nestedIds;
@@ -95,6 +94,5 @@ namespace EngineLayer
         }
 
         #endregion Private Methods
-
     }
 }

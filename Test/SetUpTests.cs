@@ -11,7 +11,6 @@ namespace Test
     [SetUpFixture]
     public class MySetUpClass
     {
-
         #region Public Fields
 
         public static string outputFolder = "";
@@ -50,9 +49,9 @@ namespace Test
 
         #region Private Methods
 
-        private static void SuccessfullyFinishedAllTasks(object sender, string rootOutputFolderPath)
+        private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)
         {
-            outputFolder = rootOutputFolderPath;
+            outputFolder = rootOutputFolderPath.s;
         }
 
         private static void MyEngine_FinishedSingleEngineHandler(object sender, SingleEngineFinishedEventArgs e)
@@ -66,6 +65,5 @@ namespace Test
         }
 
         #endregion Private Methods
-
     }
 }

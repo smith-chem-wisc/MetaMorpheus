@@ -13,7 +13,6 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
-
         #region Public Methods
 
         [Test]
@@ -47,14 +46,14 @@ namespace Test
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            Psm newPsm = new Psm(ps.CompactPeptide, 0, 0, 2, scan);
+            Psm newPsm = new Psm(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan);
 
             Assert.IsNull(newPsm.MostProbableProteinInfo);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
-                {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
+                {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
             newPsm.MatchToProteinLinkedPeptides(matching);
@@ -70,6 +69,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

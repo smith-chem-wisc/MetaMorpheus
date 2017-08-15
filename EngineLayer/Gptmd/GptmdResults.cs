@@ -8,7 +8,6 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdResults : MetaMorpheusEngineResults
     {
-
         #region Private Fields
 
         private readonly int modsAdded;
@@ -45,6 +44,5 @@ namespace EngineLayer.Gptmd
         }
 
         #endregion Public Methods
-
     }
 }

@@ -5,7 +5,6 @@ namespace EngineLayer.Indexing
 {
     public class IndexingResults : MetaMorpheusEngineResults
     {
-
         #region Public Constructors
 
         public IndexingResults(List<CompactPeptide> peptideIndex, Dictionary<float, List<int>> fragmentIndexDict, IndexingEngine indexParams) : base(indexParams)
@@ -35,6 +34,5 @@ namespace EngineLayer.Indexing
         }
 
         #endregion Public Methods
-
     }
 }
