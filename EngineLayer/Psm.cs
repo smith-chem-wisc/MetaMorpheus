@@ -288,10 +288,7 @@ namespace EngineLayer
 
         public bool CompactPeptidesContainsKey(CompactPeptideBase key)
         {
-            if (compactPeptides.ContainsKey(key))
-                return true;
-            else
-                return false;
+            return compactPeptides.ContainsKey(key);
         }
 
         public override string ToString()
