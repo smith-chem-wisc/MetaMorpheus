@@ -302,7 +302,7 @@ namespace EngineLayer
 
             if (compactPeptides.First().Value.Item2 != null)
             {
-                sb.Append("\t" + string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
+                sb.Append("\t" + string.Join("|", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
@@ -394,14 +394,14 @@ namespace EngineLayer
         private Tuple<string, double?> Resolve(IEnumerable<double> enumerable)
         {
             double doubleTol = 1e-6;
-            var list = enumerable.ToList();
+            var list = enumerable.Distinct().ToList();
             if (list.Max() - list.Min() < doubleTol)
             {
                 return new Tuple<string, double?>(list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
+                var possibleReturn = string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
                 if (possibleReturn.Length > 32000)
                     return new Tuple<string, double?>("too many", null);
                 else
@@ -411,7 +411,7 @@ namespace EngineLayer
 
         private Tuple<string, int?> Resolve(IEnumerable<int> enumerable)
         {
-            var list = enumerable.ToList();
+            var list = enumerable.Distinct().ToList();
             var first = list[0];
             if (list.All(b => first.Equals(b)))
             {
@@ -419,7 +419,7 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                var possibleReturn = string.Join("|", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
                 if (possibleReturn.Length > 32000)
                     return new Tuple<string, int?>("too many", null);
                 else
@@ -429,7 +429,7 @@ namespace EngineLayer
 
         private Tuple<string, string> Resolve(IEnumerable<string> enumerable)
         {
-            var list = enumerable.ToList();
+            var list = enumerable.Distinct().ToList();
             var first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
@@ -438,7 +438,7 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join(" or ", list);
+                var possibleReturn = string.Join("|", list);
                 if (possibleReturn.Length > 32000)
                     return new Tuple<string, string>("too many", null);
                 else
