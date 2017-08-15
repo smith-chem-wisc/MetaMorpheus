@@ -27,6 +27,7 @@ namespace EngineLayer.Calibration
         private readonly bool doForestCalibration;
         private readonly List<Psm> goodIdentifications;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
+        private readonly Random rnd;
         private int numMs1MassChargeCombinationsConsidered;
 
         private int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -41,7 +42,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<Psm> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, List<string> nestedIds) : base(nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<Psm> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, Random rnd, List<string> nestedIds) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.goodIdentifications = goodIdentifications;
@@ -54,6 +55,7 @@ namespace EngineLayer.Calibration
             this.ms1ListAction = ms1ListAction;
             this.ms2ListAction = ms2ListAction;
             this.doForestCalibration = doForestCalibration;
+            this.rnd = rnd;
         }
 
         #endregion Public Constructors
@@ -114,8 +116,6 @@ namespace EngineLayer.Calibration
 
         private Tuple<CalibrationFunction, CalibrationFunction> CalibrateRF(DataPointAquisitionResults res)
         {
-            var rnd = new Random();
-
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
 
@@ -136,7 +136,7 @@ namespace EngineLayer.Calibration
             if (trainList1.Count > 0)
                 foreach (var boolStuff in boolStuffms1)
                 {
-                    var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
+                    var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff, rnd);
                     ms1regressorRF.Train(trainList1);
                     var MS1mse = ms1regressorRF.GetMSE(testList1);
                     if (MS1mse < bestMS1MSE)
@@ -155,7 +155,7 @@ namespace EngineLayer.Calibration
             if (trainList2.Count > 0)
                 foreach (var boolStuff in boolStuffms2)
                 {
-                    var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff);
+                    var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff, rnd);
                     ms2regressorRF.Train(trainList2);
                     var MS2mse = ms2regressorRF.GetMSE(testList2);
                     if (MS2mse < bestMS2MSE)
@@ -244,8 +244,6 @@ namespace EngineLayer.Calibration
 
         private Tuple<CalibrationFunction, CalibrationFunction> CalibrateLinear(DataPointAquisitionResults res)
         {
-            var rnd = new Random();
-
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
 
