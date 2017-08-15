@@ -11,7 +11,6 @@ namespace EngineLayer
         {
             PeptidesWithSetModifications = hashSet;
             IsDecoy = PeptidesWithSetModifications.Any(bb => bb.Protein.IsDecoy);
-            var representative = PeptidesWithSetModifications.First();
         }
 
         #endregion Public Constructors

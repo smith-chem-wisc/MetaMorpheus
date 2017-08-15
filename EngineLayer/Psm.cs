@@ -59,7 +59,6 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
 
-        public LocalizationResults LocalizationResults { get; internal set; }
         public double QuantIntensity { get; set; }
 
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
@@ -72,6 +71,8 @@ namespace EngineLayer
         public int? OneBasedEndResidueInProtein { get; private set; }
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
+        public List<double> LocalizedScores { get; internal set; }
+        public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
 
         #endregion Public Properties
 
@@ -240,7 +241,10 @@ namespace EngineLayer
             sb.Append('\t' + "Next Amino Acid");
             sb.Append('\t' + "Decoy/Contaminant/Target");
 
-            sb.Append('\t' + LocalizationResults.GetTabSeparatedHeader());
+            sb.Append('\t' + "Matched Ion Counts");
+            sb.Append('\t' + "Matched Ion Masses");
+
+            sb.Append('\t' + "Localized Scores");
             sb.Append('\t' + "Improvement Possible");
 
             sb.Append('\t' + "Cumulative Target");
@@ -355,14 +359,28 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (LocalizationResults != null)
+            if (MatchedIonDictPositiveIsMatch != null)
             {
-                sb.Append('\t' + LocalizationResults.ToString());
-                sb.Append('\t' + (LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append('\t' + string.Join(";", MatchedIonDictPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))));
+
+                sb.Append('\t' + "[");
+                foreach (var kvp in MatchedIonDictPositiveIsMatch)
+                    sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " ");
+            }
+
+            if (LocalizedScores != null)
+            {
+                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]");
+                sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                sb.Append('\t' + " " + '\t' + " ");
             }
 
             if (FdrInfo != null)

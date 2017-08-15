@@ -118,7 +118,6 @@
     <Compile Include="CrosslinkSearch\PsmCross.cs" />
     <Compile Include="FdrInfo.cs" />
     <Compile Include="Localization\LocalizationEngineResults.cs" />
-    <Compile Include="Localization\LocalizationResults.cs" />
     <Compile Include="MatchedIonMassesListPositiveIsMatch.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
