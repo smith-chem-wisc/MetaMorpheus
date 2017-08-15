@@ -25,7 +25,7 @@ namespace EngineLayer.Analysis
 
         public void GenerateBins(List<Psm> targetAndDecoyMatches, double dc)
         {
-            List<double> listOfMassShifts = targetAndDecoyMatches.Select(b => b.ScanPrecursorMass - b.MostProbableProteinInfo.PeptideMonoisotopicMass).OrderBy(b => b).ToList();
+            List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.PeptideMonisotopicMass.HasValue).Select(b => b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
 
@@ -97,7 +97,7 @@ namespace EngineLayer.Analysis
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in FinalBins)
-                    if (Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].MostProbableProteinInfo.PeptideMonoisotopicMass - bin.MassShift) <= dc)
+                    if (targetAndDecoyMatches[i].PeptideMonisotopicMass.HasValue && Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].PeptideMonisotopicMass.Value - bin.MassShift) <= dc)
                         bin.Add(targetAndDecoyMatches[i]);
             }
 
@@ -164,7 +164,7 @@ namespace EngineLayer.Analysis
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)
                         && ya[ProductType.Y].Any(b => b > 0)
-                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.MostProbableProteinInfo.PeptideMonoisotopicMass)
+                        && ya[ProductType.B].Last(b => b > 0) + ya[ProductType.Y].Last(b => b > 0) > hm.Value.Item3.PeptideMonisotopicMass.Value)
                         bin.Overlapping++;
                 }
         }

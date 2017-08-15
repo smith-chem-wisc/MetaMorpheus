@@ -27,7 +27,7 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             allResultingIdentifications = new List<Psm>();
-            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
+            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
@@ -55,7 +55,7 @@ namespace Test
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
             res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(5, res.Mods["accession"].Count);
@@ -97,7 +97,7 @@ namespace Test
             match.SetFdrValues(1, 0, 0, 1, 0, 0);
             allIdentifications = new List<Psm> { match };
 
-            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(6, res.Mods["accession"].Count);
