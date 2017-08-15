@@ -61,10 +61,10 @@ namespace Test
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.BnoB1ions].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonDictPositiveIsMatch[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonDictPositiveIsMatch[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
-            Assert.IsTrue(newPsm.LocalizationResults.LocalizedScores[1] > 3 && newPsm.LocalizationResults.LocalizedScores[1] < 4);
+            Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
 
         #endregion Public Methods

@@ -157,9 +157,9 @@ namespace EngineLayer.Analysis
         private void OverlappingIonSequences()
         {
             foreach (Bin bin in FinalBins)
-                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy))
+                foreach (var hm in bin.uniquePSMs.Where(b => !b.Value.Item3.IsDecoy && b.Value.Item3.MatchedIonDictPositiveIsMatch != null))
                 {
-                    var ya = hm.Value.Item3.LocalizationResults.MatchedIonMassesListPositiveIsMatch;
+                    var ya = hm.Value.Item3.MatchedIonDictPositiveIsMatch;
                     if (ya.ContainsKey(ProductType.B)
                         && ya.ContainsKey(ProductType.Y)
                         && ya[ProductType.B].Any(b => b > 0)
@@ -175,7 +175,7 @@ namespace EngineLayer.Analysis
             {
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.Count == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentCompactPeptides == 1) / numTarget;
             }
         }
 
@@ -257,27 +257,27 @@ namespace EngineLayer.Analysis
             foreach (Bin bin in FinalBins)
             {
                 bin.residueCount = new Dictionary<char, int>();
-                foreach (var hehe in bin.uniquePSMs.Values)
+                foreach (var hehe in bin.uniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null))
                 {
-                    double bestScore = hehe.Item3.LocalizationResults.LocalizedScores.Max();
+                    double bestScore = hehe.Item3.LocalizedScores.Max();
                     if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.IsDecoy)
                     {
                         for (int i = 0; i < hehe.Item1.Count(); i++)
-                            if (bestScore - hehe.Item3.LocalizationResults.LocalizedScores[i] < 0.5)
+                            if (bestScore - hehe.Item3.LocalizedScores[i] < 0.5)
                                 if (bin.residueCount.ContainsKey(hehe.Item1[i]))
                                     bin.residueCount[hehe.Item1[i]]++;
                                 else
                                     bin.residueCount.Add(hehe.Item1[i], 1);
-                        if (hehe.Item3.LocalizationResults.LocalizedScores.Max() - hehe.Item3.LocalizationResults.LocalizedScores[0] < 0.5)
+                        if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores[0] < 0.5)
                         {
                             bin.pepNlocCount++;
-                            if (hehe.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.All(b => b.OneBasedStartResidueInProtein <= 2))
+                            if (hehe.Item3.OneBasedStartResidueInProtein.HasValue && hehe.Item3.OneBasedStartResidueInProtein.Value <= 2)
                                 bin.protNlocCount++;
                         }
-                        if (hehe.Item3.LocalizationResults.LocalizedScores.Max() - hehe.Item3.LocalizationResults.LocalizedScores.Last() < 0.5)
+                        if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores.Last() < 0.5)
                         {
                             bin.pepClocCount++;
-                            if (hehe.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.All(b => b.OneBasedEndResidueInProtein == b.Protein.Length))
+                            if (hehe.Item3.OneBasedEndResidueInProtein.HasValue && hehe.Item3.ProteinLength.HasValue && hehe.Item3.OneBasedEndResidueInProtein.Value == hehe.Item3.ProteinLength.Value)
                                 bin.protClocCount++;
                         }
                     }
