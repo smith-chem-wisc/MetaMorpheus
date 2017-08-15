@@ -175,7 +175,7 @@ namespace EngineLayer.Analysis
             {
                 var numTarget = bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.MostProbableProteinInfo.PeptidesWithSetModifications.Count == 1) / numTarget;
+                    bin.FracWithSingle = (double)bin.uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.NumDifferentCompactPeptides == 1) / numTarget;
             }
         }
 
