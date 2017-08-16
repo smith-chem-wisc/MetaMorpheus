@@ -21,6 +21,9 @@ namespace Test
             Assert.AreEqual(searchTask.MassDiffAcceptors[0].FileNameAddition, searchTaskLoaded.MassDiffAcceptors[0].FileNameAddition);
             Assert.AreEqual(searchTask.ListOfModsFixed[0].Item1, searchTaskLoaded.ListOfModsFixed[0].Item1);
             Assert.AreEqual(searchTask.ListOfModsFixed[0].Item2, searchTaskLoaded.ListOfModsFixed[0].Item2);
+            Assert.AreEqual(searchTask.ListOfModsLocalize.Count, searchTaskLoaded.ListOfModsLocalize.Count);
+            Assert.AreEqual(searchTask.ListOfModsFixed.Count, searchTaskLoaded.ListOfModsFixed.Count);
+            Assert.AreEqual(searchTask.ListOfModsVariable.Count, searchTaskLoaded.ListOfModsVariable.Count);
 
             CalibrationTask calibrationTask = new CalibrationTask();
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
@@ -34,7 +37,6 @@ namespace Test
             Toml.WriteFile(xLSearchTask, "XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
             var xLSearchTaskLoaded = Toml.ReadFile<XLSearchTask>("XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
         }
-
         #endregion Public Methods
     }
 }

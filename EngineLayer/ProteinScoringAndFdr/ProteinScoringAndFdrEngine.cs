@@ -55,7 +55,7 @@ namespace EngineLayer
             {
                 if (psm.FdrInfo.QValue <= 0.01)
                 {
-                    foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
+                    foreach (var pepWithSetMods in psm.CompactPeptides.SelectMany(b=>b.Value.Item2))
                     {
                         if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<Psm> psmsForThisPeptide))
                             peptideToPsmMatching.Add(pepWithSetMods, new HashSet<Psm> { psm });
