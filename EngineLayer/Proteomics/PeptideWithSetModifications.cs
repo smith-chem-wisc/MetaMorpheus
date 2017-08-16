@@ -20,18 +20,18 @@ namespace EngineLayer
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private string sequence;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private double? monoisotopicMass;
 
         #endregion Private Fields
 
-        #region Internal Constructors
+        #region Public Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+        public PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
                                                                                                             : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
         {
             this.missedCleavages = modPep.MissedCleavages;
@@ -39,41 +39,28 @@ namespace EngineLayer
             this.numFixedMods = numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
         {
             this.missedCleavages = everythingElseFromThisOne.missedCleavages;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key >= proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein && b.Key <= proteinOneBasedEnd - modsFromThisOne.OneBasedEndResidueInProtein).ToDictionary(b => b.Key, b => b.Value);
         }
 
-        internal PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, int? missedCleavages):base(protein, proteinOneBasedStart, proteinOneBasedEnd)
+        public PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, int? missedCleavages) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
             this.missedCleavages = missedCleavages;
             this.numFixedMods = numFixedMods;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
         }
-        #endregion Internal Constructors
+
+        #endregion Public Constructors
 
         #region Public Properties
-
-        public CompactPeptide CompactPeptide(TerminusType terminusType)
-        {
-            if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
-            {
-                return compactPeptide;               
-            }
-            else
-            {
-                CompactPeptide cp = new CompactPeptide(this, terminusType);
-                compactPeptides.Add(terminusType, cp);
-                return cp;
-            }
-        }
 
         public double MonoisotopicMass
         {
@@ -179,6 +166,20 @@ namespace EngineLayer
         #endregion Public Properties
 
         #region Public Methods
+
+        public CompactPeptide CompactPeptide(TerminusType terminusType)
+        {
+            if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
+            {
+                return compactPeptide;
+            }
+            else
+            {
+                CompactPeptide cp = new CompactPeptide(this, terminusType);
+                compactPeptides.Add(terminusType, cp);
+                return cp;
+            }
+        }
 
         public PeptideWithSetModifications Localize(int j, double massToLocalize)
         {

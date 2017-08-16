@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddCompIonsTest.cs" />
+    <Compile Include="ModificationAnalysisTest.cs" />
     <Compile Include="AnalysisEngineTest.cs" />
     <Compile Include="FdrTest.cs" />
     <Compile Include="BinGenerationTest.cs" />

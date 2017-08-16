@@ -74,6 +74,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="Thermo, Version=1.0.217.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.217\lib\Thermo.dll</HintPath>
     </Reference>
@@ -103,6 +106,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
+    <Compile Include="Interface1.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />
@@ -183,7 +187,9 @@
     <Content Include="Data\elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <Content Include="Data\proteases.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
