@@ -365,6 +365,11 @@ namespace Test
             Assert.AreEqual("QQQGGGG", allPsmsArray[1][0].BaseSequence);
         }
 
+        [Test]
+        public static void TestNonSpecificEnzymeVariableModificationHandling()
+        {
+
+        }
         #endregion Public Methods
     }
 }
