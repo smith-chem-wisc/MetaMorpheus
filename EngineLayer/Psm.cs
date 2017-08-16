@@ -266,8 +266,16 @@ namespace EngineLayer
             }
         }
 
-        public void ReplaceAndAdd(List<Tuple<CompactPeptideBase, int>> cps)
+        public void CompactCompactPeptides()
         {
+            List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
+            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in compactPeptides)
+            {
+                //Change CPWM to reflect actual CP
+                    Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
+                    if (!cps.Contains(tempTuple))
+                        cps.Add(tempTuple);
+            }
             compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
             foreach (Tuple<CompactPeptideBase, int> cp in cps)
                 compactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
