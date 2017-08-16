@@ -366,7 +366,27 @@ namespace Test
         }
 
         [Test]
-        public static void TestNonSpecificEnzymeVariableModificationHandling()
+        public static void TestNonSpecificEnzymeVariableModificationHandlingNTerm()
+        {
+           // TerminusType terminusType = TerminusType.N;
+            var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
+            var protease = new Protease("singleN", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
+            var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifP, TerminusLocalization.Any, 15.994915, null, new List<double> { 0 }, new List<double> { 15.994915 }, null) };
+            var digestedList = protein.Digest(protease, 20, 3, null, InitiatorMethionineBehavior.Variable, variableModifications);
+            foreach (var peptide in digestedList)
+            {
+                var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();
+                foreach (var PWSM in ListOfModifiedPeptides)
+                {
+                    PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein, PWSM.OneBasedEndResidueInProtein - 2);
+                    string PWSMSequence = PWSM.Sequence;
+                    string PWSMNewSequence = PWSMNew.Sequence;
+                }
+            }
+        }
+        [Test]
+        public static void TestNonSpecificEnzymeVariableModificationHandlingCTerm()
         {
 
         }
