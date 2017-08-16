@@ -52,8 +52,7 @@ namespace EngineLayer
                 return false;
             foreach (var hah in kk)
             {
-                double[] val;
-                if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out val))
+                if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out double[] val))
                     return false;
                 foreach (var ok in hah.Value.Where(b => b > 0))
                     if (!val.Contains(ok))
