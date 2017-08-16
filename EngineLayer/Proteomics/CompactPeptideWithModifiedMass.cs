@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
@@ -30,6 +31,41 @@ namespace EngineLayer
             double tempDouble = this.MonoisotopicMassIncludingFixedMods;
             this.MonoisotopicMassIncludingFixedMods = this.ModifiedMass;
             this.ModifiedMass = tempDouble;
+        }
+
+        public void CropTerminalMasses(TerminusType terminusType)
+        {
+            List<double> tempList = new List<double>();
+            if (terminusType == TerminusType.N)
+            {
+                for (int i = 0; i < NTerminalMasses.Length; i++)
+                {
+                    if (NTerminalMasses[i] < MonoisotopicMassIncludingFixedMods)
+                    {
+                        tempList.Add(NTerminalMasses[i]);
+                    }
+                    else
+                    {
+                        NTerminalMasses = tempList.ToArray();
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < CTerminalMasses.Length; i++)
+                {
+                    if (CTerminalMasses[i] < MonoisotopicMassIncludingFixedMods)
+                    {
+                        tempList.Add(CTerminalMasses[i]);
+                    }
+                    else
+                    {
+                        CTerminalMasses = tempList.ToArray();
+                        break;
+                    }
+                }
+            }
         }
 
         #endregion Public Methods

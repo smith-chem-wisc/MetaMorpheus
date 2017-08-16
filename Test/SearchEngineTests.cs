@@ -251,7 +251,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
+            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
@@ -365,6 +365,67 @@ namespace Test
             Assert.AreEqual("QQQGGGG", allPsmsArray[1][0].BaseSequence);
         }
 
+        [Test]
+        public static void TestNonSpecificEnzymeVariableModificationHandlingNTerm()
+        {
+            var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
+            var protease = new Protease("singleN", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
+            var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null, new List<double> { 0 }, new List<double> { 15.994915 }, null) };
+            var digestedList = protein.Digest(protease, 20, 6, null, InitiatorMethionineBehavior.Variable, variableModifications);
+            foreach (var peptide in digestedList)
+            {
+                var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();
+                var PWSM = ListOfModifiedPeptides[0];
+                    PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein+3, PWSM.OneBasedEndResidueInProtein - 2);
+                string PWSMSequence = PWSM.Sequence;
+                string PWSMNewSequence = PWSMNew.Sequence;
+                char[] PWSMNewSequenceArray = PWSMNewSequence.ToCharArray();
+                for (int i = 0; i < PWSMNewSequenceArray.Count(); i++)
+                {
+                    if (PWSMNewSequenceArray[i] == 'M')
+                    {
+                        Assert.IsTrue(i != PWSMNewSequenceArray.Count() - 1);
+                        Assert.IsTrue(PWSMNewSequenceArray[i + 1] == '[');
+                    }
+                    else if (PWSMNewSequenceArray[i] == '[')
+                    {
+                        Assert.IsTrue(i != 0);
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public static void TestNonSpecificEnzymeVariableModificationHandlingCTerm()
+        {
+            var protein = new Protein("MGGGGGMNNNKQQQMGGGGMGM", "TestProtein");
+            var protease = new Protease("singleC", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+            ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
+            var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null, new List<double> { 0 }, new List<double> { 15.994915 }, null) };
+            var digestedList = protein.Digest(protease, 20, 6, null, InitiatorMethionineBehavior.Variable, variableModifications);
+            foreach (var peptide in digestedList)
+            {
+                var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();
+                var PWSM = ListOfModifiedPeptides[0];
+                PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein+2, PWSM.OneBasedEndResidueInProtein-3);
+                string PWSMSequence = PWSM.Sequence;
+                string PWSMNewSequence = PWSMNew.Sequence;
+                char[] PWSMNewSequenceArray = PWSMNewSequence.ToCharArray();
+                for (int i = 0; i < PWSMNewSequenceArray.Count(); i++)
+                {
+                    if (PWSMNewSequenceArray[i] == 'M')
+                    {
+                        Assert.IsTrue(i != PWSMNewSequenceArray.Count() - 1);
+                        Assert.IsTrue(PWSMNewSequenceArray[i + 1] == '[');
+                    }
+                    else if (PWSMNewSequenceArray[i] == '[')
+                    {
+                        Assert.IsTrue(i != 0);
+                    }
+                }       
+            }
+        }
         #endregion Public Methods
     }
 }
