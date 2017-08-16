@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("Test")]
 
 namespace EngineLayer
 {
@@ -48,7 +46,7 @@ namespace EngineLayer
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key+modsFromThisOne.OneBasedStartResidueInProtein-proteinOneBasedStart), b => b.Value);
         }
