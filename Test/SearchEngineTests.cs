@@ -251,7 +251,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
+            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
