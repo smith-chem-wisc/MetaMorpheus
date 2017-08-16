@@ -294,7 +294,22 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in psm.CompactPeptides)
                             {
                                 (kvp.Key as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
+                                //Change CPWM to reflect actual CP
+                                if(CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> misplacedPWSMs))
+                                {
+                                    (kvp.Key as CompactPeptideWithModifiedMass).CropTerminalMasses(terminusType);
+                                    if(CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> wellPlacedPWSMs))
+                                    {
+                                        foreach (PeptideWithSetModifications PWSM in misplacedPWSMs)
+                                            wellPlacedPWSMs.Add(PWSM);
+                                    }
+                                    else
+                                    {
+                                        CPWMtoPWSM.Add(kvp.Key, misplacedPWSMs);
+                                    }
+                                }
                             }
+                            psm.CompactCompactPeptides();
                         }
             return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
         }

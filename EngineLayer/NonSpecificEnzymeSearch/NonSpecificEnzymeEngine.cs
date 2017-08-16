@@ -260,6 +260,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         return theoMass;
                     }
+                    else if (theoMass > scanPrecursorMass)
+                    {
+                        break;
+                    }
                 }
                 //if the theoretical and experimental have the same mass
                 if (peptide.NTerminalMasses.Count() > localminPeptideLength)
@@ -279,6 +283,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (Math.Abs((scanPrecursorMass - theoMass) / (theoMass) * 1e6) < precursorTolerance.Value)
                     {
                         return theoMass;
+                    }
+                    else if (theoMass > scanPrecursorMass)
+                    {
+                        break;
                     }
                 }
                 //if the theoretical and experimental have the same mass
