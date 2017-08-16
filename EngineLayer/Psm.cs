@@ -73,6 +73,7 @@ namespace EngineLayer
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
         public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
+        public string ProteinAccesion { get; private set; }
 
         #endregion Public Properties
 
@@ -313,6 +314,8 @@ namespace EngineLayer
             ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
 
             PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
+
+            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
 
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
