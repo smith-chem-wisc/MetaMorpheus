@@ -551,7 +551,7 @@ namespace TaskLayer
                 if (KeepAllUniprotMods)
                     modificationsToAlwaysKeep.AddRange(GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
 
-                var goodPsmsForEachProtein = allPsms.SelectMany(b => b).Where(b => b.FdrInfo.QValueNotch < 0.01 && b.MostProbableProteinInfo.PeptidesWithSetModifications.Count == 1 && !b.IsDecoy && b.NumDifferentCompactPeptides == 1).GroupBy(b => b.MostProbableProteinInfo.PeptidesWithSetModifications.First().Protein).ToDictionary(b => b.Key);
+                var goodPsmsForEachProtein = allPsms.SelectMany(b => b).Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence!=null && b.ProteinAccesion!=null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
                 foreach (var protein in proteinList)
                 {
