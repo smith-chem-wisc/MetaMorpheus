@@ -297,7 +297,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 //Change CPWM to reflect actual CP
                                 if(CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> misplacedPWSMs))
                                 {
-                                    kvp.Key.CropTerminalMasses(terminusType);
+                                    (kvp.Key as CompactPeptideWithModifiedMass).CropTerminalMasses(terminusType);
                                     if(CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> wellPlacedPWSMs))
                                     {
                                         foreach (PeptideWithSetModifications PWSM in misplacedPWSMs)
