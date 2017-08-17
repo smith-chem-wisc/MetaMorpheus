@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,15 +23,15 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
-            this.ScanNumber = scan.TheScan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
-            this.ScanRetentionTime = scan.TheScan.RetentionTime;
-            this.ScanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
-            this.TotalIonCurrent = scan.TheScan.TotalIonCurrent;
+            this.ScanNumber = scan.OneBasedScanNumber;
+            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            this.ScanRetentionTime = scan.RetentionTime;
+            this.ScanExperimentalPeaks = scan.NumPeaks;
+            this.TotalIonCurrent = scan.TotalIonCurrent;
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
@@ -74,8 +75,11 @@ namespace EngineLayer
         public List<double> LocalizedScores { get; internal set; }
         public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
         public string ProteinAccesion { get; private set; }
+        public Dictionary<string, int> ModsIdentified { get; private set; }
 
         #endregion Public Properties
+
+        // id and number of occurences
 
         #region Public Methods
 
@@ -226,6 +230,7 @@ namespace EngineLayer
             sb.Append('\t' + "Peptides Sharing Same Peaks");
             sb.Append('\t' + "Base Sequence");
             sb.Append('\t' + "Full Sequence");
+            sb.Append('\t' + "Mods");
             sb.Append('\t' + "Num Variable Mods");
             sb.Append('\t' + "Missed Cleavages");
             sb.Append('\t' + "Peptide Monoisotopic Mass");
@@ -317,6 +322,8 @@ namespace EngineLayer
 
             ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
 
+            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
+
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
@@ -349,6 +356,7 @@ namespace EngineLayer
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
@@ -374,7 +382,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictPositiveIsMatch != null)
@@ -442,6 +450,33 @@ namespace EngineLayer
         #endregion Internal Methods
 
         #region Private Methods
+
+        private Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)
+        {
+            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
+            bool notEqual = false;
+            foreach (var ha in enumerable)
+            {
+                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
+                if (!ok.SequenceEqual(okTest))
+                {
+                    notEqual = true;
+                    break;
+                }
+            }
+            if (notEqual)
+            {
+                var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
+                if (possibleReturn.Length > 32000)
+                    return new Tuple<string, Dictionary<string, int>>("too many", null);
+                else
+                    return new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+            }
+            else
+            {
+                return new Tuple<string, Dictionary<string, int>>(string.Join(" ", ok), ok);
+            }
+        }
 
         private Tuple<string, double?> Resolve(IEnumerable<double> enumerable)
         {

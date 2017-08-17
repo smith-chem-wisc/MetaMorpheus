@@ -373,7 +373,7 @@ namespace TaskLayer
                     allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictPositiveIsMatch)).Select(b => b.First()).ToList();
             }
 
-            new ModificationAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
+            new ModificationAnalysisEngine(allPsms, MassDiffAcceptors.Count, new List<string> { taskId }).Run();
 
             if (DoQuantification)
             {
@@ -551,7 +551,7 @@ namespace TaskLayer
                 if (KeepAllUniprotMods)
                     modificationsToAlwaysKeep.AddRange(GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
 
-                var goodPsmsForEachProtein = allPsms.SelectMany(b => b).Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence!=null && b.ProteinAccesion!=null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
+                var goodPsmsForEachProtein = allPsms.SelectMany(b => b).Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
                 foreach (var protein in proteinList)
                 {

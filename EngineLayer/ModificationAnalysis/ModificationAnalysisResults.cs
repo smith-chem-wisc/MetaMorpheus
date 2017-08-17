@@ -5,7 +5,7 @@ using System.Text;
 
 namespace EngineLayer
 {
-    internal class ModificationAnalysisResults : MetaMorpheusEngineResults
+    public class ModificationAnalysisResults : MetaMorpheusEngineResults
     {
         #region Public Constructors
 
@@ -17,8 +17,9 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public Dictionary<string, int>[] AllModsSeen { get; internal set; }
-        public Dictionary<string, int>[] AllModsOnPeptides { get; internal set; }
+        public Dictionary<string, int>[] ApproximateModsSeen { get; internal set; }
+        public Dictionary<string, int>[] ModsSeenAndLocalized { get; internal set; }
+        public Dictionary<string, int>[] AllModsOnProteins { get; internal set; }
 
         #endregion Public Properties
 
@@ -28,12 +29,14 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             sb.AppendLine(base.ToString());
-            for (int i = 0; i < AllModsOnPeptides.Length; i++)
+            for (int i = 0; i < AllModsOnProteins.Length; i++)
             {
-                sb.AppendLine("Search mode index:" + i + ". Unique mods seen below q-value 0.01:");
-                sb.AppendLine(string.Join(Environment.NewLine, AllModsSeen[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                sb.AppendLine("Search mode index:" + i + ". Approximate mod seen below q-value 0.01, possibly non-localized:");
+                sb.AppendLine(string.Join(Environment.NewLine, ApproximateModsSeen[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                sb.AppendLine("Search mode index:" + i + ". Localized mods seen below q-value 0.01:");
+                sb.AppendLine(string.Join(Environment.NewLine, ModsSeenAndLocalized[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
                 sb.AppendLine("Search mode index:" + i + ". All mods in database limited to peptides observed in the results:");
-                sb.AppendLine(string.Join(Environment.NewLine, AllModsOnPeptides[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
+                sb.AppendLine(string.Join(Environment.NewLine, AllModsOnProteins[i].OrderBy(b => -b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
             return sb.ToString();
         }
