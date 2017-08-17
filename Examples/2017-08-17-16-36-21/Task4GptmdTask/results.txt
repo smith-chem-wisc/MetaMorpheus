@@ -1,0 +1,75 @@
+MetaMorpheus: version Not a release version
+Time to run task: 00:00:00.4076571
+
+
+--------------------------------------------------
+
+
+New files:
+New databases: 
+/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task4GptmdTask/mouse-10GPTMD.xml
+
+
+--------------------------------------------------
+
+
+Modifications added: 53
+Mods types and counts:
+	Sodium on D	15
+	Sodium on E	13
+	Oxidation on D	3
+	Phospho on S	3
+	Sulfonation on S	3
+	Calcium on D	3
+	Water loss	3
+	Phospho on T	2
+	Sulfonation on T	2
+	Oxidation on F	1
+	Oxidation on E	1
+	Oxidation on H	1
+	Calcium on E	1
+	Carbon Adduct	1
+	Oxidation and then loss of oxidized M side chain	1
+
+
+
+--------------------------------------------------
+
+
+Engine Results:
+
+MetaMorpheusEngineResults
+Task4GptmdTask,Individual Spectra Files,/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+Time to run: 00:00:00.1534354
+
+SequencesToActualProteinPeptidesEngineResults
+Task4GptmdTask
+Time to run: 00:00:00.0349897
+CompactPeptideToProteinPeptideMatching.Count: 15
+
+FdrAnalysisResults
+Task4GptmdTask
+Time to run: 00:00:00.0000097
+
+GptmdResults
+Task4GptmdTask
+Time to run: 00:00:00.0041019
+Modifications trying to add: 53
+Proteins trying to expand: 7
+Mods types and counts:
+	Sodium on D	15
+	Sodium on E	13
+	Oxidation on D	3
+	Phospho on S	3
+	Sulfonation on S	3
+	Calcium on D	3
+	Water loss	3
+	Phospho on T	2
+	Sulfonation on T	2
+	Oxidation on F	1
+	Oxidation on E	1
+	Oxidation on H	1
+	Calcium on E	1
+	Carbon Adduct	1
+	Oxidation and then loss of oxidized M side chain	1
+

@@ -1,0 +1,10 @@
+MetaMorpheus version Not a release version is used to run a Calibrate task on 1 spectra files.
+Calibrate
+The initiator methionine behavior is set to Variable and the maximum number of allowed missed cleavages is 2
+
+
+taskId: Task2CalibrationTask
+Spectra files:
+	/Users/stepa/MetaMorpheus/Examples/example.mzML
+XML files:
+	/Users/stepa/MetaMorpheus/Examples/mouse-10.xml

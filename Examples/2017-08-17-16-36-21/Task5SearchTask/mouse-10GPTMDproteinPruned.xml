@@ -1,0 +1,917 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mzLibProteinDb>
+  <modification>ID   4-hydroxyproline
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0030
+DR   PSI-MOD; MOD:00039
+TG   P
+MM   15.994915
+CF   O
+//</modification>
+  <modification>ID   Arginine amide
+MT   Uniprot
+PP   C-terminal.
+DR   RESID; AA0082
+DR   PSI-MOD; MOD:00091
+TG   R
+MM   -0.984016
+CF   HNO-1
+//</modification>
+  <modification>ID   Calcium on E
+MT   Metal
+PP   Anywhere.
+TG   E
+CF   H-2Ca
+//</modification>
+  <modification>ID   Carbon Adduct
+MT   PeptideTermMod
+PP   Peptide N-terminal.
+TG   X
+CF   C
+//</modification>
+  <modification>ID   N6,N6,N6-trimethyllysine
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0074
+DR   PSI-MOD; MOD:00083
+TG   K
+MM   42.046950533121
+CF   C3H6
+//</modification>
+  <modification>ID   N6-acetyllysine
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0055
+DR   PSI-MOD; MOD:00064
+TG   K
+MM   42.010565
+CF   C2H2O
+//</modification>
+  <modification>ID   N6-succinyllysine
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0545
+DR   PSI-MOD; MOD:01819
+TG   K
+MM   100.016044
+CF   C4H4O3
+//</modification>
+  <modification>ID   Oxidation and then loss of oxidized M side chain
+MT   Mod
+PP   Anywhere.
+TG   M
+CF   C-1H-4OS-1
+//</modification>
+  <modification>ID   Oxidation on D
+MT   Mod
+PP   Anywhere.
+TG   D
+CF   O
+//</modification>
+  <modification>ID   Phospho on S
+MT   Mod
+PP   Anywhere.
+TG   S
+NL   0 or 97.976896
+MM   79.966331
+CF   HO3P
+//</modification>
+  <modification>ID   Phosphoserine
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0037
+DR   PSI-MOD; MOD:00046
+TG   S
+MM   79.966331
+CF   HO3P
+//</modification>
+  <modification>ID   Phosphothreonine
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0038
+DR   PSI-MOD; MOD:00047
+TG   T
+MM   79.966331
+CF   HO3P
+//</modification>
+  <modification>ID   Phosphotyrosine
+MT   Uniprot
+PP   Anywhere.
+DR   RESID; AA0039
+DR   PSI-MOD; MOD:00048
+TG   Y
+MM   79.966331
+CF   HO3P
+//</modification>
+  <modification>ID   Sodium on D
+MT   Metal
+PP   Anywhere.
+TG   D
+CF   H-1Na
+//</modification>
+  <modification>ID   Sodium on E
+MT   Metal
+PP   Anywhere.
+TG   E
+CF   H-1Na
+//</modification>
+  <modification>ID   Water loss
+MT   Mod
+PP   Anywhere.
+TG   D
+CF   H-2O-1
+//</modification>
+  <entry>
+    <accession>P55095</accession>
+    <name>GLUC_MOUSE</name>
+    <protein>
+      <recommendedName>
+        <fullName>Glucagon</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">Gcg</name>
+    </gene>
+    <dbReference type="EMBL" id="Z46845">
+      <property type="protein sequence ID" value="CAA86902.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AF276754">
+      <property type="protein sequence ID" value="AAK96898.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK007911">
+      <property type="protein sequence ID" value="BAB25344.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK148544">
+      <property type="protein sequence ID" value="BAE28612.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="BC012975">
+      <property type="protein sequence ID" value="AAH12975.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="PIR" id="A57294">
+      <property type="entry name" value="A57294" />
+    </dbReference>
+    <dbReference type="RefSeq" id="NP_032126.1">
+      <property type="nucleotide sequence ID" value="NM_008100.4" />
+    </dbReference>
+    <dbReference type="Ensembl" id="ENSMUST00000102733">
+      <property type="protein sequence ID" value="ENSMUSP00000099794" />
+      <property type="gene ID" value="ENSMUSG00000000394" />
+    </dbReference>
+    <dbReference type="UCSC" id="uc008jvj.1">
+      <property type="organism name" value="mouse" />
+    </dbReference>
+    <dbReference type="MGI" id="MGI:95674">
+      <property type="gene designation" value="Gcg" />
+    </dbReference>
+    <dbReference type="eggNOG" id="ENOG410IKZ8">
+      <property type="taxonomic scope" value="Eukaryota" />
+    </dbReference>
+    <dbReference type="eggNOG" id="ENOG4111VKC">
+      <property type="taxonomic scope" value="LUCA" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-163359">
+      <property type="pathway name" value="Glucagon signaling in metabolic regulation" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-381676">
+      <property type="pathway name" value="Glucagon-like Peptide-1 (GLP1) regulates insulin secretion" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-381771">
+      <property type="pathway name" value="Synthesis, secretion, and inactivation of Glucagon-like Peptide-1 (GLP-1)" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-416476">
+      <property type="pathway name" value="G alpha (q) signalling events" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-418555">
+      <property type="pathway name" value="G alpha (s) signalling events" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-420092">
+      <property type="pathway name" value="Glucagon-type ligand receptors" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-422085">
+      <property type="pathway name" value="Synthesis, secretion, and deacylation of Ghrelin" />
+    </dbReference>
+    <dbReference type="ChiTaRS" id="Gcg">
+      <property type="organism name" value="mouse" />
+    </dbReference>
+    <dbReference type="Proteomes" id="UP000000589">
+      <property type="component" value="Chromosome 2" />
+    </dbReference>
+    <dbReference type="ExpressionAtlas" id="P55095">
+      <property type="expression patterns" value="baseline and differential" />
+    </dbReference>
+    <dbReference type="Genevisible" id="P55095">
+      <property type="organism ID" value="MM" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005737">
+      <property type="term" value="C:cytoplasm" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005615">
+      <property type="term" value="C:extracellular space" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0034774">
+      <property type="term" value="C:secretory granule lumen" />
+      <property type="evidence" value="ECO:0000304" />
+      <property type="project" value="Reactome" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0043066">
+      <property type="term" value="P:negative regulation of apoptotic process" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:1900118">
+      <property type="term" value="P:negative regulation of execution phase of apoptosis" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:2001243">
+      <property type="term" value="P:negative regulation of intrinsic apoptotic signaling pathway" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0090280">
+      <property type="term" value="P:positive regulation of calcium ion import" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0030819">
+      <property type="term" value="P:positive regulation of cAMP biosynthetic process" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0070374">
+      <property type="term" value="P:positive regulation of ERK1 and ERK2 cascade" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0035948">
+      <property type="term" value="P:positive regulation of gluconeogenesis by positive regulation of transcription from RNA polymerase II promoter" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0051571">
+      <property type="term" value="P:positive regulation of histone H3-K4 methylation" />
+      <property type="evidence" value="ECO:0000316" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0035774">
+      <property type="term" value="P:positive regulation of insulin secretion involved in cellular response to glucose stimulus" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0033138">
+      <property type="term" value="P:positive regulation of peptidyl-serine phosphorylation" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0010800">
+      <property type="term" value="P:positive regulation of peptidyl-threonine phosphorylation" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0032092">
+      <property type="term" value="P:positive regulation of protein binding" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0045860">
+      <property type="term" value="P:positive regulation of protein kinase activity" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0010737">
+      <property type="term" value="P:protein kinase A signaling" />
+      <property type="evidence" value="ECO:0000315" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0050796">
+      <property type="term" value="P:regulation of insulin secretion" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR015550">
+      <property type="entry name" value="Glucagon" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR000532">
+      <property type="entry name" value="Glucagon_GIP_secretin_VIP" />
+    </dbReference>
+    <dbReference type="PANTHER" id="PTHR11418:SF1">
+      <property type="entry name" value="PTHR11418:SF1" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="Pfam" id="PF00123">
+      <property type="entry name" value="Hormone_2" />
+      <property type="match status" value="3" />
+    </dbReference>
+    <dbReference type="PRINTS" id="PR00275">
+      <property type="entry name" value="GLUCAGON" />
+    </dbReference>
+    <dbReference type="SMART" id="SM00070">
+      <property type="entry name" value="GLUCA" />
+      <property type="match status" value="3" />
+    </dbReference>
+    <dbReference type="PROSITE" id="PS00260">
+      <property type="entry name" value="GLUCAGON" />
+      <property type="match status" value="4" />
+    </dbReference>
+    <feature type="signal peptide">
+      <location>
+        <begin position="1" />
+        <end position="20" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="21" />
+        <end position="89" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="21" />
+        <end position="50" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="53" />
+        <end position="89" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="53" />
+        <end position="81" />
+      </location>
+    </feature>
+    <feature type="propeptide">
+      <location>
+        <begin position="84" />
+        <end position="89" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="92" />
+        <end position="128" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="98" />
+        <end position="128" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="98" />
+        <end position="127" />
+      </location>
+    </feature>
+    <feature type="propeptide">
+      <location>
+        <begin position="131" />
+        <end position="145" />
+      </location>
+    </feature>
+    <feature type="peptide">
+      <location>
+        <begin position="146" />
+        <end position="178" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="54" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="105" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="108" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Arginine amide">
+      <location>
+        <position position="127" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Carbon Adduct">
+      <location>
+        <position position="146" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water loss">
+      <location>
+        <position position="148" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="150" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phospho on S">
+      <location>
+        <position position="150" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="152" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phospho on S">
+      <location>
+        <position position="152" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on D">
+      <location>
+        <position position="153" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Sodium on E">
+      <location>
+        <position position="154" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Calcium on E">
+      <location>
+        <position position="154" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Oxidation and then loss of oxidized M side chain">
+      <location>
+        <position position="155" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Oxidation on D">
+      <location>
+        <position position="160" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Water loss">
+      <location>
+        <position position="160" />
+      </location>
+    </feature>
+    <sequence length="180">MKTIYFVAGLLIMLVQGSWQHALQDTEENPRSFPASQTEAHEDPDEMNEDKRHSQGTFTSDYSKYLDSRRAQDFVQWLMNTKRNRNNIAKRHDEFERHAEGTFTSDVSSYLEGQAAKEFIAWLVKGRGRRDFPEEVAIAEELGRRHADGSFSDEMSTILDNLATRDFINWLIQTKITDKK</sequence>
+  </entry>
+  <entry>
+    <accession>P52480</accession>
+    <name>KPYM_MOUSE</name>
+    <protein>
+      <recommendedName>
+        <fullName>Pyruvate kinase PKM</fullName>
+      </recommendedName>
+    </protein>
+    <gene>
+      <name type="primary">Pkm</name>
+      <name type="synonym">Pk3</name>
+      <name type="synonym">Pkm2</name>
+      <name type="synonym">Pykm</name>
+    </gene>
+    <dbReference type="EMBL" id="D38379">
+      <property type="protein sequence ID" value="BAA07457.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="X97047">
+      <property type="protein sequence ID" value="CAA65761.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK002341">
+      <property type="protein sequence ID" value="BAB22025.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK135397">
+      <property type="protein sequence ID" value="BAE22519.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK151724">
+      <property type="protein sequence ID" value="BAE30642.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK153483">
+      <property type="protein sequence ID" value="BAE32031.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK155110">
+      <property type="protein sequence ID" value="BAE33055.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK155655">
+      <property type="protein sequence ID" value="BAE33370.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK170892">
+      <property type="protein sequence ID" value="BAE42098.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK168943">
+      <property type="protein sequence ID" value="BAE40751.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK171023">
+      <property type="protein sequence ID" value="BAE42192.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AK171033">
+      <property type="protein sequence ID" value="BAE42199.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="AC160637">
+      <property type="status" value="NOT_ANNOTATED_CDS" />
+      <property type="molecule type" value="Genomic_DNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="BC016619">
+      <property type="protein sequence ID" value="AAH16619.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="EMBL" id="BC094663">
+      <property type="protein sequence ID" value="AAH94663.1" />
+      <property type="molecule type" value="mRNA" />
+    </dbReference>
+    <dbReference type="PIR" id="S55921">
+      <property type="entry name" value="S55921" />
+    </dbReference>
+    <dbReference type="RefSeq" id="NP_001240812.1">
+      <property type="nucleotide sequence ID" value="NM_001253883.1" />
+    </dbReference>
+    <dbReference type="RefSeq" id="NP_035229.2">
+      <property type="nucleotide sequence ID" value="NM_011099.3" />
+    </dbReference>
+    <dbReference type="RefSeq" id="XP_006510918.1">
+      <property type="nucleotide sequence ID" value="XM_006510855.1" />
+    </dbReference>
+    <dbReference type="RefSeq" id="XP_011240975.1">
+      <property type="nucleotide sequence ID" value="XM_011242673.1" />
+    </dbReference>
+    <dbReference type="BioGrid" id="202191">
+      <property type="interactions" value="18" />
+    </dbReference>
+    <dbReference type="IntAct" id="P52480">
+      <property type="interactions" value="30" />
+    </dbReference>
+    <dbReference type="Ensembl" id="ENSMUST00000034834">
+      <property type="protein sequence ID" value="ENSMUSP00000034834" />
+      <property type="gene ID" value="ENSMUSG00000032294" />
+    </dbReference>
+    <dbReference type="Ensembl" id="ENSMUST00000163694">
+      <property type="protein sequence ID" value="ENSMUSP00000128770" />
+      <property type="gene ID" value="ENSMUSG00000032294" />
+    </dbReference>
+    <dbReference type="UCSC" id="uc009pyf.2">
+      <property type="organism name" value="mouse" />
+    </dbReference>
+    <dbReference type="UCSC" id="uc009pyh.2">
+      <property type="organism name" value="mouse" />
+    </dbReference>
+    <dbReference type="MGI" id="MGI:97591">
+      <property type="gene designation" value="Pkm" />
+    </dbReference>
+    <dbReference type="eggNOG" id="KOG2323">
+      <property type="taxonomic scope" value="Eukaryota" />
+    </dbReference>
+    <dbReference type="eggNOG" id="COG0469">
+      <property type="taxonomic scope" value="LUCA" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-6798695">
+      <property type="pathway name" value="Neutrophil degranulation" />
+    </dbReference>
+    <dbReference type="Reactome" id="R-MMU-70171">
+      <property type="pathway name" value="Glycolysis" />
+    </dbReference>
+    <dbReference type="UniPathway" id="UPA00109">
+      <property type="reaction ID" value="UER00188" />
+    </dbReference>
+    <dbReference type="Proteomes" id="UP000000589">
+      <property type="component" value="Chromosome 9" />
+    </dbReference>
+    <dbReference type="Genevisible" id="P52480">
+      <property type="organism ID" value="MM" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005913">
+      <property type="term" value="C:cell-cell adherens junction" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005929">
+      <property type="term" value="C:cilium" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005737">
+      <property type="term" value="C:cytoplasm" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005829">
+      <property type="term" value="C:cytosol" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0070062">
+      <property type="term" value="C:extracellular exosome" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0031012">
+      <property type="term" value="C:extracellular matrix" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:1903561">
+      <property type="term" value="C:extracellular vesicle" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005739">
+      <property type="term" value="C:mitochondrion" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0043209">
+      <property type="term" value="C:myelin sheath" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="UniProtKB" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005634">
+      <property type="term" value="C:nucleus" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0031982">
+      <property type="term" value="C:vesicle" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0005524">
+      <property type="term" value="F:ATP binding" />
+      <property type="evidence" value="ECO:0000501" />
+      <property type="project" value="UniProtKB-KW" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0098641">
+      <property type="term" value="F:cadherin binding involved in cell-cell adhesion" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0016301">
+      <property type="term" value="F:kinase activity" />
+      <property type="evidence" value="ECO:0000501" />
+      <property type="project" value="UniProtKB-KW" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0000287">
+      <property type="term" value="F:magnesium ion binding" />
+      <property type="evidence" value="ECO:0000501" />
+      <property type="project" value="InterPro" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0023026">
+      <property type="term" value="F:MHC class II protein complex binding" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0030955">
+      <property type="term" value="F:potassium ion binding" />
+      <property type="evidence" value="ECO:0000501" />
+      <property type="project" value="InterPro" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0004743">
+      <property type="term" value="F:pyruvate kinase activity" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0003723">
+      <property type="term" value="F:RNA binding" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0032869">
+      <property type="term" value="P:cellular response to insulin stimulus" />
+      <property type="evidence" value="ECO:0000318" />
+      <property type="project" value="GO_Central" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0006096">
+      <property type="term" value="P:glycolytic process" />
+      <property type="evidence" value="ECO:0000314" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="GO" id="GO:0012501">
+      <property type="term" value="P:programmed cell death" />
+      <property type="evidence" value="ECO:0000266" />
+      <property type="project" value="MGI" />
+    </dbReference>
+    <dbReference type="CDD" id="cd00288">
+      <property type="entry name" value="Pyruvate_Kinase" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="Gene3D" id="2.40.33.10">
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="Gene3D" id="3.20.20.60">
+      <property type="match status" value="2" />
+    </dbReference>
+    <dbReference type="Gene3D" id="3.40.1380.20">
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR001697">
+      <property type="entry name" value="Pyr_Knase" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR015813">
+      <property type="entry name" value="Pyrv/PenolPyrv_Kinase-like_dom" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR011037">
+      <property type="entry name" value="Pyrv_Knase-like_insert_dom" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR015794">
+      <property type="entry name" value="Pyrv_Knase_a/b" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR018209">
+      <property type="entry name" value="Pyrv_Knase_AS" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR015793">
+      <property type="entry name" value="Pyrv_Knase_brl" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR015795">
+      <property type="entry name" value="Pyrv_Knase_C" />
+    </dbReference>
+    <dbReference type="InterPro" id="IPR015806">
+      <property type="entry name" value="Pyrv_Knase_insert_dom" />
+    </dbReference>
+    <dbReference type="PANTHER" id="PTHR11817">
+      <property type="entry name" value="PTHR11817" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="Pfam" id="PF00224">
+      <property type="entry name" value="PK" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="Pfam" id="PF02887">
+      <property type="entry name" value="PK_C" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="PRINTS" id="PR01050">
+      <property type="entry name" value="PYRUVTKNASE" />
+    </dbReference>
+    <dbReference type="SUPFAM" id="SSF50800">
+      <property type="entry name" value="SSF50800" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="SUPFAM" id="SSF51621">
+      <property type="entry name" value="SSF51621" />
+      <property type="match status" value="2" />
+    </dbReference>
+    <dbReference type="SUPFAM" id="SSF52935">
+      <property type="entry name" value="SSF52935" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="TIGRFAMs" id="TIGR01064">
+      <property type="entry name" value="pyruv_kin" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <dbReference type="PROSITE" id="PS00110">
+      <property type="entry name" value="PYRUVATE_KINASE" />
+      <property type="match status" value="1" />
+    </dbReference>
+    <feature type="chain">
+      <location>
+        <begin position="2" />
+        <end position="531" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6,N6,N6-trimethyllysine">
+      <location>
+        <position position="3" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="37" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphothreonine">
+      <location>
+        <position position="41" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="62" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine">
+      <location>
+        <position position="66" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="89" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="97" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="100" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphotyrosine">
+      <location>
+        <position position="105" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphoserine">
+      <location>
+        <position position="127" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphotyrosine">
+      <location>
+        <position position="148" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="166" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine">
+      <location>
+        <position position="166" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphotyrosine">
+      <location>
+        <position position="175" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="Phosphothreonine">
+      <location>
+        <position position="195" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="266" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="270" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="305" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="322" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine">
+      <location>
+        <position position="322" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="4-hydroxyproline">
+      <location>
+        <position position="403" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="4-hydroxyproline">
+      <location>
+        <position position="408" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-acetyllysine">
+      <location>
+        <position position="475" />
+      </location>
+    </feature>
+    <feature type="modified residue" description="N6-succinyllysine">
+      <location>
+        <position position="498" />
+      </location>
+    </feature>
+    <sequence length="531">MPKPHSEAGTAFIQTQQLHAAMADTFLEHMCRLDIDSAPITARNTGIICTIGPASRSVEMLKEMIKSGMNVARLNFSHGTHEYHAETIKNVREATESFASDPILYRPVAVALDTKGPEIRTGLIKGSGTAEVELKKGATLKITLDNAYMEKCDENILWLDYKNICKVVEVGSKIYVDDGLISLQVKEKGADFLVTEVENGGSLGSKKGVNLPGAAVDLPAVSEKDIQDLKFGVEQDVDMVFASFIRKAADVHEVRKVLGEKGKNIKIISKIENHEGVRRFDEILEASDGIMVARGDLGIEIPAEKVFLAQKMMIGRCNRAGKPVICATQMLESMIKKPRPTRAEGSDVANAVLDGADCIMLSGETAKGDYPLEAVRMQHLIAREAEAAIYHLQLFEELRRLAPITSDPTEAAAVGAVEASFKCCSGAIIVLTKSGRSAHQVARYRPRAPIIAVTRNPQTARQAHLYRGIFPVLCKDAVLNAWAEDVDLRVNLAMDVGKARGFFKKGDVVIVLTGWRPGSGFTNTMRVVPVP</sequence>
+  </entry>
+</mzLibProteinDb>

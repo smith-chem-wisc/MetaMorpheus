@@ -1,0 +1,49 @@
+MetaMorpheus: version Not a release version
+Time to run task: 00:00:00.2957474
+
+
+--------------------------------------------------
+
+
+All target PSMS within 1% FDR 5ppmAroundZero: 25
+Unique peptides within 1% FDR 5ppmAroundZero: 8
+PSMs within 1% FDR 5ppmAroundZero example-Calibrated: 25
+Unique peptides within 1% FDR 5ppmAroundZero example-Calibrated: 8
+
+
+
+--------------------------------------------------
+
+
+Engine Results:
+
+MetaMorpheusEngineResults
+Task3SearchTask,Individual Spectra Files,/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+Time to run: 00:00:00.0663395
+
+SequencesToActualProteinPeptidesEngineResults
+Task3SearchTask
+Time to run: 00:00:00.0371066
+CompactPeptideToProteinPeptideMatching.Count: 11
+
+FdrAnalysisResults
+Task3SearchTask
+Time to run: 00:00:00.0000074
+
+LocalizationEngineResults
+Task3SearchTask,Individual Spectra Files,/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+Time to run: 00:00:00.0048336
+
+ModificationAnalysisResults
+Task3SearchTask
+Time to run: 00:00:00.0000518
+Search mode index:0. Approximate mod seen below q-value 0.01, possibly non-localized:
+	Phosphoserine	2
+	Oxidation of M	1
+Search mode index:0. Localized mods seen below q-value 0.01:
+	Phosphoserine	2
+	Oxidation of M	1
+Search mode index:0. All mods in database limited to peptides observed in the results:
+	Phosphoserine	4
+
+

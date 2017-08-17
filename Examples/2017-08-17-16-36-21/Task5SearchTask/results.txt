@@ -1,0 +1,91 @@
+MetaMorpheus: version Not a release version
+Time to run task: 00:00:01.7997354
+
+
+--------------------------------------------------
+
+
+All target PSMS within 1% FDR 5ppmAroundZero: 42
+Unique peptides within 1% FDR 5ppmAroundZero: 15
+PSMs within 1% FDR 5ppmAroundZero example-Calibrated: 42
+Unique peptides within 1% FDR 5ppmAroundZero example-Calibrated: 15
+
+
+
+--------------------------------------------------
+
+
+Engine Results:
+
+MetaMorpheusEngineResults
+Task5SearchTask,Individual Spectra Files,/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+Time to run: 00:00:00.7583044
+
+SequencesToActualProteinPeptidesEngineResults
+Task5SearchTask
+Time to run: 00:00:00.3427299
+CompactPeptideToProteinPeptideMatching.Count: 47
+
+ProteinParsimonyResults
+Task5SearchTask
+Time to run: 00:00:00.0005879
+All proteins within 1% FDR: -1
+
+FdrAnalysisResults
+Task5SearchTask
+Time to run: 00:00:00.0000079
+
+ProteinScoringAndFdrResults
+Task5SearchTask
+Time to run: 00:00:00.0005708
+
+LocalizationEngineResults
+Task5SearchTask,Individual Spectra Files,/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+Time to run: 00:00:00.0058740
+
+ModificationAnalysisResults
+Task5SearchTask
+Time to run: 00:00:00.0009924
+Search mode index:0. Approximate mod seen below q-value 0.01, possibly non-localized:
+	Sodium on E	2
+	Phospho on S	2
+	Carbon Adduct	1
+	Water loss	1
+	Oxidation of M	1
+	Calcium on E	1
+	Oxidation and then loss of oxidized M side chain	1
+	Oxidation on D	1
+	Sodium on D	1
+Search mode index:0. Localized mods seen below q-value 0.01:
+	Water loss	2
+	Phospho on S	2
+	Carbon Adduct	1
+	Oxidation of M	1
+	Sodium on E	1
+	Calcium on E	1
+	Oxidation and then loss of oxidized M side chain	1
+	Oxidation on D	1
+	Sodium on D	1
+Search mode index:0. All mods in database limited to peptides observed in the results:
+	Phosphoserine	4
+	Oxidation on D	3
+	Sodium on D	3
+	Calcium on D	3
+	Water loss	3
+	Phospho on S	3
+	Sulfonation on S	3
+	Phospho on T	2
+	Sulfonation on T	2
+	Oxidation on H	1
+	Carbon Adduct	1
+	Oxidation on F	1
+	Oxidation on E	1
+	Sodium on E	1
+	Calcium on E	1
+	Oxidation and then loss of oxidized M side chain	1
+
+
+ProteinScoringAndFdrResults
+Task5SearchTask,Individual Spectra Files,/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+Time to run: 00:00:00.0002061
+

@@ -6,6 +6,7 @@ using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
 using TaskLayer;
+using System;
 
 namespace Test
 {
@@ -87,7 +88,7 @@ namespace Test
             Assert.AreEqual(1, res.ModsSeenAndLocalized[0].Count());
             Assert.AreEqual(2, res.ModsSeenAndLocalized[0][mod1.id]);
 
-            Assert.AreEqual(3, res.ApproximateModsSeen[0][mod1.id]); // Weird
+            Assert.AreEqual(0, res.NonLocalizedModsSeen[0].Count()); // Weird
 
             Assert.AreEqual(2, res.AllModsOnProteins[0].Count());
             Assert.AreEqual(2, res.AllModsOnProteins[0][mod1.id]);
@@ -147,7 +148,7 @@ namespace Test
 
             Assert.AreEqual(0, res.ModsSeenAndLocalized[0].Count()); // Not localized
 
-            Assert.AreEqual(1, res.ApproximateModsSeen[0][mod1.id]); // Saw it, but not sure where!
+            Assert.AreEqual(1, res.NonLocalizedModsSeen[0][mod1.id]); // Saw it, but not sure where!
 
             Assert.AreEqual(1, res.AllModsOnProteins[0].Count());
             Assert.AreEqual(2, res.AllModsOnProteins[0][mod1.id]);

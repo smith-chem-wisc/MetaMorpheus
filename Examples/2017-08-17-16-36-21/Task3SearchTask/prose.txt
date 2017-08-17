@@ -1,0 +1,10 @@
+MetaMorpheus version Not a release version is used to run a Search task on 1 spectra files.
+Search
+The initiator methionine behavior is set to Variable and the maximum number of allowed missed cleavages is 2
+
+
+taskId: Task3SearchTask
+Spectra files:
+	/Users/stepa/MetaMorpheus/Examples/2017-08-17-16-36-21/Task2CalibrationTask/example-Calibrated.mzML
+XML files:
+	/Users/stepa/MetaMorpheus/Examples/mouse-10.xml
