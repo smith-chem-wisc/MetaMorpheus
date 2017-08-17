@@ -324,7 +324,7 @@ namespace TaskLayer
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
             allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }).Run();
 
-            var allPsmsXL = allPsms.Where(p=>p.BetaPsmCross!=null).OrderByDescending(p => p.ScanNumber).ToList();
+            var allPsmsXL = allPsms.Where(p=>p.CrossType == PsmCrossType.Cross).OrderByDescending(p => p.ScanNumber).ToList();
             //Write Inter Psms FDR
             var interPsmsXLFDR = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderByDescending(p=>p.XLTotalScore).ToList();
             interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLFDR).Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.01).ToList();
