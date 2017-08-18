@@ -259,7 +259,8 @@ namespace Test
             SearchTask task1 = new SearchTask()
             {
                 WritePrunedDatabase = true,
-                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") }
+                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
+                DoParsimony = true,
             };
 
             //add task 1 to task list
@@ -365,7 +366,8 @@ namespace Test
 
             SearchTask testUnique = new SearchTask()
             {
-                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") }
+                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
+                DoParsimony = true
             };
 
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {

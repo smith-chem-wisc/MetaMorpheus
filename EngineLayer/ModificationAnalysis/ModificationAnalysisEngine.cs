@@ -28,7 +28,7 @@ namespace EngineLayer
         {
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            Dictionary<string, int>[] approximateModsSeen = new Dictionary<string, int>[searchModesCount];
+            Dictionary<string, int>[] nonLocMods = new Dictionary<string, int>[searchModesCount];
             Dictionary<string, int>[] allModsOnProteins = new Dictionary<string, int>[searchModesCount];
             Dictionary<string, int>[] allmodsSeenAndLocalized = new Dictionary<string, int>[searchModesCount];
 
@@ -38,7 +38,7 @@ namespace EngineLayer
 
                 Dictionary<string, int> modsSeen = new Dictionary<string, int>();
 
-                foreach (var groupOfPsmsWithSameBaseSequence in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null && b.ModsIdentified != null).GroupBy(b => (b.BaseSequence)))
+                foreach (var groupOfPsmsWithSameBaseSequence in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null && b.ModsIdentified != null && b.FullSequence==null).GroupBy(b => (b.BaseSequence)))
                 {
                     Dictionary<string, int> set = new Dictionary<string, int>();
                     foreach (var psm in groupOfPsmsWithSameBaseSequence)
@@ -62,7 +62,7 @@ namespace EngineLayer
                             modsSeen.Add(modSeen.Key, modSeen.Value);
                     }
                 }
-                approximateModsSeen[j] = modsSeen;
+                nonLocMods[j] = modsSeen;
 
                 HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
                 HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
@@ -98,7 +98,7 @@ namespace EngineLayer
                 allModsOnProteins[j] = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
                 allmodsSeenAndLocalized[j] = modsSeenAndLocalized.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
             }
-            myAnalysisResults.ApproximateModsSeen = approximateModsSeen;
+            myAnalysisResults.NonLocalizedModsSeen = nonLocMods;
             myAnalysisResults.ModsSeenAndLocalized = allmodsSeenAndLocalized;
             myAnalysisResults.AllModsOnProteins = allModsOnProteins;
             return myAnalysisResults;
