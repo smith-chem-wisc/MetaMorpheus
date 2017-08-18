@@ -252,7 +252,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 //pos = ipos;
                 ProductMassesMightHave pmmhCurr = new ProductMassesMightHave();
-                pmmhCurr.xlpos = ipos;
+                pmmhCurr.Xlpos = ipos;
                 List<double> x = new List<double>();
                 List<string> y = new List<string>();
                 if (crosslinker.Cleavable)
@@ -382,7 +382,7 @@ namespace EngineLayer.CrosslinkSearch
 
             psmCross.XLBestScore = scoreList.Max();
             psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
-            psmCross.xlpos = pmmhList[scoreList.IndexOf(scoreList.Max())].xlpos + 1;
+            psmCross.xlpos = pmmhList[scoreList.IndexOf(scoreList.Max())].Xlpos + 1;
             if (crosslinker.Cleavable)
             {
                 if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepS"))

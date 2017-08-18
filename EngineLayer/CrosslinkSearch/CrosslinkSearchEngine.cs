@@ -37,13 +37,15 @@ namespace EngineLayer.CrosslinkSearch
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
 
         private MassDiffAcceptor XLPrecusorSearchMode;
+        private readonly List<PsmCross> psmCross;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
         {
+            this.psmCross = psmCross;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
@@ -187,6 +189,7 @@ namespace EngineLayer.CrosslinkSearch
                         old_progress = new_progress;
                     }
                 }
+                psmCross.AddRange(newPsmsCross);
             });
             return new CrosslinkSearchResults(newPsmsCross, this);
         }

@@ -73,6 +73,9 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -109,7 +112,10 @@
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
     <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
+    <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
+    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
+    <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />
     <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisEngine.cs" />
     <Compile Include="CrosslinkAnalysis\CrosslinkAnalysisResults.cs" />
@@ -122,7 +128,6 @@
     <Compile Include="CrosslinkSearch\PsmCross.cs" />
     <Compile Include="FdrInfo.cs" />
     <Compile Include="Localization\LocalizationEngineResults.cs" />
-    <Compile Include="Localization\LocalizationResults.cs" />
     <Compile Include="MatchedIonMassesListPositiveIsMatch.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
@@ -131,6 +136,9 @@
     <Compile Include="ProteinParsimony\ProteinParsimonyResults.cs" />
     <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrEngine.cs" />
     <Compile Include="ProteinScoringAndFdr\ProteinScoringAndFdrResults.cs" />
+    <Compile Include="Proteomics\CompactPeptideBase.cs" />
+    <Compile Include="Proteomics\CompactPeptideWithModifiedMass.cs" />
+    <Compile Include="Proteomics\ProductTypeToTerminusType.cs" />
     <Compile Include="SearchType.cs" />
     <Compile Include="Localization\LocalizationEngine.cs" />
     <Compile Include="ProteinLevelInfo.cs" />
@@ -139,7 +147,6 @@
     <Compile Include="GlobalEngineLevelSettings.cs" />
     <Compile Include="MyErroredResults.cs" />
     <Compile Include="ClassicSearch\ClassicSearchEngine.cs" />
-    <Compile Include="SearchResults.cs" />
     <Compile Include="Proteomics\CleavageSpecificity.cs" />
     <Compile Include="Proteomics\CompactPeptide.cs" />
     <Compile Include="Proteomics\InitiatorMethionineBehavior.cs" />
