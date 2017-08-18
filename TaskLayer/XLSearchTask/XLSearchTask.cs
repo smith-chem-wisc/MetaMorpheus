@@ -133,7 +133,7 @@ namespace TaskLayer
         public char UdXLkerResidue { get; set; }
         public Tolerance XLprecusorMsTl { get; set; }
         public Tolerance XLBetaPrecusorMsTl { get; set; }
-        
+
         #endregion Public Properties
 
         #region Public Methods

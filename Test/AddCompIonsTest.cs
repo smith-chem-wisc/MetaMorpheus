@@ -117,7 +117,6 @@ namespace Test
                 allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.B, ProductType.Y }, 1, 0, 1).Run();
 
-
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 

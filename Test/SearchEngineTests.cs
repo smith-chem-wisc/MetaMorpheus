@@ -44,7 +44,7 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, false,1).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, false, 1).Run();
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -377,7 +377,7 @@ namespace Test
             {
                 var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();
                 var PWSM = ListOfModifiedPeptides[0];
-                    PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein+3, PWSM.OneBasedEndResidueInProtein - 2);
+                PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein + 3, PWSM.OneBasedEndResidueInProtein - 2);
                 string PWSMSequence = PWSM.Sequence;
                 string PWSMNewSequence = PWSMNew.Sequence;
                 char[] PWSMNewSequenceArray = PWSMNewSequence.ToCharArray();
@@ -408,7 +408,7 @@ namespace Test
             {
                 var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();
                 var PWSM = ListOfModifiedPeptides[0];
-                PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein+2, PWSM.OneBasedEndResidueInProtein-3);
+                PeptideWithSetModifications PWSMNew = new PeptideWithSetModifications(PWSM, PWSM.OneBasedStartResidueInProtein + 2, PWSM.OneBasedEndResidueInProtein - 3);
                 string PWSMSequence = PWSM.Sequence;
                 string PWSMNewSequence = PWSMNew.Sequence;
                 char[] PWSMNewSequenceArray = PWSMNewSequence.ToCharArray();
@@ -423,9 +423,10 @@ namespace Test
                     {
                         Assert.IsTrue(i != 0);
                     }
-                }       
+                }
             }
         }
+
         #endregion Public Methods
     }
 }
