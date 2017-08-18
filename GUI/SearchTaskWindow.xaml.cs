@@ -450,20 +450,6 @@ namespace MetaMorpheusGUI
             e.Handled = !TextBoxIntAllowed(e.Text);
         }
 
-        private void TextBoxValue_Pasting(object sender, DataObjectPastingEventArgs e)
-        {
-            if (e.DataObject.GetDataPresent(typeof(String)))
-            {
-                String Text1 = (String)e.DataObject.GetData(typeof(String));
-                if (!TextBoxIntAllowed(Text1))
-                    e.CancelCommand();
-            }
-            else
-            {
-                e.CancelCommand();
-            }
-        }
-
         #endregion Private Methods
     }
 
