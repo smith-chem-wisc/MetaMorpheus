@@ -46,9 +46,9 @@ namespace EngineLayer
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
-        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd,modsFromThisOne.PeptideDescription)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, modsFromThisOne.PeptideDescription)
         {
-            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key+modsFromThisOne.OneBasedStartResidueInProtein-proteinOneBasedStart), b => b.Value);
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
 
         public PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, int? missedCleavages) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)

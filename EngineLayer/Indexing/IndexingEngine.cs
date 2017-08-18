@@ -46,7 +46,7 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
-            this.currentPartition = currentPartition+1;
+            this.currentPartition = currentPartition + 1;
             this.totalPartitions = totalPartitions;
             this.searchDecoys = searchDecoys;
         }
@@ -161,6 +161,5 @@ namespace EngineLayer.Indexing
         }
 
         #endregion Protected Methods
-
     }
 }

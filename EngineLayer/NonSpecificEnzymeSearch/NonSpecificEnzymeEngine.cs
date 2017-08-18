@@ -115,8 +115,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                                 bestScores[openSearchIndex] = consideredScore;
                                                 bestNotches[openSearchIndex] = new List<int> { 0 };
                                             }
-                                            else if(!bestPeptides[openSearchIndex].Contains(cp) && (globalPsms[openSearchIndex][i] == null || !globalPsms[openSearchIndex][i].CompactPeptidesContainsKey(cp)))
-                                            { 
+                                            else if (!bestPeptides[openSearchIndex].Contains(cp) && (globalPsms[openSearchIndex][i] == null || !globalPsms[openSearchIndex][i].CompactPeptidesContainsKey(cp)))
+                                            {
                                                 bestPeptides[openSearchIndex].Add(cp);
                                                 bestNotches[openSearchIndex].Add(0);
                                             }
@@ -222,7 +222,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 startIndex = 1;
                             }
 
-                            for (int k=startIndex;  k < bestPeptides[j].Count; k++)
+                            for (int k = startIndex; k < bestPeptides[j].Count; k++)
                             {
                                 globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }

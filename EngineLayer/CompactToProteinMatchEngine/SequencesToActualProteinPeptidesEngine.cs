@@ -103,7 +103,7 @@ namespace EngineLayer
                 }
             });
 
-            #endregion Match Seqeunces to PeptideWithSetModifications
+            #endregion Match Sequences to PeptideWithSetModifications
 
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
