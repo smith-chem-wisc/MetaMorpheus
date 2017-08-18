@@ -106,7 +106,7 @@
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
-    <Compile Include="Interface1.cs" />
+    <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />

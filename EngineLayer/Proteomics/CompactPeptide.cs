@@ -1,7 +1,6 @@
 ﻿using Proteomics;
 using System;
 using System.Linq;
-using System.Collections.Generic;
 
 namespace EngineLayer
 {
@@ -14,7 +13,7 @@ namespace EngineLayer
         {
             NTerminalMasses = null;
             CTerminalMasses = null;
-            if (terminusType==TerminusType.None || terminusType == TerminusType.N)
+            if (terminusType == TerminusType.None || terminusType == TerminusType.N)
             {
                 double theMass = 0;
                 if (peptideWithSetModifications.allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))

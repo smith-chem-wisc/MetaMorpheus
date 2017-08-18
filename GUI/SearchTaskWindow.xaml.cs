@@ -92,6 +92,12 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
+        private static Boolean TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+        }
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -309,14 +315,14 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
                 return;
             }
-            if(missedCleavagesTextBox.Text.Length==0)
+            if (missedCleavagesTextBox.Text.Length == 0)
             {
                 MessageBox.Show("The number of missed cleavages was left empty. For no missed cleavages, please enter zero.");
                 return;
             }
             if (!double.TryParse(DeconvolutionIntensityRatioTextBox.Text, out double dir) || dir <= 0)
             {
-                MessageBox.Show("The deconvolution intensity ratio contains unrecognized characters. \n You entered " + '"'+ DeconvolutionIntensityRatioTextBox.Text+'"' + "\n Please enter a positive number.");
+                MessageBox.Show("The deconvolution intensity ratio contains unrecognized characters. \n You entered " + '"' + DeconvolutionIntensityRatioTextBox.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
             if (!double.TryParse(DeconvolutionMassToleranceInPpmTextBox.Text, out double dmtip) || dmtip <= 0)
@@ -334,6 +340,7 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive number.");
                 return;
             }
+
             #endregion Check Task Validity
 
             #region Save Parameters
@@ -441,26 +448,6 @@ namespace MetaMorpheusGUI
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !TextBoxIntAllowed(e.Text);
-        }
-
-        private void textBoxValue_Pasting(object sender, DataObjectPastingEventArgs e)
-        {
-            if (e.DataObject.GetDataPresent(typeof(String)))
-            {
-                String Text1 = (String)e.DataObject.GetData(typeof(String));
-                if (!TextBoxIntAllowed(Text1))
-                    e.CancelCommand();
-            }
-            else
-            {
-                e.CancelCommand();
-            }
-        }
-
-        private static Boolean TextBoxIntAllowed(String Text2)
-        {
-            return Array.TrueForAll<Char>(Text2.ToCharArray(),
-                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
         }
 
         #endregion Private Methods

@@ -38,7 +38,7 @@ namespace EngineLayer
 
                 Dictionary<string, int> modsSeen = new Dictionary<string, int>();
 
-                foreach (var groupOfPsmsWithSameBaseSequence in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null && b.ModsIdentified != null && b.FullSequence==null).GroupBy(b => (b.BaseSequence)))
+                foreach (var groupOfPsmsWithSameBaseSequence in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null && b.ModsIdentified != null && b.FullSequence == null).GroupBy(b => (b.BaseSequence)))
                 {
                     Dictionary<string, int> set = new Dictionary<string, int>();
                     foreach (var psm in groupOfPsmsWithSameBaseSequence)
