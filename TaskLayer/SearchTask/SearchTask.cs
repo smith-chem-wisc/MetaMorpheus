@@ -99,6 +99,7 @@ namespace TaskLayer
         public int MaxModificationIsoforms { get; set; }
 
         public int TotalPartitions { get; set; }
+
         public Protease Protease { get; set; }
 
         public bool AddCompIons { get; set; }
