@@ -8,7 +8,6 @@ namespace EngineLayer
 {
     public class ProteinGroup
     {
-
         #region Public Fields
 
         public readonly bool isDecoy;
@@ -256,8 +255,7 @@ namespace EngineLayer
             {
                 foreach (var pepWithSetMods in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                 {
-                    List<PeptideWithSetModifications> temp;
-                    if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out temp))
+                    if (proteinsWithPsms.TryGetValue(pepWithSetMods.Protein, out List<PeptideWithSetModifications> temp))
                         temp.Add(pepWithSetMods);
                     else
                         proteinsWithPsms.Add(pepWithSetMods.Protein, new List<PeptideWithSetModifications> { pepWithSetMods });
@@ -459,6 +457,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

@@ -4,7 +4,6 @@ namespace EngineLayer
 {
     public class SingleEngineEventArgs : EventArgs
     {
-
         #region Public Constructors
 
         public SingleEngineEventArgs(MetaMorpheusEngine myEngine)
@@ -19,6 +18,5 @@ namespace EngineLayer
         public MetaMorpheusEngine myEngine { get; private set; }
 
         #endregion Public Properties
-
     }
 }

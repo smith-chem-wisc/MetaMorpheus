@@ -15,21 +15,19 @@ namespace Test
     [TestFixture]
     public class GptmdEngineTest
     {
-
         #region Public Methods
 
         [Test]
         public static void TestGptmdEngine()
         {
             List<Psm> allResultingIdentifications = null;
-            ModificationMotif motifN;
-            ModificationMotif.TryGetMotif("N", out motifN);
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             allResultingIdentifications = new List<Psm>();
-            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
+            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(0, res.Mods.Count);
 
@@ -43,12 +41,12 @@ namespace Test
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
-                {peptidesWithSetModifications.First().CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
+                {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
@@ -57,7 +55,7 @@ namespace Test
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
             allResultingIdentifications.Add(newPsm);
 
-            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
+            engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
             res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(5, res.Mods["accession"].Count);
@@ -67,10 +65,8 @@ namespace Test
         public static void TestCombos()
         {
             List<Psm> allIdentifications = null;
-            ModificationMotif motifN;
-            ModificationMotif.TryGetMotif("N", out motifN);
-            ModificationMotif motifP;
-            ModificationMotif.TryGetMotif("P", out motifP);
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
             var gptmdModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motifN, TerminusLocalization.Any, 21.981943,null, new List<double> { 0 }, new List<double> { 21.981943 },  null),
                                                                       new ModificationWithMass("16", null, motifP, TerminusLocalization.Any, 15.994915,null, new List<double> { 0 }, new List<double> { 15.994915 },  null) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
@@ -85,12 +81,12 @@ namespace Test
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
-            Psm match = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
-            Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide, 0, 0, 0, scan);
+            Psm match = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
+            Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
-                {peptidesWithSetModifications.First().CompactPeptide, new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
+                {peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptidesWithSetModifications.First() } }
             };
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
 
@@ -101,7 +97,7 @@ namespace Test
             match.SetFdrValues(1, 0, 0, 1, 0, 0);
             allIdentifications = new List<Psm> { match };
 
-            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, precursorMassTolerance, null);
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, precursorMassTolerance, new List<string>());
             var res = (GptmdResults)engine.Run();
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(6, res.Mods["accession"].Count);
@@ -110,6 +106,5 @@ namespace Test
         }
 
         #endregion Public Methods
-
     }
 }

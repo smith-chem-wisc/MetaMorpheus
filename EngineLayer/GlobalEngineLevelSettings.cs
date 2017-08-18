@@ -10,10 +10,14 @@ namespace EngineLayer
 {
     public class GlobalEngineLevelSettings
     {
+        #region Public Fields
+
+        public static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
+
+        #endregion Public Fields
 
         #region Private Fields
 
-        private static readonly string elementsLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"elements.dat");
         private static readonly string unimodLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"unimod.xml");
         private static readonly string uniprotLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"ptmlist.txt");
         private static readonly string psiModLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data", @"PSI-MOD.obo.xml");
@@ -37,6 +41,8 @@ namespace EngineLayer
             }
 
             MetaMorpheusVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (MetaMorpheusVersion.Equals("1.0.0.0"))
+                MetaMorpheusVersion = "Not a release version";
         }
 
         #endregion Public Constructors
@@ -49,6 +55,5 @@ namespace EngineLayer
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; }
 
         #endregion Public Properties
-
     }
 }

@@ -6,7 +6,6 @@ namespace EngineLayer
 {
     public class MatchedIonMassesListPositiveIsMatch : IEnumerable<KeyValuePair<ProductType, double[]>>
     {
-
         #region Private Fields
 
         private readonly Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch;
@@ -53,8 +52,7 @@ namespace EngineLayer
                 return false;
             foreach (var hah in kk)
             {
-                double[] val;
-                if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out val))
+                if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out double[] val))
                     return false;
                 foreach (var ok in hah.Value.Where(b => b > 0))
                     if (!val.Contains(ok))
@@ -78,6 +76,5 @@ namespace EngineLayer
         }
 
         #endregion Internal Methods
-
     }
 }

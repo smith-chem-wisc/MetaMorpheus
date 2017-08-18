@@ -20,15 +20,15 @@
                             <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Intensity Ratio " />
-                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Max Assumed Charge State" />
-                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label Content="Deconvolution Mass Tolerance in PPM" />
-                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45"/>
+                                <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
                             </StackPanel>
                             <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
@@ -52,6 +52,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
                                         <RadioButton x:Name="classicSearchRadioButton" Content="Classic Search" GroupName="SearchType" />
@@ -59,6 +60,13 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <RadioButton x:Name="modernSearchRadioButton" Content="Modern Search" GroupName="SearchType" />
+                                        <StackPanel Orientation="Horizontal" Margin="1">
+                                            <Label x:Name="label2" Content="Number of Database Partitions" />
+                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <RadioButton x:Name="nonSpecificSearchRadioButton" Content="NonSpecific Search" GroupName="SearchType" />
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
@@ -69,10 +77,11 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
+                                        <CheckBox x:Name="checkBoxTarget" Content="Generate target proteins" Margin="1" DockPanel.Dock="Top" />
+                                        <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="1" DockPanel.Dock="Top" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox"  Width="45" />
+                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
@@ -86,13 +95,13 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" Width="45" />
+                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="txtMinPeptideLength"  Width="45" />
+                                            <TextBox x:Name="txtMinPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="txtMaxPeptideLength"  Width="45" />
+                                            <TextBox x:Name="txtMaxPeptideLength" PreviewTextInput="PreviewIfInt" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -106,7 +115,7 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label2_Copy" Content="Product Mass Tolerance" />
-                                            <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left"  TextWrapping="Wrap" Width="45" />
+                                            <TextBox x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" />
                                             <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
@@ -141,7 +150,7 @@
                                     <StackPanel Margin="5">
                                         <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
-                                            <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox"  Width="300" />
+                                            <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox" Width="300" />
                                             <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="AddNewAllowedPrecursorMassDiffsButton_Click" />
                                         </StackPanel>
                                     </StackPanel>
@@ -149,7 +158,11 @@
                             </GroupBox>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
-                                <TextBox x:Name="maxDegreesOfParallelism" Width="45"/>
+                                <TextBox x:Name="maxDegreesOfParallelism" PreviewTextInput="PreviewIfInt" Width="45" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
+                                <TextBox x:Name="minScoreAllowed" Width="45" />
                             </StackPanel>
                         </StackPanel>
                     </Expander>
@@ -292,7 +305,7 @@
                                     </StackPanel>
                                     <StackPanel Margin="0" VerticalAlignment="Top"  Grid.Column="1">
                                         <Label x:Name="quantPpmLabel" Content="Tolerance (ppm)" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}" />
-                                        <TextBox x:Name="quantPpmTolerance"  Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
+                                        <TextBox x:Name="quantPpmTolerance" Width="30" IsEnabled="{Binding IsChecked, ElementName=checkBoxQuantification}">
                                             <ToolTipService.ToolTip>
                                                 <ToolTip Content="PPM tolerance for MS1 (LFQ) or diagnostic ions (TMT)" />
                                             </ToolTipService.ToolTip>

@@ -9,60 +9,58 @@ namespace EngineLayer
 {
     public class PeptideWithSetModifications : Peptide
     {
-
         #region Public Fields
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
+        public readonly int? missedCleavages;
 
         #endregion Public Fields
 
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private readonly PeptideWithPossibleModifications modPep;
+        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private string sequence;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-
-        private CompactPeptide compactPeptide;
         private double? monoisotopicMass;
 
         #endregion Private Fields
 
-        #region Internal Constructors
+        #region Public Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+        public PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein, modPep.PeptideDescription)
         {
-            this.modPep = modPep;
+            this.missedCleavages = modPep.MissedCleavages;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein, everythingElseFromThisOne.PeptideDescription)
         {
-            this.modPep = everythingElseFromThisOne.modPep;
+            this.missedCleavages = everythingElseFromThisOne.missedCleavages;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
-        #endregion Internal Constructors
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, modsFromThisOne.PeptideDescription)
+        {
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
+        }
+
+        public PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, int? missedCleavages) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
+        {
+            this.missedCleavages = missedCleavages;
+            this.numFixedMods = numFixedMods;
+            this.allModsOneIsNterminus = allModsOneIsNterminus;
+        }
+
+        #endregion Public Constructors
 
         #region Public Properties
-
-        public CompactPeptide CompactPeptide
-        {
-            get
-            {
-                if (compactPeptide == null)
-                {
-                    compactPeptide = new CompactPeptide(this);
-                }
-                return compactPeptide;
-            }
-        }
 
         public double MonoisotopicMass
         {
@@ -88,22 +86,19 @@ namespace EngineLayer
                     var sbsequence = new StringBuilder();
 
                     // variable modification on peptide N-terminus
-                    ModificationWithMass pep_n_term_variable_mod;
-                    if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                    if (allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                         sbsequence.Append('[' + pep_n_term_variable_mod.modificationType + ":" + pep_n_term_variable_mod.id + ']');
 
                     for (int r = 0; r < Length; r++)
                     {
                         sbsequence.Append(this[r]);
                         // variable modification on this residue
-                        ModificationWithMass residue_variable_mod;
-                        if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
+                        if (allModsOneIsNterminus.TryGetValue(r + 2, out ModificationWithMass residue_variable_mod))
                             sbsequence.Append('[' + residue_variable_mod.modificationType + ":" + residue_variable_mod.id + ']');
                     }
 
                     // variable modification on peptide C-terminus
-                    ModificationWithMass pep_c_term_variable_mod;
-                    if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                    if (allModsOneIsNterminus.TryGetValue(Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                         sbsequence.Append('[' + pep_c_term_variable_mod.modificationType + ":" + pep_c_term_variable_mod.id + ']');
 
                     sequence = sbsequence.ToString();
@@ -120,16 +115,6 @@ namespace EngineLayer
             }
         }
 
-        public int MissedCleavages
-        {
-            get { return modPep.MissedCleavages; }
-        }
-
-        public override string PeptideDescription
-        {
-            get { return modPep.PeptideDescription; }
-        }
-
         public string SequenceWithChemicalFormulas
         {
             get
@@ -140,11 +125,9 @@ namespace EngineLayer
                     var sbsequence = new StringBuilder();
 
                     // variable modification on peptide N-terminus
-                    ModificationWithMass pep_n_term_variable_mod;
-                    if (allModsOneIsNterminus.TryGetValue(1, out pep_n_term_variable_mod))
+                    if (allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                     {
-                        var jj = pep_n_term_variable_mod as ModificationWithMassAndCf;
-                        if (jj != null && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                        if (pep_n_term_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -154,11 +137,9 @@ namespace EngineLayer
                     {
                         sbsequence.Append(this[r]);
                         // variable modification on this residue
-                        ModificationWithMass residue_variable_mod;
-                        if (allModsOneIsNterminus.TryGetValue(r + 2, out residue_variable_mod))
+                        if (allModsOneIsNterminus.TryGetValue(r + 2, out ModificationWithMass residue_variable_mod))
                         {
-                            var jj = residue_variable_mod as ModificationWithMassAndCf;
-                            if (jj != null && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                            if (residue_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
                                 sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                             else
                                 return null;
@@ -166,11 +147,9 @@ namespace EngineLayer
                     }
 
                     // variable modification on peptide C-terminus
-                    ModificationWithMass pep_c_term_variable_mod;
-                    if (allModsOneIsNterminus.TryGetValue(Length + 2, out pep_c_term_variable_mod))
+                    if (allModsOneIsNterminus.TryGetValue(Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                     {
-                        var jj = pep_c_term_variable_mod as ModificationWithMassAndCf;
-                        if (jj != null && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                        if (pep_c_term_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -188,18 +167,33 @@ namespace EngineLayer
 
         #region Public Methods
 
+        public CompactPeptide CompactPeptide(TerminusType terminusType)
+        {
+            if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
+            {
+                return compactPeptide;
+            }
+            else
+            {
+                CompactPeptide cp = new CompactPeptide(this, terminusType);
+                compactPeptides.Add(terminusType, cp);
+                return cp;
+            }
+        }
+
         public PeptideWithSetModifications Localize(int j, double massToLocalize)
         {
             var vvv = new Dictionary<int, ModificationWithMass>(allModsOneIsNterminus);
-            ModificationWithMass modToReplace;
             double massOfExistingMod = 0;
-            if (vvv.TryGetValue(j + 2, out modToReplace))
+            if (vvv.TryGetValue(j + 2, out ModificationWithMass modToReplace))
             {
                 massOfExistingMod = modToReplace.monoisotopicMass;
                 vvv.Remove(j + 2);
             }
+
             vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
+            var hm = new PeptideWithSetModifications(vvv, numFixedMods, this.Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, this.missedCleavages);
+
             return hm;
         }
 
@@ -218,6 +212,5 @@ namespace EngineLayer
         }
 
         #endregion Public Methods
-
     }
 }

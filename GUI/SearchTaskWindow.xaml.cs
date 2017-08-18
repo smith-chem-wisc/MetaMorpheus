@@ -18,7 +18,6 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class SearchTaskWindow : Window
     {
-
         #region Private Fields
 
         private readonly DataContextForSearchTaskWindow dataContextForSearchTaskWindow;
@@ -93,6 +92,12 @@ namespace MetaMorpheusGUI
 
         #region Private Methods
 
+        private static Boolean TextBoxIntAllowed(String Text2)
+        {
+            return Array.TrueForAll<Char>(Text2.ToCharArray(),
+                delegate (Char c) { return Char.IsDigit(c) || Char.IsControl(c); });
+        }
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -148,6 +153,7 @@ namespace MetaMorpheusGUI
         {
             classicSearchRadioButton.IsChecked = task.SearchType == SearchType.Classic;
             modernSearchRadioButton.IsChecked = task.SearchType == SearchType.Modern;
+            nonSpecificSearchRadioButton.IsChecked = task.SearchType == SearchType.NonSpecific;
             checkBoxParsimony.IsChecked = task.DoParsimony;
             checkBoxNoOneHitWonders.IsChecked = task.NoOneHitWonders;
             checkBoxQuantification.IsChecked = task.DoQuantification;
@@ -155,6 +161,7 @@ namespace MetaMorpheusGUI
             checkBoxMatchBetweenRuns.IsChecked = task.MatchBetweenRuns;
             modPepsAreUnique.IsChecked = task.ModPeptidesAreUnique;
             checkBoxHistogramAnalysis.IsChecked = task.DoHistogramAnalysis;
+            checkBoxTarget.IsChecked = task.SearchTarget;
             checkBoxDecoy.IsChecked = task.SearchDecoy;
             missedCleavagesTextBox.Text = task.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.MinPeptideLength.HasValue ? task.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
@@ -170,6 +177,7 @@ namespace MetaMorpheusGUI
             cCheckBox.IsChecked = task.CIons;
             zdotCheckBox.IsChecked = task.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.ConserveMemory;
+            numberOfDatabaseSearchesTextBox.Text = task.TotalPartitions.ToString(CultureInfo.InvariantCulture);
             deconvolutePrecursors.IsChecked = task.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
@@ -178,6 +186,8 @@ namespace MetaMorpheusGUI
             DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.DeconvolutionMassTolerance.Value.ToString();
+
+            minScoreAllowed.Text = task.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.ListOfModsFixed)
             {
@@ -267,13 +277,87 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            TheTask.SearchType = classicSearchRadioButton.IsChecked.Value ? SearchType.Classic : SearchType.Modern;
+            #region Check Task Validity
+
+            if (nonSpecificSearchRadioButton.IsChecked.Value)
+            {
+                if ((bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value) && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value)) //NonSpecific does not expect multipe terminus types
+                {
+                    string ionsChosen = "";
+                    if (bCheckBox.IsChecked.Value)
+                        ionsChosen += "B, ";
+                    if (cCheckBox.IsChecked.Value)
+                        ionsChosen += "C, ";
+                    if (yCheckBox.IsChecked.Value)
+                        ionsChosen += "Y, ";
+                    if (zdotCheckBox.IsChecked.Value)
+                        ionsChosen += "Zdot, ";
+                    ionsChosen = ionsChosen.Substring(0, ionsChosen.Length - 2);
+                    MessageBox.Show("Non-specific searches cannot possess ion types from multiple termini. \n You chose the following ion types: " + ionsChosen);
+                    return;
+                }
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleC") && (bCheckBox.IsChecked.Value || cCheckBox.IsChecked.Value))
+                    MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
+                    MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
+                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("single"))
+                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
+                if (!addCompIonCheckBox.IsChecked.Value)
+                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
+                if (SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList().Count != 2)
+                {
+                    MessageBox.Show("Non-specific searches require two searches: An open search and a narrow search");
+                    return;
+                }
+            }
+            if (int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture) == 0)
+            {
+                MessageBox.Show("The number of database partitions was set to zero. At least one database is required for searching.");
+                return;
+            }
+            if (missedCleavagesTextBox.Text.Length == 0)
+            {
+                MessageBox.Show("The number of missed cleavages was left empty. For no missed cleavages, please enter zero.");
+                return;
+            }
+            if (!double.TryParse(DeconvolutionIntensityRatioTextBox.Text, out double dir) || dir <= 0)
+            {
+                MessageBox.Show("The deconvolution intensity ratio contains unrecognized characters. \n You entered " + '"' + DeconvolutionIntensityRatioTextBox.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+            if (!double.TryParse(DeconvolutionMassToleranceInPpmTextBox.Text, out double dmtip) || dmtip <= 0)
+            {
+                MessageBox.Show("The deconvolution mass tolerance (in ppm) contains unrecognized characters. \n You entered " + '"' + DeconvolutionMassToleranceInPpmTextBox.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+            if (!double.TryParse(productMassToleranceTextBox.Text, out double pmt) || pmt <= 0)
+            {
+                MessageBox.Show("The product mass tolerance contains unrecognized characters. \n You entered " + '"' + productMassToleranceTextBox.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+            if (!double.TryParse(minScoreAllowed.Text, out double msa) || msa < 0)
+            {
+                MessageBox.Show("The minimum score allowed contains unrecognized characters. \n You entered " + '"' + minScoreAllowed.Text + '"' + "\n Please enter a positive number.");
+                return;
+            }
+
+            #endregion Check Task Validity
+
+            #region Save Parameters
+
+            if (classicSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.Classic;
+            else if (modernSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.Modern;
+            else //if (nonSpecificSearchRadioButton.IsChecked.Value)
+                TheTask.SearchType = SearchType.NonSpecific;
             TheTask.DoParsimony = checkBoxParsimony.IsChecked.Value;
             TheTask.NoOneHitWonders = checkBoxNoOneHitWonders.IsChecked.Value;
             TheTask.DoQuantification = checkBoxQuantification.IsChecked.Value;
             TheTask.MatchBetweenRuns = checkBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.ModPeptidesAreUnique = modPepsAreUnique.IsChecked.Value;
             TheTask.QuantifyPpmTol = double.Parse(quantPpmTolerance.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchTarget = checkBoxTarget.IsChecked.Value;
             TheTask.SearchDecoy = checkBoxDecoy.IsChecked.Value;
             TheTask.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
@@ -292,9 +376,12 @@ namespace MetaMorpheusGUI
             TheTask.CIons = cCheckBox.IsChecked.Value;
             TheTask.ZdotIons = zdotCheckBox.IsChecked.Value;
             TheTask.ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
+            TheTask.TotalPartitions = int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture);
 
             TheTask.DoPrecursorDeconvolution = deconvolutePrecursors.IsChecked.Value;
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
+
+            TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
@@ -323,6 +410,8 @@ namespace MetaMorpheusGUI
             TheTask.KeepAllUniprotMods = keepAllUniprotModsCheckBox.IsChecked.Value;
             if (int.TryParse(maxDegreesOfParallelism.Text, out int jsakdf))
                 TheTask.MaxDegreeOfParallelism = jsakdf;
+
+            #endregion Save Parameters
 
             DialogResult = true;
         }
@@ -356,13 +445,16 @@ namespace MetaMorpheusGUI
             dataContextForSearchTaskWindow.SearchModeExpanderTitle = "Some search properties...";
         }
 
-        #endregion Private Methods
+        private void PreviewIfInt(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !TextBoxIntAllowed(e.Text);
+        }
 
+        #endregion Private Methods
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
     {
-
         #region Private Fields
 
         private string expanderTitle;
@@ -430,6 +522,5 @@ namespace MetaMorpheusGUI
         }
 
         #endregion Protected Methods
-
     }
 }

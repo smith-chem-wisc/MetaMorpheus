@@ -12,16 +12,26 @@
 
     public class CrosslinkerTypeClass
     {
+        #region Public Fields
+
+        public char CrosslinkerModSite;
+
+        #endregion Public Fields
+
+        #region Public Properties
+
         public string CrosslinkerName { get; set; }
         public bool Cleavable { get; set; }
         public double TotalMass { get; set; }
         public double CleaveMassShort { get; set; }
         public double CleaveMassLong { get; set; }
-        public char CrosslinkerModSite;
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public CrosslinkerTypeClass SelectCrosslinker(CrosslinkerType name)
         {
-
             if (name == CrosslinkerType.DSSO)
             {
                 CrosslinkerName = "DSSO";
@@ -69,5 +79,7 @@
 
             return this;
         }
+
+        #endregion Public Methods
     }
 }

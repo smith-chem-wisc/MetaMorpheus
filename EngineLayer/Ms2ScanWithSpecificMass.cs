@@ -3,9 +3,8 @@ using MassSpectrometry;
 
 namespace EngineLayer
 {
-    public class Ms2ScanWithSpecificMass
+    public class Ms2ScanWithSpecificMass : IScan
     {
-
         #region Public Constructors
 
         public Ms2ScanWithSpecificMass(IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> mzLibScan, IMzPeak precursorMonoisotopicPeak, int precursorCharge, string fullFilePath)
@@ -28,7 +27,16 @@ namespace EngineLayer
         public int PrecursorCharge { get; }
         public string FullFilePath { get; }
 
-        #endregion Public Properties
+        public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 
+        public int OneBasedPrecursorScanNumber => TheScan.OneBasedPrecursorScanNumber;
+
+        public double RetentionTime => TheScan.RetentionTime;
+
+        public int NumPeaks => TheScan.MassSpectrum.Size;
+
+        public double TotalIonCurrent => TheScan.TotalIonCurrent;
+
+        #endregion Public Properties
     }
 }

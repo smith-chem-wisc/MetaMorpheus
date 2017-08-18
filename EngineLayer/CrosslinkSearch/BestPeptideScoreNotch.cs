@@ -1,16 +1,25 @@
 ﻿namespace EngineLayer.CrosslinkSearch
 {
-    class BestPeptideScoreNotch
+    internal class BestPeptideScoreNotch
     {
-        public CompactPeptide BestPeptide { get; set; }
-        public double BestScore { get; set; }
-        public int BestNotch { get; set; }
+        #region Public Constructors
+
         public BestPeptideScoreNotch(CompactPeptide bestPeptide, double bestScore, int bestNotch)
         {
             BestPeptide = bestPeptide;
             BestScore = bestScore;
             BestNotch = bestNotch;
         }
-        public int[] topPosition { get; set; }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public CompactPeptide BestPeptide { get; set; }
+        public double BestScore { get; set; }
+        public int BestNotch { get; set; }
+        public int[] TopPosition { get; set; }
+
+        #endregion Public Properties
     }
 }

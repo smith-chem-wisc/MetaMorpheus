@@ -8,27 +8,27 @@ namespace EngineLayer
 {
     public class SequencesToActualProteinPeptidesEngine : MetaMorpheusEngine
     {
+        #region Protected Fields
 
-        #region Private Fields
+        protected const int max_mods_for_peptide = 3;
+        protected readonly int maxMissedCleavages;
+        protected readonly int? minPeptideLength;
+        protected readonly int? maxPeptideLength;
+        protected readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
+        protected readonly List<ModificationWithMass> fixedModifications;
+        protected readonly List<ModificationWithMass> variableModifications;
+        protected readonly int maxModificationIsoforms;
+        protected readonly List<Psm>[] allPsms;
+        protected readonly List<Protein> proteinList;
+        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
+        protected readonly Protease protease;
+        protected readonly TerminusType terminusType;
 
-        private const int max_mods_for_peptide = 3;
-        private readonly List<Psm>[] allPsms;
-        private readonly List<Protein> proteinList;
-        private readonly List<MassDiffAcceptor> massDiffAcceptors;
-        private readonly Protease protease;
-        private readonly int maxMissedCleavages;
-        private readonly int? minPeptideLength;
-        private readonly int? maxPeptideLength;
-        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-        private readonly List<ModificationWithMass> fixedModifications;
-        private readonly List<ModificationWithMass> variableModifications;
-        private readonly int maxModificationIsoforms;
-
-        #endregion Private Fields
+        #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
@@ -41,6 +41,7 @@ namespace EngineLayer
             this.fixedModifications = fixedModifications;
             this.variableModifications = variableModifications;
             this.maxModificationIsoforms = maxModificationIsoforms;
+            this.terminusType = terminusType;
         }
 
         #endregion Public Constructors
@@ -50,10 +51,9 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             //At this point have Spectrum-Sequence matching, without knowing which protein, and without know if target/decoy
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
 
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>();
-
-            #region Match Seqeunces to PeptideWithSetModifications
+            #region Match Sequences to PeptideWithSetModifications
 
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
@@ -74,14 +74,14 @@ namespace EngineLayer
             //Status("Adding possible sources to peptide dictionary...", new List<string> { taskId });
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
-                Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
+                Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                     {
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                         {
-                            HashSet<PeptideWithSetModifications> v;
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications), out v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+
                                 v.Add(peptideWithSetModifications);
                         }
                     }
@@ -89,8 +89,7 @@ namespace EngineLayer
                 {
                     foreach (var ye in local)
                     {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                     }
@@ -104,12 +103,11 @@ namespace EngineLayer
                 }
             });
 
-            #endregion Match Seqeunces to PeptideWithSetModifications
+            #endregion Match Sequences to PeptideWithSetModifications
 
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }
 
         #endregion Protected Methods
-
     }
 }

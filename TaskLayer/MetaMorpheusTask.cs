@@ -28,7 +28,6 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
-
         #region Public Fields
 
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
@@ -215,7 +214,7 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
                     file.WriteLine("MetaMorpheus version "
-                        + (GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "NOT A RELEASE" : GlobalEngineLevelSettings.MetaMorpheusVersion)
+                        + GlobalEngineLevelSettings.MetaMorpheusVersion
                         + " is used to run a "
                         + this.TaskType
                         + " task on "
@@ -259,12 +258,11 @@ namespace TaskLayer
             var resultsFileName = Path.Combine(output_folder, "results.txt");
             using (StreamWriter file = new StreamWriter(resultsFileName))
             {
-                file.WriteLine(GlobalEngineLevelSettings.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
+                file.WriteLine("MetaMorpheus: version " + GlobalEngineLevelSettings.MetaMorpheusVersion);
                 file.Write(myTaskResults.ToString());
             }
             SucessfullyFinishedWritingFile(resultsFileName, new List<string> { taskId });
             FinishedSingleTask(taskId);
-
 #if !DEBUG
             }
             catch (Exception e)
@@ -504,9 +502,8 @@ namespace TaskLayer
             foreach (Psm psm in items)
             {
                 PeptideWithSetModifications peptide = psm.MostProbableProteinInfo.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
-                Tuple<int, int, List<string>> peptide_id;
                 //if first peptide on list hasn't been added, add peptide and peptide evidence
-                if (!peptide_ids.TryGetValue(peptide, out peptide_id))
+                if (!peptide_ids.TryGetValue(peptide, out Tuple<int, int, List<string>> peptide_id))
                 {
                     peptide_id = new Tuple<int, int, List<string>>(p_index, 0, new List<string>());
                     p_index++;
@@ -565,8 +562,7 @@ namespace TaskLayer
                     }
                 }
 
-                Tuple<int, int> scan_result_scan_item;
-                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), out scan_result_scan_item)) //check to see if scan has already been added
+                if (!psm_per_scan.TryGetValue(new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber), out Tuple<int, int> scan_result_scan_item)) //check to see if scan has already been added
                 {
                     scan_result_scan_item = new Tuple<int, int>(sir_id, 0);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1] = new mzIdentML110.Generated.SpectrumIdentificationResultType()
@@ -593,8 +589,6 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeak.Mz, 5),
-                    calculatedMassToCharge = Math.Round(psm.MostProbableProteinInfo.PeptideMonoisotopicMass.ToMz(psm.ScanPrecursorCharge), 5),
-                    calculatedMassToChargeSpecified = true,
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     peptide_ref = "P_" + peptide_id.Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.MostProbableProteinInfo.PeptidesWithSetModifications.Count],
@@ -616,6 +610,11 @@ namespace TaskLayer
                         }
                     }
                 };
+                if (psm.PeptideMonisotopicMass.HasValue)
+                {
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToCharge = Math.Round(psm.PeptideMonisotopicMass.Value.ToMz(psm.ScanPrecursorCharge), 5);
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToChargeSpecified = true;
+                }
 
                 int pe = 0;
                 foreach (PeptideWithSetModifications p in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
@@ -886,10 +885,10 @@ namespace TaskLayer
             if (Path.GetExtension(fileName).Equals(".fasta"))
             {
                 um = null;
-                return ProteinDbLoader.LoadProteinFasta(fileName, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
+                return ProteinDbLoader.LoadProteinFasta(fileName, true, generateDecoys, isContaminant, ProteinDbLoader.uniprot_accession_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_fullName_expression, ProteinDbLoader.uniprot_gene_expression);
             }
             else
-                return ProteinDbLoader.LoadProteinXML(fileName, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
+                return ProteinDbLoader.LoadProteinXML(fileName, true, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
         protected void ReportProgress(ProgressEventArgs v)
@@ -1033,7 +1032,7 @@ namespace TaskLayer
 
         private static List<Tuple<string, string>> GetModsFromString(string value)
         {
-            return value.Split(new string[] { "\t\t" }, StringSplitOptions.None).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
+            return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => new Tuple<string, string>(b.Split('\t').First(), b.Split('\t').Last())).ToList();
         }
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
@@ -1052,6 +1051,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

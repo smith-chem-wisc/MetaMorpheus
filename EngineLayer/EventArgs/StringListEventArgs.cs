@@ -5,7 +5,6 @@ namespace EngineLayer
 {
     public class StringListEventArgs : EventArgs
     {
-
         #region Public Constructors
 
         public StringListEventArgs(List<string> stringList)
@@ -20,6 +19,5 @@ namespace EngineLayer
         public IEnumerable<string> StringList { get; }
 
         #endregion Public Properties
-
     }
 }

@@ -10,7 +10,6 @@ namespace TaskLayer
 {
     public static class GlobalTaskLevelSettings
     {
-
         #region Public Constructors
 
         static GlobalTaskLevelSettings()
@@ -104,15 +103,13 @@ namespace TaskLayer
             List<double> massesToExclude = new List<double>();
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                Residue residue;
-                if (Residue.TryGetResidue(c, out residue))
+                if (Residue.TryGetResidue(c, out Residue residue))
                 {
                     massesToExclude.Add(residue.MonoisotopicMass);
                     massesToExclude.Add(-residue.MonoisotopicMass);
                     for (char cc = 'A'; cc <= 'Z'; cc++)
                     {
-                        Residue residueCC;
-                        if (Residue.TryGetResidue(cc, out residueCC))
+                        if (Residue.TryGetResidue(cc, out Residue residueCC))
                         {
                             massesToExclude.Add(residue.MonoisotopicMass + residueCC.MonoisotopicMass);
                             massesToExclude.Add(residue.MonoisotopicMass - residueCC.MonoisotopicMass);
@@ -145,6 +142,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }

@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Test
@@ -26,7 +27,7 @@ namespace Test
         {
             #region Public Constructors
 
-            public TestEngine(int level):base(null)
+            public TestEngine(int level) : base(new List<string>())
             {
             }
 

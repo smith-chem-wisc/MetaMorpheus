@@ -13,7 +13,6 @@ namespace Test
     [TestFixture]
     public class LocalizationTest
     {
-
         #region Public Methods
 
         [Test]
@@ -32,44 +31,42 @@ namespace Test
 
             Protein parentProteinForMatch = new Protein("MEK", null);
             PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
-            ModificationMotif motif;
-            ModificationMotif.TryGetMotif("E", out motif);
+            ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, null) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(variableModifications, 2, 1).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            List<ProductType> lp = new List<ProductType> { ProductType.BnoB1ions, ProductType.Y };
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications.Last();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetModsForSpectrum });
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(myMsDataFile.Last() as IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>>, new MzPeak(pepWithSetModsForSpectrum.MonoisotopicMass.ToMz(1), 1), 1, null);
-            Psm newPsm = new Psm(ps.CompactPeptide, 0, 0, 2, scan);
+            Psm newPsm = new Psm(ps.CompactPeptide(TerminusType.None), 0, 0, 2, scan);
 
             Assert.IsNull(newPsm.MostProbableProteinInfo);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-            Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptide, HashSet<PeptideWithSetModifications>>
+            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {
-                {ps.CompactPeptide, new HashSet<PeptideWithSetModifications>{ ps} }
+                {ps.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ ps} }
             };
 
             newPsm.MatchToProteinLinkedPeptides(matching);
 
-            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, null, false);
+            LocalizationEngine f = new LocalizationEngine(new List<Psm> { newPsm }, lp, myMsDataFile, fragmentTolerance, new List<string>(), false);
             f.Run();
 
             // Was single peak!!!
-            Assert.AreEqual(0, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.B].Count(b => b > 0));
-            Assert.AreEqual(1, newPsm.LocalizationResults.MatchedIonMassesListPositiveIsMatch[ProductType.Y].Count(b => b > 0));
+            Assert.AreEqual(0, newPsm.MatchedIonDictPositiveIsMatch[ProductType.BnoB1ions].Count(b => b > 0));
+            Assert.AreEqual(1, newPsm.MatchedIonDictPositiveIsMatch[ProductType.Y].Count(b => b > 0));
             // If localizing, three match!!!
-            Assert.IsTrue(newPsm.LocalizationResults.LocalizedScores[1] > 3 && newPsm.LocalizationResults.LocalizedScores[1] < 4);
+            Assert.IsTrue(newPsm.LocalizedScores[1] > 3 && newPsm.LocalizedScores[1] < 4);
         }
 
         #endregion Public Methods
-
     }
 }

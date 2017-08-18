@@ -8,7 +8,6 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly List<Psm> allIdentifications;
@@ -70,8 +69,7 @@ namespace EngineLayer.Gptmd
             // Look at all confident identifications (with notch q value less than 0.01)
             // Of those only targets (do not add modifications for decoy peptides)
             foreach (var ye in allIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.01 && !b.IsDecoy))
-            {
-                foreach (var peptide in ye.MostProbableProteinInfo.PeptidesWithSetModifications)
+                foreach (var peptide in ye.CompactPeptides.SelectMany(b => b.Value.Item2))
                     foreach (ModificationWithMass mod in GetPossibleMods(ye.ScanPrecursorMass, gptmdModifications, combos, precursorMassTolerance, peptide))
                     {
                         var proteinAcession = peptide.Protein.Accession;
@@ -91,7 +89,6 @@ namespace EngineLayer.Gptmd
                             }
                         }
                     }
-            }
             return new GptmdResults(this, Mods, modsAdded);
         }
 
@@ -129,6 +126,5 @@ namespace EngineLayer.Gptmd
         }
 
         #endregion Private Methods
-
     }
 }

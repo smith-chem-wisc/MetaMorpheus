@@ -10,7 +10,6 @@ namespace EngineLayer.Indexing
 {
     public class IndexingEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
@@ -26,14 +25,16 @@ namespace EngineLayer.Indexing
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-
         private readonly List<ProductType> lp;
+        private readonly int currentPartition;
+        private readonly int totalPartitions;
+        private readonly bool searchDecoys;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, int currentPartition, int totalPartitions, bool searchDecoys) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -45,6 +46,9 @@ namespace EngineLayer.Indexing
             this.maxPeptideLength = maxPeptideLength;
             this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
+            this.currentPartition = currentPartition + 1;
+            this.totalPartitions = totalPartitions;
+            this.searchDecoys = searchDecoys;
         }
 
         #endregion Public Constructors
@@ -54,6 +58,8 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Search Decoys: " + searchDecoys);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
@@ -80,6 +86,7 @@ namespace EngineLayer.Indexing
             var observed_sequences = new HashSet<CompactPeptide>();
             int proteinsSeen = 0;
             int old_progress = 0;
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), fff =>
             {
                 var myInnerDictionary = new Dictionary<float, List<int>>(100000);
@@ -92,7 +99,7 @@ namespace EngineLayer.Indexing
                         var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide;
+                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
                             var observed = observed_sequences.Contains(correspondingCompactPeptide);
                             if (observed)
                                 continue;
@@ -116,8 +123,7 @@ namespace EngineLayer.Indexing
                                 if (!double.IsNaN(huhu))
                                 {
                                     var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
-                                    List<int> value;
-                                    if (myInnerDictionary.TryGetValue(rounded, out value))
+                                    if (myInnerDictionary.TryGetValue(rounded, out List<int> value))
                                     {
                                         if (!value.Contains(index))
                                             value.Add(index);
@@ -133,10 +139,9 @@ namespace EngineLayer.Indexing
                 {
                     foreach (var huhu in myInnerDictionary)
                     {
-                        List<int> value;
                         foreach (var hhhh in huhu.Value)
                         {
-                            if (myFragmentDictionary.TryGetValue(huhu.Key, out value))
+                            if (myFragmentDictionary.TryGetValue(huhu.Key, out List<int> value))
                                 value.Add(hhhh);
                             else
                                 myFragmentDictionary.Add(huhu.Key, new List<int> { hhhh });
@@ -156,6 +161,5 @@ namespace EngineLayer.Indexing
         }
 
         #endregion Protected Methods
-
     }
 }

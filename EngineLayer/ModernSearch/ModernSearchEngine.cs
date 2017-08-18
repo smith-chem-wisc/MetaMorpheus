@@ -4,40 +4,41 @@ using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EngineLayer.ModernSearch
 {
     public class ModernSearchEngine : MetaMorpheusEngine
     {
+        #region Protected Fields
+
+        protected readonly List<int>[] fragmentIndex;
+        protected readonly Tolerance fragmentTolerance;
+        protected readonly float[] keys;
+        protected readonly Psm[][] globalPsms;
+        protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
+        protected readonly List<CompactPeptide> peptideIndex;
+        protected readonly List<MassDiffAcceptor> searchModes;
+        protected readonly bool addCompIons;
+        protected readonly List<ProductType> lp;
+        protected readonly double scoreCutoff;
+        protected readonly int currentPartition;
+        protected readonly int totalPartitions;
+
+        #endregion Protected Fields
 
         #region Private Fields
 
         private const double tolInDaForPreferringHavingMods = 0.03;
 
-        private readonly List<int>[] fragmentIndex;
-
-        private readonly Tolerance fragmentTolerance;
-
-        private readonly float[] keys;
-
-        private readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
-
-        private readonly List<CompactPeptide> peptideIndex;
-
-        private readonly List<MassDiffAcceptor> searchModes;
-
-        private readonly bool addCompIons;
-
-        private readonly List<ProductType> lp;
-
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions) : base(nestedIds)
         {
+            this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
@@ -46,6 +47,9 @@ namespace EngineLayer.ModernSearch
             this.searchModes = searchModes;
             this.addCompIons = addCompIons;
             this.lp = lp;
+            this.scoreCutoff = scoreCutoff;
+            this.currentPartition = currentPartition + 1;
+            this.totalPartitions = totalPartitions;
         }
 
         #endregion Public Constructors
@@ -54,12 +58,9 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine...", nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
-            Psm[][] newPsms = new Psm[searchModes.Count][];
-            for (int i = 0; i < searchModes.Count; i++)
-                newPsms[i] = new Psm[listOfSortedms2Scans.Length];
 
             var searchModesCount = searchModes.Count;
             var outputObject = new object();
@@ -87,28 +88,42 @@ namespace EngineLayer.ModernSearch
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
                         var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                        CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                        for (int j = 0; j < searchModesCount; j++)
+                        if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                         {
-                            // Check if makes sense to add due to peptidescore!
-                            var searchMode = searchModes[j];
-                            double currentBestScore = bestScores[j];
-                            if (currentBestScore > 1)
+                            CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
+                            for (int j = 0; j < searchModesCount; j++)
                             {
-                                // Existed! Need to compare with old match
-                                if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                // Check if makes sense to add due to peptidescore!
+                                var searchMode = searchModes[j];
+                                double currentBestScore = bestScores[j];
+                                if (currentBestScore > 1)
                                 {
-                                    // Score is same, need to see if accepts and if prefer the new one
-                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0)
+                                    // Existed! Need to compare with old match
+                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
                                     {
-                                        bestPeptides[j].Add(candidatePeptide);
-                                        bestNotches[j].Add(notch);
+                                        // Score is same, need to see if accepts and if prefer the new one
+                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                        if (notch >= 0)
+                                        {
+                                            bestPeptides[j].Add(candidatePeptide);
+                                            bestNotches[j].Add(notch);
+                                        }
+                                    }
+                                    else if (currentBestScore < consideredScore)
+                                    {
+                                        // Score is better, only make sure it is acceptable
+                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
+                                        if (notch >= 0)
+                                        {
+                                            bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
+                                            bestScores[j] = consideredScore;
+                                            bestNotches[j] = new List<int> { notch };
+                                        }
                                     }
                                 }
-                                else if (currentBestScore < consideredScore)
+                                // Did not exist! Only make sure that it is acceptable
+                                else
                                 {
-                                    // Score is better, only make sure it is acceptable
                                     int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
                                     if (notch >= 0)
                                     {
@@ -118,27 +133,16 @@ namespace EngineLayer.ModernSearch
                                     }
                                 }
                             }
-                            // Did not exist! Only make sure that it is acceptable
-                            else
-                            {
-                                int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                if (notch >= 0)
-                                {
-                                    bestPeptides[j] = new List<CompactPeptide> { candidatePeptide };
-                                    bestScores[j] = consideredScore;
-                                    bestNotches[j] = new List<int> { notch };
-                                }
-                            }
                         }
                     }
                     for (int j = 0; j < searchModesCount; j++)
                     {
                         if (bestPeptides[j] != null)
                         {
-                            newPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
                             for (int k = 1; k < bestPeptides[j].Count; k++)
                             {
-                                newPsms[j][i].Add(bestPeptides[j][k], bestNotches[j][k]);
+                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }
@@ -149,12 +153,12 @@ namespace EngineLayer.ModernSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop", nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop" + currentPartition + "/" + totalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
             });
-            return new SearchResults(newPsms, this);
+            return new MetaMorpheusEngineResults(this);
         }
 
         #endregion Protected Methods
@@ -173,7 +177,7 @@ namespace EngineLayer.ModernSearch
                 }
             }
             else
-            { 
+            {
                 List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
                 for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                 {
@@ -181,7 +185,7 @@ namespace EngineLayer.ModernSearch
                 }
 
                 //If HCD
-                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
@@ -189,7 +193,7 @@ namespace EngineLayer.ModernSearch
                     }
                 }
                 //If ETD
-                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
@@ -206,7 +210,6 @@ namespace EngineLayer.ModernSearch
                     GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
                 }
             }
-
         }
 
         private void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores)
@@ -253,6 +256,5 @@ namespace EngineLayer.ModernSearch
         }
 
         #endregion Private Methods
-
     }
 }

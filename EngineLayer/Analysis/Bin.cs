@@ -6,7 +6,6 @@ namespace EngineLayer.Analysis
 {
     public class Bin
     {
-
         #region Public Fields
 
         public string UnimodId = "-";
@@ -68,7 +67,7 @@ namespace EngineLayer.Analysis
         {
             get
             {
-                return uniquePSMs.Values.Count(b => !b.Item3.IsDecoy && b.Item3.LocalizationResults.LocalizedScores.Max() >= b.Item3.Score + 1);
+                return uniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null).Count(b => !b.Item3.IsDecoy && b.Item3.LocalizedScores.Max() >= b.Item3.Score + 1);
             }
         }
 
@@ -107,6 +106,5 @@ namespace EngineLayer.Analysis
         }
 
         #endregion Internal Methods
-
     }
 }

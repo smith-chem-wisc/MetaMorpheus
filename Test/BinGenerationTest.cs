@@ -14,7 +14,6 @@ namespace Test
     [TestFixture]
     public class BinGenerationTest
     {
-
         #region Public Methods
 
         [Test]
@@ -26,9 +25,11 @@ namespace Test
                 DoHistogramAnalysis = true,
                 MassDiffAcceptors = massDiffAcceptors,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                SearchTarget = true,
                 SearchDecoy = false,
                 DoParsimony = true,
-                DoQuantification = true
+                DoQuantification = true,
+                ScoreCutoff = 1
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");
@@ -121,11 +122,8 @@ namespace Test
                 new List<DbForTask> { new DbForTask(proteinDbFilePath, false) },
                 new List<string> { mzmlFilePath1, mzmlFilePath2, },
                 null);
-
-            //Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"aggregate_OpenSearch.mytsv")).Count());
         }
 
         #endregion Public Methods
-
     }
 }

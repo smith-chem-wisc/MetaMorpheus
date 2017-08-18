@@ -8,26 +8,25 @@ namespace EngineLayer
 {
     public class LocalizationEngine : MetaMorpheusEngine
     {
-
         #region Private Fields
 
         private readonly IEnumerable<Psm> allResultingIdentifications;
         private readonly List<ProductType> lp;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
-        private readonly bool addComp;
+        private readonly bool addCompIons;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addComp) : base(nestedIds)
+        public LocalizationEngine(IEnumerable<Psm> allResultingIdentifications, List<ProductType> lp, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile, Tolerance fragmentTolerance, List<string> nestedIds, bool addCompIons) : base(nestedIds)
         {
             this.allResultingIdentifications = allResultingIdentifications;
             this.lp = lp;
             this.myMsDataFile = myMsDataFile;
             this.fragmentTolerance = fragmentTolerance;
-            this.addComp = addComp;
+            this.addCompIons = addCompIons;
         }
 
         #endregion Public Constructors
@@ -36,39 +35,45 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            foreach (var ok in allResultingIdentifications)
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
+            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
-                var MatchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
-                var representative = ok.MostProbableProteinInfo.PeptidesWithSetModifications.First();
+                var matchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
                 {
-                    var ionMasses = representative.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
+                    var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
-                    Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addComp, thePrecursorMass, this.lp);
-                    MatchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
+                    Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
+                    matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
                 }
+
+                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
+
+                if (ok.FullSequence == null)
+                    continue;
+
+                var representative = ok.CompactPeptides.First().Value.Item2.First();
 
                 var localizedScores = new List<double>();
                 for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
                 {
                     PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ok.ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var gg = localizedPeptide.CompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
                     double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                    var score = Psm.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addComp, thePrecursorMass, this.lp);
+                    var score = Psm.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
                     localizedScores.Add(score);
                 }
 
-                ok.LocalizationResults = new LocalizationResults(MatchedIonDictPositiveIsMatch, localizedScores);
+                ok.LocalizedScores = localizedScores;
             }
             return new LocalizationEngineResults(this);
         }
 
         #endregion Protected Methods
-
     }
 }

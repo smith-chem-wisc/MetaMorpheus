@@ -5,7 +5,6 @@ namespace EngineLayer
     public class ProgressEventArgs : MyRecursiveEventArgs
 
     {
-
         #region Public Fields
 
         public int new_progress;
@@ -22,6 +21,5 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
     }
 }
