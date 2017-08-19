@@ -8,9 +8,9 @@ using System.Linq;
 namespace TaskLayer
 {
     //Common Parameters
-    public class TaskParameters
+    public class CommonParameters
     {
-        public TaskParameters()
+        public CommonParameters()
         {
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
