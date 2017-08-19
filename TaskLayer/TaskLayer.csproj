@@ -108,6 +108,7 @@
       <SonarQubeExclude>true</SonarQubeExclude>
     </Compile>
     <Compile Include="EventArgs\SingleTaskEventArgs.cs" />
+    <Compile Include="TaskParameters.cs" />
     <Compile Include="XLSearchTask\XLSearchTask.cs" />
     <Compile Include="XLSearchTask\XLSearchTask2.cs" />
   </ItemGroup>
