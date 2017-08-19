@@ -183,6 +183,7 @@
     <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngine.cs" />
     <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngineResults.cs" />
     <Compile Include="CrosslinkSearch\XLSearchResults.cs" />
+    <Compile Include="TaskParameters.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">

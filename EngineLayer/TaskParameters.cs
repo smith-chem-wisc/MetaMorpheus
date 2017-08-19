@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 
 
-namespace TaskLayer
+namespace EngineLayer
 {
     //Common Parameters
     public class CommonParameters
@@ -15,7 +15,7 @@ namespace TaskLayer
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
             MaxPeptideLength = null;
-            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
+            //Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             MaxModificationIsoforms = 4096;
             InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             ProductMassTolerance = new AbsoluteTolerance(0.01);
@@ -29,7 +29,7 @@ namespace TaskLayer
             
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            //ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
@@ -54,7 +54,7 @@ namespace TaskLayer
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
         public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
-        public MyTask TaskType { get; set; }
+        //public MyTask TaskType { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
@@ -95,6 +95,7 @@ namespace TaskLayer
         public static List<string> AllModLists { get; private set; }
 
     }
+
     //Search Parameters
     public class SearchParameters
     {
@@ -112,7 +113,7 @@ namespace TaskLayer
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
-            MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
+            //MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
         }
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
@@ -152,12 +153,12 @@ namespace TaskLayer
         public GPTMDParameters()
         {
             PrecursorMassTolerance = new PpmTolerance(2);
-            ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b =>
-                b.modificationType.Equals("Glycan") ||
-                b.modificationType.Equals("Mod") ||
-                b.modificationType.Equals("PeptideTermMod") ||
-                b.modificationType.Equals("Metal") ||
-                b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+        //    ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b =>
+        //        b.modificationType.Equals("Glycan") ||
+        //        b.modificationType.Equals("Mod") ||
+        //        b.modificationType.Equals("PeptideTermMod") ||
+        //        b.modificationType.Equals("Metal") ||
+        //        b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
         }
         public Tolerance PrecursorMassTolerance { get; set; }
         public List<Tuple<string, string>> ListOfModsGptmd { get; set; }
