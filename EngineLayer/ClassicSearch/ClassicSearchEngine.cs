@@ -18,7 +18,7 @@ namespace EngineLayer.ClassicSearch
         //private readonly int? minPeptideLength;
         //private readonly int? maxPeptideLength;
         //private readonly int maximumVariableModificationIsoforms;
-        //private readonly List<MassDiffAcceptor> searchModes;
+        private readonly List<MassDiffAcceptor> searchModes;
 
         private readonly List<Protein> proteinList;
 
@@ -41,16 +41,16 @@ namespace EngineLayer.ClassicSearch
         //private readonly bool conserveMemory;
         //private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
-        //private readonly bool addCompIons;
+        private readonly bool addCompIons;
         //private readonly double scoreCutoff;
         private readonly CommonParameters commonParameters;
-        protected readonly SearchParameters searchParameters;
+
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp,  CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, List<MassDiffAcceptor> searchModes, bool addCompIons, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -63,15 +63,14 @@ namespace EngineLayer.ClassicSearch
             //this.minPeptideLength = minPeptideLength;
             //this.maxPeptideLength = maxPeptideLength;
             //this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
-            //this.searchModes = searchModes;
+            this.searchModes = searchModes;
             //this.protease = protease;
             this.lp = lp;
             //this.conserveMemory = conserveMemory;
             //this.initiatorMethionineBehavior = initiatorMethionineBehavior;
-            //this.addCompIons = addCompIons;
+            this.addCompIons = addCompIons;
             //this.scoreCutoff = scoreCutoff;
             this.commonParameters = commonParameters;
-            this.searchParameters = searchParameters;
         }
 
         #endregion Public Constructors
@@ -95,8 +94,8 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new Psm[searchParameters.MassDiffAcceptors.Count][];
-                for (int searchModeIndex = 0; searchModeIndex < searchParameters.MassDiffAcceptors.Count; searchModeIndex++)
+                var psms = new Psm[searchModes.Count][];
+                for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                     psms[searchModeIndex] = new Psm[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
@@ -126,13 +125,13 @@ namespace EngineLayer.ClassicSearch
                             Array.Sort(productMasses);
                             double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
-                            for (int searchModeIndex = 0; searchModeIndex < searchParameters.MassDiffAcceptors.Count; searchModeIndex++)
+                            for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                             {
-                                var searchMode = searchParameters.MassDiffAcceptors[searchModeIndex];
+                                var searchMode = searchModes[searchModeIndex];
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                                 {
                                     double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.searchParameters.AddCompIons, thePrecursorMass, lp);
+                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
 
                                     if (score > commonParameters.ScoreCutoff)
                                     {
@@ -148,7 +147,7 @@ namespace EngineLayer.ClassicSearch
                 }
                 lock (lockObject)
                 {
-                    for (int searchModeIndex = 0; searchModeIndex < searchParameters.MassDiffAcceptors.Count; searchModeIndex++)
+                    for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                         for (int i = 0; i < globalPsms[searchModeIndex].Length; i++)
                             if (psms[searchModeIndex][i] != null)
                             {

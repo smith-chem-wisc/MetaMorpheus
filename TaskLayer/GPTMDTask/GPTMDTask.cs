@@ -26,7 +26,7 @@ namespace TaskLayer
         {
             //
             commonParameters = new CommonParameters();
-            searchParameters = new SearchParameters();
+            commonParameters.ListOfModsLocalize = ListOfModsLocalize = new List<Tuple<string, string>>();
             // Set default values here:
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
@@ -68,8 +68,6 @@ namespace TaskLayer
         #region Public Properties
 
         public CommonParameters commonParameters { get; set; }
-
-        public SearchParameters searchParameters { get; set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
@@ -187,7 +185,7 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 Psm[][] allPsmsArray = new Psm[1][];
                 allPsmsArray[0] = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, commonParameters, searchParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 lock (lock2)
                 {
                     allPsms[0].AddRange(allPsmsArray[0]);
@@ -199,7 +197,7 @@ namespace TaskLayer
 
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), commonParameters, searchParameters, new List<string> { taskId });
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), commonParameters, new List<string> { taskId });
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 

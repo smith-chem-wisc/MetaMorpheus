@@ -20,6 +20,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngine()
         {
+
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();

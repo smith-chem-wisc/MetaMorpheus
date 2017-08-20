@@ -18,12 +18,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, searchParameters, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, nestedIds)
         {
+            this.searchParameters = searchParameters;
         }
 
         #endregion Public Constructors
-
+        public SearchParameters searchParameters { get; set; }
         #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()

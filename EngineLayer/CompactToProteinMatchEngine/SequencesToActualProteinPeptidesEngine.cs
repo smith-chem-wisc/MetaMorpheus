@@ -24,13 +24,12 @@ namespace EngineLayer
         //protected readonly Protease protease;
         protected readonly TerminusType terminusType;
         protected readonly CommonParameters commonParameters;
-        protected readonly SearchParameters searchParameters;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             //this.massDiffAcceptors = massDiffAcceptors;
@@ -45,7 +44,6 @@ namespace EngineLayer
             //this.maxModificationIsoforms = maxModificationIsoforms;
             this.terminusType = terminusType;
             this.commonParameters = commonParameters;
-            this.searchParameters = searchParameters;
         }
 
         #endregion Public Constructors
