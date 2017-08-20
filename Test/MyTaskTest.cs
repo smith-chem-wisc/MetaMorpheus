@@ -39,11 +39,17 @@ namespace Test
 
             SearchTask task3 = new SearchTask()
             {
-                DoParsimony = true
+                searchParameters = new SearchParameters()
+                {
+                    DoParsimony = true
+                }
             };
             SearchTask task4 = new SearchTask()
             {
-                SearchType = SearchType.Modern
+                searchParameters = new SearchParameters()
+                {
+                    SearchType = SearchType.Modern
+                }
             };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),
@@ -120,7 +126,10 @@ namespace Test
             SearchTask task3 = new SearchTask();
             SearchTask task4 = new SearchTask()
             {
-                DoParsimony = true
+                searchParameters = new SearchParameters()
+                {
+                    DoParsimony = true
+                }
             };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
                 new Tuple<string, MetaMorpheusTask>("task1", task1),
@@ -258,9 +267,15 @@ namespace Test
             //Create Search Task
             SearchTask task1 = new SearchTask()
             {
-                WritePrunedDatabase = true,
-                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
-                DoParsimony = true,
+                commonParameters = new CommonParameters()
+                {
+                    ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
+                },
+                searchParameters = new SearchParameters()
+                {
+                    WritePrunedDatabase = true,
+                    DoParsimony = true,
+                }
             };
 
             //add task 1 to task list
@@ -319,7 +334,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
@@ -366,8 +381,14 @@ namespace Test
 
             SearchTask testUnique = new SearchTask()
             {
-                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
-                DoParsimony = true
+                commonParameters = new CommonParameters()
+                {
+                    ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
+                },
+                searchParameters = new SearchParameters()
+                {
+                    DoParsimony = true
+                }
             };
 
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
@@ -422,7 +443,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(testUnique.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(testUnique.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];

@@ -21,7 +21,6 @@ namespace Test
         public static void TestCoIsolation()
         {
             CommonParameters commonParameters = new CommonParameters();
-            commonParameters.ProductMassTolerance = new AbsoluteTolerance(0.01);
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             commonParameters.DoPrecursorDeconvolution = true;
             commonParameters.UseProvidedPrecursorInfo = true;

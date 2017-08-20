@@ -99,6 +99,7 @@ namespace EngineLayer
         public SearchParameters()
         {
             DisposeOfFileWhenDone = true;
+            //AddCompIons = false;
             DoParsimony = false;
             NoOneHitWonders = false;
             ModPeptidesAreUnique = true;

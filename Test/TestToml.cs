@@ -17,8 +17,8 @@ namespace Test
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
 
             Assert.AreEqual(searchTask.DeconvolutionMassTolerance.ToString(), searchTaskLoaded.DeconvolutionMassTolerance.ToString());
-            Assert.AreEqual(searchTask.ProductMassTolerance.ToString(), searchTaskLoaded.ProductMassTolerance.ToString());
-            Assert.AreEqual(searchTask.MassDiffAcceptors[0].FileNameAddition, searchTaskLoaded.MassDiffAcceptors[0].FileNameAddition);
+            Assert.AreEqual(searchTask.commonParameters.ProductMassTolerance.ToString(), searchTaskLoaded.commonParameters.ProductMassTolerance.ToString());
+            Assert.AreEqual(searchTask.searchParameters.MassDiffAcceptors[0].FileNameAddition, searchTaskLoaded.searchParameters.MassDiffAcceptors[0].FileNameAddition);
             Assert.AreEqual(searchTask.ListOfModsFixed[0].Item1, searchTaskLoaded.ListOfModsFixed[0].Item1);
             Assert.AreEqual(searchTask.ListOfModsFixed[0].Item2, searchTaskLoaded.ListOfModsFixed[0].Item2);
             Assert.AreEqual(searchTask.ListOfModsLocalize.Count, searchTaskLoaded.ListOfModsLocalize.Count);
