@@ -33,11 +33,11 @@ namespace TaskLayer
 
         public SearchTask() : base(MyTask.Search)
         {
-            commoParameters = new CommonParameters();
+            commonParameters = new CommonParameters();
             searchParameters = new SearchParameters();
-           commoParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
+           commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             searchParameters.MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-           commoParameters.ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+           commonParameters.ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             //// Deconvolution stuff
             //DoPrecursorDeconvolution = true;
@@ -66,7 +66,7 @@ namespace TaskLayer
             //YIons = true;
             //ZdotIons = false;
             //CIons = false;
-            //FlashLfqEngine = new FlashLFQEngine();
+            FlashLfqEngine = new FlashLFQEngine();
             //TotalPartitions = 1;
             //LocalizeAll = true;
             //DoLocalizationAnalysis = true;
@@ -99,7 +99,7 @@ namespace TaskLayer
         #endregion Public Constructors
 
         #region Public Properties
-        public CommonParameters commoParameters { get; set; }
+        public CommonParameters commonParameters { get; set; }
         public SearchParameters searchParameters { get; set; }
 
         //public bool DisposeOfFileWhenDone { get; set; }
@@ -156,9 +156,9 @@ namespace TaskLayer
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
-                + commoParameters.InitiatorMethionineBehavior
+                + commonParameters.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + commoParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                + commonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
                 );
             return sb.ToString();
         }
@@ -193,15 +193,15 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, searchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (commoParameters.BIons && searchParameters.AddCompIons)
+            if (commonParameters.BIons && searchParameters.AddCompIons)
                 ionTypes.Add(ProductType.B);
-            else if (commoParameters.BIons)
+            else if (commonParameters.BIons)
                 ionTypes.Add(ProductType.BnoB1ions);
-            if (commoParameters.YIons)
+            if (commonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
-            if (commoParameters.ZdotIons)
+            if (commonParameters.ZdotIons)
                 ionTypes.Add(ProductType.Zdot);
-            if (commoParameters.CIons)
+            if (commonParameters.CIons)
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
@@ -232,10 +232,10 @@ namespace TaskLayer
 
                 if (searchParameters.SearchType == SearchType.Modern || searchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    for (int currentPartition = 0; currentPartition < commoParameters.TotalPartitions; currentPartition++)
+                    for (int currentPartition = 0; currentPartition < commonParameters.TotalPartitions; currentPartition++)
                     {
                         List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / commoParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / commoParameters.TotalPartitions) - (currentPartition * proteinList.Count() / commoParameters.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / commonParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / commonParameters.TotalPartitions) - (currentPartition * proteinList.Count() / commonParameters.TotalPartitions));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
@@ -243,7 +243,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, currentPartition, TotalPartitions, SearchDecoy);
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, searchParameters.SearchDecoy, commonParameters, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
@@ -287,11 +287,11 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (searchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, terminusType, currentPartition, commonParameters, searchParameters, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, commoParameters, searchParameters, thisId).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, commonParameters, searchParameters, thisId).Run();
 
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + commoParameters.TotalPartitions + "!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + commonParameters.TotalPartitions + "!", thisId));
                     }
                 }
                 else //If classic search
@@ -300,7 +300,7 @@ namespace TaskLayer
                         fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, commonParameters, searchParameters, thisId).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -324,13 +324,13 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (searchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType);
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, searchParameters, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType);
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, searchParameters, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
@@ -365,7 +365,7 @@ namespace TaskLayer
             {
                 for (int j = 0; j < searchParameters.MassDiffAcceptors.Count; j++)
                 {
-                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run();
+                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], searchParameters.MassDiffAcceptors, searchParameters.NoOneHitWonders, searchParameters.ModPeptidesAreUnique, new List<string> { taskId }).Run();
                     proteinGroupsHere[j] = ressdf.sortedAndScoredProteinGroups;
                 }
             }
@@ -378,7 +378,7 @@ namespace TaskLayer
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.AddCompIons);
+                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, commonParameters.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.searchParameters.AddCompIons);
                     localizationEngine.Run();
                     myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
@@ -535,7 +535,7 @@ namespace TaskLayer
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + searchParameters.MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { commoParameters.Protease }, 0.01, searchParameters.MassDiffAcceptors[j], commoParameters.ProductMassTolerance, commoParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { commonParameters.Protease }, 0.01, searchParameters.MassDiffAcceptors[j], commonParameters.ProductMassTolerance, commonParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }

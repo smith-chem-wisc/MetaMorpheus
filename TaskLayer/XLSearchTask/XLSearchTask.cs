@@ -31,6 +31,9 @@ namespace TaskLayer
 
         public XLSearchTask() : base(MyTask.XLSearch)
         {
+            //
+            commonParameters = new CommonParameters();
+            xlsearchParameters = new XLSearchParameters();
             // Set default values here:
             DoParsimony = false;
             NoOneHitWonders = false;
@@ -91,6 +94,10 @@ namespace TaskLayer
         #endregion Public Constructors
 
         #region Public Properties
+
+        public CommonParameters commonParameters;
+
+        public XLSearchParameters xlsearchParameters;
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
@@ -274,7 +281,8 @@ namespace TaskLayer
                     #region Generate indices for modern search
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, currentPartition, TotalPartitions, SearchDecoy);
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, xlsearchParameters.SearchDecoy, commonParameters, new List<string> { taskId });
+
                     Dictionary<float, List<int>> fragmentIndexDict;
                     lock (indexLock)
                     {

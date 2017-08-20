@@ -17,19 +17,23 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private Protease protease;
-        private int? minPeptideLength;
+        //private Protease protease;
+        //private int? minPeptideLength;
         private TerminusType terminusType;
+        private new CommonParameters commonParameters;
+        private new SearchParameters searchParameters;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions)
+        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, TerminusType terminusType, int currentPartition, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, commonParameters, searchParameters, nestedIds)
         {
-            this.protease = protease;
-            this.minPeptideLength = minPeptideLength;
+            //this.protease = protease;
+            //this.minPeptideLength = minPeptideLength;
             this.terminusType = terminusType;
+            this.commonParameters = commonParameters;
+            this.searchParameters = searchParameters;
         }
 
         #endregion Public Constructors
@@ -38,23 +42,23 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In nonspecific search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
+            Status("In nonspecific search engine..." + currentPartition + "/" + commonParameters.TotalPartitions, nestedIds);
             bool classicAntigens = false;
             double precursorToleranceDouble = 5;//default 5ppm
             int openSearchIndex = 0;
-            if (searchModes.Count() > 1)
+            if (searchParameters.MassDiffAcceptors.Count() > 1)
             {
-                if (searchModes[0].ToString().Contains("ppmAroundZero"))
+                if (searchParameters.MassDiffAcceptors[0].ToString().Contains("ppmAroundZero"))
                 {
-                    string name = searchModes[0].ToString();
+                    string name = searchParameters.MassDiffAcceptors[0].ToString();
                     int index = name.IndexOf("ppmAroundZero");
                     precursorToleranceDouble = Convert.ToDouble(name.Substring(0, index));
                     classicAntigens = true;
                     openSearchIndex = 1;
                 }
-                else if (searchModes[1].ToString().Contains("ppmAroundZero"))
+                else if (searchParameters.MassDiffAcceptors[1].ToString().Contains("ppmAroundZero"))
                 {
-                    string name = searchModes[1].ToString();
+                    string name = searchParameters.MassDiffAcceptors[1].ToString();
                     int index = name.IndexOf("ppmAroundZero");
                     precursorToleranceDouble = Convert.ToDouble(name.Substring(0, index));
                     classicAntigens = true;
@@ -63,7 +67,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             PpmTolerance precursorTolerance = new PpmTolerance(precursorToleranceDouble);
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
-            var searchModesCount = searchModes.Count;
+            var searchModesCount = searchParameters.MassDiffAcceptors.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
@@ -94,7 +98,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > commonParameters.ScoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -160,11 +164,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     else //(assumes open search)
                     {
                         double currentBestScore = bestScores[openSearchIndex];
-                        var searchMode = searchModes[openSearchIndex];
+                        var searchMode = searchParameters.MassDiffAcceptors[openSearchIndex];
                         for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                         {
                             var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            if (consideredScore > commonParameters.ScoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                             {
                                 CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                                 // Check if makes sense to add due to peptidescore!
@@ -235,7 +239,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop " + currentPartition + "/" + totalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In nonspecific search loop " + currentPartition + "/" + commonParameters.TotalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
@@ -250,7 +254,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private double Accepts(double scanPrecursorMass, CompactPeptide peptide, PpmTolerance precursorTolerance, TerminusType terminusType)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
-            int localminPeptideLength = minPeptideLength ?? 0;
+            int localminPeptideLength = commonParameters.MinPeptideLength ?? 0;
             if (terminusType == TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)
@@ -308,9 +312,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
-                GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, fragmentTolerance);
+                GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, commonParameters.ProductMassTolerance);
             }
-            if (addCompIons)
+            if (searchParameters.AddCompIons)
             {
                 List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
                 //If HCD
@@ -332,7 +336,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                 IEnumerable<IMzPeak> sortedPeaksMZ = experimentalPeaks.OrderBy(x => x.Mz);
                 //propogation of error from precursor mass and complementary product mass
-                AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(fragmentTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
+                AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(commonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
                 foreach (IMzPeak experimentalPeak in sortedPeaksMZ)
                 {
                     var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
