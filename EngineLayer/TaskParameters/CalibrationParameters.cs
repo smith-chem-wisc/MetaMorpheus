@@ -1,10 +1,7 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
-using System;
 
 namespace EngineLayer
 {
-    //Calibration Parameters
     public class CalibrationParameters
     {
         public CalibrationParameters()

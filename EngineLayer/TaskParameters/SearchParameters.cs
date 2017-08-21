@@ -1,16 +1,13 @@
-﻿using MzLibUtil;
-using System.Collections.Generic;
-using System;
+﻿using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    //Search Parameters
     public class SearchParameters
     {
         public SearchParameters()
         {
             DisposeOfFileWhenDone = true;
-            //AddCompIons = false;
+            AddCompIons = false;
             DoParsimony = false;
             NoOneHitWonders = false;
             ModPeptidesAreUnique = true;

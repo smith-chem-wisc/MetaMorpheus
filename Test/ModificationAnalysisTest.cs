@@ -74,15 +74,13 @@ namespace Test
 
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
-            //Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
 
             CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
             commonParameters.MaxMissedCleavages = 0;
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             commonParameters.MaxModificationIsoforms = int.MaxValue;
+            commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, commonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();

@@ -33,118 +33,39 @@ namespace TaskLayer
 
         public SearchTask() : base(MyTask.Search)
         {
-            commonParameters = new CommonParameters();
-            searchParameters = new SearchParameters();
-           commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            searchParameters.MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-           commonParameters.ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            commonParameters = new CommonParameters()
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
+            };
+            searchParameters = new SearchParameters()
+            {
+                MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
+            };
 
-            //// Deconvolution stuff
-            //DoPrecursorDeconvolution = true;
-            //UseProvidedPrecursorInfo = true;
-            //DeconvolutionIntensityRatio = 4;
-            //DeconvolutionMaxAssumedChargeState = 10;
-            //DeconvolutionMassTolerance = new PpmTolerance(5);
-            //ScoreCutoff = 5;
-            //// Set default values here:
-            //DoParsimony = false;
-            //NoOneHitWonders = false;
-            //ModPeptidesAreUnique = true;
-            //DoQuantification = false;
-            //QuantifyPpmTol = 5;
-            //SearchTarget = true;
-            //SearchDecoy = true;
-            //DoHistogramAnalysis = false;
-            //MaxMissedCleavages = 2;
-            //MinPeptideLength = 5;
-            //MaxPeptideLength = null;
-            //Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            //MaxModificationIsoforms = 4096;
-            //InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            //ProductMassTolerance = new AbsoluteTolerance(0.01);
-            //BIons = true;
-            //YIons = true;
-            //ZdotIons = false;
-            //CIons = false;
             FlashLfqEngine = new FlashLFQEngine();
-            //TotalPartitions = 1;
             LocalizeAll = true;
-            //DoLocalizationAnalysis = true;
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-
-            //DisposeOfFileWhenDone = true;
-
-            //WritePrunedDatabase = false;
-            //KeepAllUniprotMods = true;
-
-            //MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-
-            //ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
 
-            //DisposeOfFileWhenDone = true;
-
-            //// Deconvolution stuff
+            // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
             DeconvolutionMassTolerance = new PpmTolerance(5);
-            //ScoreCutoff = 5;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
+
         public CommonParameters commonParameters { get; set; }
+
         public SearchParameters searchParameters { get; set; }
-
-        //public bool DisposeOfFileWhenDone { get; set; }
-        //public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
-        //public int MaxMissedCleavages { get; set; }
-
-        //public int? MinPeptideLength { get; set; }
-
-        //public int? MaxPeptideLength { get; set; }
-
-        //public int MaxModificationIsoforms { get; set; }
-
-        //public int TotalPartitions { get; set; }
-        //public Protease Protease { get; set; }
-
-        //public bool AddCompIons { get; set; }
-
-        //public bool BIons { get; set; }
-
-        //public bool YIons { get; set; }
-
-        //public bool ZdotIons { get; set; }
-
-        //public bool CIons { get; set; }
-        //public Tolerance ProductMassTolerance { get; set; }
-        //public bool DoParsimony { get; set; }
-        //public bool ModPeptidesAreUnique { get; set; }
-        //public bool NoOneHitWonders { get; set; }
-        //public bool MatchBetweenRuns { get; set; }
-        //public double QuantifyPpmTol { get; set; }
-        //public bool DoHistogramAnalysis { get; set; }
-        //public bool SearchTarget { get; set; }
-        //public bool SearchDecoy { get; set; }
-        //public List<MassDiffAcceptor> MassDiffAcceptors { get; set; }
-        //public bool ConserveMemory { get; set; }
-
-        //public bool WritePrunedDatabase { get; set; }
-        //public bool KeepAllUniprotMods { get; set; }
-
-        //public bool DoLocalizationAnalysis { get; set; }
-        //public bool DoQuantification { get; set; }
-
-        //public SearchType SearchType { get; set; }
-        //public double ScoreCutoff { get; set; }
 
         #endregion Public Properties
 

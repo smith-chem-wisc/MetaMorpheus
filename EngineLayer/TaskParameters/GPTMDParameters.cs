@@ -4,7 +4,6 @@ using System;
 
 namespace EngineLayer
 {
-    //GPTMD Parameters
     public class GPTMDParameters
     {
         public GPTMDParameters()

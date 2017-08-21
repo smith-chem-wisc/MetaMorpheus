@@ -23,7 +23,6 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            //
             commonParameters = new CommonParameters()
             {
                 Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],

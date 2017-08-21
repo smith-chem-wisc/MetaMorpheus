@@ -11,17 +11,10 @@ namespace EngineLayer
         #region Protected Fields
 
         protected const int max_mods_for_peptide = 3;
-        //protected readonly int maxMissedCleavages;
-        //protected readonly int? minPeptideLength;
-        //protected readonly int? maxPeptideLength;
-        //protected readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
-        //protected readonly int maxModificationIsoforms;
         protected readonly List<Psm>[] allPsms;
         protected readonly List<Protein> proteinList;
-        //protected readonly List<MassDiffAcceptor> massDiffAcceptors;
-        //protected readonly Protease protease;
         protected readonly TerminusType terminusType;
         protected readonly CommonParameters commonParameters;
 
@@ -32,16 +25,9 @@ namespace EngineLayer
         public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
-            //this.massDiffAcceptors = massDiffAcceptors;
             this.allPsms = allPsms;
-            //this.protease = protease;
-            //this.maxMissedCleavages = maxMissedCleavages;
-            //this.minPeptideLength = minPeptideLength;
-            //this.maxPeptideLength = maxPeptideLength;
-            //this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.fixedModifications = fixedModifications;
             this.variableModifications = variableModifications;
-            //this.maxModificationIsoforms = maxModificationIsoforms;
             this.terminusType = terminusType;
             this.commonParameters = commonParameters;
         }

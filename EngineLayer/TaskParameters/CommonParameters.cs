@@ -4,7 +4,6 @@ using System;
 
 namespace EngineLayer
 {
-    //Common Parameters
     public class CommonParameters
     {
         public CommonParameters()
@@ -27,21 +26,19 @@ namespace EngineLayer
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             //ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            //GPTMD ListOfModsLocalize
+            //ListOfModsLocalize = new List<Tuple<string, string>>();
 
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
+            ScoreCutoff = 5;
 
             // Deconvolution stuff
             DoPrecursorDeconvolution = true;
             UseProvidedPrecursorInfo = true;
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
-            ScoreCutoff = 5;
-
-            //GPTMD ListOfModsLocalize
-            //ListOfModsLocalize = new List<Tuple<string, string>>();
-
+            DeconvolutionMassTolerance = new PpmTolerance(5);           
         }
 
 
@@ -51,7 +48,6 @@ namespace EngineLayer
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
         public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
-        //public MyTask TaskType { get; set; }
 
         public bool DoPrecursorDeconvolution { get; set; }
         public bool UseProvidedPrecursorInfo { get; set; }
@@ -60,9 +56,8 @@ namespace EngineLayer
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
         //Common Parameters
-
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
+ 
         public int MaxMissedCleavages { get; set; }
 
         public int? MinPeptideLength { get; set; }

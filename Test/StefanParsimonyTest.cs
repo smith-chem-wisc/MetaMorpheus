@@ -211,12 +211,6 @@ namespace Test
                 protein3 = new Protein("MA", "protein3");
             }
 
-            //int? minPeptidesLength = null;
-            //int maximumMissedCleavages = 0;
-            //Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            //int? maxPeptidesLength = null;
-            //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
-
             var prot1List = protein1.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications1 = prot1List.First();
             int maxModsForPeptide = 1;

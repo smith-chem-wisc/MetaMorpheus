@@ -35,7 +35,6 @@ namespace Test
                 i++;
             }
 
-            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             commonParameters.MinPeptideLength = null;        

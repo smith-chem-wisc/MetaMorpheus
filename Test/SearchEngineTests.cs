@@ -22,10 +22,6 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
-            commonParameters.DeconvolutionIntensityRatio = 4;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
             commonParameters.ScoreCutoff = 1;
@@ -36,10 +32,9 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
             double DeconvolutionIntensityRatio = 4;
@@ -48,10 +43,6 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            //int maximumMissedCleavages = 2;
-            //int? minPeptideLength = null;
-            //int? maxPeptideLength = null;
-            //int maximumVariableModificationIsoforms = 4096;
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];            
@@ -81,25 +72,18 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
-            commonParameters.DeconvolutionIntensityRatio = 4;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             commonParameters.MaxMissedCleavages = 0;
-
+            commonParameters.ScoreCutoff = 1;
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("QXQ", null) };
 
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new OpenSearchMode() };
-            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
+            
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
             double DeconvolutionIntensityRatio = 4;
@@ -108,10 +92,6 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            //int maximumMissedCleavages = 0;
-            //int? minPeptideLength = null;
-            //int? maxPeptideLength = null;
-            //int maximumVariableModificationIsoforms = 4096;
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
@@ -140,16 +120,11 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
-            commonParameters.DeconvolutionIntensityRatio = 4;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             commonParameters.MaxMissedCleavages = 0;
+            commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
-            searchParameters.AddCompIons = false;
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -172,12 +147,9 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };      
             searchParameters.MassDiffAcceptors = searchModes;
 
-            //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, commonParameters, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -221,17 +193,10 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
-            commonParameters.DeconvolutionIntensityRatio = 4;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
-            commonParameters.DeconvolutionMassTolerance = new PpmTolerance(5);
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
             commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
-            searchParameters.AddCompIons = false;
-
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -240,12 +205,9 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
 
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new OpenSearchMode() };
-            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
             searchParameters.MassDiffAcceptors = searchModes;
-            //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            //int maximumMissedCleavages = 2;
+
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, commonParameters, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -290,7 +252,6 @@ namespace Test
             commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = true;
-            searchParameters.MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -313,11 +274,8 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
-            //var protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };           
             searchParameters.MassDiffAcceptors = searchModes;
-            //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             commonParameters.MinPeptideLength = null;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, commonParameters, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -365,10 +323,9 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
             commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = true;
-            searchParameters.MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
+            commonParameters.ScoreCutoff = 1;
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -390,13 +347,11 @@ namespace Test
             }
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
-
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
-            //var protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
+
             searchParameters.MassDiffAcceptors = searchModes;
             commonParameters.MinPeptideLength = null;
-            //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, commonParameters, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();

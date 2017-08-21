@@ -27,7 +27,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<CompactPeptide> peptideIndex;
 
         //Crosslink parameters
-        private CrosslinkerTypeClass crosslinker;
+        private readonly CrosslinkerTypeClass crosslinker;
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLprecusorMsTl;

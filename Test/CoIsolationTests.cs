@@ -22,10 +22,7 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
             commonParameters.DeconvolutionIntensityRatio = 50;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
             commonParameters.ScoreCutoff = 1;
@@ -35,10 +32,8 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
-            //var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
+            
             Proteomics.Peptide pep1 = new Proteomics.Peptide("NNNK");
             Proteomics.Peptide pep2 = new Proteomics.Peptide("NDNK");
 
@@ -71,10 +66,7 @@ namespace Test
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-            //int maximumMissedCleavages = 2;
-            //int? minPeptideLength = null;
-            //int? maxPeptideLength = null;
-            //int maximumVariableModificationIsoforms = 4096;
+
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];

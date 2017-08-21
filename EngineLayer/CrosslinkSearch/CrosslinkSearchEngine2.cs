@@ -52,7 +52,7 @@ namespace EngineLayer.CrosslinkSearch
         private MassDiffAcceptor XLBetaSearchMode;
         private MassDiffAcceptor XLPrecusorSearchMode;
 
-        private List<PsmCross> psmCross;
+        private readonly List<PsmCross> psmCross;
 
 
         //AnalysisEngine parameters 

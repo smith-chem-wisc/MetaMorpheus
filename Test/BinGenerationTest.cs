@@ -37,16 +37,6 @@ namespace Test
                     DoParsimony = true,
                     DoQuantification = true
                 },
-
-
-            //DoHistogramAnalysis = true,
-            //MassDiffAcceptors = massDiffAcceptors,
-            //InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-            //SearchTarget = true,
-            //SearchDecoy = false,
-            //DoParsimony = true,
-            //DoQuantification = true,
-            //ScoreCutoff = 1
         };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");
@@ -108,9 +98,6 @@ namespace Test
                     DoParsimony = true,
                     MassDiffAcceptors = massDiffAcceptors
                 }
-                //DoParsimony = true,
-                //InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                //MaxMissedCleavages = 0
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles.xml");
