@@ -25,6 +25,7 @@ namespace Test
                 commonParameters = new CommonParameters()
                 {
                     ScoreCutoff = 1,
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                 },
                 searchParameters = new SearchParameters()
@@ -35,16 +36,18 @@ namespace Test
                     SearchDecoy = false,
                     DoParsimony = true,
                     DoQuantification = true
-                }
-                //DoHistogramAnalysis = true,
-                //MassDiffAcceptors = massDiffAcceptors,
-                //InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                //SearchTarget = true,
-                //SearchDecoy = false,
-                //DoParsimony = true,
-                //DoQuantification = true,
-                //ScoreCutoff = 1
-            };
+                },
+
+
+            //DoHistogramAnalysis = true,
+            //MassDiffAcceptors = massDiffAcceptors,
+            //InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+            //SearchTarget = true,
+            //SearchDecoy = false,
+            //DoParsimony = true,
+            //DoQuantification = true,
+            //ScoreCutoff = 1
+        };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.mzml");
@@ -96,12 +99,14 @@ namespace Test
             {
                 commonParameters = new CommonParameters()
                 {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                     MaxMissedCleavages = 0
                 },
                 searchParameters = new SearchParameters()
                 {
-                    DoParsimony = true
+                    DoParsimony = true,
+                    MassDiffAcceptors = massDiffAcceptors
                 }
                 //DoParsimony = true,
                 //InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,

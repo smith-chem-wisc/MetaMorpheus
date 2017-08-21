@@ -33,22 +33,42 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask()
             {
+                commonParameters = new CommonParameters()
+                {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                },
                 WriteIntermediateFiles = true
             };
-            GptmdTask task2 = new GptmdTask();
+            GptmdTask task2 = new GptmdTask()
+            {
+                commonParameters = new CommonParameters()
+                {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                },
+            };
 
             SearchTask task3 = new SearchTask()
             {
+                commonParameters = new CommonParameters()
+                {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                },
                 searchParameters = new SearchParameters()
                 {
-                    DoParsimony = true
+                    DoParsimony = true,
+                    MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
             SearchTask task4 = new SearchTask()
             {
+                commonParameters = new CommonParameters()
+                {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                },
                 searchParameters = new SearchParameters()
                 {
-                    SearchType = SearchType.Modern
+                    SearchType = SearchType.Modern,
+                    MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
@@ -66,7 +86,7 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
@@ -88,7 +108,7 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943, null, new List<double> { 0 }, new List<double> { 21.981943 }, "") });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
             var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
@@ -120,15 +140,33 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalTaskLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-            CalibrationTask task1 = new CalibrationTask();
-            GptmdTask task2 = new GptmdTask();
-
-            SearchTask task3 = new SearchTask();
-            SearchTask task4 = new SearchTask()
+            CalibrationTask task1 = new CalibrationTask()
             {
+                commonParameters = new CommonParameters
+                {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                }            
+            };
+            GptmdTask task2 = new GptmdTask()
+            {
+                commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] }
+            };
+
+            SearchTask task3 = new SearchTask()
+            {
+                commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] },
                 searchParameters = new SearchParameters()
                 {
-                    DoParsimony = true
+                    MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
+                }
+            };
+            SearchTask task4 = new SearchTask()
+            {   
+                commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] },
+                searchParameters = new SearchParameters()
+                {
+                    DoParsimony = true,
+                    MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
@@ -145,7 +183,7 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
@@ -210,7 +248,15 @@ namespace Test
                     ListOfModsVariable = new List<Tuple<string, string>>(),
                     ListOfModsFixed = new List<Tuple<string, string>>(),
                     PrecursorMassTolerance = new AbsoluteTolerance(1),
-                    ScoreCutoff = 1
+                    ScoreCutoff = 1,
+                    commonParameters = new CommonParameters()
+                    {
+                        ScoreCutoff = 1,
+                        ListOfModsVariable = new List<Tuple<string, string>>(),
+                        ListOfModsFixed = new List<Tuple<string, string>>(),
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                        Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                    }
                 };
             }
 
@@ -269,12 +315,15 @@ namespace Test
             {
                 commonParameters = new CommonParameters()
                 {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
                     ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
                 },
                 searchParameters = new SearchParameters()
                 {
                     WritePrunedDatabase = true,
-                    DoParsimony = true,
+                    //DoParsimony = true,
+                    MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
 
@@ -296,8 +345,8 @@ namespace Test
             #region Protein and Mod Creation
 
             //create modification lists
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -383,12 +432,15 @@ namespace Test
             {
                 commonParameters = new CommonParameters()
                 {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
                 },
                 searchParameters = new SearchParameters()
                 {
-                    DoParsimony = true
-                }
+                    MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
+                },
+                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
+
             };
 
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {

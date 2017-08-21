@@ -68,12 +68,12 @@ namespace TaskLayer
             //CIons = false;
             FlashLfqEngine = new FlashLFQEngine();
             //TotalPartitions = 1;
-            //LocalizeAll = true;
+            LocalizeAll = true;
             //DoLocalizationAnalysis = true;
 
-            //ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            //ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            //ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
 
             //DisposeOfFileWhenDone = true;
 
@@ -83,16 +83,16 @@ namespace TaskLayer
             //MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             //ConserveMemory = true;
-            //MaxDegreeOfParallelism = 1;
+            MaxDegreeOfParallelism = 1;
 
             //DisposeOfFileWhenDone = true;
 
             //// Deconvolution stuff
-            //DoPrecursorDeconvolution = true;
-            //UseProvidedPrecursorInfo = true;
-            //DeconvolutionIntensityRatio = 4;
-            //DeconvolutionMaxAssumedChargeState = 10;
-            //DeconvolutionMassTolerance = new PpmTolerance(5);
+            DoPrecursorDeconvolution = true;
+            UseProvidedPrecursorInfo = true;
+            DeconvolutionIntensityRatio = 4;
+            DeconvolutionMaxAssumedChargeState = 10;
+            DeconvolutionMassTolerance = new PpmTolerance(5);
             //ScoreCutoff = 5;
         }
 

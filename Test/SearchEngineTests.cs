@@ -225,10 +225,10 @@ namespace Test
             commonParameters.UseProvidedPrecursorInfo = true;
             commonParameters.DeconvolutionIntensityRatio = 4;
             commonParameters.DeconvolutionMaxAssumedChargeState = 10;
+            commonParameters.DeconvolutionMassTolerance = new PpmTolerance(5);
             commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
             commonParameters.ScoreCutoff = 1;
-            commonParameters.MaxMissedCleavages = 0;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = false;
 
@@ -286,16 +286,11 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
-            commonParameters.DeconvolutionIntensityRatio = 4;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
-            commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
             commonParameters.ScoreCutoff = 1;
-            commonParameters.MaxMissedCleavages = 0;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = true;
+            searchParameters.MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -323,6 +318,7 @@ namespace Test
             //var protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
             searchParameters.MassDiffAcceptors = searchModes;
             //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            commonParameters.MinPeptideLength = null;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, commonParameters, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
@@ -353,9 +349,8 @@ namespace Test
 
             Assert.IsTrue(allPsmsArray[1][0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[1][0].ScanNumber);
-
             commonParameters.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.N, commonParameters, searchParameters, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.N, commonParameters, searchParameters, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -369,16 +364,11 @@ namespace Test
         {
             CommonParameters commonParameters = new CommonParameters();
             commonParameters.Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
-            commonParameters.DoPrecursorDeconvolution = true;
-            commonParameters.UseProvidedPrecursorInfo = true;
-            commonParameters.DeconvolutionIntensityRatio = 4;
-            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
-            commonParameters.MinPeptideLength = null;
             commonParameters.ConserveMemory = false;
             commonParameters.ScoreCutoff = 1;
-            commonParameters.MaxMissedCleavages = 0;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = true;
+            searchParameters.MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -405,7 +395,7 @@ namespace Test
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
             //var protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
             searchParameters.MassDiffAcceptors = searchModes;
-
+            commonParameters.MinPeptideLength = null;
             //InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, commonParameters, new List<string>());
 
@@ -440,7 +430,7 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[1][0].ScanNumber);
 
             commonParameters.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.C, commonParameters, searchParameters, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.C, commonParameters, searchParameters, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
