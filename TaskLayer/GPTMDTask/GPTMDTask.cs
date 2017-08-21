@@ -25,8 +25,11 @@ namespace TaskLayer
         public GptmdTask() : base(MyTask.Gptmd)
         {
             //
-            commonParameters = new CommonParameters();
-            commonParameters.ListOfModsLocalize = ListOfModsLocalize = new List<Tuple<string, string>>();
+            commonParameters = new CommonParameters()
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
+            };
             // Set default values here:
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;

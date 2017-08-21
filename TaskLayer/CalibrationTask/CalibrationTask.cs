@@ -24,7 +24,11 @@ namespace TaskLayer
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             //
-            commonParameters = new CommonParameters();
+            commonParameters = new CommonParameters()
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
+            };
             // Set default values here:
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
