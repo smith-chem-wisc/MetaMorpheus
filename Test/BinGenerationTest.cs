@@ -39,7 +39,7 @@ namespace Test
             Protein prot2 = new Protein("MENEEK", "prot2");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10, null, new List<double> { 0 }, null, null);
+            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
 
             var possMod1 = prot1.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep1_0 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
@@ -90,7 +90,7 @@ namespace Test
             string mzmlFilePath2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles2.mzml");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10, null, new List<double> { 0 }, null, null);
+            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
 
             IDictionary<int, List<Modification>> oneBasedModification = new Dictionary<int, List<Modification>>
             {
