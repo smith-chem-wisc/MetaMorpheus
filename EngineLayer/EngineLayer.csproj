@@ -183,7 +183,11 @@
     <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngine.cs" />
     <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngineResults.cs" />
     <Compile Include="CrosslinkSearch\XLSearchResults.cs" />
-    <Compile Include="TaskParameters.cs" />
+    <Compile Include="TaskParameters\CalibrationParameters.cs" />
+    <Compile Include="TaskParameters\CommonParameters.cs" />
+    <Compile Include="TaskParameters\GPTMDParameters.cs" />
+    <Compile Include="TaskParameters\SearchParameters.cs" />
+    <Compile Include="TaskParameters\XLSearchParameters.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">
