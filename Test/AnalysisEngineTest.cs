@@ -20,6 +20,18 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
+            CommonParameters commonParameters = new CommonParameters();
+            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            commonParameters.MinPeptideLength = null;
+            commonParameters.ScoreCutoff = 1;
+            commonParameters.MaxMissedCleavages = 0;
+            commonParameters.ProductMassTolerance = new PpmTolerance(10);
+            commonParameters.MaxModificationIsoforms = 1042;
+            commonParameters.DoPrecursorDeconvolution = true;
+            commonParameters.UseProvidedPrecursorInfo = true;
+            commonParameters.DeconvolutionIntensityRatio = 4;
+            commonParameters.DeconvolutionMaxAssumedChargeState = 10;
+
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
@@ -43,20 +55,20 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            //var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
             HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
@@ -79,7 +91,7 @@ namespace Test
 
             newPsms[0] = new List<Psm> { matchA, matchB, matchC };
 
-            Tolerance fragmentTolerance = new PpmTolerance(10);
+            //Tolerance fragmentTolerance = new PpmTolerance(10);
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
@@ -98,7 +110,8 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 2, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 1024, null, TerminusType.None);
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, TerminusType.None, commonParameters, new List<string>());
+
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
