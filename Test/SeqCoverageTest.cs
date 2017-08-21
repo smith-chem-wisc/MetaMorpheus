@@ -27,18 +27,18 @@ namespace Test
             Dictionary<int, ModificationWithMass> modsFor1 = new Dictionary<int, ModificationWithMass>
             {
                 {1, mod1},
+                {3, mod3},
                 {5, mod4},
             };
             Dictionary<int, ModificationWithMass> modsFor2 = new Dictionary<int, ModificationWithMass>
             {
                 {1, mod2},
-                {3, mod3},
                 {5, mod5},
             };
             Dictionary<int, ModificationWithMass> modsFor3 = new Dictionary<int, ModificationWithMass>
             {
                 {1, mod1},
-                {3, mod3},
+                {5, mod3},
                 {8, mod5}
             };
 
@@ -90,14 +90,14 @@ namespace Test
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().SequenceCoverageDisplayList.First();
             Assert.AreEqual("MMKMMK", firstSequenceCoverageDisplayList);
             var firstSequenceCoverageDisplayListWithMods = fjkd.ProteinGroups.First().SequenceCoverageDisplayListWithMods.First();
-            Assert.AreEqual("[mod1]-MM[mod3]KMM[mod3]K-[mod5]", firstSequenceCoverageDisplayListWithMods);
+            Assert.AreEqual("[mod1]-MM[mod3]KM[mod3]MK-[mod5]", firstSequenceCoverageDisplayListWithMods);
 
             var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
             Assert.IsTrue(firstModInfo.Contains(@"#aa0[mod1,info:occupancy=1.00(2/2)]"));
             Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
-            Assert.IsFalse(firstModInfo.Contains(@"#aa4"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa5[mod3,info:occupancy=0.50(1/2)]"));
+            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3,info:occupancy=0.50(1/2)]"));
+            Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
             Assert.IsTrue(firstModInfo.Contains(@"#aa7[mod5,info:occupancy=1.00(2/2)]"));
         }
 
