@@ -51,11 +51,11 @@ namespace EngineLayer
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
 
-        public PeptideWithSetModifications(Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, int? missedCleavages) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
+        public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
         {
             this.missedCleavages = missedCleavages;
             this.numFixedMods = numFixedMods;
-            this.allModsOneIsNterminus = allModsOneIsNterminus;
+            this.allModsOneIsNterminus = allModsOneIsNterminus ?? new Dictionary<int, ModificationWithMass>();
         }
 
         #endregion Public Constructors
@@ -191,8 +191,8 @@ namespace EngineLayer
                 vvv.Remove(j + 2);
             }
 
-            vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(vvv, numFixedMods, this.Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, this.missedCleavages);
+            vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod));
+            var hm = new PeptideWithSetModifications(numFixedMods, Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, vvv, missedCleavages);
 
             return hm;
         }
