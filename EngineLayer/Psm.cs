@@ -468,7 +468,7 @@ namespace EngineLayer
             {
                 var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
                 if (possibleReturn.Length > 32000)
-                    return new Tuple<string, Dictionary<string, int>>(possibleReturn.Split(' ')[0] + " or (too many)", null);
+                    return new Tuple<string, Dictionary<string, int>>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
             }
@@ -490,7 +490,7 @@ namespace EngineLayer
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
                 if (possibleReturn.Length > 32000)
-                    return new Tuple<string, double?>(list[0] + " or (too many)", null);
+                    return new Tuple<string, double?>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, double?>(possibleReturn, null);
             }
@@ -508,7 +508,7 @@ namespace EngineLayer
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
                 if (possibleReturn.Length > 32000)
-                    return new Tuple<string, int?>(list[0] + " or (too many)", null);
+                    return new Tuple<string, int?>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, int?>(possibleReturn, null);
             }
@@ -527,15 +527,15 @@ namespace EngineLayer
             {
                 var possibleReturn = string.Join(" or ", list);
                 if (possibleReturn.Length > 32000)
-                    return new Tuple<string, string>(list[0] + " or (too many)", null);
+                    return new Tuple<string, string>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
         }
 
-        private static string TrimStringForExcel(string s)
+        private static string TrimStringForExcel(string possibleReturn)
         {
-            return s.Length > 32000 ? s.Split(' ')[0] + " or (too many)" : s;
+            return possibleReturn.Length > 32000 ? possibleReturn.Substring(0, 31990) + "(too many)" : possibleReturn;
         }
 
         private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
