@@ -18,6 +18,12 @@ namespace EngineLayer
 
         #endregion Protected Fields
 
+        #region Private Fields
+
+        private const double massTolForPeptideEquality = 1e-7;
+
+        #endregion Private Fields
+
         #region Public Properties
 
         public double[] CTerminalMasses { get; protected set; }
@@ -103,44 +109,31 @@ namespace EngineLayer
             if (CTerminalMasses == null && cp.CTerminalMasses == null) //still not sure if it's || or &&
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality)
+                    && ApproxSequenceEqual(NTerminalMasses, cp.NTerminalMasses, massTolForPeptideEquality)
                     );
             }
             else if (NTerminalMasses == null && cp.NTerminalMasses == null)
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality)
+                    && ApproxSequenceEqual(CTerminalMasses, cp.CTerminalMasses, massTolForPeptideEquality)
                     );
             }
             else
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality)
+                    && ApproxSequenceEqual(CTerminalMasses, cp.CTerminalMasses, massTolForPeptideEquality)
+                    && ApproxSequenceEqual(NTerminalMasses, cp.NTerminalMasses, massTolForPeptideEquality)
                     );
             }
         }
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var result = 0;
-                if (CTerminalMasses == null)
-                {
-                    foreach (double b in NTerminalMasses)
-                        result = (result * 31) ^ b.GetHashCode();
-                }
-                else
-                {
-                    foreach (double b in CTerminalMasses)
-                        result = (result * 31) ^ b.GetHashCode();
-                }
-                return result;
-            }
+            return CTerminalMasses == null ? 0 : CTerminalMasses.Length
+                + NTerminalMasses == null ? 0 : NTerminalMasses.Length;
         }
 
         #endregion Public Methods
@@ -182,5 +175,17 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
+
+        #region Private Methods
+
+        private static bool ApproxSequenceEqual(double[] a, double[] b, double tol)
+        {
+            for (int i = 0; i < a.Length; i++)
+                if (Math.Abs(a[i] - b[i]) >= tol)
+                    return false;
+            return true;
+        }
+
+        #endregion Private Methods
     }
 }

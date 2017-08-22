@@ -20,6 +20,12 @@ namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
+        #region Private Fields
+
+        private const double tolForComboLoading = 1e-3;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
@@ -283,13 +289,12 @@ namespace TaskLayer
                     var line = r.ReadLine().Split(' ');
                     var mass1 = double.Parse(line[0]);
                     var mass2 = double.Parse(line[1]);
-                    if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < 1e-3) &&
-                        modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < 1e-3))
+                    if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < tolForComboLoading) &&
+                        modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
         }
-
 
         #endregion Private Methods
     }

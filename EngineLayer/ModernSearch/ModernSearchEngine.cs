@@ -28,6 +28,12 @@ namespace EngineLayer.ModernSearch
 
         #endregion Protected Fields
 
+        #region Private Fields
+
+        private const double tolForScoreImprovement = 1e-9;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions) : base(nestedIds)
@@ -93,7 +99,7 @@ namespace EngineLayer.ModernSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                    if (Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement)
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
