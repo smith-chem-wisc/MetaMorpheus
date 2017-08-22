@@ -15,8 +15,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Private Fields
 
-        private const double tolInDaForPreferringHavingMods = 0.03;
-
         private const int max_mods_for_peptide = 3;
         private readonly List<int>[] fragmentIndex;
 

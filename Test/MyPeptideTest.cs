@@ -52,7 +52,6 @@ namespace Test
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
-            double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
@@ -80,7 +79,6 @@ namespace Test
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
-            double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
@@ -107,7 +105,6 @@ namespace Test
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
-            double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
@@ -133,7 +130,6 @@ namespace Test
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
-            double[] matchedIonMassesListPositiveIsMatch = new double[massArray.Length];
             Array.Sort(massArray);
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, 3, 4 };
