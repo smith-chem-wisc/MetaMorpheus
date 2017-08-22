@@ -1,4 +1,5 @@
-﻿using MassSpectrometry;
+﻿using Chemistry;
+using MassSpectrometry;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,8 @@ namespace EngineLayer
         private const double tolInDaForPreferringHavingMods = 0.03;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+
+        private ChemicalFormula ModsChemicalFormula;
 
         #endregion Private Fields
 
@@ -100,6 +103,7 @@ namespace EngineLayer
             sb.Append('\t' + "Base Sequence");
             sb.Append('\t' + "Full Sequence");
             sb.Append('\t' + "Mods");
+            sb.Append('\t' + "Mods Chemical Formula");
             sb.Append('\t' + "Num Variable Mods");
             sb.Append('\t' + "Missed Cleavages");
             sb.Append('\t' + "Peptide Monoisotopic Mass");
@@ -193,6 +197,8 @@ namespace EngineLayer
 
             ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
 
+            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
         }
 
@@ -226,6 +232,7 @@ namespace EngineLayer
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
@@ -251,7 +258,7 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (MatchedIonDictPositiveIsMatch != null)
@@ -319,6 +326,47 @@ namespace EngineLayer
         #endregion Internal Methods
 
         #region Private Methods
+
+        private (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
+        {
+            ChemicalFormula f = new ChemicalFormula();
+            {
+                var firstEnum = enumerable.First();
+                foreach (var mod in firstEnum)
+                {
+                    if (mod == null)
+                        return ("unknown", null);
+                    f.Add(mod.chemicalFormula);
+                }
+            }
+            bool equals = true;
+            List<ChemicalFormula> formulas = new List<ChemicalFormula>();
+            foreach (var anEnum in enumerable)
+            {
+                ChemicalFormula fhere = new ChemicalFormula();
+                foreach (var mod in anEnum)
+                {
+                    if (mod == null)
+                        return ("unknown", null);
+                    fhere.Add(mod.chemicalFormula);
+                }
+                if (!f.Equals(fhere))
+                    equals = false;
+                formulas.Add(fhere);
+            }
+            if (!equals)
+            {
+                var possibleReturn = string.Join(" or ", formulas.Select(b => b.Formula));
+                if (possibleReturn.Length > 32000)
+                    return ("too many", null);
+                else
+                    return (possibleReturn, null);
+            }
+            else
+            {
+                return (f.Formula, f);
+            }
+        }
 
         private Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)
         {
