@@ -38,6 +38,11 @@ namespace EngineLayer
             return FileNameAddition + " daltonsAroundZero " + value;
         }
 
+        public override string ToProseString()
+        {
+            return (String.Format("{0:0.000}", value) + " Da around zero");
+        }
+
         #endregion Public Methods
     }
 }

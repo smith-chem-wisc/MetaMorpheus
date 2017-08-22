@@ -196,6 +196,26 @@ namespace TaskLayer
                 lp.Add(ProductType.Zdot);
             }
 
+            proseCreatedWhileRunning.Append("The following calibration settings were used: ");
+            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
+            if (MaxPeptideLength == null)
+            {
+                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
+            }
+            else
+            {
+                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+            }
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", searchModes.Select(m => m.ToProseString())) + "}; ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
             object lock1 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
@@ -385,5 +405,7 @@ namespace TaskLayer
         }
 
         #endregion Protected Methods
+
+
     }
 }
