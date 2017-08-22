@@ -2,154 +2,154 @@ Glycans
 ID   HexNAc
 TG   Nxs or Nxt or Nxc or S or T
 PP   Anywhere.
-NL   203.079373
-MM   203.079373
+NL   C8H13NO5
+CF   C8H13NO5
 MT   Glycan
 //
 ID   Hex
 TG   X
 PP   Peptide N-terminal.
-NL   162.052824 
-MM   162.052824 
+NL   C6H10O5
+CF   C6H10O5
 MT   Glycan
 //
 ID   Hex
 TG   K or Nxs or Nxt or S or T or W or C or R or Y
 PP   Anywhere.
-NL   162.052824 
-MM   162.052824 
+NL   C6H10O5
+CF   C6H10O5
 MT   Glycan
 //
 ID   Hex(2)HexNAc(2)dHex(1)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   876.322301
-MM   876.322301
+NL   C34H56N2O24
+CF   C34H56N2O24
 MT   Glycan
 //
 ID   Hex(5)HexNAc(2)
 TG   Nxs or Nxt
 PP   Anywhere.
-NL   1216.422863
-MM   1216.422863
+NL   C46H76N2O35
+CF   C46H76N2O35
 MT   Glycan
 //
 ID   Hex(1)HexNAc(1)NeuAc(1)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   656.227613
-MM   656.227613
+NL   C46H76N2O35
+CF   C46H76N2O35
 MT   Glycan
 //
 ID   Hex(2)HexNAc(2)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   730.264392
-MM   730.264392
+NL   C28H46N2O20
+CF   C28H46N2O20
 MT   Glycan
 //
 ID   Hex(1)HexNAc(1)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   365.132196
-MM   365.132196
+NL   C14H23NO10
+CF   C14H23NO10
 MT   Glycan
 //
 ID   Hex(6)HexNAc(2)
 TG   Nxs or Nxt
 PP   Anywhere.
-NL   1378.475686
-MM   1378.475686
+NL   C52H86N2O40
+CF   C52H86N2O40
 MT   Glycan
 //
 ID   Galactosyl
 TG   K
 PP   Anywhere.
-NL   178.047738
-MM   178.047738
+NL   C6H10O6
+CF   C6H10O6
 MT   Glycan
 //
 ID   Galactosyl on N-term
 TG   X
 PP   N-terminal.
-NL   178.047738
-MM   178.047738
+NL   C6H10O6
+CF   C6H10O6
 MT   Glycan
 //
 ID   Hex(1)HexNAc(1)NeuAc(2)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   947.323029
-MM   947.323029
+NL   C36H57N3O26
+CF   C36H57N3O26
 MT   Glycan
 //
 ID   Hex(1)HexNAc(1)NeuAc(1)NeuGc(1)
 TG   S or T
 PP   Anywhere.
-NL   963.317944
-MM   963.317944
+NL   C36H57N3O27
+CF   C36H57N3O27
 MT   Glycan
 //
 ID   HexNAc(2)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   406.158745
-MM   406.158745
+NL   C16H26N2O10
+CF   C16H26N2O10
 MT   Glycan
 //
 ID   Hex(4)HexNAc(2)
 TG   Nxs or Nxt
 PP   Anywhere.
-NL   1054.370039
-MM   1054.370039
+NL   C40H66N2O30
+CF   C40H66N2O30
 MT   Glycan
 //
 ID   dHex
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   146.057909
-MM   146.057909
+NL   C6H10O4
+CF   C6H10O4
 MT   Glycan
 //
 ID   Glucosylgalactosyl
 TG   K
 PP   Anywhere.
-NL   340.100562
-MM   340.100562
+NL   C12H20O11
+CF   C12H20O11
 MT   Glycan
 //
 ID   Glucuronyl
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   176.032088
-MM   176.032088
+NL   C6H8O6
+CF   C6H8O6
 MT   Glycan
 //
 ID   Hex(1)HexNAc(1)NeuGc(1)
 TG   S or T
 PP   Anywhere.
-NL   672.222527
-MM   672.222527
+NL   C25H40N2O19
+CF   C25H40N2O19
 MT   Glycan
 //
 ID   dHex(1)Hex(3)HexNAc(2)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   1038.375125
-MM   1038.375125
+NL   C40H66N2O29
+CF   C40H66N2O29
 MT   Glycan
 //
 ID   HexNAc(1)dHex(1)
 TG   Nxs or Nxt or S or T
 PP   Anywhere.
-NL   349.137281
-MM   349.137281
+NL   C14H23NO9
+CF   C14H23NO9
 MT   Glycan
 //
 ID   Bacillosamine
 TG   Nxs or Nxt
 PP   Anywhere.
-NL   228.111007
-MM   228.111007
+NL   C10H16N2O4
+CF   C10H16N2O4
 MT   Glycan
 //
