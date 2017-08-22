@@ -132,8 +132,7 @@ namespace EngineLayer
 
         public override int GetHashCode()
         {
-            return CTerminalMasses == null ? 0 : CTerminalMasses.Length
-                + NTerminalMasses == null ? 0 : NTerminalMasses.Length;
+            return (CTerminalMasses == null ? 0 : CTerminalMasses.Length) + (NTerminalMasses == null ? 0 : NTerminalMasses.Length);
         }
 
         #endregion Public Methods
