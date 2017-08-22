@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
@@ -56,11 +57,17 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { massArray[0].ToMz(1), massArray[2].ToMz(1), massArray[4].ToMz(1), 10000 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Assert.Less(score, 4);
-            Assert.Greater(score, 3);
+            Psm[][] globalPsms = new Psm[1][];
+            globalPsms[0] = new Psm[1];
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+
+            cse.Run();
+
+            Assert.Less(globalPsms[0][0].Score, 4);
+            Assert.Greater(globalPsms[0][0].Score, 3);
         }
 
         [Test]
@@ -78,11 +85,16 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1) };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Assert.Less(score, 2);
-            Assert.Greater(score, 1);
+            Psm[][] globalPsms = new Psm[1][];
+            globalPsms[0] = new Psm[1];
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+
+            cse.Run();
+            Assert.Less(globalPsms[0][0].Score, 2);
+            Assert.Greater(globalPsms[0][0].Score, 1);
         }
 
         [Test]
@@ -100,11 +112,16 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, massArray[4].ToMz(1), massArray[4].ToMz(1) + 1e-9 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Assert.Less(score, 2);
-            Assert.Greater(score, 1);
+            Psm[][] globalPsms = new Psm[1][];
+            globalPsms[0] = new Psm[1];
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+
+            cse.Run();
+            Assert.Less(globalPsms[0][0].Score, 2);
+            Assert.Greater(globalPsms[0][0].Score, 1);
         }
 
         [Test]
@@ -121,10 +138,15 @@ namespace Test
             double[] intensities = new double[] { 1, 1, 1, 1 };
             double[] mz = new double[] { 1, 2, 3, 4 };
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
-            IMsDataScan<IMzSpectrum<IMzPeak>> scan = new MzmlScan(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null);
-            var score = Psm.MatchIons(scan, new PpmTolerance(5), massArray, matchedIonMassesListPositiveIsMatch, false, 0, new List<ProductType>());
+            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Assert.AreEqual(0, score);
+            Psm[][] globalPsms = new Psm[1][];
+            globalPsms[0] = new Psm[1];
+            Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+
+            cse.Run();
+            Assert.IsNull(globalPsms[0][0]);
         }
 
         [Test]
