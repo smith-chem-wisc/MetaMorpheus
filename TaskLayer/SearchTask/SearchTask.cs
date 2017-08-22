@@ -206,19 +206,15 @@ namespace TaskLayer
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var fileSetting = fileSettingsList[spectraFileIndex];
                 //set protease to fileSpecificToml if it exists (default if not)
-                Protease = fileSetting.Protease;
+                if(fileSetting.Protease != null)
+                {
+                    Protease = fileSetting.Protease;
+                }
 
                 Psm[][] fileSpecificPsms = new Psm[MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
-
-                //If path contains toml with same name
-                //bool fileSpecificTomlExists = false;
-               
-                
-                //var nameOfFileSpecificToml = myDirectoryFiles.SingleOrDefault(f => f.Contains("CustomerWorkSheet/" + myCustomerId + "."));
-                //if hi.get
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);

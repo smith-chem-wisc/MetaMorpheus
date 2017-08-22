@@ -262,7 +262,7 @@ namespace TaskLayer
                 fileSettingsList[index] = new FileSettings();
                 var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
                 //fileSettingsList[index]. //fileSpecificToml
-                if (fileSpecificToml.Length > 0 && fileSpecificToml.Length < 2)
+                if (fileSpecificToml.Length == 1)
                 {
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
