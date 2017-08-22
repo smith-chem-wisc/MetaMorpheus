@@ -348,11 +348,11 @@ namespace EngineLayer
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
             sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch
-            sb.Append('\t' + Resolve(NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture)));
+            sb.Append('\t' + NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture));
 
             if (compactPeptides.First().Value.Item2 != null)
             {
-                sb.Append("\t" + string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
+                sb.Append("\t" + Resolve(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture)))));
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
