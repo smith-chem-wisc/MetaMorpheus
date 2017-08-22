@@ -1,5 +1,8 @@
-﻿using Nett;
+﻿using EngineLayer;
+using Nett;
 using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
 using TaskLayer;
 
 namespace Test
@@ -38,6 +41,20 @@ namespace Test
             var xLSearchTaskLoaded = Toml.ReadFile<XLSearchTask>("XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
         }
 
+        [Test]
+        public static void TestTomlForSpecficFile()
+        {
+            SearchTask searchTask = new SearchTask();
+            var Test = Toml.ReadFile("testFileSpecfic.toml", MetaMorpheusTask.tomlConfig);
+            var tomlSettingsList = Test.ToDictionary(p => p.Key);
+           // var protease = new Protease("C", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "TestCustomProtease");
+
+        }
+
+
         #endregion Public Methods
     }
+
+
 }

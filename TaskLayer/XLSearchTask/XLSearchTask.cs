@@ -171,7 +171,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
             List<Tuple<PsmCross, PsmCross>> allPsmsXLTuple = new List<Tuple<PsmCross, PsmCross>>();

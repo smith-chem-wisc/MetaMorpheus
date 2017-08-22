@@ -252,7 +252,25 @@ namespace TaskLayer
 #endif
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilenameList, taskId);
+
+            FileSettings[] fileSettingsList = new FileSettings[currentRawDataFilenameList.Count];
+            int index = 0;
+            var directoryOfRawFiles = Directory.GetParent(currentRawDataFilenameList[0]);
+            TomlTable fileSpecificSettings;
+            foreach (string rawFileName in currentRawDataFilenameList)
+            {
+                var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
+                //fileSettingsList[index]. //fileSpecificToml
+                if (fileSpecificToml.Length > 0 && fileSpecificToml.Length < 2)
+                {
+                    fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
+                    var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
+                    fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
+                    index++;
+                }
+            }
+
+            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilenameList, taskId, fileSettingsList);
             stopWatch.Stop();
             myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
@@ -287,6 +305,7 @@ namespace TaskLayer
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return myTaskResults;
         }
+
 
         #endregion Public Methods
 
@@ -896,7 +915,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSettings[] fileSettings);
 
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {

@@ -10,7 +10,7 @@ namespace TaskLayer
     {
 
 
-        public FileSettings(TomlSettings sett)
+        public FileSettings()
         {
             
         }
@@ -19,6 +19,7 @@ namespace TaskLayer
 
 
         public Protease Protease { get; set; }
+
 
     }
 }
