@@ -258,6 +258,33 @@ namespace TaskLayer
             object psmLock = new object();
 
             Status("Searching files...", taskId);
+
+            proseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
+            proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName +"; ");
+            proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
+            proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
+            proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");
+
+            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
+            if (MaxPeptideLength == null)
+            {
+                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
+            }
+            else
+            {
+                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+            }
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
+
+            proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = UNKNOWN; ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
