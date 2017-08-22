@@ -348,7 +348,7 @@ namespace EngineLayer
             sb.Append('\t' + ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture));
             sb.Append('\t' + Score.ToString("F3", CultureInfo.InvariantCulture));
             sb.Append("\t" + Resolve(compactPeptides.Select(b => b.Value.Item1)).Item1); // Notch
-            sb.Append('\t' + NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture));
+            sb.Append('\t' + Resolve(NumDifferentCompactPeptides.ToString("F5", CultureInfo.InvariantCulture)));
 
             if (compactPeptides.First().Value.Item2 != null)
             {
@@ -531,6 +531,14 @@ namespace EngineLayer
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
+        }
+
+        private string Resolve(string s)
+        {
+            if (s.Length > 32000)
+                return "too many";
+            else
+                return s;
         }
 
         private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
