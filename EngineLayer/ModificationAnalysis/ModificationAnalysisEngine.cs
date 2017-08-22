@@ -26,6 +26,8 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            Status("Running modification analysis...", nestedIds);
+
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
             Dictionary<string, int>[] nonLocMods = new Dictionary<string, int>[searchModesCount];
@@ -34,11 +36,11 @@ namespace EngineLayer
 
             for (int j = 0; j < searchModesCount; j++)
             {
-                Status("Running modification analysis...", nestedIds);
-
                 Dictionary<string, int> modsSeen = new Dictionary<string, int>();
 
-                foreach (var groupOfPsmsWithSameBaseSequence in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null && b.ModsIdentified != null && b.FullSequence == null).GroupBy(b => (b.BaseSequence)))
+                var confidentTargetPsms = newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
+
+                foreach (var groupOfPsmsWithSameBaseSequence in confidentTargetPsms.Where(b => b.BaseSequence != null && b.ModsIdentified != null && b.FullSequence == null).GroupBy(b => (b.BaseSequence)))
                 {
                     Dictionary<string, int> set = new Dictionary<string, int>();
                     foreach (var psm in groupOfPsmsWithSameBaseSequence)
@@ -67,7 +69,7 @@ namespace EngineLayer
                 HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
                 HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
 
-                foreach (var psm in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null))
+                foreach (var psm in confidentTargetPsms.Where(b => b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null))
                 {
                     var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
                     foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))

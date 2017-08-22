@@ -343,7 +343,7 @@ namespace EngineLayer
             }
             else
             {
-                return new Tuple<string, Dictionary<string, int>>(string.Join(" ", ok), ok);
+                return new Tuple<string, Dictionary<string, int>>(string.Join(" ", enumerable.First().Values.Select(c => c.id).OrderBy(c => c)), ok);
             }
         }
 
