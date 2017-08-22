@@ -17,8 +17,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        //private Protease protease;
-        //private int? minPeptideLength;
         private TerminusType terminusType;
         private new CommonParameters commonParameters;
         private new SearchParameters searchParameters;
@@ -29,8 +27,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, TerminusType terminusType, int currentPartition, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, commonParameters, searchParameters, nestedIds)
         {
-            //this.protease = protease;
-            //this.minPeptideLength = minPeptideLength;
             this.terminusType = terminusType;
             this.commonParameters = commonParameters;
             this.searchParameters = searchParameters;

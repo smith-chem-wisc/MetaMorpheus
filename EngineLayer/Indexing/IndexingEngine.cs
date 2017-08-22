@@ -14,20 +14,12 @@ namespace EngineLayer.Indexing
 
         private const int max_mods_for_peptide = 3;
         private const int decimalDigitsForFragmentMassRounding = 3;
-        //private readonly int maximumMissedCleavages;
-        //private readonly int? minPeptideLength;
-        //private readonly int? maxPeptideLength;
-        //private readonly int maximumVariableModificationIsoforms;
         private readonly List<Protein> proteinList;
-
-        //private readonly Protease protease;
 
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly List<ModificationWithMass> variableModifications;
-        //private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<ProductType> lp;
         private readonly int currentPartition;
-        //private readonly int totalPartitions;
         private readonly bool searchDecoys;
         private readonly CommonParameters commonParameters;
 
@@ -40,15 +32,8 @@ namespace EngineLayer.Indexing
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            //this.protease = protease;
-            //this.initiatorMethionineBehavior = initiatorMethionineBehavior;
-            //this.maximumMissedCleavages = maximumMissedCleavages;
-            //this.minPeptideLength = minPeptideLength;
-            //this.maxPeptideLength = maxPeptideLength;
-            //this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
-            //this.totalPartitions = totalPartitions;
             this.searchDecoys = searchDecoys;
             this.commonParameters = commonParameters;
         }

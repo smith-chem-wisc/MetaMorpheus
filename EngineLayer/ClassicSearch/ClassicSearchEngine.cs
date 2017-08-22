@@ -14,21 +14,13 @@ namespace EngineLayer.ClassicSearch
 
         private const int max_mods_for_peptide = 3;
 
-        //private readonly int maximumMissedCleavages;
-        //private readonly int? minPeptideLength;
-        //private readonly int? maxPeptideLength;
-        //private readonly int maximumVariableModificationIsoforms;
         private readonly List<MassDiffAcceptor> searchModes;
 
         private readonly List<Protein> proteinList;
 
-        //private readonly Protease protease;
-
         private readonly List<ModificationWithMass> fixedModifications;
 
         private readonly List<ModificationWithMass> variableModifications;
-
-        //private readonly Tolerance productMassTolerance;
 
         private readonly Psm[][] globalPsms;
 
@@ -38,11 +30,8 @@ namespace EngineLayer.ClassicSearch
 
         private readonly List<ProductType> lp;
 
-        //private readonly bool conserveMemory;
-        //private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
-
         private readonly bool addCompIons;
-        //private readonly double scoreCutoff;
+
         private readonly CommonParameters commonParameters;
 
 
@@ -58,18 +47,9 @@ namespace EngineLayer.ClassicSearch
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
             this.proteinList = proteinList;
-            //this.productMassTolerance = productMassTolerance;
-            //this.maximumMissedCleavages = maximumMissedCleavages;
-            //this.minPeptideLength = minPeptideLength;
-            //this.maxPeptideLength = maxPeptideLength;
-            //this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.searchModes = searchModes;
-            //this.protease = protease;
             this.lp = lp;
-            //this.conserveMemory = conserveMemory;
-            //this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.addCompIons = addCompIons;
-            //this.scoreCutoff = scoreCutoff;
             this.commonParameters = commonParameters;
         }
 
