@@ -17,8 +17,6 @@ namespace TaskLayer
         }
 
 
-
-
         public Protease Protease { get; set; }
 
 
