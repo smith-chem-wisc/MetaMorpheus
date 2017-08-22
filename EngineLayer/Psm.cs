@@ -18,8 +18,6 @@ namespace EngineLayer
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
-        private ChemicalFormula ModsChemicalFormula;
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -43,6 +41,7 @@ namespace EngineLayer
 
         #region Public Properties
 
+        public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -327,6 +326,11 @@ namespace EngineLayer
 
         #region Private Methods
 
+        private static string TrimStringForExcel(string s)
+        {
+            return s.Length > 32000 ? "too many" : s;
+        }
+
         private (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
         {
             ChemicalFormula f = new ChemicalFormula();
@@ -448,11 +452,6 @@ namespace EngineLayer
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
-        }
-
-        private static string TrimStringForExcel(string s)
-        {
-            return s.Length > 32000 ? "too many" : s;
         }
 
         private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
