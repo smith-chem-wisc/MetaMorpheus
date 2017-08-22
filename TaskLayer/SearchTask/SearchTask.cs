@@ -206,7 +206,7 @@ namespace TaskLayer
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var fileSetting = fileSettingsList[spectraFileIndex];
                 //set protease to fileSpecificToml if it exists (default if not)
-                if(fileSetting.Protease != null)
+                if(fileSetting.Protease.Name != "trypsin")
                 {
                     Protease = fileSetting.Protease;
                 }
