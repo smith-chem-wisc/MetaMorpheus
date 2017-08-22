@@ -282,10 +282,10 @@ namespace TaskLayer
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
                 using (StreamWriter file = new StreamWriter(proseFilePath))
-                {                                       
+                {
                     file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalEngineLevelSettings.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
                     file.Write(proseCreatedWhileRunning.ToString());
-                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine,"") + " ");
+                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
                     file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilenameList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");

@@ -156,7 +156,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
-           
+
             List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                 allPsms[searchModeIndex] = new List<Psm>();
@@ -191,12 +191,12 @@ namespace TaskLayer
                 proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
             }
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
-            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ",fixedModifications.Select(m=>m.id)) + "; ");
-            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m=>m.id)) + "; ");
+            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", MassDiffAcceptors.Select(m=>m.ToProseString())) +"}; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", MassDiffAcceptors.Select(m => m.ToProseString())) + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p=>p.IsContaminant).Count() + " contaminant sequences. ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (BIons && AddCompIons)
@@ -226,7 +226,7 @@ namespace TaskLayer
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var fileSetting = fileSettingsList[spectraFileIndex];
                 //set protease to fileSpecificToml if it exists (default if not)
-                if(fileSetting.Protease.Name != "trypsin")
+                if (fileSetting.Protease.Name != "trypsin")
                 {
                     Protease = fileSetting.Protease;
                 }
