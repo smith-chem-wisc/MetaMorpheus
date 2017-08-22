@@ -271,7 +271,12 @@ namespace TaskLayer
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
 
-                    //file.WriteLine(TaskSpecificProse());
+                    file.WriteLine();
+                    file.WriteLine("Spectra files: ");
+                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
+                    file.WriteLine("Databases:");
+                    file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
+
 
                 }
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
@@ -284,7 +289,6 @@ namespace TaskLayer
             return myTaskResults;
         }
 
-        protected abstract string TaskSpecificProse();
 
         #endregion Public Methods
 

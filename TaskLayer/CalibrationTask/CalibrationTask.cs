@@ -200,8 +200,14 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
             proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
-            if (MaxPeptideLength == null) { proseCreatedWhileRunning.Append("maximum peptide length = unspecified; "); }
-            else { proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; "); }
+            if (MaxPeptideLength == null)
+            {
+                proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
+            }
+            else
+            {
+                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+            }
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
@@ -400,14 +406,6 @@ namespace TaskLayer
 
         #endregion Protected Methods
 
-        #region Private Methods
-
-        protected override string TaskSpecificProse()
-        {
-            return "";
-        }
-        
-        #endregion Private Methods
 
     }
 }
