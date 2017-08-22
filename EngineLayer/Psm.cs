@@ -352,7 +352,7 @@ namespace EngineLayer
 
             if (compactPeptides.First().Value.Item2 != null)
             {
-                sb.Append("\t" + string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
+                sb.Append("\t" + TrimStringForExcel(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture)))));
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
@@ -531,6 +531,11 @@ namespace EngineLayer
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
+        }
+
+        private static string TrimStringForExcel(string s)
+        {
+            return s.Length > 32000 ? "too many" : s;
         }
 
         private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
