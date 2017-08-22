@@ -77,8 +77,6 @@ namespace EngineLayer
 
         #endregion Public Properties
 
-        // id and number of occurences
-
         #region Public Methods
 
         public static string GetTabSeparatedHeader()
