@@ -54,42 +54,7 @@ namespace EngineLayer
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
 
             if (addComp)
-            {
-                List<MzPeak> complementaryPeaks = new List<MzPeak>();
-
-                //keep original peeks
-                for (int i = 0; i < experimental_mzs.Length; i++)
-                {
-                    complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i]));
-                }
-                //If HCD
-                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
-                {
-                    for (int i = 0; i < experimental_mzs.Length; i++)
-                    {
-                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 100)));
-                    }
-                }
-                //If ETD
-                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
-                {
-                    for (int i = 0; i < experimental_mzs.Length; i++)
-                    {
-                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 100)));
-                    }
-                }
-
-                IEnumerable<MzPeak> sortedPeaksMZ = complementaryPeaks.OrderBy(x => x.Mz);
-                experimental_mzs = new double[sortedPeaksMZ.Count()];
-                experimental_intensities = new double[sortedPeaksMZ.Count()];
-                int index = 0;
-                foreach (MzPeak peak in sortedPeaksMZ)
-                {
-                    experimental_mzs[index] = peak.Mz;
-                    experimental_intensities[index] = peak.Intensity;
-                    index++;
-                }
-            }
+                AddComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
 
             int num_experimental_peaks = experimental_mzs.Length;
 
@@ -213,6 +178,44 @@ namespace EngineLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private static void AddComplementaryPeaks(ref double[] experimental_mzs, ref double[] experimental_intensities, double precursorMass, List<ProductType> lp)
+        {
+            List<MzPeak> complementaryPeaks = new List<MzPeak>();
+
+            //keep original peeks
+            for (int i = 0; i < experimental_mzs.Length; i++)
+            {
+                complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i]));
+            }
+            //If HCD
+            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+            {
+                for (int i = 0; i < experimental_mzs.Length; i++)
+                {
+                    complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 100)));
+                }
+            }
+            //If ETD
+            if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
+            {
+                for (int i = 0; i < experimental_mzs.Length; i++)
+                {
+                    complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 100)));
+                }
+            }
+
+            IEnumerable<MzPeak> sortedPeaksMZ = complementaryPeaks.OrderBy(x => x.Mz);
+            experimental_mzs = new double[sortedPeaksMZ.Count()];
+            experimental_intensities = new double[sortedPeaksMZ.Count()];
+            int index = 0;
+            foreach (MzPeak peak in sortedPeaksMZ)
+            {
+                experimental_mzs[index] = peak.Mz;
+                experimental_intensities[index] = peak.Intensity;
+                index++;
+            }
+        }
 
         private void StartingSingleEngine()
         {
