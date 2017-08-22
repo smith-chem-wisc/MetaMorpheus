@@ -156,7 +156,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
         {
             myTaskResults = new MyTaskResults(this);
-
+            FileSettings[] fileSettingsList = new FileSettings[currentRawFileList.Count]; 
             List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
             for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
                 allPsms[searchModeIndex] = new List<Psm>();
@@ -204,10 +204,24 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
+                var fileSetting = fileSettingsList[spectraFileIndex];
+
+
                 Psm[][] fileSpecificPsms = new Psm[MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
+
+                //If path contains toml with same name
+                //bool fileSpecificTomlExists = false;
+                var hi = Directory.GetParent(origDataFile);
+                var fileSpecificToml = Directory.GetFiles(hi.ToString(), Path.GetFileNameWithoutExtension(origDataFile) + ".to*");
+                if (fileSpecificToml.Length > 0)
+                {
+                   // fileSpecificTomlExists = true;
+                };
+                //var nameOfFileSpecificToml = myDirectoryFiles.SingleOrDefault(f => f.Contains("CustomerWorkSheet/" + myCustomerId + "."));
+                //if hi.get
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);

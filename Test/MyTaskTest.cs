@@ -452,7 +452,6 @@ namespace Test
                 {
                     if (line.Contains("Unique PSMS within 1% FDR"))
                     {
-                        Console.WriteLine("adsf");
                         found.Add(line);
                         Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
                     }
