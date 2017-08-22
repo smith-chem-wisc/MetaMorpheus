@@ -153,6 +153,21 @@ namespace TaskLayer
 
             var numRawFiles = currentRawFileList.Count;
 
+            proseCreatedWhileRunning.Append("The following G-PTM-D settings were used: ");
+            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
+            if (MaxPeptideLength == null) { proseCreatedWhileRunning.Append("maximum peptide length = unspecified; "); }
+            else { proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; "); }
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", searchModes.Select(m => m.ToProseString())) + "}; ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
             Status("Running G-PTM-D...", new List<string> { taskId });
 
             object lock1 = new object();
@@ -267,6 +282,11 @@ namespace TaskLayer
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
+        }
+
+        protected override string TaskSpecificProse()
+        {
+            return "";
         }
 
         #endregion Private Methods

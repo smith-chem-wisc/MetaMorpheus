@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 using UsefulProteomicsDatabases;
@@ -107,6 +108,7 @@ namespace TaskLayer
         public double DeconvolutionIntensityRatio { get; set; }
         public int DeconvolutionMaxAssumedChargeState { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
+        protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
 
         #endregion Public Properties
 
@@ -207,34 +209,6 @@ namespace TaskLayer
         {
             StartingSingleTask(taskId);
 
-            #region Write prose
-
-            {
-                var proseFilePath = Path.Combine(output_folder, "prose.txt");
-                using (StreamWriter file = new StreamWriter(proseFilePath))
-                {
-                    file.WriteLine("MetaMorpheus version "
-                        + GlobalEngineLevelSettings.MetaMorpheusVersion
-                        + " is used to run a "
-                        + this.TaskType
-                        + " task on "
-                        + currentRawDataFilenameList.Count
-                        + " spectra files.");
-
-                    file.WriteLine(ToString());
-
-                    file.WriteLine();
-                    file.WriteLine("taskId: " + taskId);
-                    file.WriteLine("Spectra files:");
-                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
-                    file.WriteLine("XML files:");
-                    file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
-                }
-                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
-            }
-
-            #endregion Write prose
-
             #region write TOML
 
             {
@@ -284,9 +258,33 @@ namespace TaskLayer
             }
 #endif
 
+            #region Write prose
+
+            {
+                var proseFilePath = Path.Combine(output_folder, "prose.txt");
+                using (StreamWriter file = new StreamWriter(proseFilePath))
+                {                                       
+                    file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalEngineLevelSettings.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
+                    file.Write(proseCreatedWhileRunning.ToString());
+                    file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine,"") + " ");
+                    file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilenameList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
+                    file.WriteLine();
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
+
+                    //file.WriteLine(TaskSpecificProse());
+
+                }
+                SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
+            }
+
+            #endregion Write prose
+
+
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return myTaskResults;
         }
+
+        protected abstract string TaskSpecificProse();
 
         #endregion Public Methods
 
