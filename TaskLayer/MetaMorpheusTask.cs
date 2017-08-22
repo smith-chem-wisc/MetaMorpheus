@@ -259,6 +259,7 @@ namespace TaskLayer
             TomlTable fileSpecificSettings;
             foreach (string rawFileName in currentRawDataFilenameList)
             {
+                fileSettingsList[index] = new FileSettings();
                 var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
                 //fileSettingsList[index]. //fileSpecificToml
                 if (fileSpecificToml.Length > 0 && fileSpecificToml.Length < 2)
@@ -266,8 +267,8 @@ namespace TaskLayer
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
                     fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
-                    index++;
                 }
+                index++;
             }
 
             RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilenameList, taskId, fileSettingsList);

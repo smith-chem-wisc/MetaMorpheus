@@ -205,7 +205,7 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var fileSetting = fileSettingsList[spectraFileIndex];
-                //set protease to fileSpecificToml if it exists (default Trypsin if not)
+                //set protease to fileSpecificToml if it exists (default if not)
                 Protease = fileSetting.Protease;
 
                 Psm[][] fileSpecificPsms = new Psm[MassDiffAcceptors.Count()][];
