@@ -12,8 +12,6 @@ namespace EngineLayer.ClassicSearch
     {
         #region Private Fields
 
-        private const int max_mods_for_peptide = 3;
-
         private readonly List<MassDiffAcceptor> searchModes;
 
         private readonly List<Protein> proteinList;
@@ -83,7 +81,7 @@ namespace EngineLayer.ClassicSearch
                     var digestedList = protein.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, commonParameters.Max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);

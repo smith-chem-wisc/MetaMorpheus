@@ -29,6 +29,8 @@ namespace EngineLayer
             //GPTMD ListOfModsLocalize
             //ListOfModsLocalize = new List<Tuple<string, string>>();
 
+            Max_mods_for_peptide = 3;
+
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
             ScoreCutoff = 5;
@@ -85,6 +87,8 @@ namespace EngineLayer
         public double ScoreCutoff { get; set; }
 
         public static List<string> AllModLists { get; private set; }
+
+        public int Max_mods_for_peptide { get; set; }
 
     }
 }

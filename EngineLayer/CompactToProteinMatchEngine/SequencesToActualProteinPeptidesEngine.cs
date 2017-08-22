@@ -10,7 +10,7 @@ namespace EngineLayer
     {
         #region Protected Fields
 
-        protected const int max_mods_for_peptide = 3;
+        
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
         protected readonly List<Psm>[] allPsms;
@@ -66,7 +66,7 @@ namespace EngineLayer
                 for (int i = fff.Item1; i < fff.Item2; i++)
                     foreach (var peptideWithPossibleModifications in proteinList[i].Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, fixedModifications))
                     {
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, max_mods_for_peptide))
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, commonParameters.Max_mods_for_peptide))
                         {
                             if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 

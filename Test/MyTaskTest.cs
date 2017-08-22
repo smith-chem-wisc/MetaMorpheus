@@ -33,7 +33,7 @@ namespace Test
 
             CalibrationTask task1 = new CalibrationTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
                 },
@@ -41,7 +41,7 @@ namespace Test
             };
             GptmdTask task2 = new GptmdTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
                 },
@@ -49,11 +49,11 @@ namespace Test
 
             SearchTask task3 = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     DoParsimony = true,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
@@ -61,11 +61,11 @@ namespace Test
             };
             SearchTask task4 = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     SearchType = SearchType.Modern,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
@@ -155,7 +155,7 @@ namespace Test
             SearchTask task3 = new SearchTask()
             {
                 commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
@@ -163,7 +163,7 @@ namespace Test
             SearchTask task4 = new SearchTask()
             {   
                 commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     DoParsimony = true,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
@@ -249,7 +249,7 @@ namespace Test
                     ListOfModsFixed = new List<Tuple<string, string>>(),
                     PrecursorMassTolerance = new AbsoluteTolerance(1),
                     ScoreCutoff = 1,
-                    commonParameters = new CommonParameters()
+                    commonParameters = new CommonParameters
                     {
                         ScoreCutoff = 1,
                         ListOfModsVariable = new List<Tuple<string, string>>(),
@@ -313,13 +313,13 @@ namespace Test
             //Create Search Task
             SearchTask task1 = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
                     ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     WritePrunedDatabase = true,
                     //DoParsimony = true,
@@ -430,12 +430,12 @@ namespace Test
 
             SearchTask testUnique = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 },

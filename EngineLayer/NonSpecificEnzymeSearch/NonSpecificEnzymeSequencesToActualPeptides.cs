@@ -91,7 +91,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         foreach (var peptideWithPossibleModifications in proteinList[i].Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, fixedModifications))
                         {
-                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, max_mods_for_peptide))
+                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, commonParameters.Max_mods_for_peptide))
                             {
                                 if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                                     v.Add(peptideWithSetModifications);
@@ -193,7 +193,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         foreach (var peptideWithPossibleModifications in proteinList[i].Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, fixedModifications))
                         {
-                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, max_mods_for_peptide))
+                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, commonParameters.Max_mods_for_peptide))
                             {
                                 if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                                     v.Add(peptideWithSetModifications);

@@ -19,7 +19,7 @@ namespace EngineLayer
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
-            //MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
+
         }
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }

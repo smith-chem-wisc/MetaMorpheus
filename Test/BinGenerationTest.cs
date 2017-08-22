@@ -22,13 +22,13 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptors = massDiffAcceptors,                   
@@ -87,13 +87,13 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                     MaxMissedCleavages = 0
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     DoParsimony = true,
                     MassDiffAcceptors = massDiffAcceptors
