@@ -175,18 +175,14 @@ namespace Test
             double monoisotopicMass = Chemistry.ChemicalFormula.ParseFormula("CH2").MonoisotopicMass;
             ModificationMotif.TryGetMotif("G", out ModificationMotif motif1);
             ModificationMotif.TryGetMotif("A", out ModificationMotif motif2);
-            IDictionary<string, IList<string>> externalDatabaseReferences = null;
-            IEnumerable<double> neutralLosses = null;
-            IEnumerable<double> diagnosticIons = null;
-            string modificationType = "customModType";
             TerminusLocalization modificationSites = TerminusLocalization.Any;
             List<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>
             {
-                new ModificationWithMass("CH2 on Glycine", null, motif1, modificationSites, monoisotopicMass, externalDatabaseReferences, neutralLosses, diagnosticIons, modificationType)
+                new ModificationWithMass("CH2 on Glycine", null, motif1, modificationSites, monoisotopicMass)
             };
             List<ModificationWithMass> variableModifications;
 
-            ModificationWithMass alanineMod = new ModificationWithMass("CH2 on Alanine", null, motif2, modificationSites, monoisotopicMass, externalDatabaseReferences, neutralLosses, diagnosticIons, modificationType);
+            ModificationWithMass alanineMod = new ModificationWithMass("CH2 on Alanine", null, motif2, modificationSites, monoisotopicMass);
 
             if (localizeable)
             {
