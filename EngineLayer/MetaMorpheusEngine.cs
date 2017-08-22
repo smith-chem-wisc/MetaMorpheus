@@ -90,9 +90,11 @@ namespace EngineLayer
                     currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
                     currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
                 }
-                // Else if for sure did not reach the next theoretical yet, move to next experimental
+                // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMZ < currentTheoreticalMz)
-                    continue;
+                {
+                    // Just move to next experimental
+                }
                 // Else if for sure passed a theoretical
                 else
                 {
