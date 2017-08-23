@@ -57,7 +57,7 @@ namespace EngineLayer
 
         public override string ToProseString()
         {
-            return (tol.ToString() + " around " + String.Join(",",acceptableSortedMassShifts) + " Da");
+            return (tol.ToString() + " around " + String.Join(",", acceptableSortedMassShifts) + " Da");
         }
 
         #endregion Public Methods
