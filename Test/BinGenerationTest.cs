@@ -23,7 +23,7 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
@@ -54,7 +54,7 @@ namespace Test
                     DeconvolutionMaxAssumedChargeState = 10,
                     DeconvolutionMassTolerance = new PpmTolerance(5),
                 },
-                searchParameters = new SearchParameters
+                SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptors = massDiffAcceptors,                   
@@ -83,18 +83,18 @@ namespace Test
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
             ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
 
-            var possMod1 = prot1.Digest(st.commonParameters.Protease, st.commonParameters.MaxMissedCleavages, st.commonParameters.MinPeptideLength, st.commonParameters.MaxPeptideLength, st.commonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod1 = prot1.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep1_0 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep1_10 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass> { mod }, 4096, 3).Last();
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3");
 
-            var possMod3 = prot3.Digest(st.commonParameters.Protease, st.commonParameters.MaxMissedCleavages, st.commonParameters.MinPeptideLength, st.commonParameters.MaxPeptideLength, st.commonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod3 = prot3.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep2_0 = possMod3.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep2_10 = possMod3.GetPeptidesWithSetModifications(new List<ModificationWithMass>() { mod }, 4096, 3).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
-            var possMod4 = prot4.Digest(st.commonParameters.Protease, st.commonParameters.MaxMissedCleavages, st.commonParameters.MinPeptideLength, st.commonParameters.MaxPeptideLength, st.commonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod4 = prot4.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep3_10 = possMod4.GetPeptidesWithSetModifications(new List<ModificationWithMass>() { mod }, 4096, 3).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
@@ -122,7 +122,7 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
@@ -153,7 +153,7 @@ namespace Test
                     DeconvolutionMaxAssumedChargeState = 10,
                     DeconvolutionMassTolerance = new PpmTolerance(5),
                 },
-                searchParameters = new SearchParameters
+                SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptors = massDiffAcceptors,
@@ -187,7 +187,7 @@ namespace Test
 
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
-            var possMod1 = prot1.Digest(st.commonParameters.Protease, st.commonParameters.MaxMissedCleavages, st.commonParameters.MinPeptideLength, st.commonParameters.MaxPeptideLength, st.commonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod1 = prot1.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep1 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep2 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).Last();
 

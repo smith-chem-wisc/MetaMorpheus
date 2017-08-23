@@ -20,13 +20,13 @@ namespace EngineLayer.Indexing
         private readonly List<ProductType> lp;
         private readonly int currentPartition;
         private readonly bool searchDecoys;
-        private readonly CommonParameters commonParameters;
+        private readonly CommonParameters CommonParameters;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
@@ -34,7 +34,7 @@ namespace EngineLayer.Indexing
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
             this.searchDecoys = searchDecoys;
-            this.commonParameters = commonParameters;
+            this.CommonParameters = CommonParameters;
         }
 
         #endregion Public Constructors
@@ -44,18 +44,18 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Partitions: " + currentPartition + "/" + commonParameters.TotalPartitions);
+            sb.AppendLine("Partitions: " + currentPartition + "/" + CommonParameters.TotalPartitions);
             sb.AppendLine("Search Decoys: " + searchDecoys);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
             sb.AppendLine("lp: " + string.Join(",", lp));
-            sb.AppendLine("protease: " + commonParameters.Protease);
-            sb.AppendLine("initiatorMethionineBehavior: " + commonParameters.InitiatorMethionineBehavior);
-            sb.AppendLine("maximumMissedCleavages: " + commonParameters.MaxMissedCleavages);
-            sb.AppendLine("minPeptideLength: " + commonParameters.MinPeptideLength);
-            sb.AppendLine("maxPeptideLength: " + commonParameters.MaxPeptideLength);
-            sb.AppendLine("maximumVariableModificationIsoforms: " + commonParameters.MaxModificationIsoforms);
+            sb.AppendLine("protease: " + CommonParameters.Protease);
+            sb.AppendLine("initiatorMethionineBehavior: " + CommonParameters.InitiatorMethionineBehavior);
+            sb.AppendLine("maximumMissedCleavages: " + CommonParameters.MaxMissedCleavages);
+            sb.AppendLine("minPeptideLength: " + CommonParameters.MinPeptideLength);
+            sb.AppendLine("maxPeptideLength: " + CommonParameters.MaxPeptideLength);
+            sb.AppendLine("maximumVariableModificationIsoforms: " + CommonParameters.MaxModificationIsoforms);
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
@@ -79,10 +79,10 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, fixedModifications).ToList();
+                    var digestedList = protein.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, commonParameters.Max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);

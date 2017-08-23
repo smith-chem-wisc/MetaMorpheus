@@ -75,7 +75,7 @@ namespace Test
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters commonParameters = new CommonParameters
+            CommonParameters CommonParameters = new CommonParameters
             {
                 Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MinPeptideLength = null,
@@ -104,7 +104,7 @@ namespace Test
                 DeconvolutionMaxAssumedChargeState = 10,
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, commonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
@@ -162,7 +162,7 @@ namespace Test
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters commonParameters = new CommonParameters
+            CommonParameters CommonParameters = new CommonParameters
             {
                 Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MinPeptideLength = null,
@@ -190,7 +190,7 @@ namespace Test
                 DeconvolutionIntensityRatio = 4,
                 DeconvolutionMaxAssumedChargeState = 10,
             };
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, commonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
