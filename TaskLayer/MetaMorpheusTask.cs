@@ -524,7 +524,7 @@ namespace TaskLayer
                             location = mod.Key - 1,
                             locationSpecified = true,
                             monoisotopicMassDelta = mod.Value.monoisotopicMass,
-                            residues = new string[1] { mod.Value.motif.Motif.ToString() },
+                            residues = new string[1] { mod.Value.motif.ToString() },
                             monoisotopicMassDeltaSpecified = true,
                             cvParam = new mzIdentML110.Generated.CVParamType[1]
                             {
@@ -749,7 +749,7 @@ namespace TaskLayer
                 {
                     fixedMod = true,
                     massDelta = (float)mod.monoisotopicMass,
-                    residues = mod.motif.Motif,
+                    residues = mod.motif.ToString(),
                 };
                 mod_index++;
             }
@@ -759,7 +759,7 @@ namespace TaskLayer
                 {
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
-                    residues = mod.motif.Motif,
+                    residues = mod.motif.ToString(),
                 };
                 mod_index++;
             }

@@ -272,7 +272,7 @@ namespace TaskLayer
             {
                 foreach (var modToLocalize in gptmdModifications)
                 {
-                    if (modOnPeptide.motif.Motif.Equals(modToLocalize.motif.Motif))
+                    if (modOnPeptide.motif.Equals(modToLocalize.motif))
                     {
                         yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
                     }

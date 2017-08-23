@@ -33,16 +33,16 @@ namespace EngineLayer.Gptmd
 
         public static bool ModFits(ModificationWithMass attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
-            var motif = attemptToLocalize.motif.Motif;
+            var motif = attemptToLocalize.motif;
             // First find the capital letter...
-            var hehe = motif.IndexOf(motif.First(b => char.IsUpper(b)));
+            var hehe = motif.ToString().IndexOf(motif.ToString().First(b => char.IsUpper(b)));
 
             var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
             var indexUp = 0;
             // Look up starting at and including the capital letter
-            while (indexUp < motif.Length)
+            while (indexUp < motif.ToString().Length)
             {
-                if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif[indexUp]).Equals('X') && !char.ToUpper(motif[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
+                if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X') && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
                     return false;
                 indexUp++;
             }
@@ -103,7 +103,7 @@ namespace EngineLayer.Gptmd
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass))
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.allModsOneIsNterminus.Values)
-                    if (modOnPsm.motif.Motif.Equals(Mod.motif.Motif))
+                    if (modOnPsm.motif.Equals(Mod.motif))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + Mod.monoisotopicMass - modOnPsm.monoisotopicMass))
                             yield return Mod;
