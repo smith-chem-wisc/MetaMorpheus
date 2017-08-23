@@ -405,7 +405,5 @@ namespace TaskLayer
         }
 
         #endregion Protected Methods
-
-
     }
 }

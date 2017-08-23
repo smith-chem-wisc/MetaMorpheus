@@ -286,10 +286,8 @@ namespace TaskLayer
                 crosslinker.CrosslinkerModSite = UdXLkerResidue;
             }
 
-
-
             proseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
-            proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName +"; ");
+            proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
             proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
             proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
             proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");
@@ -313,7 +311,6 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = UNKNOWN; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
-
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {

@@ -36,14 +36,14 @@ namespace EngineLayer
 
         public override string ToProseString()
         {
-            return (String.Format("{0:0.0}",ppmTolerance) + " ppm around zero");
+            return (String.Format("{0:0.0}", ppmTolerance) + " ppm around zero");
         }
 
         public override string ToString()
         {
             return FileNameAddition + " ppmAroundZero " + ppmTolerance;
         }
-        
+
         #endregion Public Methods
     }
 }

@@ -46,7 +46,7 @@ namespace EngineLayer
                     var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
-                    Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
                     matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
                 }
 
@@ -65,7 +65,7 @@ namespace EngineLayer
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
                     double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                    var score = Psm.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
+                    var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
                     localizedScores.Add(score);
                 }
 

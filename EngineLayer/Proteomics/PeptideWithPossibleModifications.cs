@@ -151,7 +151,7 @@ namespace EngineLayer
             {
                 var possible_variable_modifications = new Dictionary<int, UniqueModificationsCollection>(possibleVariableModifications);
 
-                int[] base_variable_modification_pattern = new int[Length + 4];
+                int[] base_variable_modification_pattern = new int[this.Length + 4];
                 var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
                 for (int variable_modifications = 0; variable_modifications <= Math.Min(totalAvailableMods, maxModsForPeptide); variable_modifications++)
                 {
@@ -259,17 +259,35 @@ namespace EngineLayer
 
         protected sealed class UniqueModificationsCollection : List<ModificationWithMass>
         {
+            #region Private Fields
+
+            private const double tolForModMassAdding = 1e-4;
+
+            #endregion Private Fields
+
             #region Internal Methods
 
             internal new void Add(ModificationWithMass mod)
             {
                 foreach (ModificationWithMass modHere in this)
-                    if (Math.Abs(modHere.monoisotopicMass - mod.monoisotopicMass) < 0.0001 && modHere.neutralLosses.SequenceEqual(mod.neutralLosses))
+                    if (Math.Abs(modHere.monoisotopicMass - mod.monoisotopicMass) < tolForModMassAdding && ApproxSequenceEqual(modHere.neutralLosses, mod.neutralLosses, tolForModMassAdding))
                         return;
                 base.Add(mod);
             }
 
             #endregion Internal Methods
+
+            #region Private Methods
+
+            private static bool ApproxSequenceEqual(List<double> a, List<double> b, double tol)
+            {
+                for (int i = 0; i < a.Count; i++)
+                    if (Math.Abs(a[i] - b[i]) >= tol)
+                        return false;
+                return true;
+            }
+
+            #endregion Private Methods
         }
 
         #endregion Protected Classes
