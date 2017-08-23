@@ -205,7 +205,48 @@ namespace TaskLayer
             return ye;
         }
 
+        //only set commonParams
         private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict)
+        {
+            commonParams.MaxDegreeOfParallelism = tomlDict["MaxDegreeOfParallelism"].Value.Get<int>();
+            commonParams.LocalizeAll = tomlDict["LocalizeAll"].Value.Get<bool>();
+            commonParams.ListOfModsFixed = tomlDict["ListOfModsFixed"].Value.Get<List<Tuple<string, string>>>();
+            commonParams.ListOfModsVariable = tomlDict["ListOfModsVariable"].Value.Get<List<Tuple<string, string>>>();
+            commonParams.ListOfModsLocalize = tomlDict["ListOfModsLocalize"].Value.Get<List<Tuple<string, string>>>();
+            commonParams.DoPrecursorDeconvolution = tomlDict["DoPrecursorDeconvolution"].Value.Get<bool>();
+            commonParams.UseProvidedPrecursorInfo = tomlDict["UseProvidedPrecursorInfo"].Value.Get<bool>();
+            commonParams.DeconvolutionIntensityRatio = tomlDict["DeconvolutionIntensityRatio"].Value.Get<double>();
+            commonParams.DeconvolutionMaxAssumedChargeState = tomlDict["DeconvolutionMaxAssumedChargeState"].Value.Get<int>();
+            commonParams.DeconvolutionMassTolerance = tomlDict["DeconvolutionMassTolerance"].Value.Get<Tolerance>();
+            commonParams.InitiatorMethionineBehavior = tomlDict["InitiatorMethionineBehavior"].Value.Get<InitiatorMethionineBehavior>();
+            commonParams.MaxMissedCleavages = tomlDict["MaxMissedCleavages"].Value.Get<int>();
+            commonParams.MinPeptideLength = tomlDict["MinPeptideLength"].Value.Get<int>();
+            commonParams.MaxPeptideLength = tomlDict["MaxPeptideLength"].Value.Get<int>();
+            commonParams.MaxModificationIsoforms = tomlDict["MaxModificationIsoforms"].Value.Get<int>();
+            commonParams.TotalPartitions = tomlDict["TotalPartitions"].Value.Get<int>();
+            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
+
+            commonParams.BIons = tomlDict["BIons"].Value.Get<bool>();
+            commonParams.YIons = tomlDict["YIons"].Value.Get<bool>();
+            commonParams.ZdotIons = tomlDict["ZdotIons"].Value.Get<bool>();
+            commonParams.CIons = tomlDict["CIons"].Value.Get<bool>();
+            commonParams.ProductMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
+            commonParams.ConserveMemory = tomlDict["ConserveMemory"].Value.Get<bool>();
+            commonParams.ScoreCutoff = tomlDict["ScoreCutoff"].Value.Get<double>();
+            //Don't need to set allmostlsit(is static)
+            commonParams.Max_mods_for_peptide = tomlDict["Max_mods_for_peptide"].Value.Get<int>();
+
+        }
+
+        //set common params and search params
+        private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict, string a)
+        {
+
+            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
+
+        }
+
+        private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict, int b)
         {
 
             commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
@@ -238,7 +279,6 @@ namespace TaskLayer
             int index = 0;
             var directoryOfRawFiles = Directory.GetParent(currentRawDataFilenameList[0]);
             TomlTable fileSpecificSettings;
-            Dictionary<CommonParameters, bool> fileSettingsListWithInfo = new Dictionary<CommonParameters, bool>();
             foreach (string rawFileName in currentRawDataFilenameList)
             {
                 fileSettingsList[index] = new CommonParameters();
@@ -249,12 +289,7 @@ namespace TaskLayer
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
                     SetParamsEqual(fileSettingsList[index], tomlSettingsList);
-                    fileSettingsListWithInfo.Add(fileSettingsList[index], true);
                     //fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
-                }
-                else
-                {
-                    fileSettingsListWithInfo.Add(fileSettingsList[index], false);
                 }
 
                 index++;

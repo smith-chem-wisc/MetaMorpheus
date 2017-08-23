@@ -189,7 +189,7 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var currentFileSpecificSettings = fileSettingsList[spectraFileIndex];
-                SetAllFileSpecificParams(CommonParameters, currentFileSpecificSettings);
+                SetAllFileSpecificCommonParams(CommonParameters, currentFileSpecificSettings);
 
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
 
@@ -612,12 +612,60 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private void SetAllFileSpecificParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
+        private void SetAllFileSpecificCommonParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
         {
+            if (currentFileSpecificSettings.MaxDegreeOfParallelism != 0)
+                commonParams.MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism;
+            if (currentFileSpecificSettings.LocalizeAll != false)
+                commonParams.LocalizeAll = currentFileSpecificSettings.LocalizeAll;
+            if (currentFileSpecificSettings.ListOfModsFixed != null)
+                commonParams.ListOfModsFixed = currentFileSpecificSettings.ListOfModsFixed;
+            if (currentFileSpecificSettings.ListOfModsVariable != null)
+                commonParams.ListOfModsVariable = currentFileSpecificSettings.ListOfModsVariable;
+            if (currentFileSpecificSettings.ListOfModsLocalize != null)
+                commonParams.ListOfModsLocalize = currentFileSpecificSettings.ListOfModsLocalize;
+            if (currentFileSpecificSettings.DoPrecursorDeconvolution != false)
+                commonParams.DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution;
+            if (currentFileSpecificSettings.UseProvidedPrecursorInfo != false)
+                commonParams.UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo;
+            if (currentFileSpecificSettings.DeconvolutionIntensityRatio != 0.0D)
+                commonParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio;
+            if (currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState != 0.0D)
+                commonParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState;
+            if (currentFileSpecificSettings.DeconvolutionMassTolerance != null)
+                commonParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance;
+            if (currentFileSpecificSettings.InitiatorMethionineBehavior != CommonParameters.InitiatorMethionineBehavior)
+                commonParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior;
+            if (currentFileSpecificSettings.MaxMissedCleavages != 0)
+                commonParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages;
+            if (currentFileSpecificSettings.MinPeptideLength != 0)
+                commonParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength;
+            if (currentFileSpecificSettings.MaxPeptideLength != 0)
+                commonParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength;
+            if (currentFileSpecificSettings.MaxModificationIsoforms != 0)
+                commonParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms;
+            if (currentFileSpecificSettings.TotalPartitions != 0)
+                commonParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions;
             if (currentFileSpecificSettings.Protease != null)
-            {
                 commonParams.Protease = currentFileSpecificSettings.Protease;
-            }
+
+            if (currentFileSpecificSettings.BIons != false)
+                commonParams.BIons = currentFileSpecificSettings.BIons;
+            if (currentFileSpecificSettings.YIons != false)
+                commonParams.YIons = currentFileSpecificSettings.YIons;
+            if (currentFileSpecificSettings.ZdotIons != false)
+                commonParams.ZdotIons = currentFileSpecificSettings.ZdotIons;
+            if (currentFileSpecificSettings.CIons != false)
+                commonParams.CIons = currentFileSpecificSettings.CIons;
+            if (currentFileSpecificSettings.ProductMassTolerance != null)
+                commonParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance;
+            if (currentFileSpecificSettings.ConserveMemory != false)
+                commonParams.ConserveMemory = currentFileSpecificSettings.ConserveMemory;
+            if (currentFileSpecificSettings.ScoreCutoff != 0)
+                commonParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff;
+            if (currentFileSpecificSettings.Max_mods_for_peptide != 0)
+                commonParams.Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide;
+
         }
 
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
