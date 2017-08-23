@@ -205,12 +205,10 @@ namespace TaskLayer
             return ye;
         }
 
-        public void SetParamsEqual(CommonParameters commonParams, Dictionary<string,KeyValuePair<string, TomlObject>> tomlDict)
+        private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict)
         {
-            if(commonParams.Protease != null)
-            {
-                commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
-            }
+
+            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
 
         }
 
@@ -240,6 +238,7 @@ namespace TaskLayer
             int index = 0;
             var directoryOfRawFiles = Directory.GetParent(currentRawDataFilenameList[0]);
             TomlTable fileSpecificSettings;
+            Dictionary<CommonParameters, bool> fileSettingsListWithInfo = new Dictionary<CommonParameters, bool>();
             foreach (string rawFileName in currentRawDataFilenameList)
             {
                 fileSettingsList[index] = new CommonParameters();
@@ -250,8 +249,14 @@ namespace TaskLayer
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
                     SetParamsEqual(fileSettingsList[index], tomlSettingsList);
+                    fileSettingsListWithInfo.Add(fileSettingsList[index], true);
                     //fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
                 }
+                else
+                {
+                    fileSettingsListWithInfo.Add(fileSettingsList[index], false);
+                }
+
                 index++;
             }
 
@@ -927,7 +932,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettings);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettingsList);
 
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {

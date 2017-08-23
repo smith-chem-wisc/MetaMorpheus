@@ -774,7 +774,6 @@ namespace Test
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             var testUniqeMod = new ModificationWithMass("testUniqeMod", "mt", motif, TerminusLocalization.Any, 10);
-
             GlobalTaskLevelSettings.AddMods(new List<ModificationWithLocation>
             {
                 testUniqeMod

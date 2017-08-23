@@ -86,9 +86,9 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (psmpair != null)
                 {
-                        var cp = psmpair.CompactPeptide;
-                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                            compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                    var cp = psmpair.CompactPeptide;
+                    if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
+                        compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
 
                     if (psmpair.BetaPsmCross != null)
                     {
@@ -150,12 +150,12 @@ namespace EngineLayer.CrosslinkAnalysis
                 var huh = newPsms[myScanWithMassIndex];
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                if (huh !=null)
+                if (huh != null)
                 {
                     var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
                     if (huh1 != null && huh1.MostProbableProteinInfo == null)
                         huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                }             
+                }
             }
 
             return myAnalysisResults;

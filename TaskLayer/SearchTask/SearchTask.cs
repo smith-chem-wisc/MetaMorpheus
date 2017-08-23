@@ -190,8 +190,8 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var currentFileSpecificSettings = fileSpecificCommonParams[spectraFileIndex];
+                SetAllFileSpecificParams(CommonParameters, currentFileSpecificSettings);
                 //will set commonParams to file specific params (only if specific params exist)
-                CommonParameters = currentFileSpecificSettings;
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
@@ -612,6 +612,13 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+        private void SetAllFileSpecificParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
+        {
+            if (currentFileSpecificSettings.Protease != null)
+            {
+                commonParams.Protease = currentFileSpecificSettings.Protease;
+            }
+        }
 
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
