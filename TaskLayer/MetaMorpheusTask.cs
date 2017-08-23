@@ -207,7 +207,10 @@ namespace TaskLayer
 
         public void SetParamsEqual(CommonParameters commonParams, Dictionary<string,KeyValuePair<string, TomlObject>> tomlDict)
         {
-            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
+            if(commonParams.Protease != null)
+            {
+                commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
+            }
 
         }
 
