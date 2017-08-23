@@ -30,52 +30,10 @@ namespace TaskLayer
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
-            CommonParameters = new CommonParameters
-            {
-                MaxMissedCleavages = 2,
-                MinPeptideLength = 5,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                BIons = true,
-                YIons = true,
-                ZdotIons = false,
-                CIons = false,
+            CommonParameters = new CommonParameters();
+            CommonParameters.ListOfModsLocalize = new List<Tuple<string, string>>();
 
-                TotalPartitions = 1,
-                LocalizeAll = true,
-
-                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                ListOfModsLocalize = new List<Tuple<string, string>>(),
-
-            Max_mods_for_peptide = 3,
-
-                ConserveMemory = true,
-                MaxDegreeOfParallelism = 1,
-                ScoreCutoff = 5,
-
-                // Deconvolution stuff
-                DoPrecursorDeconvolution = true,
-                UseProvidedPrecursorInfo = true,
-                DeconvolutionIntensityRatio = 4,
-                DeconvolutionMaxAssumedChargeState = 10,
-                DeconvolutionMassTolerance = new PpmTolerance(5),
-
-            };
-
-            GptmdParameters = new GptmdParameters
-            {
-                ListOfModsGptmd = GlobalTaskLevelSettings.AllModsKnown.Where(b =>
-                    b.modificationType.Equals("Glycan") ||
-                    b.modificationType.Equals("Mod") ||
-                    b.modificationType.Equals("PeptideTermMod") ||
-                    b.modificationType.Equals("Metal") ||
-                    b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-                PrecursorMassTolerance = new PpmTolerance(2)
-        };
+            GptmdParameters = new GptmdParameters();
 
         }
 
@@ -114,15 +72,15 @@ namespace TaskLayer
             };
             Status("Loading modifications...", new List<string> { taskId });
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
             if (CommonParameters.LocalizeAll)
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
-            List<ModificationWithMass> gptmdModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => GptmdParameters.ListOfModsGptmd.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> gptmdModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => GptmdParameters.ListOfModsGptmd.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 

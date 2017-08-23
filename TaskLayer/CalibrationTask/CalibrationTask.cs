@@ -23,48 +23,9 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters
-            {
-                MaxMissedCleavages = 2,
-                MinPeptideLength = 5,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                BIons = true,
-                YIons = true,
-                ZdotIons = false,
-                CIons = false,
+            CommonParameters = new CommonParameters();
 
-                TotalPartitions = 1,
-                LocalizeAll = true,
-
-                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-
-                Max_mods_for_peptide = 3,
-
-                ConserveMemory = true,
-                MaxDegreeOfParallelism = 1,
-                ScoreCutoff = 5,
-
-                // Deconvolution stuff
-                DoPrecursorDeconvolution = true,
-                UseProvidedPrecursorInfo = true,
-                DeconvolutionIntensityRatio = 4,
-                DeconvolutionMaxAssumedChargeState = 10,
-                DeconvolutionMassTolerance = new PpmTolerance(5),
-
-            };
-
-            CalibrationParameters = new CalibrationParameters
-            {
-                NonLinearCalibration = true,
-                PrecursorMassTolerance = new PpmTolerance(10),
-                WriteIntermediateFiles = false
-            };
+            CalibrationParameters = new CalibrationParameters();
         }
 
         #endregion Public Constructors
@@ -144,13 +105,13 @@ namespace TaskLayer
             var searchModes = new List<MassDiffAcceptor> { searchMode };
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
             if (CommonParameters.LocalizeAll)
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();

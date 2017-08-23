@@ -49,7 +49,7 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value])))
+                                .FromToml(tmlString => GlobalEngineLevelSettings.ProteaseDictionary[tmlString.Value])))
                         .ConfigureType<List<Tuple<string, string>>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))

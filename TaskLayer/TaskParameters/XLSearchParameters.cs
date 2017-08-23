@@ -4,6 +4,22 @@ namespace EngineLayer
 {
     public class XlSearchParameters
     {
+        public XlSearchParameters()
+        {
+            SearchDecoy = true;
+            CrosslinkerType = CrosslinkerType.DSS;
+            CrosslinkSearchTopNum = 50;
+            CrosslinkSearchWithAllBeta = false;
+            UdXLkerName = null;
+            UdXLkerCleavable = false;
+            UdXLkerShortMass = null;
+            UdXLkerLongMass = null;
+            UdXLkerTotalMass = null;
+            UdXLkerResidue = 'K';
+            XlPrecusorMsTl = new PpmTolerance(10);
+            XlBetaPrecusorMsTl = new PpmTolerance(10);
+        }
+
         public bool SearchDecoy { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
