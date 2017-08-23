@@ -7,13 +7,16 @@ using System.Linq;
 namespace EngineLayer
 {
     [Serializable]
-    public abstract class CompactPeptideBase
+    public abstract class CompactPeptideBase : IEquatable<CompactPeptideBase>
     {
         #region Protected Fields
 
         protected static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+
         protected static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+
         protected static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+
         protected static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         #endregion Protected Fields
@@ -109,8 +112,32 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             var cp = obj as CompactPeptideBase;
-            if (cp == null)
-                return false;
+            return cp == null ? false : Equals(cp);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                {
+                    var result = 0;
+                    if (CTerminalMasses == null)
+                    {
+                        foreach (double b in NTerminalMasses)
+                            result = (result * 31) ^ b.GetHashCode();
+                    }
+                    else
+                    {
+                        foreach (double b in CTerminalMasses)
+                            result = (result * 31) ^ b.GetHashCode();
+                    }
+                    return result;
+                }
+            }
+        }
+
+        public bool Equals(CompactPeptideBase cp)
+        {
             if (CTerminalMasses == null && cp.CTerminalMasses == null)
             {
                 return (
@@ -135,32 +162,11 @@ namespace EngineLayer
             }
         }
 
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                {
-                    var result = 0;
-                    if (CTerminalMasses == null)
-                    {
-                        foreach (double b in NTerminalMasses)
-                            result = (result * 31) ^ b.GetHashCode();
-                    }
-                    else
-                    {
-                        foreach (double b in CTerminalMasses)
-                            result = (result * 31) ^ b.GetHashCode();
-                    }
-                    return result;
-                }
-            }
-        }
-
         #endregion Public Methods
 
         #region Protected Methods
 
-        protected IEnumerable<double> ComputeFollowingFragmentMasses(PeptideWithSetModifications yyy, double prevMass, int oneBasedIndexToLookAt, int direction)
+        protected static IEnumerable<double> ComputeFollowingFragmentMasses(PeptideWithSetModifications yyy, double prevMass, int oneBasedIndexToLookAt, int direction)
         {
             ModificationWithMass residue_variable_mod = null;
             do

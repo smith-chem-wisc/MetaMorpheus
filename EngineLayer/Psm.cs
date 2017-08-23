@@ -332,7 +332,7 @@ namespace EngineLayer
             return s.Length > 32000 ? "too many" : s;
         }
 
-        private (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
+        private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
         {
             ChemicalFormula f = new ChemicalFormula();
             {
@@ -371,6 +371,16 @@ namespace EngineLayer
             {
                 return (f.Formula, f);
             }
+        }
+
+        private static bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
+        {
+            if (firstPli.IsDecoy && !secondPli.IsDecoy)
+                return true;
+            if (!firstPli.IsDecoy && secondPli.IsDecoy)
+                return false;
+
+            return true;
         }
 
         private Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)
@@ -452,16 +462,6 @@ namespace EngineLayer
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
-        }
-
-        private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
-        {
-            if (firstPli.IsDecoy && !secondPli.IsDecoy)
-                return true;
-            if (!firstPli.IsDecoy && secondPli.IsDecoy)
-                return false;
-
-            return true;
         }
 
         #endregion Private Methods

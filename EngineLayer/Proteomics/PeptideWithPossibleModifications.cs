@@ -151,7 +151,7 @@ namespace EngineLayer
             {
                 var possible_variable_modifications = new Dictionary<int, UniqueModificationsCollection>(possibleVariableModifications);
 
-                int[] base_variable_modification_pattern = new int[Length + 4];
+                int[] base_variable_modification_pattern = new int[this.Length + 4];
                 var totalAvailableMods = possible_variable_modifications.Select(b => b.Value == null ? 0 : b.Value.Count).Sum();
                 for (int variable_modifications = 0; variable_modifications <= Math.Min(totalAvailableMods, maxModsForPeptide); variable_modifications++)
                 {
