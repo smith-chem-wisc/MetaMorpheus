@@ -144,23 +144,23 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, searchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             proseCreatedWhileRunning.Append("The following search settings were used: ");
-            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
-            if (MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("protease = " + commonParameters.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + commonParameters.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + commonParameters.MinPeptideLength + "; ");
+            if (commonParameters.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + commonParameters.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + commonParameters.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ",fixedModifications.Select(m=>m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m=>m.id)) + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", MassDiffAcceptors.Select(m=>m.ToProseString())) +"}; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + commonParameters.MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", searchParameters.MassDiffAcceptors.Select(m=>m.ToProseString())) +"}; ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + commonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p=>p.IsContaminant).Count() + " contaminant sequences. ");
 
             List<ProductType> ionTypes = new List<ProductType>();
