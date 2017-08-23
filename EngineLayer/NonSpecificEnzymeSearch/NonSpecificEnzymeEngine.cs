@@ -25,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions, bool reportAllAmbiguity, int maxNumAmbiguities, bool excelCompatible) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions, reportAllAmbiguity, maxNumAmbiguities, excelCompatible)
+        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions, bool reportAllAmbiguity, bool excelCompatible) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions, reportAllAmbiguity, excelCompatible)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -101,7 +101,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[openSearchIndex].Count < maxNumAmbiguities)) 
+                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[openSearchIndex].Count == 0)) 
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
@@ -171,7 +171,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                             for (int k = startIndex; k < bestPeptides[j].Count; k++)
                             {
-                                if (reportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() < maxNumAmbiguities)
+                                if (reportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() == 0)
                                     globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }

@@ -167,8 +167,7 @@
                                             <RadioButton x:Name="allAmbiguity" Content="Report All Ambiguity (might be slow)" GroupName="AmbiguityType"  Margin="5" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="1">
-                                            <RadioButton x:Name="someAmbiguity" Content="Maximum Number of Ambiguities to Report" GroupName="AmbiguityType" Margin="5" />
-                                            <TextBox x:Name="maxNumAmbiguities" PreviewTextInput="PreviewIfInt" Width="45" IsEnabled="{Binding IsChecked, ElementName=someAmbiguity}" Margin="5"/>
+                                            <RadioButton x:Name="someAmbiguity" Content="Ignore Ambiguity" GroupName="AmbiguityType" Margin="5" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">

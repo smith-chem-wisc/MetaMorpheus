@@ -26,7 +26,6 @@ namespace EngineLayer.ModernSearch
         protected readonly int currentPartition;
         protected readonly int totalPartitions;
         protected readonly bool reportAllAmbiguity;
-        protected readonly int maxNumAmbiguities;
         protected readonly bool excelCompatible;
 
         #endregion Protected Fields
@@ -39,7 +38,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions, bool reportAllAmbiguity, int maxNumAmbiguities, bool excelCompatible) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions, bool reportAllAmbiguity, bool excelCompatible) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -54,7 +53,6 @@ namespace EngineLayer.ModernSearch
             this.currentPartition = currentPartition + 1;
             this.totalPartitions = totalPartitions;
             this.reportAllAmbiguity = reportAllAmbiguity;
-            this.maxNumAmbiguities = maxNumAmbiguities;
             this.excelCompatible = excelCompatible;
         }
 
@@ -105,7 +103,7 @@ namespace EngineLayer.ModernSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[j].Count < maxNumAmbiguities)) 
+                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[j].Count == 0)) 
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
@@ -155,7 +153,7 @@ namespace EngineLayer.ModernSearch
 
                             for (int k = startIndex; k < bestPeptides[j].Count; k++)
                             {
-                                if (reportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() < maxNumAmbiguities)
+                                if (reportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() == 0)
                                     globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
