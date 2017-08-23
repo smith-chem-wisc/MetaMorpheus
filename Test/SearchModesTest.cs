@@ -3,6 +3,7 @@ using MzLibUtil;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace Test
 {
@@ -102,6 +103,11 @@ namespace Test
             public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass)
             {
                 yield return new AllowedIntervalWithNotch(new DoubleRange(1 / peptideMonoisotopicMass, double.MaxValue), 1);
+            }
+
+            public override string ToProseString()
+            {
+                throw new NotImplementedException();
             }
 
             #endregion Public Methods
