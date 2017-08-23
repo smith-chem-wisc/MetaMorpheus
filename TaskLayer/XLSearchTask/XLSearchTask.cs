@@ -23,71 +23,62 @@ namespace TaskLayer
 
         private const double binTolInDaltons = 0.003;
 
-        private FlashLFQEngine FlashLfqEngine;
-
         #endregion Private Fields
 
         #region Public Constructors
 
         public XLSearchTask() : base(MyTask.XLSearch)
         {
-            //
-            CommonParameters = new CommonParameters();
-            XlSearchParameters = new XlSearchParameters();
-            // Set default values here:
-            DoParsimony = false;
-            NoOneHitWonders = false;
-            ModPeptidesAreUnique = false;
-            DoQuantification = false;
-            QuantifyPpmTol = 5;
-            SearchDecoy = true;
-            DoHistogramAnalysis = false;
-            MaxMissedCleavages = 2;
-            MinPeptideLength = 6;
-            MaxPeptideLength = null;
-            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            MaxModificationIsoforms = 4096;
-            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new PpmTolerance(10);
-            BIons = true;
-            YIons = true;
-            ZdotIons = false;
-            CIons = false;
-            FlashLfqEngine = new FlashLFQEngine();
+            CommonParameters = new CommonParameters
+            {
+                MaxMissedCleavages = 2,
+                MinPeptideLength = 5,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
 
-            LocalizeAll = true;
-            DoLocalizationAnalysis = true;
+                TotalPartitions = 1,
+                LocalizeAll = true,
 
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
 
-            WritePrunedDatabase = false;
-            KeepAllUniprotMods = true;
+                Max_mods_for_peptide = 3,
 
-            ConserveMemory = false;
-            MaxDegreeOfParallelism = null;
-            CrosslinkerType = CrosslinkerType.DSS;
-            CrosslinkSearchTopNum = 50;
-            CrosslinkSearchWithAllBeta = false;
-            UdXLkerName = null;
-            UdXLkerCleavable = false;
-            UdXLkerShortMass = null;
-            UdXLkerLongMass = null;
-            UdXLkerTotalMass = null;
-            UdXLkerResidue = 'K';
-            XLprecusorMsTl = new PpmTolerance(10);
-            XLBetaPrecusorMsTl = new PpmTolerance(10);
+                ConserveMemory = true,
+                MaxDegreeOfParallelism = 1,
+                ScoreCutoff = 5,
 
-            // Deconvolution stuff
-            DoPrecursorDeconvolution = false;
-            UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+                DeconvolutionMassTolerance = new PpmTolerance(5),
 
-            DisposeOfFileWhenDone = true;
-            TotalPartitions = 1;
+            };
+            XlSearchParameters = new XlSearchParameters
+            {
+                SearchDecoy = true,
+                CrosslinkerType = CrosslinkerType.DSS,
+                CrosslinkSearchTopNum = 50,
+                CrosslinkSearchWithAllBeta = false,
+                UdXLkerName = null,
+                UdXLkerCleavable = false,
+                UdXLkerShortMass = null,
+                UdXLkerLongMass = null,
+                UdXLkerTotalMass = null,
+                UdXLkerResidue = 'K',
+                XlPrecusorMsTl = new PpmTolerance(10),
+                XlBetaPrecusorMsTl = new PpmTolerance(10),
+            };
 
         }
 
@@ -95,59 +86,7 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public CommonParameters CommonParameters;
-
-        public XlSearchParameters XlSearchParameters;
-
-        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
-        public int MaxMissedCleavages { get; set; }
-
-        public int? MinPeptideLength { get; set; }
-
-        public int? MaxPeptideLength { get; set; }
-
-        public int MaxModificationIsoforms { get; set; }
-
-        public Protease Protease { get; set; }
-
-        public bool BIons { get; set; }
-
-        public bool YIons { get; set; }
-
-        public bool ZdotIons { get; set; }
-
-        public bool CIons { get; set; }
-        public Tolerance ProductMassTolerance { get; set; }
-        public bool DoParsimony { get; set; }
-        public bool ModPeptidesAreUnique { get; set; }
-        public bool NoOneHitWonders { get; set; }
-        public bool MatchBetweenRuns { get; set; }
-        public double QuantifyPpmTol { get; set; }
-        public bool DoHistogramAnalysis { get; set; }
-        public bool SearchDecoy { get; set; }
-
-        public bool ConserveMemory { get; set; }
-
-        public bool WritePrunedDatabase { get; set; }
-        public bool KeepAllUniprotMods { get; set; }
-
-        public bool DoLocalizationAnalysis { get; set; }
-        public bool DoQuantification { get; set; }
-
-        public CrosslinkerType CrosslinkerType { get; set; }
-        public int CrosslinkSearchTopNum { get; set; }
-        public bool CrosslinkSearchWithAllBeta { get; set; }
-        public string UdXLkerName { get; set; }
-        public bool UdXLkerCleavable { get; set; }
-        public double? UdXLkerTotalMass { get; set; }
-        public double? UdXLkerShortMass { get; set; }
-        public double? UdXLkerLongMass { get; set; }
-        public char UdXLkerResidue { get; set; }
-        public Tolerance XLprecusorMsTl { get; set; }
-        public Tolerance XLBetaPrecusorMsTl { get; set; }
-        public bool DisposeOfFileWhenDone { get; set; }
-        public int TotalPartitions { get; set; }
+        public XlSearchParameters XlSearchParameters { get; set; }
 
         #endregion Public Properties
 
@@ -158,26 +97,26 @@ namespace TaskLayer
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine("The initiator methionine behavior is set to "
-                + InitiatorMethionineBehavior
+                + CommonParameters.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + MaxModificationIsoforms);
-            sb.AppendLine("protease: " + Protease);
-            sb.AppendLine("bIons: " + BIons);
-            sb.AppendLine("yIons: " + YIons);
-            sb.AppendLine("cIons: " + CIons);
-            sb.AppendLine("zdotIons: " + ZdotIons);
+                + CommonParameters.MaxMissedCleavages);
+            sb.AppendLine("MinPeptideLength: " + CommonParameters.MinPeptideLength);
+            sb.AppendLine("MaxPeptideLength: " + CommonParameters.MaxPeptideLength);
+            sb.AppendLine("maxModificationIsoforms: " + CommonParameters.MaxModificationIsoforms);
+            sb.AppendLine("protease: " + CommonParameters.Protease);
+            sb.AppendLine("bIons: " + CommonParameters.BIons);
+            sb.AppendLine("yIons: " + CommonParameters.YIons);
+            sb.AppendLine("cIons: " + CommonParameters.CIons);
+            sb.AppendLine("zdotIons: " + CommonParameters.ZdotIons);
 
-            sb.AppendLine("Fixed mod lists: " + string.Join(",", ListOfModsFixed));
-            sb.AppendLine("Variable mod lists: " + string.Join(",", ListOfModsVariable));
-            sb.AppendLine("Localized mod lists: " + string.Join(",", ListOfModsLocalize));
-            sb.AppendLine("searchDecoy: " + SearchDecoy);
-            sb.AppendLine("productMassTolerance: " + ProductMassTolerance);
+            sb.AppendLine("Fixed mod lists: " + string.Join(",", CommonParameters.ListOfModsFixed));
+            sb.AppendLine("Variable mod lists: " + string.Join(",", CommonParameters.ListOfModsVariable));
+            sb.AppendLine("Localized mod lists: " + string.Join(",", CommonParameters.ListOfModsLocalize));
+            sb.AppendLine("searchDecoy: " + XlSearchParameters.SearchDecoy);
+            sb.AppendLine("productMassTolerance: " + CommonParameters.ProductMassTolerance);
 
-            sb.AppendLine("Crosslink Precusor mass tolerance: " + XLprecusorMsTl);
-            sb.AppendLine("Beta Precusor mass tolerance: " + XLBetaPrecusorMsTl);
+            sb.AppendLine("Crosslink Precusor mass tolerance: " + XlSearchParameters.XlPrecusorMsTl);
+            sb.AppendLine("Beta Precusor mass tolerance: " + XlSearchParameters.XlBetaPrecusorMsTl);
 
             return sb.ToString();
         }
@@ -197,13 +136,13 @@ namespace TaskLayer
 
             #region Load modifications
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (LocalizeAll)
+            if (CommonParameters.LocalizeAll)
                 localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
             foreach (var mod in fixedModifications)
                 modsDictionary.Add(mod, 0);
@@ -223,35 +162,35 @@ namespace TaskLayer
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (BIons)
+            if (CommonParameters.BIons)
                 ionTypes.Add(ProductType.B);
-            if (YIons)
+            if (CommonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
-            if (ZdotIons)
+            if (CommonParameters.ZdotIons)
                 ionTypes.Add(ProductType.Zdot);
-            if (CIons)
+            if (CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
             var crosslinker = new CrosslinkerTypeClass();
-            crosslinker.SelectCrosslinker(CrosslinkerType);
-            if (CrosslinkerType == CrosslinkerType.UserDefined)
+            crosslinker.SelectCrosslinker(XlSearchParameters.CrosslinkerType);
+            if (XlSearchParameters.CrosslinkerType == CrosslinkerType.UserDefined)
             {
-                crosslinker.CrosslinkerName = UdXLkerName;
-                crosslinker.Cleavable = UdXLkerCleavable;
-                crosslinker.TotalMass = (double)UdXLkerTotalMass;
-                crosslinker.CleaveMassShort = (double)UdXLkerShortMass;
-                crosslinker.CleaveMassLong = (double)UdXLkerLongMass;
-                crosslinker.CrosslinkerModSite = UdXLkerResidue;
+                crosslinker.CrosslinkerName = XlSearchParameters.UdXLkerName;
+                crosslinker.Cleavable = XlSearchParameters.UdXLkerCleavable;
+                crosslinker.TotalMass = (double)XlSearchParameters.UdXLkerTotalMass;
+                crosslinker.CleaveMassShort = (double)XlSearchParameters.UdXLkerShortMass;
+                crosslinker.CleaveMassLong = (double)XlSearchParameters.UdXLkerLongMass;
+                crosslinker.CrosslinkerModSite = XlSearchParameters.UdXLkerResidue;
             }
 
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
-            MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
+            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
+            MyFileManager myFileManager = new MyFileManager(XlSearchParameters.DisposeOfFileWhenDone);
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -265,24 +204,24 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
             proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");
 
-            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
-            if (MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("protease = " + CommonParameters.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.MinPeptideLength + "; ");
+            if (CommonParameters.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
 
-            proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = UNKNOWN; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
@@ -295,12 +234,12 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-                for (int currentPartition = 0; currentPartition < TotalPartitions; currentPartition++)
+                for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<CompactPeptide> peptideIndex = null;
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / TotalPartitions, ((currentPartition + 1) * proteinList.Count() / TotalPartitions) - (currentPartition * proteinList.Count() / TotalPartitions));
+                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / CommonParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / CommonParameters.TotalPartitions) - (currentPartition * proteinList.Count() / CommonParameters.TotalPartitions));
 
                     float[] keys = null;
                     List<int>[] fragmentIndex = null;
@@ -353,12 +292,12 @@ namespace TaskLayer
 
                     Status("Searching files...", taskId);
 
-                    if (CrosslinkSearchWithAllBeta)
-                        new CrosslinkSearchEngine2(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, variableModifications, fixedModifications, MaxModificationIsoforms, thisId).Run();
+                    if (XlSearchParameters.CrosslinkSearchWithAllBeta)
+                        new CrosslinkSearchEngine2(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, modsDictionary, ionTypes, proteinList, CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, variableModifications, fixedModifications, CommonParameters.MaxModificationIsoforms, thisId).Run();
                     else
-                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, crosslinker, CrosslinkSearchTopNum, CrosslinkSearchWithAllBeta, XLprecusorMsTl, XLBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run();
+                        new CrosslinkSearchEngine(newPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, CommonParameters.ProductMassTolerance, crosslinker, XlSearchParameters.CrosslinkSearchTopNum, XlSearchParameters.CrosslinkSearchWithAllBeta, XlSearchParameters.XlPrecusorMsTl, XlSearchParameters.XlBetaPrecusorMsTl, ionTypes, modsDictionary, thisId).Run();
 
-                    ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + TotalPartitions + "!", thisId));
+                    ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                 }
 
                 lock (psmLock)
@@ -374,7 +313,7 @@ namespace TaskLayer
 
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
-            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, Protease, null, ProductMassTolerance, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }, terminusType).Run();
+            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, CommonParameters.Protease, null, CommonParameters.ProductMassTolerance, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.MaxModificationIsoforms, ionTypes, CommonParameters.InitiatorMethionineBehavior, modsDictionary, null, OutputFolder, crosslinker, new List<string> { taskId }, terminusType).Run();
 
             var allPsmsXL = allPsms.Where(p=>p.CrossType == PsmCrossType.Cross).OrderByDescending(p => p.ScanNumber).ToList();
             //Write Inter Psms FDR

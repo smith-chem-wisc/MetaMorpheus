@@ -16,7 +16,7 @@ namespace EngineLayer
         public double? UdXLkerShortMass { get; set; }
         public double? UdXLkerLongMass { get; set; }
         public char UdXLkerResidue { get; set; }
-        public Tolerance XlprecusorMsTl { get; set; }
+        public Tolerance XlPrecusorMsTl { get; set; }
         public Tolerance XlBetaPrecusorMsTl { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
     }

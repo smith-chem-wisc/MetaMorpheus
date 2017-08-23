@@ -93,8 +93,6 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public CommonParameters CommonParameters { get; set; }
-
         public SearchParameters SearchParameters { get; set; }
 
         #endregion Public Properties

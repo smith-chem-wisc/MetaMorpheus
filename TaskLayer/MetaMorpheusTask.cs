@@ -97,18 +97,9 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public int? MaxDegreeOfParallelism { get; set; }
-        public bool LocalizeAll { get; set; }
-        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
-        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
-        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public MyTask TaskType { get; set; }
 
-        public bool DoPrecursorDeconvolution { get; set; }
-        public bool UseProvidedPrecursorInfo { get; set; }
-        public double DeconvolutionIntensityRatio { get; set; }
-        public int DeconvolutionMaxAssumedChargeState { get; set; }
-        public Tolerance DeconvolutionMassTolerance { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 

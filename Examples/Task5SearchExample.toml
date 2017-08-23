@@ -1,4 +1,23 @@
 TaskType = "Search"
+
+[SearchParameters]
+DisposeOfFileWhenDone = false
+AddCompIons = false
+DoParsimony = true
+ModPeptidesAreUnique = true
+NoOneHitWonders = false
+MatchBetweenRuns = false
+QuantifyPpmTol = 5.0
+DoHistogramAnalysis = false
+SearchTarget = true
+SearchDecoy = true
+MassDiffAcceptors = ["5ppmAroundZero ppmAroundZero 5"]
+WritePrunedDatabase = true
+KeepAllUniprotMods = true
+DoLocalizationAnalysis = true
+DoQuantification = true
+SearchType = "Classic"
+
 [CommonParameters]
 MaxDegreeOfParallelism = 1
 LocalizeAll = true
@@ -23,21 +42,4 @@ CIons = false
 ProductMassTolerance = "±0.0100 Absolute"
 ConserveMemory = false
 ScoreCutoff = 5.0
-
-[SearchParameters]
-DisposeOfFileWhenDone = false
-AddCompIons = false
-DoParsimony = true
-ModPeptidesAreUnique = true
-NoOneHitWonders = false
-MatchBetweenRuns = false
-QuantifyPpmTol = 5.0
-DoHistogramAnalysis = false
-SearchTarget = true
-SearchDecoy = true
-MassDiffAcceptors = ["5ppmAroundZero ppmAroundZero 5"]
-WritePrunedDatabase = true
-KeepAllUniprotMods = true
-DoLocalizationAnalysis = true
-DoQuantification = true
-SearchType = "Classic"
+Max_mods_for_peptide = 0
