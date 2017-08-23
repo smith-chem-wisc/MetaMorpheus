@@ -260,7 +260,7 @@ namespace TaskLayer
             Status("Searching files...", taskId);
 
             proseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
-            proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName +"; ");
+            proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
             proseCreatedWhileRunning.Append("crosslinker type = " + crosslinker.Cleavable + "; ");
             proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
             proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");

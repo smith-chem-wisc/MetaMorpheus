@@ -109,7 +109,8 @@ namespace EngineLayer.ClassicSearch
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                                 {
                                     double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
+                                    var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
+
 
                                     if (score > CommonParameters.ScoreCutoff)
                                     {
@@ -133,10 +134,7 @@ namespace EngineLayer.ClassicSearch
                                     globalPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    if (psms[searchModeIndex][i].Score - globalPsms[searchModeIndex][i].Score > 1e-9)
-                                        globalPsms[searchModeIndex][i] = psms[searchModeIndex][i];
-                                    else if (psms[searchModeIndex][i].Score - globalPsms[searchModeIndex][i].Score > -1e-9)
-                                        globalPsms[searchModeIndex][i].Add(psms[searchModeIndex][i]);
+                                    globalPsms[searchModeIndex][i].AddOrReplace(psms[searchModeIndex][i]);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

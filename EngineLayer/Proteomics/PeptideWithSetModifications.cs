@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using Proteomics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -127,7 +126,7 @@ namespace EngineLayer
                     // variable modification on peptide N-terminus
                     if (allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                     {
-                        if (pep_n_term_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                        if (pep_n_term_variable_mod is ModificationWithMassAndCf jj)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -139,7 +138,7 @@ namespace EngineLayer
                         // variable modification on this residue
                         if (allModsOneIsNterminus.TryGetValue(r + 2, out ModificationWithMass residue_variable_mod))
                         {
-                            if (residue_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                            if (residue_variable_mod is ModificationWithMassAndCf jj)
                                 sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                             else
                                 return null;
@@ -149,7 +148,7 @@ namespace EngineLayer
                     // variable modification on peptide C-terminus
                     if (allModsOneIsNterminus.TryGetValue(Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                     {
-                        if (pep_c_term_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                        if (pep_c_term_variable_mod is ModificationWithMassAndCf jj)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;

@@ -16,8 +16,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Private Fields
 
-        private const double tolInDaForPreferringHavingMods = 0.03;
-
         private readonly List<int>[] fragmentIndex;
 
         private readonly Tolerance fragmentTolerance;
@@ -400,7 +398,7 @@ namespace EngineLayer.CrosslinkSearch
 
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
-                                var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, fragmentTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
+                                var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, fragmentTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
                                 if (score > 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count!=0)
                                 {
                                     var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
