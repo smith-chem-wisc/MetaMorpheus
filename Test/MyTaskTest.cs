@@ -31,7 +31,7 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalTaskLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-            CalibrationTask task1 = new CalibrationTask()
+            CalibrationTask task1 = new CalibrationTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -43,7 +43,7 @@ namespace Test
                 },
                 WriteIntermediateFiles = true
             };
-            GptmdTask task2 = new GptmdTask()
+            GptmdTask task2 = new GptmdTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -52,7 +52,7 @@ namespace Test
                 },
             };
 
-            SearchTask task3 = new SearchTask()
+            SearchTask task3 = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -114,7 +114,7 @@ namespace Test
                 }
             };
 
-            SearchTask task4 = new SearchTask()
+            SearchTask task4 = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -555,7 +555,7 @@ namespace Test
             #region setup
 
             //Create Search Task
-            SearchTask task1 = new SearchTask()
+            SearchTask task1 = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -711,7 +711,7 @@ namespace Test
         {
             #region setup
 
-            SearchTask testUnique = new SearchTask()
+            SearchTask testUnique = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 {

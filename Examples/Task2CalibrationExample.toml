@@ -25,7 +25,7 @@ DeconvolutionIntensityRatio = 4.0
 DeconvolutionMaxAssumedChargeState = 10
 DeconvolutionMassTolerance = "±5.0000 PPM"
 
-[commonParameters]
+[CommonParameters]
 MaxDegreeOfParallelism = 1
 LocalizeAll = true
 ListOfModsFixed = "Common Fixed\tCarbamidomethyl of C"
