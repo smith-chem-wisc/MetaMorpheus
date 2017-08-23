@@ -190,6 +190,8 @@ namespace TaskLayer
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var currentFileSpecificSettings = fileSpecificCommonParams[spectraFileIndex];
+                //will set commonParams to file specific params (only if specific params exist)
+                CommonParameters = currentFileSpecificSettings;
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
