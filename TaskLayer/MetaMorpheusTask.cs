@@ -209,7 +209,6 @@ namespace TaskLayer
         {
             commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
 
-
         }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
@@ -247,7 +246,8 @@ namespace TaskLayer
                 {
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
-                    fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
+                    SetParamsEqual(fileSettingsList[index], tomlSettingsList);
+                    //fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
                 }
                 index++;
             }
