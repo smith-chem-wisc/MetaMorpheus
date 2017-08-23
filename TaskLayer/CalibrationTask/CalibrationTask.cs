@@ -234,13 +234,13 @@ namespace TaskLayer
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
 
-                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff);
+                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff, true, 1, true);
                     searchEngine.Run();
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
                     // Group and order psms
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId, "Individual Spectra Files", origDataFile }, terminusType);
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId, "Individual Spectra Files", origDataFile }, terminusType, true, 1);
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
@@ -291,14 +291,14 @@ namespace TaskLayer
                     var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2ScansTest.Length];
-                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff);
+                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff, true, 1, true);
                     searchEngineTest.Run();
 
                     // Group and order psms
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId, "Individual Spectra Files", origDataFile }, terminusType);
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId, "Individual Spectra Files", origDataFile }, terminusType, true, 1);
                     var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
@@ -343,12 +343,12 @@ namespace TaskLayer
                     var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[ms2ScansAfterCalib.Length];
-                    new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff).Run();
+                    new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff, true, 1, true).Run();
 
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId, "Individual Spectra Files", origDataFile }, terminusType);
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId, "Individual Spectra Files", origDataFile }, terminusType, true, 1);
                     var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 

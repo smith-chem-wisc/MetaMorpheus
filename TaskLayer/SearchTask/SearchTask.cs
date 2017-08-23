@@ -58,6 +58,10 @@ namespace TaskLayer
             LocalizeAll = true;
             DoLocalizationAnalysis = true;
 
+            ReportAllAmbiguity = true;
+            MaximumNumberOfAmbiguities = 1;
+            excelCompatible = true;
+
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
@@ -121,6 +125,10 @@ namespace TaskLayer
         public bool SearchDecoy { get; set; }
         public List<MassDiffAcceptor> MassDiffAcceptors { get; set; }
         public bool ConserveMemory { get; set; }
+
+        public bool ReportAllAmbiguity { get; set; }
+        public int MaximumNumberOfAmbiguities { get; set; }
+        public bool excelCompatible { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
@@ -272,9 +280,9 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions, ReportAllAmbiguity, MaximumNumberOfAmbiguities, excelCompatible).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions, ReportAllAmbiguity, MaximumNumberOfAmbiguities, excelCompatible).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + TotalPartitions + "!", thisId));
                     }
@@ -285,7 +293,7 @@ namespace TaskLayer
                         fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff, ReportAllAmbiguity, MaximumNumberOfAmbiguities, excelCompatible).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -309,13 +317,13 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType);
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType,ReportAllAmbiguity, MaximumNumberOfAmbiguities);
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType);
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType, ReportAllAmbiguity, MaximumNumberOfAmbiguities);
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }

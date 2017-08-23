@@ -25,7 +25,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions)
+        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, Protease protease, int? minPeptideLength, TerminusType terminusType, double cutoffScore, int currentPartition, int totalPartitions, bool reportAllAmbiguity, int maxNumAmbiguities, bool excelCompatible) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, fragmentTolerance, searchModes, nestedIds, addCompIons, lp, cutoffScore, currentPartition, totalPartitions, reportAllAmbiguity, maxNumAmbiguities, excelCompatible)
         {
             this.protease = protease;
             this.minPeptideLength = minPeptideLength;
@@ -101,7 +101,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[openSearchIndex].Count < maxNumAmbiguities)) 
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
@@ -109,7 +109,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         {
                                             CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
                                             cp.SwapMonoisotopicMassWithModifiedMass();
-                                            if (bestPeptides[openSearchIndex] == null)
+                                            if (bestPeptides[openSearchIndex] == null) //have to check, because current best score may have been found in a previous partition
                                             {
                                                 bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { cp };
                                                 bestScores[openSearchIndex] = consideredScore;
@@ -157,59 +157,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             foreach (CompactPeptideBase cpb in bestPeptides[openSearchIndex])
                                 (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                     }
-                    else //(assumes open search)
-                    {
-                        double currentBestScore = bestScores[openSearchIndex];
-                        var searchMode = searchModes[openSearchIndex];
-                        for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
-                        {
-                            var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
-                            {
-                                CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                                // Check if makes sense to add due to peptidescore!
-
-                                if (currentBestScore > 1)
-                                {
-                                    // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
-                                    {
-                                        // Score is same, need to see if accepts and if prefer the new one
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                        if (notch >= 0)
-                                        {
-                                            bestPeptides[openSearchIndex].Add(candidatePeptide);
-                                            bestNotches[openSearchIndex].Add(notch);
-                                        }
-                                    }
-                                    else if (currentBestScore < consideredScore)
-                                    {
-                                        // Score is better, only make sure it is acceptable
-                                        int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                        if (notch >= 0)
-                                        {
-                                            bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { candidatePeptide };
-                                            bestScores[openSearchIndex] = consideredScore;
-                                            bestNotches[openSearchIndex] = new List<int> { notch };
-                                            currentBestScore = consideredScore;
-                                        }
-                                    }
-                                }
-                                // Did not exist! Only make sure that it is acceptable
-                                else
-                                {
-                                    int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
-                                    if (notch >= 0)
-                                    {
-                                        bestPeptides[openSearchIndex] = new List<CompactPeptideBase> { candidatePeptide };
-                                        bestScores[openSearchIndex] = consideredScore;
-                                        bestNotches[openSearchIndex] = new List<int> { notch };
-                                        currentBestScore = consideredScore;
-                                    }
-                                }
-                            }
-                        }
-                    }
                     for (int j = 0; j < searchModesCount; j++)
                     {
                         if (bestPeptides[j] != null)
@@ -218,13 +165,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                             if (globalPsms[j][i] == null)
                             {
-                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
+                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan, excelCompatible);
                                 startIndex = 1;
                             }
 
                             for (int k = startIndex; k < bestPeptides[j].Count; k++)
                             {
-                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
+                                if (reportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() < maxNumAmbiguities)
+                                    globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
                     }

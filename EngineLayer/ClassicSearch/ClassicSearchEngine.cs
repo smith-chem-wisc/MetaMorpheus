@@ -43,12 +43,15 @@ namespace EngineLayer.ClassicSearch
 
         private readonly bool addCompIons;
         private readonly double scoreCutoff;
+        private readonly bool reportAllAmbiguity;
+        private readonly int maxNumAmbiguities;
+        private readonly bool excelCompatible;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, InitiatorMethionineBehavior initiatorMethionineBehavior, bool addCompIons, double scoreCutoff) : base(nestedIds)
+        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, Tolerance productMassTolerance, Protease protease, List<MassDiffAcceptor> searchModes, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds, bool conserveMemory, InitiatorMethionineBehavior initiatorMethionineBehavior, bool addCompIons, double scoreCutoff, bool reportAllAmbiguity, int maxNumAmbiguities, bool excelCompatible) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -68,6 +71,9 @@ namespace EngineLayer.ClassicSearch
             this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.addCompIons = addCompIons;
             this.scoreCutoff = scoreCutoff;
+            this.reportAllAmbiguity = reportAllAmbiguity;
+            this.maxNumAmbiguities = maxNumAmbiguities;
+            this.excelCompatible = excelCompatible;
         }
 
         #endregion Public Constructors
@@ -133,8 +139,8 @@ namespace EngineLayer.ClassicSearch
                                     if (score > scoreCutoff)
                                     {
                                         if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                        else
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, excelCompatible);
+                                        else if (reportAllAmbiguity || maxNumAmbiguities > psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].CompactPeptideSize())
                                             psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
                                     }
                                 }

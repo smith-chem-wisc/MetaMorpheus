@@ -183,6 +183,10 @@ namespace MetaMorpheusGUI
             maxDegreesOfParallelism.Text = task.MaxDegreeOfParallelism.ToString();
             disposeOfFilesWhenDone.IsChecked = task.DisposeOfFileWhenDone;
 
+            allAmbiguity.IsChecked = task.ReportAllAmbiguity;
+            maxNumAmbiguities.Text = task.MaximumNumberOfAmbiguities.ToString(CultureInfo.InvariantCulture);
+            excelCompatible.IsChecked = task.excelCompatible;
+
             DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.DeconvolutionMassTolerance.Value.ToString();
@@ -320,6 +324,11 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("The number of missed cleavages was left empty. For no missed cleavages, please enter zero.");
                 return;
             }
+            if (maxNumAmbiguities.Text.Length == 0 || maxNumAmbiguities.Text.Equals("0"))
+            {
+                MessageBox.Show("The maximum number of ambiguities was left empty. For no ambiguities, please enter one.");
+                return;
+            }
             if (!double.TryParse(DeconvolutionIntensityRatioTextBox.Text, out double dir) || dir <= 0)
             {
                 MessageBox.Show("The deconvolution intensity ratio contains unrecognized characters. \n You entered " + '"' + DeconvolutionIntensityRatioTextBox.Text + '"' + "\n Please enter a positive number.");
@@ -382,6 +391,10 @@ namespace MetaMorpheusGUI
             TheTask.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+
+            TheTask.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
+            TheTask.MaximumNumberOfAmbiguities = int.Parse(maxNumAmbiguities.Text, CultureInfo.InvariantCulture);
+            TheTask.excelCompatible = excelCompatible.IsChecked.Value;
 
             TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);

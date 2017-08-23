@@ -23,12 +23,14 @@ namespace EngineLayer
         protected readonly List<MassDiffAcceptor> massDiffAcceptors;
         protected readonly Protease protease;
         protected readonly TerminusType terminusType;
+        protected readonly bool reportAllAmbiguity;
+        protected readonly int maxNumAmbiguities;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType, bool reportAllAmbiguity, int maxNumAmbiguities) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.massDiffAcceptors = massDiffAcceptors;
@@ -42,6 +44,8 @@ namespace EngineLayer
             this.variableModifications = variableModifications;
             this.maxModificationIsoforms = maxModificationIsoforms;
             this.terminusType = terminusType;
+            this.reportAllAmbiguity = reportAllAmbiguity;
+            this.maxNumAmbiguities = maxNumAmbiguities;
         }
 
         #endregion Public Constructors
@@ -91,7 +95,8 @@ namespace EngineLayer
                     {
                         if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
-                                v.Add(huh);
+                                if (reportAllAmbiguity || v.Count < maxNumAmbiguities)
+                                    v.Add(huh);
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);

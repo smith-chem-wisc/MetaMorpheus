@@ -18,7 +18,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds, terminusType)
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType, bool reportAllAmbiguity, int maxNumAmbiguities) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds, terminusType, reportAllAmbiguity, maxNumAmbiguities)
         {
         }
 
@@ -149,7 +149,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
                                 {
-                                    if (!tempPWSMHashSet.Contains(PWSM))
+                                    if ((reportAllAmbiguity || tempPWSMHashSet.Count < maxNumAmbiguities) && !tempPWSMHashSet.Contains(PWSM))
                                     {
                                         tempPWSMHashSet.Add(PWSM);
                                     }
@@ -160,7 +160,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 tempPWSMHashSet = new HashSet<PeptideWithSetModifications>();
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
                                 {
-                                    if (!tempPWSMHashSet.Contains(PWSM))
+                                    if ((reportAllAmbiguity || tempPWSMHashSet.Count < maxNumAmbiguities) && !tempPWSMHashSet.Contains(PWSM))
                                     {
                                         tempPWSMHashSet.Add(PWSM);
                                     }

@@ -18,6 +18,7 @@ namespace EngineLayer
         private const double tolInDaForPreferringHavingMods = 0.03;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        private bool excelCompatible { get; set; }
 
         #endregion Private Fields
 
@@ -36,6 +37,23 @@ namespace EngineLayer
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
             AddOrReplace(peptide, score, notch);
+            this.excelCompatible = true;
+        }
+
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible)
+        {
+            this.ScanIndex = scanIndex;
+            this.FullFilePath = scan.FullFilePath;
+            this.ScanNumber = scan.OneBasedScanNumber;
+            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            this.ScanRetentionTime = scan.RetentionTime;
+            this.ScanExperimentalPeaks = scan.NumPeaks;
+            this.TotalIonCurrent = scan.TotalIonCurrent;
+            this.ScanPrecursorCharge = scan.PrecursorCharge;
+            this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
+            this.ScanPrecursorMass = scan.PrecursorMass;
+            AddOrReplace(peptide, score, notch);
+            this.excelCompatible = excelCompatible;
         }
 
         #endregion Public Constructors
@@ -332,6 +350,11 @@ namespace EngineLayer
             return compactPeptides.ContainsKey(key);
         }
 
+        public int CompactPeptideSize()
+        {
+            return compactPeptides.Count;
+        }
+
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -467,7 +490,7 @@ namespace EngineLayer
             if (notEqual)
             {
                 var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                if (possibleReturn.Length > 32000)
+                if (excelCompatible && possibleReturn.Length > 32000)
                     return new Tuple<string, Dictionary<string, int>>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
@@ -489,7 +512,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
-                if (possibleReturn.Length > 32000)
+                if (excelCompatible && possibleReturn.Length > 32000)
                     return new Tuple<string, double?>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, double?>(possibleReturn, null);
@@ -507,7 +530,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
-                if (possibleReturn.Length > 32000)
+                if (excelCompatible && possibleReturn.Length > 32000)
                     return new Tuple<string, int?>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, int?>(possibleReturn, null);
@@ -526,16 +549,16 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list);
-                if (possibleReturn.Length > 32000)
+                if (excelCompatible && possibleReturn.Length > 32000)
                     return new Tuple<string, string>(possibleReturn.Substring(0, 31990) + "(too many)", null);
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
         }
 
-        private static string TrimStringForExcel(string possibleReturn)
+        private string TrimStringForExcel(string possibleReturn)
         {
-            return possibleReturn.Length > 32000 ? possibleReturn.Substring(0, 31990) + "(too many)" : possibleReturn;
+            return (excelCompatible && possibleReturn.Length > 32000) ? possibleReturn.Substring(0, 31990) + "(too many)" : possibleReturn;
         }
 
         private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
