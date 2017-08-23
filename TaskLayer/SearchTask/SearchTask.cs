@@ -93,7 +93,7 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public CommonParameters CommonParameters { get; set; }
+        public CommonParameters commonParameters { get; set; }
 
         public SearchParameters SearchParameters { get; set; }
 
@@ -118,7 +118,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSpecificCommonParams)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
 
@@ -155,7 +155,7 @@ namespace TaskLayer
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + commonParameters.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ",fixedModifications.Select(m=>m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m=>m.id)) + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
@@ -189,10 +189,7 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                var currentFileSpecificSettings = fileSpecificCommonParams[spectraFileIndex];
-                SetAllFileSpecificParams(CommonParameters, currentFileSpecificSettings);
-                //will set commonParams to file specific params (only if specific params exist)
-                Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
+                Psm[][] fileSpecificPsms = new Psm[searchParameters.MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
@@ -612,13 +609,6 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
-        private void SetAllFileSpecificParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
-        {
-            if (currentFileSpecificSettings.Protease != null)
-            {
-                commonParams.Protease = currentFileSpecificSettings.Protease;
-            }
-        }
 
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {
