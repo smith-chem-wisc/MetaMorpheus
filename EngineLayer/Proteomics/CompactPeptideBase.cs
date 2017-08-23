@@ -101,38 +101,59 @@ namespace EngineLayer
             return massesToReturn;
         }
 
+        /// <summary>
+        /// Sometimes says not equal when in reality should be equal, due to rounding errors. Small but annoying bug. Careful when fixing! Make sure Indexing runs at a reasonable speed.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
             var cp = obj as CompactPeptideBase;
             if (cp == null)
                 return false;
-            if (CTerminalMasses == null && cp.CTerminalMasses == null) //still not sure if it's || or &&
+            if (CTerminalMasses == null && cp.CTerminalMasses == null)
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality)
-                    && ApproxSequenceEqual(NTerminalMasses, cp.NTerminalMasses, massTolForPeptideEquality)
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
             else if (NTerminalMasses == null && cp.NTerminalMasses == null)
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality)
-                    && ApproxSequenceEqual(CTerminalMasses, cp.CTerminalMasses, massTolForPeptideEquality)
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
                     );
             }
             else
             {
                 return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality)
-                    && ApproxSequenceEqual(CTerminalMasses, cp.CTerminalMasses, massTolForPeptideEquality)
-                    && ApproxSequenceEqual(NTerminalMasses, cp.NTerminalMasses, massTolForPeptideEquality)
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
                     );
             }
         }
 
         public override int GetHashCode()
         {
-            return (CTerminalMasses == null ? 0 : CTerminalMasses.Length) + (NTerminalMasses == null ? 0 : NTerminalMasses.Length);
+            unchecked
+            {
+                {
+                    var result = 0;
+                    if (CTerminalMasses == null)
+                    {
+                        foreach (double b in NTerminalMasses)
+                            result = (result * 31) ^ b.GetHashCode();
+                    }
+                    else
+                    {
+                        foreach (double b in CTerminalMasses)
+                            result = (result * 31) ^ b.GetHashCode();
+                    }
+                    return result;
+                }
+            }
         }
 
         #endregion Public Methods
@@ -174,17 +195,5 @@ namespace EngineLayer
         }
 
         #endregion Protected Methods
-
-        #region Private Methods
-
-        private static bool ApproxSequenceEqual(double[] a, double[] b, double tol)
-        {
-            for (int i = 0; i < a.Length; i++)
-                if (Math.Abs(a[i] - b[i]) >= tol)
-                    return false;
-            return true;
-        }
-
-        #endregion Private Methods
     }
 }
