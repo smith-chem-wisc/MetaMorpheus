@@ -121,7 +121,6 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
-
             List<Psm>[] allPsms = new List<Psm>[SearchParameters.MassDiffAcceptors.Count];
             for (int searchModeIndex = 0; searchModeIndex < SearchParameters.MassDiffAcceptors.Count; searchModeIndex++)
                 allPsms[searchModeIndex] = new List<Psm>();
@@ -156,12 +155,12 @@ namespace TaskLayer
                 proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
             }
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
-            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ",fixedModifications.Select(m=>m.id)) + "; ");
-            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m=>m.id)) + "; ");
+            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
+            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", SearchParameters.MassDiffAcceptors.Select(m=>m.ToProseString())) +"}; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", SearchParameters.MassDiffAcceptors.Select(m => m.ToProseString())) + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
-            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p=>p.IsContaminant).Count() + " contaminant sequences. ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             List<ProductType> ionTypes = new List<ProductType>();
             if (CommonParameters.BIons && SearchParameters.AddCompIons)
@@ -189,6 +188,9 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
+                var currentFileSpecificSettings = fileSettingsList[spectraFileIndex];
+                SetAllFileSpecificParams(CommonParameters, currentFileSpecificSettings);
+
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
@@ -260,7 +262,7 @@ namespace TaskLayer
                         if (SearchParameters.SearchType == SearchType.NonSpecific)
                             new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, terminusType, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + CommonParameters.TotalPartitions + "!", thisId));
                     }
@@ -271,7 +273,7 @@ namespace TaskLayer
                         fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes,SearchParameters.MassDiffAcceptors, SearchParameters.AddCompIons, CommonParameters, thisId).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, SearchParameters.MassDiffAcceptors, SearchParameters.AddCompIons, CommonParameters, thisId).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -609,6 +611,14 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        private void SetAllFileSpecificParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
+        {
+            if (currentFileSpecificSettings.Protease != null)
+            {
+                commonParams.Protease = currentFileSpecificSettings.Protease;
+            }
+        }
 
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {

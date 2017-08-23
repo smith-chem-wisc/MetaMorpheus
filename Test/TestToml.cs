@@ -46,9 +46,7 @@ namespace Test
         [Test]
         public static void TestTomlForSpecficFiles()
         {
-            SearchTask searchTask = new SearchTask();
             var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).ToString()).ToString();
-            Console.WriteLine();
             var file = Directory.GetFiles(dir.ToString(), Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
             var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
