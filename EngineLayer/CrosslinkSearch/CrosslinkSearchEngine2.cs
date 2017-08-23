@@ -18,8 +18,6 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly List<int>[] fragmentIndex;
 
-        private readonly Tolerance fragmentTolerance;
-
         private readonly float[] keys;
 
         private readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
@@ -27,8 +25,8 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<CompactPeptide> peptideIndex;
 
         private readonly List<ProductType> lp;
-        //Crosslink parameters
 
+        //Crosslink parameters
         private readonly CrosslinkerTypeClass crosslinker;
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
@@ -37,37 +35,26 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
         private readonly List<Protein> proteinList;
-        private readonly Protease protease;
-
-        private const int max_mods_for_peptide = 3;
-
-        private readonly int maximumMissedCleavages;
-        private readonly int? minPeptideLength;
-        private readonly int? maxPeptideLength;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
-        private readonly int maxModIsoforms;
-        private MassDiffAcceptor XLBetaSearchMode;
-        private MassDiffAcceptor XLPrecusorSearchMode;
+
+        private readonly CommonParameters CommonParameters;
 
         private readonly List<PsmCross> psmCross;
-
-
-        //AnalysisEngine parameters 
-        //private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
+        private MassDiffAcceptor XLBetaSearchMode;
+        private MassDiffAcceptor XLPrecusorSearchMode;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine2(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance,  CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, Protease protease, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, int maxModIsoforms, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine2(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex,  CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.psmCross = psmCross;   
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
-            this.fragmentTolerance = fragmentTolerance;
 
             this.crosslinker = crosslinker;
             this.CrosslinkSearchTopNum = CrosslinkSearchTopNum;
@@ -78,13 +65,9 @@ namespace EngineLayer.CrosslinkSearch
             this.modsDictionary = modsDictionary;
             this.lp = lp;
             this.proteinList = proteinList;
-            this.protease = protease;
-            this.maximumMissedCleavages = maximumMissedCleavages;
-            this.minPeptideLength = minPeptideLength;
-            this.maxPeptideLength = maxPeptideLength;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            this.maxModIsoforms = maxModIsoforms;
+            this.CommonParameters = CommonParameters;
         }
 
         #endregion Public Constructors
@@ -308,7 +291,7 @@ namespace EngineLayer.CrosslinkSearch
                     while (downIpos >= 0)
                     {
                         closestPeak = keys[downIpos];
-                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                        if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[downIpos])
                                 peptideScores[heh] += theAdd;
@@ -325,7 +308,7 @@ namespace EngineLayer.CrosslinkSearch
                     while (upIpos < keys.Length)
                     {
                         closestPeak = keys[upIpos];
-                        if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                        if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
                         {
                             foreach (var heh in fragmentIndex[upIpos])
                                 peptideScores[heh] += theAdd;
@@ -370,10 +353,10 @@ namespace EngineLayer.CrosslinkSearch
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
+                    var digestedList = protein.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
@@ -398,11 +381,11 @@ namespace EngineLayer.CrosslinkSearch
 
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
-                                var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, fragmentTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
+                                var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
                                 if (score > 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count!=0)
                                 {
                                     var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                     PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, fragmentTolerance);
+                                     PsmCross.XLCalculateTotalProductMassesMightHave(scanWithIndexAndNotchInfo.theScan, psm, crosslinker, lp, CommonParameters.ProductMassTolerance);
                                     double currentBestPsmLocalScore = 0;
                                     if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
                                     {
@@ -459,7 +442,7 @@ namespace EngineLayer.CrosslinkSearch
             {
                 if (outerPsms[i] != null && PsmCross.xlPosCal(selectedPsmParent[i].CompactPeptide, crosslinker).Count!=0)
                 {
-                    PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], crosslinker,lp, fragmentTolerance);
+                    PsmCross.XLCalculateTotalProductMassesMightHave(selectedScan[i], selectedPsmParent[i], crosslinker,lp, CommonParameters.ProductMassTolerance);
                     selectedPsmParent[i].XLTotalScore = selectedPsmParent[i].XLBestScore + outerPsms[i].XLBestScore;
                     selectedPsmParent[i].BetaPsmCross = outerPsms[i];
                     newPsmsTop.Add(selectedPsmParent[i]);
