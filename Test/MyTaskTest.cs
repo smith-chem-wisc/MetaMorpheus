@@ -31,9 +31,9 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalTaskLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-            CalibrationTask task1 = new CalibrationTask()
+            CalibrationTask task1 = new CalibrationTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
@@ -43,18 +43,18 @@ namespace Test
                 },
                 WriteIntermediateFiles = true
             };
-            GptmdTask task2 = new GptmdTask()
+            GptmdTask task2 = new GptmdTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
 
-            SearchTask task3 = new SearchTask()
+            SearchTask task3 = new SearchTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ConserveMemory = false,
                     MaxMissedCleavages = 2,
@@ -93,7 +93,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters
+                SearchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -114,9 +114,9 @@ namespace Test
                 }
             };
 
-            SearchTask task4 = new SearchTask()
+            SearchTask task4 = new SearchTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ConserveMemory = false,
                     MaxMissedCleavages = 2,
@@ -155,7 +155,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters
+                SearchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -183,14 +183,14 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             Console.WriteLine("Size of variable Modificaitaons: " + variableModifications.Capacity);
             Console.WriteLine("Size of fixed Modificaitaons: " + fixedModifications.Capacity);
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
@@ -212,7 +212,7 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
             var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
@@ -244,9 +244,9 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalTaskLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-            CalibrationTask task1 = new CalibrationTask()
+            CalibrationTask task1 = new CalibrationTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
@@ -255,18 +255,18 @@ namespace Test
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
-            GptmdTask task2 = new GptmdTask()
+            GptmdTask task2 = new GptmdTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
 
-            SearchTask task3 = new SearchTask()
+            SearchTask task3 = new SearchTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ConserveMemory = false,
                     MaxMissedCleavages = 2,
@@ -305,7 +305,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters
+                SearchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -325,9 +325,9 @@ namespace Test
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
-            SearchTask task4 = new SearchTask()
+            SearchTask task4 = new SearchTask
             {
-                commonParameters = new CommonParameters
+                CommonParameters = new CommonParameters
                 {
                     ConserveMemory = false,
                     MaxMissedCleavages = 2,
@@ -366,7 +366,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters
+                SearchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -400,7 +400,7 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
@@ -459,14 +459,14 @@ namespace Test
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 GlobalTaskLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
-                task1 = new GptmdTask()
+                task1 = new GptmdTask
                 {
                     ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
                     ListOfModsVariable = new List<Tuple<string, string>>(),
                     ListOfModsFixed = new List<Tuple<string, string>>(),
                     PrecursorMassTolerance = new AbsoluteTolerance(1),
                     ScoreCutoff = 1,
-                    commonParameters = new CommonParameters
+                    CommonParameters = new CommonParameters
                     {
                         ConserveMemory = false,
                         MaxMissedCleavages = 2,
@@ -555,9 +555,9 @@ namespace Test
             #region setup
 
             //Create Search Task
-            SearchTask task1 = new SearchTask()
+            SearchTask task1 = new SearchTask
             {
-                commonParameters = new CommonParameters()
+                CommonParameters = new CommonParameters
                 {
                     MaxMissedCleavages = 2,
                     MinPeptideLength = 5,
@@ -592,7 +592,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters()
+                SearchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -628,9 +628,8 @@ namespace Test
 
             #region Protein and Mod Creation
 
-            //create modification lists
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            //create modification lists  
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var dictHere = new Dictionary<int, List<Modification>>();
@@ -667,7 +666,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task1.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
@@ -712,9 +711,9 @@ namespace Test
         {
             #region setup
 
-            SearchTask testUnique = new SearchTask()
+            SearchTask testUnique = new SearchTask
             {
-                commonParameters = new CommonParameters()
+                CommonParameters = new CommonParameters
                 {
                     MaxMissedCleavages = 2,
                     MinPeptideLength = 5,
@@ -749,7 +748,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters()
+                SearchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -786,8 +785,8 @@ namespace Test
             #region mod setup and protein creation
 
             //create modification lists
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+          
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();
@@ -821,7 +820,7 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(testUnique.commonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(testUnique.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];

@@ -20,7 +20,7 @@ namespace Test
         [Test]
         public static void TestCoIsolation()
         {
-            CommonParameters commonParameters = new CommonParameters
+            CommonParameters CommonParameters = new CommonParameters
             {
                 Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
                 MinPeptideLength = null,
@@ -78,7 +78,7 @@ namespace Test
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
 
 
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, commonParameters, new List<string>()).Run();
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -89,7 +89,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0][0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0][0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, commonParameters,new List<string>()).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters,new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[0])
             {

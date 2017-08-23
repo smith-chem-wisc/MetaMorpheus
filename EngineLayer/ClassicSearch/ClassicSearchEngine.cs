@@ -30,14 +30,14 @@ namespace EngineLayer.ClassicSearch
 
         private readonly bool addCompIons;
 
-        private readonly CommonParameters commonParameters;
+        private readonly CommonParameters CommonParameters;
 
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, List<MassDiffAcceptor> searchModes, bool addCompIons, CommonParameters commonParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, List<MassDiffAcceptor> searchModes, bool addCompIons, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -48,7 +48,7 @@ namespace EngineLayer.ClassicSearch
             this.searchModes = searchModes;
             this.lp = lp;
             this.addCompIons = addCompIons;
-            this.commonParameters = commonParameters;
+            this.CommonParameters = CommonParameters;
         }
 
         #endregion Public Constructors
@@ -78,14 +78,14 @@ namespace EngineLayer.ClassicSearch
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, fixedModifications).ToList();
+                    var digestedList = protein.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, commonParameters.MaxModificationIsoforms, commonParameters.Max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                            if (!commonParameters.ConserveMemory)
+                            if (!CommonParameters.ConserveMemory)
                             {
                                 var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
                                 if (peptideWasObserved)
@@ -109,9 +109,9 @@ namespace EngineLayer.ClassicSearch
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                                 {
                                     double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, commonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
+                                    var score = Psm.MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
 
-                                    if (score > commonParameters.ScoreCutoff)
+                                    if (score > CommonParameters.ScoreCutoff)
                                     {
                                         if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
                                             psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);

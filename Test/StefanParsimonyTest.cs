@@ -168,7 +168,7 @@ namespace Test
 
         private static Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
-            CommonParameters commonParameters = new CommonParameters()
+            CommonParameters CommonParameters = new CommonParameters
             {
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
@@ -190,7 +190,6 @@ namespace Test
                 ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
 
                 Max_mods_for_peptide = 3,
-
                 ConserveMemory = true,
                 MaxDegreeOfParallelism = 1,
                 ScoreCutoff = 1,
@@ -234,19 +233,19 @@ namespace Test
                 protein3 = new Protein("MA", "protein3");
             }
 
-            var prot1List = protein1.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
+            var prot1List = protein1.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications1 = prot1List.First();
             int maxModsForPeptide = 1;
             int maximumVariableModificationIsoforms = 2;
             var pep1list = pepWithPossibleModifications1.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepWithSetModifications1 = pep1list.First();
 
-            var prot2List = protein2.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
+            var prot2List = protein2.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications2 = prot2List.First();
             var pep2list = pepWithPossibleModifications2.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepWithSetModifications2 = pep2list.First();
 
-            var prot3List = protein3.Digest(commonParameters.Protease, commonParameters.MaxMissedCleavages, commonParameters.MinPeptideLength, commonParameters.MaxPeptideLength, commonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
+            var prot3List = protein3.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications3 = prot3List.First();
             var pep3list = pepWithPossibleModifications3.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide).ToList();
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
@@ -282,7 +281,7 @@ namespace Test
             };
 
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, TerminusType.None, commonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, TerminusType.None, CommonParameters, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
             var compactPeptideToProteinPeptideMatching = haha.CompactPeptideToProteinPeptideMatching;

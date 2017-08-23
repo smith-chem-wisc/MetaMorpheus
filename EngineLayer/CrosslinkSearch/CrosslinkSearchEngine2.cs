@@ -31,7 +31,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly List<ProductType> lp;
         //Crosslink parameters
 
-        private CrosslinkerTypeClass crosslinker;
+        private readonly CrosslinkerTypeClass crosslinker;
         private readonly int CrosslinkSearchTopNum;
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLprecusorMsTl;
@@ -285,9 +285,6 @@ namespace EngineLayer.CrosslinkSearch
             var AllCrossPsmsRe = AllCrossPsmsGroupOrder.Select(p => p.First()).ToList();
 
             psmCross.AddRange(AllCrossPsmsRe);
-            //var allAlphaPsmsRe = (from c in allAlphaPsms
-            //                    group c by c.ScanNumber into grp
-            //                    select grp.OrderByDescending(c => c.XLTotalScore).FirstOrDefault()).ToList();
             return new CrosslinkSearchResults(AllCrossPsmsRe, this);
         }
 

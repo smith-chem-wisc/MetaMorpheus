@@ -23,7 +23,7 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            commonParameters = new CommonParameters
+            CommonParameters = new CommonParameters
             {
                 Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
@@ -68,7 +68,7 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public CommonParameters commonParameters { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         public static List<string> AllModLists { get; private set; }
 
@@ -261,13 +261,13 @@ namespace TaskLayer
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
 
-                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false, commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });     
+                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });     
                     searchEngine.Run();
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
                     // Group and order psms
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
@@ -319,7 +319,7 @@ namespace TaskLayer
                     var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2ScansTest.Length];
-                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false,commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false,CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     searchEngineTest.Run();
 
@@ -327,7 +327,7 @@ namespace TaskLayer
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
@@ -373,12 +373,12 @@ namespace TaskLayer
                     var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[ms2ScansAfterCalib.Length];
-                    new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, lp, searchModes, false, commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                    new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
 
-                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 

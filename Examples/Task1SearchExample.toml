@@ -10,7 +10,7 @@ DeconvolutionIntensityRatio = 4.0
 DeconvolutionMaxAssumedChargeState = 10
 DeconvolutionMassTolerance = "±5.0000 PPM"
 
-[commonParameters]
+[CommonParameters]
 MaxDegreeOfParallelism = 1
 LocalizeAll = true
 ListOfModsFixed = "Common Fixed\tCarbamidomethyl of C"
@@ -36,7 +36,7 @@ ConserveMemory = false
 ScoreCutoff = 5.0
 Max_mods_for_peptide = 0
 
-[searchParameters]
+[SearchParameters]
 DisposeOfFileWhenDone = false
 AddCompIons = false
 DoParsimony = true
