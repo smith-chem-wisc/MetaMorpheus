@@ -168,7 +168,7 @@ namespace Test
 
         private static Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
-            CommonParameters commonParameters = new CommonParameters()
+            CommonParameters commonParameters = new CommonParameters
             {
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
@@ -190,7 +190,6 @@ namespace Test
                 ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
 
                 Max_mods_for_peptide = 3,
-
                 ConserveMemory = true,
                 MaxDegreeOfParallelism = 1,
                 ScoreCutoff = 1,

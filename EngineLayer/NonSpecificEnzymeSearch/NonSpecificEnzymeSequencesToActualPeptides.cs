@@ -13,7 +13,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private List<MassDiffAcceptor> massDiffAcceptors;
+        private readonly List<MassDiffAcceptor> massDiffAcceptors;
 
         #endregion Private Fields
 

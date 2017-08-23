@@ -244,7 +244,7 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalTaskLevelSettings.AddMods(PtmListLoader.ReadModsFromFile(modFile));
 
-            CalibrationTask task1 = new CalibrationTask()
+            CalibrationTask task1 = new CalibrationTask
             {
                 commonParameters = new CommonParameters
                 {
@@ -255,7 +255,7 @@ namespace Test
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
-            GptmdTask task2 = new GptmdTask()
+            GptmdTask task2 = new GptmdTask
             {
                 commonParameters = new CommonParameters
                 {
@@ -264,7 +264,7 @@ namespace Test
                 },
             };
 
-            SearchTask task3 = new SearchTask()
+            SearchTask task3 = new SearchTask
             {
                 commonParameters = new CommonParameters
                 {
@@ -325,7 +325,7 @@ namespace Test
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
-            SearchTask task4 = new SearchTask()
+            SearchTask task4 = new SearchTask
             {
                 commonParameters = new CommonParameters
                 {
@@ -459,7 +459,7 @@ namespace Test
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
                 GlobalTaskLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
-                task1 = new GptmdTask()
+                task1 = new GptmdTask
                 {
                     ListOfModsGptmd = new List<Tuple<string, string>> { new Tuple<string, string>("okType", "ok") },
                     ListOfModsVariable = new List<Tuple<string, string>>(),
@@ -557,7 +557,7 @@ namespace Test
             //Create Search Task
             SearchTask task1 = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     MaxMissedCleavages = 2,
                     MinPeptideLength = 5,
@@ -592,7 +592,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -628,8 +628,7 @@ namespace Test
 
             #region Protein and Mod Creation
 
-            //create modification lists
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            //create modification lists  
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
@@ -714,7 +713,7 @@ namespace Test
 
             SearchTask testUnique = new SearchTask()
             {
-                commonParameters = new CommonParameters()
+                commonParameters = new CommonParameters
                 {
                     MaxMissedCleavages = 2,
                     MinPeptideLength = 5,
@@ -749,7 +748,7 @@ namespace Test
                     DeconvolutionMassTolerance = new PpmTolerance(5),
 
                 },
-                searchParameters = new SearchParameters()
+                searchParameters = new SearchParameters
                 {
                     DisposeOfFileWhenDone = true,
                     AddCompIons = false,
@@ -786,7 +785,7 @@ namespace Test
             #region mod setup and protein creation
 
             //create modification lists
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+          
             List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object

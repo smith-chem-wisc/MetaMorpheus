@@ -4,7 +4,7 @@ using System;
 
 namespace EngineLayer
 {
-    public class GPTMDParameters
+    public class GptmdParameters
     {
         public Tolerance PrecursorMassTolerance { get; set; }
         public List<Tuple<string, string>> ListOfModsGptmd { get; set; }

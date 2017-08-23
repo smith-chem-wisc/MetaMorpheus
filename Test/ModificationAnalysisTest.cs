@@ -161,7 +161,6 @@ namespace Test
 
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
-            //Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
 
             CommonParameters commonParameters = new CommonParameters
             {
