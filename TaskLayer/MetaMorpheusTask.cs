@@ -59,6 +59,7 @@ namespace TaskLayer
 
         #region Protected Fields
 
+        protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
         protected MyTaskResults myTaskResults;
 
         #endregion Protected Fields
@@ -108,7 +109,6 @@ namespace TaskLayer
         public double DeconvolutionIntensityRatio { get; set; }
         public int DeconvolutionMaxAssumedChargeState { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
-        protected readonly StringBuilder proseCreatedWhileRunning = new StringBuilder();
 
         #endregion Public Properties
 
@@ -305,19 +305,15 @@ namespace TaskLayer
                     file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
                     file.WriteLine("Databases:");
                     file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
-
-
                 }
                 SucessfullyFinishedWritingFile(proseFilePath, new List<string> { taskId });
             }
 
             #endregion Write prose
 
-
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return myTaskResults;
         }
-
 
         #endregion Public Methods
 
@@ -557,7 +553,7 @@ namespace TaskLayer
                             location = mod.Key - 1,
                             locationSpecified = true,
                             monoisotopicMassDelta = mod.Value.monoisotopicMass,
-                            residues = new string[1] { mod.Value.motif.Motif.ToString() },
+                            residues = new string[1] { mod.Value.motif.ToString() },
                             monoisotopicMassDeltaSpecified = true,
                             cvParam = new mzIdentML110.Generated.CVParamType[1]
                             {
@@ -782,7 +778,7 @@ namespace TaskLayer
                 {
                     fixedMod = true,
                     massDelta = (float)mod.monoisotopicMass,
-                    residues = mod.motif.Motif,
+                    residues = mod.motif.ToString(),
                 };
                 mod_index++;
             }
@@ -792,7 +788,7 @@ namespace TaskLayer
                 {
                     fixedMod = false,
                     massDelta = (float)mod.monoisotopicMass,
-                    residues = mod.motif.Motif,
+                    residues = mod.motif.ToString(),
                 };
                 mod_index++;
             }
