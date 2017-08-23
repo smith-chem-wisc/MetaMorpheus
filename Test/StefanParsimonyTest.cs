@@ -172,33 +172,8 @@ namespace Test
             {
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-
-                BIons = true,
-                YIons = true,
-                ZdotIons = false,
-                CIons = false,
-
-                TotalPartitions = 1,
-                LocalizeAll = true,
-
-                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-
-                Max_mods_for_peptide = 3,
-                ConserveMemory = true,
-                MaxDegreeOfParallelism = 1,
-                ScoreCutoff = 1,
-
-                // Deconvolution stuff
-                DoPrecursorDeconvolution = true,
-                UseProvidedPrecursorInfo = true,
-                DeconvolutionIntensityRatio = 4,
-                DeconvolutionMaxAssumedChargeState = 10,
+                ScoreCutoff = 1
             };
 
             // Alanine = Glycine + CH2

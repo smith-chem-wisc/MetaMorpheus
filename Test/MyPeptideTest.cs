@@ -64,10 +64,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
@@ -103,10 +101,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
@@ -141,10 +137,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
@@ -178,10 +172,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
