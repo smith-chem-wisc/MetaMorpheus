@@ -1,3 +1,4 @@
+TaskType = "Search"
 [CommonParameters]
 MaxDegreeOfParallelism = 1
 LocalizeAll = true
