@@ -247,8 +247,6 @@ namespace TaskLayer
                 crosslinker.CleaveMassLong = (double)UdXLkerLongMass;
                 crosslinker.CrosslinkerModSite = UdXLkerResidue;
             }
-
-
             ParallelOptions parallelOptions = new ParallelOptions();
             if (MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
@@ -259,7 +257,6 @@ namespace TaskLayer
             object psmLock = new object();
 
             Status("Searching files...", taskId);
-
 
             proseCreatedWhileRunning.Append("The following crosslink discovery were used: ");
             proseCreatedWhileRunning.Append("crosslinker name = " + crosslinker.CrosslinkerName + "; ");
