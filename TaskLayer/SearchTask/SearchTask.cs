@@ -33,54 +33,60 @@ namespace TaskLayer
 
         public SearchTask() : base(MyTask.Search)
         {
-            // Set default values here:
-            DoParsimony = false;
-            NoOneHitWonders = false;
-            ModPeptidesAreUnique = true;
-            DoQuantification = false;
-            QuantifyPpmTol = 5;
-            SearchTarget = true;
-            SearchDecoy = true;
-            DoHistogramAnalysis = false;
-            MaxMissedCleavages = 2;
-            MinPeptideLength = 5;
-            MaxPeptideLength = null;
-            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            MaxModificationIsoforms = 4096;
-            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
-            BIons = true;
-            YIons = true;
-            ZdotIons = false;
-            CIons = false;
+            commonParameters = new CommonParameters()
+            {
+                MaxMissedCleavages = 2,
+                MinPeptideLength = 5,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+
+                Max_mods_for_peptide = 3,
+
+                ConserveMemory = true,
+                MaxDegreeOfParallelism = 1,
+                ScoreCutoff = 5,
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+                DeconvolutionMassTolerance = new PpmTolerance(5),
+
+            };
+            searchParameters = new SearchParameters()
+            {
+                DisposeOfFileWhenDone = true,
+                AddCompIons = false,
+                DoParsimony = false,
+                NoOneHitWonders = false,
+                ModPeptidesAreUnique = true,
+                DoQuantification = false,
+                QuantifyPpmTol = 5,
+                SearchTarget = true,
+                SearchDecoy = true,
+                DoHistogramAnalysis = false,
+                DoLocalizationAnalysis = true,
+                WritePrunedDatabase = false,
+                KeepAllUniprotMods = true,
+                MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
+            };
+
             FlashLfqEngine = new FlashLFQEngine();
-            TotalPartitions = 1;
-            LocalizeAll = true;
-            DoLocalizationAnalysis = true;
-
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-
-            DisposeOfFileWhenDone = true;
-
-            WritePrunedDatabase = false;
-            KeepAllUniprotMods = true;
-
-            MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList();
-
-            ConserveMemory = true;
-            MaxDegreeOfParallelism = 1;
-
-            DisposeOfFileWhenDone = true;
-
-            // Deconvolution stuff
-            DoPrecursorDeconvolution = true;
-            UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
-            ScoreCutoff = 5;
         }
 
         #endregion Public Constructors
@@ -128,9 +134,9 @@ namespace TaskLayer
 
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
+        public CommonParameters commonParameters { get; set; }
 
-        public SearchType SearchType { get; set; }
-        public double ScoreCutoff { get; set; }
+        public SearchParameters searchParameters { get; set; }
 
         #endregion Public Properties
 
@@ -142,9 +148,9 @@ namespace TaskLayer
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
-                + InitiatorMethionineBehavior
+                + commonParameters.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                + commonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
                 );
             return sb.ToString();
         }
@@ -157,64 +163,70 @@ namespace TaskLayer
         {
             myTaskResults = new MyTaskResults(this);
 
-            List<Psm>[] allPsms = new List<Psm>[MassDiffAcceptors.Count];
-            for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
+            List<Psm>[] allPsms = new List<Psm>[searchParameters.MassDiffAcceptors.Count];
+            for (int searchModeIndex = 0; searchModeIndex < searchParameters.MassDiffAcceptors.Count; searchModeIndex++)
                 allPsms[searchModeIndex] = new List<Psm>();
 
             Status("Loading modifications...", taskId);
 
             #region Load modifications
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (LocalizeAll)
+            if (commonParameters.LocalizeAll)
                 localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => commonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             #endregion Load modifications
 
             Status("Loading proteins...", new List<string> { taskId });
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, searchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             proseCreatedWhileRunning.Append("The following search settings were used: ");
-            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
-            if (MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("protease = " + commonParameters.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + commonParameters.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + commonParameters.MinPeptideLength + "; ");
+            if (commonParameters.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + commonParameters.MaxPeptideLength + "; ");
             }
             proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
-            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", MassDiffAcceptors.Select(m => m.ToProseString())) + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + commonParameters.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ",fixedModifications.Select(m=>m.id)) + "; ");
+            proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m=>m.id)) + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + commonParameters.MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", searchParameters.MassDiffAcceptors.Select(m=>m.ToProseString())) +"}; ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + commonParameters.ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p=>p.IsContaminant).Count() + " contaminant sequences. ");
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (BIons && AddCompIons)
+            if (commonParameters.BIons && searchParameters.AddCompIons)
                 ionTypes.Add(ProductType.B);
-            else if (BIons)
+            else if (commonParameters.BIons)
                 ionTypes.Add(ProductType.BnoB1ions);
-            if (YIons)
+            if (commonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
-            if (ZdotIons)
+            if (commonParameters.ZdotIons)
                 ionTypes.Add(ProductType.Zdot);
-            if (CIons)
+            if (commonParameters.CIons)
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
-            MyFileManager myFileManager = new MyFileManager(DisposeOfFileWhenDone);
+            if (commonParameters.MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = commonParameters.MaxDegreeOfParallelism.Value;
+            MyFileManager myFileManager = new MyFileManager(searchParameters.DisposeOfFileWhenDone);
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -231,24 +243,24 @@ namespace TaskLayer
                     Protease = fileSetting.Protease;
                 }
 
-                Psm[][] fileSpecificPsms = new Psm[MassDiffAcceptors.Count()][];
+                Psm[][] fileSpecificPsms = new Psm[searchParameters.MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-                for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
+                for (int aede = 0; aede < searchParameters.MassDiffAcceptors.Count; aede++)
                     fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
-                if (SearchType == SearchType.Modern || SearchType == SearchType.NonSpecific)
+                if (searchParameters.SearchType == SearchType.Modern || searchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    for (int currentPartition = 0; currentPartition < TotalPartitions; currentPartition++)
+                    for (int currentPartition = 0; currentPartition < commonParameters.TotalPartitions; currentPartition++)
                     {
                         List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / TotalPartitions, ((currentPartition + 1) * proteinList.Count() / TotalPartitions) - (currentPartition * proteinList.Count() / TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / commonParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / commonParameters.TotalPartitions) - (currentPartition * proteinList.Count() / commonParameters.TotalPartitions));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
@@ -256,7 +268,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, Protease, InitiatorMethionineBehavior, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, new List<string> { taskId }, currentPartition, TotalPartitions, SearchDecoy);
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, searchParameters.SearchDecoy, commonParameters, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
@@ -299,21 +311,21 @@ namespace TaskLayer
                         #endregion Generate indices for modern search
 
                         Status("Searching files...", taskId);
-                        if (SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions).Run();
+                        if (searchParameters.SearchType == SearchType.NonSpecific)
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, terminusType, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, thisId).Run();
 
-                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + TotalPartitions + "!", thisId));
+                        ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + commonParameters.TotalPartitions + "!", thisId));
                     }
                 }
                 else //If classic search
                 {
-                    for (int aede = 0; aede < MassDiffAcceptors.Count; aede++)
+                    for (int aede = 0; aede < searchParameters.MassDiffAcceptors.Count; aede++)
                         fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes,searchParameters.MassDiffAcceptors, searchParameters.AddCompIons, commonParameters, thisId).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -322,7 +334,7 @@ namespace TaskLayer
 
                 lock (psmLock)
                 {
-                    for (int searchModeIndex = 0; searchModeIndex < MassDiffAcceptors.Count; searchModeIndex++)
+                    for (int searchModeIndex = 0; searchModeIndex < searchParameters.MassDiffAcceptors.Count; searchModeIndex++)
                         allPsms[searchModeIndex].AddRange(fileSpecificPsms[searchModeIndex]);
                 }
 
@@ -335,25 +347,25 @@ namespace TaskLayer
             // Group and order psms
             Status("Matching peptides to proteins...", taskId);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-            if (SearchType == SearchType.NonSpecific)
+            if (searchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType);
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, searchParameters.MassDiffAcceptors, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, MassDiffAcceptors, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, terminusType);
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
 
             ProteinParsimonyResults proteinAnalysisResults = null;
-            if (DoParsimony)
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, ModPeptidesAreUnique, new List<string> { taskId }).Run());
+            if (searchParameters.DoParsimony)
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, searchParameters.ModPeptidesAreUnique, new List<string> { taskId }).Run());
 
             Status("Resolving most probable peptide...", new List<string> { taskId });
-            for (int j = 0; j < MassDiffAcceptors.Count; j++)
+            for (int j = 0; j < searchParameters.MassDiffAcceptors.Count; j++)
             {
                 if (allPsms[j] != null)
                 {
@@ -370,20 +382,20 @@ namespace TaskLayer
                 allPsms[j] = allPsms[j].Where(b => b != null).OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
             Status("Running FDR analysis...", taskId);
-            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, MassDiffAcceptors, new List<string> { taskId }).Run();
+            var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, searchParameters.MassDiffAcceptors, new List<string> { taskId }).Run();
 
-            List<ProteinGroup>[] proteinGroupsHere = new List<ProteinGroup>[MassDiffAcceptors.Count];
+            List<ProteinGroup>[] proteinGroupsHere = new List<ProteinGroup>[searchParameters.MassDiffAcceptors.Count];
 
-            if (DoParsimony)
+            if (searchParameters.DoParsimony)
             {
-                for (int j = 0; j < MassDiffAcceptors.Count; j++)
+                for (int j = 0; j < searchParameters.MassDiffAcceptors.Count; j++)
                 {
-                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId }).Run();
+                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], searchParameters.MassDiffAcceptors, searchParameters.NoOneHitWonders, searchParameters.ModPeptidesAreUnique, new List<string> { taskId }).Run();
                     proteinGroupsHere[j] = ressdf.sortedAndScoredProteinGroups;
                 }
             }
 
-            if (DoLocalizationAnalysis)
+            if (searchParameters.DoLocalizationAnalysis)
             {
                 Status("Running localization analysis...", taskId);
                 Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
@@ -391,7 +403,7 @@ namespace TaskLayer
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.AddCompIons);
+                    var localizationEngine = new LocalizationEngine(allPsms.SelectMany(b => b).Where(b => b != null && b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, commonParameters.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.searchParameters.AddCompIons);
                     localizationEngine.Run();
                     myFileManager.DoneWithFile(origDataFile);
                     ReportProgress(new ProgressEventArgs(100, "Done with localization analysis!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
@@ -401,9 +413,9 @@ namespace TaskLayer
                     allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictPositiveIsMatch)).Select(b => b.First()).ToList();
             }
 
-            new ModificationAnalysisEngine(allPsms, MassDiffAcceptors.Count, new List<string> { taskId }).Run();
+            new ModificationAnalysisEngine(allPsms, searchParameters.MassDiffAcceptors.Count, new List<string> { taskId }).Run();
 
-            if (DoQuantification)
+            if (searchParameters.DoQuantification)
             {
                 // use FlashLFQ to quantify peaks across all files
                 Status("Quantifying...", taskId);
@@ -413,10 +425,10 @@ namespace TaskLayer
                     throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
                 if (!FlashLfqEngine.ParseArgs(new string[] {
-                        "--ppm " + QuantifyPpmTol,
+                        "--ppm " + searchParameters.QuantifyPpmTol,
                         "--sil true",
                         "--pau false",
-                        "--mbr " + MatchBetweenRuns }
+                        "--mbr " + searchParameters.MatchBetweenRuns }
                     ))
                     throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
@@ -467,9 +479,9 @@ namespace TaskLayer
 
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            if (DoHistogramAnalysis)
+            if (searchParameters.DoHistogramAnalysis)
             {
-                for (int j = 0; j < MassDiffAcceptors.Count; j++)
+                for (int j = 0; j < searchParameters.MassDiffAcceptors.Count; j++)
                 {
                     var limitedpsms_with_fdr = allPsms[j].Where(b => (b.FdrInfo.QValue <= 0.01)).ToList();
                     if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
@@ -477,24 +489,24 @@ namespace TaskLayer
                         Status("Running histogram analysis...", new List<string> { taskId });
                         var myTreeStructure = new BinTreeStructure();
                         myTreeStructure.GenerateBins(limitedpsms_with_fdr, binTolInDaltons);
-                        WriteTree(myTreeStructure, OutputFolder, "aggregate_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+                        WriteTree(myTreeStructure, OutputFolder, "aggregate_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
                     }
                 }
             }
 
             // Now that we are done with fdr analysis and localization analysis, can write the results!
             Status("Writing results...", taskId);
-            for (int j = 0; j < MassDiffAcceptors.Count; j++)
+            for (int j = 0; j < searchParameters.MassDiffAcceptors.Count; j++)
             {
-                WritePsmsToTsv(allPsms[j], OutputFolder, "aggregatePSMs_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+                WritePsmsToTsv(allPsms[j], OutputFolder, "aggregatePSMs_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
 
-                myTaskResults.AddNiceText("All target PSMS within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + ": " + allPsms[j].Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
+                myTaskResults.AddNiceText("All target PSMS within 1% FDR " + searchParameters.MassDiffAcceptors[j].FileNameAddition + ": " + allPsms[j].Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
 
                 var uniquePeptides = allPsms[j].GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
-                WritePsmsToTsv(uniquePeptides, OutputFolder, "aggregateUniquePeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+                WritePsmsToTsv(uniquePeptides, OutputFolder, "aggregateUniquePeptides_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
 
-                myTaskResults.AddNiceText("Unique peptides within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + ": " + uniquePeptides.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
+                myTaskResults.AddNiceText("Unique peptides within 1% FDR " + searchParameters.MassDiffAcceptors[j].FileNameAddition + ": " + uniquePeptides.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
 
                 var psmsGroupedByFile = allPsms[j].GroupBy(p => p.FullFilePath);
 
@@ -505,15 +517,15 @@ namespace TaskLayer
 
                     var strippedFileName = Path.GetFileNameWithoutExtension(group.First().FullFilePath);
 
-                    myTaskResults.AddNiceText("PSMs within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
+                    myTaskResults.AddNiceText("PSMs within 1% FDR " + searchParameters.MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + psmsForThisFile.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
 
-                    WritePsmsToTsv(psmsForThisFile, OutputFolder, strippedFileName + "_PSMs_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
+                    WritePsmsToTsv(psmsForThisFile, OutputFolder, strippedFileName + "_PSMs_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
                     var uniquePeptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-                    WritePsmsToTsv(uniquePeptidesForFile, OutputFolder, strippedFileName + "_UniquePeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
-                    myTaskResults.AddNiceText("Unique peptides within 1% FDR " + MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
+                    WritePsmsToTsv(uniquePeptidesForFile, OutputFolder, strippedFileName + "_UniquePeptides_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", group.First().FullFilePath });
+                    myTaskResults.AddNiceText("Unique peptides within 1% FDR " + searchParameters.MassDiffAcceptors[j].FileNameAddition + " " + strippedFileName + ": " + uniquePeptidesForFile.Count(a => a.FdrInfo.QValue <= .01 && a.IsDecoy == false));
                 }
 
-                if (DoParsimony)
+                if (searchParameters.DoParsimony)
                 {
                     // aggregate protein group file
                     foreach (var pg in proteinGroupsHere[j])
@@ -522,7 +534,7 @@ namespace TaskLayer
                             pg.AggregateQuantifyHelper(currentRawFileList);
                     }
 
-                    WriteProteinGroupsToTsv(proteinGroupsHere[j], OutputFolder, "aggregateProteinGroups_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
+                    WriteProteinGroupsToTsv(proteinGroupsHere[j], OutputFolder, "aggregateProteinGroups_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
 
                     // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                     foreach (var fullFilePath in currentRawFileList)
@@ -544,39 +556,39 @@ namespace TaskLayer
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, MassDiffAcceptors, NoOneHitWonders, ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
-                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
+                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, searchParameters.MassDiffAcceptors, searchParameters.NoOneHitWonders, searchParameters.ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
+                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + searchParameters.MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { Protease }, 0.01, MassDiffAcceptors[j], ProductMassTolerance, MaxMissedCleavages, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { commonParameters.Protease }, 0.01, searchParameters.MassDiffAcceptors[j], commonParameters.ProductMassTolerance, commonParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }
 
-                if (DoQuantification)
+                if (searchParameters.DoQuantification)
                 {
                     foreach (var fullFilePath in currentRawFileList)
                     {
                         var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
                         var peaksForThisFile = FlashLfqEngine.allFeaturesByFile[Array.IndexOf(FlashLfqEngine.filePaths, fullFilePath)];
 
-                        WritePeakQuantificationResultsToTsv(peaksForThisFile, OutputFolder, strippedFileName + "_" + MassDiffAcceptors[j].FileNameAddition + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WritePeakQuantificationResultsToTsv(peaksForThisFile, OutputFolder, strippedFileName + "_" + searchParameters.MassDiffAcceptors[j].FileNameAddition + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                     }
 
                     var summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");
-                    WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptides_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+                    WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptides_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
 
                     summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "FullSequence");
-                    WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq_" + MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+                    WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq_" + searchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
                 }
             }
 
-            if (WritePrunedDatabase)
+            if (searchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { taskId });
 
                 List<Modification> modificationsToAlwaysKeep = new List<Modification>();
-                if (KeepAllUniprotMods)
+                if (searchParameters.KeepAllUniprotMods)
                     modificationsToAlwaysKeep.AddRange(GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
 
                 var goodPsmsForEachProtein = allPsms.SelectMany(b => b).Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);

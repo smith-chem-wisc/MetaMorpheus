@@ -20,14 +20,26 @@ namespace Test
         [Test]
         public static void TestCoIsolation()
         {
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                DeconvolutionIntensityRatio = 50
+            };
+
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
-            var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
+            
             Proteomics.Peptide pep1 = new Proteomics.Peptide("NNNK");
             Proteomics.Peptide pep2 = new Proteomics.Peptide("NDNK");
 
@@ -60,14 +72,13 @@ namespace Test
             Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-            int maximumMissedCleavages = 2;
-            int? minPeptideLength = null;
-            int? maxPeptideLength = null;
-            int maximumVariableModificationIsoforms = 4096;
+
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, productMassTolerance, protease, searchModes, maximumMissedCleavages, minPeptideLength, maxPeptideLength, maximumVariableModificationIsoforms, new List<ProductType> { ProductType.B, ProductType.Y }, new List<string>(), false, InitiatorMethionineBehavior.Variable, false, 1).Run();
+
+
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, commonParameters, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -78,7 +89,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0][0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0][0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, searchModes, protease, maximumMissedCleavages, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.None).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, commonParameters,new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[0])
             {
