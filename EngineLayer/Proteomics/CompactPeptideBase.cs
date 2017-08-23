@@ -112,7 +112,7 @@ namespace EngineLayer
         public override bool Equals(object obj)
         {
             var cp = obj as CompactPeptideBase;
-            return cp == null ? false : Equals(cp);
+            return cp != null && Equals(cp);
         }
 
         public override int GetHashCode()
