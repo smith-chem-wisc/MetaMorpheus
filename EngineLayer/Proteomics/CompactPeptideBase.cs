@@ -7,16 +7,25 @@ using System.Linq;
 namespace EngineLayer
 {
     [Serializable]
-    public abstract class CompactPeptideBase
+    public abstract class CompactPeptideBase : IEquatable<CompactPeptideBase>
     {
         #region Protected Fields
 
         protected static readonly double nitrogenAtomMonoisotopicMass = PeriodicTable.GetElement("N").PrincipalIsotope.AtomicMass;
+
         protected static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+
         protected static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
+
         protected static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
 
         #endregion Protected Fields
+
+        #region Private Fields
+
+        private const double massTolForPeptideEquality = 1e-7;
+
+        #endregion Private Fields
 
         #region Public Properties
 
@@ -95,51 +104,61 @@ namespace EngineLayer
             return massesToReturn;
         }
 
+        /// <summary>
+        /// Sometimes says not equal when in reality should be equal, due to rounding errors. Small but annoying bug. Careful when fixing! Make sure Indexing runs at a reasonable speed.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
             var cp = obj as CompactPeptideBase;
-            if (cp == null)
-                return false;
-            if (CTerminalMasses == null && cp.CTerminalMasses == null) //still not sure if it's || or &&
-            {
-                return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
-                    );
-            }
-            else if (NTerminalMasses == null && cp.NTerminalMasses == null)
-            {
-                return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                    );
-            }
-            else
-            {
-                return (
-                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < 1e-7)
-                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
-                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
-                    );
-            }
+            return cp != null && Equals(cp);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                var result = 0;
-                if (CTerminalMasses == null)
                 {
-                    foreach (double b in NTerminalMasses)
-                        result = (result * 31) ^ b.GetHashCode();
+                    var result = 0;
+                    if (CTerminalMasses == null)
+                    {
+                        foreach (double b in NTerminalMasses)
+                            result = (result * 31) ^ b.GetHashCode();
+                    }
+                    else
+                    {
+                        foreach (double b in CTerminalMasses)
+                            result = (result * 31) ^ b.GetHashCode();
+                    }
+                    return result;
                 }
-                else
-                {
-                    foreach (double b in CTerminalMasses)
-                        result = (result * 31) ^ b.GetHashCode();
-                }
-                return result;
+            }
+        }
+
+        public bool Equals(CompactPeptideBase cp)
+        {
+            if (CTerminalMasses == null && cp.CTerminalMasses == null)
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    );
+            }
+            else if (NTerminalMasses == null && cp.NTerminalMasses == null)
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    );
+            }
+            else
+            {
+                return (
+                    ((double.IsNaN(MonoisotopicMassIncludingFixedMods) && double.IsNaN(cp.MonoisotopicMassIncludingFixedMods)) || (Math.Abs(MonoisotopicMassIncludingFixedMods - cp.MonoisotopicMassIncludingFixedMods) < massTolForPeptideEquality))
+                    && CTerminalMasses.SequenceEqual(cp.CTerminalMasses)
+                    && NTerminalMasses.SequenceEqual(cp.NTerminalMasses)
+                    );
             }
         }
 
@@ -147,7 +166,7 @@ namespace EngineLayer
 
         #region Protected Methods
 
-        protected IEnumerable<double> ComputeFollowingFragmentMasses(PeptideWithSetModifications yyy, double prevMass, int oneBasedIndexToLookAt, int direction)
+        protected static IEnumerable<double> ComputeFollowingFragmentMasses(PeptideWithSetModifications yyy, double prevMass, int oneBasedIndexToLookAt, int direction)
         {
             ModificationWithMass residue_variable_mod = null;
             do

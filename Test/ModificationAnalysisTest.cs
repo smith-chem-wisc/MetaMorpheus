@@ -84,14 +84,18 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, searchModes.Count, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(1, res.ModsSeenAndLocalized[0].Count());
-            Assert.AreEqual(2, res.ModsSeenAndLocalized[0][mod1.id]);
-
-            Assert.AreEqual(0, res.NonLocalizedModsSeen[0].Count()); // Weird
-
             Assert.AreEqual(2, res.AllModsOnProteins[0].Count());
             Assert.AreEqual(2, res.AllModsOnProteins[0][mod1.id]);
             Assert.AreEqual(1, res.AllModsOnProteins[0][mod2.id]);
+
+            Assert.AreEqual(1, res.ModsSeenAndLocalized[0].Count());
+            Assert.AreEqual(2, res.ModsSeenAndLocalized[0][mod1.id]);
+
+            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen[0].Count());
+
+            Assert.AreEqual(0, res.UnlocalizedMods[0].Count());
+
+            Assert.AreEqual(0, res.UnlocalizedFormulas[0].Count());
         }
 
         [Test]
@@ -145,12 +149,16 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, searchModes.Count, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(0, res.ModsSeenAndLocalized[0].Count()); // Not localized
-
-            Assert.AreEqual(1, res.NonLocalizedModsSeen[0][mod1.id]); // Saw it, but not sure where!
-
             Assert.AreEqual(1, res.AllModsOnProteins[0].Count());
             Assert.AreEqual(2, res.AllModsOnProteins[0][mod1.id]);
+
+            Assert.AreEqual(0, res.ModsSeenAndLocalized[0].Count());
+
+            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen[0].Count);
+
+            Assert.AreEqual(1, res.UnlocalizedMods[0][mod1.id]); // Saw it, but not sure where!
+
+            Assert.AreEqual(0, res.UnlocalizedFormulas[0].Count());
         }
 
         #endregion Public Methods
