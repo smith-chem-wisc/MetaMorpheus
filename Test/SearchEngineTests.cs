@@ -20,12 +20,18 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngine()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
-
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength =null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -70,12 +76,18 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.ScoreCutoff = 1;
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -118,13 +130,19 @@ namespace Test
         [Test]
         public static void TestModernSearchEngine()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -168,7 +186,7 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType>(), 0, commonParameters, searchParameters, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType>(), 0, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(1, allPsmsArray.Length);
@@ -191,12 +209,19 @@ namespace Test
         [Test]
         public static void TestModernSearchEngineWithWeirdPeptide()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<ModificationWithMass>();
@@ -226,7 +251,7 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            var engine = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType>(), 0, commonParameters, searchParameters, new List<string>());
+            var engine = new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType>(), 0, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -246,12 +271,21 @@ namespace Test
         [Test]
         public static void TestNonSpecificEnzymeEngineSingleN()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
-            commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = true;
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null),
+                MinPeptideLength = 5,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
+
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -296,7 +330,7 @@ namespace Test
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
             commonParameters.MinPeptideLength = 5;
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List < ProductType > { ProductType.B }, TerminusType.N, 0, commonParameters, searchParameters, new List<string>());
+            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List < ProductType > { ProductType.B }, 0, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, TerminusType.N, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -308,7 +342,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[1][0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[1][0].ScanNumber);
             commonParameters.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.N, commonParameters, searchParameters, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.N, commonParameters, searchParameters.MassDiffAcceptors, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -320,12 +354,20 @@ namespace Test
         [Test]
         public static void TestNonSpecificEnzymeEngineSingleC()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
-            commonParameters.ConserveMemory = false;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.AddCompIons = true;
-            commonParameters.ScoreCutoff = 1;
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null),
+                MinPeptideLength = 5,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
@@ -372,7 +414,7 @@ namespace Test
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
             commonParameters.MinPeptideLength = 5;           
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, TerminusType.C, 0, commonParameters, searchParameters, new List<string>());
+            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 0, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, TerminusType.C, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -385,7 +427,7 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[1][0].ScanNumber);
 
             commonParameters.MinPeptideLength = null;
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.C, commonParameters, searchParameters, new List<string>()).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.C, commonParameters, searchParameters.MassDiffAcceptors, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)

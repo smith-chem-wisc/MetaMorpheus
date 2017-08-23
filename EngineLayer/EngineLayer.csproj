@@ -105,6 +105,7 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
+    <Compile Include="CommonParameters.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
     <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
     <Compile Include="IScan.cs" />
@@ -183,11 +184,6 @@
     <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngine.cs" />
     <Compile Include="CompactToProteinMatchEngine\SequencesToActualProteinPeptidesEngineResults.cs" />
     <Compile Include="CrosslinkSearch\XLSearchResults.cs" />
-    <Compile Include="TaskParameters\CalibrationParameters.cs" />
-    <Compile Include="TaskParameters\CommonParameters.cs" />
-    <Compile Include="TaskParameters\GPTMDParameters.cs" />
-    <Compile Include="TaskParameters\SearchParameters.cs" />
-    <Compile Include="TaskParameters\XLSearchParameters.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Data\elements.dat">

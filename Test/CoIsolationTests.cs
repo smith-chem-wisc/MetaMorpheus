@@ -20,13 +20,19 @@ namespace Test
         [Test]
         public static void TestCoIsolation()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.DeconvolutionIntensityRatio = 50;
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
-
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                DeconvolutionIntensityRatio = 50
+            };
 
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();

@@ -41,13 +41,18 @@ namespace Test
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
 
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.ScoreCutoff = 1;
-
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, commonParameters, new List<string>()).Run();
             Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
@@ -93,14 +98,20 @@ namespace Test
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
 
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
             SearchParameters searchParameters = new SearchParameters();
             searchParameters.MassDiffAcceptors = searchModes;
-
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, commonParameters, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -120,13 +131,13 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];           
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, commonParameters, searchParameters, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, new List<string>()).Run();
 
             Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
             searchParameters.AddCompIons = true;
-            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, commonParameters, searchParameters, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);

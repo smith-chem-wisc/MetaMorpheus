@@ -168,12 +168,39 @@ namespace Test
 
         private static Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ScoreCutoff = 1;
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain;
+            CommonParameters commonParameters = new CommonParameters()
+            {
+                MaxMissedCleavages = 0,
+                MinPeptideLength = null,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+
+                Max_mods_for_peptide = 3,
+
+                ConserveMemory = true,
+                MaxDegreeOfParallelism = 1,
+                ScoreCutoff = 1,
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+            };
 
             // Alanine = Glycine + CH2
             Protein protein1 = new Protein("MA", "protein1");

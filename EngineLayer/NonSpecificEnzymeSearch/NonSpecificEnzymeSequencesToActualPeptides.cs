@@ -13,34 +13,35 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private List<MassDiffAcceptor> massDiffAcceptors;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, nestedIds)
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters commonParameters, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, nestedIds)
         {
-            this.searchParameters = searchParameters;
+            this.massDiffAcceptors = massDiffAcceptors;
         }
 
         #endregion Public Constructors
-        public SearchParameters searchParameters { get; set; }
+
         #region Protected Methods
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             double precursorTolerance = 0;
-            if (searchParameters.MassDiffAcceptors.Count() > 1)
+            if (massDiffAcceptors.Count() > 1)
             {
-                if (searchParameters.MassDiffAcceptors[0].ToString().Contains("ppmAroundZero"))
+                if (massDiffAcceptors[0].ToString().Contains("ppmAroundZero"))
                 {
-                    string name = searchParameters.MassDiffAcceptors[0].ToString();
+                    string name = massDiffAcceptors[0].ToString();
                     int index = name.IndexOf("ppmAroundZero");
                     precursorTolerance = Convert.ToDouble(name.Substring(0, index));
                 }
-                else if (searchParameters.MassDiffAcceptors[1].ToString().Contains("ppmAroundZero"))
+                else if (massDiffAcceptors[1].ToString().Contains("ppmAroundZero"))
                 {
-                    string name = searchParameters.MassDiffAcceptors[1].ToString();
+                    string name = massDiffAcceptors[1].ToString();
                     int index = name.IndexOf("ppmAroundZero");
                     precursorTolerance = Convert.ToDouble(name.Substring(0, index));
                 }

@@ -75,12 +75,34 @@ namespace Test
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.MaxModificationIsoforms = int.MaxValue;
-            commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = int.MaxValue,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                Max_mods_for_peptide = 3,
+                MaxDegreeOfParallelism = 1,
+
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+            };
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, commonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
@@ -141,13 +163,34 @@ namespace Test
             List<Protein> proteinList = new List<Protein> { protein1 };
             //Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
 
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.MinPeptideLength = null;
-            commonParameters.ConserveMemory = false;
-            commonParameters.ScoreCutoff = 1;
-            commonParameters.MaxModificationIsoforms = int.MaxValue;
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = int.MaxValue,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                Max_mods_for_peptide = 3,
+                MaxDegreeOfParallelism = 1,
+
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+            };
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, commonParameters, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();

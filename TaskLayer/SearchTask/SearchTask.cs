@@ -35,28 +35,58 @@ namespace TaskLayer
         {
             commonParameters = new CommonParameters()
             {
+                MaxMissedCleavages = 2,
+                MinPeptideLength = 5,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
                 Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                ProductMassTolerance = new AbsoluteTolerance(0.01),
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+
+                Max_mods_for_peptide = 3,
+
+                ConserveMemory = true,
+                MaxDegreeOfParallelism = 1,
+                ScoreCutoff = 5,
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+                DeconvolutionMassTolerance = new PpmTolerance(5),
+
             };
             searchParameters = new SearchParameters()
             {
+                DisposeOfFileWhenDone = true,
+                AddCompIons = false,
+                DoParsimony = false,
+                NoOneHitWonders = false,
+                ModPeptidesAreUnique = true,
+                DoQuantification = false,
+                QuantifyPpmTol = 5,
+                SearchTarget = true,
+                SearchDecoy = true,
+                DoHistogramAnalysis = false,
+                DoLocalizationAnalysis = true,
+                WritePrunedDatabase = false,
+                KeepAllUniprotMods = true,
                 MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
             };
 
             FlashLfqEngine = new FlashLFQEngine();
-            LocalizeAll = true;
-
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-            MaxDegreeOfParallelism = 1;
-
-            // Deconvolution stuff
-            DoPrecursorDeconvolution = true;
-            UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
         }
 
         #endregion Public Constructors
@@ -100,13 +130,13 @@ namespace TaskLayer
 
             #region Load modifications
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (LocalizeAll)
+            if (commonParameters.LocalizeAll)
                 localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => commonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             #endregion Load modifications
 
@@ -127,8 +157,8 @@ namespace TaskLayer
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
+            if (commonParameters.MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = commonParameters.MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(searchParameters.DisposeOfFileWhenDone);
 
             int completedFiles = 0;
@@ -146,7 +176,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, commonParameters.DoPrecursorDeconvolution, commonParameters.UseProvidedPrecursorInfo, commonParameters.DeconvolutionIntensityRatio, commonParameters.DeconvolutionMaxAssumedChargeState, commonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int aede = 0; aede < searchParameters.MassDiffAcceptors.Count; aede++)
                     fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
@@ -208,9 +238,9 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (searchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, terminusType, currentPartition, commonParameters, searchParameters, thisId).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, terminusType, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, commonParameters, searchParameters, thisId).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, commonParameters, searchParameters.AddCompIons, searchParameters.MassDiffAcceptors, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + commonParameters.TotalPartitions + "!", thisId));
                     }
@@ -245,7 +275,7 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (searchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, searchParameters, new List<string> { taskId });
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, commonParameters, searchParameters.MassDiffAcceptors, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }

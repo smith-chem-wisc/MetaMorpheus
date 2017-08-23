@@ -35,7 +35,11 @@ namespace Test
             {
                 commonParameters = new CommonParameters
                 {
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
                 WriteIntermediateFiles = true
             };
@@ -43,7 +47,8 @@ namespace Test
             {
                 commonParameters = new CommonParameters
                 {
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
 
@@ -51,22 +56,121 @@ namespace Test
             {
                 commonParameters = new CommonParameters
                 {
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 2,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+
+
+                    MinPeptideLength = 5,
+
+
+
+                    BIons = true,
+                    YIons = true,
+                    ZdotIons = false,
+                    CIons = false,
+
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+
+                    Max_mods_for_peptide = 3,
+
+                    MaxDegreeOfParallelism = 1,
+                    ScoreCutoff = 5,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+
                 },
                 searchParameters = new SearchParameters
                 {
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
                     DoParsimony = true,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    DoQuantification = false,
+                    QuantifyPpmTol = 5,
+                    SearchTarget = true,
+                    SearchDecoy = true,
+                    DoHistogramAnalysis = false,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
+                    SearchType = SearchType.Modern,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
+
             SearchTask task4 = new SearchTask()
             {
                 commonParameters = new CommonParameters
                 {
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 2,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+
+
+                    MinPeptideLength = 5,
+
+
+
+                    BIons = true,
+                    YIons = true,
+                    ZdotIons = false,
+                    CIons = false,
+
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+
+                    Max_mods_for_peptide = 3,
+
+                    MaxDegreeOfParallelism = 1,
+                    ScoreCutoff = 5,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+
                 },
                 searchParameters = new SearchParameters
                 {
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    DoParsimony = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    DoQuantification = false,
+                    QuantifyPpmTol = 5,
+                    SearchTarget = true,
+                    SearchDecoy = true,
+                    DoHistogramAnalysis = false,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
                     SearchType = SearchType.Modern,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
@@ -79,8 +183,8 @@ namespace Test
 
             #endregion Setup tasks
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             Console.WriteLine("Size of variable Modificaitaons: " + variableModifications.Capacity);
             Console.WriteLine("Size of fixed Modificaitaons: " + fixedModifications.Capacity);
             // Generate data for files
@@ -144,28 +248,141 @@ namespace Test
             {
                 commonParameters = new CommonParameters
                 {
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                }            
+                    ProductMassTolerance = new AbsoluteTolerance(0.01)
+                },
             };
             GptmdTask task2 = new GptmdTask()
             {
-                commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] }
+                commonParameters = new CommonParameters
+                {
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    ProductMassTolerance = new AbsoluteTolerance(0.01)
+                },
             };
 
             SearchTask task3 = new SearchTask()
             {
-                commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] },
+                commonParameters = new CommonParameters
+                {
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 2,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+
+
+                    MinPeptideLength = 5,
+
+
+
+                    BIons = true,
+                    YIons = true,
+                    ZdotIons = false,
+                    CIons = false,
+
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+
+                    Max_mods_for_peptide = 3,
+
+                    MaxDegreeOfParallelism = 1,
+                    ScoreCutoff = 5,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+
+                },
                 searchParameters = new SearchParameters
                 {
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    DoParsimony = true,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    DoQuantification = false,
+                    QuantifyPpmTol = 5,
+                    SearchTarget = true,
+                    SearchDecoy = true,
+                    DoHistogramAnalysis = false,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
+                    SearchType = SearchType.Modern,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
             SearchTask task4 = new SearchTask()
-            {   
-                commonParameters = new CommonParameters { Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"] },
+            {
+                commonParameters = new CommonParameters
+                {
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 2,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+
+
+                    MinPeptideLength = 5,
+
+
+
+                    BIons = true,
+                    YIons = true,
+                    ZdotIons = false,
+                    CIons = false,
+
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+
+                    Max_mods_for_peptide = 3,
+
+                    MaxDegreeOfParallelism = 1,
+                    ScoreCutoff = 5,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+
+                },
                 searchParameters = new SearchParameters
                 {
-                    DoParsimony = true,
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    DoParsimony = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    DoQuantification = false,
+                    QuantifyPpmTol = 5,
+                    SearchTarget = true,
+                    SearchDecoy = true,
+                    DoHistogramAnalysis = false,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
+                    SearchType = SearchType.Modern,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
@@ -251,12 +468,39 @@ namespace Test
                     ScoreCutoff = 1,
                     commonParameters = new CommonParameters
                     {
-                        ScoreCutoff = 1,
+                        ConserveMemory = false,
+                        MaxMissedCleavages = 2,
+                        MaxPeptideLength = null,
+                        MaxModificationIsoforms = 4096,
+                        ProductMassTolerance = new AbsoluteTolerance(0.01),
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                         ListOfModsVariable = new List<Tuple<string, string>>(),
                         ListOfModsFixed = new List<Tuple<string, string>>(),
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                        Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"]
-                    }
+                        Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+
+                        MinPeptideLength = 5,
+
+                        BIons = true,
+                        YIons = true,
+                        ZdotIons = false,
+                        CIons = false,
+
+                        TotalPartitions = 1,
+                        LocalizeAll = true,
+
+                        Max_mods_for_peptide = 3,
+
+                        MaxDegreeOfParallelism = 1,
+                        ScoreCutoff = 1,
+
+                        // Deconvolution stuff
+                        DoPrecursorDeconvolution = true,
+                        UseProvidedPrecursorInfo = true,
+                        DeconvolutionIntensityRatio = 4,
+                        DeconvolutionMaxAssumedChargeState = 10,
+                        DeconvolutionMassTolerance = new PpmTolerance(5),
+
+                    },
                 };
             }
 
@@ -313,16 +557,56 @@ namespace Test
             //Create Search Task
             SearchTask task1 = new SearchTask()
             {
-                commonParameters = new CommonParameters
+                commonParameters = new CommonParameters()
                 {
+                    MaxMissedCleavages = 2,
+                    MinPeptideLength = 5,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    BIons = true,
+                    YIons = true,
+                    ZdotIons = false,
+                    CIons = false,
+
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
                     ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
+
+                    Max_mods_for_peptide = 3,
+
+                    ConserveMemory = true,
+                    MaxDegreeOfParallelism = 1,
+                    ScoreCutoff = 5,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+
                 },
-                searchParameters = new SearchParameters
+                searchParameters = new SearchParameters()
                 {
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    DoParsimony = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    DoQuantification = false,
+                    QuantifyPpmTol = 5,
+                    SearchTarget = true,
+                    SearchDecoy = true,
+                    DoHistogramAnalysis = false,
+                    DoLocalizationAnalysis = true,
                     WritePrunedDatabase = true,
-                    //DoParsimony = true,
+                    KeepAllUniprotMods = true,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
                 }
             };
@@ -430,16 +714,58 @@ namespace Test
 
             SearchTask testUnique = new SearchTask()
             {
-                commonParameters = new CommonParameters
+                commonParameters = new CommonParameters()
                 {
+                    MaxMissedCleavages = 2,
+                    MinPeptideLength = 5,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                    ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    BIons = true,
+                    YIons = true,
+                    ZdotIons = false,
+                    CIons = false,
+
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("ConnorModType", "ConnorMod") },
+
+                    Max_mods_for_peptide = 3,
+
+                    ConserveMemory = true,
+                    MaxDegreeOfParallelism = 1,
+                    ScoreCutoff = 5,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+
                 },
-                searchParameters = new SearchParameters
+                searchParameters = new SearchParameters()
                 {
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    DoParsimony = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    DoQuantification = false,
+                    QuantifyPpmTol = 5,
+                    SearchTarget = true,
+                    SearchDecoy = true,
+                    DoHistogramAnalysis = false,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = true,
+                    KeepAllUniprotMods = true,
                     MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
-                },
-                ListOfModsLocalize = new List<Tuple<string, string>> { new Tuple<string, string>("testUniqueModType", "testUniqueMod") },
+                }
 
             };
 
@@ -460,8 +786,8 @@ namespace Test
             #region mod setup and protein creation
 
             //create modification lists
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.commonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.commonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
             var modDictionary = new Dictionary<int, List<Modification>>();

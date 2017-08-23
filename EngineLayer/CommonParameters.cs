@@ -6,45 +6,7 @@ namespace EngineLayer
 {
     public class CommonParameters
     {
-        public CommonParameters()
-        {
-            MaxMissedCleavages = 2;
-            MinPeptideLength = 5;
-            MaxPeptideLength = null;
-            //Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            MaxModificationIsoforms = 4096;
-            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
-            BIons = true;
-            YIons = true;
-            ZdotIons = false;
-            CIons = false;
 
-            TotalPartitions = 1;
-            LocalizeAll = true;
-
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            //ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-            //GPTMD ListOfModsLocalize
-            //ListOfModsLocalize = new List<Tuple<string, string>>();
-
-            Max_mods_for_peptide = 3;
-
-            ConserveMemory = true;
-            MaxDegreeOfParallelism = 1;
-            ScoreCutoff = 5;
-
-            // Deconvolution stuff
-            DoPrecursorDeconvolution = true;
-            UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);           
-        }
-
-
-        //MetaMorpheusTask Parameters
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
@@ -57,7 +19,6 @@ namespace EngineLayer
         public int DeconvolutionMaxAssumedChargeState { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
-        //Common Parameters
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
  
         public int MaxMissedCleavages { get; set; }

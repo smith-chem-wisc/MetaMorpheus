@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using MzLibUtil;
 
 namespace Test
 {
@@ -26,7 +27,32 @@ namespace Test
                 {
                     ScoreCutoff = 1,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,                            
+                    MinPeptideLength = 5,
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 2,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    BIons = true,
+                    YIons = true, 
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+                    MaxDegreeOfParallelism = 1,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    ZdotIons = false,
+                    CIons = false,
+
+                    Max_mods_for_peptide = 3,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
                 },
                 searchParameters = new SearchParameters
                 {
@@ -35,7 +61,16 @@ namespace Test
                     SearchTarget = true,
                     SearchDecoy = false,
                     DoParsimony = true,
-                    DoQuantification = true
+                    DoQuantification = true,
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    QuantifyPpmTol = 5,             
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
                 },
         };
 
@@ -89,15 +124,53 @@ namespace Test
             {
                 commonParameters = new CommonParameters
                 {
+                    ScoreCutoff = 1,
                     Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                    MaxMissedCleavages = 0
+                    MinPeptideLength = 5,
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 0,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    BIons = true,
+                    YIons = true,
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+                    MaxDegreeOfParallelism = 1,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    ZdotIons = false,
+                    CIons = false,
+
+                    Max_mods_for_peptide = 3,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
                 },
                 searchParameters = new SearchParameters
                 {
+                    DoHistogramAnalysis = true,
+                    MassDiffAcceptors = massDiffAcceptors,
+                    SearchTarget = true,
+                    SearchDecoy = false,
                     DoParsimony = true,
-                    MassDiffAcceptors = massDiffAcceptors
-                }
+                    DoQuantification = true,
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    QuantifyPpmTol = 5,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
+                },
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles.xml");

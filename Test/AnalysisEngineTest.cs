@@ -20,12 +20,18 @@ namespace Test
         [Test]
         public static void TestAnalysisEngineTests()
         {
-            CommonParameters commonParameters = new CommonParameters();
-            commonParameters.Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-            commonParameters.MinPeptideLength = null;
-            commonParameters.MaxMissedCleavages = 0;
-            commonParameters.ProductMassTolerance = new PpmTolerance(10);
-            commonParameters.MaxModificationIsoforms = 1042;
+            CommonParameters commonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 1042,
+                ProductMassTolerance = new PpmTolerance(10),
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
 
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();

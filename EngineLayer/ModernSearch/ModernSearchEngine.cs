@@ -21,7 +21,8 @@ namespace EngineLayer.ModernSearch
         protected readonly List<ProductType> lp;
         protected readonly int currentPartition;
         protected readonly CommonParameters commonParameters;
-        protected readonly SearchParameters searchParameters;
+        protected readonly bool addCompIons;
+        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
 
         #endregion Protected Fields
 
@@ -33,7 +34,7 @@ namespace EngineLayer.ModernSearch
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, SearchParameters searchParameters, List<string> nestedIds) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters commonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
@@ -43,7 +44,8 @@ namespace EngineLayer.ModernSearch
             this.lp = lp;
             this.currentPartition = currentPartition + 1;
             this.commonParameters = commonParameters;
-            this.searchParameters = searchParameters;
+            this.addCompIons = addCompIons;
+            this.massDiffAcceptors = massDiffAcceptors;
         }
 
         #endregion Public Constructors
@@ -56,7 +58,7 @@ namespace EngineLayer.ModernSearch
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
-            var searchModesCount = searchParameters.MassDiffAcceptors.Count;
+            var searchModesCount = massDiffAcceptors.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
@@ -88,7 +90,7 @@ namespace EngineLayer.ModernSearch
                             for (int j = 0; j < searchModesCount; j++)
                             {
                                 // Check if makes sense to add due to peptidescore!
-                                var searchMode = searchParameters.MassDiffAcceptors[j];
+                                var searchMode = massDiffAcceptors[j];
                                 double currentBestScore = bestScores[j];
                                 if (currentBestScore > 1)
                                 {
@@ -161,7 +163,7 @@ namespace EngineLayer.ModernSearch
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
-            if (!searchParameters.AddCompIons)
+            if (!addCompIons)
             {
                 for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                 {

@@ -4,22 +4,6 @@ namespace EngineLayer
 {
     public class XLSearchParameters
     {
-        public XLSearchParameters()
-        {
-            CrosslinkerType = CrosslinkerType.DSS;
-            CrosslinkSearchTopNum = 50;
-            CrosslinkSearchWithAllBeta = false;
-            UdXLkerName = null;
-            UdXLkerCleavable = false;
-            UdXLkerShortMass = null;
-            UdXLkerLongMass = null;
-            UdXLkerTotalMass = null;
-            UdXLkerResidue = 'K';
-            XLprecusorMsTl = new PpmTolerance(10);
-            XLBetaPrecusorMsTl = new PpmTolerance(10);
-            DisposeOfFileWhenDone = true;
-        }
-
         public bool SearchDecoy { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
