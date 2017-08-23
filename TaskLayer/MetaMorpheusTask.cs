@@ -225,7 +225,6 @@ namespace TaskLayer
             commonParams.MaxModificationIsoforms = tomlDict["MaxModificationIsoforms"].Value.Get<int>();
             commonParams.TotalPartitions = tomlDict["TotalPartitions"].Value.Get<int>();
             commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
-
             commonParams.BIons = tomlDict["BIons"].Value.Get<bool>();
             commonParams.YIons = tomlDict["YIons"].Value.Get<bool>();
             commonParams.ZdotIons = tomlDict["ZdotIons"].Value.Get<bool>();
@@ -238,20 +237,6 @@ namespace TaskLayer
 
         }
 
-        //set common params and search params
-        private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict, string a)
-        {
-
-            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
-
-        }
-
-        private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict, int b)
-        {
-
-            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
-
-        }
 
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {

@@ -648,7 +648,6 @@ namespace TaskLayer
                 commonParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions;
             if (currentFileSpecificSettings.Protease != null)
                 commonParams.Protease = currentFileSpecificSettings.Protease;
-
             if (currentFileSpecificSettings.BIons != false)
                 commonParams.BIons = currentFileSpecificSettings.BIons;
             if (currentFileSpecificSettings.YIons != false)
