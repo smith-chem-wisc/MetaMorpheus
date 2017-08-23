@@ -205,6 +205,13 @@ namespace TaskLayer
             return ye;
         }
 
+        public void SetParamsEqual(CommonParameters commonParams, Dictionary<string,KeyValuePair<string, TomlObject>> tomlDict)
+        {
+            commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
+
+
+        }
+
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
             StartingSingleTask(taskId);
@@ -227,15 +234,15 @@ namespace TaskLayer
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            FileSettings[] fileSettingsList = new FileSettings[currentRawDataFilenameList.Count];
+            CommonParameters[] fileSettingsList = new CommonParameters[currentRawDataFilenameList.Count];
             int index = 0;
             var directoryOfRawFiles = Directory.GetParent(currentRawDataFilenameList[0]);
             TomlTable fileSpecificSettings;
             foreach (string rawFileName in currentRawDataFilenameList)
             {
-                fileSettingsList[index] = new FileSettings();
+                fileSettingsList[index] = new CommonParameters();
                 var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
-                //fileSettingsList[index]. //fileSpecificToml
+                //Will only enter if Toml file exists with same name
                 if (fileSpecificToml.Length == 1)
                 {
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
@@ -917,7 +924,7 @@ namespace TaskLayer
             OutProgressHandler?.Invoke(this, v);
         }
 
-        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSettings[] fileSettings);
+        protected abstract MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettings);
 
         protected void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {
