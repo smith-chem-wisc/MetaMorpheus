@@ -130,9 +130,9 @@ namespace Test
             Protein protein3 = new Protein("MTASIK", "protein3");
 
             IEnumerable<ModificationWithMass> allKnownFixedModifications = new List<ModificationWithMass>();
-            var from1 = protein1.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
-            var from2 = protein2.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
-            var from3 = protein3.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from1 = protein1.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from2 = protein2.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
+            var from3 = protein3.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, allKnownFixedModifications).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
             PeptideWithSetModifications pep1 = from1.GetPeptidesWithSetModifications(variableModifications, 1, 0).First();
@@ -174,7 +174,7 @@ namespace Test
                 MinPeptideLength = null,
                 MaxPeptideLength = null,
                 MaxModificationIsoforms = 4096,
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
 
                 BIons = true,
@@ -187,7 +187,7 @@ namespace Test
 
                 ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
                 ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
 
                 Max_mods_for_peptide = 3,
                 ConserveMemory = true,

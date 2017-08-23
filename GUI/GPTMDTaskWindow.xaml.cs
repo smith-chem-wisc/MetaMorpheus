@@ -186,7 +186,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalTaskLevelSettings.ProteaseDictionary.Values)
+            foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
 
@@ -198,7 +198,7 @@ namespace MetaMorpheusGUI
             precursorMassToleranceComboBox.Items.Add("Absolute");
             precursorMassToleranceComboBox.Items.Add("Ppm");
 
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -206,7 +206,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -214,7 +214,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 localizeModTypeForTreeViewObservableCollection.Add(theModType);
@@ -223,7 +223,7 @@ namespace MetaMorpheusGUI
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
 
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 gptmdModTypeForTreeViewObservableCollection.Add(theModType);

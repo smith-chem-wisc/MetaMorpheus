@@ -77,7 +77,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
@@ -168,7 +168,7 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,

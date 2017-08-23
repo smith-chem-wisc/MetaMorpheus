@@ -26,7 +26,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,                            
                     MinPeptideLength = 5,
                     ConserveMemory = false,
@@ -40,7 +40,7 @@ namespace Test
                     MaxDegreeOfParallelism = 1,
                     ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01),
                     ZdotIons = false,
                     CIons = false,
@@ -125,7 +125,7 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                     MinPeptideLength = 5,
                     ConserveMemory = false,
@@ -139,7 +139,7 @@ namespace Test
                     MaxDegreeOfParallelism = 1,
                     ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
                     ProductMassTolerance = new AbsoluteTolerance(0.01),
                     ZdotIons = false,
                     CIons = false,
