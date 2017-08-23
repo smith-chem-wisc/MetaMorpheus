@@ -34,11 +34,16 @@ namespace EngineLayer
             yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
         }
 
+        public override string ToProseString()
+        {
+            return (String.Format("{0:0.0}",ppmTolerance) + " ppm around zero");
+        }
+
         public override string ToString()
         {
             return FileNameAddition + " ppmAroundZero " + ppmTolerance;
         }
-
+        
         #endregion Public Methods
     }
 }
