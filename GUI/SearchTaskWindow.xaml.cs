@@ -184,7 +184,7 @@ namespace MetaMorpheusGUI
             disposeOfFilesWhenDone.IsChecked = task.DisposeOfFileWhenDone;
 
             allAmbiguity.IsChecked = task.ReportAllAmbiguity;
-            excelCompatible.IsChecked = task.excelCompatible;
+            excelCompatible.IsChecked = task.ExcelCompatible;
 
             DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
@@ -387,7 +387,7 @@ namespace MetaMorpheusGUI
             TheTask.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
             TheTask.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
-            TheTask.excelCompatible = excelCompatible.IsChecked.Value;
+            TheTask.ExcelCompatible = excelCompatible.IsChecked.Value;
 
             TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);

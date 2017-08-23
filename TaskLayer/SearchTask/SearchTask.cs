@@ -59,7 +59,7 @@ namespace TaskLayer
             DoLocalizationAnalysis = true;
 
             ReportAllAmbiguity = true;
-            excelCompatible = true;
+            ExcelCompatible = true;
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
@@ -126,7 +126,7 @@ namespace TaskLayer
         public bool ConserveMemory { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
-        public bool excelCompatible { get; set; }
+        public bool ExcelCompatible { get; set; }
 
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
@@ -298,9 +298,9 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions, ReportAllAmbiguity, excelCompatible).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, AddCompIons, ionTypes, Protease, MinPeptideLength, terminusType, ScoreCutoff, currentPartition, TotalPartitions, ReportAllAmbiguity, ExcelCompatible).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions, ReportAllAmbiguity, excelCompatible).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ProductMassTolerance, MassDiffAcceptors, thisId, this.AddCompIons, ionTypes, ScoreCutoff, currentPartition, TotalPartitions, ReportAllAmbiguity, ExcelCompatible).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + TotalPartitions + "!", thisId));
                     }
@@ -311,7 +311,7 @@ namespace TaskLayer
                         fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff, ReportAllAmbiguity, excelCompatible).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, MassDiffAcceptors, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, ionTypes, thisId, ConserveMemory, InitiatorMethionineBehavior, this.AddCompIons, ScoreCutoff, ReportAllAmbiguity, ExcelCompatible).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
