@@ -42,8 +42,8 @@
     <Reference Include="Chemistry, Version=1.0.221.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.221\lib\Chemistry.dll</HintPath>
     </Reference>
-    <Reference Include="FlashLFQ, Version=0.1.68.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.68\lib\net451\FlashLFQ.dll</HintPath>
+    <Reference Include="FlashLFQ, Version=0.1.74.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\FlashLFQ.0.1.74\lib\net451\FlashLFQ.dll</HintPath>
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.221.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.221\lib\ManagedThermoHelperLayer.dll</HintPath>
@@ -105,7 +105,9 @@
     <Compile Include="CalibrationEngine\CalibrationFunctions\RegressionTree.cs" />
     <Compile Include="CalibrationEngine\TransformFunction.cs" />
     <Compile Include="CalibrationEngine\CalibrationResults.cs" />
+    <Compile Include="CommonParameters.cs" />
     <Compile Include="CrosslinkSearch\ProductMassesMightHave.cs" />
+    <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
     <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
@@ -200,12 +202,14 @@
     </Content>
     <Content Include="Data\PSI-MOD.obo.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SonarQubeExclude>true</SonarQubeExclude>
     </Content>
     <Content Include="Data\ptmlist.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SonarQubeExclude>true</SonarQubeExclude>
     </Content>
     <Content Include="Mods\aListOfmods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

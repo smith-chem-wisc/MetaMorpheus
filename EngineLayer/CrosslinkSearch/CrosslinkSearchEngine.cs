@@ -1,12 +1,12 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using System.Linq;
+using Proteomics;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -24,27 +24,25 @@ namespace EngineLayer.CrosslinkSearch
 
         private readonly List<CompactPeptide> peptideIndex;
 
-        private readonly int CrosslinkSearchTopNum;
-
-        private readonly bool CrosslinkSearchWithCrosslinkerMod;
-
-        private readonly Tolerance XLprecusorMsTl;
-
-        private readonly Tolerance XLBetaPrecusorMsTl;
-
-        private readonly List<ProductType> lp;
-
-        private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
-
         //Crosslink parameters
-        private CrosslinkerTypeClass crosslinker;
+        private readonly CrosslinkerTypeClass crosslinker;
+        private readonly int CrosslinkSearchTopNum;
+        private readonly bool CrosslinkSearchWithCrosslinkerMod;
+        private readonly Tolerance XLprecusorMsTl;
+        private readonly Tolerance XLBetaPrecusorMsTl;
+        private readonly List<ProductType> lp;
+        private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
+        private readonly List<PsmCross> psmCross;
+
+        private MassDiffAcceptor XLPrecusorSearchMode;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkSearchEngine(Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkSearchEngine(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
         {
+            this.psmCross = psmCross;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
@@ -67,6 +65,11 @@ namespace EngineLayer.CrosslinkSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             MassDiffAcceptor XLsearchMode = new OpenSearchMode();
+            XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(XLprecusorMsTl.Value);
+            if (XLBetaPrecusorMsTl.ToString().Contains("Absolute"))
+            {
+                XLPrecusorSearchMode = new SingleAbsoluteAroundZeroSearchMode(XLprecusorMsTl.Value);
+            }
 
             Status("In crosslink search engine...", nestedIds);
 
@@ -78,7 +81,7 @@ namespace EngineLayer.CrosslinkSearch
             var peptideIndexCount = peptideIndex.Count;
 
             //Crosslink data storage
-            List<Tuple<PsmCross, PsmCross>> newPsmsTopTuple = new List<Tuple<PsmCross, PsmCross>>();
+            List<PsmCross> newPsmsCross = new List<PsmCross>();
 
             //Find Top matched peptides and then find Crosslinked peptides from them.
             //Parallel.ForEach(Partitioner.Create(0, 1), fff =>
@@ -105,10 +108,12 @@ namespace EngineLayer.CrosslinkSearch
 
                         if (consideredScore >= 1)
                         {
+
                             // Check if makes sense to add due to peptidescore!
                             //currentWorstScore to mark the current worst score and peptide for comparation and removal.
                             double currentWorstScore = worstScores;
                             //From all scored peptides to choose the Top Num ones
+                            #region
                             if (bestPeptideScoreNotch != null && bestPeptideScoreNotch.Count == CrosslinkSearchTopNum)
                             {
                                 // Full! Need to compare with old worst match
@@ -152,6 +157,8 @@ namespace EngineLayer.CrosslinkSearch
                                     worstScores = bestPeptideScoreNotch.Last().BestScore;
                                 }
                             }
+                            #endregion
+
                         }
                     }
 
@@ -160,13 +167,14 @@ namespace EngineLayer.CrosslinkSearch
                     if (bestPeptideScoreNotch != null)
                     {
                         //Function that find the two crosslinked peptide
-                        var crosslinkPeptidePairList = FindCrosslinkedPeptide(thisScan, bestPeptideScoreNotch, i);
+                        var possiblePsmCross = FindCrosslinkedPeptide(thisScan, bestPeptideScoreNotch, i);
 
-                        if (crosslinkPeptidePairList != null)
+                        if (possiblePsmCross != null)
                         {
-                            newPsmsTopTuple.Add(crosslinkPeptidePairList);
+                            newPsmsCross.Add(possiblePsmCross);
                         }
                     }
+
                 }
                 lock (outputObject)
                 {
@@ -178,8 +186,9 @@ namespace EngineLayer.CrosslinkSearch
                         old_progress = new_progress;
                     }
                 }
+                psmCross.AddRange(newPsmsCross);
             });
-            return new CrosslinkSearchResults(newPsmsTopTuple, this);
+            return new CrosslinkSearchResults(newPsmsCross, this);
         }
 
         #endregion Protected Methods
@@ -235,175 +244,109 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Targetting function: to find two peptides that in the Top matched peptides
-        private Tuple<PsmCross, PsmCross> FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int i)
+        private PsmCross FindCrosslinkedPeptide(Ms2ScanWithSpecificMass theScan, List<BestPeptideScoreNotch> theScanBestPeptide, int i)
         {
-            Tuple<PsmCross, PsmCross> bestPsmCrossList = null;
+            List<PsmCross> bestPsmCrossList = new List<PsmCross>();
+            PsmCross bestPsmCross = null;
             for (int ind = 0; ind < theScanBestPeptide.Count; ind++)
             {
-                var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
+                if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods)>=0)
                 {
-                    var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMassIncludingFixedMods;
-                    if (XLprecusorMsTl.Within(theScan.PrecursorMass, x + y + crosslinker.TotalMass))
+                    var psmCrossSingle = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
+                    psmCrossSingle.XLTotalScore = psmCrossSingle.Score;
+                    psmCrossSingle.CrossType = PsmCrossType.Singe;
+                    if (bestPsmCrossList.Count >= 2)
                     {
-                        var psmCrossAlpha = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
-                        var psmCrossBeta = new PsmCross(theScanBestPeptide[inx].BestPeptide, theScanBestPeptide[inx].BestNotch, theScanBestPeptide[inx].BestScore, i, theScan);
-                        psmCrossAlpha.TopPosition = new int[] { ind, inx };
-                        XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha);
-                        XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta);
-                        psmCrossAlpha.XLTotalScore = psmCrossAlpha.XLBestScore + psmCrossBeta.XLBestScore;
+                        bestPsmCrossList.OrderByDescending(p=>p.XLTotalScore);
+                        bestPsmCrossList.RemoveAt(1);
+                        bestPsmCrossList.Add(psmCrossSingle);
+                    }
+                    else
+                    {
+                        bestPsmCrossList.Add(psmCrossSingle);
+                    }
+                }
 
-                        if (bestPsmCrossList == null)
+                else if(XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + 156.0786) >= 0)
+                {
+                    var psmCrossEnd = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
+                    //The Score need to recaculate.
+                    psmCrossEnd.XLTotalScore = psmCrossEnd.Score;
+                    psmCrossEnd.CrossType = PsmCrossType.DeadEnd;
+                    if (bestPsmCrossList.Count >= 2)
+                    {
+                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList.RemoveAt(1);
+                        bestPsmCrossList.Add(psmCrossEnd);
+                    }
+                    else
+                    {
+                        bestPsmCrossList.Add(psmCrossEnd);
+                    }
+                }
+
+                else if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods + 138.06808) >= 0)
+                {
+                    var psmCrossLoop = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
+                    psmCrossLoop.XLTotalScore = psmCrossLoop.Score;
+                    psmCrossLoop.CrossType = PsmCrossType.Loop;
+                    if (bestPsmCrossList.Count >= 2)
+                    {
+                        bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                        bestPsmCrossList.RemoveAt(1);
+                        bestPsmCrossList.Add(psmCrossLoop);
+                    }
+                    else
+                    {
+                        bestPsmCrossList.Add(psmCrossLoop);
+                    }              
+                }
+
+                else if(theScan.PrecursorMass - theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods >= 500)
+                {
+                    var x = theScanBestPeptide[ind].BestPeptide.MonoisotopicMassIncludingFixedMods;
+                    for (int inx = ind; inx < theScanBestPeptide.Count; inx++)
+                    {
+                        var y = theScanBestPeptide[inx].BestPeptide.MonoisotopicMassIncludingFixedMods;
+                        if (XLPrecusorSearchMode.Accepts(theScan.PrecursorMass, x + y + crosslinker.TotalMass) >= 0 && PsmCross.xlPosCal(theScanBestPeptide[ind].BestPeptide, crosslinker).Count!=0 && PsmCross.xlPosCal(theScanBestPeptide[inx].BestPeptide, crosslinker).Count != 0)
                         {
-                            bestPsmCrossList = new Tuple<PsmCross, PsmCross>(psmCrossAlpha, psmCrossBeta);
-                        }
-                        else
-                        {
-                            if (bestPsmCrossList.Item1.XLTotalScore < psmCrossAlpha.XLTotalScore)
+                            var psmCrossAlpha = new PsmCross(theScanBestPeptide[ind].BestPeptide, theScanBestPeptide[ind].BestNotch, theScanBestPeptide[ind].BestScore, i, theScan);
+                            var psmCrossBeta = new PsmCross(theScanBestPeptide[inx].BestPeptide, theScanBestPeptide[inx].BestNotch, theScanBestPeptide[inx].BestScore, i, theScan);
+                            psmCrossAlpha.topPosition = new int[] { ind, inx };
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossAlpha, crosslinker, lp, fragmentTolerance);
+                            PsmCross.XLCalculateTotalProductMassesMightHave(theScan, psmCrossBeta, crosslinker, lp, fragmentTolerance);
+                            psmCrossAlpha.XLTotalScore = psmCrossAlpha.XLBestScore + psmCrossBeta.XLBestScore;
+                            psmCrossAlpha.CrossType = PsmCrossType.Cross;
+                            psmCrossAlpha.BetaPsmCross = psmCrossBeta;
+                            if (bestPsmCrossList.Count >= 2)
                             {
-                                bestPsmCrossList = new Tuple<PsmCross, PsmCross>(psmCrossAlpha, psmCrossBeta);
+                                bestPsmCrossList.OrderByDescending(p => p.XLTotalScore);
+                                bestPsmCrossList.RemoveAt(1);
+                                bestPsmCrossList.Add(psmCrossAlpha);
                             }
+                            else
+                            {
+                                bestPsmCrossList.Add(psmCrossAlpha);
+                            }  
                         }
                     }
                 }
             }
-            return bestPsmCrossList;
-        }
 
-        private void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross)
-        {
-            var modMass = theScan.PrecursorMass - psmCross.CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass;
-            int length = psmCross.CompactPeptide.NTerminalMasses.Length;
-            var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
-            ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
-            //int pos = -1;
-            List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
-
-            var linkPos = PsmCross.XlPosCal(psmCross.CompactPeptide, crosslinker);
-            linkPos.Add(0);
-            foreach (var ipos in linkPos)
+            if (bestPsmCrossList.Count != 0)
             {
-                //pos = ipos;
-                ProductMassesMightHave pmmhCurr = new ProductMassesMightHave()
+                bestPsmCross = bestPsmCrossList.OrderByDescending(p => p.XLTotalScore).First();
+                if (bestPsmCrossList.Count > 1)
                 {
-                    Xlpos = ipos
-                };
-                List<double> x = new List<double>();
-                List<string> y = new List<string>();
-                if (crosslinker.Cleavable)
-                {
-                    x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong);
-                    y.Add("PepS");
-                    x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort);
-                    y.Add("PepL");
+                    bestPsmCross.dScore = Math.Abs(bestPsmCrossList.First().XLTotalScore - bestPsmCrossList[1].XLTotalScore);
                 }
-                for (int i = 0; i < pmmh.ProductMz.Length; i++)
-                {
-                    var cr = pmmh.ProductName[i][0];
-                    var nm = Int32.Parse(System.Text.RegularExpressions.Regex.Match(pmmh.ProductName[i], @"\d+").Value);
-                    if ((cr == 'b' || cr == 'c') && nm < ipos + 1)
-                    {
-                        x.Add(pmmh.ProductMz[i]);
-                        y.Add(pmmh.ProductName[i]);
-                    }
-                    if ((cr == 'y' || cr == 'z') && nm < length - ipos + 1)
-                    {
-                        x.Add(pmmh.ProductMz[i]);
-                        y.Add(pmmh.ProductName[i]);
-                    }
-                    if (cr == 'b' && nm >= ipos + 1)
-                    {
-                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
-                        y.Add("t1b" + nm.ToString());
-
-                        x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
-                        y.Add("t2b" + nm.ToString());
-
-                        if (crosslinker.Cleavable)
-                        {
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
-                            y.Add("sb" + nm.ToString());
-
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
-                            y.Add("lb" + nm.ToString());
-                        }
-                    }
-
-                    if (cr == 'c' && nm >= ipos)
-                    {
-                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
-                        y.Add("t1c" + nm.ToString());
-
-                        x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
-                        y.Add("t2c" + nm.ToString());
-
-                        if (crosslinker.Cleavable)
-                        {
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
-                            y.Add("sc" + nm.ToString());
-
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
-                            y.Add("lc" + nm.ToString());
-                        }
-                    }
-
-                    if (cr == 'y' && (nm >= length - ipos + 1))
-                    {
-                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
-                        y.Add("t1y" + nm.ToString());
-
-                        x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
-                        y.Add("t2y" + nm.ToString());
-
-                        if (crosslinker.Cleavable)
-                        {
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
-                            y.Add("sy" + nm.ToString());
-
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
-                            y.Add("ly" + nm.ToString());
-                        }
-                    }
-
-                    if (cr == 'z' && (nm >= length - ipos + 1))
-                    {
-                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
-                        y.Add("t1z" + nm.ToString());
-
-                        x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
-                        y.Add("t2z" + nm.ToString());
-
-                        if (crosslinker.Cleavable)
-                        {
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
-                            y.Add("sz" + nm.ToString());
-
-                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
-                            y.Add("lz" + nm.ToString());
-                        }
-                    }
-                }
-                pmmhCurr.ProductMz = x.ToArray();
-                pmmhCurr.ProductName = y.ToArray();
-                Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
-                pmmhList.Add(pmmhCurr);
+                else { bestPsmCross.dScore = bestPsmCross.XLTotalScore; }
             }
 
-            List<double> scoreList = new List<double>();
-            List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
-            foreach (var pmm in pmmhList)
-            {
-                var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
-                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
-                miil.Add(matchedIonMassesListPositiveIsMatch);
-                scoreList.Add(pmmScore);
-            }
-
-            psmCross.XLBestScore = scoreList.Max();
-            psmCross.MatchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
-            psmCross.Xlpos = pmmhList[scoreList.IndexOf(scoreList.Max())].Xlpos + 1;
+            return bestPsmCross;
         }
 
         #endregion Private Methods
     }
 }
+

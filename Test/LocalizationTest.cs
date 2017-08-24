@@ -18,7 +18,7 @@ namespace Test
         [Test]
         public static void TestNonSpecific()
         {
-            Protease p = GlobalTaskLevelSettings.ProteaseDictionary["non-specific"];
+            Protease p = GlobalEngineLevelSettings.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
             Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(p, 8, 1, 9, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Count());

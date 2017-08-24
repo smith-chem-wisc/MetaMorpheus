@@ -48,8 +48,8 @@
     <Reference Include="Chemistry, Version=1.0.221.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.221\lib\Chemistry.dll</HintPath>
     </Reference>
-    <Reference Include="FlashLFQ, Version=0.1.68.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\FlashLFQ.0.1.68\lib\net451\FlashLFQ.dll</HintPath>
+    <Reference Include="FlashLFQ, Version=0.1.74.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>..\packages\FlashLFQ.0.1.74\lib\net451\FlashLFQ.dll</HintPath>
     </Reference>
     <Reference Include="ManagedThermoHelperLayer, Version=1.0.221.0, Culture=neutral, processorArchitecture=AMD64">
       <HintPath>..\packages\mzLib.1.0.221\lib\ManagedThermoHelperLayer.dll</HintPath>
@@ -109,6 +109,9 @@
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CollectionForTreeView.cs" />
+    <Compile Include="DialogWindow.xaml.cs">
+      <DependentUpon>DialogWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ForTreeView.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
@@ -135,6 +138,10 @@
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DialogWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

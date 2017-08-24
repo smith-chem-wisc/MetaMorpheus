@@ -74,8 +74,17 @@ namespace Test
 
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
-            Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), new List<ModificationWithMass>(), int.MaxValue, new List<string>(), TerminusType.None, true);
+
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxModificationIsoforms = int.MaxValue,
+            };
+
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
@@ -136,8 +145,17 @@ namespace Test
 
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
-            Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), new List<ModificationWithMass>(), int.MaxValue, new List<string>(), TerminusType.None, true);
+
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxModificationIsoforms = int.MaxValue
+            };
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
+
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);

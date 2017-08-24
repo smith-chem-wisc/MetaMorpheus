@@ -49,11 +49,12 @@ namespace TaskLayer
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => GlobalTaskLevelSettings.ProteaseDictionary[tmlString.Value])))
+                                .FromToml(tmlString => GlobalEngineLevelSettings.ProteaseDictionary[tmlString.Value])))
                         .ConfigureType<List<Tuple<string, string>>>(type => type
                              .WithConversionFor<TomlString>(convert => convert
                                  .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                                  .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+
 
         #endregion Public Fields
 
@@ -97,18 +98,9 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public int? MaxDegreeOfParallelism { get; set; }
-        public bool LocalizeAll { get; set; }
-        public List<Tuple<string, string>> ListOfModsFixed { get; set; }
-        public List<Tuple<string, string>> ListOfModsVariable { get; set; }
-        public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
         public MyTask TaskType { get; set; }
 
-        public bool DoPrecursorDeconvolution { get; set; }
-        public bool UseProvidedPrecursorInfo { get; set; }
-        public double DeconvolutionIntensityRatio { get; set; }
-        public int DeconvolutionMaxAssumedChargeState { get; set; }
-        public Tolerance DeconvolutionMassTolerance { get; set; }
+        public CommonParameters CommonParameters { get; set; }
 
         #endregion Public Properties
 
