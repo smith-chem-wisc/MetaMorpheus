@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using MzLibUtil;
 
 namespace Test
 {
@@ -26,51 +25,16 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,                            
-                    MinPeptideLength = 5,
                     ConserveMemory = false,
-                    MaxMissedCleavages = 2,
-                    MaxPeptideLength = null,
-                    MaxModificationIsoforms = 4096,
-                    BIons = true,
-                    YIons = true, 
-                    TotalPartitions = 1,
-                    LocalizeAll = true,
-                    MaxDegreeOfParallelism = 1,
-                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01),
-                    ZdotIons = false,
-                    CIons = false,
-
-                    Max_mods_for_peptide = 3,
-
-                    // Deconvolution stuff
-                    DoPrecursorDeconvolution = true,
-                    UseProvidedPrecursorInfo = true,
-                    DeconvolutionIntensityRatio = 4,
-                    DeconvolutionMaxAssumedChargeState = 10,
-                    DeconvolutionMassTolerance = new PpmTolerance(5),
                 },
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptors = massDiffAcceptors,                   
-                    SearchTarget = true,
                     SearchDecoy = false,
                     DoParsimony = true,
-                    DoQuantification = true,
-                    DisposeOfFileWhenDone = true,
-                    AddCompIons = false,
-                    NoOneHitWonders = false,
-                    ModPeptidesAreUnique = true,
-                    QuantifyPpmTol = 5,             
-                    DoLocalizationAnalysis = true,
-                    WritePrunedDatabase = false,
-                    KeepAllUniprotMods = true,
-
+                    DoQuantification = true
                 },
         };
 
@@ -125,51 +89,14 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                     InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                    MinPeptideLength = 5,
                     ConserveMemory = false,
-                    MaxMissedCleavages = 0,
-                    MaxPeptideLength = null,
-                    MaxModificationIsoforms = 4096,
-                    BIons = true,
-                    YIons = true,
-                    TotalPartitions = 1,
-                    LocalizeAll = true,
-                    MaxDegreeOfParallelism = 1,
-                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-                    ProductMassTolerance = new AbsoluteTolerance(0.01),
-                    ZdotIons = false,
-                    CIons = false,
-
-                    Max_mods_for_peptide = 3,
-
-                    // Deconvolution stuff
-                    DoPrecursorDeconvolution = true,
-                    UseProvidedPrecursorInfo = true,
-                    DeconvolutionIntensityRatio = 4,
-                    DeconvolutionMaxAssumedChargeState = 10,
-                    DeconvolutionMassTolerance = new PpmTolerance(5),
+                    MaxMissedCleavages = 0
                 },
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptors = massDiffAcceptors,
-                    SearchTarget = true,
-                    SearchDecoy = false,
-                    DoParsimony = true,
-                    DoQuantification = true,
-                    DisposeOfFileWhenDone = true,
-                    AddCompIons = false,
-                    NoOneHitWonders = false,
-                    ModPeptidesAreUnique = true,
-                    QuantifyPpmTol = 5,
-                    DoLocalizationAnalysis = true,
-                    WritePrunedDatabase = false,
-                    KeepAllUniprotMods = true,
-
                 },
             };
 

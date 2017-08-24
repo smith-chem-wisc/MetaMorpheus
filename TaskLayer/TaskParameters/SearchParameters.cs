@@ -1,9 +1,27 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer
 {
     public class SearchParameters
     {
+        public SearchParameters()
+        {
+            DisposeOfFileWhenDone = true;
+            AddCompIons = false;
+            DoParsimony = false;
+            NoOneHitWonders = false;
+            ModPeptidesAreUnique = true;
+            DoQuantification = false;
+            QuantifyPpmTol = 5;
+            SearchTarget = true;
+            SearchDecoy = true;
+            DoHistogramAnalysis = false;
+            DoLocalizationAnalysis = true;
+            WritePrunedDatabase = false;
+            KeepAllUniprotMods = true;
+            MassDiffAcceptors = GlobalEngineLevelSettings.SearchModesKnown.Take(1).ToList();
+        }
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }

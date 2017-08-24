@@ -26,11 +26,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
                 DeconvolutionIntensityRatio = 50
             };
 
