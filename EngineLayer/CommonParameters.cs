@@ -91,5 +91,6 @@ namespace EngineLayer
         public bool ExcelCompatible { get; set; }
 
         public bool ReportAllAmbiguity { get; set; }
+
     }
 }

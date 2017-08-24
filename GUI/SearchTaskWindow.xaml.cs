@@ -183,14 +183,12 @@ namespace MetaMorpheusGUI
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
             disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
-
-            allAmbiguity.IsChecked = task.ReportAllAmbiguity;
-            someAmbiguity.IsChecked = !task.ReportAllAmbiguity;
-            excelCompatible.IsChecked = task.ExcelCompatible;
-
-            DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
-            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.DeconvolutionMaxAssumedChargeState.ToString();
-            DeconvolutionMassToleranceInPpmTextBox.Text = task.DeconvolutionMassTolerance.Value.ToString();
+            allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
+            someAmbiguity.IsChecked = !task.CommonParameters.ReportAllAmbiguity;
+            excelCompatible.IsChecked = task.CommonParameters.ExcelCompatible;
+            DeconvolutionIntensityRatioTextBox.Text = task.CommonParameters.DeconvolutionIntensityRatio.ToString();
+            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
+            DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
 
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
@@ -392,14 +390,14 @@ namespace MetaMorpheusGUI
 
             TheTask.CommonParameters.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
 
-            TheTask.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
-            TheTask.ExcelCompatible = excelCompatible.IsChecked.Value;
+            TheTask.CommonParameters.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
+            TheTask.CommonParameters.ExcelCompatible = excelCompatible.IsChecked.Value;
 
-            TheTask.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
-            TheTask.DisposeOfFileWhenDone = disposeOfFilesWhenDone.IsChecked.Value;
-            TheTask.ListOfModsVariable = new List<Tuple<string, string>>();
+            TheTask.CommonParameters.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.CommonParameters.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.CommonParameters.DeconvolutionMassTolerance = new PpmTolerance(double.Parse(DeconvolutionMassToleranceInPpmTextBox.Text, CultureInfo.InvariantCulture));
+            TheTask.SearchParameters.DisposeOfFileWhenDone = disposeOfFilesWhenDone.IsChecked.Value;
+            TheTask.CommonParameters.ListOfModsVariable = new List<Tuple<string, string>>();
             foreach (var heh in variableModTypeForTreeViewObservableCollection)
                 TheTask.CommonParameters.ListOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             TheTask.CommonParameters.ListOfModsFixed = new List<Tuple<string, string>>();

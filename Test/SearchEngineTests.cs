@@ -305,7 +305,7 @@ namespace Test
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
             CommonParameters.MinPeptideLength = 5;
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List < ProductType > { ProductType.B }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, TerminusType.N, new List<string>());
+            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List < ProductType > { ProductType.B }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -383,7 +383,7 @@ namespace Test
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
             CommonParameters.MinPeptideLength = 5;           
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, TerminusType.C, new List<string>());
+            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -495,8 +495,14 @@ namespace Test
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
             var protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.SemiN, null, null, null);
 
-            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, 2, null, null, 4096, new List<ProductType> { ProductType.B }, new List<string>(), 1, 1, true);
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                MaxMissedCleavages = 2,
+                Protease = protease,
+                ProductMassTolerance = productMassTolerance,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, CommonParameters, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -514,7 +520,7 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.B }, protease, 5, TerminusType.N, 1, 0, 1, true, true);
+            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B }, 1, CommonParameters, true, searchModes, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -526,7 +532,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[1][0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, searchModes, protease, 2, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.N, true).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.N, CommonParameters, searchModes, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -563,8 +569,14 @@ namespace Test
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
             var protease = new Protease("singleC", new List<string> { "G" }, new List<string>(), TerminusType.C, CleavageSpecificity.SemiC, null, null, null);
 
-            InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, initiatorMethionineBehavior, 5, null, null, 4096, new List<ProductType> { ProductType.Y }, new List<string>(), 1, 1, true);
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                MaxMissedCleavages = 5,
+                Protease = protease,
+                ProductMassTolerance = productMassTolerance,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.Y }, 1, true, CommonParameters, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;
             var fragmentIndexDict = indexResults.FragmentIndexDict;
@@ -582,7 +594,7 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, productMassTolerance, searchModes, new List<string>(), true, new List<ProductType> { ProductType.Y }, protease, 5, TerminusType.C, 1, 0, 1, true, true);
+            var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 1, CommonParameters, true, searchModes, new List<string>());
             var searchResults = engine.Run();
 
             // Single search mode
@@ -594,7 +606,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[1][0].Score > 4);
             Assert.AreEqual(2, allPsmsArray[1][0].ScanNumber);
 
-            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, searchModes, protease, 5, null, null, initiatorMethionineBehavior, fixedModifications, variableModifications, 4096, new List<string>(), TerminusType.C, true).Run();
+            var hah = (SequencesToActualProteinPeptidesEngineResults)new NonSpecificEnzymeSequencesToActualPeptides(new List<Psm>[] { new List<Psm> { allPsmsArray[1][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.C, CommonParameters, searchModes, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[1])
                 if (huh != null && huh.MostProbableProteinInfo == null)

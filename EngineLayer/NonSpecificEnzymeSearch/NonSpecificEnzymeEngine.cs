@@ -17,16 +17,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private static readonly double oxygenAtomMonoisotopicMass = PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
         private static readonly double hydrogenAtomMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass;
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private TerminusType terminusType;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, TerminusType terminusType, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
+        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
-            this.terminusType = terminusType;
-
         }
 
         #endregion Public Constructors
@@ -36,6 +33,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("In nonspecific search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds);
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             bool classicAntigens = false;
             double precursorToleranceDouble = 5;//default 5ppm
             int openSearchIndex = 0;
@@ -98,7 +96,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[openSearchIndex].Count == 0)) 
+                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (CommonParameters.ReportAllAmbiguity || bestPeptides[openSearchIndex].Count == 0)) 
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, precursorTolerance, terminusType);
@@ -162,13 +160,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                             if (globalPsms[j][i] == null)
                             {
-                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan, excelCompatible);
+                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan, CommonParameters.ExcelCompatible);
                                 startIndex = 1;
                             }
 
                             for (int k = startIndex; k < bestPeptides[j].Count; k++)
                             {
-                                if (reportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() == 0)
+                                if (CommonParameters.ReportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() == 0)
                                     globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }
