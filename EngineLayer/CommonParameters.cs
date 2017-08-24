@@ -40,7 +40,9 @@ namespace EngineLayer
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
             DeconvolutionMassTolerance = new PpmTolerance(5);
-        }
+            ExcelCompatible = true;
+            ReportAllAmbiguity = true;
+    }
 
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
@@ -86,5 +88,8 @@ namespace EngineLayer
 
         public int Max_mods_for_peptide { get; set; }
 
+        public bool ExcelCompatible { get; set; }
+
+        public bool ReportAllAmbiguity { get; set; }
     }
 }
