@@ -53,7 +53,7 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            int a = (int)CommonParameters.MaxMissedCleavages;
+            int a = CommonParameters.MaxMissedCleavages.Value;
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
@@ -82,7 +82,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if ((bool)CommonParameters.LocalizeAll)
+            if (CommonParameters.LocalizeAll.Value)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -134,15 +134,15 @@ namespace TaskLayer
                 combinedParams = SetAllFileSpecificCommonParams(CommonParameters, currentFileSpecificSettings);
 
                 ionTypes = new List<ProductType>();
-                if ((bool)combinedParams.BIons && SearchParameters.AddCompIons)
+                if (combinedParams.BIons.Value && SearchParameters.AddCompIons)
                     ionTypes.Add(ProductType.B);
-                else if ((bool)combinedParams.BIons)
+                else if (combinedParams.BIons.Value)
                     ionTypes.Add(ProductType.BnoB1ions);
-                if ((bool)combinedParams.YIons)
+                if (combinedParams.YIons.Value)
                     ionTypes.Add(ProductType.Y);
-                if ((bool)combinedParams.ZdotIons)
+                if (combinedParams.ZdotIons.Value)
                     ionTypes.Add(ProductType.Zdot);
-                if ((bool)combinedParams.CIons)
+                if (combinedParams.CIons.Value)
                     ionTypes.Add(ProductType.C);
                 terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
@@ -152,7 +152,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, (bool)combinedParams.DoPrecursorDeconvolution, (bool)combinedParams.UseProvidedPrecursorInfo, (int)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution.Value, combinedParams.UseProvidedPrecursorInfo.Value, combinedParams.DeconvolutionIntensityRatio.Value, combinedParams.DeconvolutionMaxAssumedChargeState.Value, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int aede = 0; aede < SearchParameters.MassDiffAcceptors.Count; aede++)
                     fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
@@ -162,7 +162,7 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / (int)combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / (int)combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / (int)CommonParameters.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions.Value, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions.Value) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions.Value));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
@@ -462,7 +462,7 @@ namespace TaskLayer
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.Protease }, 0.01, SearchParameters.MassDiffAcceptors[j], CommonParameters.ProductMassTolerance, (int)CommonParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.Protease }, 0.01, SearchParameters.MassDiffAcceptors[j], CommonParameters.ProductMassTolerance, CommonParameters.MaxMissedCleavages.Value, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }

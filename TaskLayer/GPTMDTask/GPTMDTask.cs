@@ -50,7 +50,7 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            int a = (int)CommonParameters.MaxMissedCleavages;
+            int a = CommonParameters.MaxMissedCleavages.Value;
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
                 + CommonParameters.InitiatorMethionineBehavior
@@ -75,7 +75,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if ((bool)CommonParameters.LocalizeAll)
+            if (CommonParameters.LocalizeAll.Value)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -92,13 +92,13 @@ namespace TaskLayer
             allPsms[0] = new List<Psm>();
 
             List<ProductType> lp = new List<ProductType>();
-            if ((bool)CommonParameters.BIons)
+            if (CommonParameters.BIons.Value)
                 lp.Add(ProductType.B);
-            if ((bool)CommonParameters.YIons)
+            if (CommonParameters.YIons.Value)
                 lp.Add(ProductType.Y);
-            if ((bool)CommonParameters.CIons)
+            if (CommonParameters.CIons.Value)
                 lp.Add(ProductType.C);
-            if ((bool)CommonParameters.ZdotIons)
+            if (CommonParameters.ZdotIons.Value)
                 lp.Add(ProductType.Zdot);
 
             Status("Loading proteins...", new List<string> { taskId });
@@ -152,7 +152,7 @@ namespace TaskLayer
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, (double)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution.Value, CommonParameters.UseProvidedPrecursorInfo.Value, CommonParameters.DeconvolutionIntensityRatio.Value, CommonParameters.DeconvolutionMaxAssumedChargeState.Value, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 Psm[][] allPsmsArray = new Psm[1][];
                 allPsmsArray[0] = new Psm[arrayOfMs2ScansSortedByMass.Length];
                 new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();

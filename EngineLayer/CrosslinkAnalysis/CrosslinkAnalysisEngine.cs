@@ -91,11 +91,11 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.Protease, (int)CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, CommonParameters.InitiatorMethionineBehavior, fixedModifications))
+                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages.Value, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, CommonParameters.InitiatorMethionineBehavior, fixedModifications))
                     {
                         //if (peptideWithPossibleModifications.Length <= 1)
                         //    continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, (int)CommonParameters.MaxModificationIsoforms, (int)CommonParameters.Max_mods_for_peptide))
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms.Value, CommonParameters.Max_mods_for_peptide.Value))
                         {
                             if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 

@@ -90,7 +90,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if ((bool)CommonParameters.LocalizeAll)
+            if (CommonParameters.LocalizeAll.Value)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -116,13 +116,13 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if ((bool)CommonParameters.BIons)
+            if (CommonParameters.BIons.Value)
                 ionTypes.Add(ProductType.B);
-            if ((bool)CommonParameters.YIons)
+            if (CommonParameters.YIons.Value)
                 ionTypes.Add(ProductType.Y);
-            if ((bool)CommonParameters.ZdotIons)
+            if (CommonParameters.ZdotIons.Value)
                 ionTypes.Add(ProductType.Zdot);
-            if ((bool)CommonParameters.CIons)
+            if (CommonParameters.CIons.Value)
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
@@ -184,12 +184,12 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, (int)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution.Value, CommonParameters.UseProvidedPrecursorInfo.Value, CommonParameters.DeconvolutionIntensityRatio.Value, CommonParameters.DeconvolutionMaxAssumedChargeState.Value, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
                     List<CompactPeptide> peptideIndex = null;
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / (int)CommonParameters.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / (int)CommonParameters.TotalPartitions) - (currentPartition * proteinList.Count() / (int)CommonParameters.TotalPartitions));
+                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / CommonParameters.TotalPartitions.Value, ((currentPartition + 1) * proteinList.Count() / CommonParameters.TotalPartitions.Value) - (currentPartition * proteinList.Count() / CommonParameters.TotalPartitions.Value));
 
                     float[] keys = null;
                     List<int>[] fragmentIndex = null;

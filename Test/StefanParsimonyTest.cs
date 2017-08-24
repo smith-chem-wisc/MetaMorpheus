@@ -208,19 +208,19 @@ namespace Test
                 protein3 = new Protein("MA", "protein3");
             }
 
-            var prot1List = protein1.Digest(CommonParameters.Protease, (int)CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
+            var prot1List = protein1.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages.Value, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications1 = prot1List.First();
             int maxModsForPeptide = 1;
             int maximumVariableModificationIsoforms = 2;
             var pep1list = pepWithPossibleModifications1.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepWithSetModifications1 = pep1list.First();
 
-            var prot2List = protein2.Digest(CommonParameters.Protease, (int)CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
+            var prot2List = protein2.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages.Value, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications2 = prot2List.First();
             var pep2list = pepWithPossibleModifications2.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepWithSetModifications2 = pep2list.First();
 
-            var prot3List = protein3.Digest(CommonParameters.Protease, (int)CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
+            var prot3List = protein3.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages.Value, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, allKnownFixedModifications);
             PeptideWithPossibleModifications pepWithPossibleModifications3 = prot3List.First();
             var pep3list = pepWithPossibleModifications3.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide).ToList();
             PeptideWithSetModifications pepWithSetModifications3 = pep3list.Last();
