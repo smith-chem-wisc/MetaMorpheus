@@ -49,7 +49,7 @@ namespace Test
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                temp = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), TerminusType.None);
 
                 foreach (var dbPeptide in temp)
                 {
@@ -270,7 +270,7 @@ namespace Test
 
             foreach (var protein in p)
             {
-                var digestedProtein = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var digestedProtein = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), TerminusType.None);
 
                 foreach (var pepWithPossibleMods in digestedProtein)
                 {
@@ -319,7 +319,7 @@ namespace Test
 
             var prot = (new Protein(sequence, "TestProtein"));
 
-            var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+            var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), TerminusType.None);
             var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
 
@@ -369,12 +369,12 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, TerminusType.None).Last();
             HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
             Assert.AreEqual("QQQ", value.First().Sequence);
 
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, TerminusType.None).First();
             HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
             Assert.AreEqual("MNNNSK", value2.First().Sequence);
@@ -383,7 +383,7 @@ namespace Test
             CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last(), TerminusType.None);
             Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications, TerminusType.None).ToList()[1];
             HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNSK", value3.First().Sequence);
@@ -395,7 +395,7 @@ namespace Test
             var peptideList = new HashSet<PeptideWithSetModifications>();
             foreach (var protein in proteinList)
             {
-                var temp = protein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var temp = protein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), TerminusType.None);
                 foreach (var dbPeptide in temp)
                 {
                     var pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();

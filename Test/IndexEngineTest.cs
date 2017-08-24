@@ -43,7 +43,7 @@ namespace Test
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var digestedList = proteinList[0].Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).ToList();
+            var digestedList = proteinList[0].Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), TerminusType.None).ToList();
 
             Assert.AreEqual(5, digestedList.Count);
             foreach (var fdfd in digestedList)
