@@ -20,7 +20,5 @@ namespace EngineLayer
         }
 
         #endregion Public Constructors
-
-
     }
 }

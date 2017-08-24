@@ -74,8 +74,37 @@ namespace Test
 
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
-            Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), new List<ModificationWithMass>(), int.MaxValue, new List<string>(), TerminusType.None);
+
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = int.MaxValue,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                Max_mods_for_peptide = 3,
+                MaxDegreeOfParallelism = 1,
+
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+            };
+
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
@@ -84,14 +113,18 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, searchModes.Count, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(1, res.ModsSeenAndLocalized[0].Count());
-            Assert.AreEqual(2, res.ModsSeenAndLocalized[0][mod1.id]);
-
-            Assert.AreEqual(0, res.NonLocalizedModsSeen[0].Count()); // Weird
-
             Assert.AreEqual(2, res.AllModsOnProteins[0].Count());
             Assert.AreEqual(2, res.AllModsOnProteins[0][mod1.id]);
             Assert.AreEqual(1, res.AllModsOnProteins[0][mod2.id]);
+
+            Assert.AreEqual(1, res.ModsSeenAndLocalized[0].Count());
+            Assert.AreEqual(2, res.ModsSeenAndLocalized[0][mod1.id]);
+
+            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen[0].Count());
+
+            Assert.AreEqual(0, res.UnlocalizedMods[0].Count());
+
+            Assert.AreEqual(0, res.UnlocalizedFormulas[0].Count());
         }
 
         [Test]
@@ -132,8 +165,37 @@ namespace Test
 
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             List<Protein> proteinList = new List<Protein> { protein1 };
-            Protease protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, searchModes, protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>(), new List<ModificationWithMass>(), int.MaxValue, new List<string>(), TerminusType.None);
+
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 0,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = int.MaxValue,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
+                BIons = true,
+                YIons = true,
+                ZdotIons = false,
+                CIons = false,
+
+                TotalPartitions = 1,
+                LocalizeAll = true,
+
+                Max_mods_for_peptide = 3,
+                MaxDegreeOfParallelism = 1,
+
+
+                // Deconvolution stuff
+                DoPrecursorDeconvolution = true,
+                UseProvidedPrecursorInfo = true,
+                DeconvolutionIntensityRatio = 4,
+                DeconvolutionMaxAssumedChargeState = 10,
+            };
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
+
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
@@ -145,12 +207,16 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, searchModes.Count, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(0, res.ModsSeenAndLocalized[0].Count()); // Not localized
-
-            Assert.AreEqual(1, res.NonLocalizedModsSeen[0][mod1.id]); // Saw it, but not sure where!
-
             Assert.AreEqual(1, res.AllModsOnProteins[0].Count());
             Assert.AreEqual(2, res.AllModsOnProteins[0][mod1.id]);
+
+            Assert.AreEqual(0, res.ModsSeenAndLocalized[0].Count());
+
+            Assert.AreEqual(0, res.AmbiguousButLocalizedModsSeen[0].Count);
+
+            Assert.AreEqual(1, res.UnlocalizedMods[0][mod1.id]); // Saw it, but not sure where!
+
+            Assert.AreEqual(0, res.UnlocalizedFormulas[0].Count());
         }
 
         #endregion Public Methods

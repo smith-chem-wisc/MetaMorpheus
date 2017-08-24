@@ -39,6 +39,7 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 ## Database Requirements
 
+UniProt or fasta format, may be compressed.
 
 ## Test Installation (Windows GUI)
 
