@@ -85,7 +85,7 @@ namespace EngineLayer.ClassicSearch
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                            if (!CommonParameters.ConserveMemory)
+                            if ((bool)!CommonParameters.ConserveMemory)
                             {
                                 var peptideWasObserved = observedPeptides.Contains(correspondingCompactPeptide);
                                 if (peptideWasObserved)

@@ -8,13 +8,13 @@ namespace EngineLayer
     {
 
         public int? MaxDegreeOfParallelism { get; set; }
-        public bool LocalizeAll { get; set; }
+        public bool? LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
         public List<Tuple<string, string>> ListOfModsVariable { get; set; }
         public List<Tuple<string, string>> ListOfModsLocalize { get; set; }
 
-        public bool DoPrecursorDeconvolution { get; set; }
-        public bool UseProvidedPrecursorInfo { get; set; }
+        public bool? DoPrecursorDeconvolution { get; set; }
+        public bool? UseProvidedPrecursorInfo { get; set; }
         public double DeconvolutionIntensityRatio { get; set; }
         public int DeconvolutionMaxAssumedChargeState { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
@@ -33,17 +33,17 @@ namespace EngineLayer
 
         public Protease Protease { get; set; }
 
-        public bool BIons { get; set; }
+        public bool? BIons { get; set; }
 
-        public bool YIons { get; set; }
+        public bool? YIons { get; set; }
 
-        public bool ZdotIons { get; set; }
+        public bool? ZdotIons { get; set; }
 
-        public bool CIons { get; set; }
+        public bool? CIons { get; set; }
 
         public Tolerance ProductMassTolerance { get; set; }
 
-        public bool ConserveMemory { get; set; }
+        public bool? ConserveMemory { get; set; }
 
         public double ScoreCutoff { get; set; }
 

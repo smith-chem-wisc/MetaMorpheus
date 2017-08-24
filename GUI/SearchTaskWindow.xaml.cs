@@ -227,7 +227,7 @@ namespace MetaMorpheusGUI
             }
 
             localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
-            if (task.CommonParameters.LocalizeAll)
+            if ((bool)task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                     heh.Use = true;
