@@ -14,8 +14,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Private Fields
 
-        private const double tolInDaForPreferringHavingMods = 0.03;
-
         private readonly List<int>[] fragmentIndex;
 
         private readonly Tolerance fragmentTolerance;

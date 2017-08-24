@@ -36,7 +36,7 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
-            foreach (var ok in allResultingIdentifications)
+            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
                 var matchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
@@ -46,33 +46,30 @@ namespace EngineLayer
                     var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
-                    Psm.MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
                     matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
                 }
 
                 ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
 
-                if (ok.NumDifferentCompactPeptides == 1)
+                if (ok.FullSequence == null)
+                    continue;
+
+                var representative = ok.CompactPeptides.First().Value.Item2.First();
+
+                var localizedScores = new List<double>();
+                for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
                 {
-                    if (ok.FullSequence == null)
-                        continue;
+                    PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ok.ScanPrecursorMass - representative.MonoisotopicMass);
 
-                    var representative = ok.CompactPeptides.First().Value.Item2.First();
-
-                    var localizedScores = new List<double>();
-                    for (int indexToLocalize = 0; indexToLocalize < representative.Length; indexToLocalize++)
-                    {
-                        PeptideWithSetModifications localizedPeptide = representative.Localize(indexToLocalize, ok.ScanPrecursorMass - representative.MonoisotopicMass);
-
-                        var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
-                        Array.Sort(gg);
-                        double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                        var score = Psm.MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
-                        localizedScores.Add(score);
-                    }
-
-                    ok.LocalizedScores = localizedScores;
+                    var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
+                    Array.Sort(gg);
+                    double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
+                    var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
+                    localizedScores.Add(score);
                 }
+
+                ok.LocalizedScores = localizedScores;
             }
             return new LocalizationEngineResults(this);
         }

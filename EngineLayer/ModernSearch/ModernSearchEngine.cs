@@ -32,7 +32,7 @@ namespace EngineLayer.ModernSearch
 
         #region Private Fields
 
-        private const double tolInDaForPreferringHavingMods = 0.03;
+        private const double tolForScoreImprovement = 1e-9;
 
         #endregion Private Fields
 
@@ -103,7 +103,7 @@ namespace EngineLayer.ModernSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (reportAllAmbiguity || bestPeptides[j].Count == 0)) 
+                                    if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (reportAllAmbiguity || bestPeptides[j].Count == 0)) 
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
