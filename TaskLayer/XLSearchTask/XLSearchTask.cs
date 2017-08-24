@@ -278,7 +278,7 @@ namespace TaskLayer
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML(interPsmsXLFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                    WritePepXML_xl(interPsmsXLFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
             //
@@ -296,7 +296,7 @@ namespace TaskLayer
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WritePepXML(intraPsmsXLFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
+                    WritePepXML_xl(intraPsmsXLFDR.Where(p => p.FullFilePath == fullFilePath).ToList(), dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, fileNameNoExtension, new List<string> { taskId });
                 }
             }
             //

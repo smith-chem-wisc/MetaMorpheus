@@ -456,6 +456,8 @@ namespace TaskLayer
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.Protease }, 0.01, SearchParameters.MassDiffAcceptors[j], CommonParameters.ProductMassTolerance, CommonParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WritePepXML(psmsForThisFile, dbFilenameList, variableModifications, fixedModifications, localizeableModifications, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, SearchParameters, new List<string> { taskId });
+
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }

@@ -865,6 +865,234 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(Path.Combine(outputFolder, fileName + ".mzid"), nestedIds);
         }
 
+        protected internal void WritePepXML(List<Psm> items, List<DbForTask> dbFilenameList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> localizeableModifications, string outputFolder, string fileName, SearchParameters searchParameters, List<string> nestedIds)
+        {
+            XmlSerializer _indexedSerializer = new XmlSerializer(typeof(pepXML.Generated.msms_pipeline_analysis));
+            var _pepxml = new pepXML.Generated.msms_pipeline_analysis();
+
+            #region Add element to pepXML
+            _pepxml.date = DateTime.Now;
+            _pepxml.summary_xml = items[0].FullFilePath + ".pep.xml";
+
+            string proteaseC = ""; string proteaseNC = "";
+            foreach (var x in CommonParameters.Protease.SequencesInducingCleavage) { proteaseC += x; }
+            foreach (var x in CommonParameters.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
+
+            string modsFixed = ""; string modsVar = "";
+            foreach (var x in CommonParameters.ListOfModsFixed) { modsFixed += x.Item2 + "."; }
+            foreach (var x in CommonParameters.ListOfModsVariable) { modsVar += x.Item2 + "."; }
+
+            Dictionary<string, Modification> unknownModifications;
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, searchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            uint proteinTot = Convert.ToUInt32(proteinList.Count);
+
+            string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
+            string filePathNoExtension = Path.ChangeExtension(items[0].FullFilePath, null);
+
+            _pepxml.msms_run_summary = new pepXML.Generated.msms_pipeline_analysisMsms_run_summary[1]
+             {
+                 new pepXML.Generated.msms_pipeline_analysisMsms_run_summary
+                 {
+                 base_name = filePathNoExtension,
+                 raw_data_type = "raw",
+                 raw_data = ".mzML",
+                 sample_enzyme = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzyme()
+                 {
+                     name = CommonParameters.Protease.Name,
+                     specificity = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity[1]
+                     {
+                         new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity
+                         {
+                             cut = proteaseC,
+                             no_cut = proteaseNC,
+                         }
+                     }
+                 },
+
+                 search_summary = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summary[1]
+                 {
+                     new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summary
+                     {
+                         base_name = filePathNoExtension,
+                         //search_engine = pepXML.Generated.engineType.,
+                         search_engine_version = GlobalEngineLevelSettings.MetaMorpheusVersion,
+                         precursor_mass_type = pepXML.Generated.massType.monoisotopic,
+                         fragment_mass_type = pepXML.Generated.massType.monoisotopic,
+                         search_id = 1,
+                         search_database = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summarySearch_database
+                         {
+                             local_path = dbFilenameList[0].FilePath,
+                             type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summarySearch_databaseType.AA,
+                         },
+                         enzymatic_search_constraint = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summaryEnzymatic_search_constraint
+                         {
+                             enzyme = CommonParameters.Protease.Name,
+                             max_num_internal_cleavages = CommonParameters.MaxMissedCleavages.ToString(),
+                         },
+                         parameter = new pepXML.Generated.nameValueType[]
+                         {
+                             new pepXML.Generated.nameValueType{ name = "threads", value = "" },
+                             new pepXML.Generated.nameValueType{ name = "database", value = dbFilenameList[0].FilePath },
+                             new pepXML.Generated.nameValueType{ name = "MS_data_file", value = items[0].FullFilePath },
+
+                             new pepXML.Generated.nameValueType{ name = "Generate decoy proteins", value = searchParameters.SearchDecoy.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "MaxMissed Cleavages", value = CommonParameters.MaxMissedCleavages.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Protease", value = CommonParameters.Protease.Name },
+                             new pepXML.Generated.nameValueType{ name = "Initiator Methionine", value = CommonParameters.InitiatorMethionineBehavior.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Max Modification Isoforms", value = CommonParameters.MaxModificationIsoforms.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Min Peptide Len", value = CommonParameters.MinPeptideLength.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Max Peptide Len", value = CommonParameters.MaxPeptideLength.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Ions to search", value = "B "+ CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() },
+
+                             new pepXML.Generated.nameValueType{ name = "Fixed Modifications", value = modsFixed },
+                             new pepXML.Generated.nameValueType{ name = "Variable Modificaions", value = modsVar },
+                             new pepXML.Generated.nameValueType{ name = "Localize All Modifications", value = CommonParameters.LocalizeAll.ToString() },
+                         }
+                     }
+                 },
+                 }
+             };
+
+            _pepxml.msms_run_summary[0].spectrum_query = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query[items.Count];
+            for (int i = 0; i < items.Count; i++)
+            {
+                _pepxml.msms_run_summary[0].spectrum_query[i] = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_query()
+                {
+                    spectrum = fileNameNoExtension + "." + items[i].ScanNumber.ToString(),
+                    start_scan = Convert.ToUInt32(items[i].ScanNumber),
+                    end_scan = Convert.ToUInt32(items[i].ScanNumber),
+                    precursor_neutral_mass = (float)items[i].ScanPrecursorMonoisotopicPeak.Mz * items[i].ScanPrecursorCharge,
+                    assumed_charge = items[i].ScanPrecursorCharge.ToString(),
+                    index = Convert.ToUInt32(i + 1),
+                    retention_time_sec = (float)items[i].ScanRetentionTime,
+                    search_result = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result[1]
+                    {
+                        new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_result
+                        {
+                            search_hit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit[1]
+                            {
+                                new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
+                                {
+                                    hit_rank = 1,
+                                    peptide = items[i].BaseSequence,
+                                    peptide_prev_aa = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().PreviousAminoAcid.ToString(),
+                                    peptide_next_aa = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().NextAminoAcid.ToString(),
+                                    protein = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().Protein.Accession,
+                                    num_tot_proteins = proteinTot/2,
+                                    calc_neutral_pep_mass = (float)items[i].PeptideMonisotopicMass.Value,
+                                    massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value ).ToString(),
+
+                                    search_score = new pepXML.Generated.nameValueType[]
+                                    {
+                                        new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].Score.ToString()},
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                #region mods infomation
+                int modsFixedNum1 = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Count;
+                if (modsFixedNum1 != 0)
+                {
+                    modsFixedNum1 = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Count;
+                    if (modsFixedNum1 == 1)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[1]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum1 == 2)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[2]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum1 == 3)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[3]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum1 == 4)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[4]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum1 == 5)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[5]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    if (modsFixedNum1 == 6)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info = new pepXML.Generated.modInfoDataType
+                        {
+                            mod_aminoacid_mass = new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass[6]
+                        {
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{},
+                            new pepXML.Generated.modInfoDataTypeMod_aminoacid_mass{}
+                        }
+                        };
+                    }
+                    for (int j = 0; j < modsFixedNum1; j++)
+                    {
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info.mod_aminoacid_mass[j].mass = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Values.Select(p => p.monoisotopicMass).ToList()[j];
+                        _pepxml.msms_run_summary[0].spectrum_query[i].search_result[0].search_hit[0].xlink.linked_peptide[0].modification_info.mod_aminoacid_mass[j].position = items[i].MostProbableProteinInfo.PeptidesWithSetModifications.First().allModsOneIsNterminus.Keys.ToList()[j].ToString();
+                    }
+                }
+                #endregion
+            }
+
+
+            #endregion
+
+            TextWriter writer = new StreamWriter(Path.Combine(outputFolder, fileName + ".pep.xml"));
+            _indexedSerializer.Serialize(writer, _pepxml);
+            writer.Close();
+            SucessfullyFinishedWritingFile(Path.Combine(outputFolder, fileName + ".pep.xml"), nestedIds);
+
+        }
+
         #endregion Protected Internal Methods
 
         #region Protected Methods
