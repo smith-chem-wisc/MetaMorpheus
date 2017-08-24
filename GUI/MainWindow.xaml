@@ -121,18 +121,17 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="20" />
-                            <RowDefinition Height="10*" />
-                            <RowDefinition Height="3*"/>
+                            <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                             <RowDefinition Height="40" />
                         </Grid.RowDefinitions>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button x:Name="addSearchTaskButton" Content="New Search Task" Click="AddSearchTaskButton_Click" />
                             <Button x:Name="addCalibrateTaskButton" Content="New Calibrate Task" Click="AddCalibrateTaskButton_Click" />
                             <Button x:Name="addGPTMDTaskButton" Content="New GPTMD Task" Click="AddGPTMDTaskButton_Click" />
                             <Button x:Name="btnAddCrosslinkSearch" Content="New XL Task" Click="BtnAddCrosslinkSearch_Click" />
                         </StackPanel>
-                        <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" Grid.RowSpan="2">
+                        <TreeView x:Name="tasksTreeView" Grid.Row="1" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick">
                             <TreeView.Resources>
                                 <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
                                     <StackPanel Orientation="Horizontal">
@@ -164,7 +163,7 @@
                                 </DataTemplate>
                             </TreeView.Resources>
                         </TreeView>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3" Margin="81,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
                             <Button x:Name="LoadTaskButton" Content="Load" Click="LoadTaskButton_Click" />
                             <Button x:Name="ClearTasksButton" Content="Clear" Click="ClearTasks_Click" />
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
