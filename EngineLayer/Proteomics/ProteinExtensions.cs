@@ -100,26 +100,27 @@ namespace EngineLayer
                         }
                     }
 
+                    int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
+                    int maxIndex = maximumMissedCleavages < lastIndex ? maximumMissedCleavages : lastIndex;
                     if (protease.CleavageSpecificity == CleavageSpecificity.SemiN)
                     {
-                        int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
-                        for (int i = 1; i <= maximumMissedCleavages; i++)
+                        for (int i = 1; i <= maxIndex; i++)
                         {
                             if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] >= minPeptidesLength) &&
                                 (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] <= maxPeptidesLength))
                             {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[lastIndex - i], oneBasedIndicesToCleaveAfter[lastIndex], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[lastIndex - i] + 1, oneBasedIndicesToCleaveAfter[lastIndex], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
                             }
                         }
                     }
                     else //SemiC, never cleave M
                     {
-                        for (int i = 1; i <= maximumMissedCleavages; i++)
+                        for (int i = 1; i <= maxIndex; i++)
                         {
                             if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] >= minPeptidesLength) &&
                                 (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] <= maxPeptidesLength))
                             {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[0], oneBasedIndicesToCleaveAfter[i], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[0] + 1, oneBasedIndicesToCleaveAfter[i], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
                             }
                         }
                     }
