@@ -27,7 +27,7 @@ namespace EngineLayer
                         for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - missed_cleavages - 1; i++)
                         {
                             // Retain!
-                            if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || i != 0 || protein[0] != 'M')
+                            if (i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                             {
                                 if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
@@ -36,7 +36,7 @@ namespace EngineLayer
                                 }
                             }
                             // Cleave!
-                            if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && i == 0 && protein[0] == 'M')
+                            if (i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
                             {
                                 if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1 >= minPeptidesLength) &&
                                     (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1 <= maxPeptidesLength))
@@ -78,112 +78,137 @@ namespace EngineLayer
                 }
                 else // protease.CleavageSpecificity == CleavageSpecificity.Semi
                 {
-                    for (int missed_cleavages = 0; missed_cleavages <= maximumMissedCleavages; missed_cleavages++)
+                    for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - maximumMissedCleavages - 1; i++)
                     {
-                        for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - missed_cleavages - 1; i++)
+                        // Retain!
+                        if (i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                         {
-                            // Retain!
-                            if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || i != 0 || protein[0] != 'M')
+                            if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
                             {
-                                if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                            }
+                        }
+                        // Cleave!
+                        if (i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                        {
+                            if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi:M cleaved", allKnownFixedModifications);
+                            }
+                        }
+                    }
+
+                    if (protease.CleavageSpecificity == CleavageSpecificity.SemiN)
+                    {
+                        int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
+                        for (int i = 1; i <= maximumMissedCleavages; i++)
+                        {
+                            if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[lastIndex] - oneBasedIndicesToCleaveAfter[lastIndex - i] <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[lastIndex - i], oneBasedIndicesToCleaveAfter[lastIndex], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                            }
+                        }
+                    }
+                    else //SemiC, never cleave M
+                    {
+                        for (int i = 1; i <= maximumMissedCleavages; i++)
+                        {
+                            if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] >= minPeptidesLength) &&
+                                (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i] - oneBasedIndicesToCleaveAfter[0] <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[0], oneBasedIndicesToCleaveAfter[i], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+                            }
+                        }
+                    }
+
+                    // Also digest using the proteolysis product start/end indices
+                    foreach (var proteolysisProduct in protein.ProteolysisProducts)
+                        if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length)
+                        {
+                            int i = 0;
+                            while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)
+                                i++;
+                            // Start peptide
+                            if (i + maximumMissedCleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages] <= proteolysisProduct.OneBasedEndPosition && proteolysisProduct.OneBasedBeginPosition.HasValue)
+                            {
+                                if ((!minPeptidesLength.HasValue || (oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || (oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full", allKnownFixedModifications);
+                                    yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages], protein, maximumMissedCleavages, proteolysisProduct.Type + " start", allKnownFixedModifications);
                                 }
                             }
-                            // Cleave!
-                            if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && i == 0 && protein[0] == 'M')
+                            while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition)
+                                i++;
+                            // End
+                            if (i - maximumMissedCleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - maximumMissedCleavages - 1] + 1 >= proteolysisProduct.OneBasedBeginPosition && proteolysisProduct.OneBasedEndPosition.HasValue)
                             {
-                                if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1 >= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1] - 1 <= maxPeptidesLength))
+                                if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - maximumMissedCleavages - 1]) >= minPeptidesLength) &&
+                                    (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - maximumMissedCleavages - 1]) <= maxPeptidesLength))
                                 {
-                                    yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + missed_cleavages + 1], protein, missed_cleavages, "full:M cleaved", allKnownFixedModifications);
+                                    yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - maximumMissedCleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value, protein, maximumMissedCleavages, proteolysisProduct.Type + " end", allKnownFixedModifications);
                                 }
                             }
                         }
+                }
+            }
 
-                        // Also digest using the proteolysis product start/end indices
-                        foreach (var proteolysisProduct in protein.ProteolysisProducts)
-                            if (proteolysisProduct.OneBasedBeginPosition != 1 || proteolysisProduct.OneBasedEndPosition != protein.Length)
-                            {
-                                int i = 0;
-                                while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedBeginPosition)
-                                    i++;
-                                // Start peptide
-                                if (i + missed_cleavages < oneBasedIndicesToCleaveAfter.Count && oneBasedIndicesToCleaveAfter[i + missed_cleavages] <= proteolysisProduct.OneBasedEndPosition && proteolysisProduct.OneBasedBeginPosition.HasValue)
-                                {
-                                    if ((!minPeptidesLength.HasValue || (oneBasedIndicesToCleaveAfter[i + missed_cleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
-                                        (!maxPeptidesLength.HasValue || (oneBasedIndicesToCleaveAfter[i + missed_cleavages] - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
-                                    {
-                                        yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, oneBasedIndicesToCleaveAfter[i + missed_cleavages], protein, missed_cleavages, proteolysisProduct.Type + " start", allKnownFixedModifications);
-                                    }
-                                }
-                                while (oneBasedIndicesToCleaveAfter[i] < proteolysisProduct.OneBasedEndPosition)
-                                    i++;
-                                // End
-                                if (i - missed_cleavages - 1 >= 0 && oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1 >= proteolysisProduct.OneBasedBeginPosition && proteolysisProduct.OneBasedEndPosition.HasValue)
-                                {
-                                    if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1]) >= minPeptidesLength) &&
-                                        (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1]) <= maxPeptidesLength))
-                                    {
-                                        yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i - missed_cleavages - 1] + 1, proteolysisProduct.OneBasedEndPosition.Value, protein, missed_cleavages, proteolysisProduct.Type + " end", allKnownFixedModifications);
-                                    }
-                                }
-                            }
-                    }
-                }
-            }
-            else if (protease.Name.Equals("singleC"))
-            {
-                //cleave in one spot
-                for (int index = 1; index <= protein.Length; index++) //position BEFORE the amino acid
-                {
-                    if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength))//&&
-                    {
-                        yield return new PeptideWithPossibleModifications(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "MHC", allKnownFixedModifications);
-                    }
-                }
-            }
-            else if (protease.Name.Equals("singleN"))
-            {
-                //cleave in one spot
-                for (int index = 1; index <= protein.Length; index++) //position BEFORE the amino acid
-                {
-                    if ((!minPeptidesLength.HasValue || (protein.Length - index + 1) >= minPeptidesLength)) //&&
-                    {
-                        yield return new PeptideWithPossibleModifications(index, Math.Min(protein.Length, index + (maxPeptidesLength ?? 50)), protein, 0, "MHC", allKnownFixedModifications);
-                    }
-                }
-            }
             else  // protease.CleavageSpecificity == CleavageSpecificity.None
             {
-                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                if (protease.Name.Equals("singleC"))
                 {
-                    if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || protein.Length <= maxPeptidesLength))
+                    //cleave in one spot
+                    for (int index = 1; index <= protein.Length; index++) //position BEFORE the amino acid
                     {
-                        yield return new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
-                    }
-                }
-                if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
-                {
-                    if ((!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength) &&
-                                    (!maxPeptidesLength.HasValue || protein.Length - 1 <= maxPeptidesLength))
-                    {
-                        yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
-                    }
-                }
-
-                // Also digest using the proteolysis product start/end indices
-                foreach (var proteolysisProduct in protein.ProteolysisProducts)
-                    if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue)
-                    {
-                        if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
-                                       (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
+                        if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength))//&&
                         {
-                            yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications);
+                            yield return new PeptideWithPossibleModifications(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "MHC", allKnownFixedModifications);
                         }
                     }
+                }
+                else if (protease.Name.Equals("singleN"))
+                {
+                    //cleave in one spot
+                    for (int index = 1; index <= protein.Length; index++) //position BEFORE the amino acid
+                    {
+                        if ((!minPeptidesLength.HasValue || (protein.Length - index + 1) >= minPeptidesLength)) //&&
+                        {
+                            yield return new PeptideWithPossibleModifications(index, Math.Min(protein.Length, index + (maxPeptidesLength ?? 50)), protein, 0, "MHC", allKnownFixedModifications);
+                        }
+                    }
+                }
+                else
+                {
+                    if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                    {
+                        if ((!minPeptidesLength.HasValue || protein.Length >= minPeptidesLength) &&
+                                        (!maxPeptidesLength.HasValue || protein.Length <= maxPeptidesLength))
+                        {
+                            yield return new PeptideWithPossibleModifications(1, protein.Length, protein, 0, "full", allKnownFixedModifications);
+                        }
+                    }
+                    if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                    {
+                        if ((!minPeptidesLength.HasValue || protein.Length - 1 >= minPeptidesLength) &&
+                                        (!maxPeptidesLength.HasValue || protein.Length - 1 <= maxPeptidesLength))
+                        {
+                            yield return new PeptideWithPossibleModifications(2, protein.Length, protein, 0, "full:M cleaved", allKnownFixedModifications);
+                        }
+                    }
+
+                    // Also digest using the proteolysis product start/end indices
+                    foreach (var proteolysisProduct in protein.ProteolysisProducts)
+                        if (proteolysisProduct.OneBasedEndPosition.HasValue && proteolysisProduct.OneBasedBeginPosition.HasValue)
+                        {
+                            if ((!minPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) >= minPeptidesLength) &&
+                                           (!maxPeptidesLength.HasValue || (proteolysisProduct.OneBasedEndPosition.Value - proteolysisProduct.OneBasedBeginPosition.Value + 1) <= maxPeptidesLength))
+                            {
+                                yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type, allKnownFixedModifications);
+                            }
+                        }
+                }
             }
         }
 
