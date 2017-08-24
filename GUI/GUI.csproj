@@ -109,6 +109,9 @@
       <DependentUpon>CalibrateTaskWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="CollectionForTreeView.cs" />
+    <Compile Include="DialogWindow.xaml.cs">
+      <DependentUpon>DialogWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ForTreeView.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
@@ -135,6 +138,10 @@
       <DependentUpon>XLSearchTaskWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="CalibrateTaskWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DialogWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

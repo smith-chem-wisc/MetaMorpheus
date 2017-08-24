@@ -16,16 +16,18 @@ namespace TaskLayer
         private readonly List<Tuple<string, MetaMorpheusTask>> taskList;
         private List<string> currentRawDataFilenameList;
         private List<DbForTask> currentXmlDbFilenameList;
+        private string metaMorpheusTaskSuffix;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList)
+        public EverythingRunnerEngine(List<Tuple<string, MetaMorpheusTask>> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string folderSuffix)
         {
             this.taskList = taskList;
             currentRawDataFilenameList = startingRawFilenameList;
             currentXmlDbFilenameList = startingXmlDbFilenameList;
+            metaMorpheusTaskSuffix = folderSuffix;
         }
 
         #endregion Public Constructors
@@ -62,7 +64,7 @@ namespace TaskLayer
                 return;
             }
 
-            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture) + metaMorpheusTaskSuffix;
 
             var MatchingChars =
                 from len in Enumerable.Range(0, currentRawDataFilenameList.Min(s => s.Length)).Reverse()

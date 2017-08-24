@@ -169,7 +169,13 @@
                             <Button x:Name="RemoveLastTaskButton" Content="Remove Last Task" Click="RemoveLastTask_Click" />
                             <Button x:Name="ResetTasksButton" Content="Reset Tasks" Click="ResetTasksButton_Click" />
                         </StackPanel>
-                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3" />
+                        <Button x:Name="RunTasksButton" Content="Run all tasks!" Click="RunAllTasks_Click" FontSize="24" Grid.Row="3" >
+                            <Button.ContextMenu>
+                                <ContextMenu AllowDrop="True">
+                                    <MenuItem Header="Add Folder Suffix" Click="AddMetaMorpheusTaskFolderSuffix_Click"></MenuItem>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                     </Grid>
                 </GroupBox>
                 <GridSplitter Grid.Row="1"
