@@ -303,8 +303,11 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
-                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("single"))
-                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
+                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                {
+                    MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not assigned for the non-specific search");
+                    return;
+                }
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
                 if (SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList().Count != 2)
