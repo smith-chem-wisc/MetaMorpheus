@@ -15,55 +15,38 @@ namespace EngineLayer.CrosslinkAnalysis
 
         #region Private Fields
 
-        private const int max_mods_for_peptide = 3;
-        private readonly int maximumMissedCleavages;
-        private readonly int? minPeptideLength;
-        private readonly int? maxPeptideLength;
-        private readonly int maxModIsoforms;
         private readonly List<PsmCross> newPsms;
         private readonly List<Protein> proteinList;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
-        private readonly Protease protease;
-        private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
-        private readonly Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans;
-        private readonly Tolerance fragmentTolerance;
-        private readonly List<ProductType> lp;
-        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
+        private readonly List<ProductType> lp;
         private readonly CrosslinkerTypeClass crosslinker;
 
-        private Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
-        private string OutputFolder;
+        private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
+        private readonly string OutputFolder;
         protected readonly TerminusType terminusType;
+
+        private readonly CommonParameters CommonParameters;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, List<string> nestedIds, TerminusType terminusType) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, string OutputFolder, CrosslinkerTypeClass crosslinker, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            this.protease = protease;
-
-            this.myMsDataFile = myMSDataFile;
-            this.fragmentTolerance = fragmentTolerance;
-            this.maximumMissedCleavages = maximumMissedCleavages;
-            this.minPeptideLength = minPeptideLength;
-            this.maxPeptideLength = maxPeptideLength;
-            this.maxModIsoforms = maxModIsoforms;
             this.lp = lp;
-            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.modsDictionary = modsDictionary;
-            this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.OutputFolder = OutputFolder;
             this.crosslinker = crosslinker;
             this.terminusType = terminusType;
+            this.CommonParameters = CommonParameters;
         }
 
         #endregion Public Constructors
@@ -108,11 +91,11 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
+                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, CommonParameters.InitiatorMethionineBehavior, fixedModifications))
                     {
                         //if (peptideWithPossibleModifications.Length <= 1)
                         //    continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide))
                         {
                             if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 

@@ -26,11 +26,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength =null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
 
             var myMsDataFile = new TestDataFile();
@@ -83,10 +78,6 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 MaxMissedCleavages = 0,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
 
             var myMsDataFile = new TestDataFile();
@@ -137,11 +128,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
 
             var myMsDataFile = new TestDataFile();
@@ -216,11 +202,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
 
             var myMsDataFile = new TestDataFile();
@@ -276,14 +257,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null),
-                MinPeptideLength = 5,
                 ConserveMemory = false,
-                ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+                ScoreCutoff = 1
             };
 
 
@@ -359,14 +334,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null),
-                MinPeptideLength = 5,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
 
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");

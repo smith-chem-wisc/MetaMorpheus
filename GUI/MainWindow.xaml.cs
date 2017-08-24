@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using TaskLayer;
 
@@ -43,7 +44,7 @@ namespace MetaMorpheusGUI
             try
             {
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
-                    GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
+                    GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(modFile));
             }
             catch (Exception e)
             {
@@ -51,8 +52,8 @@ namespace MetaMorpheusGUI
                 Application.Current.Shutdown();
             }
 
-            GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
-            GlobalTaskLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
+            GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UnimodDeserialized.OfType<ModificationWithLocation>());
+            GlobalEngineLevelSettings.AddMods(GlobalEngineLevelSettings.UniprotDeseralized.OfType<ModificationWithLocation>());
 
             EverythingRunnerEngine.NewDbsHandler += AddNewDB;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectra;
@@ -286,7 +287,7 @@ namespace MetaMorpheusGUI
                         {
                             try
                             {
-                                GlobalTaskLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
+                                GlobalEngineLevelSettings.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(draggedFilePath).OfType<ModificationWithLocation>());
                             }
                             catch (Exception ee)
                             {
@@ -336,19 +337,40 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
+
+            RunAllTasks("");
+        }
+
+        private void RunAllTasks(string v)
+        {
             dynamicTasksObservableCollection = new ObservableCollection<InRunTask>();
 
             for (int i = 0; i < staticTasksObservableCollection.Count; i++)
                 dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList());
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
             var t = new Thread(() => a.Run())
             {
                 IsBackground = true
             };
             t.Start();
         }
+
+        private void AddMetaMorpheusTaskFolderSuffix_Click(object sender, RoutedEventArgs e)
+        {
+            var myDialog = new DialogWindow();
+            myDialog.SizeToContent = SizeToContent.WidthAndHeight;
+            myDialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;           
+            myDialog.ShowDialog();
+
+
+            RunAllTasks(myDialog.stringSuffix);
+
+
+        }
+
+
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
         {

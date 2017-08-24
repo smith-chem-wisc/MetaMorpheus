@@ -27,10 +27,8 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 MaxMissedCleavages = 0,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = 1042,
                 ProductMassTolerance = new PpmTolerance(10),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
 
             List<ModificationWithMass> localizeableModifications = new List<ModificationWithMass>();

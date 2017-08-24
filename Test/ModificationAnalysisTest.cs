@@ -77,31 +77,11 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 MaxMissedCleavages = 0,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
-                BIons = true,
-                YIons = true,
-                ZdotIons = false,
-                CIons = false,
-
-                TotalPartitions = 1,
-                LocalizeAll = true,
-
-                Max_mods_for_peptide = 3,
-                MaxDegreeOfParallelism = 1,
-
-
-                // Deconvolution stuff
-                DoPrecursorDeconvolution = true,
-                UseProvidedPrecursorInfo = true,
-                DeconvolutionIntensityRatio = 4,
-                DeconvolutionMaxAssumedChargeState = 10,
             };
 
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
@@ -168,31 +148,11 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 MaxMissedCleavages = 0,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = int.MaxValue,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
-                BIons = true,
-                YIons = true,
-                ZdotIons = false,
-                CIons = false,
-
-                TotalPartitions = 1,
-                LocalizeAll = true,
-
-                Max_mods_for_peptide = 3,
-                MaxDegreeOfParallelism = 1,
-
-
-                // Deconvolution stuff
-                DoPrecursorDeconvolution = true,
-                UseProvidedPrecursorInfo = true,
-                DeconvolutionIntensityRatio = 4,
-                DeconvolutionMaxAssumedChargeState = 10,
+                MaxModificationIsoforms = int.MaxValue
             };
             SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
 

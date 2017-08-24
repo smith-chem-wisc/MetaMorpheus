@@ -109,7 +109,7 @@ namespace MetaMorpheusGUI
 
         private void PopulateChoices()
         {
-            foreach (Protease protease in GlobalTaskLevelSettings.ProteaseDictionary.Values)
+            foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
 
@@ -119,7 +119,7 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.Items.Add("Absolute");
             productMassToleranceComboBox.Items.Add("Ppm");
 
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 fixedModTypeForTreeViewObservableCollection.Add(theModType);
@@ -127,7 +127,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             fixedModsTreeView.DataContext = fixedModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 variableModTypeForTreeViewObservableCollection.Add(theModType);
@@ -135,7 +135,7 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.id, false, theModType));
             }
             variableModsTreeView.DataContext = variableModTypeForTreeViewObservableCollection;
-            foreach (var hm in GlobalTaskLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
+            foreach (var hm in GlobalEngineLevelSettings.AllModsKnown.GroupBy(b => b.modificationType))
             {
                 var theModType = new ModTypeForTreeView(hm.Key, false);
                 localizeModTypeForTreeViewObservableCollection.Add(theModType);
@@ -144,7 +144,7 @@ namespace MetaMorpheusGUI
             }
             localizeModsTreeView.DataContext = localizeModTypeForTreeViewObservableCollection;
 
-            foreach (var uu in GlobalTaskLevelSettings.SearchModesKnown)
+            foreach (var uu in GlobalEngineLevelSettings.SearchModesKnown)
                 SearchModesForThisTask.Add(new SearchModeForDataGrid(uu));
             searchModesDataGrid.DataContext = SearchModesForThisTask;
         }
@@ -168,6 +168,7 @@ namespace MetaMorpheusGUI
             txtMaxPeptideLength.Text = task.CommonParameters.MaxPeptideLength.HasValue ? task.CommonParameters.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             proteaseComboBox.SelectedItem = task.CommonParameters.Protease;
             maxModificationIsoformsTextBox.Text = task.CommonParameters.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            txtMaxModNum.Text = task.CommonParameters.Max_mods_for_peptide.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
@@ -364,6 +365,7 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
             TheTask.CommonParameters.Protease = (Protease)proteaseComboBox.SelectedItem;
             TheTask.CommonParameters.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.CommonParameters.Max_mods_for_peptide = int.Parse(txtMaxModNum.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
@@ -421,7 +423,7 @@ namespace MetaMorpheusGUI
             try
             {
                 var ye = MetaMorpheusTask.ParseSearchMode(newAllowedPrecursorMassDiffsTextBox.Text);
-                GlobalTaskLevelSettings.SearchModesKnown.Add(ye);
+                GlobalEngineLevelSettings.SearchModesKnown.Add(ye);
                 SearchModesForThisTask.Add(new SearchModeForDataGrid(ye));
                 searchModesDataGrid.Items.Refresh();
             }

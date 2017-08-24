@@ -47,11 +47,7 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+                MaxMissedCleavages = 0
             };
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
             Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
@@ -106,11 +102,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, CommonParameters, new List<string>());
 

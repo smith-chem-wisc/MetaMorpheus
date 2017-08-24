@@ -1,11 +1,46 @@
 ﻿using MzLibUtil;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
+        public CommonParameters()
+        {
+            MaxMissedCleavages = 2;
+            MinPeptideLength = 5;
+            MaxPeptideLength = null;
+            MaxModificationIsoforms = 4096;
+            Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
+            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            BIons = true;
+            YIons = true;
+            ZdotIons = false;
+            CIons = false;
+
+            TotalPartitions = 1;
+            LocalizeAll = true;
+
+            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
+            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+            ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+
+            Max_mods_for_peptide = 3;
+
+            ConserveMemory = true;
+            MaxDegreeOfParallelism = 1;
+            ScoreCutoff = 5;
+
+            // Deconvolution stuff
+            DoPrecursorDeconvolution = true;
+            UseProvidedPrecursorInfo = true;
+            DeconvolutionIntensityRatio = 4;
+            DeconvolutionMaxAssumedChargeState = 10;
+            DeconvolutionMassTolerance = new PpmTolerance(5);
+        }
 
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
