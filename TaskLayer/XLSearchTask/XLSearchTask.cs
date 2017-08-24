@@ -90,7 +90,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (CommonParameters.LocalizeAll)
+            if ((bool)CommonParameters.LocalizeAll)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -116,13 +116,13 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             List<ProductType> ionTypes = new List<ProductType>();
-            if (CommonParameters.BIons)
+            if ((bool)CommonParameters.BIons)
                 ionTypes.Add(ProductType.B);
-            if (CommonParameters.YIons)
+            if ((bool)CommonParameters.YIons)
                 ionTypes.Add(ProductType.Y);
-            if (CommonParameters.ZdotIons)
+            if ((bool)CommonParameters.ZdotIons)
                 ionTypes.Add(ProductType.Zdot);
-            if (CommonParameters.CIons)
+            if ((bool)CommonParameters.CIons)
                 ionTypes.Add(ProductType.C);
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
 
@@ -184,7 +184,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {

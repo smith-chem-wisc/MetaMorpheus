@@ -13,7 +13,7 @@ namespace TaskLayer
         public FileSettings()
         {
             // Set default values here:
-            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
+            Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
         }
 
 
