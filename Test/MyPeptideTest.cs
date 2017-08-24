@@ -48,7 +48,7 @@ namespace Test
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             mods.Add(1, new List<Modification> { new ModificationWithMass("Hehe", null, motif, TerminusLocalization.NProt, 18.010565, null, null, null, null) });
             var prot = new Protein("MMMM", null, null, mods);
-            var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye = prot.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -64,10 +64,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
@@ -87,7 +85,7 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, mods);
-            var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye = prot.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -103,10 +101,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
@@ -125,7 +121,7 @@ namespace Test
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif);
             var prot = new Protein("MMMM", null, null, mods);
-            var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye = prot.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B, ProductType.Y });
@@ -141,10 +137,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
@@ -162,7 +156,7 @@ namespace Test
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
             var prot = new Protein("XMMM", null, null, mods);
-            var ye = prot.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
+            var ye = prot.Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).First();
             var thePep = ye.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 2, 1).Last();
 
             var massArray = thePep.CompactPeptide(TerminusType.None).ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { ProductType.B });
@@ -178,10 +172,8 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters
             {
                 ProductMassTolerance = new PpmTolerance(5),
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
-                MaxPeptideLength = null,
                 MaxModificationIsoforms = int.MaxValue,
                 ConserveMemory = false,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,

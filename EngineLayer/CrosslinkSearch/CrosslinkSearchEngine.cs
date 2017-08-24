@@ -30,12 +30,11 @@ namespace EngineLayer.CrosslinkSearch
         private readonly bool CrosslinkSearchWithCrosslinkerMod;
         private readonly Tolerance XLprecusorMsTl;
         private readonly Tolerance XLBetaPrecusorMsTl;
-
         private readonly List<ProductType> lp;
         private readonly Dictionary<ModificationWithMass, ushort> modsDictionary;
+        private readonly List<PsmCross> psmCross;
 
         private MassDiffAcceptor XLPrecusorSearchMode;
-        private readonly List<PsmCross> psmCross;
 
         #endregion Private Fields
 

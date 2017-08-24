@@ -41,10 +41,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
             };
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, true, CommonParameters, new List<string>());
 
@@ -95,9 +91,6 @@ namespace Test
                 MinPeptideLength = null,
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 2,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
             };
             var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, true, CommonParameters, new List<string>());

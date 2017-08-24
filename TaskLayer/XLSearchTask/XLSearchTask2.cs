@@ -148,16 +148,16 @@ namespace TaskLayer
             _pepxml.summary_xml = items[0].FullFilePath + ".pep.xml";              
 
             string proteaseC = ""; string proteaseNC = "";
-            foreach (var x in Protease.SequencesInducingCleavage) { proteaseC += x; }
-            foreach (var x in Protease.SequencesPreventingCleavage) { proteaseNC += x; }
+            foreach (var x in CommonParameters.Protease.SequencesInducingCleavage) { proteaseC += x; }
+            foreach (var x in CommonParameters.Protease.SequencesPreventingCleavage) { proteaseNC += x; }
 
-            CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass().SelectCrosslinker(CrosslinkerType);
+            CrosslinkerTypeClass crosslinker = new CrosslinkerTypeClass().SelectCrosslinker(XlSearchParameters.CrosslinkerType);
             string modsFixed = ""; string modsVar = "";
-            foreach (var x in ListOfModsFixed) { modsFixed += x.Item2 + "."; }
-            foreach (var x in ListOfModsVariable) { modsVar += x.Item2 + "."; }
+            foreach (var x in CommonParameters.ListOfModsFixed) { modsFixed += x.Item2 + "."; }
+            foreach (var x in CommonParameters.ListOfModsVariable) { modsVar += x.Item2 + "."; }
 
             Dictionary<string, Modification> unknownModifications;
-            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
+            var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, XlSearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out unknownModifications)).ToList();
             uint proteinTot = Convert.ToUInt32(proteinList.Count);
 
             string fileNameNoExtension = Path.GetFileNameWithoutExtension(items[0].FullFilePath);
@@ -169,10 +169,10 @@ namespace TaskLayer
                  {
                  base_name = filePathNoExtension,
                  raw_data_type = "raw",
-                 raw_data = ".mzML",                 
+                 raw_data = ".mzML",
                  sample_enzyme = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzyme()
                  {
-                     name = Protease.Name,
+                     name = CommonParameters.Protease.Name,
                      specificity = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity[1]
                      {
                          new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySample_enzymeSpecificity
@@ -200,8 +200,8 @@ namespace TaskLayer
                          },
                          enzymatic_search_constraint = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySearch_summaryEnzymatic_search_constraint
                          {
-                             enzyme = Protease.Name,
-                             max_num_internal_cleavages = MaxMissedCleavages.ToString(),
+                             enzyme = CommonParameters.Protease.Name,
+                             max_num_internal_cleavages = CommonParameters.MaxMissedCleavages.ToString(),
                              //min_number_termini = "2"
                          },
                          parameter = new pepXML.Generated.nameValueType[]
@@ -210,8 +210,8 @@ namespace TaskLayer
                              new pepXML.Generated.nameValueType{ name = "database", value = dbFilenameList[0].FilePath },
                              new pepXML.Generated.nameValueType{ name = "MS_data_file", value = items[0].FullFilePath },
 
-                             new pepXML.Generated.nameValueType{ name = "Search with All Possible Beta Peptides", value = CrosslinkSearchWithAllBeta.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Cross-link Precusor Mass Tolence", value = XLprecusorMsTl.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Search with All Possible Beta Peptides", value = XlSearchParameters.CrosslinkSearchWithAllBeta.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Cross-link Precusor Mass Tolence", value = XlSearchParameters.XlPrecusorMsTl.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Cross-linker Type", value = crosslinker.CrosslinkerName },
                              new pepXML.Generated.nameValueType{ name = "Cross-linker mass", value = crosslinker.TotalMass.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Cross-linker cleavable", value = crosslinker.Cleavable.ToString() },
@@ -219,20 +219,20 @@ namespace TaskLayer
                              new pepXML.Generated.nameValueType{ name = "Cross-linker cleavable short mass", value = crosslinker.CleaveMassShort.ToString() },
                              new pepXML.Generated.nameValueType{ name = "Cross-linker xl site", value = crosslinker.CrosslinkerModSite.ToString() },
 
-                             new pepXML.Generated.nameValueType{ name = "Generate decoy proteins", value = SearchDecoy.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "MaxMissed Cleavages", value = MaxMissedCleavages.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Protease", value = Protease.Name },
-                             new pepXML.Generated.nameValueType{ name = "Initiator Methionine", value = InitiatorMethionineBehavior.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Max Modification Isoforms", value = MaxModificationIsoforms.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Min Peptide Len", value = MinPeptideLength.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Max Peptide Len", value = MaxPeptideLength.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Product Mass Tolerance", value = ProductMassTolerance.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Ions to search", value = "B "+ BIons.ToString() + " Y " + YIons.ToString() + " C " +CIons.ToString() + " Z " + ZdotIons.ToString() },
-                             new pepXML.Generated.nameValueType{ name = "Allowed Beta Precusor Mass Difference", value =  XLBetaPrecusorMsTl.ToString()},
+                             new pepXML.Generated.nameValueType{ name = "Generate decoy proteins", value = XlSearchParameters.SearchDecoy.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "MaxMissed Cleavages", value = CommonParameters.MaxMissedCleavages.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Protease", value = CommonParameters.Protease.Name },
+                             new pepXML.Generated.nameValueType{ name = "Initiator Methionine", value = CommonParameters.InitiatorMethionineBehavior.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Max Modification Isoforms", value = CommonParameters.MaxModificationIsoforms.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Min Peptide Len", value = CommonParameters.MinPeptideLength.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Max Peptide Len", value = CommonParameters.MaxPeptideLength.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Ions to search", value = "B "+ CommonParameters.BIons.ToString() + " Y " + CommonParameters.YIons.ToString() + " C " + CommonParameters.CIons.ToString() + " Z " + CommonParameters.ZdotIons.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Allowed Beta Precusor Mass Difference", value = XlSearchParameters.XlBetaPrecusorMsTl.ToString()},
 
                              new pepXML.Generated.nameValueType{ name = "Fixed Modifications", value = modsFixed },
                              new pepXML.Generated.nameValueType{ name = "Variable Modificaions", value = modsVar },
-                             new pepXML.Generated.nameValueType{ name = "Localize All Modifications", value = LocalizeAll.ToString() },
+                             new pepXML.Generated.nameValueType{ name = "Localize All Modifications", value = CommonParameters.LocalizeAll.ToString() },
                          }
                      }
                  },

@@ -23,81 +23,16 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters
-            {
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
-            };
-            // Set default values here:
-            MaxMissedCleavages = 2;
-            MinPeptideLength = 5;
-            MaxPeptideLength = null;
-            Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"];
-            MaxModificationIsoforms = 4096;
-            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
-            PrecursorMassTolerance = new PpmTolerance(10);
-            BIons = true;
-            YIons = true;
-            CIons = false;
-            ZdotIons = false;
+            CommonParameters = new CommonParameters();
 
-            LocalizeAll = true;
-
-            NonLinearCalibration = true;
-
-            ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
-            ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
-
-            MaxDegreeOfParallelism = 1;
-            ConserveMemory = true;
-
-            WriteIntermediateFiles = false;
-
-            DoPrecursorDeconvolution = true;
-            UseProvidedPrecursorInfo = true;
-            DeconvolutionIntensityRatio = 4;
-            DeconvolutionMaxAssumedChargeState = 10;
-            DeconvolutionMassTolerance = new PpmTolerance(5);
-
-            ScoreCutoff = 5;
+            CalibrationParameters = new CalibrationParameters();
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public CommonParameters CommonParameters { get; set; }
-
-        public static List<string> AllModLists { get; private set; }
-
-        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
-        public int MaxMissedCleavages { get; set; }
-        public bool ConserveMemory { get; set; }
-
-        public int? MinPeptideLength { get; set; }
-
-        public int? MaxPeptideLength { get; set; }
-
-        public int MaxModificationIsoforms { get; set; }
-
-        public Protease Protease { get; set; }
-
-        public bool BIons { get; set; }
-
-        public bool YIons { get; set; }
-
-        public bool ZdotIons { get; set; }
-
-        public bool CIons { get; set; }
-        public Tolerance ProductMassTolerance { get; set; }
-        public Tolerance PrecursorMassTolerance { get; set; }
-        public bool NonLinearCalibration { get; set; }
-        public bool WriteIntermediateFiles { get; set; }
-        public double ScoreCutoff { get; set; }
-
+        public CalibrationParameters CalibrationParameters { get; set; }
         #endregion Public Properties
 
         #region Public Methods
@@ -108,9 +43,9 @@ namespace TaskLayer
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
-                + InitiatorMethionineBehavior
+                + CommonParameters.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                + CommonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
                 );
             return sb.ToString();
         }
@@ -162,77 +97,76 @@ namespace TaskLayer
                 newSpectra = new List<string>()
             };
             MassDiffAcceptor searchMode;
-            if (PrecursorMassTolerance is PpmTolerance)
-                searchMode = new SinglePpmAroundZeroSearchMode(PrecursorMassTolerance.Value);
+            if (CalibrationParameters.PrecursorMassTolerance is PpmTolerance)
+                searchMode = new SinglePpmAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
             else
-                searchMode = new SingleAbsoluteAroundZeroSearchMode(PrecursorMassTolerance.Value);
+                searchMode = new SingleAbsoluteAroundZeroSearchMode(CalibrationParameters.PrecursorMassTolerance.Value);
             var searchModes = new List<MassDiffAcceptor> { searchMode };
 
             Status("Loading modifications...", new List<string> { taskId });
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (LocalizeAll)
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+            if (CommonParameters.LocalizeAll)
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             Status("Loading proteins...", new List<string> { taskId });
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, true, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> um)).ToList();
 
             List<ProductType> lp = new List<ProductType>();
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
-            if (BIons)
+            if (CommonParameters.BIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.b;
                 lp.Add(ProductType.B);
             }
-            if (YIons)
+            if (CommonParameters.YIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.y;
                 lp.Add(ProductType.Y);
             }
-            if (CIons)
+            if (CommonParameters.CIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.c;
                 lp.Add(ProductType.C);
             }
-            if (ZdotIons)
+            if (CommonParameters.ZdotIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.zdot;
                 lp.Add(ProductType.Zdot);
             }
 
             proseCreatedWhileRunning.Append("The following calibration settings were used: ");
-            proseCreatedWhileRunning.Append("protease = " + Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + MinPeptideLength + "; ");
-            if (MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("protease = " + CommonParameters.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.MinPeptideLength + "; ");
+            if (CommonParameters.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", searchModes.Select(m => m.ToProseString())) + "}; ");
-            proseCreatedWhileRunning.Append("product mass tolerance = " + ProductMassTolerance + " Da. ");
+            proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             object lock1 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
-            if (MaxDegreeOfParallelism.HasValue)
-                parallelOptions.MaxDegreeOfParallelism = MaxDegreeOfParallelism.Value;
+            if (CommonParameters.MaxDegreeOfParallelism.HasValue)
+                parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             Status("Calibrating...", new List<string> { taskId });
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 lock (lock1) // Lock because reading is sequential
                 {
@@ -245,9 +179,6 @@ namespace TaskLayer
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 }
 
-                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
                 StringBuilder sbForThisFile = new StringBuilder();
                 sbForThisFile.AppendLine(origDataFile);
 
@@ -258,10 +189,13 @@ namespace TaskLayer
                 Random rnd = new Random(spectraFileIndex);
                 // Linear calibration
                 {
+                    Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
 
-                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });     
+                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     searchEngine.Run();
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
@@ -281,20 +215,20 @@ namespace TaskLayer
                     // Run FDR analysis on single file results
                     new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
-                    if (WriteIntermediateFiles)
+                    if (CalibrationParameters.WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
                     Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };
-                    if (WriteIntermediateFiles)
+                    if (CalibrationParameters.WriteIntermediateFiles)
                     {
                         ms1Action = (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                         ms2Action = (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }
 
-                    MetaMorpheusEngineResults theResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, false, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                    MetaMorpheusEngineResults theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, false, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
                     CalibrationResults calibrationResult = theResult as CalibrationResults;
 
@@ -311,15 +245,15 @@ namespace TaskLayer
                     sbForThisFile.AppendLine("\t" + "After Linear: MS1 (Th): " + calibrationResult.ms1meanSds.Last());
                     sbForThisFile.AppendLine("\t" + "After Linear: MS2 (Th): " + calibrationResult.ms2meanSds.Last());
                 }
-                if (NonLinearCalibration)
+                if (CalibrationParameters.NonLinearCalibration)
                 {
                     // Second search round
 
                     Status("Getting ms2 scans for second round...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2ScansTest.Length];
-                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false,CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     searchEngineTest.Run();
 
@@ -340,20 +274,20 @@ namespace TaskLayer
 
                     new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
-                    if (WriteIntermediateFiles)
+                    if (CalibrationParameters.WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeNonLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
                     Action<List<LabeledMs2DataPoint>, string> ms2Action = (List<LabeledMs2DataPoint> theList, string s) => {; };
-                    if (WriteIntermediateFiles)
+                    if (CalibrationParameters.WriteIntermediateFiles)
                     {
                         ms1Action = (List<LabeledMs1DataPoint> theList, string s) => WriteMs1DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inNonLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                         ms2Action = (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inNonLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }
 
-                    var theResult = new CalibrationEngine(myMsDataFile, ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, true, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                    var theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, true, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                     CalibrationResults calibrationResult = theResult as CalibrationResults;
 
                     if (calibrationResult == null)
@@ -368,9 +302,9 @@ namespace TaskLayer
                     sbForThisFile.AppendLine("\t" + "After NonLin: MS2 (Th): " + calibrationResult.ms2meanSds.Last());
                 }
 
-                if (WriteIntermediateFiles)
+                if (CalibrationParameters.WriteIntermediateFiles)
                 {
-                    var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[ms2ScansAfterCalib.Length];
                     new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
@@ -391,7 +325,7 @@ namespace TaskLayer
 
                     new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
-                    if (WriteIntermediateFiles)
+                    if (CalibrationParameters.WriteIntermediateFiles)
                         WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsAfterCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 }
 
