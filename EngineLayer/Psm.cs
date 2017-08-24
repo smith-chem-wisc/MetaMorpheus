@@ -422,10 +422,7 @@ namespace EngineLayer
             if (notEqual)
             {
                 var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                if (ExcelCompatible && possibleReturn.Length > 32000)
-                    return new Tuple<string, Dictionary<string, int>>(possibleReturn.Substring(0, 31990) + "(too many)", null);
-                else
-                    return new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>(possibleReturn.Substring(0, 31990) + "(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
             }
             else
             {
