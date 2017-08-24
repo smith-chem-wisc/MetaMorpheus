@@ -254,7 +254,7 @@ namespace TaskLayer
             }
             if (tomlDict.ContainsKey("MaxPeptideLength"))
             {
-                commonParams.MaxPeptideLength = tomlDict["MaxPeptideLength"].Value.Get<int? >();
+                commonParams.MaxPeptideLength = tomlDict["MaxPeptideLength"].Value.Get<int?>();
             }
             if (tomlDict.ContainsKey("MaxModificationIsoforms"))
             {
