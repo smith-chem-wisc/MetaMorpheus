@@ -9,9 +9,6 @@
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925)](https://www.codacy.com/app/solntsev_2/MetaMorpheus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=smith-chem-wisc/MetaMorpheus&amp;utm_campaign=Badge_Grade)
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=vulnerabilities)](https://sonarqube.com/dashboard?id=MetaMorpheus)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=code_smells)](https://sonarqube.com/dashboard?id=MetaMorpheus)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 <a href="https://scan.coverity.com/projects/metamorpheus">
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/11282/badge.svg"/>
