@@ -251,7 +251,7 @@ namespace TaskLayer
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
             foreach (Psm psm in items)
             {
-                PeptideWithSetModifications peptide = psm.MostProbableProteinInfo.PeptidesWithSetModifications.OrderBy(p => p.PeptideDescription).First();
+                PeptideWithSetModifications peptide = psm.MostProbableProteinInfo.PeptidesWithSetModifications.First();
                 //if first peptide on list hasn't been added, add peptide and peptide evidence
                 if (!peptide_ids.TryGetValue(peptide, out Tuple<int, int, List<string>> peptide_id))
                 {
@@ -877,7 +877,7 @@ namespace TaskLayer
 
             ProteinParsimonyResults proteinAnalysisResults = null;
             if (SearchParameters.DoParsimony)
-                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, SearchParameters.ModPeptidesAreUnique, new List<string> { taskId }).Run());
+                proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, new List<string> { taskId }).Run());
 
             Status("Resolving most probable peptide...", new List<string> { taskId });
             for (int j = 0; j < SearchParameters.MassDiffAcceptors.Count; j++)
@@ -905,7 +905,7 @@ namespace TaskLayer
             {
                 for (int j = 0; j < SearchParameters.MassDiffAcceptors.Count; j++)
                 {
-                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, new List<string> { taskId }).Run();
+                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, new List<string> { taskId }).Run();
                     proteinGroupsHere[j] = ressdf.sortedAndScoredProteinGroups;
                 }
             }
@@ -1086,7 +1086,7 @@ namespace TaskLayer
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
+                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });

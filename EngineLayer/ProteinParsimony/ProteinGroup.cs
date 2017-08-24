@@ -80,8 +80,6 @@ namespace EngineLayer
 
         public double[] IntensitiesByFile { get; set; }
 
-        public bool DisplayModsOnPeptides { get; set; }
-
         public List<string> ModsInfo { get; private set; }
 
         public List<string> FileNames { get; private set; }
@@ -141,39 +139,24 @@ namespace EngineLayer
             sb.Append("\t");
 
             // list of unique peptides
-            if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence))));
-            else
-                sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence))));
+            sb.Append(string.Join("|", new HashSet<string>(UniquePeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of shared peptides
             var SharedPeptides = AllPeptides.Except(UniquePeptides);
-            if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.BaseSequence))));
-            else
-                sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence))));
+            sb.Append(string.Join("|", new HashSet<string>(SharedPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // list of razor peptides
-            if (!DisplayModsOnPeptides)
-                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.BaseSequence))));
-            else
-                sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
+            sb.Append(string.Join("|", new HashSet<string>(RazorPeptides.Select(p => p.Sequence))));
             sb.Append("\t");
 
             // number of peptides
-            if (!DisplayModsOnPeptides)
-                sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.BaseSequence)).Count);
-            else
-                sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.Sequence)).Count);
+            sb.Append("" + new HashSet<string>(AllPeptides.Select(p => p.Sequence)).Count);
             sb.Append("\t");
 
             // number of unique peptides
-            if (!DisplayModsOnPeptides)
-                sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.BaseSequence)).Count);
-            else
-                sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.Sequence)).Count);
+            sb.Append("" + new HashSet<string>(UniquePeptides.Select(p => p.Sequence)).Count);
             sb.Append("\t");
 
             // sequence coverage percent
@@ -473,7 +456,6 @@ namespace EngineLayer
                 RazorPeptides = allRazorPeptidesForThisFile,
                 //subsetPg.FileNames = new List<string>() { fileName };
                 AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
-                DisplayModsOnPeptides = this.DisplayModsOnPeptides
             };
             return subsetPg;
         }

@@ -5,13 +5,14 @@ namespace EngineLayer
 {
     public class SearchParameters
     {
+        #region Public Constructors
+
         public SearchParameters()
         {
             DisposeOfFileWhenDone = true;
             AddCompIons = false;
             DoParsimony = false;
             NoOneHitWonders = false;
-            ModPeptidesAreUnique = true;
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
@@ -22,10 +23,14 @@ namespace EngineLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptors = GlobalEngineLevelSettings.SearchModesKnown.Take(1).ToList();
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
-        public bool ModPeptidesAreUnique { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
         public double QuantifyPpmTol { get; set; }
@@ -38,5 +43,7 @@ namespace EngineLayer
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+
+        #endregion Public Properties
     }
 }

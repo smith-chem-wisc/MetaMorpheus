@@ -77,11 +77,11 @@ namespace Test
                 psm3,
             };
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
             List<MassDiffAcceptor> searchModes = null;
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, searchModes, true, true, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, searchModes, true, new List<string>());
 
             psafe.Run();
 
