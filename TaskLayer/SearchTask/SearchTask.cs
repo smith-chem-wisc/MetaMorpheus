@@ -134,7 +134,7 @@ namespace TaskLayer
             object indexLock = new object();
             object psmLock = new object();
 
-            Protease.IsSemiSpecific(SearchType, terminusType);
+            CommonParameters.Protease.IsSemiSpecific(SearchParameters.SearchType, terminusType);
 
             Status("Searching files...", taskId);
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
@@ -209,7 +209,7 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, terminusType, thisId).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
                             new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes,  currentPartition, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
 

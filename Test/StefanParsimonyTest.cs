@@ -173,7 +173,7 @@ namespace Test
                 MaxMissedCleavages = 0,
                 MinPeptideLength = null,
                 InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                ScoreCutoff = 1
+                ScoreCutoff = 1,
             };
 
             // Alanine = Glycine + CH2

@@ -79,7 +79,7 @@ namespace EngineLayer
                     {
                         if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
-                                if (reportAllAmbiguity || v.Count == 0)
+                                if (CommonParameters.ReportAllAmbiguity || v.Count == 0)
                                     v.Add(huh);
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;

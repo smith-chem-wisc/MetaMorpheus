@@ -151,7 +151,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
                                 {
-                                    if ((reportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
+                                    if ((CommonParameters.ReportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
                                     {
                                         tempPWSMHashSet.Add(PWSM);
                                     }
@@ -162,7 +162,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 tempPWSMHashSet = new HashSet<PeptideWithSetModifications>();
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
                                 {
-                                    if ((reportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
+                                    if ((CommonParameters.ReportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
                                     {
                                         tempPWSMHashSet.Add(PWSM);
                                     }

@@ -86,5 +86,9 @@ namespace EngineLayer
 
         public int Max_mods_for_peptide { get; set; }
 
+        public bool ExcelCompatible { get; set; }
+
+        public bool ReportAllAmbiguity { get; set; }
+
     }
 }
