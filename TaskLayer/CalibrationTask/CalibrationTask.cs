@@ -33,7 +33,6 @@ namespace TaskLayer
         #region Public Properties
 
         public CalibrationParameters CalibrationParameters { get; set; }
-
         #endregion Public Properties
 
         #region Public Methods
@@ -168,7 +167,6 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 lock (lock1) // Lock because reading is sequential
                 {
@@ -181,9 +179,6 @@ namespace TaskLayer
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 }
 
-                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
                 StringBuilder sbForThisFile = new StringBuilder();
                 sbForThisFile.AppendLine(origDataFile);
 
@@ -194,10 +189,13 @@ namespace TaskLayer
                 Random rnd = new Random(spectraFileIndex);
                 // Linear calibration
                 {
+                    Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
 
-                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });     
+                    var searchEngine = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     searchEngine.Run();
                     List<Psm>[] allPsms = new List<Psm>[1];
                     allPsms[0] = allPsmsArray[0].ToList();
@@ -255,7 +253,7 @@ namespace TaskLayer
                     var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2ScansTest.Length];
-                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, lp, searchModes, false,CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                     searchEngineTest.Run();
 

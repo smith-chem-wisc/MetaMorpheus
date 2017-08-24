@@ -132,7 +132,7 @@ namespace Test
             #endregion Write the files
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) },null);
             engine.Run();
         }
 
@@ -246,7 +246,7 @@ namespace Test
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) });
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
         }
 
@@ -414,7 +414,7 @@ namespace Test
             #endregion MZML File
 
             //run!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) },null);
             engine.Run();
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
@@ -522,7 +522,7 @@ namespace Test
             #region run
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) });
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
 
             List<string> found = new List<string>();
