@@ -57,6 +57,8 @@ namespace EngineLayer
             foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
             {
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
+                double thePrecursorMass = ok.ScanPrecursorMass;
+
                 if (ok.FullSequence == null)
                     continue;
 
