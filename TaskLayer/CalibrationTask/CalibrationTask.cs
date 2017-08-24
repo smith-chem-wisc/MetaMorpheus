@@ -230,7 +230,6 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
                 lock (lock1) // Lock because reading is sequential
                 {
@@ -243,9 +242,6 @@ namespace TaskLayer
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 }
 
-                Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
-
                 StringBuilder sbForThisFile = new StringBuilder();
                 sbForThisFile.AppendLine(origDataFile);
 
@@ -256,6 +252,9 @@ namespace TaskLayer
                 Random rnd = new Random(spectraFileIndex);
                 // Linear calibration
                 {
+                    Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
 
