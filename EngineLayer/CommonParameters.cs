@@ -60,7 +60,7 @@ namespace EngineLayer
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
- 
+
         public int MaxMissedCleavages { get; set; }
 
         public int? MinPeptideLength { get; set; }
