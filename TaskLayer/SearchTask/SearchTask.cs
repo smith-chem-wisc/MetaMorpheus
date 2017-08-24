@@ -33,58 +33,9 @@ namespace TaskLayer
 
         public SearchTask() : base(MyTask.Search)
         {
-            CommonParameters = new CommonParameters
-            {
-                MaxMissedCleavages = 2,
-                MinPeptideLength = 5,
-                MaxPeptideLength = null,
-                MaxModificationIsoforms = 4096,
-                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable,
-                ProductMassTolerance = new AbsoluteTolerance(0.01),
-                BIons = true,
-                YIons = true,
-                ZdotIons = false,
-                CIons = false,
+            CommonParameters = new CommonParameters();
 
-                TotalPartitions = 1,
-                LocalizeAll = true,
-
-                ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
-                ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
-                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-
-                Max_mods_for_peptide = 3,
-
-                ConserveMemory = true,
-                MaxDegreeOfParallelism = 1,
-                ScoreCutoff = 5,
-
-                // Deconvolution stuff
-                DoPrecursorDeconvolution = true,
-                UseProvidedPrecursorInfo = true,
-                DeconvolutionIntensityRatio = 4,
-                DeconvolutionMaxAssumedChargeState = 10,
-                DeconvolutionMassTolerance = new PpmTolerance(5),
-
-            };
-            SearchParameters = new SearchParameters
-            {
-                DisposeOfFileWhenDone = true,
-                AddCompIons = false,
-                DoParsimony = false,
-                NoOneHitWonders = false,
-                ModPeptidesAreUnique = true,
-                DoQuantification = false,
-                QuantifyPpmTol = 5,
-                SearchTarget = true,
-                SearchDecoy = true,
-                DoHistogramAnalysis = false,
-                DoLocalizationAnalysis = true,
-                WritePrunedDatabase = false,
-                KeepAllUniprotMods = true,
-                MassDiffAcceptors = GlobalTaskLevelSettings.SearchModesKnown.Take(1).ToList()
-            };
+            SearchParameters = new SearchParameters();
 
             FlashLfqEngine = new FlashLFQEngine();
         }
@@ -92,8 +43,6 @@ namespace TaskLayer
         #endregion Public Constructors
 
         #region Public Properties
-
-        public CommonParameters CommonParameters { get; set; }
 
         public SearchParameters SearchParameters { get; set; }
 
@@ -114,7 +63,7 @@ namespace TaskLayer
             return sb.ToString();
         }
 
-        #endregion Public Methods
+         #endregion Public Methods
 
         #region Protected Methods
 
@@ -129,13 +78,13 @@ namespace TaskLayer
 
             #region Load modifications
 
-            List<ModificationWithMass> variableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
-            List<ModificationWithMass> fixedModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+            List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
             if ((bool)CommonParameters.LocalizeAll)
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
-                localizeableModifications = GlobalTaskLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             #endregion Load modifications
 
@@ -539,7 +488,7 @@ namespace TaskLayer
 
                 List<Modification> modificationsToAlwaysKeep = new List<Modification>();
                 if (SearchParameters.KeepAllUniprotMods)
-                    modificationsToAlwaysKeep.AddRange(GlobalTaskLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
+                    modificationsToAlwaysKeep.AddRange(GlobalEngineLevelSettings.AllModsKnown.Where(b => b.modificationType.Equals("Uniprot")));
 
                 var goodPsmsForEachProtein = allPsms.SelectMany(b => b).Where(b => b.FdrInfo.QValueNotch < 0.01 && !b.IsDecoy && b.FullSequence != null && b.ProteinAccesion != null).GroupBy(b => b.CompactPeptides.First().Value.Item2.First().Protein).ToDictionary(b => b.Key);
 
