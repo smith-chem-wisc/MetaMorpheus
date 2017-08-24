@@ -78,7 +78,6 @@ namespace TaskLayer
             Status("Loading modifications...", taskId);
 
             #region Load modifications
-
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
@@ -132,6 +131,10 @@ namespace TaskLayer
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var currentFileSpecificSettings = fileSettingsList[spectraFileIndex];
                 combinedParams = SetAllFileSpecificCommonParams(CommonParameters, currentFileSpecificSettings);
+
+
+                fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => combinedParams.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
+                variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => combinedParams.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
                 ionTypes = new List<ProductType>();
                 if (combinedParams.BIons.Value && SearchParameters.AddCompIons)
@@ -569,125 +572,56 @@ namespace TaskLayer
         private CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
         {
             CommonParameters returnParams = new CommonParameters(true);
-            if (currentFileSpecificSettings.MaxDegreeOfParallelism != null)
-                returnParams.MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism;
-            else
-                returnParams.MaxDegreeOfParallelism = commonParams.MaxDegreeOfParallelism;
-            if (currentFileSpecificSettings.LocalizeAll != null)
-                returnParams.LocalizeAll = currentFileSpecificSettings.LocalizeAll;
-            else
-                returnParams.LocalizeAll = commonParams.LocalizeAll;
-            if (currentFileSpecificSettings.ListOfModsFixed != default(List<Tuple<string, string>>))
-                returnParams.ListOfModsFixed = currentFileSpecificSettings.ListOfModsFixed;
-            else
-                returnParams.ListOfModsFixed = commonParams.ListOfModsFixed;
-            if (currentFileSpecificSettings.ListOfModsVariable != default(List<Tuple<string, string>>))
-                returnParams.ListOfModsVariable = currentFileSpecificSettings.ListOfModsVariable;
-            else
-                returnParams.ListOfModsVariable = commonParams.ListOfModsVariable;
 
-            if (currentFileSpecificSettings.ListOfModsLocalize != default(List<Tuple<string, string>>))
-                returnParams.ListOfModsLocalize = currentFileSpecificSettings.ListOfModsLocalize;
-            else
-                returnParams.ListOfModsLocalize = commonParams.ListOfModsLocalize;
-            if (currentFileSpecificSettings.DoPrecursorDeconvolution != null)
-                returnParams.DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution;
-            else
-                returnParams.DoPrecursorDeconvolution = commonParams.DoPrecursorDeconvolution;
-            if (currentFileSpecificSettings.UseProvidedPrecursorInfo != null)
-                returnParams.UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo;
-            else
-                returnParams.UseProvidedPrecursorInfo = commonParams.UseProvidedPrecursorInfo;
+            returnParams.MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism ?? commonParams.MaxDegreeOfParallelism;
 
-            if (currentFileSpecificSettings.DeconvolutionIntensityRatio != null)
-                returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio;
-            else
-                returnParams.DeconvolutionIntensityRatio = commonParams.DeconvolutionIntensityRatio;
-            if (currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState != null)
-                returnParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState;
-            else
-                returnParams.DeconvolutionMaxAssumedChargeState = commonParams.DeconvolutionMaxAssumedChargeState;
+            returnParams.LocalizeAll = currentFileSpecificSettings.LocalizeAll ?? commonParams.LocalizeAll;
 
-            if (currentFileSpecificSettings.DeconvolutionMassTolerance != null)
-                returnParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance;
-            else
-                returnParams.DeconvolutionMassTolerance = commonParams.DeconvolutionMassTolerance;
+            returnParams.ListOfModsFixed = currentFileSpecificSettings.ListOfModsFixed ?? commonParams.ListOfModsFixed;
 
-            if (currentFileSpecificSettings.InitiatorMethionineBehavior != CommonParameters.InitiatorMethionineBehavior)
-                returnParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior;
-            else
-                returnParams.InitiatorMethionineBehavior = commonParams.InitiatorMethionineBehavior;
+            returnParams.ListOfModsVariable = currentFileSpecificSettings.ListOfModsVariable ?? commonParams.ListOfModsVariable;
 
-            if (currentFileSpecificSettings.MaxMissedCleavages != null)
-                returnParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages;
-            else
-                returnParams.MaxMissedCleavages = commonParams.MaxMissedCleavages;
+            returnParams.ListOfModsLocalize = currentFileSpecificSettings.ListOfModsLocalize ?? commonParams.ListOfModsLocalize;
 
-            if (currentFileSpecificSettings.MinPeptideLength != null)
-                returnParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength;
-            else
-                returnParams.MinPeptideLength = commonParams.MinPeptideLength;
-            
-            if (currentFileSpecificSettings.MaxPeptideLength != null)
-                returnParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength;
-            else
-                returnParams.MaxPeptideLength = commonParams.MaxPeptideLength;
-                
-            if (currentFileSpecificSettings.MaxModificationIsoforms != null)
-                returnParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms;
-            else
-                returnParams.MaxModificationIsoforms = commonParams.MaxModificationIsoforms;
+            returnParams.DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution;
 
-            if (currentFileSpecificSettings.TotalPartitions != null)
-                returnParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions;
-            else
-                returnParams.TotalPartitions = commonParams.TotalPartitions;
+            returnParams.UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo;
 
-            if (currentFileSpecificSettings.Protease != null)
-                returnParams.Protease = currentFileSpecificSettings.Protease;
-            else
-                returnParams.Protease = commonParams.Protease;
+            returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio;
 
-            if (currentFileSpecificSettings.BIons != null)
-                returnParams.BIons = currentFileSpecificSettings.BIons;
-            else
-                returnParams.BIons = commonParams.BIons;
-            if (currentFileSpecificSettings.YIons != null)
-                returnParams.YIons = currentFileSpecificSettings.YIons;
-            else
-                returnParams.YIons = commonParams.YIons;
+            returnParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState;
 
-            if (currentFileSpecificSettings.ZdotIons != null)
-                returnParams.ZdotIons = currentFileSpecificSettings.ZdotIons;
-            else
-                returnParams.ZdotIons = commonParams.ZdotIons;
+            returnParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance;
 
-            if (currentFileSpecificSettings.CIons != null)
-                returnParams.CIons = currentFileSpecificSettings.CIons;
-            else
-                returnParams.CIons = commonParams.CIons;
+            returnParams.InitiatorMethionineBehavior = (currentFileSpecificSettings.InitiatorMethionineBehavior != CommonParameters.InitiatorMethionineBehavior) ? currentFileSpecificSettings.InitiatorMethionineBehavior : commonParams.InitiatorMethionineBehavior;
 
-            if (currentFileSpecificSettings.ProductMassTolerance != null)
-                returnParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance;
-            else
-                returnParams.ProductMassTolerance = commonParams.ProductMassTolerance;
+            returnParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.MaxMissedCleavages;
 
-            if (currentFileSpecificSettings.ConserveMemory != null)
-                returnParams.ConserveMemory = currentFileSpecificSettings.ConserveMemory;
-            else
-                returnParams.ConserveMemory = commonParams.ConserveMemory;
+            returnParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.MinPeptideLength;
 
-            if (currentFileSpecificSettings.ScoreCutoff != null)
-                returnParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff;
-            else
-                returnParams.ScoreCutoff = commonParams.ScoreCutoff;
+            returnParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.MaxPeptideLength;
 
-            if (currentFileSpecificSettings.Max_mods_for_peptide != null)
-                returnParams.Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide;
-            else
-                returnParams.Max_mods_for_peptide = commonParams.Max_mods_for_peptide;
+            returnParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.MaxModificationIsoforms;
 
+            returnParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions;
 
+            returnParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.Protease;
+
+            returnParams.BIons = currentFileSpecificSettings.BIons ?? commonParams.BIons;
+
+            returnParams.YIons = currentFileSpecificSettings.YIons ?? commonParams.YIons;
+
+            returnParams.ZdotIons = currentFileSpecificSettings.ZdotIons ?? commonParams.ZdotIons;
+
+            returnParams.CIons = currentFileSpecificSettings.CIons ?? commonParams.CIons;
+
+            returnParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance;
+
+            returnParams.ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory;
+
+            returnParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff;
+
+            returnParams.Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.Max_mods_for_peptide;
 
             return returnParams;
         }
