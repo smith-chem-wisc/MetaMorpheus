@@ -40,12 +40,13 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
+            int a = (int)CommonParameters.MaxMissedCleavages;
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
                 + CommonParameters.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + CommonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                + a.ToString(CultureInfo.InvariantCulture)
                 );
             return sb.ToString();
         }
@@ -190,7 +191,7 @@ namespace TaskLayer
                 // Linear calibration
                 {
                     Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, (double)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
@@ -250,7 +251,7 @@ namespace TaskLayer
                     // Second search round
 
                     Status("Getting ms2 scans for second round...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, (double)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2ScansTest.Length];
                     var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -304,7 +305,7 @@ namespace TaskLayer
 
                 if (CalibrationParameters.WriteIntermediateFiles)
                 {
-                    var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, (bool)CommonParameters.DoPrecursorDeconvolution, (bool)CommonParameters.UseProvidedPrecursorInfo, (double)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[ms2ScansAfterCalib.Length];
                     new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();

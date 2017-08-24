@@ -53,12 +53,13 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
+            int a = (int)CommonParameters.MaxMissedCleavages;
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
                 + CommonParameters.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + CommonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture)
+                + a.ToString(CultureInfo.InvariantCulture)
                 );
             return sb.ToString();
         }
@@ -98,6 +99,7 @@ namespace TaskLayer
             if (CommonParameters.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
+                
             }
             else
             {
@@ -124,7 +126,7 @@ namespace TaskLayer
             object psmLock = new object();
 
             Status("Searching files...", taskId);
-            CommonParameters combinedParams = new CommonParameters();
+            CommonParameters combinedParams = new CommonParameters(true);
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
@@ -150,7 +152,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, (bool)combinedParams.DoPrecursorDeconvolution, (bool)combinedParams.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, (bool)combinedParams.DoPrecursorDeconvolution, (bool)combinedParams.UseProvidedPrecursorInfo, (int)CommonParameters.DeconvolutionIntensityRatio, (int)CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int aede = 0; aede < SearchParameters.MassDiffAcceptors.Count; aede++)
                     fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
@@ -160,7 +162,7 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / CommonParameters.TotalPartitions));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / (int)combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / (int)combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / (int)CommonParameters.TotalPartitions));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
@@ -460,7 +462,7 @@ namespace TaskLayer
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
-                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.Protease }, 0.01, SearchParameters.MassDiffAcceptors[j], CommonParameters.ProductMassTolerance, CommonParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
+                        WriteMzidentml(psmsForThisFile, subsetProteinGroupsForThisFile, variableModifications, fixedModifications, new List<Protease> { CommonParameters.Protease }, 0.01, SearchParameters.MassDiffAcceptors[j], CommonParameters.ProductMassTolerance, (int)CommonParameters.MaxMissedCleavages, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                         ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", fullFilePath }));
                     }
                 }
@@ -567,7 +569,7 @@ namespace TaskLayer
         private CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
         {
             CommonParameters returnParams = new CommonParameters(true);
-            if (currentFileSpecificSettings.MaxDegreeOfParallelism != default(int?))
+            if (currentFileSpecificSettings.MaxDegreeOfParallelism != null)
                 returnParams.MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism;
             else
                 returnParams.MaxDegreeOfParallelism = commonParams.MaxDegreeOfParallelism;
@@ -597,16 +599,16 @@ namespace TaskLayer
             else
                 returnParams.UseProvidedPrecursorInfo = commonParams.UseProvidedPrecursorInfo;
 
-            if (currentFileSpecificSettings.DeconvolutionIntensityRatio != default(double))
+            if (currentFileSpecificSettings.DeconvolutionIntensityRatio != null)
                 returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio;
             else
-                returnParams.DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio;
-            if (currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState != default(int))
+                returnParams.DeconvolutionIntensityRatio = commonParams.DeconvolutionIntensityRatio;
+            if (currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState != null)
                 returnParams.DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState;
             else
                 returnParams.DeconvolutionMaxAssumedChargeState = commonParams.DeconvolutionMaxAssumedChargeState;
 
-            if (currentFileSpecificSettings.DeconvolutionMassTolerance != default(Tolerance))
+            if (currentFileSpecificSettings.DeconvolutionMassTolerance != null)
                 returnParams.DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance;
             else
                 returnParams.DeconvolutionMassTolerance = commonParams.DeconvolutionMassTolerance;
@@ -616,32 +618,32 @@ namespace TaskLayer
             else
                 returnParams.InitiatorMethionineBehavior = commonParams.InitiatorMethionineBehavior;
 
-            if (currentFileSpecificSettings.MaxMissedCleavages != default(int))
+            if (currentFileSpecificSettings.MaxMissedCleavages != null)
                 returnParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages;
             else
                 returnParams.MaxMissedCleavages = commonParams.MaxMissedCleavages;
 
-            if (currentFileSpecificSettings.MinPeptideLength != default(int?))
+            if (currentFileSpecificSettings.MinPeptideLength != null)
                 returnParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength;
             else
                 returnParams.MinPeptideLength = commonParams.MinPeptideLength;
-
-            if (currentFileSpecificSettings.MaxPeptideLength != default(int?))
+            
+            if (currentFileSpecificSettings.MaxPeptideLength != null)
                 returnParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength;
             else
                 returnParams.MaxPeptideLength = commonParams.MaxPeptideLength;
-
-            if (currentFileSpecificSettings.MaxModificationIsoforms != default(int))
+                
+            if (currentFileSpecificSettings.MaxModificationIsoforms != null)
                 returnParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms;
             else
                 returnParams.MaxModificationIsoforms = commonParams.MaxModificationIsoforms;
 
-            if (currentFileSpecificSettings.TotalPartitions != default(int))
+            if (currentFileSpecificSettings.TotalPartitions != null)
                 returnParams.TotalPartitions = currentFileSpecificSettings.TotalPartitions;
             else
                 returnParams.TotalPartitions = commonParams.TotalPartitions;
 
-            if (currentFileSpecificSettings.Protease != default(Protease))
+            if (currentFileSpecificSettings.Protease != null)
                 returnParams.Protease = currentFileSpecificSettings.Protease;
             else
                 returnParams.Protease = commonParams.Protease;
@@ -650,8 +652,6 @@ namespace TaskLayer
                 returnParams.BIons = currentFileSpecificSettings.BIons;
             else
                 returnParams.BIons = commonParams.BIons;
-
-
             if (currentFileSpecificSettings.YIons != null)
                 returnParams.YIons = currentFileSpecificSettings.YIons;
             else
@@ -667,7 +667,7 @@ namespace TaskLayer
             else
                 returnParams.CIons = commonParams.CIons;
 
-            if (currentFileSpecificSettings.ProductMassTolerance != default(Tolerance))
+            if (currentFileSpecificSettings.ProductMassTolerance != null)
                 returnParams.ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance;
             else
                 returnParams.ProductMassTolerance = commonParams.ProductMassTolerance;
@@ -677,12 +677,12 @@ namespace TaskLayer
             else
                 returnParams.ConserveMemory = commonParams.ConserveMemory;
 
-            if (currentFileSpecificSettings.ScoreCutoff != default(double))
+            if (currentFileSpecificSettings.ScoreCutoff != null)
                 returnParams.ScoreCutoff = currentFileSpecificSettings.ScoreCutoff;
             else
                 returnParams.ScoreCutoff = commonParams.ScoreCutoff;
 
-            if (currentFileSpecificSettings.Max_mods_for_peptide != default(int))
+            if (currentFileSpecificSettings.Max_mods_for_peptide != null)
                 returnParams.Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide;
             else
                 returnParams.Max_mods_for_peptide = commonParams.Max_mods_for_peptide;
