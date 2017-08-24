@@ -61,7 +61,7 @@ namespace Test
             Psm[][] globalPsms = new Psm[1][];
             globalPsms[0] = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0, true, true);
 
             cse.Run();
 
@@ -88,7 +88,7 @@ namespace Test
             Psm[][] globalPsms = new Psm[1][];
             globalPsms[0] = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0, true, true);
 
             cse.Run();
             Assert.Less(globalPsms[0][0].Score, 2);
@@ -114,7 +114,7 @@ namespace Test
             Psm[][] globalPsms = new Psm[1][];
             globalPsms[0] = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0, true, true);
 
             cse.Run();
             Assert.Less(globalPsms[0][0].Score, 2);
@@ -139,7 +139,7 @@ namespace Test
             Psm[][] globalPsms = new Psm[1][];
             globalPsms[0] = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new PpmTolerance(5), GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], new List<MassDiffAcceptor> { new OpenSearchMode() }, 0, null, null, int.MaxValue, new List<ProductType> { ProductType.B, ProductType.Y }, null, false, InitiatorMethionineBehavior.Retain, false, 0, true, true);
 
             cse.Run();
             Assert.IsNull(globalPsms[0][0]);
