@@ -33,7 +33,6 @@ namespace TaskLayer
         #region Public Properties
 
         public CalibrationParameters CalibrationParameters { get; set; }
-        public CommonParameters CommonParameters { get; set; }
         #endregion Public Properties
 
         #region Public Methods
