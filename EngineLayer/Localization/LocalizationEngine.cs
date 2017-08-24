@@ -36,7 +36,8 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
-            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
+
+            foreach (var ok in allResultingIdentifications)
             {
                 var matchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
@@ -51,7 +52,11 @@ namespace EngineLayer
                 }
 
                 ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
+            }
 
+            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
+            {
+                var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 if (ok.FullSequence == null)
                     continue;
 
