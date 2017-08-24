@@ -12,6 +12,10 @@
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=vulnerabilities)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=code_smells)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=MetaMorpheus)
+<a href="https://scan.coverity.com/projects/metamorpheus">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/11282/badge.svg"/>
+</a>
 
 Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases).
  
