@@ -184,6 +184,7 @@ namespace MetaMorpheusGUI
             disposeOfFilesWhenDone.IsChecked = task.DisposeOfFileWhenDone;
 
             allAmbiguity.IsChecked = task.ReportAllAmbiguity;
+            someAmbiguity.IsChecked = !task.ReportAllAmbiguity;
             excelCompatible.IsChecked = task.ExcelCompatible;
 
             DeconvolutionIntensityRatioTextBox.Text = task.DeconvolutionIntensityRatio.ToString();
