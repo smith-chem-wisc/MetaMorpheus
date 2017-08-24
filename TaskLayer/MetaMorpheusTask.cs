@@ -332,7 +332,7 @@ namespace TaskLayer
             TomlTable fileSpecificSettings;
             foreach (string rawFileName in currentRawDataFilenameList)
             {
-                fileSettingsList[index] = new CommonParameters();
+                fileSettingsList[index] = new CommonParameters(true);
                 var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
                 //Will only enter if Toml file exists with same name
                 if (fileSpecificToml.Length == 1)
@@ -340,7 +340,6 @@ namespace TaskLayer
                     fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
                     SetParamsEqual(fileSettingsList[index], tomlSettingsList);
-                    //fileSettingsList[index].Protease = tomlSettingsList["Protease"].Value.Get<Protease>();
                 }
 
                 index++;

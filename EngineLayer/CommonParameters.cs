@@ -42,6 +42,11 @@ namespace EngineLayer
             DeconvolutionMassTolerance = new PpmTolerance(5);
         }
 
+        public CommonParameters(bool setAlltoDefault)
+        {
+
+        }
+
         public int? MaxDegreeOfParallelism { get; set; }
         public bool? LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
