@@ -33,6 +33,7 @@ namespace TaskLayer
         #region Public Properties
 
         public CalibrationParameters CalibrationParameters { get; set; }
+
         #endregion Public Properties
 
         #region Public Methods
@@ -216,7 +217,11 @@ namespace TaskLayer
                     new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
                     if (CalibrationParameters.WriteIntermediateFiles)
-                        WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    {
+                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeLinearCalib" + ".psmtsv");
+                        WritePsmsToTsv(allPsms[0], writtenFile);
+                        SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    }
 
                     var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
@@ -275,8 +280,11 @@ namespace TaskLayer
                     new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
                     if (CalibrationParameters.WriteIntermediateFiles)
-                        WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeNonLinearCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-
+                    {
+                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeNonLinearCalib");
+                        WritePsmsToTsv(allPsms[0], writtenFile);
+                        SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    }
                     var goodIdentifications = allPsms[0].Where(b => b.FdrInfo.QValue < 0.01 && !b.IsDecoy).ToList();
 
                     Action<List<LabeledMs1DataPoint>, string> ms1Action = (List<LabeledMs1DataPoint> theList, string s) => {; };
@@ -326,7 +334,11 @@ namespace TaskLayer
                     new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
 
                     if (CalibrationParameters.WriteIntermediateFiles)
-                        WritePsmsToTsv(allPsms[0], OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsAfterCalib", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    {
+                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsAfterCalib");
+                        WritePsmsToTsv(allPsms[0], writtenFile);
+                        SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                    }
                 }
 
                 myTaskResults.AddNiceText(sbForThisFile.ToString());
