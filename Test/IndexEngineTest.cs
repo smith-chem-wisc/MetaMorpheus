@@ -35,15 +35,24 @@ namespace Test
                 i++;
             }
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, new List<string>(), 1, 1, true);
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable
+            };
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, true, CommonParameters, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var digestedList = proteinList[0].Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).ToList();
+            var digestedList = proteinList[0].Digest(CommonParameters.Protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(5, digestedList.Count);
             foreach (var fdfd in digestedList)
@@ -80,9 +89,18 @@ namespace Test
                 i++;
             }
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, new List<string>(), 1, 1, true);
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                MinPeptideLength = null,
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+                MaxMissedCleavages = 2,
+                MaxPeptideLength = null,
+                MaxModificationIsoforms = 4096,
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+            };
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, true, CommonParameters, new List<string>());
 
             var results = (IndexingResults)engine.Run();
 

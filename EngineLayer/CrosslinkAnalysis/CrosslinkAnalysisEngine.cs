@@ -12,6 +12,7 @@ namespace EngineLayer.CrosslinkAnalysis
 {
     public class CrosslinkAnalysisEngine : MetaMorpheusEngine
     {
+
         #region Private Fields
 
         private const int max_mods_for_peptide = 3;
@@ -19,7 +20,7 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly int? minPeptideLength;
         private readonly int? maxPeptideLength;
         private readonly int maxModIsoforms;
-        private readonly List<Tuple<PsmCross, PsmCross>> newPsms;
+        private readonly List<PsmCross> newPsms;
         private readonly List<Protein> proteinList;
         private readonly List<ModificationWithMass> variableModifications;
         private readonly List<ModificationWithMass> fixedModifications;
@@ -31,19 +32,17 @@ namespace EngineLayer.CrosslinkAnalysis
         private readonly List<ProductType> lp;
         private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
 
-        //Draw Control
         private readonly CrosslinkerTypeClass crosslinker;
 
         private Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private string OutputFolder;
+        protected readonly TerminusType terminusType;
 
         #endregion Private Fields
 
-        //private bool draw = true;
-
         #region Public Constructors
 
-        public CrosslinkAnalysisEngine(List<Tuple<PsmCross, PsmCross>> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, List<string> nestedIds) : base(nestedIds)
+        public CrosslinkAnalysisEngine(List<PsmCross> newPsms, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, Tolerance fragmentTolerance, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maxModIsoforms, List<ProductType> lp, InitiatorMethionineBehavior initiatorMethionineBehavior, Dictionary<ModificationWithMass, ushort> modsDictionary, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string OutputFolder, CrosslinkerTypeClass crosslinker, List<string> nestedIds, TerminusType terminusType) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
@@ -64,6 +63,7 @@ namespace EngineLayer.CrosslinkAnalysis
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
             this.OutputFolder = OutputFolder;
             this.crosslinker = crosslinker;
+            this.terminusType = terminusType;
         }
 
         #endregion Public Constructors
@@ -86,17 +86,15 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 if (psmpair != null)
                 {
-                    if (psmpair.Item1 != null)
-                    {
-                        var cp = psmpair.Item1.CompactPeptide;
+                        var cp = psmpair.CompactPeptide;
                         if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
                             compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
-                    }
-                    if (psmpair.Item2 != null)
+
+                    if (psmpair.BetaPsmCross != null)
                     {
-                        var cp = psmpair.Item2.CompactPeptide;
-                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp))
-                            compactPeptideToProteinPeptideMatching.Add(cp, new HashSet<PeptideWithSetModifications>());
+                        var cp1 = psmpair.BetaPsmCross.CompactPeptide;
+                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp1))
+                            compactPeptideToProteinPeptideMatching.Add(cp1, new HashSet<PeptideWithSetModifications>());
                     }
                 }
             }
@@ -116,7 +114,8 @@ namespace EngineLayer.CrosslinkAnalysis
                         //    continue;
                         foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModIsoforms, max_mods_for_peptide))
                         {
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, TerminusType.None), out HashSet<PeptideWithSetModifications> v))
+                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+
                                 v.Add(peptideWithSetModifications);
                         }
                     }
@@ -124,7 +123,8 @@ namespace EngineLayer.CrosslinkAnalysis
                 {
                     foreach (var ye in local)
                     {
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
+                        HashSet<PeptideWithSetModifications> v;
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                     }
@@ -147,36 +147,20 @@ namespace EngineLayer.CrosslinkAnalysis
             Status("Computing info about actual peptides with modifications...", nestedIds);
             for (int myScanWithMassIndex = 0; myScanWithMassIndex < newPsms.Count; myScanWithMassIndex++)
             {
-                var huh = newPsms[myScanWithMassIndex].Item1;
+                var huh = newPsms[myScanWithMassIndex];
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-                var huh1 = newPsms[myScanWithMassIndex].Item2;
-                if (huh1 != null && huh1.MostProbableProteinInfo == null)
-                    huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                if (huh !=null)
+                {
+                    var huh1 = newPsms[myScanWithMassIndex].BetaPsmCross;
+                    if (huh1 != null && huh1.MostProbableProteinInfo == null)
+                        huh1.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
+                }             
             }
 
             return myAnalysisResults;
         }
 
         #endregion Protected Methods
-
-        /*Calculate n-score based on the equation from xlinkx
-        private double XLCalculateNScore(int N, int n, int la, int lb, int ftotal, int ionType, double tolerance)
-        {
-            double x = 1 / 111.1 * ionType * tolerance * 2;
-            double f = (double)lb / ((double)la + (double)lb) * ftotal;
-            double e = Math.E;
-            double p;
-            double px = 0;
-            double ifactorial = 1;
-            for (int i = 0; i < n; i++)
-            {
-                if (i == 0) { ifactorial = 1; } else { ifactorial *= i; }
-                px += Math.Pow(e, -x * f) * Math.Pow(x * f, i) / ifactorial;
-            }
-            p = 1 - px;
-            return p * N;
-        }
-        */
     }
 }

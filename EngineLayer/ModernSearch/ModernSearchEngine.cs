@@ -14,42 +14,38 @@ namespace EngineLayer.ModernSearch
         #region Protected Fields
 
         protected readonly List<int>[] fragmentIndex;
-        protected readonly Tolerance fragmentTolerance;
         protected readonly float[] keys;
         protected readonly Psm[][] globalPsms;
         protected readonly Ms2ScanWithSpecificMass[] listOfSortedms2Scans;
         protected readonly List<CompactPeptide> peptideIndex;
-        protected readonly List<MassDiffAcceptor> searchModes;
-        protected readonly bool addCompIons;
         protected readonly List<ProductType> lp;
-        protected readonly double scoreCutoff;
         protected readonly int currentPartition;
-        protected readonly int totalPartitions;
+        protected readonly CommonParameters CommonParameters;
+        protected readonly bool addCompIons;
+        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
 
         #endregion Protected Fields
 
         #region Private Fields
 
-        private const double tolInDaForPreferringHavingMods = 0.03;
+        private const double tolForScoreImprovement = 1e-9;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, List<MassDiffAcceptor> searchModes, List<string> nestedIds, bool addCompIons, List<ProductType> lp, double scoreCutoff, int currentPartition, int totalPartitions) : base(nestedIds)
+        public ModernSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.listOfSortedms2Scans = listOfSortedms2Scans;
             this.peptideIndex = peptideIndex;
             this.keys = keys;
             this.fragmentIndex = fragmentIndex;
-            this.fragmentTolerance = fragmentTolerance;
-            this.searchModes = searchModes;
-            this.addCompIons = addCompIons;
             this.lp = lp;
-            this.scoreCutoff = scoreCutoff;
             this.currentPartition = currentPartition + 1;
-            this.totalPartitions = totalPartitions;
+            this.CommonParameters = CommonParameters;
+            this.addCompIons = addCompIons;
+            this.massDiffAcceptors = massDiffAcceptors;
         }
 
         #endregion Public Constructors
@@ -58,11 +54,11 @@ namespace EngineLayer.ModernSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("In modern search engine..." + currentPartition + "/" + totalPartitions, nestedIds);
+            Status("In modern search engine..." + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds);
 
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
-            var searchModesCount = searchModes.Count;
+            var searchModesCount = massDiffAcceptors.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
@@ -88,18 +84,18 @@ namespace EngineLayer.ModernSearch
                     for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
                         var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                        if (consideredScore > scoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                        if (consideredScore > CommonParameters.ScoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                         {
                             CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
                             for (int j = 0; j < searchModesCount; j++)
                             {
                                 // Check if makes sense to add due to peptidescore!
-                                var searchMode = searchModes[j];
+                                var searchMode = massDiffAcceptors[j];
                                 double currentBestScore = bestScores[j];
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < 1e-9)
+                                    if (Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement)
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
@@ -153,7 +149,7 @@ namespace EngineLayer.ModernSearch
                     var new_progress = (int)((double)scansSeen / (listOfSortedms2ScansLength) * 100);
                     if (new_progress > old_progress)
                     {
-                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop" + currentPartition + "/" + totalPartitions, nestedIds));
+                        ReportProgress(new ProgressEventArgs(new_progress, "In modern search loop" + currentPartition + "/" + CommonParameters.TotalPartitions, nestedIds));
                         old_progress = new_progress;
                     }
                 }
@@ -226,7 +222,7 @@ namespace EngineLayer.ModernSearch
                 while (downIpos >= 0)
                 {
                     closestPeak = keys[downIpos];
-                    if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                    if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
                     {
                         foreach (var heh in fragmentIndex[downIpos])
                             peptideScores[heh] += theAdd;
@@ -243,7 +239,7 @@ namespace EngineLayer.ModernSearch
                 while (upIpos < keys.Length)
                 {
                     closestPeak = keys[upIpos];
-                    if (fragmentTolerance.Within(experimentalPeakInDaltons, closestPeak))
+                    if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
                     {
                         foreach (var heh in fragmentIndex[upIpos])
                             peptideScores[heh] += theAdd;

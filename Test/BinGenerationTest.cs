@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using MzLibUtil;
 
 namespace Test
 {
@@ -22,15 +23,56 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                DoHistogramAnalysis = true,
-                MassDiffAcceptors = massDiffAcceptors,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                SearchTarget = true,
-                SearchDecoy = false,
-                DoParsimony = true,
-                DoQuantification = true,
-                ScoreCutoff = 1
-            };
+                CommonParameters = new CommonParameters
+                {
+                    ScoreCutoff = 1,
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,                            
+                    MinPeptideLength = 5,
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 2,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    BIons = true,
+                    YIons = true, 
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+                    MaxDegreeOfParallelism = 1,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    ZdotIons = false,
+                    CIons = false,
+
+                    Max_mods_for_peptide = 3,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+                },
+                SearchParameters = new SearchParameters
+                {
+                    DoHistogramAnalysis = true,
+                    MassDiffAcceptors = massDiffAcceptors,                   
+                    SearchTarget = true,
+                    SearchDecoy = false,
+                    DoParsimony = true,
+                    DoQuantification = true,
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    QuantifyPpmTol = 5,             
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
+                },
+        };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.mzml");
@@ -41,18 +83,18 @@ namespace Test
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
             ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
 
-            var possMod1 = prot1.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod1 = prot1.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep1_0 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep1_10 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass> { mod }, 4096, 3).Last();
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3");
 
-            var possMod3 = prot3.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod3 = prot3.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep2_0 = possMod3.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep2_10 = possMod3.GetPeptidesWithSetModifications(new List<ModificationWithMass>() { mod }, 4096, 3).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
-            var possMod4 = prot4.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod4 = prot4.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep3_10 = possMod4.GetPeptidesWithSetModifications(new List<ModificationWithMass>() { mod }, 4096, 3).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
@@ -80,9 +122,55 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                DoParsimony = true,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0
+                CommonParameters = new CommonParameters
+                {
+                    ScoreCutoff = 1,
+                    Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                    MinPeptideLength = 5,
+                    ConserveMemory = false,
+                    MaxMissedCleavages = 0,
+                    MaxPeptideLength = null,
+                    MaxModificationIsoforms = 4096,
+                    BIons = true,
+                    YIons = true,
+                    TotalPartitions = 1,
+                    LocalizeAll = true,
+                    MaxDegreeOfParallelism = 1,
+                    ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
+                    ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
+                    ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
+                    ProductMassTolerance = new AbsoluteTolerance(0.01),
+                    ZdotIons = false,
+                    CIons = false,
+
+                    Max_mods_for_peptide = 3,
+
+                    // Deconvolution stuff
+                    DoPrecursorDeconvolution = true,
+                    UseProvidedPrecursorInfo = true,
+                    DeconvolutionIntensityRatio = 4,
+                    DeconvolutionMaxAssumedChargeState = 10,
+                    DeconvolutionMassTolerance = new PpmTolerance(5),
+                },
+                SearchParameters = new SearchParameters
+                {
+                    DoHistogramAnalysis = true,
+                    MassDiffAcceptors = massDiffAcceptors,
+                    SearchTarget = true,
+                    SearchDecoy = false,
+                    DoParsimony = true,
+                    DoQuantification = true,
+                    DisposeOfFileWhenDone = true,
+                    AddCompIons = false,
+                    NoOneHitWonders = false,
+                    ModPeptidesAreUnique = true,
+                    QuantifyPpmTol = 5,
+                    DoLocalizationAnalysis = true,
+                    WritePrunedDatabase = false,
+                    KeepAllUniprotMods = true,
+
+                },
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles.xml");
@@ -90,7 +178,7 @@ namespace Test
             string mzmlFilePath2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles2.mzml");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
+            ModificationWithMass mod = new ModificationWithMass("mod1", "mt", motif, TerminusLocalization.Any, 10);
 
             IDictionary<int, List<Modification>> oneBasedModification = new Dictionary<int, List<Modification>>
             {
@@ -99,7 +187,7 @@ namespace Test
 
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
-            var possMod1 = prot1.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
+            var possMod1 = prot1.Digest(st.CommonParameters.Protease, st.CommonParameters.MaxMissedCleavages, st.CommonParameters.MinPeptideLength, st.CommonParameters.MaxPeptideLength, st.CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
             var pep1 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
             var pep2 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).Last();
 

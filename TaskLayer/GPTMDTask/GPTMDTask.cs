@@ -20,10 +20,22 @@ namespace TaskLayer
 {
     public class GptmdTask : MetaMorpheusTask
     {
+        #region Private Fields
+
+        private const double tolForComboLoading = 1e-3;
+
+        #endregion Private Fields
+
         #region Public Constructors
 
         public GptmdTask() : base(MyTask.Gptmd)
         {
+            //
+            CommonParameters = new CommonParameters
+            {
+                Protease = GlobalTaskLevelSettings.ProteaseDictionary["trypsin"],
+                ListOfModsLocalize = GlobalTaskLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList()
+            };
             // Set default values here:
             MaxMissedCleavages = 2;
             MinPeptideLength = 5;
@@ -63,6 +75,8 @@ namespace TaskLayer
         #endregion Public Constructors
 
         #region Public Properties
+
+        public CommonParameters CommonParameters { get; set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
 
@@ -201,7 +215,7 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 Psm[][] allPsmsArray = new Psm[1][];
                 allPsmsArray[0] = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ProductMassTolerance, Protease, searchModes, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, MaxModificationIsoforms, lp, new List<string> { taskId, "Individual Spectra Files", origDataFile }, ConserveMemory, InitiatorMethionineBehavior, false, ScoreCutoff).Run();
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 lock (lock2)
                 {
                     allPsms[0].AddRange(allPsmsArray[0]);
@@ -213,7 +227,7 @@ namespace TaskLayer
 
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, searchModes, Protease, MaxMissedCleavages, MinPeptideLength, MaxPeptideLength, InitiatorMethionineBehavior, fixedModifications, variableModifications, MaxModificationIsoforms, new List<string> { taskId }, ProductTypeToTerminusType.IdentifyTerminusType(lp));
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), CommonParameters, new List<string> { taskId });
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
@@ -266,7 +280,7 @@ namespace TaskLayer
             {
                 foreach (var modToLocalize in gptmdModifications)
                 {
-                    if (modOnPeptide.motif.Motif.Equals(modToLocalize.motif.Motif))
+                    if (modOnPeptide.motif.Equals(modToLocalize.motif))
                     {
                         yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
                     }
@@ -283,13 +297,12 @@ namespace TaskLayer
                     var line = r.ReadLine().Split(' ');
                     var mass1 = double.Parse(line[0]);
                     var mass2 = double.Parse(line[1]);
-                    if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < 1e-3) &&
-                        modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < 1e-3))
+                    if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < tolForComboLoading) &&
+                        modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
                 }
             }
         }
-
 
         #endregion Private Methods
     }
