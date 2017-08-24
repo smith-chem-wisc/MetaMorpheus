@@ -29,4 +29,4 @@ CIons = false
 ProductMassTolerance = "±0.0100 Absolute"
 ConserveMemory = true
 ScoreCutoff = 5.0
-Max_mods_for_peptide = 0
+Max_mods_for_peptide = 3
