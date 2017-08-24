@@ -1,4 +1,4 @@
-# MetaMorpheus
+# MetaMorpheus <a href="https://twitter.com/intent/tweet?text=Discover PTMs in bottom-up data with MetaMorpheus https://tinyurl.com/y9an55ah"> <img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Tweet">
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus)
@@ -11,7 +11,7 @@
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=sqale_debt_ratio)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 
 Download the current version at [https://github.com/smith-chem-wisc/MetaMorpheus/releases](https://github.com/smith-chem-wisc/MetaMorpheus/releases).
- 
+
 MetaMorpheus is a bottom-up proteomics database search software with integrated posttranslational modification (PTM) discovery capability.
 This program combines features of [Morpheus](https://github.com/cwenger/Morpheus) and [G-PTM-D](https://github.com/smith-chem-wisc/gptmd) in a single tool.
 
@@ -94,7 +94,7 @@ mono MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExam
 
 ## References
 
-* [Global Post-translational Modification Discovery--J. Proteome Res., 2017, 16, 1383-1390](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
+* [Global Post-translational Modification Discovery--J. Proteome Res., 2017, 16, 1383-1390](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)<a href="https://twitter.com/intent/tweet?text=Global Post-translational Modification Discovery -- http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034"> <img src="https://img.shields.io/twitter/url/http/shields.io.svg?style=social" alt="Tweet">
 
 * [Global Identification of Protein Post-translational Modifications in a Single-Pass Database Search--J. Proteome Res., 2015, 14 (11), pp 4714–4720](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.5b00599)
 
