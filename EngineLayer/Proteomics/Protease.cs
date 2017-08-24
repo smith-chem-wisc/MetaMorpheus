@@ -42,6 +42,12 @@ namespace EngineLayer
             return Name;
         }
 
+        public void IsSemiSpecific(SearchType searchType, TerminusType terminusType)
+        {
+            if(searchType==SearchType.NonSpecific)
+                CleavageSpecificity = terminusType == TerminusType.N ? CleavageSpecificity.SemiN : CleavageSpecificity.SemiC;
+        }
+
         #endregion Public Methods
 
         #region Internal Methods

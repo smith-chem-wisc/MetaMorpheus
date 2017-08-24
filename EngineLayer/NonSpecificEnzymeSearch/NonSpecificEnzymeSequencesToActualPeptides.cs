@@ -88,7 +88,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key as CompactPeptideBase, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, terminusType))
+                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                         {
                             foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                             {
@@ -190,7 +190,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, terminusType))
+                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
                         {
                             foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
                             {

@@ -225,6 +225,8 @@ namespace TaskLayer
             object indexLock = new object();
             object psmLock = new object();
 
+            Protease.IsSemiSpecific(SearchType, terminusType);
+
             Status("Searching files...", taskId);
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {

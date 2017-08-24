@@ -372,7 +372,7 @@ namespace Test
             var protease = new Protease("singleN", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915) };
-            var digestedList = protein.Digest(protease, 20, 6, null, InitiatorMethionineBehavior.Variable, variableModifications, TerminusType.N);
+            var digestedList = protein.Digest(protease, 20, 6, null, InitiatorMethionineBehavior.Variable, variableModifications);
             foreach (var peptide in digestedList)
             {
                 var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();
@@ -403,7 +403,7 @@ namespace Test
             var protease = new Protease("singleC", new List<string> { "K, G, M, N, Q" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null);
             ModificationMotif.TryGetMotif("M", out ModificationMotif motifM);
             var variableModifications = new List<ModificationWithMass> { new ModificationWithMass("16", null, motifM, TerminusLocalization.Any, 15.994915, null) };
-            var digestedList = protein.Digest(protease, 20, 6, null, InitiatorMethionineBehavior.Variable, variableModifications, TerminusType.C);
+            var digestedList = protein.Digest(protease, 20, 6, null, InitiatorMethionineBehavior.Variable, variableModifications);
             foreach (var peptide in digestedList)
             {
                 var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, 20, 3).ToList();

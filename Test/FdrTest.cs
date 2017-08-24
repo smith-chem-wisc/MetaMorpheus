@@ -24,7 +24,7 @@ namespace Test
             List<Psm>[] newPsms = new List<Psm>[1];
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
-            var digested = p.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, new List<ModificationWithMass>(), TerminusType.None).ToList();
+            var digested = p.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, new List<ModificationWithMass>()).ToList();
 
             PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
             PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
