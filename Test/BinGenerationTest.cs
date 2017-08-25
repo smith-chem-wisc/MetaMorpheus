@@ -25,18 +25,18 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,                            
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
                     ConserveMemory = false,
                 },
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
-                    MassDiffAcceptors = massDiffAcceptors,                   
+                    MassDiffAcceptors = massDiffAcceptors,
                     SearchDecoy = false,
                     DoParsimony = true,
                     DoQuantification = true
                 },
-        };
+            };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.mzml");

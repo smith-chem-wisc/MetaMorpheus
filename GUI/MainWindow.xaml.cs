@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using TaskLayer;
 
@@ -337,7 +336,6 @@ namespace MetaMorpheusGUI
 
         private void RunAllTasks_Click(object sender, RoutedEventArgs e)
         {
-
             RunAllTasks("");
         }
 
@@ -361,16 +359,11 @@ namespace MetaMorpheusGUI
         {
             var myDialog = new DialogWindow();
             myDialog.SizeToContent = SizeToContent.WidthAndHeight;
-            myDialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;           
+            myDialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             myDialog.ShowDialog();
 
-
             RunAllTasks(myDialog.stringSuffix);
-
-
         }
-
-
 
         private void ClearTasks_Click(object sender, RoutedEventArgs e)
         {

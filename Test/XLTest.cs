@@ -31,7 +31,7 @@ namespace Test
             var c = pep.CompactPeptide(TerminusType.None).CTerminalMasses;
             Assert.AreEqual(n.Count(), 4);
             Assert.AreEqual(c.Count(), 4);
-            Assert.AreEqual(c[0], 128.09496301518999);
+            Assert.AreEqual(c[0], 128.09496301518999, 1e-6);
             var x = PsmCross.xlPosCal(pep.CompactPeptide(TerminusType.None), crosslinker).ToArray();
             Assert.AreEqual(x[0], 4);
 
@@ -41,7 +41,7 @@ namespace Test
             var c2 = pep2.CompactPeptide(TerminusType.None).CTerminalMasses;
             Assert.AreEqual(n2.Count(), 8);
             Assert.AreEqual(c2.Count(), 8);
-            Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-9);
+            Assert.AreEqual(n2[4] - n2[3], 128.09496301518999, 1e-6);
             var x2 = PsmCross.xlPosCal(pep2.CompactPeptide(TerminusType.None), crosslinker).ToArray();
             Assert.AreEqual(x2[0], 4);
         }

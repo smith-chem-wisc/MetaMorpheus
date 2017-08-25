@@ -5,7 +5,6 @@ using EngineLayer.Gptmd;
 using IO.MzML;
 using IO.Thermo;
 using MassSpectrometry;
-using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -31,10 +30,7 @@ namespace TaskLayer
         public GptmdTask() : base(MyTask.Gptmd)
         {
             CommonParameters = new CommonParameters();
-            CommonParameters.ListOfModsLocalize = new List<Tuple<string, string>>();
-
             GptmdParameters = new GptmdParameters();
-
         }
 
         #endregion Public Constructors

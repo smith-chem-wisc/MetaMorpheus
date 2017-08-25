@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Test
 {
@@ -311,7 +310,7 @@ namespace Test
         {
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
-            
+
             FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
             if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
@@ -324,7 +323,7 @@ namespace Test
                         "--mbr true" }
                 ))
                 throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
-            
+
             FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, "P34223");
 
             FlashLfqEngine.ConstructBinsFromIdentifications();
