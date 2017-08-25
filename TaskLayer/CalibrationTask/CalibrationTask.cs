@@ -218,7 +218,7 @@ namespace TaskLayer
 
                     if (CalibrationParameters.WriteIntermediateFiles)
                     {
-                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeLinearCalib" + ".psmtsv");
+                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "-PSMsBeforeLinearCalib.psmtsv");
                         WritePsmsToTsv(allPsms[0], writtenFile);
                         SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }
@@ -281,7 +281,7 @@ namespace TaskLayer
 
                     if (CalibrationParameters.WriteIntermediateFiles)
                     {
-                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsBeforeNonLinearCalib");
+                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "-PSMsBeforeNonLinearCalib.psmtsv");
                         WritePsmsToTsv(allPsms[0], writtenFile);
                         SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }
@@ -335,7 +335,7 @@ namespace TaskLayer
 
                     if (CalibrationParameters.WriteIntermediateFiles)
                     {
-                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "PSMsAfterCalib");
+                        var writtenFile = Path.Combine(OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "-PSMsAfterCalib.psmtsv");
                         WritePsmsToTsv(allPsms[0], writtenFile);
                         SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }

@@ -786,9 +786,9 @@ namespace TaskLayer
                             {
                                 var output_folderForIndices = GenerateOutputFolderForIndices(dbFilenameList);
                                 Status("Writing params...", new List<string> { taskId });
-                                var indexEnginePath = Path.Combine(output_folderForIndices, "indexEngine.params");
-                                WriteIndexEngineParams(indexEngine, indexEnginePath);
-                                SucessfullyFinishedWritingFile(indexEnginePath, new List<string> { taskId });
+                                var paramsFile = Path.Combine(output_folderForIndices, "indexEngine.params");
+                                WriteIndexEngineParams(indexEngine, paramsFile);
+                                SucessfullyFinishedWritingFile(paramsFile, new List<string> { taskId });
 
                                 Status("Running Index Engine...", new List<string> { taskId });
                                 var indexResults = (IndexingResults)indexEngine.Run();
