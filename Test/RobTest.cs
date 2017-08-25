@@ -312,7 +312,7 @@ namespace Test
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
             
-            FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath, rawFilePath });
+            FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
             if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
                 throw new MetaMorpheusException("Quantification error - could not find periodic table file");
