@@ -192,7 +192,7 @@ namespace TaskLayer
             return ye;
         }
 
-        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
+        public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string taskId)
         {
             StartingSingleTask(taskId);
 
@@ -214,24 +214,21 @@ namespace TaskLayer
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilenameList.Count];
-            int index = 0;
-            var directoryOfRawFiles = Directory.GetParent(currentRawDataFilenameList[0]);
-            foreach (string rawFileName in currentRawDataFilenameList)
+            FileSpecificSettings[] fileSettingsList = new FileSpecificSettings[currentRawDataFilepathList.Count];
+            for (int i = 0; i < currentRawDataFilepathList.Count; i++)
             {
-                var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
+                string rawFilePath = currentRawDataFilepathList[i];
+                var fileSpecificToml = Directory.GetFiles(Directory.GetParent(rawFilePath).ToString(), Path.GetFileNameWithoutExtension(rawFilePath) + ".toml");
                 //Will only enter if Toml file exists with same name
                 if (fileSpecificToml.Length == 1)
                 {
                     TomlTable fileSpecificSettings = Toml.ReadFile(fileSpecificToml[0], tomlConfig);
                     var tomlSettingsList = fileSpecificSettings.ToDictionary(p => p.Key);
-                    fileSettingsList[index] = new FileSpecificSettings(tomlSettingsList);
+                    fileSettingsList[i] = new FileSpecificSettings(tomlSettingsList);
                 }
-
-                index++;
             }
 
-            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilenameList, taskId, fileSettingsList);
+            RunSpecific(output_folder, currentProteinDbFilenameList, currentRawDataFilepathList, taskId, fileSettingsList);
             stopWatch.Stop();
             myTaskResults.Time = stopWatch.Elapsed;
             var resultsFileName = Path.Combine(output_folder, "results.txt");
@@ -272,13 +269,13 @@ namespace TaskLayer
                     file.Write("The data analysis was performed using MetaMorpheus Version: " + GlobalEngineLevelSettings.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus." + " [INSERT CITATION] ");
                     file.Write(proseCreatedWhileRunning.ToString());
                     file.Write(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-                    file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilenameList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
+                    file.WriteLine("The total time to perform " + this.TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", myTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: STEFAN'S VERY IMPORTANT PAPER");
 
                     file.WriteLine();
                     file.WriteLine("Spectra files: ");
-                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilenameList.Select(b => '\t' + b)));
+                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
                     file.WriteLine("Databases:");
                     file.Write(string.Join(Environment.NewLine, currentProteinDbFilenameList.Select(b => '\t' + (b.IsContaminant ? "Contaminant " : "") + b.FilePath)));
                 }
