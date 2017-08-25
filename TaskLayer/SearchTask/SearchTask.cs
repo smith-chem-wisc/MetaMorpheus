@@ -15,7 +15,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
@@ -623,20 +622,6 @@ namespace TaskLayer
             XmlWriter writer = XmlWriter.Create(outputPath, settings);
             _indexedSerializer.Serialize(writer, _mzid);
             writer.Close();
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            int a = CommonParameters.MaxMissedCleavages;
-            sb.AppendLine(TaskType.ToString());
-            sb.AppendLine(
-                "The initiator methionine behavior is set to "
-                + CommonParameters.InitiatorMethionineBehavior
-                + " and the maximum number of allowed missed cleavages is "
-                + a.ToString(CultureInfo.InvariantCulture)
-                );
-            return sb.ToString();
         }
 
         #endregion Public Methods

@@ -9,7 +9,6 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -35,24 +34,6 @@ namespace TaskLayer
         public CalibrationParameters CalibrationParameters { get; set; }
 
         #endregion Public Properties
-
-        #region Public Methods
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            int a = CommonParameters.MaxMissedCleavages;
-            sb.AppendLine(TaskType.ToString());
-            sb.AppendLine(
-                "The initiator methionine behavior is set to "
-                + CommonParameters.InitiatorMethionineBehavior
-                + " and the maximum number of allowed missed cleavages is "
-                + a.ToString(CultureInfo.InvariantCulture)
-                );
-            return sb.ToString();
-        }
-
-        #endregion Public Methods
 
         #region Protected Internal Methods
 
