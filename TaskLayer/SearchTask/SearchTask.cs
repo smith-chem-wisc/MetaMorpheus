@@ -624,6 +624,67 @@ namespace TaskLayer
             writer.Close();
         }
 
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
+        {
+            if (currentFileSpecificSettings == null)
+                return commonParams;
+
+            CommonParameters returnParams = new CommonParameters
+            {
+                MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism ?? commonParams.MaxDegreeOfParallelism,
+
+                LocalizeAll = currentFileSpecificSettings.LocalizeAll ?? commonParams.LocalizeAll,
+
+                ListOfModsFixed = currentFileSpecificSettings.ListOfModsFixed ?? commonParams.ListOfModsFixed,
+
+                ListOfModsVariable = currentFileSpecificSettings.ListOfModsVariable ?? commonParams.ListOfModsVariable,
+
+                ListOfModsLocalize = currentFileSpecificSettings.ListOfModsLocalize ?? commonParams.ListOfModsLocalize,
+
+                DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
+
+                UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
+
+                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
+
+                DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
+
+                DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
+
+                InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior,
+
+                MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.MaxMissedCleavages,
+
+                MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.MinPeptideLength,
+
+                MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.MaxPeptideLength,
+
+                MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.MaxModificationIsoforms,
+
+                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
+
+                Protease = currentFileSpecificSettings.Protease ?? commonParams.Protease,
+
+                BIons = currentFileSpecificSettings.BIons ?? commonParams.BIons,
+
+                YIons = currentFileSpecificSettings.YIons ?? commonParams.YIons,
+
+                ZdotIons = currentFileSpecificSettings.ZdotIons ?? commonParams.ZdotIons,
+
+                CIons = currentFileSpecificSettings.CIons ?? commonParams.CIons,
+
+                ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
+
+                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
+
+                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
+
+                Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.Max_mods_for_peptide
+            };
+
+            return returnParams;
+        }
+
         #endregion Public Methods
 
         #region Protected Methods
@@ -1203,67 +1264,6 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
-
-        private static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
-        {
-            if (currentFileSpecificSettings == null)
-                return commonParams;
-
-            CommonParameters returnParams = new CommonParameters
-            {
-                MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism ?? commonParams.MaxDegreeOfParallelism,
-
-                LocalizeAll = currentFileSpecificSettings.LocalizeAll ?? commonParams.LocalizeAll,
-
-                ListOfModsFixed = currentFileSpecificSettings.ListOfModsFixed ?? commonParams.ListOfModsFixed,
-
-                ListOfModsVariable = currentFileSpecificSettings.ListOfModsVariable ?? commonParams.ListOfModsVariable,
-
-                ListOfModsLocalize = currentFileSpecificSettings.ListOfModsLocalize ?? commonParams.ListOfModsLocalize,
-
-                DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
-
-                UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
-
-                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
-
-                DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
-
-                DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
-
-                InitiatorMethionineBehavior = (currentFileSpecificSettings.InitiatorMethionineBehavior != commonParams.InitiatorMethionineBehavior) ? currentFileSpecificSettings.InitiatorMethionineBehavior : commonParams.InitiatorMethionineBehavior,
-
-                MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.MaxMissedCleavages,
-
-                MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.MinPeptideLength,
-
-                MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.MaxPeptideLength,
-
-                MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.MaxModificationIsoforms,
-
-                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
-
-                Protease = currentFileSpecificSettings.Protease ?? commonParams.Protease,
-
-                BIons = currentFileSpecificSettings.BIons ?? commonParams.BIons,
-
-                YIons = currentFileSpecificSettings.YIons ?? commonParams.YIons,
-
-                ZdotIons = currentFileSpecificSettings.ZdotIons ?? commonParams.ZdotIons,
-
-                CIons = currentFileSpecificSettings.CIons ?? commonParams.CIons,
-
-                ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
-
-                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
-
-                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
-
-                Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.Max_mods_for_peptide
-            };
-
-            return returnParams;
-        }
 
         private static IEnumerable<Type> GetSubclassesAndItself(Type type)
         {

@@ -1,4 +1,5 @@
-﻿using Nett;
+﻿using EngineLayer;
+using Nett;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
@@ -47,11 +48,21 @@ namespace Test
             var file = Directory.GetFiles(dir, Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
             var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
-            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "AspN");
+            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
             Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
+            Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
+
             FileSpecificSettings f = new FileSpecificSettings(tomlSettingsList);
-            Assert.AreEqual(f.Protease, "TestCustomProtease");
+
+            Assert.AreEqual("Asp-N", f.Protease.Name);
+            Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
+
+            CommonParameters c = SearchTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+
+            Assert.AreEqual("Asp-N", c.Protease.Name);
+            Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.InitiatorMethionineBehavior);
+            Assert.AreEqual(2, c.MaxMissedCleavages);
         }
 
         #endregion Public Methods
