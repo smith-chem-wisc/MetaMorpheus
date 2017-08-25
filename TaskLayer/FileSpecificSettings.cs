@@ -1,7 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
-using System;
 using System.Collections.Generic;
 
 namespace TaskLayer
@@ -13,26 +12,6 @@ namespace TaskLayer
 
         public FileSpecificSettings(Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict)
         {
-            if (tomlDict.ContainsKey("MaxDegreeOfParallelism"))
-            {
-                MaxDegreeOfParallelism = tomlDict["MaxDegreeOfParallelism"].Value.Get<int?>();
-            }
-            if (tomlDict.ContainsKey("LocalizeAll"))
-            {
-                LocalizeAll = tomlDict["LocalizeAll"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ListOfModsFixed"))
-            {
-                ListOfModsFixed = tomlDict["ListOfModsFixed"].Value.Get<List<Tuple<string, string>>>();
-            }
-            if (tomlDict.ContainsKey("ListOfModsVariable"))
-            {
-                ListOfModsVariable = tomlDict["ListOfModsVariable"].Value.Get<List<Tuple<string, string>>>();
-            }
-            if (tomlDict.ContainsKey("ListOfModsLocalize"))
-            {
-                ListOfModsLocalize = tomlDict["ListOfModsLocalize"].Value.Get<List<Tuple<string, string>>>();
-            }
             if (tomlDict.ContainsKey("DoPrecursorDeconvolution"))
             {
                 DoPrecursorDeconvolution = tomlDict["DoPrecursorDeconvolution"].Value.Get<bool?>();
@@ -81,22 +60,6 @@ namespace TaskLayer
             {
                 Protease = tomlDict["Protease"].Value.Get<Protease>();
             }
-            if (tomlDict.ContainsKey("BIons"))
-            {
-                BIons = tomlDict["BIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("YIons"))
-            {
-                YIons = tomlDict["YIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ZdotIons"))
-            {
-                ZdotIons = tomlDict["ZdotIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("CIons"))
-            {
-                CIons = tomlDict["CIons"].Value.Get<bool?>();
-            }
             if (tomlDict.ContainsKey("ProductMassTolerance"))
             {
                 ProductMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
@@ -122,21 +85,12 @@ namespace TaskLayer
 
         public Protease Protease { get; }
         public int? Max_mods_for_peptide { get; }
-        public int? MaxDegreeOfParallelism { get; }
-        public bool? LocalizeAll { get; }
-        public List<Tuple<string, string>> ListOfModsFixed { get; }
-        public List<Tuple<string, string>> ListOfModsVariable { get; }
-        public List<Tuple<string, string>> ListOfModsLocalize { get; }
         public bool? DoPrecursorDeconvolution { get; }
         public bool? UseProvidedPrecursorInfo { get; }
         public double? DeconvolutionIntensityRatio { get; }
         public double? ScoreCutoff { get; }
         public bool? ConserveMemory { get; }
         public Tolerance ProductMassTolerance { get; }
-        public bool? CIons { get; }
-        public bool? ZdotIons { get; }
-        public bool? YIons { get; }
-        public bool? BIons { get; }
         public int? TotalPartitions { get; }
         public int? MaxModificationIsoforms { get; }
         public int? MaxPeptideLength { get; }
