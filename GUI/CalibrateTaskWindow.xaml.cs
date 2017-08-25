@@ -59,13 +59,11 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
-            int temp = task.CommonParameters.MaxMissedCleavages;
-            missedCleavagesTextBox.Text = temp.ToString(CultureInfo.InvariantCulture);
+            missedCleavagesTextBox.Text = task.CommonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.MinPeptideLength.HasValue ? task.CommonParameters.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.MaxPeptideLength.HasValue ? task.CommonParameters.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             proteaseComboBox.SelectedItem = task.CommonParameters.Protease;
-            temp = task.CommonParameters.MaxModificationIsoforms;
-            maxModificationIsoformsTextBox.Text = temp.ToString(CultureInfo.InvariantCulture);
+            maxModificationIsoformsTextBox.Text = task.CommonParameters.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.InitiatorMethionineBehavior;
 
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -83,8 +81,7 @@ namespace MetaMorpheusGUI
             nonLinearCalibCheckBox.IsChecked = task.CalibrationParameters.NonLinearCalibration;
 
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
-            double temp2 = task.CommonParameters.ScoreCutoff;
-            minScoreAllowed.Text = temp2.ToString(CultureInfo.InvariantCulture);
+            minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
