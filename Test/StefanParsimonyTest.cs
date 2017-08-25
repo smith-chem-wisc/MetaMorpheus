@@ -29,39 +29,11 @@ namespace Test
             Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
-            bool modPeptidesAreUnique = true;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, new List<string>());
             pae.Run();
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
-        }
-
-        [Test]
-        public static void ParsimonyVariableDontTreatAsUnique()
-        {
-            bool localizeable = false;
-            var hah = GetInfo(localizeable);
-
-            var newPsms = hah.Item1;
-            var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
-            var noOneHitWonders = hah.Item4;
-            var compactPeptide1 = hah.Item5;
-            var compactPeptide2 = hah.Item6;
-
-            Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(2, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            bool modPeptidesAreUnique = false;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
-            pae.Run();
-
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
             Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
             Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
@@ -83,8 +55,7 @@ namespace Test
             Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
 
-            bool modPeptidesAreUnique = true;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
+            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, new List<string>());
             pae.Run();
 
             Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
@@ -92,33 +63,6 @@ namespace Test
 
             Assert.AreEqual(1, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
             Assert.AreEqual(1, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
-        }
-
-        [Test]
-        public static void ParsimonyLocalizeableDontTreatAsUnique()
-        {
-            bool localizeable = true;
-            var hah = GetInfo(localizeable);
-
-            var newPsms = hah.Item1;
-            var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
-            var noOneHitWonders = hah.Item4;
-            var compactPeptide1 = hah.Item5;
-            var compactPeptide2 = hah.Item6;
-
-            Assert.AreEqual(3, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(1, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            bool modPeptidesAreUnique = false;
-            ProteinParsimonyEngine pae = new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, modPeptidesAreUnique, new List<string>());
-            pae.Run();
-
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide1].Count);
-            Assert.AreEqual(4, compactPeptideToProteinPeptideMatching[compactPeptide2].Count);
-
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide1].Select(b => b.Protein)).Count);
-            Assert.AreEqual(2, new HashSet<Protein>(compactPeptideToProteinPeptideMatching[compactPeptide2].Select(b => b.Protein)).Count);
         }
 
         [Test]
@@ -150,7 +94,7 @@ namespace Test
                 {compactPeptide3, new HashSet<PeptideWithSetModifications>{pep3} }
             };
 
-            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, false, new List<string>()).Run();
+            var cool = (ProteinParsimonyResults)new ProteinParsimonyEngine(compactPeptideToProteinPeptideMatching, new List<string>()).Run();
 
             Assert.AreEqual(2, compactPeptideToProteinPeptideMatching.Count);
 

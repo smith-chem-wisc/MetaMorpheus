@@ -13,7 +13,6 @@ namespace EngineLayer
             AddCompIons = false;
             DoParsimony = false;
             NoOneHitWonders = false;
-            ModPeptidesAreUnique = true;
             DoQuantification = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
@@ -32,7 +31,6 @@ namespace EngineLayer
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
-        public bool ModPeptidesAreUnique { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
         public double QuantifyPpmTol { get; set; }

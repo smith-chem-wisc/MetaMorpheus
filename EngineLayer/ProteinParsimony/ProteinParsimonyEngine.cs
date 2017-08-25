@@ -1,7 +1,6 @@
 ﻿using Proteomics;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,16 +10,14 @@ namespace EngineLayer
     {
         #region Private Fields
 
-        private readonly bool treatModPeptidesAsDifferentPeptides;
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, bool modPeptidesAreUnique, List<string> nestedIds) : base(nestedIds)
+        public ProteinParsimonyEngine(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching, List<string> nestedIds) : base(nestedIds)
         {
-            this.treatModPeptidesAsDifferentPeptides = modPeptidesAreUnique;
             this.compactPeptideToProteinPeptideMatching = compactPeptideToProteinPeptideMatching;
         }
 
@@ -44,30 +41,6 @@ namespace EngineLayer
 
         private List<ProteinGroup> ApplyProteinParsimony()
         {
-            // digesting an XML database results in a non-mod-agnostic digestion; need to fix this if mod-agnostic parsimony enabled
-            if (!treatModPeptidesAsDifferentPeptides)
-            {
-                Dictionary<string, List<PeptideWithSetModifications>> baseSeqToPeptideMatch = new Dictionary<string, List<PeptideWithSetModifications>>();
-                foreach (var peptide in compactPeptideToProteinPeptideMatching.SelectMany(b => b.Value))
-                {
-                    if (baseSeqToPeptideMatch.TryGetValue(peptide.BaseSequence, out List<PeptideWithSetModifications> value))
-                        value.Add(peptide);
-                    else
-                        baseSeqToPeptideMatch[peptide.BaseSequence] = new List<PeptideWithSetModifications> { peptide };
-                }
-
-                foreach (var ok in compactPeptideToProteinPeptideMatching)
-                    foreach (var modsFromThisOne in ok.Value.ToList())
-                        foreach (var peptideToAdd in baseSeqToPeptideMatch[modsFromThisOne.BaseSequence])
-                        {
-                            ok.Value.Add(peptideToAdd);
-                            var anotherPeptideToAdd = new PeptideWithSetModifications(modsFromThisOne, peptideToAdd);
-                            ok.Value.Add(anotherPeptideToAdd);
-                            var anotherPeptideToAdd2 = new PeptideWithSetModifications(peptideToAdd, modsFromThisOne);
-                            ok.Value.Add(anotherPeptideToAdd2);
-                        }
-            }
-
             var proteinToPeptidesMatching = new Dictionary<Protein, HashSet<CompactPeptideBase>>();
             var parsimonyProteinList = new Dictionary<Protein, HashSet<CompactPeptideBase>>();
             var proteinsWithUniquePeptides = new Dictionary<Protein, HashSet<PeptideWithSetModifications>>();
@@ -115,10 +88,7 @@ namespace EngineLayer
                 foreach (var peptide in kvp.Value)
                 {
                     string pepSequence;
-                    if (!treatModPeptidesAsDifferentPeptides)
-                        pepSequence = string.Join("", peptide.NTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + string.Join("", peptide.CTerminalMasses.Select(b => b.ToString(CultureInfo.InvariantCulture))) + peptide.MonoisotopicMassIncludingFixedMods.ToString(CultureInfo.InvariantCulture);
-                    else
-                        pepSequence = compactPeptideToFullSeqMatch[peptide];
+                    pepSequence = compactPeptideToFullSeqMatch[peptide];
                     if (!peptideSeqProteinListMatch.TryGetValue(pepSequence, out HashSet<Protein> proteinListHere))
                         peptideSeqProteinListMatch.Add(pepSequence, new HashSet<Protein>() { kvp.Key });
                     else
@@ -273,7 +243,6 @@ namespace EngineLayer
             foreach (var proteinGroup in proteinGroups)
             {
                 proteinGroup.AllPeptides.RemoveWhere(p => !proteinGroup.Proteins.Contains(p.Protein));
-                proteinGroup.DisplayModsOnPeptides = treatModPeptidesAsDifferentPeptides;
             }
 
             return proteinGroups;

@@ -26,6 +26,7 @@ namespace EngineLayer
         private const int digitsForRoundingMasses = 7;
 
         private const double massTolForPeptideEquality = 1e-7;
+        private const int digitsForRoundingMasses = 7;
 
         #endregion Private Fields
 

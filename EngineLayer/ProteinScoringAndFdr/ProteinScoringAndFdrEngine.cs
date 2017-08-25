@@ -10,20 +10,18 @@ namespace EngineLayer
         private readonly IEnumerable<Psm> newPsms;
         private readonly List<MassDiffAcceptor> searchModes;
         private readonly bool noOneHitWonders;
-        private readonly bool treatModPeptidesAsDifferentPeptides;
         private List<ProteinGroup> proteinGroups;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, List<string> nestedIds) : base(nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
             this.proteinGroups = proteinGroups;
             this.noOneHitWonders = noOneHitWonders;
-            this.treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
         }
 
         #endregion Public Constructors
@@ -152,10 +150,7 @@ namespace EngineLayer
 
             if (noOneHitWonders)
             {
-                if (treatModPeptidesAsDifferentPeptides)
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
-                else
-                    proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.BaseSequence)).Count > 1).ToList();
+                proteinGroups = proteinGroups.Where(p => p.isDecoy || new HashSet<string>(p.AllPeptides.Select(x => x.Sequence)).Count > 1).ToList();
             }
 
             // order protein groups by score

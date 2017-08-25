@@ -23,10 +23,12 @@ namespace EngineLayer
             CIons = false;
 
             TotalPartitions = 1;
-            LocalizeAll = true;
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
+          
+            LocalizeAll = true;
+
             ListOfModsLocalize = null;
 
             Max_mods_for_peptide = 3;
@@ -47,7 +49,6 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public static List<string> AllModLists { get; private set; }
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }

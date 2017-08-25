@@ -226,6 +226,7 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.ListOfModsFixed = new List<Tuple<string, string>>();
             foreach (var heh in fixedModTypeForTreeViewObservableCollection)
                 TheTask.CommonParameters.ListOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
+
             if (localizeAllCheckBox.IsChecked.Value)
             {
                 TheTask.CommonParameters.ListOfModsLocalize = null;
