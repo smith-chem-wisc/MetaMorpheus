@@ -47,7 +47,11 @@ namespace Test
             var file = Directory.GetFiles(dir, Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
             var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
-            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "TestCustomProtease");
+            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "AspN");
+            Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
+            FileSpecificSettings f = new FileSpecificSettings(tomlSettingsList);
+            Assert.AreEqual(f.Protease, "TestCustomProtease");
+            Assert.IsNull(f.MaxMissedCleavages);
         }
 
         #endregion Public Methods

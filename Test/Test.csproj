@@ -135,6 +135,9 @@
     <None Include="sliced-raw.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="testFileSpecfic.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj">
