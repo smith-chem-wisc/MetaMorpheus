@@ -135,9 +135,9 @@ namespace Test
             var from3 = protein3.Digest(digestionParams, allKnownFixedModifications).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            PeptideWithSetModifications pep1 = from1.GetPeptidesWithSetModifications(digestionParams,variableModifications).First();
-            PeptideWithSetModifications pep2 = from2.GetPeptidesWithSetModifications(digestionParams,variableModifications).First();
-            PeptideWithSetModifications pep3 = from3.GetPeptidesWithSetModifications(digestionParams,variableModifications).First();
+            PeptideWithSetModifications pep1 = from1.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
+            PeptideWithSetModifications pep2 = from2.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
+            PeptideWithSetModifications pep3 = from3.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
 
             CompactPeptide compactPeptide1 = pep1.CompactPeptide(TerminusType.None);
             CompactPeptide compactPeptide2 = pep2.CompactPeptide(TerminusType.None);

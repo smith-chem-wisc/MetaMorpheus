@@ -123,8 +123,8 @@ namespace Test
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
             var possMod1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep1 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams,new List<ModificationWithMass>()).First();
-            var pep2 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams,new List<ModificationWithMass>()).Last();
+            var pep1 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep2 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).Last();
 
             List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
             List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };

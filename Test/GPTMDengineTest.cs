@@ -41,7 +41,7 @@ namespace Test
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>()).First();
             //var twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams,variableModifications).First() };
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
 
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
@@ -82,7 +82,7 @@ namespace Test
             var modPep = parentProtein.Digest(digestionParams, new List<ModificationWithMass>()).First();
 
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams,variableModifications).First() };
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             Psm match = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
             Psm newPsm = new Psm(peptidesWithSetModifications.First().CompactPeptide(TerminusType.None), 0, 0, 0, scan);
             Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();

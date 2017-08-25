@@ -46,10 +46,10 @@
 
         public override int GetHashCode()
         {
-            return 
-                MaxMissedCleavages.GetHashCode() 
-                ^ InitiatorMethionineBehavior.GetHashCode() 
-                ^ MaxModificationIsoforms.GetHashCode() 
+            return
+                MaxMissedCleavages.GetHashCode()
+                ^ InitiatorMethionineBehavior.GetHashCode()
+                ^ MaxModificationIsoforms.GetHashCode()
                 ^ MaxModsForPeptide.GetHashCode();
         }
 

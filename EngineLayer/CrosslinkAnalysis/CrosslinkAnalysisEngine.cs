@@ -96,7 +96,7 @@ namespace EngineLayer.CrosslinkAnalysis
                     {
                         //if (peptideWithPossibleModifications.Length <= 1)
                         //    continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams,variableModifications))
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications))
                         {
                             if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 
