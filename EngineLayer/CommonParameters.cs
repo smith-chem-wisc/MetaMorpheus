@@ -1,7 +1,6 @@
 ﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace EngineLayer
 {
@@ -28,7 +27,7 @@ namespace EngineLayer
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            ListOfModsLocalize = null;
 
             Max_mods_for_peptide = 3;
 
