@@ -91,6 +91,9 @@ namespace EngineLayer
         public double ScoreCutoff { get; set; }
         public int Max_mods_for_peptide { get; set; }
 
+        public bool ExcelCompatible { get; set; }
+        public bool ReportAllAmbiguity { get; set; }
+
         #endregion Public Properties
     }
 }
