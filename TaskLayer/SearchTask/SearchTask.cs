@@ -681,7 +681,7 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
             List<Psm>[] allPsms = new List<Psm>[SearchParameters.MassDiffAcceptors.Count];
