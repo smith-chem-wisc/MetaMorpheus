@@ -59,12 +59,12 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
-            int temp = task.CommonParameters.MaxMissedCleavages.Value;
+            int temp = task.CommonParameters.MaxMissedCleavages;
             missedCleavagesTextBox.Text = temp.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.MinPeptideLength.HasValue ? task.CommonParameters.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.MaxPeptideLength.HasValue ? task.CommonParameters.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             proteaseComboBox.SelectedItem = task.CommonParameters.Protease;
-            temp = task.CommonParameters.MaxModificationIsoforms.Value;
+            temp = task.CommonParameters.MaxModificationIsoforms;
             maxModificationIsoformsTextBox.Text = temp.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.InitiatorMethionineBehavior;
 
@@ -83,7 +83,7 @@ namespace MetaMorpheusGUI
             nonLinearCalibCheckBox.IsChecked = task.CalibrationParameters.NonLinearCalibration;
 
             writeIntermediateFilesCheckBox.IsChecked = task.CalibrationParameters.WriteIntermediateFiles;
-            double temp2 = task.CommonParameters.ScoreCutoff.Value;
+            double temp2 = task.CommonParameters.ScoreCutoff;
             minScoreAllowed.Text = temp2.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -124,7 +124,7 @@ namespace MetaMorpheusGUI
             }
 
             localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
-            if (task.CommonParameters.LocalizeAll.Value)
+            if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                     heh.Use = true;

@@ -17,6 +17,8 @@ namespace EngineLayer.CrosslinkSearch
 
         #region Private Fields
 
+        #region Private Fields
+
         private readonly List<int>[] fragmentIndex;
 
         private readonly float[] keys;
@@ -50,6 +52,10 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Private Fields
 
+        #endregion Private Fields
+
+        #region Public Constructors
+
         #region Public Constructors
 
         #region Public Constructors
@@ -79,6 +85,10 @@ namespace EngineLayer.CrosslinkSearch
         #endregion Public Constructors
 
         #endregion Public Constructors
+
+        #endregion Public Constructors
+
+        #region Protected Methods
 
         #region Protected Methods
 
@@ -282,6 +292,10 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Protected Methods
 
+        #endregion Protected Methods
+
+        #region Private Methods
+
         #region Private Methods
 
         #region Private Methods
@@ -365,10 +379,10 @@ namespace EngineLayer.CrosslinkSearch
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages.Value, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
+                    var digestedList = protein.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms.Value, CommonParameters.Max_mods_for_peptide.Value).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
@@ -494,6 +508,8 @@ namespace EngineLayer.CrosslinkSearch
             // index of the first element that is larger than value
             return index;
         }
+
+        #endregion Private Methods
 
         #endregion Private Methods
 

@@ -41,7 +41,7 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            int a = CommonParameters.MaxMissedCleavages.Value;
+            int a = CommonParameters.MaxMissedCleavages;
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
@@ -92,7 +92,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettings)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettings)
         {
             myTaskResults = new MyTaskResults(this)
             {
@@ -109,7 +109,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (CommonParameters.LocalizeAll.Value)
+            if (CommonParameters.LocalizeAll)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -119,22 +119,22 @@ namespace TaskLayer
 
             List<ProductType> lp = new List<ProductType>();
             FragmentTypes fragmentTypesForCalibration = FragmentTypes.None;
-            if (CommonParameters.BIons.Value)
+            if (CommonParameters.BIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.b;
                 lp.Add(ProductType.B);
             }
-            if (CommonParameters.YIons.Value)
+            if (CommonParameters.YIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.y;
                 lp.Add(ProductType.Y);
             }
-            if (CommonParameters.CIons.Value)
+            if (CommonParameters.CIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.c;
                 lp.Add(ProductType.C);
             }
-            if (CommonParameters.ZdotIons.Value)
+            if (CommonParameters.ZdotIons)
             {
                 fragmentTypesForCalibration = fragmentTypesForCalibration | FragmentTypes.zdot;
                 lp.Add(ProductType.Zdot);
@@ -192,7 +192,7 @@ namespace TaskLayer
                 // Linear calibration
                 {
                     Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution.Value, CommonParameters.UseProvidedPrecursorInfo.Value, CommonParameters.DeconvolutionIntensityRatio.Value, CommonParameters.DeconvolutionMaxAssumedChargeState.Value, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var listOfSortedms2Scans = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2Scans.Length];
@@ -256,7 +256,7 @@ namespace TaskLayer
                     // Second search round
 
                     Status("Getting ms2 scans for second round...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution.Value, CommonParameters.UseProvidedPrecursorInfo.Value, CommonParameters.DeconvolutionIntensityRatio.Value, CommonParameters.DeconvolutionMaxAssumedChargeState.Value, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var listOfSortedms2ScansTest = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[listOfSortedms2ScansTest.Length];
                     var searchEngineTest = new ClassicSearchEngine(allPsmsArray, listOfSortedms2ScansTest, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -313,7 +313,7 @@ namespace TaskLayer
 
                 if (CalibrationParameters.WriteIntermediateFiles)
                 {
-                    var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution.Value, CommonParameters.UseProvidedPrecursorInfo.Value, CommonParameters.DeconvolutionIntensityRatio.Value, CommonParameters.DeconvolutionMaxAssumedChargeState.Value, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                    var ms2ScansAfterCalib = GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                     Psm[][] allPsmsArray = new Psm[1][];
                     allPsmsArray[0] = new Psm[ms2ScansAfterCalib.Length];
                     new ClassicSearchEngine(allPsmsArray, ms2ScansAfterCalib, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();

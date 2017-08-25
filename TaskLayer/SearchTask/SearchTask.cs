@@ -628,7 +628,7 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            int a = CommonParameters.MaxMissedCleavages.Value;
+            int a = CommonParameters.MaxMissedCleavages;
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
@@ -681,7 +681,7 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this);
             List<Psm>[] allPsms = new List<Psm>[SearchParameters.MassDiffAcceptors.Count];
@@ -695,7 +695,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (CommonParameters.LocalizeAll.Value)
+            if (CommonParameters.LocalizeAll)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -749,15 +749,15 @@ namespace TaskLayer
                 variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => combinedParams.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
                 ionTypes = new List<ProductType>();
-                if (combinedParams.BIons.Value && SearchParameters.AddCompIons)
+                if (combinedParams.BIons && SearchParameters.AddCompIons)
                     ionTypes.Add(ProductType.B);
-                else if (combinedParams.BIons.Value)
+                else if (combinedParams.BIons)
                     ionTypes.Add(ProductType.BnoB1ions);
-                if (combinedParams.YIons.Value)
+                if (combinedParams.YIons)
                     ionTypes.Add(ProductType.Y);
-                if (combinedParams.ZdotIons.Value)
+                if (combinedParams.ZdotIons)
                     ionTypes.Add(ProductType.Zdot);
-                if (combinedParams.CIons.Value)
+                if (combinedParams.CIons)
                     ionTypes.Add(ProductType.C);
                 terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
@@ -767,7 +767,7 @@ namespace TaskLayer
                 Status("Loading spectra file...", thisId);
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
                 Status("Getting ms2 scans...", thisId);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution.Value, combinedParams.UseProvidedPrecursorInfo.Value, combinedParams.DeconvolutionIntensityRatio.Value, combinedParams.DeconvolutionMaxAssumedChargeState.Value, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
                 for (int aede = 0; aede < SearchParameters.MassDiffAcceptors.Count; aede++)
                     fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
@@ -777,7 +777,7 @@ namespace TaskLayer
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<CompactPeptide> peptideIndex = null;
-                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions.Value, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions.Value) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions.Value));
+                        List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                         float[] keys = null;
                         List<int>[] fragmentIndex = null;
@@ -1208,8 +1208,11 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, CommonParameters currentFileSpecificSettings)
+        private static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
         {
+            if (currentFileSpecificSettings == null)
+                return commonParams;
+
             CommonParameters returnParams = new CommonParameters
             {
                 MaxDegreeOfParallelism = currentFileSpecificSettings.MaxDegreeOfParallelism ?? commonParams.MaxDegreeOfParallelism,

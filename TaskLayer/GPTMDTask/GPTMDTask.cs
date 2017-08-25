@@ -46,7 +46,7 @@ namespace TaskLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            int a = CommonParameters.MaxMissedCleavages.Value;
+            int a = CommonParameters.MaxMissedCleavages;
             sb.AppendLine(
                 "The initiator methionine behavior is set to "
                 + CommonParameters.InitiatorMethionineBehavior
@@ -60,7 +60,7 @@ namespace TaskLayer
 
         #region Protected Methods
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, CommonParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificSettings[] fileSettingsList)
         {
             myTaskResults = new MyTaskResults(this)
             {
@@ -71,7 +71,7 @@ namespace TaskLayer
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
             List<ModificationWithMass> localizeableModifications;
-            if (CommonParameters.LocalizeAll.Value)
+            if (CommonParameters.LocalizeAll)
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList();
             else
                 localizeableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => CommonParameters.ListOfModsLocalize.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
@@ -88,13 +88,13 @@ namespace TaskLayer
             allPsms[0] = new List<Psm>();
 
             List<ProductType> lp = new List<ProductType>();
-            if (CommonParameters.BIons.Value)
+            if (CommonParameters.BIons)
                 lp.Add(ProductType.B);
-            if (CommonParameters.YIons.Value)
+            if (CommonParameters.YIons)
                 lp.Add(ProductType.Y);
-            if (CommonParameters.CIons.Value)
+            if (CommonParameters.CIons)
                 lp.Add(ProductType.C);
-            if (CommonParameters.ZdotIons.Value)
+            if (CommonParameters.ZdotIons)
                 lp.Add(ProductType.Zdot);
 
             Status("Loading proteins...", new List<string> { taskId });
@@ -148,7 +148,7 @@ namespace TaskLayer
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution.Value, CommonParameters.UseProvidedPrecursorInfo.Value, CommonParameters.DeconvolutionIntensityRatio.Value, CommonParameters.DeconvolutionMaxAssumedChargeState.Value, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 Psm[][] allPsmsArray = new Psm[1][];
                 allPsmsArray[0] = new Psm[arrayOfMs2ScansSortedByMass.Length];
                 new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();

@@ -168,12 +168,12 @@ namespace MetaMorpheusGUI
             txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.SearchDecoy;
-            int temp = task.CommonParameters.MaxMissedCleavages.Value;
+            int temp = task.CommonParameters.MaxMissedCleavages;
             missedCleavagesTextBox.Text = temp.ToString(CultureInfo.InvariantCulture);
             txtMinPeptideLength.Text = task.CommonParameters.MinPeptideLength.HasValue ? task.CommonParameters.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             txtMaxPeptideLength.Text = task.CommonParameters.MaxPeptideLength.HasValue ? task.CommonParameters.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
             proteaseComboBox.SelectedItem = task.CommonParameters.Protease;
-            temp = task.CommonParameters.MaxModificationIsoforms.Value;
+            temp = task.CommonParameters.MaxModificationIsoforms;
             maxModificationIsoformsTextBox.Text = temp.ToString(CultureInfo.InvariantCulture);
             initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -221,7 +221,7 @@ namespace MetaMorpheusGUI
             }
 
             localizeAllCheckBox.IsChecked = task.CommonParameters.LocalizeAll;
-            if (task.CommonParameters.LocalizeAll.Value)
+            if (task.CommonParameters.LocalizeAll)
             {
                 foreach (var heh in localizeModTypeForTreeViewObservableCollection)
                     heh.Use = true;
