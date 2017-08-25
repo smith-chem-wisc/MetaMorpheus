@@ -97,6 +97,7 @@ namespace Test
                 {
                     DoHistogramAnalysis = true,
                     MassDiffAcceptors = massDiffAcceptors,
+                    MatchBetweenRuns = true
                 },
             };
 
