@@ -70,7 +70,7 @@ namespace MetaMorpheusCommandLine
                     var draggedFilePath = p.Object.Tasks[i];
 
                     var uhum = Toml.ReadFile(draggedFilePath, MetaMorpheusTask.tomlConfig);
-                    
+
                     switch (uhum.Get<string>("TaskType"))
                     {
                         case "Search":
