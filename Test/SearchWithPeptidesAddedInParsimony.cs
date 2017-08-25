@@ -11,7 +11,7 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     [TestFixture]
-    public class SearchWithPeptidesAddedInParsimony
+    public static class SearchWithPeptidesAddedInParsimony
     {
         #region Public Methods
 
@@ -19,7 +19,7 @@ namespace Test
         public static void SearchWithPeptidesAddedInParsimonyTest()
         {
             // Make sure can run the complete search task when multiple compact peptides may correspond to a single PWSM
-            SearchTask st = new SearchTask()
+            SearchTask st = new SearchTask
             {
                 SearchParameters = new SearchParameters
                 {
@@ -78,7 +78,6 @@ namespace Test
             pepWithPossibleModifications = prot2List.First();
             var pep2list = pepWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
             PeptideWithSetModifications pepMG = pep2list.First();
-            PeptideWithSetModifications pepMGch2 = pep2list.Last();
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
 
@@ -89,7 +88,7 @@ namespace Test
             #region Generate and write the mzml
 
             {
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA,pepMG, pepMA111 }, true);
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepMA, pepMG, pepMA111 }, true);
 
                 IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
