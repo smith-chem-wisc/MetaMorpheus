@@ -10,7 +10,6 @@ namespace EngineLayer
     {
         #region Protected Fields
 
-        
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
         protected readonly List<Psm>[] allPsms;

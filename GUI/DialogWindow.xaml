@@ -12,10 +12,8 @@
             Please enter a folder suffix for the MetaMorpheus task:
         </TextBlock>
         <TextBlock HorizontalAlignment="Center">
-            <TextBox HorizontalAlignment="Center" VerticalAlignment="Center" Width="500" Height="30" Name="metaMorpheusTaskSuffixTextbox" 
-           KeyDown="OnKeyDownHandler" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,5,0,10"/>
+            <TextBox HorizontalAlignment="Center" VerticalAlignment="Center" Width="500" Height="30" Name="metaMorpheusTaskSuffixTextbox"
+           KeyDown="OnKeyDownHandler" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,5,0,10" />
         </TextBlock>
-        
     </StackPanel>
-
 </Window>

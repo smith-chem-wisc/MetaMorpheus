@@ -54,8 +54,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    ConserveMemory = false                
-
+                    ConserveMemory = false
                 },
                 SearchParameters = new SearchParameters
                 {
@@ -132,7 +131,7 @@ namespace Test
             #endregion Write the files
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) },null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
         }
 
@@ -262,7 +261,6 @@ namespace Test
                 GlobalEngineLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
-
                     CommonParameters = new CommonParameters
                     {
                         ConserveMemory = false,
@@ -356,7 +354,7 @@ namespace Test
 
             #region Protein and Mod Creation
 
-            //create modification lists  
+            //create modification lists
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
@@ -414,7 +412,7 @@ namespace Test
             #endregion MZML File
 
             //run!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) },null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
@@ -449,7 +447,6 @@ namespace Test
                 {
                     WritePrunedDatabase = true
                 }
-
             };
 
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
@@ -468,7 +465,7 @@ namespace Test
             #region mod setup and protein creation
 
             //create modification lists
-          
+
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object

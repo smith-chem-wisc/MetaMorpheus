@@ -1,12 +1,13 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
+        #region Public Constructors
+
         public CommonParameters()
         {
             MaxMissedCleavages = 2;
@@ -26,7 +27,7 @@ namespace EngineLayer
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            ListOfModsLocalize = null;
 
             Max_mods_for_peptide = 3;
 
@@ -46,6 +47,10 @@ namespace EngineLayer
         {
 
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public int? MaxDegreeOfParallelism { get; set; }
         public bool? LocalizeAll { get; set; }
@@ -87,9 +92,8 @@ namespace EngineLayer
 
         public double? ScoreCutoff { get; set; }
 
-        public static List<string> AllModLists { get; private set; }
-
         public int? Max_mods_for_peptide { get; set; }
 
+        #endregion Public Properties
     }
 }

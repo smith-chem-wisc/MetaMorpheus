@@ -32,7 +32,6 @@ namespace EngineLayer.ClassicSearch
 
         private readonly CommonParameters CommonParameters;
 
-
         #endregion Private Fields
 
         #region Public Constructors
@@ -110,6 +109,7 @@ namespace EngineLayer.ClassicSearch
                                 {
                                     double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
                                     var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
+
                                     if (score > CommonParameters.ScoreCutoff)
                                     {
                                         if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)

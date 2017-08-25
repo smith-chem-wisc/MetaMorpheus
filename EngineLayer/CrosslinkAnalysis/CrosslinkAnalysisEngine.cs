@@ -1,6 +1,4 @@
 ﻿using EngineLayer.CrosslinkSearch;
-using MassSpectrometry;
-using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Concurrent;
@@ -12,6 +10,11 @@ namespace EngineLayer.CrosslinkAnalysis
 {
     public class CrosslinkAnalysisEngine : MetaMorpheusEngine
     {
+        #region Protected Fields
+
+        protected readonly TerminusType terminusType;
+
+        #endregion Protected Fields
 
         #region Private Fields
 
@@ -26,8 +29,6 @@ namespace EngineLayer.CrosslinkAnalysis
 
         private readonly Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching;
         private readonly string OutputFolder;
-        protected readonly TerminusType terminusType;
-
         private readonly CommonParameters CommonParameters;
 
         #endregion Private Fields
