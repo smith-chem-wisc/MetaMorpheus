@@ -192,7 +192,7 @@ namespace MetaMorpheusGUI
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
             double temp2 = task.CommonParameters.ScoreCutoff.Value;
-            minScoreAllowed.Text = temp.ToString(CultureInfo.InvariantCulture);
+            minScoreAllowed.Text = temp2.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {

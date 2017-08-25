@@ -90,7 +90,7 @@ namespace MetaMorpheusGUI
             zdotCheckBox.IsChecked = task.CommonParameters.ZdotIons;
             conserveMemoryCheckBox.IsChecked = task.CommonParameters.ConserveMemory;
             double temp2 = task.CommonParameters.ScoreCutoff.Value;
-            minScoreAllowed.Text = temp.ToString(CultureInfo.InvariantCulture);
+            minScoreAllowed.Text = temp2.ToString(CultureInfo.InvariantCulture);
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
