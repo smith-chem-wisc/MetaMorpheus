@@ -8,7 +8,9 @@ using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Test
 {
@@ -307,48 +309,32 @@ namespace Test
         [Test]
         public static void TestQuantification()
         {
-            Dictionary<ModificationWithMass, ushort> modsDictionary = new Dictionary<ModificationWithMass, ushort>();
-
-            int charge = 3;
-            double intensity = 1000.0;
-            double rt = 20.0;
-
-            // creates some test proteins, digest, and fragment
-            string sequence = "NVLIFDLGGGTFDVSILTIEDGIFEVK";
-            var protease = new Protease("tryp", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
-
-            var prot = (new Protein(sequence, "TestProtein"));
-
-            var digestedProtein = prot.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
-            var peptide = digestedProtein.First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3).First();
-            IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(peptide, charge, intensity, rt);
-
-            var psms = new List<Psm>();
-
-            IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> dfkj = new MzmlScanWithPrecursor(0, new MzmlMzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null, null);
-            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfkj, new MzPeak(2, 2), 1, "TestDataFile");
-            var psm = new Psm(peptide.CompactPeptide(TerminusType.None), 0, 0, 0, scan);
-
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
-
-            Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
-            {
-                {peptide.CompactPeptide(TerminusType.None), new HashSet<PeptideWithSetModifications>{ peptide} }
-            };
-
-            psm.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
-
-            psms.Add(psm);
-
+            string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
-            FlashLfqEngine.PassFilePaths(new string[] { "TestDataFile" });
+            
+            FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
-            //FdrAnalysisEngine ae = new FdrAnalysisEngine(new PsmParent[0][], null, new List<Protein>(), null, null, null, null, null, null, null, null, null, null, false, false, false, 0, null, null, 0, false, new List<ProductType> { ProductType.B, ProductType.Y }, double.NaN, InitiatorMethionineBehavior.Variable, new List<string>(), modsDictionary, new List<string> { "TestMsFile" });
-            //ae.RunQuantification(psms, 10);
+            if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
+                throw new MetaMorpheusException("Quantification error - could not find periodic table file");
 
-            //var theIntensity = psms.First().QuantIntensity[0];
-            //Assert.AreEqual(0, theIntensity);
+            if (!FlashLfqEngine.ParseArgs(new string[] {
+                        "--ppm 5",
+                        "--sil true",
+                        "--pau false",
+                        "--mbr true" }
+                ))
+                throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
+            
+            FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, "P34223");
+
+            FlashLfqEngine.ConstructBinsFromIdentifications();
+
+            FlashLfqEngine.Quantify(null, mzmlFilePath);
+
+            if (FlashLfqEngine.mbr)
+                FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
+
+            Assert.That(FlashLfqEngine.allFeaturesByFile[0].First().intensity > 0);
         }
 
         [Test]
