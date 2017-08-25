@@ -42,11 +42,14 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                    MaxMissedCleavages = 0
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0
             };
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
             Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
@@ -93,16 +96,21 @@ namespace Test
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
 
-            SearchParameters SearchParameters = new SearchParameters();
-            SearchParameters.MassDiffAcceptors = searchModes;
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptors = searchModes
+            };
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("singleN", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
             };
-            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, CommonParameters, new List<string>());
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
 
             var indexResults = (IndexingResults)indexEngine.Run();
             var peptideIndex = indexResults.PeptideIndex;

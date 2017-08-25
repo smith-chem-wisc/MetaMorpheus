@@ -22,8 +22,11 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
                 DeconvolutionIntensityRatio = 50
@@ -83,7 +86,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0][0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0][0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters, new List<string>()).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[0])
             {

@@ -92,11 +92,11 @@ namespace EngineLayer.CrosslinkAnalysis
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, CommonParameters.InitiatorMethionineBehavior, fixedModifications))
+                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.DigestionParams, fixedModifications))
                     {
                         //if (peptideWithPossibleModifications.Length <= 1)
                         //    continue;
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide))
+                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications))
                         {
                             if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 
@@ -107,8 +107,7 @@ namespace EngineLayer.CrosslinkAnalysis
                 {
                     foreach (var ye in local)
                     {
-                        HashSet<PeptideWithSetModifications> v;
-                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out v))
+                        if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
                                 v.Add(huh);
                     }

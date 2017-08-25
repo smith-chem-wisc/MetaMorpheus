@@ -168,12 +168,12 @@ namespace MetaMorpheusGUI
             txtXLBetaPrecusorMsTl.Text = task.XlSearchParameters.XlPrecusorMsTl.Value.ToString(CultureInfo.InvariantCulture);
 
             checkBoxDecoy.IsChecked = task.XlSearchParameters.SearchDecoy;
-            missedCleavagesTextBox.Text = task.CommonParameters.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            txtMinPeptideLength.Text = task.CommonParameters.MinPeptideLength.HasValue ? task.CommonParameters.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-            txtMaxPeptideLength.Text = task.CommonParameters.MaxPeptideLength.HasValue ? task.CommonParameters.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
-            proteaseComboBox.SelectedItem = task.CommonParameters.Protease;
-            maxModificationIsoformsTextBox.Text = task.CommonParameters.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.InitiatorMethionineBehavior;
+            missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
+            txtMinPeptideLength.Text = task.CommonParameters.DigestionParams.MinPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtMaxPeptideLength.Text = task.CommonParameters.DigestionParams.MaxPeptideLength.HasValue ? task.CommonParameters.DigestionParams.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            proteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease;
+            maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
             productMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             productMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             bCheckBox.IsChecked = task.CommonParameters.BIons;
@@ -284,12 +284,12 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.XlSearchParameters.SearchDecoy = checkBoxDecoy.IsChecked.Value;
-            TheTask.CommonParameters.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
-            TheTask.CommonParameters.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
-            TheTask.CommonParameters.Protease = (Protease)proteaseComboBox.SelectedItem;
-            TheTask.CommonParameters.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
-            TheTask.CommonParameters.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
+            TheTask.CommonParameters.DigestionParams.MaxMissedCleavages = int.Parse(missedCleavagesTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.CommonParameters.DigestionParams.MinPeptideLength = int.TryParse(txtMinPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int temp) ? (int?)temp : null;
+            TheTask.CommonParameters.DigestionParams.MaxPeptideLength = int.TryParse(txtMaxPeptideLength.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out temp) ? (int?)temp : null;
+            TheTask.CommonParameters.DigestionParams.Protease = (Protease)proteaseComboBox.SelectedItem;
+            TheTask.CommonParameters.DigestionParams.MaxModificationIsoforms = int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior = (InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex;
             if (productMassToleranceComboBox.SelectedIndex == 0)
                 TheTask.CommonParameters.ProductMassTolerance = new AbsoluteTolerance(double.Parse(productMassToleranceTextBox.Text, CultureInfo.InvariantCulture));
             else

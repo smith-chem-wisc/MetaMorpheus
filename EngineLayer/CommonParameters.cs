@@ -10,12 +10,8 @@ namespace EngineLayer
 
         public CommonParameters()
         {
-            MaxMissedCleavages = 2;
-            MinPeptideLength = 5;
-            MaxPeptideLength = null;
-            MaxModificationIsoforms = 4096;
-            Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"];
-            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+            DigestionParams = new DigestionParams();
+
             ProductMassTolerance = new AbsoluteTolerance(0.01);
             BIons = true;
             YIons = true;
@@ -28,8 +24,6 @@ namespace EngineLayer
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
             ListOfModsLocalize = null;
-
-            Max_mods_for_peptide = 3;
 
             ConserveMemory = true;
             MaxDegreeOfParallelism = 1;
@@ -59,19 +53,7 @@ namespace EngineLayer
         public int DeconvolutionMaxAssumedChargeState { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
-        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
-
-        public int MaxMissedCleavages { get; set; }
-
-        public int? MinPeptideLength { get; set; }
-
-        public int? MaxPeptideLength { get; set; }
-
-        public int MaxModificationIsoforms { get; set; }
-
         public int TotalPartitions { get; set; }
-
-        public Protease Protease { get; set; }
 
         public bool BIons { get; set; }
 
@@ -86,7 +68,8 @@ namespace EngineLayer
         public bool ConserveMemory { get; set; }
 
         public double ScoreCutoff { get; set; }
-        public int Max_mods_for_peptide { get; set; }
+
+        public DigestionParams DigestionParams { get; set; }
 
         #endregion Public Properties
     }

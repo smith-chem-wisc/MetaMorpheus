@@ -1,5 +1,8 @@
-﻿using Nett;
+﻿using EngineLayer;
+using Nett;
 using NUnit.Framework;
+using System.IO;
+using System.Linq;
 using TaskLayer;
 
 namespace Test
@@ -36,6 +39,30 @@ namespace Test
             XLSearchTask xLSearchTask = new XLSearchTask();
             Toml.WriteFile(xLSearchTask, "XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
             var xLSearchTaskLoaded = Toml.ReadFile<XLSearchTask>("XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
+        }
+
+        [Test]
+        public static void TestTomlForSpecficFiles()
+        {
+            var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).ToString()).ToString();
+            var file = Directory.GetFiles(dir, Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
+            var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
+            var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
+            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
+            Assert.IsFalse(tomlSettingsList.ContainsKey("MaxMissedCleavages"));
+            Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
+
+            FileSpecificSettings f = new FileSpecificSettings(tomlSettingsList);
+
+            Assert.AreEqual("Asp-N", f.Protease.Name);
+            Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
+            Assert.IsNull(f.MaxMissedCleavages);
+
+            CommonParameters c = SearchTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+
+            Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
+            Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
+            Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
 
         #endregion Public Methods

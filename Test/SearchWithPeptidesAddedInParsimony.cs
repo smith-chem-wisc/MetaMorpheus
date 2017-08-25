@@ -30,7 +30,10 @@ namespace Test
                 CommonParameters = new CommonParameters
                 {
                     ScoreCutoff = 1,
-                    MinPeptideLength = 1
+                    DigestionParams = new DigestionParams
+                    {
+                        MinPeptideLength = 1
+                    }
                 }
             };
 
@@ -40,9 +43,14 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                MaxMissedCleavages = 0,
-                MinPeptideLength = null,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                DigestionParams = new DigestionParams
+                {
+                    MaxMissedCleavages = 0,
+                    MinPeptideLength = null,
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                    MaxModsForPeptide = 1,
+                    MaxModificationIsoforms = 2
+                },
                 ScoreCutoff = 1
             };
             ModificationMotif.TryGetMotif("A", out ModificationMotif motifA);
@@ -66,17 +74,15 @@ namespace Test
                 };
             Protein protein2 = new Protein("MG", "protein3", oneBasedModifications: oneBasedModifications2);
 
-            var prot1List = protein1.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>());
+            var prot1List = protein1.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>());
             PeptideWithPossibleModifications pepWithPossibleModifications = prot1List.First();
-            int maxModsForPeptide = 1;
-            int maximumVariableModificationIsoforms = 2;
-            var pep1list = pepWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
+            var pep1list = pepWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications);
             PeptideWithSetModifications pepMA = pep1list.First();
             PeptideWithSetModifications pepMA111 = pep1list.Last();
 
-            var prot2List = protein2.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, new List<ModificationWithMass>());
+            var prot2List = protein2.Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>());
             pepWithPossibleModifications = prot2List.First();
-            var pep2list = pepWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, maxModsForPeptide);
+            var pep2list = pepWithPossibleModifications.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications);
             PeptideWithSetModifications pepMG = pep2list.First();
 
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { protein1, protein2 }, xmlName);
