@@ -84,23 +84,23 @@ namespace TaskLayer
 
             var numRawFiles = currentRawFileList.Count;
 
-            proseCreatedWhileRunning.Append("The following G-PTM-D settings were used: ");
-            proseCreatedWhileRunning.Append("protease = " + CommonParameters.Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.MinPeptideLength + "; ");
-            if (CommonParameters.MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
+
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("G-PTM-D modifications count = " + gptmdModifications.Count + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", searchModes.Select(m => m.ToProseString())) + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
@@ -144,7 +144,7 @@ namespace TaskLayer
 
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), CommonParameters, new List<string> { taskId });
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string> { taskId });
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 

@@ -60,9 +60,9 @@ namespace Test
 
             CommonParameters c = SearchTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
-            Assert.AreEqual("Asp-N", c.Protease.Name);
-            Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.InitiatorMethionineBehavior);
-            Assert.AreEqual(2, c.MaxMissedCleavages);
+            Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
+            Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
+            Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
 
         #endregion Public Methods

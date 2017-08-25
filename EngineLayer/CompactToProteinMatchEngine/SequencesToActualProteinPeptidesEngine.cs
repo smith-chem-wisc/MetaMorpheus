@@ -15,20 +15,20 @@ namespace EngineLayer
         protected readonly List<Psm>[] allPsms;
         protected readonly List<Protein> proteinList;
         protected readonly TerminusType terminusType;
-        protected readonly CommonParameters CommonParameters;
+        protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, IEnumerable<DigestionParams> CollectionOfDigestionParams, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.allPsms = allPsms;
             this.fixedModifications = fixedModifications;
             this.variableModifications = variableModifications;
             this.terminusType = terminusType;
-            this.CommonParameters = CommonParameters;
+            this.CollectionOfDigestionParams = CollectionOfDigestionParams;
         }
 
         #endregion Public Constructors
@@ -63,15 +63,16 @@ namespace EngineLayer
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxPeptideLength, CommonParameters.InitiatorMethionineBehavior, fixedModifications))
-                    {
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide))
+                    foreach (var digestionParam in CollectionOfDigestionParams)
+                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(digestionParam, fixedModifications))
                         {
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
+                            {
+                                if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 
-                                v.Add(peptideWithSetModifications);
+                                    v.Add(peptideWithSetModifications);
+                            }
                         }
-                    }
                 lock (obj)
                 {
                     foreach (var ye in local)

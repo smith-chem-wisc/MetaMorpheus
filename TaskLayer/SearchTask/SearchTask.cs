@@ -641,28 +641,22 @@ namespace TaskLayer
 
                 DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
 
-                InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior,
-
-                MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.MaxMissedCleavages,
-
-                MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.MinPeptideLength,
-
-                MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.MaxPeptideLength,
-
-                MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.MaxModificationIsoforms,
-
                 TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
-
-                Protease = currentFileSpecificSettings.Protease ?? commonParams.Protease,
 
                 ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
 
                 ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
 
                 ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
-
-                Max_mods_for_peptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.Max_mods_for_peptide
             };
+
+            returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
+            returnParams.DigestionParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            returnParams.DigestionParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            returnParams.DigestionParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            returnParams.DigestionParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms;
+            returnParams.DigestionParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease;
+            returnParams.DigestionParams.MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide;
 
             return returnParams;
         }
@@ -746,21 +740,21 @@ namespace TaskLayer
             var proteinList = dbFilenameList.SelectMany(b => LoadProteinDb(b.FilePath, SearchParameters.SearchDecoy, localizeableModifications, b.IsContaminant, out Dictionary<string, Modification> unknownModifications)).ToList();
 
             proseCreatedWhileRunning.Append("The following search settings were used: ");
-            proseCreatedWhileRunning.Append("protease = " + CommonParameters.Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.MinPeptideLength + "; ");
-            if (CommonParameters.MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", SearchParameters.MassDiffAcceptors.Select(m => m.ToProseString())) + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
@@ -769,6 +763,8 @@ namespace TaskLayer
             if (CommonParameters.MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
+
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -805,7 +801,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, combinedParams, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, CommonParameters.TotalPartitions, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
@@ -893,13 +889,13 @@ namespace TaskLayer
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (SearchParameters.SearchType == SearchType.NonSpecific)
             {
-                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, CommonParameters, SearchParameters.MassDiffAcceptors, new List<string> { taskId });
+                NonSpecificEnzymeSequencesToActualPeptides sequencesToActualProteinPeptidesEngine = new NonSpecificEnzymeSequencesToActualPeptides(allPsms, proteinList, fixedModifications, variableModifications, terminusType, ListOfDigestionParams, SearchParameters.MassDiffAcceptors, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
             else
             {
-                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, CommonParameters, new List<string> { taskId });
+                SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, terminusType, ListOfDigestionParams, new List<string> { taskId });
                 var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
                 compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
             }
@@ -1308,6 +1304,19 @@ namespace TaskLayer
             if (oneIsNterminus == peptideWithSetModifications.Length + 2)
                 return peptideWithSetModifications.OneBasedEndResidueInProtein;
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
+        }
+
+        private HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
+        {
+            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
+            {
+                commonParameters.DigestionParams
+            };
+
+            foreach (var hah in enumerable)
+                okay.Add(hah.DigestionParams);
+
+            return okay;
         }
 
         private void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)

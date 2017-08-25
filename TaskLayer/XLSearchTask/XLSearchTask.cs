@@ -45,13 +45,13 @@ namespace TaskLayer
             var sb = new StringBuilder();
             sb.AppendLine(TaskType.ToString());
             sb.AppendLine("The initiator methionine behavior is set to "
-                + CommonParameters.InitiatorMethionineBehavior
+                + CommonParameters.DigestionParams.InitiatorMethionineBehavior
                 + " and the maximum number of allowed missed cleavages is "
-                + CommonParameters.MaxMissedCleavages);
-            sb.AppendLine("MinPeptideLength: " + CommonParameters.MinPeptideLength);
-            sb.AppendLine("MaxPeptideLength: " + CommonParameters.MaxPeptideLength);
-            sb.AppendLine("maxModificationIsoforms: " + CommonParameters.MaxModificationIsoforms);
-            sb.AppendLine("protease: " + CommonParameters.Protease);
+                + CommonParameters.DigestionParams.MaxMissedCleavages);
+            sb.AppendLine("MinPeptideLength: " + CommonParameters.DigestionParams.MinPeptideLength);
+            sb.AppendLine("MaxPeptideLength: " + CommonParameters.DigestionParams.MaxPeptideLength);
+            sb.AppendLine("maxModificationIsoforms: " + CommonParameters.DigestionParams.MaxModificationIsoforms);
+            sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
             sb.AppendLine("bIons: " + CommonParameters.BIons);
             sb.AppendLine("yIons: " + CommonParameters.YIons);
             sb.AppendLine("cIons: " + CommonParameters.CIons);
@@ -150,22 +150,23 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("crosslinker mass = " + crosslinker.TotalMass + "; ");
             proseCreatedWhileRunning.Append("crosslinker modification site(s) = " + crosslinker.CrosslinkerModSite + "; ");
 
-            proseCreatedWhileRunning.Append("protease = " + CommonParameters.Protease + "; ");
-            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.MaxMissedCleavages + "; ");
-            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.MinPeptideLength + "; ");
-            if (CommonParameters.MaxPeptideLength == null)
+            proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
+            proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            if (CommonParameters.DigestionParams.MaxPeptideLength == null)
             {
                 proseCreatedWhileRunning.Append("maximum peptide length = unspecified; ");
             }
             else
             {
-                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.MaxPeptideLength + "; ");
+                proseCreatedWhileRunning.Append("maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             }
-            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
+
             proseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.id)) + "; ");
             proseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.id)) + "; ");
 
-            proseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.MaxModificationIsoforms + "; ");
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = UNKNOWN; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
@@ -193,7 +194,7 @@ namespace TaskLayer
                     #region Generate indices for modern search
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
-                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.SearchDecoy, CommonParameters, new List<string> { taskId });
+                    var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, XlSearchParameters.SearchDecoy, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string> { taskId });
 
                     Dictionary<float, List<int>> fragmentIndexDict;
                     lock (indexLock)

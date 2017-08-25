@@ -23,10 +23,11 @@ namespace Test
             IEnumerable<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            PeptideWithPossibleModifications modPep = ParentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
+            DigestionParams digestionParams = new DigestionParams();
+            PeptideWithPossibleModifications modPep = ParentProtein.Digest(digestionParams, fixedModifications).First();
             //Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            PeptideWithSetModifications pepWithSetMods = modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
+            PeptideWithSetModifications pepWithSetMods = modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods);
 
@@ -61,7 +62,8 @@ namespace Test
         [Test]
         public static void TestQuadratic()
         {
-            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", null).Digest(new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null), 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
+            DigestionParams digestionParams = new DigestionParams();
+            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", null).Digest(digestionParams, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
 
