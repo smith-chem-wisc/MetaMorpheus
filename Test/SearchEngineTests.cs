@@ -33,9 +33,8 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            
+
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
             double DeconvolutionIntensityRatio = 4;
@@ -46,7 +45,7 @@ namespace Test
 
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];            
+                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
             // Single search mode
@@ -59,7 +58,6 @@ namespace Test
             Assert.AreEqual(2, allPsmsArray[0][0].ScanNumber);
 
             var hah = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters, new List<string>()).Run();
-
 
             foreach (var huh in allPsmsArray[0])
                 if (huh != null && huh.MostProbableProteinInfo == null)
@@ -86,7 +84,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("QXQ", null) };
 
             var searchModes = new List<MassDiffAcceptor> { new OpenSearchMode() };
-            
+
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
             double DeconvolutionIntensityRatio = 4;
@@ -151,7 +149,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };      
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
             SearchParameters.MassDiffAcceptors = searchModes;
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B, ProductType.Y }, 1, true, CommonParameters, new List<string>());
@@ -261,7 +259,6 @@ namespace Test
                 ScoreCutoff = 1
             };
 
-
             var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
             var variableModifications = new List<ModificationWithMass>();
             var fixedModifications = new List<ModificationWithMass>();
@@ -283,7 +280,7 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };           
+            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5), new OpenSearchMode() };
             SearchParameters.MassDiffAcceptors = searchModes;
             CommonParameters.MinPeptideLength = null;
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.B }, 1, true, CommonParameters, new List<string>());
@@ -382,8 +379,10 @@ namespace Test
             Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
+
             CommonParameters.MinPeptideLength = 5;           
             var engine = new NonSpecificEnzymeEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>());
+
             var searchResults = engine.Run();
 
             // Single search mode

@@ -54,7 +54,6 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
-
             PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
             HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);

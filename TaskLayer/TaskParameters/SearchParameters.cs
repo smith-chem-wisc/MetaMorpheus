@@ -5,6 +5,8 @@ namespace EngineLayer
 {
     public class SearchParameters
     {
+        #region Public Constructors
+
         public SearchParameters()
         {
             DisposeOfFileWhenDone = true;
@@ -22,6 +24,11 @@ namespace EngineLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptors = GlobalEngineLevelSettings.SearchModesKnown.Take(1).ToList();
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public bool DisposeOfFileWhenDone { get; set; }
         public bool AddCompIons { get; set; }
         public bool DoParsimony { get; set; }
@@ -38,5 +45,7 @@ namespace EngineLayer
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
         public SearchType SearchType { get; set; }
+
+        #endregion Public Properties
     }
 }

@@ -1,12 +1,13 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
+        #region Public Constructors
+
         public CommonParameters()
         {
             MaxMissedCleavages = 2;
@@ -26,7 +27,7 @@ namespace EngineLayer
 
             ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") };
             ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") };
-            ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
+            ListOfModsLocalize = null;
 
             Max_mods_for_peptide = 3;
 
@@ -44,6 +45,11 @@ namespace EngineLayer
             ReportAllAmbiguity = true;
     }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public static List<string> AllModLists { get; private set; }
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
@@ -57,7 +63,7 @@ namespace EngineLayer
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
- 
+
         public int MaxMissedCleavages { get; set; }
 
         public int? MinPeptideLength { get; set; }
@@ -83,14 +89,8 @@ namespace EngineLayer
         public bool ConserveMemory { get; set; }
 
         public double ScoreCutoff { get; set; }
-
-        public static List<string> AllModLists { get; private set; }
-
         public int Max_mods_for_peptide { get; set; }
 
-        public bool ExcelCompatible { get; set; }
-
-        public bool ReportAllAmbiguity { get; set; }
-
+        #endregion Public Properties
     }
 }
