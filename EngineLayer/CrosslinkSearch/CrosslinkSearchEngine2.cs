@@ -15,10 +15,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Private Fields
 
-        #region Private Fields
-
-        #region Private Fields
-
         private readonly List<int>[] fragmentIndex;
 
         private readonly float[] keys;
@@ -50,14 +46,6 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Private Fields
 
-        #endregion Private Fields
-
-        #endregion Private Fields
-
-        #region Public Constructors
-
-        #region Public Constructors
-
         #region Public Constructors
 
         public CrosslinkSearchEngine2(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
@@ -83,14 +71,6 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         #endregion Public Constructors
-
-        #endregion Public Constructors
-
-        #endregion Public Constructors
-
-        #region Protected Methods
-
-        #region Protected Methods
 
         #region Protected Methods
 
@@ -151,7 +131,7 @@ namespace EngineLayer.CrosslinkSearch
                             //currentWorstScore to mark the current worst score and peptide for comparation and removal.
                             double currentWorstScore = worstScores;
                             //From all scored peptides to choose the Top Num ones
-                            #region
+
                             if (bestPeptideScoreNotch != null && bestPeptideScoreNotch.Count == CrosslinkSearchTopNum)
                             {
                                 // Full! Need to compare with old worst match
@@ -195,7 +175,6 @@ namespace EngineLayer.CrosslinkSearch
                                     worstScores = bestPeptideScoreNotch.Last().BestScore;
                                 }
                             }
-                            #endregion Protected Methods
                         }
                     }
 
@@ -289,14 +268,6 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         #endregion Protected Methods
-
-        #endregion Protected Methods
-
-        #endregion Protected Methods
-
-        #region Private Methods
-
-        #region Private Methods
 
         #region Private Methods
 
@@ -508,10 +479,6 @@ namespace EngineLayer.CrosslinkSearch
             // index of the first element that is larger than value
             return index;
         }
-
-        #endregion Private Methods
-
-        #endregion Private Methods
 
         #endregion Private Methods
     }
