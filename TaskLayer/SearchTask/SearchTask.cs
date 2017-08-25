@@ -710,9 +710,6 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
-            List<ProductType> ionTypes = new List<ProductType>();
-            TerminusType terminusType = new TerminusType();
-
             ParallelOptions parallelOptions = new ParallelOptions();
             if (CommonParameters.MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
@@ -723,28 +720,28 @@ namespace TaskLayer
             object psmLock = new object();
 
             Status("Searching files...", taskId);
-            CommonParameters combinedParams = new CommonParameters();
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
                 var currentFileSpecificSettings = fileSettingsList[spectraFileIndex];
-                combinedParams = SetAllFileSpecificCommonParams(CommonParameters, currentFileSpecificSettings);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, currentFileSpecificSettings);
 
                 fixedModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => combinedParams.ListOfModsFixed.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
                 variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => combinedParams.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
-                ionTypes = new List<ProductType>();
+                List<ProductType> ionTypesForThisFile = new List<ProductType>();
                 if (combinedParams.BIons && SearchParameters.AddCompIons)
-                    ionTypes.Add(ProductType.B);
+                    ionTypesForThisFile.Add(ProductType.B);
                 else if (combinedParams.BIons)
-                    ionTypes.Add(ProductType.BnoB1ions);
+                    ionTypesForThisFile.Add(ProductType.BnoB1ions);
                 if (combinedParams.YIons)
-                    ionTypes.Add(ProductType.Y);
+                    ionTypesForThisFile.Add(ProductType.Y);
                 if (combinedParams.ZdotIons)
-                    ionTypes.Add(ProductType.Zdot);
+                    ionTypesForThisFile.Add(ProductType.Zdot);
                 if (combinedParams.CIons)
-                    ionTypes.Add(ProductType.C);
-                terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
+                    ionTypesForThisFile.Add(ProductType.C);
+                TerminusType terminusTypeForThisFile = ProductTypeToTerminusType.IdentifyTerminusType(ionTypesForThisFile);
+
                 Psm[][] fileSpecificPsms = new Psm[SearchParameters.MassDiffAcceptors.Count()][];
 
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
@@ -770,7 +767,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, combinedParams, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypesForThisFile, currentPartition, SearchParameters.SearchDecoy, combinedParams, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
@@ -821,9 +818,9 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, terminusType, thisId).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypesForThisFile, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, terminusTypeForThisFile, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
-                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
+                            new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypesForThisFile, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
                     }
@@ -834,7 +831,7 @@ namespace TaskLayer
                         fileSpecificPsms[aede] = new Psm[arrayOfMs2ScansSortedByMass.Length];
 
                     Status("Starting search...", thisId);
-                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypes, SearchParameters.MassDiffAcceptors, SearchParameters.AddCompIons, combinedParams, thisId).Run();
+                    new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, ionTypesForThisFile, SearchParameters.MassDiffAcceptors, SearchParameters.AddCompIons, combinedParams, thisId).Run();
 
                     myFileManager.DoneWithFile(origDataFile);
 
@@ -853,6 +850,20 @@ namespace TaskLayer
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
             // Group and order psms
+
+            List<ProductType> ionTypes = new List<ProductType>();
+            if (CommonParameters.BIons && SearchParameters.AddCompIons)
+                ionTypes.Add(ProductType.B);
+            else if (CommonParameters.BIons)
+                ionTypes.Add(ProductType.BnoB1ions);
+            if (CommonParameters.YIons)
+                ionTypes.Add(ProductType.Y);
+            if (CommonParameters.ZdotIons)
+                ionTypes.Add(ProductType.Zdot);
+            if (CommonParameters.CIons)
+                ionTypes.Add(ProductType.C);
+            TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(ionTypes);
+
             Status("Matching peptides to proteins...", taskId);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             if (SearchParameters.SearchType == SearchType.NonSpecific)

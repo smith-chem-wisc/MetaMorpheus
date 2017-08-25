@@ -1,8 +1,5 @@
-﻿using EngineLayer;
-using Nett;
+﻿using Nett;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
@@ -51,11 +48,8 @@ namespace Test
             var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
             Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "TestCustomProtease");
-
         }
 
         #endregion Public Methods
     }
-
-
 }
