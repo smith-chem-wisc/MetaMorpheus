@@ -47,7 +47,6 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public static List<string> AllModLists { get; private set; }
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
