@@ -23,6 +23,8 @@ namespace EngineLayer
 
         #region Private Fields
 
+        private const int digitsForRoundingMasses = 7;
+
         private const double massTolForPeptideEquality = 1e-7;
         private const int digitsForRoundingMasses = 7;
 
@@ -189,7 +191,7 @@ namespace EngineLayer
                     foreach (double nl in residue_variable_mod.neutralLosses)
                     {
                         var theMass = prevMass + residue_variable_mod.monoisotopicMass - nl;
-                        yield return Math.Round(prevMass, digitsForRoundingMasses);
+                        yield return Math.Round(theMass, digitsForRoundingMasses);
                         if ((direction == 1 && oneBasedIndexToLookAt + direction < yyy.Length) ||
                             (direction == -1 && oneBasedIndexToLookAt + direction > 1))
                             foreach (var nextMass in ComputeFollowingFragmentMasses(yyy, theMass, oneBasedIndexToLookAt + direction, direction))

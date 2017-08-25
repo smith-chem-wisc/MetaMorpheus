@@ -34,7 +34,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
             var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
-            
+
             Proteomics.Peptide pep1 = new Proteomics.Peptide("NNNK");
             Proteomics.Peptide pep2 = new Proteomics.Peptide("NDNK");
 
@@ -72,7 +72,6 @@ namespace Test
             for (int aede = 0; aede < searchModes.Count; aede++)
                 allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
 
-
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
             // Single search mode
@@ -84,7 +83,7 @@ namespace Test
             Assert.IsTrue(allPsmsArray[0][0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0][0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters,new List<string>()).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters, new List<string>()).Run();
 
             foreach (var huh in allPsmsArray[0])
             {

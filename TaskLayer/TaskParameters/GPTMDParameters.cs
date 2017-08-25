@@ -1,12 +1,14 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
 {
     public class GptmdParameters
     {
+        #region Public Constructors
+
         public GptmdParameters()
         {
             ListOfModsGptmd = GlobalEngineLevelSettings.AllModsKnown.Where(b =>
@@ -17,7 +19,14 @@ namespace EngineLayer
                 b.modificationType.Equals("ProteinTermMod")).Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList();
             PrecursorMassTolerance = new PpmTolerance(2);
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public Tolerance PrecursorMassTolerance { get; set; }
         public List<Tuple<string, string>> ListOfModsGptmd { get; set; }
+
+        #endregion Public Properties
     }
 }

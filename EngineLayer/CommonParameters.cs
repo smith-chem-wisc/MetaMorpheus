@@ -1,6 +1,7 @@
 ﻿using MzLibUtil;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer
 {
@@ -88,7 +89,6 @@ namespace EngineLayer
         public bool ConserveMemory { get; set; }
 
         public double ScoreCutoff { get; set; }
-
         public int Max_mods_for_peptide { get; set; }
 
         #endregion Public Properties
