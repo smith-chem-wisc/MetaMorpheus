@@ -47,7 +47,7 @@ namespace Test
         public static void TestTomlForSpecficFiles()
         {
             var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).ToString()).ToString();
-            var file = Directory.GetFiles(dir.ToString(), Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
+            var file = Directory.GetFiles(dir, Path.GetFileNameWithoutExtension("testFileSpecfic") + ".to*");
             var fileSpecificToml = Toml.ReadFile(file[0], MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
             Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "TestCustomProtease");
