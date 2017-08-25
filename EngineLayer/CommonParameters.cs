@@ -1,12 +1,14 @@
 ﻿using MzLibUtil;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
 {
     public class CommonParameters
     {
+        #region Public Constructors
+
         public CommonParameters()
         {
             MaxMissedCleavages = 2;
@@ -42,6 +44,11 @@ namespace EngineLayer
             DeconvolutionMassTolerance = new PpmTolerance(5);
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public static List<string> AllModLists { get; private set; }
         public int? MaxDegreeOfParallelism { get; set; }
         public bool LocalizeAll { get; set; }
         public List<Tuple<string, string>> ListOfModsFixed { get; set; }
@@ -55,7 +62,7 @@ namespace EngineLayer
         public Tolerance DeconvolutionMassTolerance { get; set; }
 
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
- 
+
         public int MaxMissedCleavages { get; set; }
 
         public int? MinPeptideLength { get; set; }
@@ -81,10 +88,8 @@ namespace EngineLayer
         public bool ConserveMemory { get; set; }
 
         public double ScoreCutoff { get; set; }
-
-        public static List<string> AllModLists { get; private set; }
-
         public int Max_mods_for_peptide { get; set; }
 
+        #endregion Public Properties
     }
 }

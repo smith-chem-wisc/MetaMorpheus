@@ -2,9 +2,7 @@
 using EngineLayer.CrosslinkAnalysis;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
-using FlashLFQ;
 using MassSpectrometry;
-using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -18,7 +16,6 @@ namespace TaskLayer
 {
     public partial class XLSearchTask : MetaMorpheusTask
     {
-
         #region Private Fields
 
         private const double binTolInDaltons = 0.003;
@@ -81,7 +78,6 @@ namespace TaskLayer
             myTaskResults = new MyTaskResults(this);
             List<PsmCross> allPsms = new List<PsmCross>();
             var compactPeptideToProteinPeptideMatch = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
-
 
             Status("Loading modifications...", taskId);
 
@@ -260,15 +256,15 @@ namespace TaskLayer
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
             });
 
-            ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));          
+            ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
             Status("Crosslink analysis engine", taskId);
             MetaMorpheusEngineResults allcrosslinkanalysisResults;
-            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, modsDictionary, OutputFolder, crosslinker, terminusType, CommonParameters, new List <string> { taskId }).Run();
+            allcrosslinkanalysisResults = new CrosslinkAnalysisEngine(allPsms, compactPeptideToProteinPeptideMatch, proteinList, variableModifications, fixedModifications, ionTypes, modsDictionary, OutputFolder, crosslinker, terminusType, CommonParameters, new List<string> { taskId }).Run();
 
-            var allPsmsXL = allPsms.Where(p=>p.CrossType == PsmCrossType.Cross).OrderByDescending(p => p.ScanNumber).ToList();
+            var allPsmsXL = allPsms.Where(p => p.CrossType == PsmCrossType.Cross).OrderByDescending(p => p.ScanNumber).ToList();
             //Write Inter Psms FDR
-            var interPsmsXLFDR = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderByDescending(p=>p.XLTotalScore).ToList();
+            var interPsmsXLFDR = allPsmsXL.Where(p => p.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First() != p.BetaPsmCross.MostProbableProteinInfo.PeptidesWithSetModifications.Select(b => b.Protein.Accession).First()).OrderByDescending(p => p.XLTotalScore).ToList();
             interPsmsXLFDR = CrosslinkDoFalseDiscoveryRateAnalysis(interPsmsXLFDR).Where(p => p.MostProbableProteinInfo.IsDecoy != true && p.BetaPsmCross.MostProbableProteinInfo.IsDecoy != true && p.FdrInfo.QValue <= 0.01).ToList();
             WriteCrosslinkToTsv(interPsmsXLFDR, OutputFolder, "xl_inter_fdr", new List<string> { taskId });
             WriteCrosslinkToTxtForCLMSVault(interPsmsXLFDR, OutputFolder, "xl_inter_fdr_CLMSVault", crosslinker, new List<string> { taskId });
@@ -436,6 +432,5 @@ namespace TaskLayer
         }
 
         #endregion Private Methods
-
     }
 }
