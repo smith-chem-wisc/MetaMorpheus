@@ -192,113 +192,6 @@ namespace TaskLayer
             return ye;
         }
 
-        //only set commonParams
-        private void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict)
-        {
-            if (tomlDict.ContainsKey("MaxDegreeOfParallelism"))
-            {
-                commonParams.MaxDegreeOfParallelism = tomlDict["MaxDegreeOfParallelism"].Value.Get<int?>();
-            }
-            if (tomlDict.ContainsKey("LocalizeAll"))
-            {
-                commonParams.LocalizeAll = tomlDict["LocalizeAll"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ListOfModsFixed"))
-            {
-                commonParams.ListOfModsFixed = tomlDict["ListOfModsFixed"].Value.Get<List<Tuple<string, string>>>();
-            }
-            if (tomlDict.ContainsKey("ListOfModsVariable"))
-            {
-                commonParams.ListOfModsVariable = tomlDict["ListOfModsVariable"].Value.Get<List<Tuple<string, string>>>();
-            }
-            if (tomlDict.ContainsKey("ListOfModsLocalize"))
-            {
-                commonParams.ListOfModsLocalize = tomlDict["ListOfModsLocalize"].Value.Get<List<Tuple<string, string>>>();
-            }
-            if (tomlDict.ContainsKey("DoPrecursorDeconvolution"))
-            {
-                commonParams.DoPrecursorDeconvolution = tomlDict["DoPrecursorDeconvolution"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("UseProvidedPrecursorInfo"))
-            {
-                commonParams.UseProvidedPrecursorInfo = tomlDict["UseProvidedPrecursorInfo"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("DeconvolutionIntensityRatio"))
-            {
-                commonParams.DeconvolutionIntensityRatio = tomlDict["DeconvolutionIntensityRatio"].Value.Get<double>();
-            }
-            if (tomlDict.ContainsKey("DeconvolutionMaxAssumedChargeState"))
-            {
-                commonParams.DeconvolutionMaxAssumedChargeState = tomlDict["DeconvolutionMaxAssumedChargeState"].Value.Get<int>();
-            }
-            if (tomlDict.ContainsKey("DeconvolutionMassTolerance"))
-            {
-                commonParams.DeconvolutionMassTolerance = tomlDict["DeconvolutionMassTolerance"].Value.Get<Tolerance>();
-            }
-            if (tomlDict.ContainsKey("InitiatorMethionineBehavior"))
-            {
-                commonParams.InitiatorMethionineBehavior = tomlDict["InitiatorMethionineBehavior"].Value.Get<InitiatorMethionineBehavior>();
-            }
-            if (tomlDict.ContainsKey("MaxMissedCleavages"))
-            {
-                commonParams.MaxMissedCleavages = tomlDict["MaxMissedCleavages"].Value.Get<int>();
-            }
-            if (tomlDict.ContainsKey("MinPeptideLength"))
-            {
-                commonParams.MinPeptideLength = tomlDict["MinPeptideLength"].Value.Get<int?>();
-            }
-            if (tomlDict.ContainsKey("MaxPeptideLength"))
-            {
-                commonParams.MaxPeptideLength = tomlDict["MaxPeptideLength"].Value.Get<int?>();
-            }
-            if (tomlDict.ContainsKey("MaxModificationIsoforms"))
-            {
-                commonParams.MaxModificationIsoforms = tomlDict["MaxModificationIsoforms"].Value.Get<int>();
-            }
-            if (tomlDict.ContainsKey("TotalPartitions"))
-            {
-                commonParams.TotalPartitions = tomlDict["TotalPartitions"].Value.Get<int>();
-            }
-            if (tomlDict.ContainsKey("Protease"))
-            {
-                commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
-            }
-            if (tomlDict.ContainsKey("BIons"))
-            {
-                commonParams.BIons = tomlDict["BIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("YIons"))
-            {
-                commonParams.YIons = tomlDict["YIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ZdotIons"))
-            {
-                commonParams.ZdotIons = tomlDict["ZdotIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("CIons"))
-            {
-                commonParams.CIons = tomlDict["CIons"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ProductMassTolerance"))
-            {
-                commonParams.ProductMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
-            }
-            if (tomlDict.ContainsKey("ConserveMemory"))
-            {
-                commonParams.ConserveMemory = tomlDict["ConserveMemory"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ScoreCutoff"))
-            {
-                commonParams.ScoreCutoff = tomlDict["ScoreCutoff"].Value.Get<double>();
-            }
-            //Don't need to set allmostlsit(is static)
-            if (tomlDict.ContainsKey("Max_mods_for_peptide"))
-            {
-                commonParams.Max_mods_for_peptide = tomlDict["Max_mods_for_peptide"].Value.Get<int>();
-            }
-        }
-
-
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilenameList, string taskId)
         {
             StartingSingleTask(taskId);
@@ -327,7 +220,7 @@ namespace TaskLayer
             TomlTable fileSpecificSettings;
             foreach (string rawFileName in currentRawDataFilenameList)
             {
-                fileSettingsList[index] = new CommonParameters(true);
+                fileSettingsList[index] = new CommonParameters();
                 var fileSpecificToml = Directory.GetFiles(directoryOfRawFiles.ToString(), Path.GetFileNameWithoutExtension(rawFileName) + ".to*");
                 //Will only enter if Toml file exists with same name
                 if (fileSpecificToml.Length == 1)
@@ -470,6 +363,112 @@ namespace TaskLayer
         #endregion Protected Methods
 
         #region Private Methods
+
+        //only set commonParams
+        private static void SetParamsEqual(CommonParameters commonParams, Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict)
+        {
+            if (tomlDict.ContainsKey("MaxDegreeOfParallelism"))
+            {
+                commonParams.MaxDegreeOfParallelism = tomlDict["MaxDegreeOfParallelism"].Value.Get<int?>();
+            }
+            if (tomlDict.ContainsKey("LocalizeAll"))
+            {
+                commonParams.LocalizeAll = tomlDict["LocalizeAll"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("ListOfModsFixed"))
+            {
+                commonParams.ListOfModsFixed = tomlDict["ListOfModsFixed"].Value.Get<List<Tuple<string, string>>>();
+            }
+            if (tomlDict.ContainsKey("ListOfModsVariable"))
+            {
+                commonParams.ListOfModsVariable = tomlDict["ListOfModsVariable"].Value.Get<List<Tuple<string, string>>>();
+            }
+            if (tomlDict.ContainsKey("ListOfModsLocalize"))
+            {
+                commonParams.ListOfModsLocalize = tomlDict["ListOfModsLocalize"].Value.Get<List<Tuple<string, string>>>();
+            }
+            if (tomlDict.ContainsKey("DoPrecursorDeconvolution"))
+            {
+                commonParams.DoPrecursorDeconvolution = tomlDict["DoPrecursorDeconvolution"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("UseProvidedPrecursorInfo"))
+            {
+                commonParams.UseProvidedPrecursorInfo = tomlDict["UseProvidedPrecursorInfo"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("DeconvolutionIntensityRatio"))
+            {
+                commonParams.DeconvolutionIntensityRatio = tomlDict["DeconvolutionIntensityRatio"].Value.Get<double>();
+            }
+            if (tomlDict.ContainsKey("DeconvolutionMaxAssumedChargeState"))
+            {
+                commonParams.DeconvolutionMaxAssumedChargeState = tomlDict["DeconvolutionMaxAssumedChargeState"].Value.Get<int>();
+            }
+            if (tomlDict.ContainsKey("DeconvolutionMassTolerance"))
+            {
+                commonParams.DeconvolutionMassTolerance = tomlDict["DeconvolutionMassTolerance"].Value.Get<Tolerance>();
+            }
+            if (tomlDict.ContainsKey("InitiatorMethionineBehavior"))
+            {
+                commonParams.InitiatorMethionineBehavior = tomlDict["InitiatorMethionineBehavior"].Value.Get<InitiatorMethionineBehavior>();
+            }
+            if (tomlDict.ContainsKey("MaxMissedCleavages"))
+            {
+                commonParams.MaxMissedCleavages = tomlDict["MaxMissedCleavages"].Value.Get<int>();
+            }
+            if (tomlDict.ContainsKey("MinPeptideLength"))
+            {
+                commonParams.MinPeptideLength = tomlDict["MinPeptideLength"].Value.Get<int?>();
+            }
+            if (tomlDict.ContainsKey("MaxPeptideLength"))
+            {
+                commonParams.MaxPeptideLength = tomlDict["MaxPeptideLength"].Value.Get<int?>();
+            }
+            if (tomlDict.ContainsKey("MaxModificationIsoforms"))
+            {
+                commonParams.MaxModificationIsoforms = tomlDict["MaxModificationIsoforms"].Value.Get<int>();
+            }
+            if (tomlDict.ContainsKey("TotalPartitions"))
+            {
+                commonParams.TotalPartitions = tomlDict["TotalPartitions"].Value.Get<int>();
+            }
+            if (tomlDict.ContainsKey("Protease"))
+            {
+                commonParams.Protease = tomlDict["Protease"].Value.Get<Protease>();
+            }
+            if (tomlDict.ContainsKey("BIons"))
+            {
+                commonParams.BIons = tomlDict["BIons"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("YIons"))
+            {
+                commonParams.YIons = tomlDict["YIons"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("ZdotIons"))
+            {
+                commonParams.ZdotIons = tomlDict["ZdotIons"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("CIons"))
+            {
+                commonParams.CIons = tomlDict["CIons"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("ProductMassTolerance"))
+            {
+                commonParams.ProductMassTolerance = tomlDict["ProductMassTolerance"].Value.Get<Tolerance>();
+            }
+            if (tomlDict.ContainsKey("ConserveMemory"))
+            {
+                commonParams.ConserveMemory = tomlDict["ConserveMemory"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("ScoreCutoff"))
+            {
+                commonParams.ScoreCutoff = tomlDict["ScoreCutoff"].Value.Get<double>();
+            }
+            //Don't need to set allmostlsit(is static)
+            if (tomlDict.ContainsKey("Max_mods_for_peptide"))
+            {
+                commonParams.Max_mods_for_peptide = tomlDict["Max_mods_for_peptide"].Value.Get<int>();
+            }
+        }
 
         private static List<Tuple<string, string>> GetModsFromString(string value)
         {

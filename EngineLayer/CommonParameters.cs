@@ -42,12 +42,7 @@ namespace EngineLayer
             DeconvolutionMaxAssumedChargeState = 10;
             DeconvolutionMassTolerance = new PpmTolerance(5);
         }
-
-        public CommonParameters(bool setAlltoDefault)
-        {
-
-        }
-
+        
         #endregion Public Constructors
 
         #region Public Properties
