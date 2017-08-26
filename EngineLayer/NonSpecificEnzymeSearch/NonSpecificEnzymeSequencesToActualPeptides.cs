@@ -71,7 +71,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             }
                         }
 
-            var HACKYYYYYYDigestionParams = CollectionOfDigestionParams.First();
+            var HACKYYYYYYDigestionParams = collectionOfDigestionParams.First();
             //CP==CompactPeptide
             //CPWM==CompactPeptideWithMass (Patched to respresent a double)
             //PWSM==PeptideWithSetModification
@@ -91,7 +91,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key as CompactPeptideBase, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        foreach (var digestionParam in CollectionOfDigestionParams)
+                        foreach (var digestionParam in collectionOfDigestionParams)
                             foreach (var peptideWithPossibleModifications in proteinList[i].Digest(digestionParam, fixedModifications))
                             {
                                 foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
@@ -153,7 +153,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             {
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
                                 {
-                                    if ((CommonParameters.ReportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
+                                    if ((reportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
                                     {
                                         tempPWSMHashSet.Add(PWSM);
                                     }
@@ -164,7 +164,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 tempPWSMHashSet = new HashSet<PeptideWithSetModifications>();
                                 foreach (PeptideWithSetModifications PWSM in kvp.Value)
                                 {
-                                    if ((CommonParameters.ReportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
+                                    if ((reportAllAmbiguity || tempPWSMHashSet.Count == 0) && !tempPWSMHashSet.Contains(PWSM))
                                     {
                                         tempPWSMHashSet.Add(PWSM);
                                     }

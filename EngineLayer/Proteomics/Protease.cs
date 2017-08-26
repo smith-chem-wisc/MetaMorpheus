@@ -57,7 +57,14 @@ namespace EngineLayer
         public void IsSemiSpecific(SearchType searchType, TerminusType terminusType)
         {
             if(searchType==SearchType.NonSpecific)
-                CleavageSpecificity = terminusType == TerminusType.N ? CleavageSpecificity.SemiN : CleavageSpecificity.SemiC;
+            {
+                if (terminusType == TerminusType.N)
+                    CleavageSpecificity = CleavageSpecificity.SemiN;
+                else if (terminusType == TerminusType.C)
+                    CleavageSpecificity = CleavageSpecificity.SemiC;
+                else
+                    throw new MetaMorpheusException("Terminus obtained for NonSpecific search has not been implemented.");
+            }
         }
 
         #endregion Public Methods
