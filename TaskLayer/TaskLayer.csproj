@@ -91,6 +91,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FileSpecificSettings.cs" />
     <Compile Include="EventArgs\XmlForTaskListEventArgs.cs" />
     <Compile Include="EverythingRunner\EverythingRunnerEngine.cs" />
     <Compile Include="CalibrationTask\CalibrationTask.cs" />

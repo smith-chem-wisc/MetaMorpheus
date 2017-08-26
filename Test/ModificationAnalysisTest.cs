@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
@@ -77,14 +76,17 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = null,
+                    MaxMissedCleavages = 0,
+                    MaxModificationIsoforms = int.MaxValue,
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0,
-                MaxModificationIsoforms = int.MaxValue,
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>());
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])
                 psm.MatchToProteinLinkedPeptides(nice.CompactPeptideToProteinPeptideMatching);
@@ -148,13 +150,16 @@ namespace Test
 
             CommonParameters CommonParameters = new CommonParameters
             {
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    MinPeptideLength = null,
+                    MaxMissedCleavages = 0,
+                    MaxModificationIsoforms = int.MaxValue
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0,
-                MaxModificationIsoforms = int.MaxValue
             };
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, new List<ModificationWithMass>(), new List<ModificationWithMass>(), TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>());
 
             var nice = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             foreach (var psm in newPsms[0])

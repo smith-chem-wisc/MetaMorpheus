@@ -6,7 +6,6 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
@@ -21,7 +20,16 @@ namespace Test
             Protease p = GlobalEngineLevelSettings.ProteaseDictionary["non-specific"];
             Protein prot = new Protein("MABCDEFGH", null);
 
-            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(p, 8, 1, 9, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass>()).Count());
+            DigestionParams digestionParams = new DigestionParams
+            {
+                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                MaxMissedCleavages = 8,
+                MinPeptideLength = 1,
+                MaxPeptideLength = 9,
+                Protease = p
+            };
+
+            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8, prot.Digest(digestionParams, new List<ModificationWithMass>()).Count());
         }
 
         [Test]
@@ -30,11 +38,15 @@ namespace Test
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             Protein parentProteinForMatch = new Protein("MEK", null);
-            PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First();
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = 1,
+            };
+            PeptideWithPossibleModifications pwpm = parentProteinForMatch.Digest(digestionParams, new List<ModificationWithMass>()).First();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) };
 
-            List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(variableModifications, 2, 1).ToList();
+            List<PeptideWithSetModifications> allPeptidesWithSetModifications = pwpm.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
             Assert.AreEqual(2, allPeptidesWithSetModifications.Count());
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 

@@ -104,6 +104,7 @@
     <Compile Include="CrosslinkSearch\PsmCrossType.cs" />
     <Compile Include="IScan.cs" />
     <Compile Include="MetaMorpheusException.cs" />
+    <Compile Include="DigestionParams.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeEngine.cs" />
     <Compile Include="NonSpecificEnzymeSearch\NonSpecificEnzymeSequencesToActualPeptides.cs" />
     <Compile Include="PrecursorSearchModes\AllowedIntervalWithNotch.cs" />
