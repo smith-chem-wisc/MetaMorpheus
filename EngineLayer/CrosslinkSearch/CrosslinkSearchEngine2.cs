@@ -15,8 +15,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Private Fields
 
-        #region Private Fields
-
         private readonly List<int>[] fragmentIndex;
 
         private readonly float[] keys;
@@ -48,10 +46,6 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Private Fields
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         #region Public Constructors
 
         public CrosslinkSearchEngine2(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, Dictionary<ModificationWithMass, ushort> modsDictionary, List<ProductType> lp, List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
@@ -77,10 +71,6 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         #endregion Public Constructors
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         #region Protected Methods
 
@@ -141,7 +131,7 @@ namespace EngineLayer.CrosslinkSearch
                             //currentWorstScore to mark the current worst score and peptide for comparation and removal.
                             double currentWorstScore = worstScores;
                             //From all scored peptides to choose the Top Num ones
-                            #region
+
                             if (bestPeptideScoreNotch != null && bestPeptideScoreNotch.Count == CrosslinkSearchTopNum)
                             {
                                 // Full! Need to compare with old worst match
@@ -185,7 +175,6 @@ namespace EngineLayer.CrosslinkSearch
                                     worstScores = bestPeptideScoreNotch.Last().BestScore;
                                 }
                             }
-                            #endregion Protected Methods
                         }
                     }
 
@@ -280,10 +269,6 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Protected Methods
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         #region Private Methods
 
         private void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores)
@@ -365,10 +350,10 @@ namespace EngineLayer.CrosslinkSearch
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(CommonParameters.Protease, CommonParameters.MaxMissedCleavages, CommonParameters.MinPeptideLength, CommonParameters.MaxMissedCleavages, InitiatorMethionineBehavior.Variable, fixedModifications).ToList();
+                    var digestedList = protein.Digest(CommonParameters.DigestionParams, fixedModifications).ToList();
                     foreach (var peptide in digestedList)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, CommonParameters.MaxModificationIsoforms, CommonParameters.Max_mods_for_peptide).ToList();
+                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).ToList();
                         foreach (var yyy in ListOfModifiedPeptides)
                         {
                             var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
@@ -394,6 +379,7 @@ namespace EngineLayer.CrosslinkSearch
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(BetaPeptidePrecusor, yyy.MonoisotopicMass, XLBetaSearchMode, selectedScan).ToList())
                             {
                                 var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch.MatchedIonMz, true, yyy.MonoisotopicMass, lp);
+
                                 if (score > 1 && PsmCross.xlPosCal(correspondingCompactPeptide, crosslinker).Count != 0)
                                 {
                                     var psm = new PsmCross(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
@@ -493,8 +479,6 @@ namespace EngineLayer.CrosslinkSearch
             // index of the first element that is larger than value
             return index;
         }
-
-        #endregion Private Methods
 
         #endregion Private Methods
     }

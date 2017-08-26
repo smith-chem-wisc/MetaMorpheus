@@ -42,6 +42,18 @@ namespace EngineLayer
             return Name;
         }
 
+        public override bool Equals(object obj)
+        {
+            var a = obj as Protease;
+            return a != null
+                && a.Name.Equals(Name);
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
+
         public void IsSemiSpecific(SearchType searchType, TerminusType terminusType)
         {
             if(searchType==SearchType.NonSpecific)

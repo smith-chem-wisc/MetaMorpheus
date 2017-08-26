@@ -14,8 +14,6 @@ namespace EngineLayer.CrosslinkSearch
     {
         #region Private Fields
 
-        #region Private Fields
-
         private readonly List<int>[] fragmentIndex;
 
         private readonly Tolerance fragmentTolerance;
@@ -41,10 +39,6 @@ namespace EngineLayer.CrosslinkSearch
 
         #endregion Private Fields
 
-        #endregion Private Fields
-
-        #region Public Constructors
-
         #region Public Constructors
 
         public CrosslinkSearchEngine(List<PsmCross> psmCross, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, Tolerance fragmentTolerance, CrosslinkerTypeClass crosslinker, int CrosslinkSearchTopNum, bool CrosslinkSearchWithCrosslinkerMod, Tolerance XLprecusorMsTl, Tolerance XLBetaPrecusorMsTl, List<ProductType> lp, Dictionary<ModificationWithMass, ushort> modsDictionary, List<string> nestedIds) : base(nestedIds)
@@ -66,10 +60,6 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         #endregion Public Constructors
-
-        #endregion Public Constructors
-
-        #region Protected Methods
 
         #region Protected Methods
 
@@ -123,7 +113,7 @@ namespace EngineLayer.CrosslinkSearch
                             //currentWorstScore to mark the current worst score and peptide for comparation and removal.
                             double currentWorstScore = worstScores;
                             //From all scored peptides to choose the Top Num ones
-                            #region
+
                             if (bestPeptideScoreNotch != null && bestPeptideScoreNotch.Count == CrosslinkSearchTopNum)
                             {
                                 // Full! Need to compare with old worst match
@@ -167,7 +157,6 @@ namespace EngineLayer.CrosslinkSearch
                                     worstScores = bestPeptideScoreNotch.Last().BestScore;
                                 }
                             }
-                            #endregion Protected Methods
                         }
                     }
 
@@ -200,10 +189,6 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         #endregion Protected Methods
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         #region Private Methods
 
@@ -354,8 +339,6 @@ namespace EngineLayer.CrosslinkSearch
 
             return bestPsmCross;
         }
-
-        #endregion Private Methods
 
         #endregion Private Methods
     }

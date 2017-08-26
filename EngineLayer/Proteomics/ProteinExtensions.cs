@@ -9,8 +9,14 @@ namespace EngineLayer
     {
         #region Public Methods
 
-        public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, Protease protease, int maximumMissedCleavages, int? minPeptidesLength, int? maxPeptidesLength, InitiatorMethionineBehavior initiatorMethionineBehavior, IEnumerable<ModificationWithMass> allKnownFixedModifications)
+        public static IEnumerable<PeptideWithPossibleModifications> Digest(this Protein protein, DigestionParams digestionParams, IEnumerable<ModificationWithMass> allKnownFixedModifications)
         {
+            var protease = digestionParams.Protease;
+            var maximumMissedCleavages = digestionParams.MaxMissedCleavages;
+            var initiatorMethionineBehavior = digestionParams.InitiatorMethionineBehavior;
+            var minPeptidesLength = digestionParams.MinPeptideLength;
+            var maxPeptidesLength = digestionParams.MaxPeptideLength;
+
             if (protease.CleavageSpecificity != CleavageSpecificity.None)
             {
                 // these are the 1-based residue indices the protease cleaves AFTER

@@ -96,6 +96,7 @@
     <Compile Include="FdrTest.cs" />
     <Compile Include="BinGenerationTest.cs" />
     <Compile Include="SeqCoverageTest.cs" />
+    <Compile Include="SearchWithPeptidesAddedInParsimony.cs" />
     <Compile Include="StefanParsimonyTest.cs" />
     <Compile Include="SlicedTest.cs" />
     <Compile Include="FakeMsDataFile.cs" />
@@ -132,6 +133,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="sliced-raw.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="testFileSpecfic.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

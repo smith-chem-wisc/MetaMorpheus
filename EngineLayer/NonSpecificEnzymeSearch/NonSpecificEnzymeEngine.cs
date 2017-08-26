@@ -193,7 +193,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private double Accepts(double scanPrecursorMass, CompactPeptide peptide, PpmTolerance precursorTolerance, TerminusType terminusType)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
-            int localminPeptideLength = CommonParameters.MinPeptideLength ?? 0;
+            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength ?? 0;
             if (terminusType == TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)
