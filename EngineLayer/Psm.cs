@@ -422,7 +422,7 @@ namespace EngineLayer
             if (notEqual)
             {
                 var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>(possibleReturn.Substring(0, 31990) + "(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>("(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
             }
             else
             {
@@ -440,7 +440,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, double?>(possibleReturn.Substring(0, 31990) + "(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
             }
         }
 
@@ -455,7 +455,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, int?>(possibleReturn.Substring(0, 31990) + "(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, int?>("(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
             }
         }
 
@@ -471,7 +471,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list);
-                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>(possibleReturn.Substring(0, 31990) + "(too many)", null) : new Tuple<string, string>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
         }
       
