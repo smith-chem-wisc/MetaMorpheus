@@ -16,7 +16,6 @@ namespace EngineLayer
         protected readonly List<Protein> proteinList;
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
-        protected readonly bool reportAllAmbiguity;
 
         #endregion Protected Fields
 
@@ -70,7 +69,6 @@ namespace EngineLayer
                             foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
                             {
                                 if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
-
                                     v.Add(peptideWithSetModifications);
                             }
                         }
@@ -80,7 +78,6 @@ namespace EngineLayer
                     {
                         if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
-                                if (reportAllAmbiguity || v.Count == 0)
                                     v.Add(huh);
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;

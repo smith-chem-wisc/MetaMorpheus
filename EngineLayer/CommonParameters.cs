@@ -35,9 +35,9 @@ namespace EngineLayer
             DeconvolutionIntensityRatio = 4;
             DeconvolutionMaxAssumedChargeState = 10;
             DeconvolutionMassTolerance = new PpmTolerance(5);
-            ExcelCompatible = true;
             ReportAllAmbiguity = true;
-    }
+            ExcelCompatible = true;
+        }
 
         #endregion Public Constructors
 
@@ -73,8 +73,9 @@ namespace EngineLayer
 
         public DigestionParams DigestionParams { get; set; }
 
-        public bool ExcelCompatible { get; set; }
         public bool ReportAllAmbiguity { get; set; }
+
+        public bool ExcelCompatible { get; set; }
 
         #endregion Public Properties
     }
