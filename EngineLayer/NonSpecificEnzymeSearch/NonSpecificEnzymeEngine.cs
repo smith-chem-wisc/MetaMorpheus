@@ -166,7 +166,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
                             for (int k = startIndex; k < bestPeptides[j].Count; k++)
                             {
-                                if (CommonParameters.ReportAllAmbiguity || globalPsms[j][i].CompactPeptideSize() == 0)
+                                if (CommonParameters.ReportAllAmbiguity || globalPsms[j][i].NumDifferentCompactPeptides == 0)
                                     globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
                             }
                         }

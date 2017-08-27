@@ -225,11 +225,6 @@ namespace EngineLayer
             return compactPeptides.ContainsKey(key);
         }
 
-        public int CompactPeptideSize()
-        {
-            return compactPeptides.Count;
-        }
-
         public override string ToString()
         {
             var sb = new StringBuilder();
