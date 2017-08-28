@@ -72,18 +72,6 @@ namespace TaskLayer
             {
                 ScoreCutoff = tomlDict["ScoreCutoff"].Value.Get<double?>();
             }
-            if (tomlDict.ContainsKey("ListProductIonTypes"))
-            {
-                ListProductIonTypes = tomlDict["ListProductIonTypes"].Value.Get<List<ProductType>>();
-            }
-            if (tomlDict.ContainsKey("ReportAllAmbiguity"))
-            {
-                ReportAllAmbiguity = tomlDict["ReportAllAmbiguity"].Value.Get<bool?>();
-            }
-            if (tomlDict.ContainsKey("ExcelCompatible"))
-            {
-                ExcelCompatible = tomlDict["ExcelCompatible"].Value.Get<bool?>();
-            }
             //Don't need to set allmostlsit(is static)
             if (tomlDict.ContainsKey("Max_mods_for_peptide"))
             {
@@ -111,9 +99,6 @@ namespace TaskLayer
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; }
         public Tolerance DeconvolutionMassTolerance { get; }
         public int? DeconvolutionMaxAssumedChargeState { get; }
-        public List<ProductType> ListProductIonTypes { get; }
-        public bool? ReportAllAmbiguity { get; }
-        public bool? ExcelCompatible { get; }
 
         #endregion Public Properties
     }
