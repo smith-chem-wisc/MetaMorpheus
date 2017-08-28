@@ -36,7 +36,7 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch);
+            AddOrReplace(peptide, score, notch, true);
             this.ExcelCompatible = true;
         }
 
@@ -327,7 +327,7 @@ namespace EngineLayer
         internal void AddOrReplace(Psm psmParent)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1);
+                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, true);
         }
 
         #endregion Internal Methods

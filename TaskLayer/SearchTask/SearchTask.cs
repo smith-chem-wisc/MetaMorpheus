@@ -649,9 +649,6 @@ namespace TaskLayer
 
                 ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
 
-                ReportAllAmbiguity = currentFileSpecificSettings.ReportAllAmbiguity ?? commonParams.ReportAllAmbiguity,
-
-                ExcelCompatible = currentFileSpecificSettings.ExcelCompatible ?? commonParams.ExcelCompatible 
             };
 
             returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
