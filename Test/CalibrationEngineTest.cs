@@ -12,7 +12,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class CalibrationEngineTests
+    public static class CalibrationEngineTests
     {
         #region Public Methods
 
@@ -21,7 +21,6 @@ namespace Test
         {
             Protein ParentProtein = new Protein("MQQQQQQQ", null);
             IEnumerable<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
             DigestionParams digestionParams = new DigestionParams();
             PeptideWithPossibleModifications modPep = ParentProtein.Digest(digestionParams, fixedModifications).First();

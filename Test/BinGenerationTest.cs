@@ -12,7 +12,7 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     [TestFixture]
-    public class BinGenerationTest
+    public static class BinGenerationTest
     {
         #region Public Methods
 

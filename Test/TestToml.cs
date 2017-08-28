@@ -8,7 +8,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class TestToml
+    public static class TestToml
     {
         #region Public Methods
 

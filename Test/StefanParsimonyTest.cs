@@ -9,7 +9,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class StefanParsimonyTest
+    public static class StefanParsimonyTest
     {
         #region Public Methods
 
@@ -75,7 +75,6 @@ namespace Test
 
             var newPsms = hah.Item1;
             var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
             var noOneHitWonders = hah.Item4;
             var compactPeptide1 = hah.Item5;
             var compactPeptide2 = hah.Item6;

@@ -8,7 +8,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class SearchModesTest
+    public static class SearchModesTest
     {
         #region Public Methods
 

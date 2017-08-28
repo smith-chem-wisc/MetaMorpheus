@@ -194,21 +194,7 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
-        {
-            foreach (var modOnPeptide in enumerable)
-            {
-                foreach (var modToLocalize in gptmdModifications)
-                {
-                    if (modOnPeptide.motif.Equals(modToLocalize.motif))
-                    {
-                        yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
-                    }
-                }
-            }
-        }
-
-        private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
+        private static IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
         {
             using (StreamReader r = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", @"combos.txt")))
             {
@@ -220,6 +206,20 @@ namespace TaskLayer
                     if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < tolForComboLoading) &&
                         modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
+                }
+            }
+        }
+
+        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
+        {
+            foreach (var modOnPeptide in enumerable)
+            {
+                foreach (var modToLocalize in gptmdModifications)
+                {
+                    if (modOnPeptide.motif.Equals(modToLocalize.motif))
+                    {
+                        yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
+                    }
                 }
             }
         }

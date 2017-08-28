@@ -11,7 +11,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class FdrTest
+    public static class FdrTest
     {
         #region Public Methods
 
