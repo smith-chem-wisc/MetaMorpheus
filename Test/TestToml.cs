@@ -57,8 +57,6 @@ namespace Test
             Assert.AreEqual("Asp-N", f.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
-
-            //will need to move this/implement runSpecific() in this class
             
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
