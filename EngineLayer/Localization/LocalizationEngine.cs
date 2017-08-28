@@ -39,7 +39,7 @@ namespace EngineLayer
 
             foreach (var ok in allResultingIdentifications)
             {
-                var matchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
+                var matchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
@@ -49,10 +49,10 @@ namespace EngineLayer
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
                     MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesListPositiveIsMatch.Where(m => m > 0).ToArray();
-                    matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesOnlyMatches);
+                    matchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
                 }
 
-                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
+                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListOnlyMasses(matchedIonDictOnlyMatches);
             }
 
             foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))

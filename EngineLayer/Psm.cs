@@ -81,7 +81,7 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
+        public MatchedIonMassesListOnlyMasses MatchedIonDictPositiveIsMatch { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
 
