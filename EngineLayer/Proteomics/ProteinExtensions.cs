@@ -148,7 +148,7 @@ namespace EngineLayer
                     {
                         if ((!minPeptidesLength.HasValue || (protein.Length - index + 1) >= minPeptidesLength)) //&&
                         {
-                            yield return new PeptideWithPossibleModifications(index, Math.Min(protein.Length, index + (maxPeptidesLength ?? 50)), protein, 0, "MHC", allKnownFixedModifications);
+                            yield return new PeptideWithPossibleModifications(index, Math.Min(protein.Length, index + (maxPeptidesLength ?? 50)), protein, 0, "SingleN", allKnownFixedModifications);
                         }
                     }
                     break;
@@ -158,7 +158,7 @@ namespace EngineLayer
                     {
                         if ((!minPeptidesLength.HasValue || (index) >= minPeptidesLength))//&&
                         {
-                            yield return new PeptideWithPossibleModifications(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "MHC", allKnownFixedModifications);
+                            yield return new PeptideWithPossibleModifications(Math.Max(1, index - (maxPeptidesLength ?? 50)), index, protein, 0, "SingleC", allKnownFixedModifications);
                         }
                     }
                     break;
