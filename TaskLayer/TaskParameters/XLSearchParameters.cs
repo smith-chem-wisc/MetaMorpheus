@@ -4,6 +4,8 @@ namespace EngineLayer
 {
     public class XlSearchParameters
     {
+        #region Public Constructors
+
         public XlSearchParameters()
         {
             SearchDecoy = true;
@@ -20,6 +22,10 @@ namespace EngineLayer
             XlBetaPrecusorMsTl = new PpmTolerance(10);
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public bool SearchDecoy { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
 
@@ -35,6 +41,7 @@ namespace EngineLayer
         public Tolerance XlPrecusorMsTl { get; set; }
         public Tolerance XlBetaPrecusorMsTl { get; set; }
         public bool DisposeOfFileWhenDone { get; set; }
-    }
 
+        #endregion Public Properties
+    }
 }

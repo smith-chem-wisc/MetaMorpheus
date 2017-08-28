@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Test
 {
@@ -49,13 +48,19 @@ namespace Test
 
             IEnumerable<PeptideWithPossibleModifications> temp;
             IEnumerable<PeptideWithSetModifications> pepWithSetMods = null;
+
+            DigestionParams digestionParams = new DigestionParams
+            {
+                MinPeptideLength = null,
+                Protease = protease,
+            };
             foreach (var protein in p)
             {
-                temp = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                temp = protein.Digest(digestionParams, new List<ModificationWithMass>());
 
                 foreach (var dbPeptide in temp)
                 {
-                    pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+                    pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>());
                     foreach (var peptide in pepWithSetMods)
                     {
                         switch (peptide.BaseSequence)
@@ -270,13 +275,14 @@ namespace Test
             for (int i = 0; i < sequences.Length; i++)
                 p.Add(new Protein(sequences[i], (i + 1).ToString()));
 
+            DigestionParams digestionParams = new DigestionParams();
             foreach (var protein in p)
             {
-                var digestedProtein = protein.Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var digestedProtein = protein.Digest(digestionParams, new List<ModificationWithMass>());
 
                 foreach (var pepWithPossibleMods in digestedProtein)
                 {
-                    var pepWithSetMods = pepWithPossibleMods.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4098, 3);
+                    var pepWithSetMods = pepWithPossibleMods.GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>());
 
                     foreach (var peptide in pepWithSetMods)
                         peptides.Add(peptide);
@@ -311,7 +317,7 @@ namespace Test
         {
             string mzmlFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             FlashLFQEngine FlashLfqEngine = new FlashLFQEngine();
-            
+
             FlashLfqEngine.PassFilePaths(new string[] { mzmlFilePath });
 
             if (!FlashLfqEngine.ReadPeriodicTable(GlobalEngineLevelSettings.elementsLocation))
@@ -324,7 +330,7 @@ namespace Test
                         "--mbr true" }
                 ))
                 throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
-            
+
             FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, "P34223");
 
             FlashLfqEngine.ConstructBinsFromIdentifications();
@@ -355,25 +361,31 @@ namespace Test
                 {variableModifications.Last(), 1 }
             };
 
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
-            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            DigestionParams digestionParams = new DigestionParams
+            {
+                Protease = protease,
+                MinPeptideLength = null,
+                MaxMissedCleavages = 0
+            };
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(digestionParams, fixedModifications).Last();
+            HashSet<PeptideWithSetModifications> value = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value.First(), TerminusType.None);
             Assert.AreEqual("QQQ", value.First().Sequence);
 
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(digestionParams, fixedModifications).First();
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
             Assert.AreEqual("MNNNSK", value2.First().Sequence);
-            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
+            HashSet<PeptideWithSetModifications> value2mod = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(digestionParams, variableModifications).Last() };
 
             CompactPeptide compactPeptide2mod = new CompactPeptide(value2mod.Last(), TerminusType.None);
             Assert.AreEqual("MNNNS[HaHa:resMod]K", value2mod.Last().Sequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(digestionParams, fixedModifications).ToList()[1];
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(digestionParams, variableModifications).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNSK", value3.First().Sequence);
-            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).Last() };
+            HashSet<PeptideWithSetModifications> value3mod = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(digestionParams, variableModifications).Last() };
 
             CompactPeptide compactPeptide3mod = new CompactPeptide(value3mod.Last(), TerminusType.None);
             Assert.AreEqual("NNNS[HaHa:resMod]K", value3mod.Last().Sequence);
@@ -381,10 +393,10 @@ namespace Test
             var peptideList = new HashSet<PeptideWithSetModifications>();
             foreach (var protein in proteinList)
             {
-                var temp = protein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>());
+                var temp = protein.Digest(digestionParams, new List<ModificationWithMass>());
                 foreach (var dbPeptide in temp)
                 {
-                    var pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+                    var pepWithSetMods = dbPeptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
                     foreach (var peptide in pepWithSetMods)
                     {
                         peptideList.Add(peptide);

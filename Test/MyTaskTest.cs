@@ -35,7 +35,13 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    ConserveMemory = false
+                    ConserveMemory = false,
+                    DigestionParams = new DigestionParams
+                    {
+                        MaxMissedCleavages = 0,
+                        MinPeptideLength = null,
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+                    },
                 },
                 CalibrationParameters = new CalibrationParameters
                 {
@@ -54,8 +60,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    ConserveMemory = false                
-
+                    ConserveMemory = false
                 },
                 SearchParameters = new SearchParameters
                 {
@@ -90,19 +95,19 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
-            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
 
             Assert.AreEqual(2, setList1.Count);
 
             PeptideWithSetModifications pepWithSetMods1 = setList1[0];
 
             PeptideWithPossibleModifications modPep2 = digestedList[1];
-            var setList2 = modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList2 = modPep2.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
 
             Assert.AreEqual(1, setList2.Count);
 
@@ -112,10 +117,10 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
-            var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList3 = modPep3.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
             Assert.AreEqual(4, setList3.Count);
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
@@ -132,7 +137,7 @@ namespace Test
             #endregion Write the files
 
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) },null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
         }
 
@@ -148,10 +153,15 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
+                    DigestionParams = new DigestionParams
+                    {
+                        MaxMissedCleavages = 0,
+                        MinPeptideLength = null,
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+                    },
                     ListOfModsVariable = new List<Tuple<string, string>> { new Tuple<string, string>("Common Variable", "Oxidation of M") },
                     ListOfModsFixed = new List<Tuple<string, string>> { new Tuple<string, string>("Common Fixed", "Carbamidomethyl of C") },
                     ListOfModsLocalize = GlobalEngineLevelSettings.AllModsKnown.Select(b => new Tuple<string, string>(b.modificationType, b.id)).ToList(),
-                    Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
@@ -159,7 +169,10 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 {
-                    Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
+                    DigestionParams = new DigestionParams
+                    {
+                        Protease = GlobalEngineLevelSettings.ProteaseDictionary["trypsin"],
+                    },
                     ProductMassTolerance = new AbsoluteTolerance(0.01)
                 },
             };
@@ -201,19 +214,19 @@ namespace Test
             // Generate data for files
             Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
 
-            var digestedList = ParentProtein.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications).ToList();
 
             Assert.AreEqual(2, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
-            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
 
             Assert.AreEqual(2, setList1.Count);
 
             PeptideWithSetModifications pepWithSetMods1 = setList1[0];
 
             PeptideWithPossibleModifications modPep2 = digestedList[1];
-            var setList2 = modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList2 = modPep2.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
 
             Assert.AreEqual(1, setList2.Count);
 
@@ -223,10 +236,10 @@ namespace Test
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new ModificationWithMass("21", null, motif, TerminusLocalization.Any, 21.981943) });
             Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", new List<Tuple<string, string>>(), dictHere);
-            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+            digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications).ToList();
             var modPep3 = digestedList[0];
             Assert.AreEqual(1, digestedList.Count);
-            var setList3 = modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList3 = modPep3.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
             Assert.AreEqual(4, setList3.Count);
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, setList3[1] });
@@ -262,11 +275,13 @@ namespace Test
                 GlobalEngineLevelSettings.AddMods(new List<ModificationWithMass> { new ModificationWithMass("ok", "okType", motif, TerminusLocalization.Any, 229) });
                 task1 = new GptmdTask
                 {
-
                     CommonParameters = new CommonParameters
                     {
                         ConserveMemory = false,
-                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                        DigestionParams = new DigestionParams
+                        {
+                            InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                        },
                         ListOfModsVariable = new List<Tuple<string, string>>(),
                         ListOfModsFixed = new List<Tuple<string, string>>(),
                         ScoreCutoff = 1
@@ -302,13 +317,13 @@ namespace Test
 
                 List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
 
-                var targetDigested = theProteins[0].Digest(GlobalEngineLevelSettings.ProteaseDictionary["trypsin"], 1, null, null, InitiatorMethionineBehavior.Retain, fixedModifications).ToList();
+                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                var okjhjf = targetDigested[0].GetPeptidesWithSetModifications(GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 1, 0).ToList();
+                var okjhjf = targetDigested[0].GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
                 PeptideWithSetModifications targetGood = okjhjf.First();
 
-                var okjhj = targetDigested[1].GetPeptidesWithSetModifications(GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList(), 2, 1).ToList();
+                var okjhj = targetDigested[1].GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
                 PeptideWithSetModifications targetWithUnknownMod = okjhj.Last();
                 IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod }, true);
 
@@ -356,7 +371,7 @@ namespace Test
 
             #region Protein and Mod Creation
 
-            //create modification lists  
+            //create modification lists
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => task1.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
@@ -394,12 +409,12 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(task1.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
 
-            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptidesWithSetModifications(task1.CommonParameters.DigestionParams, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
 
             //Set Peptide with 1 mod at position 3
@@ -414,7 +429,7 @@ namespace Test
             #endregion MZML File
 
             //run!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) },null);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
 
             string outputFolderInThisTest = MySetUpClass.outputFolder;
@@ -449,7 +464,6 @@ namespace Test
                 {
                     WritePrunedDatabase = true
                 }
-
             };
 
             List<Tuple<string, MetaMorpheusTask>> taskList = new List<Tuple<string, MetaMorpheusTask>> {
@@ -458,7 +472,6 @@ namespace Test
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             var testUniqeMod = new ModificationWithMass("testUniqeMod", "mt", motif, TerminusLocalization.Any, 10);
-
             GlobalEngineLevelSettings.AddMods(new List<ModificationWithLocation>
             {
                 testUniqeMod
@@ -469,7 +482,7 @@ namespace Test
             #region mod setup and protein creation
 
             //create modification lists
-          
+
             List<ModificationWithMass> variableModifications = GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().Where(b => testUnique.CommonParameters.ListOfModsVariable.Contains(new Tuple<string, string>(b.modificationType, b.id))).ToList();
 
             //add modification to Protein object
@@ -504,12 +517,12 @@ namespace Test
 
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
-            var digestedList = protein[0].Digest(testUnique.CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Retain, new List<ModificationWithMass> { }).ToList();
+            var digestedList = protein[0].Digest(testUnique.CommonParameters.DigestionParams, new List<ModificationWithMass> { }).ToList();
             Assert.AreEqual(1, digestedList.Count);
 
             PeptideWithPossibleModifications modPep1 = digestedList[0];
 
-            var setList1 = modPep1.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+            var setList1 = modPep1.GetPeptidesWithSetModifications(testUnique.CommonParameters.DigestionParams, variableModifications).ToList();
             Assert.AreEqual(4, setList1.Count);
 
             //Finally Write MZML file
@@ -534,7 +547,6 @@ namespace Test
                 {
                     if (line.Contains("Unique PSMS within 1% FDR"))
                     {
-                        Console.WriteLine("adsf");
                         found.Add(line);
                         Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
                     }

@@ -26,7 +26,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, TerminusType terminusType, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
             this.terminusType = terminusType;
-
         }
 
         #endregion Public Constructors
@@ -247,7 +246,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         private double Accepts(double scanPrecursorMass, CompactPeptide peptide, PpmTolerance precursorTolerance, TerminusType terminusType)
         {
             //all masses in N and CTerminalMasses are b-ion masses, which are one water away from a full peptide
-            int localminPeptideLength = CommonParameters.MinPeptideLength ?? 0;
+            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength ?? 0;
             if (terminusType == TerminusType.N)
             {
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)

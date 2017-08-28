@@ -34,8 +34,10 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public IEnumerable<PeptideWithSetModifications> GetPeptidesWithSetModifications(List<ModificationWithMass> variableModifications, int maximumVariableModificationIsoforms, int maxModsForPeptide)
+        public IEnumerable<PeptideWithSetModifications> GetPeptidesWithSetModifications(DigestionParams digestionParams, List<ModificationWithMass> variableModifications)
         {
+            int maximumVariableModificationIsoforms = digestionParams.MaxModificationIsoforms;
+            int maxModsForPeptide = digestionParams.MaxModsForPeptide;
             var two_based_possible_variable_and_localizeable_modifications = new Dictionary<int, UniqueModificationsCollection>(Length + 4);
 
             var pep_n_term_variable_mods = new UniqueModificationsCollection();

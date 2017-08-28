@@ -22,12 +22,15 @@ namespace Test
         {
             CommonParameters CommonParameters = new CommonParameters
             {
-                Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
-                MinPeptideLength = null,
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                    MaxMissedCleavages = 0,
+                    MaxModificationIsoforms = 1042,
+                },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
-                MaxMissedCleavages = 0,
-                MaxModificationIsoforms = 1042,
                 ProductMassTolerance = new PpmTolerance(10),
             };
 
@@ -54,20 +57,19 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
-
-            PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).Last();
-            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).Last();
+            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
             CompactPeptide compactPeptide1 = new CompactPeptide(value1.First(), TerminusType.None);
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
-            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep2 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).First();
+            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
             CompactPeptide compactPeptide2 = new CompactPeptide(value2.First(), TerminusType.None);
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
-            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(CommonParameters.Protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First() };
+            PeptideWithPossibleModifications modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).ToList()[1];
+            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).First() };
             CompactPeptide compactPeptide3 = new CompactPeptide(value3.First(), TerminusType.None);
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
@@ -107,7 +109,7 @@ namespace Test
                 Assert.AreEqual(1, l.FinalBins.Count);
             };
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, TerminusType.None, CommonParameters, new List<string>());
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngine = new SequencesToActualProteinPeptidesEngine(newPsms, proteinList, fixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>());
 
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
