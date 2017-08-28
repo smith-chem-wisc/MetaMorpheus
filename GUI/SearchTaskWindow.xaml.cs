@@ -303,7 +303,12 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
                 if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not assigned for the non-specific search");
+                    MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'singleN' or 'singleC'.");
+                    return;
+                }
+                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
+                {
+                    MessageBox.Show("The semi-trypsin protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'trypsin'.");
                     return;
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)

@@ -324,10 +324,10 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal void AddOrReplace(Psm psmParent)
+        internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, true);
+                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
         }
 
         #endregion Internal Methods

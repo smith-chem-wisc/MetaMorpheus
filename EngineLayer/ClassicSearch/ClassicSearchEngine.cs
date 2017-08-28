@@ -132,7 +132,7 @@ namespace EngineLayer.ClassicSearch
                                     globalPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    globalPsms[searchModeIndex][i].AddOrReplace(psms[searchModeIndex][i]);
+                                    globalPsms[searchModeIndex][i].AddOrReplace(psms[searchModeIndex][i], CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

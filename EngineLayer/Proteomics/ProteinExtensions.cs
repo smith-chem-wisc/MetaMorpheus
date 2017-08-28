@@ -17,7 +17,7 @@ namespace EngineLayer
             var minPeptidesLength = digestionParams.MinPeptideLength;
             var maxPeptidesLength = digestionParams.MaxPeptideLength;
             List<int> oneBasedIndicesToCleaveAfter = new List<int>();
-            oneBasedIndicesToCleaveAfter = protease.GetDigestionSiteIndices(protein.BaseSequence);
+
             switch (protease.CleavageSpecificity)
             {
                 case CleavageSpecificity.Full:
