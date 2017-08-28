@@ -63,6 +63,8 @@ namespace Test
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
+
+          
         }
 
         #endregion Public Methods

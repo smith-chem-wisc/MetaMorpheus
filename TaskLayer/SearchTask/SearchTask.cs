@@ -624,6 +624,7 @@ namespace TaskLayer
             writer.Close();
         }
 
+        //this method will be used by all tasks
         public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
         {
             if (currentFileSpecificSettings == null)
@@ -801,7 +802,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, CommonParameters.TotalPartitions, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
