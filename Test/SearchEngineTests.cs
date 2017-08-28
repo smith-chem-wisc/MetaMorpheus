@@ -270,7 +270,7 @@ namespace Test
             {
                 DigestionParams = new DigestionParams
                 {
-                    Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null),
+                    Protease = new Protease("singleN", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleN, null, null, null),
                 },
                 ScoreCutoff = 1,
                 ConserveMemory = false,
@@ -351,7 +351,7 @@ namespace Test
             {
                 DigestionParams = new DigestionParams
                 {
-                    Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.None, null, null, null),
+                    Protease = new Protease("singleC", new List<string> { "K, G" }, new List<string>(), TerminusType.None, CleavageSpecificity.SingleC, null, null, null),
                 },
                 ConserveMemory = false,
                 ScoreCutoff = 1,
