@@ -58,12 +58,14 @@ namespace Test
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
 
-            CommonParameters c = SearchTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            //will need to move this/implement runSpecific() in this class
+            /*
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
-
+            */
           
         }
 

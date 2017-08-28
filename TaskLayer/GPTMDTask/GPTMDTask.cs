@@ -108,7 +108,7 @@ namespace TaskLayer
 
             Status("Running G-PTM-D...", new List<string> { taskId });
 
-            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SearchTask.SetAllFileSpecificCommonParams(CommonParameters, b)));
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             object lock1 = new object();
             object lock2 = new object();
@@ -118,7 +118,7 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
-                CommonParameters combinedParams = SearchTask.SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -210,18 +210,7 @@ namespace TaskLayer
             }
         }
 
-        private HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
-        {
-            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
-            {
-                commonParameters.DigestionParams
-            };
 
-            foreach (var hah in enumerable)
-                okay.Add(hah.DigestionParams);
-
-            return okay;
-        }
 
         private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
         {
