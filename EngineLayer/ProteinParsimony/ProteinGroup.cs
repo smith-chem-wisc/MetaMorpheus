@@ -190,7 +190,7 @@ namespace EngineLayer
 
             //Detailed mods information list
             var modsInfoString = string.Join("|", ModsInfo);
-            if (modsInfoString.Length < 32000)
+            if (modsInfoString.Length < 32767)
                 sb.Append(modsInfoString);
             else
                 sb.Append("Too many mods to display");
