@@ -302,9 +302,9 @@ namespace EngineLayer.Analysis
                         okDiff.Add(theMod.monoisotopicMass - bin.MassShift);
                     }
                 }
-                bin.UnimodId = string.Join("|", ok);
-                bin.UnimodFormulas = string.Join("|", okformula);
-                bin.UnimodDiffs = string.Join("|", okDiff);
+                bin.UnimodId = string.Join(" or ", ok);
+                bin.UnimodFormulas = string.Join(" or ", okformula);
+                bin.UnimodDiffs = string.Join(" or ", okDiff);
             }
         }
 
@@ -318,7 +318,7 @@ namespace EngineLayer.Analysis
                     if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
                         ok.Add(hm.id);
                 }
-                bin.uniprotID = string.Join("|", ok);
+                bin.uniprotID = string.Join(" or ", ok);
             }
         }
 
@@ -339,7 +339,7 @@ namespace EngineLayer.Analysis
                 foreach (var hm in ok)
                     if (Math.Abs(hm.Item1 + hm.Item2 - bin.MassShift) <= v && bin.CountTarget < hm.Item3)
                         okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
-                bin.combos = string.Join("|", okk);
+                bin.combos = string.Join(" or ", okk);
             }
         }
 
@@ -368,7 +368,7 @@ namespace EngineLayer.Analysis
                         }
                     }
                 }
-                bin.AA = string.Join("|", ok);
+                bin.AA = string.Join(" or ", ok);
             }
         }
 
