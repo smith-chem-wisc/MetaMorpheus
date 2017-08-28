@@ -624,42 +624,8 @@ namespace TaskLayer
             writer.Close();
         }
 
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
-        {
-            if (currentFileSpecificSettings == null)
-                return commonParams;
-
-            CommonParameters returnParams = new CommonParameters
-            {
-                DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
-
-                UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
-
-                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
-
-                DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
-
-                DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
-
-                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
-
-                ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
-
-                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
-
-                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
-            };
-
-            returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
-            returnParams.DigestionParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            returnParams.DigestionParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            returnParams.DigestionParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            returnParams.DigestionParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms;
-            returnParams.DigestionParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease;
-            returnParams.DigestionParams.MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide;
-
-            return returnParams;
-        }
+        //this method will be used by all tasks
+        
 
         #endregion Public Methods
 
@@ -801,7 +767,7 @@ namespace TaskLayer
                         #region Generate indices for modern search
 
                         Status("Getting fragment dictionary...", new List<string> { taskId });
-                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, CommonParameters.TotalPartitions, new List<string> { taskId });
+                        var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, ionTypes, currentPartition, SearchParameters.SearchDecoy, ListOfDigestionParams, combinedParams.TotalPartitions, new List<string> { taskId });
                         Dictionary<float, List<int>> fragmentIndexDict;
                         lock (indexLock)
                         {
@@ -1306,18 +1272,6 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
-        {
-            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
-            {
-                commonParameters.DigestionParams
-            };
-
-            foreach (var hah in enumerable)
-                okay.Add(hah.DigestionParams);
-
-            return okay;
-        }
 
         private void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {
