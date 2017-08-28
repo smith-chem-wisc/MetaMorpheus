@@ -48,7 +48,8 @@ namespace EngineLayer
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
                     MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
-                    matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
+                    double[] matchedIonMassesOnlyMatches = new List<double>(matchedIonMassesListPositiveIsMatch).Where(m => m > 0).ToArray();
+                    matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesOnlyMatches);
                 }
 
                 ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
