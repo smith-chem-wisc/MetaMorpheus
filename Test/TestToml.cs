@@ -59,13 +59,13 @@ namespace Test
             Assert.IsNull(f.MaxMissedCleavages);
 
             //will need to move this/implement runSpecific() in this class
-            /*
+            
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
-            */
+            
           
         }
 

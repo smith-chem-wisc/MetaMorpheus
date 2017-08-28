@@ -355,7 +355,7 @@ namespace TaskLayer
             NewCollectionHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
         }
 
-        protected static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
         {
             if (currentFileSpecificSettings == null)
                 return commonParams;
