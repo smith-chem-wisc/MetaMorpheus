@@ -40,19 +40,8 @@ namespace EngineLayer
             this.ExcelCompatible = true;
         }
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible):this(peptide, notch, score, scanIndex, scan)
         {
-            this.ScanIndex = scanIndex;
-            this.FullFilePath = scan.FullFilePath;
-            this.ScanNumber = scan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            this.ScanRetentionTime = scan.RetentionTime;
-            this.ScanExperimentalPeaks = scan.NumPeaks;
-            this.TotalIonCurrent = scan.TotalIonCurrent;
-            this.ScanPrecursorCharge = scan.PrecursorCharge;
-            this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
-            this.ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch);
             this.ExcelCompatible = excelCompatible;
         }
 
