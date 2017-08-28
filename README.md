@@ -1,13 +1,16 @@
-<p align="center">
-<img src="https://cloud.githubusercontent.com/assets/5972770/24164335/57652d5c-0e3b-11e7-954f-ec3fc159943c.png" width="200">
-</p>
-
 # MetaMorpheus: Why Not See All Your Peptides?
 
+release
+[![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/release?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
+[![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=release)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
+[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5187926)
+
+master
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
-[![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus)
-[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925)](https://www.codacy.com/app/solntsev_2/MetaMorpheus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=smith-chem-wisc/MetaMorpheus&amp;utm_campaign=Badge_Grade)
+[![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
+[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5044926)
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 <a href="https://scan.coverity.com/projects/metamorpheus">
   <img alt="Coverity Scan Build Status"
@@ -103,25 +106,3 @@ mono MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExam
 * [Global Identification of Protein Post-translational Modifications in a Single-Pass Database Search--J. Proteome Res., 2015, 14 (11), pp 4714–4720](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.5b00599)
 
 * [A Proteomics Search Algorithm Specifically Designed for High-Resolution Tandem Mass Spectra--J. Proteome Res., 2013, 12 (3), pp 1377–1386](http://pubs.acs.org/doi/abs/10.1021/pr301024c)
-
-
-## Badges
-
-release
-
-[![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/release?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
-[![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=release)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
-[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5187926)
-
-master
-
-[![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
-[![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
-[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5044926)
-[![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
-<a href="https://scan.coverity.com/projects/metamorpheus">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/11282/badge.svg"/>
-</a>
