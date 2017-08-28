@@ -11,7 +11,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class FdrTest
+    public static class FdrTest
     {
         #region Public Methods
 
@@ -49,7 +49,7 @@ namespace Test
             Psm psm3 = new Psm(peptide3, 0, 1, 2, scan3);
 
             CompactPeptide peptide4 = new CompactPeptide(pep4, TerminusType.None);
-            psm3.AddOrReplace(peptide4, 1, 1);
+            psm3.AddOrReplace(peptide4, 1, 1, true);
 
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>
             {

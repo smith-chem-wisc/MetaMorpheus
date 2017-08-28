@@ -13,7 +13,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    internal class AddCompIonsTest
+    internal static class AddCompIonsTest
     {
         #region Public Methods
 
@@ -156,7 +156,7 @@ namespace Test
             TestDataFile t = new TestDataFile();
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
             double precursorMass = 300;
-            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
+            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; // 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350
             double[] matchedIonMassesListPositiveIsMatch = new double[sorted_theoretical_product_masses_for_this_peptide.Count()];
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             double scoreT = MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, true, precursorMass, lp);

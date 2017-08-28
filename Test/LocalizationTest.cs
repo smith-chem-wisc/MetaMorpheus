@@ -10,7 +10,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class LocalizationTest
+    public static class LocalizationTest
     {
         #region Public Methods
 

@@ -107,6 +107,8 @@ namespace TaskLayer
 
             Status("Running G-PTM-D...", new List<string> { taskId });
 
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+
             object lock1 = new object();
             object lock2 = new object();
             ParallelOptions parallelOptions = new ParallelOptions();
@@ -115,6 +117,7 @@ namespace TaskLayer
             Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
             {
                 var origDataFile = currentRawFileList[spectraFileIndex];
+                CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -129,10 +132,10 @@ namespace TaskLayer
                         myMsDataFile = ThermoStaticData.LoadAllStaticData(origDataFile);
                 }
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters.DoPrecursorDeconvolution, CommonParameters.UseProvidedPrecursorInfo, CommonParameters.DeconvolutionIntensityRatio, CommonParameters.DeconvolutionMaxAssumedChargeState, CommonParameters.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
                 Psm[][] allPsmsArray = new Psm[1][];
                 allPsmsArray[0] = new Psm[arrayOfMs2ScansSortedByMass.Length];
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, CommonParameters, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, proteinList, lp, searchModes, false, combinedParams, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
                 lock (lock2)
                 {
                     allPsms[0].AddRange(allPsmsArray[0]);
@@ -144,7 +147,7 @@ namespace TaskLayer
 
             // Group and order psms
 
-            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string> { taskId });
+            SequencesToActualProteinPeptidesEngine sequencesToActualProteinPeptidesEngineTest = new SequencesToActualProteinPeptidesEngine(allPsms, proteinList, fixedModifications, variableModifications, ProductTypeToTerminusType.IdentifyTerminusType(lp), ListOfDigestionParams, new List<string> { taskId });
             var resTest = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngineTest.Run();
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatchingTest = resTest.CompactPeptideToProteinPeptideMatching;
 
@@ -191,21 +194,7 @@ namespace TaskLayer
 
         #region Private Methods
 
-        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
-        {
-            foreach (var modOnPeptide in enumerable)
-            {
-                foreach (var modToLocalize in gptmdModifications)
-                {
-                    if (modOnPeptide.motif.Equals(modToLocalize.motif))
-                    {
-                        yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
-                    }
-                }
-            }
-        }
-
-        private IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
+        private static IEnumerable<Tuple<double, double>> LoadCombos(List<ModificationWithMass> modificationsThatCanBeCombined)
         {
             using (StreamReader r = new StreamReader(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", @"combos.txt")))
             {
@@ -217,6 +206,20 @@ namespace TaskLayer
                     if (modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass1) < tolForComboLoading) &&
                         modificationsThatCanBeCombined.Any(b => Math.Abs(b.monoisotopicMass - mass2) < tolForComboLoading))
                         yield return new Tuple<double, double>(mass1, mass2);
+                }
+            }
+        }
+
+        private IEnumerable<double> GetObservedMasses(IEnumerable<ModificationWithMass> enumerable, List<ModificationWithMass> gptmdModifications)
+        {
+            foreach (var modOnPeptide in enumerable)
+            {
+                foreach (var modToLocalize in gptmdModifications)
+                {
+                    if (modOnPeptide.motif.Equals(modToLocalize.motif))
+                    {
+                        yield return modToLocalize.monoisotopicMass - modOnPeptide.monoisotopicMass;
+                    }
                 }
             }
         }

@@ -15,7 +15,7 @@ using static Chemistry.PeriodicTable;
 namespace Test
 {
     [TestFixture]
-    public class MyPeptideTest
+    public static class MyPeptideTest
     {
         #region Public Methods
 

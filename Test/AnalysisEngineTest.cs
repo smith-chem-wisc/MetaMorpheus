@@ -13,7 +13,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class AnalysisEngineTests
+    public static class AnalysisEngineTests
     {
         #region Public Methods
 

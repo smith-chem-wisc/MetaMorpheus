@@ -94,7 +94,7 @@ namespace EngineLayer.ModernSearch
                                 if (currentBestScore > 1)
                                 {
                                     // Existed! Need to compare with old match
-                                    if (Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement)
+                                    if ((Math.Abs(currentBestScore - consideredScore) < tolForScoreImprovement) && (CommonParameters.ReportAllAmbiguity || bestPeptides[j].Count == 0))
                                     {
                                         // Score is same, need to see if accepts and if prefer the new one
                                         int notch = searchMode.Accepts(thisScanprecursorMass, candidatePeptide.MonoisotopicMassIncludingFixedMods);
@@ -134,10 +134,17 @@ namespace EngineLayer.ModernSearch
                     {
                         if (bestPeptides[j] != null)
                         {
-                            globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan);
-                            for (int k = 1; k < bestPeptides[j].Count; k++)
+                            int startIndex = 0;
+
+                            if (globalPsms[j][i] == null)
                             {
-                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k]);
+                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan, CommonParameters.ExcelCompatible);
+                                startIndex = 1;
+                            }
+
+                            for (int k = startIndex; k < bestPeptides[j].Count; k++)
+                            {
+                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k], CommonParameters.ReportAllAmbiguity);
                             }
                         }
                     }

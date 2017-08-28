@@ -357,9 +357,11 @@ namespace MetaMorpheusGUI
 
         private void AddMetaMorpheusTaskFolderSuffix_Click(object sender, RoutedEventArgs e)
         {
-            var myDialog = new DialogWindow();
-            myDialog.SizeToContent = SizeToContent.WidthAndHeight;
-            myDialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            var myDialog = new DialogWindow
+            {
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
             myDialog.ShowDialog();
 
             RunAllTasks(myDialog.stringSuffix);

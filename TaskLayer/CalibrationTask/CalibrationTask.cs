@@ -37,12 +37,12 @@ namespace TaskLayer
 
         #region Protected Internal Methods
 
-        protected internal void WriteMs1DataPoints(List<LabeledMs1DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
+        protected internal void WriteMs2DataPoints(List<LabeledMs2DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
         {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
+            var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeaderForMs1 + "\t" + Psm.GetTabSeparatedHeader());
+                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeaderForMs1 + "\t" + Psm.GetTabSeparatedHeader());
                 foreach (var dp in items)
                 {
                     output.Write(string.Join("\t", dp.Inputs));
@@ -53,12 +53,12 @@ namespace TaskLayer
             SucessfullyFinishedWritingFile(writtenFile, nestedIDs);
         }
 
-        protected internal void WriteMs2DataPoints(List<LabeledMs2DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
+        protected internal void WriteMs1DataPoints(List<LabeledMs1DataPoint> items, string outputFolder, string fileName, List<string> nestedIDs)
         {
-            var writtenFile = Path.Combine(outputFolder, fileName + ".ms2dptsv");
+            var writtenFile = Path.Combine(outputFolder, fileName + ".ms1dptsv");
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine(LabeledMs2DataPoint.TabSeparatedHeaderForMs1 + "\t" + Psm.GetTabSeparatedHeader());
+                output.WriteLine(LabeledMs1DataPoint.TabSeparatedHeaderForMs1 + "\t" + Psm.GetTabSeparatedHeader());
                 foreach (var dp in items)
                 {
                     output.Write(string.Join("\t", dp.Inputs));
@@ -121,7 +121,8 @@ namespace TaskLayer
                 lp.Add(ProductType.Zdot);
             }
 
-            proseCreatedWhileRunning.Append("The following calibration settings were used: "); proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            proseCreatedWhileRunning.Append("The following calibration settings were used: ");
+            proseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             proseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             proseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
             if (CommonParameters.DigestionParams.MaxPeptideLength == null)

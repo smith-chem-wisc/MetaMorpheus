@@ -183,7 +183,8 @@ namespace MetaMorpheusGUI
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
             disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
-
+            allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
+            excelCompatible.IsChecked = task.CommonParameters.ExcelCompatible;
             DeconvolutionIntensityRatioTextBox.Text = task.CommonParameters.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
@@ -300,15 +301,18 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
-                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("single"))
-                    MessageBox.Show("Warning: A 'single' type protease was not assigned for the non-specific search");
-                if (!addCompIonCheckBox.IsChecked.Value)
-                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
-                if (SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList().Count != 2)
+                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
-                    MessageBox.Show("Non-specific searches require two searches: An open search and a narrow search");
+                    MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'singleN' or 'singleC'.");
                     return;
                 }
+                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
+                {
+                    MessageBox.Show("The semi-trypsin protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'trypsin'.");
+                    return;
+                }
+                if (!addCompIonCheckBox.IsChecked.Value)
+                    MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
             }
             if (int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture) == 0)
             {
@@ -383,6 +387,9 @@ namespace MetaMorpheusGUI
             TheTask.CommonParameters.UseProvidedPrecursorInfo = useProvidedPrecursor.IsChecked.Value;
 
             TheTask.CommonParameters.ScoreCutoff = double.Parse(minScoreAllowed.Text, CultureInfo.InvariantCulture);
+
+            TheTask.CommonParameters.ReportAllAmbiguity = allAmbiguity.IsChecked.Value;
+            TheTask.CommonParameters.ExcelCompatible = excelCompatible.IsChecked.Value;
 
             TheTask.CommonParameters.DeconvolutionIntensityRatio = double.Parse(DeconvolutionIntensityRatioTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.CommonParameters.DeconvolutionMaxAssumedChargeState = int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture);

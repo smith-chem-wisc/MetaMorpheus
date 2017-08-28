@@ -8,7 +8,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class TestToml
+    public static class TestToml
     {
         #region Public Methods
 
@@ -58,7 +58,7 @@ namespace Test
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
 
-            CommonParameters c = SearchTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);

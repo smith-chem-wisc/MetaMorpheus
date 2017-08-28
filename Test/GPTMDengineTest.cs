@@ -13,7 +13,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class GptmdEngineTest
+    public static class GptmdEngineTest
     {
         #region Public Methods
 

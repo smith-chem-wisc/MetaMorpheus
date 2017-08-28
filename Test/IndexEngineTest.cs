@@ -8,7 +8,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class IndexEngineTest
+    public static class IndexEngineTest
     {
         #region Public Methods
 

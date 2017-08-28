@@ -8,7 +8,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class XLTest
+    public static class XLTest
     {
         #region Public Methods
 

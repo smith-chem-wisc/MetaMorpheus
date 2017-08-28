@@ -1,10 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
 {
-    public class MatchedIonMassesListPositiveIsMatch : IEnumerable<KeyValuePair<ProductType, double[]>>
+    public class MatchedIonMassesListOnlyMasses : IEnumerable<KeyValuePair<ProductType, double[]>>, IEquatable<MatchedIonMassesListOnlyMasses>
+
     {
         #region Private Fields
 
@@ -14,7 +16,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public MatchedIonMassesListPositiveIsMatch(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch)
+        public MatchedIonMassesListOnlyMasses(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch)
         {
             this.matchedIonDictPositiveIsMatch = matchedIonDictPositiveIsMatch;
         }
@@ -47,10 +49,18 @@ namespace EngineLayer
 
         public override bool Equals(object obj)
         {
-            var kk = obj as MatchedIonMassesListPositiveIsMatch;
-            if (kk == null)
-                return false;
-            foreach (var hah in kk)
+            var kk = obj as MatchedIonMassesListOnlyMasses;
+            return kk != null && Equals(kk);
+        }
+
+        public override int GetHashCode()
+        {
+            return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);
+        }
+
+        public bool Equals(MatchedIonMassesListOnlyMasses other)
+        {
+            foreach (var hah in other)
             {
                 if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out double[] val))
                     return false;
@@ -59,11 +69,6 @@ namespace EngineLayer
                         return false;
             }
             return true;
-        }
-
-        public override int GetHashCode()
-        {
-            return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);
         }
 
         #endregion Public Methods

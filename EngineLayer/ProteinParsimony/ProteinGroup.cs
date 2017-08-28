@@ -189,7 +189,8 @@ namespace EngineLayer
             sb.Append("\t");
 
             //Detailed mods information list
-            sb.Append(string.Join("|", ModsInfo));
+            var modsInfoString = string.Join("|", ModsInfo);
+            sb.Append(modsInfoString.Length < 32767 ? modsInfoString : "Too many mods to display");
             sb.Append("\t");
 
             // summed MS1 intensity of razor and unique peptides
