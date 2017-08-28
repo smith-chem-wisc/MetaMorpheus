@@ -112,14 +112,14 @@ release
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/release?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=release)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=smith-chem-wisc/MetaMorpheus&amp;utm_campaign=Badge_Grade?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5187926)
 
 master
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=smith-chem-wisc/MetaMorpheus&amp;utm_campaign=Badge_Grade?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5044926)
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 <a href="https://scan.coverity.com/projects/metamorpheus">
   <img alt="Coverity Scan Build Status"
