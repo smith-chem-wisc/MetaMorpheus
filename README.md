@@ -111,13 +111,14 @@ release
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/release?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=release)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
-[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
+[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release)
+
 
 master
 
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=master)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
-[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus)
+[![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/master)
 [![Quality Gate](https://sonarqube.com/api/badges/measure?key=MetaMorpheus&metric=bugs)](https://sonarqube.com/dashboard?id=MetaMorpheus)
 <a href="https://scan.coverity.com/projects/metamorpheus">
   <img alt="Coverity Scan Build Status"
