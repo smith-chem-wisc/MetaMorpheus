@@ -308,11 +308,6 @@ namespace MetaMorpheusGUI
                 }
                 if (!addCompIonCheckBox.IsChecked.Value)
                     MessageBox.Show("Warning: Complementary ions are recommended for non-specific searches");
-                if (SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).ToList().Count != 2)
-                {
-                    MessageBox.Show("Non-specific searches require two searches: An open search and a narrow search");
-                    return;
-                }
             }
             if (int.Parse(numberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture) == 0)
             {
