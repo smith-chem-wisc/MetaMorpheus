@@ -4,7 +4,7 @@ release
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/release?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
 [![Build Status](https://travis-ci.org/smith-chem-wisc/MetaMorpheus.svg?branch=release)](https://travis-ci.org/smith-chem-wisc/MetaMorpheus/branches)
 [![codecov](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release/graph/badge.svg)](https://codecov.io/gh/smith-chem-wisc/MetaMorpheus/branch/release)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=master)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5187926)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a610ab7d56904e85846fae61f79ea925?branch=release)](https://www.codacy.com/app/solntsev_2/MetaMorpheus/dashboard?bid=5187926)
 
 master
 [![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/master?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/master)
