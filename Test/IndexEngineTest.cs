@@ -35,19 +35,28 @@ namespace Test
                 i++;
             }
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                },
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+            };
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Variable, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(5, results.PeptideIndex.Count);
 
-            var digestedList = proteinList[0].Digest(protease, 2, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).ToList();
+            var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<ModificationWithMass>()).ToList();
 
             Assert.AreEqual(5, digestedList.Count);
             foreach (var fdfd in digestedList)
             {
-                var dfdfse = fdfd.GetPeptidesWithSetModifications(variableModifications, 4096, 3).ToList();
+                var dfdfse = fdfd.GetPeptidesWithSetModifications(CommonParameters.DigestionParams, variableModifications).ToList();
                 Assert.AreEqual(1, dfdfse.Count);
                 foreach (var kjdfk in dfdfse)
                 {
@@ -79,9 +88,19 @@ namespace Test
                 i++;
             }
 
-            var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters
+            {
+                DigestionParams = new DigestionParams
+                {
+                    Protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null),
+                    MinPeptideLength = null,
+                    InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain
+                },
+                ConserveMemory = false,
+                ScoreCutoff = 1,
+            };
+            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, 1, true, new List<DigestionParams> { CommonParameters.DigestionParams }, CommonParameters.TotalPartitions, new List<string>());
 
-            var engine = new IndexingEngine(proteinList, variableModifications, fixedModifications, protease, InitiatorMethionineBehavior.Retain, 2, null, null, 4096, new List<ProductType> { ProductType.BnoB1ions, ProductType.Y }, null);
             var results = (IndexingResults)engine.Run();
 
             Assert.AreEqual(1, results.PeptideIndex.Count);

@@ -52,6 +52,11 @@ namespace EngineLayer
             return FileNameAddition + " interval " + string.Join(",", intervals);
         }
 
+        public override string ToProseString()
+        {
+            return ("the mass (Da) interval(s) " + String.Join(", ", intervals));
+        }
+
         #endregion Public Methods
     }
 }

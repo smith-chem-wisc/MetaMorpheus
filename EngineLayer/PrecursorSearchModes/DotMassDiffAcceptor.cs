@@ -55,6 +55,11 @@ namespace EngineLayer
             return FileNameAddition + " dot " + tol.ToString() + " " + string.Join(",", acceptableSortedMassShifts);
         }
 
+        public override string ToProseString()
+        {
+            return (tol.ToString() + " around " + String.Join(",", acceptableSortedMassShifts) + " Da");
+        }
+
         #endregion Public Methods
     }
 }

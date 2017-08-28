@@ -1,6 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using MzLibUtil;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,7 +14,8 @@ namespace EngineLayer
     {
         #region Private Fields
 
-        private const double tolInDaForPreferringHavingMods = 0.03;
+        private const double tolForDoubleResolution = 1e-6;
+        private const double tolForScoreDifferentiation = 1e-9;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
 
@@ -22,15 +23,15 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan)
         {
             this.ScanIndex = scanIndex;
             this.FullFilePath = scan.FullFilePath;
-            this.ScanNumber = scan.TheScan.OneBasedScanNumber;
-            this.PrecursorScanNumber = scan.TheScan.OneBasedPrecursorScanNumber;
-            this.ScanRetentionTime = scan.TheScan.RetentionTime;
-            this.ScanExperimentalPeaks = scan.TheScan.MassSpectrum.Size;
-            this.TotalIonCurrent = scan.TheScan.TotalIonCurrent;
+            this.ScanNumber = scan.OneBasedScanNumber;
+            this.PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            this.ScanRetentionTime = scan.RetentionTime;
+            this.ScanExperimentalPeaks = scan.NumPeaks;
+            this.TotalIonCurrent = scan.TotalIonCurrent;
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
@@ -41,6 +42,7 @@ namespace EngineLayer
 
         #region Public Properties
 
+        public ChemicalFormula ModsChemicalFormula { get; private set; }
         public int ScanNumber { get; }
         public int PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -59,7 +61,6 @@ namespace EngineLayer
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
 
-        public LocalizationResults LocalizationResults { get; internal set; }
         public double QuantIntensity { get; set; }
 
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
@@ -68,137 +69,18 @@ namespace EngineLayer
         public int? Notch { get; private set; }
         public string BaseSequence { get; private set; }
         public int? PeptideLength { get; private set; }
+        public int? OneBasedStartResidueInProtein { get; private set; }
+        public int? OneBasedEndResidueInProtein { get; private set; }
+        public double? PeptideMonisotopicMass { get; private set; }
+        public int? ProteinLength { get; private set; }
+        public List<double> LocalizedScores { get; internal set; }
+        public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
+        public string ProteinAccesion { get; private set; }
+        public Dictionary<string, int> ModsIdentified { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
-
-        public static double MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sorted_theoretical_product_masses_for_this_peptide, double[] matchedIonMassesListPositiveIsMatch, bool addComp, double precursorMass, List<ProductType> lp)
-        {
-            var TotalProductsHere = sorted_theoretical_product_masses_for_this_peptide.Length;
-            if (TotalProductsHere == 0)
-                return 0;
-            int MatchingProductsHere = 0;
-            double MatchingIntensityHere = 0;
-
-            // speed optimizations
-            double[] experimental_mzs = thisScan.MassSpectrum.XArray;
-            double[] experimental_intensities = thisScan.MassSpectrum.YArray;
-
-            if (addComp)
-            {
-                List<MzPeak> complementaryPeaks = new List<MzPeak>();
-
-                //keep original peeks
-                for (int i = 0; i < experimental_mzs.Length; i++)
-                {
-                    complementaryPeaks.Add(new MzPeak(experimental_mzs[i], experimental_intensities[i]));
-                }
-                //If HCD
-                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
-                {
-                    for (int i = 0; i < experimental_mzs.Length; i++)
-                    {
-                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 100)));
-                    }
-                }
-                //If ETD
-                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
-                {
-                    for (int i = 0; i < experimental_mzs.Length; i++)
-                    {
-                        complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 100)));
-                    }
-                }
-
-                IEnumerable<MzPeak> sortedPeaksMZ = complementaryPeaks.OrderBy(x => x.Mz);
-                experimental_mzs = new double[sortedPeaksMZ.Count()];
-                experimental_intensities = new double[sortedPeaksMZ.Count()];
-                int index = 0;
-                foreach (MzPeak peak in sortedPeaksMZ)
-                {
-                    experimental_mzs[index] = peak.Mz;
-                    experimental_intensities[index] = peak.Intensity;
-                    index++;
-                }
-            }
-
-            int num_experimental_peaks = experimental_mzs.Length;
-
-            int currentTheoreticalIndex = -1;
-            double currentTheoreticalMass;
-            do
-            {
-                currentTheoreticalIndex++;
-                currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-            } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sorted_theoretical_product_masses_for_this_peptide.Length - 1);
-
-            if (double.IsNaN(currentTheoreticalMass))
-                return 0;
-
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
-
-            int testTheoreticalIndex;
-            double testTheoreticalMZ;
-            double testTheoreticalMass;
-            // Loop over all experimenal indices
-            for (int experimentalIndex = 0; experimentalIndex < num_experimental_peaks; experimentalIndex++)
-            {
-                double currentExperimentalMZ = experimental_mzs[experimentalIndex];
-                // If found match
-                if (productMassTolerance.Within(currentExperimentalMZ, currentTheoreticalMz))
-                {
-                    MatchingProductsHere++;
-                    MatchingIntensityHere += experimental_intensities[experimentalIndex];
-                    matchedIonMassesListPositiveIsMatch[currentTheoreticalIndex] = currentTheoreticalMass;
-                    currentTheoreticalIndex++;
-                    if (currentTheoreticalIndex == TotalProductsHere)
-                        break;
-                    currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
-                }
-                // Else if for sure did not reach the next theoretical yet, move to next experimental
-                else if (currentExperimentalMZ < currentTheoreticalMz)
-                    continue;
-                // Else if for sure passed a theoretical
-                else
-                {
-                    // Mark the theoretical as missed
-                    matchedIonMassesListPositiveIsMatch[currentTheoreticalIndex] = -currentTheoreticalMass;
-
-                    // Move on to next index and never come back!
-                    currentTheoreticalIndex++;
-                    if (currentTheoreticalIndex == TotalProductsHere)
-                        break;
-                    currentTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
-
-                    // Start with the current ones
-                    testTheoreticalIndex = currentTheoreticalIndex;
-                    testTheoreticalMZ = currentTheoreticalMz;
-                    testTheoreticalMass = currentTheoreticalMass;
-                    // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
-                    while (currentExperimentalMZ > testTheoreticalMZ)
-                    {
-                        matchedIonMassesListPositiveIsMatch[testTheoreticalIndex] = -currentTheoreticalMass;
-                        // Store old info for possible reuse
-                        currentTheoreticalMass = testTheoreticalMass;
-                        currentTheoreticalMz = testTheoreticalMZ;
-                        currentTheoreticalIndex = testTheoreticalIndex;
-
-                        // Update test stuff!
-                        testTheoreticalIndex++;
-                        if (testTheoreticalIndex == TotalProductsHere)
-                            break;
-                        testTheoreticalMass = sorted_theoretical_product_masses_for_this_peptide[testTheoreticalIndex];
-                        testTheoreticalMZ = testTheoreticalMass + Constants.protonMass;
-                    }
-
-                    experimentalIndex--;
-                }
-            }
-            return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
-        }
 
         public static string GetTabSeparatedHeader()
         {
@@ -220,6 +102,8 @@ namespace EngineLayer
             sb.Append('\t' + "Peptides Sharing Same Peaks");
             sb.Append('\t' + "Base Sequence");
             sb.Append('\t' + "Full Sequence");
+            sb.Append('\t' + "Mods");
+            sb.Append('\t' + "Mods Chemical Formula");
             sb.Append('\t' + "Num Variable Mods");
             sb.Append('\t' + "Missed Cleavages");
             sb.Append('\t' + "Peptide Monoisotopic Mass");
@@ -236,7 +120,10 @@ namespace EngineLayer
             sb.Append('\t' + "Next Amino Acid");
             sb.Append('\t' + "Decoy/Contaminant/Target");
 
-            sb.Append('\t' + LocalizationResults.GetTabSeparatedHeader());
+            sb.Append('\t' + "Matched Ion Counts");
+            sb.Append('\t' + "Matched Ion Masses");
+
+            sb.Append('\t' + "Localized Scores");
             sb.Append('\t' + "Improvement Possible");
 
             sb.Append('\t' + "Cumulative Target");
@@ -251,7 +138,7 @@ namespace EngineLayer
 
         public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch)
         {
-            if (score - Score > 1e-9)
+            if (score - Score > tolForScoreDifferentiation)
             {
                 compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
                 {
@@ -259,19 +146,33 @@ namespace EngineLayer
                 };
                 Score = score;
             }
-            else if (score - Score > -1e-9)
+            else if (score - Score > -tolForScoreDifferentiation)
             {
                 compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
         }
 
+        public void CompactCompactPeptides()
+        {
+            List<Tuple<CompactPeptideBase, int>> cps = new List<Tuple<CompactPeptideBase, int>>();
+            foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in compactPeptides)
+            {
+                //Change CPWM to reflect actual CP
+                Tuple<CompactPeptideBase, int> tempTuple = new Tuple<CompactPeptideBase, int>(kvp.Key, kvp.Value.Item1);
+                if (!cps.Contains(tempTuple))
+                    cps.Add(tempTuple);
+            }
+            compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+            foreach (Tuple<CompactPeptideBase, int> cp in cps)
+                compactPeptides[cp.Item1] = new Tuple<int, HashSet<PeptideWithSetModifications>>(cp.Item2, null);
+        }
+
         public void MatchToProteinLinkedPeptides(Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> matching)
         {
-            foreach (var ok in compactPeptides.Keys.ToList())
+            foreach (var cpKey in compactPeptides.Keys.ToList())
             {
-                compactPeptides[ok] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[ok].Item1, matching[ok]);
-
-                var candidatePli = new ProteinLinkedInfo(matching[ok]);
+                compactPeptides[cpKey] = new Tuple<int, HashSet<PeptideWithSetModifications>>(compactPeptides[cpKey].Item1, matching[cpKey]);
+                var candidatePli = new ProteinLinkedInfo(matching[cpKey]);
                 if (MostProbableProteinInfo == null || FirstIsPreferable(candidatePli, MostProbableProteinInfo))
                     MostProbableProteinInfo = candidatePli;
             }
@@ -284,7 +185,26 @@ namespace EngineLayer
 
             PeptideLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Length)).Item2;
 
+            OneBasedStartResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedStartResidueInProtein)).Item2;
+
+            OneBasedEndResidueInProtein = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.OneBasedEndResidueInProtein)).Item2;
+
+            ProteinLength = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Length)).Item2;
+
+            PeptideMonisotopicMass = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item2;
+
+            ProteinAccesion = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession)).Item2;
+
+            ModsIdentified = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item2;
+
+            ModsChemicalFormula = Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item2;
+
             Notch = Resolve(compactPeptides.Select(b => b.Value.Item1)).Item2;
+        }
+
+        public bool CompactPeptidesContainsKey(CompactPeptideBase key)
+        {
+            return compactPeptides.ContainsKey(key);
         }
 
         public override string ToString()
@@ -307,12 +227,14 @@ namespace EngineLayer
 
             if (compactPeptides.First().Value.Item2 != null)
             {
-                sb.Append("\t" + string.Join("|", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture))));
+                sb.Append("\t" + TrimStringForExcel(string.Join(" or ", compactPeptides.Select(b => b.Value.Item2.Count.ToString(CultureInfo.InvariantCulture)))));
 
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.BaseSequence)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Sequence)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.allModsOneIsNterminus.Select(c => (c.Value as ModificationWithMassAndCf)))).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.NumVariableMods)).Item1);
-                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MissedCleavages)).Item1);
+                sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.missedCleavages.HasValue ? b.missedCleavages.Value.ToString(CultureInfo.InvariantCulture) : "unknown")).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ScanPrecursorMass - b.MonoisotopicMass)).Item1);
                 sb.Append('\t' + Resolve(compactPeptides.SelectMany(b => b.Value.Item2).Select(b => ((ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).Item1);
@@ -336,17 +258,31 @@ namespace EngineLayer
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (LocalizationResults != null)
+            if (MatchedIonDictPositiveIsMatch != null)
             {
-                sb.Append('\t' + LocalizationResults.ToString());
-                sb.Append('\t' + (LocalizationResults.LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+                sb.Append('\t' + string.Join(";", MatchedIonDictPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))));
+
+                sb.Append('\t' + "[");
+                foreach (var kvp in MatchedIonDictPositiveIsMatch)
+                    sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " ");
+            }
+
+            if (LocalizedScores != null)
+            {
+                sb.Append('\t' + "[" + string.Join(",", LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]");
+                sb.Append('\t' + (LocalizedScores.Max() - Score).ToString("F3", CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                sb.Append('\t' + " " + '\t' + " ");
             }
 
             if (FdrInfo != null)
@@ -381,7 +317,7 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal void Add(Psm psmParent)
+        internal void AddOrReplace(Psm psmParent)
         {
             foreach (var kvp in psmParent.compactPeptides)
                 AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1);
@@ -391,17 +327,99 @@ namespace EngineLayer
 
         #region Private Methods
 
+        private static string TrimStringForExcel(string s)
+        {
+            return s.Length > 32000 ? "too many" : s;
+        }
+
+        private static (string, ChemicalFormula) Resolve(IEnumerable<IEnumerable<ModificationWithMassAndCf>> enumerable)
+        {
+            ChemicalFormula f = new ChemicalFormula();
+            {
+                var firstEnum = enumerable.First();
+                foreach (var mod in firstEnum)
+                {
+                    if (mod == null)
+                        return ("unknown", null);
+                    f.Add(mod.chemicalFormula);
+                }
+            }
+            bool equals = true;
+            List<ChemicalFormula> formulas = new List<ChemicalFormula>();
+            foreach (var anEnum in enumerable)
+            {
+                ChemicalFormula fhere = new ChemicalFormula();
+                foreach (var mod in anEnum)
+                {
+                    if (mod == null)
+                        return ("unknown", null);
+                    fhere.Add(mod.chemicalFormula);
+                }
+                if (!f.Equals(fhere))
+                    equals = false;
+                formulas.Add(fhere);
+            }
+            if (!equals)
+            {
+                var possibleReturn = string.Join(" or ", formulas.Select(b => b.Formula));
+                if (possibleReturn.Length > 32000)
+                    return ("too many", null);
+                else
+                    return (possibleReturn, null);
+            }
+            else
+            {
+                return (f.Formula, f);
+            }
+        }
+
+        private static bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
+        {
+            if (firstPli.IsDecoy && !secondPli.IsDecoy)
+                return true;
+            if (!firstPli.IsDecoy && secondPli.IsDecoy)
+                return false;
+
+            return true;
+        }
+
+        private Tuple<string, Dictionary<string, int>> Resolve(IEnumerable<Dictionary<int, ModificationWithMass>> enumerable)
+        {
+            Dictionary<string, int> ok = enumerable.First().Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
+            bool notEqual = false;
+            foreach (var ha in enumerable)
+            {
+                Dictionary<string, int> okTest = ha.Values.OrderBy(b => b.id).GroupBy(b => b.id).ToDictionary(b => b.Key, b => b.Count());
+                if (!ok.SequenceEqual(okTest))
+                {
+                    notEqual = true;
+                    break;
+                }
+            }
+            if (notEqual)
+            {
+                var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
+                if (possibleReturn.Length > 32000)
+                    return new Tuple<string, Dictionary<string, int>>("too many", null);
+                else
+                    return new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+            }
+            else
+            {
+                return new Tuple<string, Dictionary<string, int>>(string.Join(" ", enumerable.First().Values.Select(c => c.id).OrderBy(c => c)), ok);
+            }
+        }
+
         private Tuple<string, double?> Resolve(IEnumerable<double> enumerable)
         {
-            double doubleTol = 1e-6;
-            var list = enumerable.Distinct().ToList();
-            if (list.Max() - list.Min() < doubleTol)
+            var list = enumerable.ToList();
+            if (list.Max() - list.Min() < tolForDoubleResolution)
             {
                 return new Tuple<string, double?>(list.Average().ToString("F5", CultureInfo.InvariantCulture), list.Average());
             }
             else
             {
-                var possibleReturn = string.Join("|", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
+                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
                 if (possibleReturn.Length > 32000)
                     return new Tuple<string, double?>("too many", null);
                 else
@@ -411,7 +429,7 @@ namespace EngineLayer
 
         private Tuple<string, int?> Resolve(IEnumerable<int> enumerable)
         {
-            var list = enumerable.Distinct().ToList();
+            var list = enumerable.ToList();
             var first = list[0];
             if (list.All(b => first.Equals(b)))
             {
@@ -419,7 +437,7 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join("|", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
                 if (possibleReturn.Length > 32000)
                     return new Tuple<string, int?>("too many", null);
                 else
@@ -429,7 +447,7 @@ namespace EngineLayer
 
         private Tuple<string, string> Resolve(IEnumerable<string> enumerable)
         {
-            var list = enumerable.Distinct().ToList();
+            var list = enumerable.ToList();
             var first = list.FirstOrDefault(b => b != null);
             // Only first if list is either all null or all equal to the first
             if (list.All(b => b == null) || list.All(b => first.Equals(b)))
@@ -438,58 +456,12 @@ namespace EngineLayer
             }
             else
             {
-                var possibleReturn = string.Join("|", list);
+                var possibleReturn = string.Join(" or ", list);
                 if (possibleReturn.Length > 32000)
                     return new Tuple<string, string>("too many", null);
                 else
                     return new Tuple<string, string>(possibleReturn, null);
             }
-        }
-
-        private bool FirstIsPreferable(ProteinLinkedInfo firstPli, ProteinLinkedInfo secondPli)
-        {
-            if (firstPli.IsDecoy && !secondPli.IsDecoy)
-                return true;
-            if (!firstPli.IsDecoy && secondPli.IsDecoy)
-                return false;
-
-            // Score is same, need to see if accepts and if prefer the new one
-            var first = firstPli.PeptidesWithSetModifications.First();
-            var second = secondPli.PeptidesWithSetModifications.First();
-
-            // Prefer to be at zero rather than fewer modifications
-            if ((Math.Abs(first.MonoisotopicMass - ScanPrecursorMass) < tolInDaForPreferringHavingMods)
-                && (Math.Abs(second.MonoisotopicMass - ScanPrecursorMass) > tolInDaForPreferringHavingMods))
-                return true;
-            if ((Math.Abs(second.MonoisotopicMass - ScanPrecursorMass) < tolInDaForPreferringHavingMods)
-                && (Math.Abs(first.MonoisotopicMass - ScanPrecursorMass) > tolInDaForPreferringHavingMods))
-                return false;
-
-            //int firstVarMods = first.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
-            //int secondVarMods = second.allModsOneIsNterminus.Count(b => variableMods.Contains(b.Value));
-
-            // Want the lowest number of localizeable mods!!! Even at the expense of many variable and fixed mods.
-            //if (first.NumMods - firstVarMods - first.numFixedMods < second.NumMods - secondVarMods - second.numFixedMods)
-            //    return true;
-            //if (first.NumMods - firstVarMods - first.numFixedMods > second.NumMods - secondVarMods - second.numFixedMods)
-            //    return false;
-
-            // If have same number of localizeable mods, pick the lowest number of localizeable + variable mods
-            if (first.NumMods - first.numFixedMods < second.NumMods - second.numFixedMods)
-                return true;
-            if (first.NumMods - first.numFixedMods > second.NumMods - second.numFixedMods)
-                return false;
-
-            // If have same numbers of localizeable and variable mods, prefer not to have substitutions and removals!
-            int firstNumRazor = first.allModsOneIsNterminus.Count(b => b.Value.modificationType.Equals("substitution") || b.Value.modificationType.Equals("missing") || b.Value.modificationType.Equals("trickySubstitution"));
-            int secondNumRazor = second.allModsOneIsNterminus.Count(b => b.Value.modificationType.Equals("substitution") || b.Value.modificationType.Equals("missing") || b.Value.modificationType.Equals("trickySubstitution"));
-
-            if (firstNumRazor < secondNumRazor)
-                return true;
-            if (firstNumRazor > secondNumRazor)
-                return false;
-
-            return true;
         }
 
         #endregion Private Methods

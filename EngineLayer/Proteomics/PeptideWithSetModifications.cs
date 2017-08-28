@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using Proteomics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,61 +12,54 @@ namespace EngineLayer
 
         public readonly int numFixedMods;
         public readonly Dictionary<int, ModificationWithMass> allModsOneIsNterminus;
+        public readonly int? missedCleavages;
 
         #endregion Public Fields
 
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
-        private readonly PeptideWithPossibleModifications modPep;
+        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private string sequence;
         private bool? hasChemicalFormulas;
         private string sequenceWithChemicalFormulas;
         private object lockObj = new object();
-        private readonly Dictionary<TerminusType, CompactPeptide> compactPeptides = new Dictionary<TerminusType, CompactPeptide>();
         private double? monoisotopicMass;
 
         #endregion Private Fields
 
-        #region Internal Constructors
+        #region Public Constructors
 
-        internal PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
-                                                                                                            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein)
+        public PeptideWithSetModifications(PeptideWithPossibleModifications modPep, Dictionary<int, ModificationWithMass> allModsOneIsNterminus, int numFixedMods)
+            : base(modPep.Protein, modPep.OneBasedStartResidueInProtein, modPep.OneBasedEndResidueInProtein, modPep.PeptideDescription)
         {
-            this.modPep = modPep;
+            this.missedCleavages = modPep.MissedCleavages;
             this.allModsOneIsNterminus = allModsOneIsNterminus;
             this.numFixedMods = numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, PeptideWithSetModifications everythingElseFromThisOne) : base(everythingElseFromThisOne.Protein, everythingElseFromThisOne.OneBasedStartResidueInProtein, everythingElseFromThisOne.OneBasedEndResidueInProtein, everythingElseFromThisOne.PeptideDescription)
         {
-            this.modPep = everythingElseFromThisOne.modPep;
+            this.missedCleavages = everythingElseFromThisOne.missedCleavages;
             this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus;
             this.numFixedMods = modsFromThisOne.numFixedMods;
         }
 
-        internal PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd)
+        public PeptideWithSetModifications(PeptideWithSetModifications modsFromThisOne, int proteinOneBasedStart, int proteinOneBasedEnd) : base(modsFromThisOne.Protein, proteinOneBasedStart, proteinOneBasedEnd, modsFromThisOne.PeptideDescription)
         {
-            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key >= proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein && b.Key <= proteinOneBasedEnd - modsFromThisOne.OneBasedEndResidueInProtein).ToDictionary(b => b.Key, b => b.Value);
+            this.allModsOneIsNterminus = modsFromThisOne.allModsOneIsNterminus.Where(b => b.Key > (1 + proteinOneBasedStart - modsFromThisOne.OneBasedStartResidueInProtein) && b.Key <= (2 + proteinOneBasedEnd - modsFromThisOne.OneBasedStartResidueInProtein)).ToDictionary(b => (b.Key + modsFromThisOne.OneBasedStartResidueInProtein - proteinOneBasedStart), b => b.Value);
         }
 
-        #endregion Internal Constructors
+        public PeptideWithSetModifications(int numFixedMods, Protein protein, int proteinOneBasedStart, int proteinOneBasedEnd, Dictionary<int, ModificationWithMass> allModsOneIsNterminus = null, int? missedCleavages = null) : base(protein, proteinOneBasedStart, proteinOneBasedEnd)
+        {
+            this.missedCleavages = missedCleavages;
+            this.numFixedMods = numFixedMods;
+            this.allModsOneIsNterminus = allModsOneIsNterminus ?? new Dictionary<int, ModificationWithMass>();
+        }
+
+        #endregion Public Constructors
 
         #region Public Properties
-
-        public CompactPeptide CompactPeptide(TerminusType terminusType)
-        {
-            if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
-            {
-                return compactPeptide;               
-            }
-            else
-            {
-                CompactPeptide cp = new CompactPeptide(this, terminusType);
-                compactPeptides.Add(terminusType, cp);
-                return cp;
-            }
-        }
 
         public double MonoisotopicMass
         {
@@ -122,11 +114,6 @@ namespace EngineLayer
             }
         }
 
-        public int MissedCleavages
-        {
-            get { return modPep.MissedCleavages; }
-        }
-
         public string SequenceWithChemicalFormulas
         {
             get
@@ -139,7 +126,7 @@ namespace EngineLayer
                     // variable modification on peptide N-terminus
                     if (allModsOneIsNterminus.TryGetValue(1, out ModificationWithMass pep_n_term_variable_mod))
                     {
-                        if (pep_n_term_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                        if (pep_n_term_variable_mod is ModificationWithMassAndCf jj)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -151,7 +138,7 @@ namespace EngineLayer
                         // variable modification on this residue
                         if (allModsOneIsNterminus.TryGetValue(r + 2, out ModificationWithMass residue_variable_mod))
                         {
-                            if (residue_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                            if (residue_variable_mod is ModificationWithMassAndCf jj)
                                 sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                             else
                                 return null;
@@ -161,7 +148,7 @@ namespace EngineLayer
                     // variable modification on peptide C-terminus
                     if (allModsOneIsNterminus.TryGetValue(Length + 2, out ModificationWithMass pep_c_term_variable_mod))
                     {
-                        if (pep_c_term_variable_mod is ModificationWithMassAndCf jj && Math.Abs(jj.chemicalFormula.MonoisotopicMass - jj.monoisotopicMass) < 1e-5)
+                        if (pep_c_term_variable_mod is ModificationWithMassAndCf jj)
                             sbsequence.Append('[' + jj.chemicalFormula.Formula + ']');
                         else
                             return null;
@@ -179,6 +166,20 @@ namespace EngineLayer
 
         #region Public Methods
 
+        public CompactPeptide CompactPeptide(TerminusType terminusType)
+        {
+            if (compactPeptides.TryGetValue(terminusType, out CompactPeptide compactPeptide))
+            {
+                return compactPeptide;
+            }
+            else
+            {
+                CompactPeptide cp = new CompactPeptide(this, terminusType);
+                compactPeptides.Add(terminusType, cp);
+                return cp;
+            }
+        }
+
         public PeptideWithSetModifications Localize(int j, double massToLocalize)
         {
             var vvv = new Dictionary<int, ModificationWithMass>(allModsOneIsNterminus);
@@ -189,8 +190,8 @@ namespace EngineLayer
                 vvv.Remove(j + 2);
             }
 
-            vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod, null, new List<double> { 0 }, new List<double> { massToLocalize + massOfExistingMod }, null));
-            var hm = new PeptideWithSetModifications(modPep, vvv, numFixedMods);
+            vvv.Add(j + 2, new ModificationWithMass(null, null, null, TerminusLocalization.Any, massToLocalize + massOfExistingMod));
+            var hm = new PeptideWithSetModifications(numFixedMods, Protein, OneBasedStartResidueInProtein, OneBasedEndResidueInProtein, vvv, missedCleavages);
 
             return hm;
         }

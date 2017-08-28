@@ -33,6 +33,8 @@ namespace EngineLayer
 
         public abstract IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervals(double peptideMonoisotopicMass);
 
+        public abstract string ToProseString();
+
         #endregion Public Methods
     }
 }

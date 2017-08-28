@@ -15,9 +15,9 @@ namespace EngineLayer
 
         #endregion Public Fields
 
-        #region Internal Constructors
+        #region Public Constructors
 
-        internal ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
+        public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
             Proteins = proteins;
 
@@ -50,7 +50,7 @@ namespace EngineLayer
             }
         }
 
-        #endregion Internal Constructors
+        #endregion Public Constructors
 
         #region Public Properties
 
@@ -314,8 +314,15 @@ namespace EngineLayer
 
                         foreach (var mod in temp1)
                         {
-                            int modStringIndex = seq.Length - (protein.Length - mod.Key);
-                            seq = seq.Insert(modStringIndex, "[" + mod.Value.id + "]");
+                            if (mod.Value.terminusLocalization.Equals(TerminusLocalization.NProt))
+                                seq = seq.Insert(0, "[" + mod.Value.id + "]-");
+                            else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.Any))
+                            {
+                                int modStringIndex = seq.Length - (protein.Length - mod.Key);
+                                seq = seq.Insert(modStringIndex, "[" + mod.Value.id + "]");
+                            }
+                            else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.ProtC))
+                                seq = seq.Insert(seq.Length, "-[" + mod.Value.id + "]");
                         }
 
                         SequenceCoverageDisplayListWithMods.Add(seq);
@@ -341,16 +348,31 @@ namespace EngineLayer
                             foreach (var mod in pep.allModsOneIsNterminus)
                             {
                                 int tempPepNumTotal = 0; //For one mod, The total Pep Num
-                                if (!mod.Value.modificationType.Contains("PeptideTermMod") && !mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed"))
+                                if (!mod.Value.modificationType.Contains("Common Variable") && !mod.Value.modificationType.Contains("Common Fixed") && !mod.Value.terminusLocalization.Equals(TerminusLocalization.PepC) && !mod.Value.terminusLocalization.Equals(TerminusLocalization.NPep))
                                 {
-                                    int temp = pep.OneBasedStartResidueInProtein + mod.Key - 2;
-                                    if (tempModIndex.Contains(temp) && tempPepModValues[tempModIndex.IndexOf(temp)] == mod.Value.id) { tempPepModTotals[tempModIndex.IndexOf(temp)] += 1; }
+                                    int tempIndexInProtein;
+                                    if (mod.Value.terminusLocalization.Equals(TerminusLocalization.NProt))
+                                        tempIndexInProtein = 0;
+                                    else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.Any))
+                                    {
+                                        tempIndexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
+                                    }
+                                    else if (mod.Value.terminusLocalization.Equals(TerminusLocalization.ProtC))
+                                        tempIndexInProtein = protein.Length + 1;
+                                    else
+                                        // In case it's a peptide mod, skip!
+                                        break;
+
+                                    if (tempModIndex.Contains(tempIndexInProtein) && tempPepModValues[tempModIndex.IndexOf(tempIndexInProtein)] == mod.Value.id)
+                                    {
+                                        tempPepModTotals[tempModIndex.IndexOf(tempIndexInProtein)] += 1;
+                                    }
                                     else
                                     {
-                                        tempModIndex.Add(temp);
+                                        tempModIndex.Add(tempIndexInProtein);
                                         foreach (var pept in aproteinWithPsms.Value)
                                         {
-                                            if (temp >= (pept.OneBasedStartResidueInProtein - 1) && temp <= (pept.OneBasedEndResidueInProtein))
+                                            if (tempIndexInProtein >= pept.OneBasedStartResidueInProtein - (tempIndexInProtein == 0 ? 1 : 0) && tempIndexInProtein <= pept.OneBasedEndResidueInProtein + (tempIndexInProtein == protein.Length + 1 ? 1 : 0))
                                             { tempPepNumTotal += 1; }
                                         }
                                         tempPepTotals.Add(tempPepNumTotal);

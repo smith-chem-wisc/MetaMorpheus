@@ -4,6 +4,7 @@ using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -36,14 +37,18 @@ namespace EngineLayer.CrosslinkSearch
         public CompactPeptide CompactPeptide { get { return compactPeptide; } set { compactPeptide = value; } }
 
         //public ProductMassesMightHave pmmh { get; set; }
-        public double PeptideMass { get; set; }
+        public double peptideMass { get; set; }
 
         public double XLBestScore { get; set; }
-        public MatchedIonInfo MatchedIonInfo { get; set; }
-        public double NScore { get; set; }
+        public MatchedIonInfo matchedIonInfo { get; set; }
         public double XLTotalScore { get; set; }
-        public int Xlpos { get; set; }
-        public int[] TopPosition { get; set; }
+        public int xlpos { get; set; }
+        public int[] topPosition { get; set; }
+        public string parentIonExist { get; set; }
+        public int Charge2IonExist { get; set; }
+        public PsmCross BetaPsmCross { get; set; }
+        public PsmCrossType CrossType { get; set; }
+        public double dScore { get; set; }
 
         #endregion Public Properties
 
@@ -141,9 +146,9 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         //Compute if crosslink amino acid exist and return its position based on compactPeptide
-        public static List<int> XlPosCal(CompactPeptide compactPeptide, CrosslinkerTypeClass crosslinker)
+        public static List<int> xlPosCal(CompactPeptide compactPeptide, CrosslinkerTypeClass crosslinker)
         {
-            Tolerance tolerance = new PpmTolerance(0.001);
+            Tolerance tolerance = new PpmTolerance(1);
             List<int> xlpos = new List<int>();
             if (tolerance.Within(compactPeptide.NTerminalMasses[0], Residue.GetResidue(crosslinker.CrosslinkerModSite).MonoisotopicMass))
             {
@@ -161,6 +166,178 @@ namespace EngineLayer.CrosslinkSearch
                 xlpos.Add(compactPeptide.NTerminalMasses.Length);
             }
             return xlpos;
+        }
+
+        public static void XLCalculateTotalProductMassesMightHave(Ms2ScanWithSpecificMass theScan, PsmCross psmCross, CrosslinkerTypeClass crosslinker, List<ProductType> lp, Tolerance fragmentTolerance)
+        {
+            bool CalculateCharge2 = true;
+            var modMass = theScan.PrecursorMass - psmCross.CompactPeptide.MonoisotopicMassIncludingFixedMods - crosslinker.TotalMass;
+            int length = psmCross.CompactPeptide.NTerminalMasses.Length;
+            var pmmh = psmCross.ProductMassesMightHaveDuplicatesAndNaNs(lp);
+            ProductMassesMightHave pmmhTop = new ProductMassesMightHave();
+
+            List<ProductMassesMightHave> pmmhList = new List<ProductMassesMightHave>();
+
+            var linkPos = PsmCross.xlPosCal(psmCross.CompactPeptide, crosslinker);
+            //linkPos.Add(0);
+
+            foreach (var ipos in linkPos)
+            {
+                //pos = ipos;
+                ProductMassesMightHave pmmhCurr = new ProductMassesMightHave();
+                pmmhCurr.Xlpos = ipos;
+                List<double> x = new List<double>();
+                List<string> y = new List<string>();
+                if (crosslinker.Cleavable)
+                {
+                    x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassLong);
+                    y.Add("PepS");
+                    x.Add(theScan.PrecursorMass - modMass - crosslinker.CleaveMassShort);
+                    y.Add("PepL");
+                }
+                for (int i = 0; i < pmmh.ProductMz.Length; i++)
+                {
+                    var cr = pmmh.ProductName[i][0];
+                    //get the position of amino acid
+                    var nm = Int32.Parse(System.Text.RegularExpressions.Regex.Match(pmmh.ProductName[i], @"\d+").Value);
+                    if ((cr == 'b' || cr == 'c') && nm < ipos + 1)
+                    {
+                        x.Add(pmmh.ProductMz[i]);
+                        y.Add(pmmh.ProductName[i]);
+                    }
+                    if ((cr == 'y' || cr == 'z') && nm < length - ipos + 1)
+                    {
+                        x.Add(pmmh.ProductMz[i]);
+                        y.Add(pmmh.ProductName[i]);
+                    }
+                    if (cr == 'b' && nm >= ipos + 1)
+                    {
+                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
+                        y.Add("t1b" + nm.ToString());
+                        if (CalculateCharge2)
+                        {
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
+                            y.Add("t2b" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3b" + nm.ToString());
+                        }
+                        if (crosslinker.Cleavable)
+                        {
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
+                            y.Add("sb" + nm.ToString());
+
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
+                            y.Add("lb" + nm.ToString());
+                        }
+                    }
+
+                    if (cr == 'c' && nm >= ipos)
+                    {
+                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
+                        y.Add("t1c" + nm.ToString());
+                        if (CalculateCharge2)
+                        {
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
+                            y.Add("t2c" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3c" + nm.ToString());
+                        }
+
+                        if (crosslinker.Cleavable)
+                        {
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
+                            y.Add("sc" + nm.ToString());
+
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
+                            y.Add("lc" + nm.ToString());
+                        }
+                    }
+
+                    if (cr == 'y' && (nm >= length - ipos + 1))
+                    {
+                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
+                        y.Add("t1y" + nm.ToString());
+
+                        if (CalculateCharge2)
+                        {
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
+                            y.Add("t2y" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3y" + nm.ToString());
+                        }
+                        if (crosslinker.Cleavable)
+                        {
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
+                            y.Add("sy" + nm.ToString());
+
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
+                            y.Add("ly" + nm.ToString());
+                        }
+                    }
+
+                    if (cr == 'z' && (nm >= length - ipos + 1))
+                    {
+                        x.Add(pmmh.ProductMz[i] + modMass + crosslinker.TotalMass);
+                        y.Add("t1z" + nm.ToString());
+                        if (CalculateCharge2)
+                        {
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 2);
+                            y.Add("t2z" + nm.ToString());
+                            x.Add((pmmh.ProductMz[i] + modMass + crosslinker.TotalMass) / 3);
+                            y.Add("t3z" + nm.ToString());
+                        }
+                        if (crosslinker.Cleavable)
+                        {
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassShort);
+                            y.Add("sz" + nm.ToString());
+
+                            x.Add(pmmh.ProductMz[i] + crosslinker.CleaveMassLong);
+                            y.Add("lz" + nm.ToString());
+                        }
+                    }
+                }
+                pmmhCurr.ProductMz = x.ToArray();
+                pmmhCurr.ProductName = y.ToArray();
+                Array.Sort(pmmhCurr.ProductMz, pmmhCurr.ProductName);
+                pmmhList.Add(pmmhCurr);
+            }
+
+            List<double> scoreList = new List<double>();
+            List<MatchedIonInfo> miil = new List<MatchedIonInfo>();
+            foreach (var pmm in pmmhList)
+            {
+                var matchedIonMassesListPositiveIsMatch = new MatchedIonInfo(pmm.ProductMz.Length);
+                double pmmScore = PsmCross.XLMatchIons(theScan.TheScan, fragmentTolerance, pmm.ProductMz, pmm.ProductName, matchedIonMassesListPositiveIsMatch);
+                miil.Add(matchedIonMassesListPositiveIsMatch);
+                scoreList.Add(pmmScore);
+            }
+
+            psmCross.XLBestScore = scoreList.Max();
+            psmCross.matchedIonInfo = miil[scoreList.IndexOf(scoreList.Max())];
+            psmCross.xlpos = pmmhList[scoreList.IndexOf(scoreList.Max())].Xlpos + 1;
+            if (crosslinker.Cleavable)
+            {
+                if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepS"))
+                {
+                    psmCross.parentIonExist += "PepS";
+                }
+                if (psmCross.matchedIonInfo.MatchedIonName.Contains("PepL"))
+                {
+                    psmCross.parentIonExist += "PepL";
+                }
+            }
+            if (CalculateCharge2)
+            {
+                int Charge2IonExist = 0;
+                for (int i = 0; i < psmCross.matchedIonInfo.MatchedIonName.Length; i++)
+                {
+                    if (psmCross.matchedIonInfo.MatchedIonName[i] != null && (psmCross.matchedIonInfo.MatchedIonName[i].Contains("t2") || psmCross.matchedIonInfo.MatchedIonName[i].Contains("t3")))
+                    {
+                        Charge2IonExist++;
+                    }
+                }
+                psmCross.Charge2IonExist = Charge2IonExist;
+            }
         }
 
         public ProductMassesMightHave ProductMassesMightHaveDuplicatesAndNaNs(List<ProductType> productTypes)

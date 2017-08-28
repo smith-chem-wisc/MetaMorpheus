@@ -22,13 +22,23 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                DoHistogramAnalysis = true,
-                MassDiffAcceptors = massDiffAcceptors,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                SearchTarget = true,
-                SearchDecoy = false,
-                DoParsimony = true,
-                DoQuantification = true
+                CommonParameters = new CommonParameters
+                {
+                    ScoreCutoff = 1,
+                    DigestionParams = new DigestionParams
+                    {
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                    },
+                    ConserveMemory = false,
+                },
+                SearchParameters = new SearchParameters
+                {
+                    DoHistogramAnalysis = true,
+                    MassDiffAcceptors = massDiffAcceptors,
+                    SearchDecoy = false,
+                    DoParsimony = true,
+                    DoQuantification = true
+                },
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "BinGenerationTest.xml");
@@ -38,21 +48,21 @@ namespace Test
             Protein prot2 = new Protein("MENEEK", "prot2");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10, null, new List<double> { 0 }, null, null);
+            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10);
 
-            var possMod1 = prot1.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
-            var pep1_0 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
-            var pep1_10 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass> { mod }, 4096, 3).Last();
+            var possMod1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep1_0 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep1_10 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass> { mod }).Last();
 
             Protein prot3 = new Protein("MAAADAAAAAAAAAAAAAAA", "prot3");
 
-            var possMod3 = prot3.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
-            var pep2_0 = possMod3.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
-            var pep2_10 = possMod3.GetPeptidesWithSetModifications(new List<ModificationWithMass>() { mod }, 4096, 3).Last();
+            var possMod3 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep2_0 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep2_10 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>() { mod }).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
-            var possMod4 = prot4.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
-            var pep3_10 = possMod4.GetPeptidesWithSetModifications(new List<ModificationWithMass>() { mod }, 4096, 3).Last();
+            var possMod4 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep3_10 = possMod4.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>() { mod }).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepsWithSetMods);
@@ -79,9 +89,23 @@ namespace Test
             List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
             SearchTask st = new SearchTask()
             {
-                DoParsimony = true,
-                InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
-                MaxMissedCleavages = 0
+                CommonParameters = new CommonParameters
+                {
+                    ScoreCutoff = 1,
+                    DigestionParams = new DigestionParams
+                    {
+                        InitiatorMethionineBehavior = InitiatorMethionineBehavior.Retain,
+                        MaxMissedCleavages = 0
+                    },
+                    ConserveMemory = false,
+                },
+                SearchParameters = new SearchParameters
+                {
+                    DoHistogramAnalysis = true,
+                    MassDiffAcceptors = massDiffAcceptors,
+                    MatchBetweenRuns = true,
+                    DoQuantification = true
+                },
             };
 
             string proteinDbFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles.xml");
@@ -89,7 +113,7 @@ namespace Test
             string mzmlFilePath2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles2.mzml");
 
             ModificationMotif.TryGetMotif("D", out ModificationMotif motif);
-            ModificationWithMass mod = new ModificationWithMass(null, null, motif, TerminusLocalization.Any, 10, null, new List<double> { 0 }, null, null);
+            ModificationWithMass mod = new ModificationWithMass("mod1", "mt", motif, TerminusLocalization.Any, 10);
 
             IDictionary<int, List<Modification>> oneBasedModification = new Dictionary<int, List<Modification>>
             {
@@ -98,9 +122,9 @@ namespace Test
 
             Protein prot1 = new Protein("MEDEEK", "prot1", oneBasedModifications: oneBasedModification);
 
-            var possMod1 = prot1.Digest(st.Protease, st.MaxMissedCleavages, st.MinPeptideLength, st.MaxPeptideLength, st.InitiatorMethionineBehavior, new List<ModificationWithMass>()).First();
-            var pep1 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
-            var pep2 = possMod1.GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).Last();
+            var possMod1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep1 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
+            var pep2 = possMod1.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).Last();
 
             List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
             List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
@@ -121,8 +145,6 @@ namespace Test
                 new List<DbForTask> { new DbForTask(proteinDbFilePath, false) },
                 new List<string> { mzmlFilePath1, mzmlFilePath2, },
                 null);
-
-            //Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"aggregate_OpenSearch.mytsv")).Count());
         }
 
         #endregion Public Methods

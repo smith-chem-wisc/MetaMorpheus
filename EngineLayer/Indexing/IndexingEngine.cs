@@ -12,37 +12,31 @@ namespace EngineLayer.Indexing
     {
         #region Private Fields
 
-        private const int max_mods_for_peptide = 3;
         private const int decimalDigitsForFragmentMassRounding = 3;
-        private readonly int maximumMissedCleavages;
-        private readonly int? minPeptideLength;
-        private readonly int? maxPeptideLength;
-        private readonly int maximumVariableModificationIsoforms;
         private readonly List<Protein> proteinList;
-
-        private readonly Protease protease;
 
         private readonly List<ModificationWithMass> fixedModifications;
         private readonly List<ModificationWithMass> variableModifications;
-        private readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         private readonly List<ProductType> lp;
+        private readonly int currentPartition;
+        private readonly bool searchDecoys;
+        private readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
+        private readonly int totalPartitions;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, Protease protease, InitiatorMethionineBehavior initiatorMethionineBehavior, int maximumMissedCleavages, int? minPeptideLength, int? maxPeptideLength, int maximumVariableModificationIsoforms, List<ProductType> lp, List<string> nestedIds) : base(nestedIds)
+        public IndexingEngine(List<Protein> proteinList, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<ProductType> lp, int currentPartition, bool searchDecoys, IEnumerable<DigestionParams> CollectionOfDigestionParams, int totalPartitions, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.variableModifications = variableModifications;
             this.fixedModifications = fixedModifications;
-            this.protease = protease;
-            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
-            this.maximumMissedCleavages = maximumMissedCleavages;
-            this.minPeptideLength = minPeptideLength;
-            this.maxPeptideLength = maxPeptideLength;
-            this.maximumVariableModificationIsoforms = maximumVariableModificationIsoforms;
             this.lp = lp;
+            this.currentPartition = currentPartition + 1;
+            this.searchDecoys = searchDecoys;
+            this.CollectionOfDigestionParams = CollectionOfDigestionParams;
+            this.totalPartitions = totalPartitions;
         }
 
         #endregion Public Constructors
@@ -52,16 +46,21 @@ namespace EngineLayer.Indexing
         public override string ToString()
         {
             var sb = new StringBuilder();
+            sb.AppendLine("Partitions: " + currentPartition + "/" + totalPartitions);
+            sb.AppendLine("Search Decoys: " + searchDecoys);
             sb.AppendLine("Number of proteins: " + proteinList.Count);
             sb.AppendLine("Number of fixed mods: " + fixedModifications.Count);
             sb.AppendLine("Number of variable mods: " + variableModifications.Count);
             sb.AppendLine("lp: " + string.Join(",", lp));
-            sb.AppendLine("protease: " + protease);
-            sb.AppendLine("initiatorMethionineBehavior: " + initiatorMethionineBehavior);
-            sb.AppendLine("maximumMissedCleavages: " + maximumMissedCleavages);
-            sb.AppendLine("minPeptideLength: " + minPeptideLength);
-            sb.AppendLine("maxPeptideLength: " + maxPeptideLength);
-            sb.AppendLine("maximumVariableModificationIsoforms: " + maximumVariableModificationIsoforms);
+            foreach (var digestionParams in CollectionOfDigestionParams)
+            {
+                sb.AppendLine("protease: " + digestionParams.Protease);
+                sb.AppendLine("initiatorMethionineBehavior: " + digestionParams.InitiatorMethionineBehavior);
+                sb.AppendLine("maximumMissedCleavages: " + digestionParams.MaxMissedCleavages);
+                sb.AppendLine("minPeptideLength: " + digestionParams.MinPeptideLength);
+                sb.AppendLine("maxPeptideLength: " + digestionParams.MaxPeptideLength);
+                sb.AppendLine("maximumVariableModificationIsoforms: " + digestionParams.MaxModificationIsoforms);
+            }
             sb.Append("Localizeable mods: " + proteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
             return sb.ToString();
         }
@@ -85,43 +84,46 @@ namespace EngineLayer.Indexing
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
                     var protein = proteinList[i];
-                    var digestedList = protein.Digest(protease, maximumMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications).ToList();
-                    foreach (var peptide in digestedList)
+                    foreach (var digestionParams in CollectionOfDigestionParams)
                     {
-                        var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(variableModifications, maximumVariableModificationIsoforms, max_mods_for_peptide).ToList();
-                        foreach (var yyy in ListOfModifiedPeptides)
+                        var digestedList = protein.Digest(digestionParams, fixedModifications).ToList();
+                        foreach (var peptide in digestedList)
                         {
-                            var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
-                            var observed = observed_sequences.Contains(correspondingCompactPeptide);
-                            if (observed)
-                                continue;
-                            lock (observed_sequences)
+                            var ListOfModifiedPeptides = peptide.GetPeptidesWithSetModifications(digestionParams, variableModifications).ToList();
+                            foreach (var yyy in ListOfModifiedPeptides)
                             {
-                                observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                var correspondingCompactPeptide = yyy.CompactPeptide(terminusType);
+                                var observed = observed_sequences.Contains(correspondingCompactPeptide);
                                 if (observed)
                                     continue;
-                                observed_sequences.Add(correspondingCompactPeptide);
-                            }
-
-                            int index;
-                            lock (myDictionary)
-                            {
-                                index = myDictionary.Count;
-                                myDictionary.Add(correspondingCompactPeptide);
-                            }
-
-                            foreach (var huhu in correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp))
-                            {
-                                if (!double.IsNaN(huhu))
+                                lock (observed_sequences)
                                 {
-                                    var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
-                                    if (myInnerDictionary.TryGetValue(rounded, out List<int> value))
+                                    observed = observed_sequences.Contains(correspondingCompactPeptide);
+                                    if (observed)
+                                        continue;
+                                    observed_sequences.Add(correspondingCompactPeptide);
+                                }
+
+                                int index;
+                                lock (myDictionary)
+                                {
+                                    index = myDictionary.Count;
+                                    myDictionary.Add(correspondingCompactPeptide);
+                                }
+
+                                foreach (var huhu in correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp))
+                                {
+                                    if (!double.IsNaN(huhu))
                                     {
-                                        if (!value.Contains(index))
-                                            value.Add(index);
+                                        var rounded = (float)Math.Round(huhu, decimalDigitsForFragmentMassRounding);
+                                        if (myInnerDictionary.TryGetValue(rounded, out List<int> value))
+                                        {
+                                            if (!value.Contains(index))
+                                                value.Add(index);
+                                        }
+                                        else
+                                            myInnerDictionary.Add(rounded, new List<int> { index });
                                     }
-                                    else
-                                        myInnerDictionary.Add(rounded, new List<int> { index });
                                 }
                             }
                         }
@@ -153,6 +155,5 @@ namespace EngineLayer.Indexing
         }
 
         #endregion Protected Methods
-
     }
 }

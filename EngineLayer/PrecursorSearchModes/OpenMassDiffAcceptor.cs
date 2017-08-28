@@ -25,6 +25,11 @@ namespace EngineLayer
             yield return new AllowedIntervalWithNotch(new DoubleRange(double.MinValue, double.MaxValue), 0);
         }
 
+        public override string ToProseString()
+        {
+            return ("unbounded");
+        }
+
         public override string ToString()
         {
             return FileNameAddition + " OpenSearch";

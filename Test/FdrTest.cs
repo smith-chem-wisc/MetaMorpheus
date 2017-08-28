@@ -7,7 +7,6 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using System.Linq;
-using TaskLayer;
 
 namespace Test
 {
@@ -20,16 +19,17 @@ namespace Test
         public static void FdrTestMethod()
         {
             List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5)) };
-            List<string> nestedIds = null;
+            List<string> nestedIds = new List<string>();
             List<Psm>[] newPsms = new List<Psm>[1];
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
-            var digested = p.Digest(GlobalTaskLevelSettings.ProteaseDictionary["trypsin"], 0, null, null, InitiatorMethionineBehavior.Cleave, new List<ModificationWithMass>()).ToList();
+            DigestionParams digestionParams = new DigestionParams();
+            var digested = p.Digest(digestionParams, new List<ModificationWithMass>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
-            PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
-            PeptideWithSetModifications pep3 = digested[2].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
-            PeptideWithSetModifications pep4 = digested[3].GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 0, 0).First();
+            PeptideWithSetModifications pep1 = digested[0].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep2 = digested[1].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep3 = digested[2].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
+            PeptideWithSetModifications pep4 = digested[3].GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 

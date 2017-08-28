@@ -3,125 +3,125 @@ ID   -W
 PP   Anywhere.
 TG   W
 MT   missing
-MM   -186.07931295073
+CF   C-11H-10N-2O-1
 //
 ID   -Y
 PP   Anywhere.
 TG   Y
 MT   missing
-MM   -163.06332853364
+CF   C-9H-9N-1O-2
 //
 ID   -R
 PP   Anywhere.
 TG   R
 MT   missing
-MM   -156.10111102405
+CF   C-6H-12N-4O-1
 //
 ID   -U
 PP   Anywhere.
 TG   U
 MT   missing
-MM   -150.95363558515
+CF   C-3H-5N-1O-1Se-1
 //
 ID   -F
 PP   Anywhere.
 TG   F
 MT   missing
-MM   -147.06841391407
+CF   C-9H-9N-1O-1
 //
 ID   -H
 PP   Anywhere.
 TG   H
 MT   missing
-MM   -137.05891185847
+CF   C-6H-7N-3O-1
 //
 ID   -M
 PP   Anywhere.
 TG   M
 MT   missing
-MM   -131.04048508847
+CF   C-5H-9N-1O-1S-1
 //
 ID   -E
 PP   Anywhere.
 TG   E
 MT   missing
-MM   -129.04259308875
+CF   C-5H-7N-1O-3
 //
 ID   -K
 PP   Anywhere.
 TG   K
 MT   missing
-MM   -128.09496301519
+CF   C-6H-12N-2O-1
 //
 ID   -Q
 PP   Anywhere.
 TG   Q
 MT   missing
-MM   -128.05857750584
+CF   C-5H-8N-2O-2
 //
 ID   -D
 PP   Anywhere.
 TG   D
 MT   missing
-MM   -115.02694302429
+CF   C-4H-5N-1O-3
 //
 ID   -N
 PP   Anywhere.
 TG   N
 MT   missing
-MM   -114.04292744138
+CF   C-4H-6N-2O-2
 //
 ID   -I
 PP   Anywhere.
 TG   I
 MT   missing
-MM   -113.08406397853
+CF   C-6H-11N-1O-1
 //
 ID   -L
 PP   Anywhere.
 TG   L
 MT   missing
-MM   -113.08406397853
+CF   C-6H-11N-1O-1
 //
 ID   -C
 PP   Anywhere.
 TG   C
 MT   missing
-MM   -103.00918495955
+CF   C-3H-5N-1O-1S-1
 //
 ID   -T
 PP   Anywhere.
 TG   T
 MT   missing
-MM   -101.04767846918
+CF   C-4H-7N-1O-2
 //
 ID   -V
 PP   Anywhere.
 TG   V
 MT   missing
-MM   -99.06841391407
+CF   C-5H-9N-1O-1
 //
 ID   -P
 PP   Anywhere.
 TG   P
 MT   missing
-MM   -97.05276384961
+CF   C-5H-7N-1O-1
 //
 ID   -S
 PP   Anywhere.
 TG   S
 MT   missing
-MM   -87.03202840472
+CF   C-3H-5N-1O-2
 //
 ID   -A
 PP   Anywhere.
 TG   A
 MT   missing
-MM   -71.03711378515
+CF   C-3H-5N-1O-1
 //
 ID   -G
 PP   Anywhere.
 TG   G
 MT   missing
-MM   -57.02146372069
+CF   C-2H-3N-1O-1
 //

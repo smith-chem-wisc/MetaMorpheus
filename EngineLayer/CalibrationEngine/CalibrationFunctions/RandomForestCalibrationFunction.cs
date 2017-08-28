@@ -11,15 +11,17 @@ namespace EngineLayer.Calibration
 
         private readonly RegressionTree[] RegressionTrees;
         private readonly bool[] useFeature;
+        private readonly Random rand;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public RandomForestCalibrationFunction(int numTrees, int splitLimit, bool[] useFeature)
+        public RandomForestCalibrationFunction(int numTrees, int splitLimit, bool[] useFeature, Random rand)
         {
             RegressionTrees = new RegressionTree[numTrees];
             this.useFeature = useFeature;
+            this.rand = rand;
             for (int i = 0; i < numTrees; i++)
                 RegressionTrees[i] = new RegressionTree(splitLimit, 0, useFeature);
         }
@@ -39,7 +41,6 @@ namespace EngineLayer.Calibration
 
         internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
-            var rand = new Random();
             List<LabeledDataPoint> trainingListHere = trainingList.ToList();
             Parallel.For(0, RegressionTrees.Length, i =>
             {

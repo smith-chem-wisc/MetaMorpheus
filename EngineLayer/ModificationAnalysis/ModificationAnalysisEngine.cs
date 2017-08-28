@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Chemistry;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
@@ -7,16 +8,16 @@ namespace EngineLayer
     {
         #region Private Fields
 
-        private readonly List<MassDiffAcceptor> searchModes;
+        private readonly int searchModesCount;
         private readonly List<Psm>[] newPsms;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ModificationAnalysisEngine(List<Psm>[] newPsms, List<MassDiffAcceptor> searchModes, List<string> nestedIds) : base(nestedIds)
+        public ModificationAnalysisEngine(List<Psm>[] newPsms, int searchModesCount, List<string> nestedIds) : base(nestedIds)
         {
-            this.searchModes = searchModes;
+            this.searchModesCount = searchModesCount;
             this.newPsms = newPsms;
         }
 
@@ -26,43 +27,114 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
+            Status("Running modification analysis...", nestedIds);
+
             ModificationAnalysisResults myAnalysisResults = new ModificationAnalysisResults(this);
 
-            Dictionary<string, int>[] allModsSeen = new Dictionary<string, int>[searchModes.Count];
-            Dictionary<string, int>[] allModsOnPeptides = new Dictionary<string, int>[searchModes.Count];
+            myAnalysisResults.AmbiguousButLocalizedModsSeen = new Dictionary<string, int>[searchModesCount];
+            myAnalysisResults.ModsSeenAndLocalized = new Dictionary<string, int>[searchModesCount];
+            myAnalysisResults.AllModsOnProteins = new Dictionary<string, int>[searchModesCount];
+            myAnalysisResults.UnlocalizedMods = new Dictionary<string, int>[searchModesCount];
+            myAnalysisResults.UnlocalizedFormulas = new Dictionary<ChemicalFormula, int>[searchModesCount];
 
-            for (int j = 0; j < searchModes.Count; j++)
+            for (int j = 0; j < searchModesCount; j++)
             {
-                Status("Running modification analysis...", nestedIds);
+                var confidentTargetPsms = newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).ToList();
 
-                Dictionary<string, int> modsSeen = new Dictionary<string, int>();
-                Dictionary<string, int> modsOnPeptides = new Dictionary<string, int>();
+                // For the database ones, only need un-ambiguous protein and location in protein
+                var forObserved = confidentTargetPsms
+                    .Where(b => b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
 
-                foreach (var highConfidencePSM in newPsms[j].Where(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy).GroupBy(b => b.MostProbableProteinInfo.PeptidesWithSetModifications.First().Sequence).Select(b => b.FirstOrDefault()))
+                // For the unambiguously localized ones, need FullSequence and un-ambiguous protein and location in protein
+                var forUnambiguouslyLocalized = confidentTargetPsms
+                    .Where(b => b.FullSequence != null && b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
+
+                // For the localized but ambiguous ones, need FullSequence
+                var forAmbiguousButLocalized = confidentTargetPsms
+                    .Where(b => b.FullSequence != null && !(b.ProteinAccesion != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null))
+                    .GroupBy(b => b.FullSequence);
+
+                // For unlocalized but identified modifications, skip ones with full sequences!
+                var forUnlocalized = confidentTargetPsms
+                    .Where(b => b.BaseSequence != null && b.FullSequence == null && b.ModsIdentified != null)
+                    .GroupBy(b => (b.BaseSequence, string.Join(" ", b.ModsIdentified.Values.OrderBy(c => c))));
+
+                // For chemical formulas of modifications, skip ones with full sequences and identified mods!
+                var forChemicalFormulas = confidentTargetPsms
+                    .Where(b => b.BaseSequence != null && b.FullSequence == null && b.ModsIdentified == null && b.ModsChemicalFormula != null)
+                    .GroupBy(b => (b.BaseSequence, b.ModsChemicalFormula));
+
+                // We do not want to double-count modifications. Hence the HashSet!!!
+                HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
+                foreach (var psm in forObserved)
                 {
-                    var singlePeptide = highConfidencePSM.MostProbableProteinInfo.PeptidesWithSetModifications.First();
-                    var modsIdentified = singlePeptide.allModsOneIsNterminus;
-                    foreach (var modSeen in modsIdentified)
+                    var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
+                    foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))
+
+                        foreach (var huh in modInProtein.Value)
+                            modsOnProteins.Add((singlePeptide.Protein.Accession, huh.id, modInProtein.Key));
+                }
+
+                // We do not want to double-count modifications. Hence the HashSet!!!
+                HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
+                foreach (var psm in forUnambiguouslyLocalized)
+                {
+                    var singlePeptide = psm.CompactPeptides.First().Value.Item2.First();
+                    foreach (var nice in singlePeptide.allModsOneIsNterminus)
                     {
-                        if (modsSeen.ContainsKey(modSeen.Value.id))
-                            modsSeen[modSeen.Value.id]++;
+                        int locInProtein;
+                        if (nice.Key == 1)
+                            locInProtein = singlePeptide.OneBasedStartResidueInProtein;
+                        else if (nice.Key == singlePeptide.Length + 2)
+                            locInProtein = singlePeptide.OneBasedEndResidueInProtein;
                         else
-                            modsSeen.Add(modSeen.Value.id, 1);
-                    }
-                    var modsInProtein = singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein).SelectMany(b => b.Value);
-                    foreach (var modInProtein in modsInProtein)
-                    {
-                        if (modsOnPeptides.ContainsKey(modInProtein.id))
-                            modsOnPeptides[modInProtein.id]++;
-                        else
-                            modsOnPeptides.Add(modInProtein.id, 1);
+                            locInProtein = singlePeptide.OneBasedStartResidueInProtein + nice.Key - 2;
+                        modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.id, locInProtein));
                     }
                 }
-                allModsSeen[j] = modsSeen;
-                allModsOnPeptides[j] = modsOnPeptides;
+
+                // Might have some double counting...
+                Dictionary<string, int> ambiguousButLocalizedModsSeen = new Dictionary<string, int>();
+                foreach (var representativePsm in forAmbiguousButLocalized.Select(b => b.First()))
+                {
+                    foreach (var modCountKvp in representativePsm.ModsIdentified)
+                    {
+                        if (ambiguousButLocalizedModsSeen.ContainsKey(modCountKvp.Key))
+                            ambiguousButLocalizedModsSeen[modCountKvp.Key] += modCountKvp.Value;
+                        else
+                            ambiguousButLocalizedModsSeen.Add(modCountKvp.Key, modCountKvp.Value);
+                    }
+                }
+
+                // Might have some double counting...
+                Dictionary<string, int> unlocalizedMods = new Dictionary<string, int>();
+                foreach (var representativePsm in forUnlocalized.Select(b => b.First()))
+                {
+                    foreach (var modCountKvp in representativePsm.ModsIdentified)
+                    {
+                        if (unlocalizedMods.ContainsKey(modCountKvp.Key))
+                            unlocalizedMods[modCountKvp.Key] += modCountKvp.Value;
+                        else
+                            unlocalizedMods.Add(modCountKvp.Key, modCountKvp.Value);
+                    }
+                }
+
+                // Might have some double counting...
+                Dictionary<ChemicalFormula, int> unlocalizedFormulas = new Dictionary<ChemicalFormula, int>();
+                foreach (var representativePsm in forChemicalFormulas.Select(b => b.First()))
+                {
+                    if (unlocalizedFormulas.ContainsKey(representativePsm.ModsChemicalFormula))
+                        unlocalizedFormulas[representativePsm.ModsChemicalFormula] += 1;
+                    else
+                        unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1);
+                }
+
+                myAnalysisResults.AllModsOnProteins[j] = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
+                myAnalysisResults.ModsSeenAndLocalized[j] = modsSeenAndLocalized.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
+                myAnalysisResults.AmbiguousButLocalizedModsSeen[j] = ambiguousButLocalizedModsSeen;
+                myAnalysisResults.UnlocalizedMods[j] = unlocalizedMods;
+                myAnalysisResults.UnlocalizedFormulas[j] = unlocalizedFormulas;
             }
-            myAnalysisResults.AllModsSeen = allModsSeen;
-            myAnalysisResults.AllModsOnPeptides = allModsOnPeptides;
             return myAnalysisResults;
         }
 

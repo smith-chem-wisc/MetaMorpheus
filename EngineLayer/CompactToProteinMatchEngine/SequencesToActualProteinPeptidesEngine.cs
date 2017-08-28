@@ -10,38 +10,25 @@ namespace EngineLayer
     {
         #region Protected Fields
 
-        protected const int max_mods_for_peptide = 3;
-        protected readonly int maxMissedCleavages;
-        protected readonly int? minPeptideLength;
-        protected readonly int? maxPeptideLength;
-        protected readonly InitiatorMethionineBehavior initiatorMethionineBehavior;
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
-        protected readonly int maxModificationIsoforms;
         protected readonly List<Psm>[] allPsms;
         protected readonly List<Protein> proteinList;
-        protected readonly List<MassDiffAcceptor> massDiffAcceptors;
-        protected readonly Protease protease;
         protected readonly TerminusType terminusType;
+        protected readonly IEnumerable<DigestionParams> CollectionOfDigestionParams;
 
         #endregion Protected Fields
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, IEnumerable<DigestionParams> CollectionOfDigestionParams, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
-            this.massDiffAcceptors = massDiffAcceptors;
             this.allPsms = allPsms;
-            this.protease = protease;
-            this.maxMissedCleavages = maxMissedCleavages;
-            this.minPeptideLength = minPeptideLength;
-            this.maxPeptideLength = maxPeptideLength;
-            this.initiatorMethionineBehavior = initiatorMethionineBehavior;
             this.fixedModifications = fixedModifications;
             this.variableModifications = variableModifications;
-            this.maxModificationIsoforms = maxModificationIsoforms;
             this.terminusType = terminusType;
+            this.CollectionOfDigestionParams = CollectionOfDigestionParams;
         }
 
         #endregion Public Constructors
@@ -76,15 +63,16 @@ namespace EngineLayer
             {
                 Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> local = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                 for (int i = fff.Item1; i < fff.Item2; i++)
-                    foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
-                    {
-                        foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
+                    foreach (var digestionParam in CollectionOfDigestionParams)
+                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(digestionParam, fixedModifications))
                         {
-                            if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
+                            {
+                                if (local.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
 
-                                v.Add(peptideWithSetModifications);
+                                    v.Add(peptideWithSetModifications);
+                            }
                         }
-                    }
                 lock (obj)
                 {
                     foreach (var ye in local)
@@ -103,7 +91,7 @@ namespace EngineLayer
                 }
             });
 
-            #endregion Match Seqeunces to PeptideWithSetModifications
+            #endregion Match Sequences to PeptideWithSetModifications
 
             return new SequencesToActualProteinPeptidesEngineResults(this, compactPeptideToProteinPeptideMatching);
         }

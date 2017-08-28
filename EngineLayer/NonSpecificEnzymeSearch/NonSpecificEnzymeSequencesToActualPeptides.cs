@@ -13,12 +13,16 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         #region Private Fields
 
         private static readonly double waterMonoisotopicMass = PeriodicTable.GetElement("H").PrincipalIsotope.AtomicMass * 2 + PeriodicTable.GetElement("O").PrincipalIsotope.AtomicMass;
+        private readonly List<MassDiffAcceptor> massDiffAcceptors;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<MassDiffAcceptor> massDiffAcceptors, Protease protease, int maxMissedCleavages, int? minPeptideLength, int? maxPeptideLength, InitiatorMethionineBehavior initiatorMethionineBehavior, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, int maxModificationIsoforms, List<string> nestedIds, TerminusType terminusType) : base(allPsms, proteinList, massDiffAcceptors, protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications, variableModifications, maxModificationIsoforms, nestedIds, terminusType) { }
+        public NonSpecificEnzymeSequencesToActualPeptides(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, IEnumerable<DigestionParams> CollectionOfDigestionParams, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(allPsms, proteinList, fixedModifications, variableModifications, terminusType, CollectionOfDigestionParams, nestedIds)
+        {
+            this.massDiffAcceptors = massDiffAcceptors;
+        }
 
         #endregion Public Constructors
 
@@ -47,9 +51,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> compactPeptideToProteinPeptideMatching = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             Dictionary<CompactPeptideBase, List<double>> compactPeptideToMassMatching = new Dictionary<CompactPeptideBase, List<double>>();
 
-            //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
-            //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
-
             //Looking at the search results, generate a dictionary of keys for each unique CompactPeptide with empty values
             foreach (var psmListForASpecificSearchMode in allPsms) //should only be one
                 if (psmListForASpecificSearchMode != null)
@@ -58,8 +59,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             foreach (var cp in psm.CompactPeptides)
                             {
-                                List<double> ld = new List<double>();
-                                if (compactPeptideToMassMatching.TryGetValue(cp.Key, out ld))
+                                if (compactPeptideToMassMatching.TryGetValue(cp.Key, out List<double> ld))
                                 {
                                     ld.Add(psm.ScanPrecursorMass);
                                 }
@@ -70,12 +70,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 }
                             }
                         }
-            //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
 
+            var HACKYYYYYYDigestionParams = CollectionOfDigestionParams.First();
             //CP==CompactPeptide
             //CPWM==CompactPeptideWithMass (Patched to respresent a double)
             //PWSM==PeptideWithSetModification
-            HashSet<CompactPeptideBase> PsmCPWMs = new HashSet<CompactPeptideBase>(from b in compactPeptideToProteinPeptideMatching select b.Key);
             Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> CPWMtoPWSM = new Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>();
             int totalProteins = proteinList.Count;
             int proteinsSeen = 0;
@@ -92,14 +91,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key as CompactPeptideBase, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
-                        {
-                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
+                        foreach (var digestionParam in CollectionOfDigestionParams)
+                            foreach (var peptideWithPossibleModifications in proteinList[i].Digest(digestionParam, fixedModifications))
                             {
-                                if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
-                                    v.Add(peptideWithSetModifications);
+                                foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(digestionParam, variableModifications))
+                                {
+                                    if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
+                                        v.Add(peptideWithSetModifications);
+                                }
                             }
-                        }
                     }
                     //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
                     //CP==CompactPeptide
@@ -124,13 +124,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 {
                                     finalMass[0] = initialMass + waterMonoisotopicMass; //This is the starting mass of the final mass
                                     int index = ComputePeptideIndexes(pwsm, finalMass, 1, 1, precursorMass, precursorTolerance);
-                                    if (index >= 0 && (!minPeptideLength.HasValue | index >= minPeptideLength))
+                                    if (index >= 0 && (!HACKYYYYYYDigestionParams.MinPeptideLength.HasValue | index >= HACKYYYYYYDigestionParams.MinPeptideLength))
                                     {
                                         //generate correct sequence
                                         PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein, pwsm.OneBasedStartResidueInProtein + index - 1);
                                         double modifiedMass = finalMass[0];
                                         CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
-                                        tempCPWM.AssignCorrectMass();
+                                        tempCPWM.SwapMonoisotopicMassWithModifiedMass();
                                         if (localCPWMtoPWSM.TryGetValue(tempCPWM, out HashSet<PeptideWithSetModifications> tempPWSMHashSet))
                                         {
                                             tempPWSMHashSet.Add(tempPWSM);
@@ -194,9 +194,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>> localCPtoPWSM = compactPeptideToProteinPeptideMatching.ToDictionary(b => b.Key, b => new HashSet<PeptideWithSetModifications>());
                     for (int i = fff.Item1; i < fff.Item2; i++)
                     {
-                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(protease, maxMissedCleavages, minPeptideLength, maxPeptideLength, initiatorMethionineBehavior, fixedModifications))
+                        foreach (var peptideWithPossibleModifications in proteinList[i].Digest(HACKYYYYYYDigestionParams, fixedModifications))
                         {
-                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(variableModifications, maxModificationIsoforms, max_mods_for_peptide))
+                            foreach (var peptideWithSetModifications in peptideWithPossibleModifications.GetPeptidesWithSetModifications(HACKYYYYYYDigestionParams, variableModifications))
                             {
                                 if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                                     v.Add(peptideWithSetModifications);
@@ -227,13 +227,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 {
                                     finalMass[0] = initialMass + waterMonoisotopicMass;
                                     int index = ComputePeptideIndexes(pwsm, finalMass, pwsm.Length, -1, precursorMass, precursorTolerance);
-                                    if (index >= 0 && (!minPeptideLength.HasValue | (pwsm.OneBasedEndResidueInProtein - (pwsm.OneBasedStartResidueInProtein + index - 2)) >= minPeptideLength))
+                                    if (index >= 0 && (!HACKYYYYYYDigestionParams.MinPeptideLength.HasValue | (pwsm.OneBasedEndResidueInProtein - (pwsm.OneBasedStartResidueInProtein + index - 2)) >= HACKYYYYYYDigestionParams.MinPeptideLength))
                                     {
                                         //generate correct sequence
                                         PeptideWithSetModifications tempPWSM = new PeptideWithSetModifications(pwsm, pwsm.OneBasedStartResidueInProtein + index - 1, pwsm.OneBasedEndResidueInProtein);
                                         double modifiedMass = finalMass[0];
                                         CompactPeptideWithModifiedMass tempCPWM = new CompactPeptideWithModifiedMass(kvp.Key, modifiedMass);
-                                        tempCPWM.AssignCorrectMass();
+                                        tempCPWM.SwapMonoisotopicMassWithModifiedMass();
                                         if (localCPWMtoPWSM.TryGetValue(tempCPWM, out HashSet<PeptideWithSetModifications> tempPWSMHashSet))
                                         {
                                             tempPWSMHashSet.Add(tempPWSM);
@@ -292,15 +292,30 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 });
             }
             //with filled CPtoCPWM and CPWMtoPWSM, convert psm objects to corrected CP mass
-            foreach (var psmListForAspecificSerchMode in allPsms) //should only be one
-                if (psmListForAspecificSerchMode != null)
-                    foreach (var psm in psmListForAspecificSerchMode)
+            foreach (var psmListForASpecificSearchMode in allPsms) //should only be one
+                if (psmListForASpecificSearchMode != null)
+                    foreach (var psm in psmListForASpecificSearchMode)
                         if (psm != null)
                         {
                             foreach (KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> kvp in psm.CompactPeptides)
                             {
-                                (kvp.Key as CompactPeptideWithModifiedMass).AssignCorrectMass();
+                                (kvp.Key as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
+                                //Change CPWM to reflect actual CP
+                                if (CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> misplacedPWSMs))
+                                {
+                                    (kvp.Key as CompactPeptideWithModifiedMass).CropTerminalMasses(terminusType);
+                                    if (CPWMtoPWSM.TryGetValue(kvp.Key, out HashSet<PeptideWithSetModifications> wellPlacedPWSMs))
+                                    {
+                                        foreach (PeptideWithSetModifications PWSM in misplacedPWSMs)
+                                            wellPlacedPWSMs.Add(PWSM);
+                                    }
+                                    else
+                                    {
+                                        CPWMtoPWSM.Add(kvp.Key, misplacedPWSMs);
+                                    }
+                                }
                             }
+                            psm.CompactCompactPeptides();
                         }
             return new SequencesToActualProteinPeptidesEngineResults(this, CPWMtoPWSM);
         }

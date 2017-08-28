@@ -4,9 +4,11 @@ namespace EngineLayer
 {
     public static class ProductTypeToTerminusType
     {
+        #region Public Methods
+
         public static TerminusType IdentifyTerminusType(List<ProductType> lp)
         {
-            if ((lp.Contains(ProductType.B) || lp.Contains(ProductType.BnoB1ions) || lp.Contains(ProductType.C) || lp.Contains(ProductType.Adot)) 
+            if ((lp.Contains(ProductType.B) || lp.Contains(ProductType.BnoB1ions) || lp.Contains(ProductType.C) || lp.Contains(ProductType.Adot))
                 && (lp.Contains(ProductType.Y) || lp.Contains(ProductType.Zdot) || lp.Contains(ProductType.X)))
             {
                 return TerminusType.None;
@@ -20,5 +22,7 @@ namespace EngineLayer
                 return TerminusType.N;
             }
         }
+
+        #endregion Public Methods
     }
 }

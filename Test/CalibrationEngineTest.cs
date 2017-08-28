@@ -5,6 +5,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,10 +23,11 @@ namespace Test
             IEnumerable<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
             var protease = new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null);
 
-            PeptideWithPossibleModifications modPep = ParentProtein.Digest(protease, 0, null, null, InitiatorMethionineBehavior.Variable, fixedModifications).First();
+            DigestionParams digestionParams = new DigestionParams();
+            PeptideWithPossibleModifications modPep = ParentProtein.Digest(digestionParams, fixedModifications).First();
             //Dictionary<int, MorpheusModification> twoBasedVariableAndLocalizeableModificationss = new Dictionary<int, MorpheusModification>();
             List<ModificationWithMass> variableModifications = new List<ModificationWithMass>();
-            PeptideWithSetModifications pepWithSetMods = modPep.GetPeptidesWithSetModifications(variableModifications, 4096, 3).First();
+            PeptideWithSetModifications pepWithSetMods = modPep.GetPeptidesWithSetModifications(digestionParams, variableModifications).First();
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods);
 
@@ -50,7 +52,8 @@ namespace Test
             int minMS2isotopicPeaksNeededForConfirmedIdentification = 2;
             int numFragmentsNeededForEveryIdentification = 10;
 
-            var calibrationEngine = new CalibrationEngine(myMsDataFile, fragmentTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>());
+            Random rnd = new Random(0);
+            var calibrationEngine = new CalibrationEngine(myMsDataFile, fragmentTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, rnd, new List<string>());
 
             var res = calibrationEngine.Run();
             Assert.IsTrue(res is CalibrationResults);
@@ -59,7 +62,8 @@ namespace Test
         [Test]
         public static void TestQuadratic()
         {
-            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", null).Digest(new Protease("Custom Protease", new List<string> { "K" }, new List<string>(), TerminusType.C, CleavageSpecificity.Full, null, null, null), 0, null, null, InitiatorMethionineBehavior.Variable, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(new List<ModificationWithMass>(), 4096, 3).First();
+            DigestionParams digestionParams = new DigestionParams();
+            PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", null).Digest(digestionParams, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepWithSetMods, "quadratic");
 
@@ -79,7 +83,8 @@ namespace Test
 
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
 
-            var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<Psm> { newPsm }, 3, 2, 10, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, new List<string>()).Run();
+            Random rnd = new Random(0);
+            var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<Psm> { newPsm }, 3, 2, 10, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, rnd, new List<string>()).Run();
             Assert.IsTrue(res is CalibrationResults);
         }
 
