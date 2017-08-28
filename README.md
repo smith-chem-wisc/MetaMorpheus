@@ -109,7 +109,7 @@ mono MetaMorpheusCommandLine.exe -t Task1SearchExample.toml Task2CalibrationExam
 
 release
 
-[![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/com?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
+[![Build status](https://ci.appveyor.com/api/projects/status/0kpjdrn9tn6y387k/branch/release?svg=true)](https://ci.appveyor.com/project/stefanks/metamorpheus/branch/release)
 
 master
 
