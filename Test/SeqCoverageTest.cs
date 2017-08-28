@@ -80,7 +80,7 @@ namespace Test
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(matching, true, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            List<MassDiffAcceptor> searchModes = null;
+            MassDiffAcceptor searchModes = null;
             ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, searchModes, true, true, new List<string>());
 
             psafe.Run();

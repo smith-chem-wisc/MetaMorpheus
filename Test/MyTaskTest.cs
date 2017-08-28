@@ -18,7 +18,6 @@ namespace Test
         #region Public Fields
 
         public static bool hasPrunedRun;
-    
 
         #endregion Public Fields
 

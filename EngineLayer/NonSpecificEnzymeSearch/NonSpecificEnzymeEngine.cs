@@ -22,7 +22,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         #region Public Constructors
 
-        public NonSpecificEnzymeEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, List<MassDiffAcceptor> massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
+        public NonSpecificEnzymeEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<CompactPeptide> peptideIndex, float[] keys, List<int>[] fragmentIndex, List<ProductType> lp, int currentPartition, CommonParameters CommonParameters, bool addCompIons, MassDiffAcceptor massDiffAcceptors, List<string> nestedIds) : base(globalPsms, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, lp, currentPartition, CommonParameters, addCompIons, massDiffAcceptors, nestedIds)
         {
         }
 
@@ -36,16 +36,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
             var listOfSortedms2ScansLength = listOfSortedms2Scans.Length;
 
-            var searchModesCount = massDiffAcceptors.Count;
             var outputObject = new object();
             int scansSeen = 0;
             int old_progress = 0;
             var peptideIndexCount = peptideIndex.Count;
             Parallel.ForEach(Partitioner.Create(0, listOfSortedms2ScansLength), fff =>
             {
-                List<CompactPeptideBase>[] bestPeptides = new List<CompactPeptideBase>[searchModesCount];
-                double[] bestScores = new double[searchModesCount];
-                List<int>[] bestNotches = new List<int>[searchModesCount];
+                List<CompactPeptideBase> bestPeptides;
+                double bestScores;
+                List<int> bestNotches;
                 double[] fullPeptideScores = new double[peptideIndexCount];
                 for (int i = fff.Item1; i < fff.Item2; i++)
                 {
@@ -55,97 +54,91 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     double thePrecursorMass = thisScan.PrecursorMass;
                     CalculatePeptideScores(thisScan.TheScan, fullPeptideScores, thePrecursorMass);
 
-                    Array.Clear(bestPeptides, 0, searchModesCount);
-                    Array.Clear(bestScores, 0, searchModesCount);
-                    Array.Clear(bestNotches, 0, searchModesCount);
+                    bestPeptides = null;
+                    bestScores = 0;
+                    bestNotches = null;
 
-                    for (int j = 0; j < searchModesCount; j++)
+                    for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
                     {
-                        for (int possibleWinningPeptideIndex = 0; possibleWinningPeptideIndex < fullPeptideScores.Length; possibleWinningPeptideIndex++)
+                        var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
+                        if (consideredScore > CommonParameters.ScoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
                         {
-                            var consideredScore = fullPeptideScores[possibleWinningPeptideIndex];
-                            if (consideredScore > CommonParameters.ScoreCutoff) //intentionally high. 99.9% of 4-mers are present in a given UniProt database. This saves considerable time
+                            CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
+                            // Check if makes sense to add due to peptidescore!
+                            var searchMode = massDiffAcceptors;
+                            double currentBestScore = bestScores;
+                            if (currentBestScore > 1)
                             {
-                                CompactPeptide candidatePeptide = peptideIndex[possibleWinningPeptideIndex];
-                                // Check if makes sense to add due to peptidescore!
-                                var searchMode = massDiffAcceptors[j];
-                                double currentBestScore = bestScores[j];
-                                if (currentBestScore > 1)
+                                // Existed! Need to compare with old match
+                                if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (CommonParameters.ReportAllAmbiguity || bestPeptides.Count == 0))
                                 {
-                                    // Existed! Need to compare with old match
-                                    if ((Math.Abs(currentBestScore - consideredScore) < 1e-9) && (CommonParameters.ReportAllAmbiguity || bestPeptides[j].Count == 0))
-                                    {
-                                        // Score is same, need to see if accepts and if prefer the new one
-                                        double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, terminusType, searchMode);
-                                        if (precursorMass > 1)
-                                        {
-                                            CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
-                                            cp.SwapMonoisotopicMassWithModifiedMass();
-                                            if (bestPeptides[j] == null) //have to check, because current best score may have been found in a previous partition
-                                            {
-                                                bestPeptides[j] = new List<CompactPeptideBase> { cp };
-                                                bestScores[j] = consideredScore;
-                                                bestNotches[j] = new List<int> { 0 };
-                                            }
-                                            else if (!bestPeptides[j].Contains(cp) && (globalPsms[j][i] == null || !globalPsms[j][i].CompactPeptidesContainsKey(cp)))
-                                            {
-                                                bestPeptides[j].Add(cp);
-                                                bestNotches[j].Add(0);
-                                            }
-                                        }
-                                    }
-                                    else if (currentBestScore < consideredScore)
-                                    {
-                                        // Score is better, only make sure it is acceptable
-                                        double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, terminusType, searchMode);
-                                        if (precursorMass > 1)
-                                        {
-                                            CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
-                                            cp.SwapMonoisotopicMassWithModifiedMass();
-                                            bestPeptides[j] = new List<CompactPeptideBase> { cp };
-                                            bestScores[j] = consideredScore;
-                                            bestNotches[j] = new List<int> { 0 };
-                                            currentBestScore = consideredScore;
-                                        }
-                                    }
-                                }
-                                // Did not exist! Only make sure that it is acceptable
-                                else
-                                {
+                                    // Score is same, need to see if accepts and if prefer the new one
                                     double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, terminusType, searchMode);
                                     if (precursorMass > 1)
                                     {
                                         CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
                                         cp.SwapMonoisotopicMassWithModifiedMass();
-                                        bestPeptides[j] = new List<CompactPeptideBase> { cp };
-                                        bestScores[j] = consideredScore;
-                                        bestNotches[j] = new List<int> { 0 };
+                                        if (bestPeptides == null) //have to check, because current best score may have been found in a previous partition
+                                        {
+                                            bestPeptides = new List<CompactPeptideBase> { cp };
+                                            bestScores = consideredScore;
+                                            bestNotches = new List<int> { 0 };
+                                        }
+                                        else if (!bestPeptides.Contains(cp) && (globalPsms[i] == null || !globalPsms[i].CompactPeptidesContainsKey(cp)))
+                                        {
+                                            bestPeptides.Add(cp);
+                                            bestNotches.Add(0);
+                                        }
+                                    }
+                                }
+                                else if (currentBestScore < consideredScore)
+                                {
+                                    // Score is better, only make sure it is acceptable
+                                    double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, terminusType, searchMode);
+                                    if (precursorMass > 1)
+                                    {
+                                        CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                        cp.SwapMonoisotopicMassWithModifiedMass();
+                                        bestPeptides = new List<CompactPeptideBase> { cp };
+                                        bestScores = consideredScore;
+                                        bestNotches = new List<int> { 0 };
                                         currentBestScore = consideredScore;
                                     }
                                 }
                             }
+                            // Did not exist! Only make sure that it is acceptable
+                            else
+                            {
+                                double precursorMass = Accepts(thisScanprecursorMass, candidatePeptide, terminusType, searchMode);
+                                if (precursorMass > 1)
+                                {
+                                    CompactPeptideWithModifiedMass cp = new CompactPeptideWithModifiedMass(candidatePeptide, precursorMass);
+                                    cp.SwapMonoisotopicMassWithModifiedMass();
+                                    bestPeptides = new List<CompactPeptideBase> { cp };
+                                    bestScores = consideredScore;
+                                    bestNotches = new List<int> { 0 };
+                                    currentBestScore = consideredScore;
+                                }
+                            }
                         }
-                        if (bestPeptides[j] != null)
-                            foreach (CompactPeptideBase cpb in bestPeptides[j])
-                                (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                     }
+                    if (bestPeptides != null)
+                        foreach (CompactPeptideBase cpb in bestPeptides)
+                            (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
 
-                    for (int j = 0; j < searchModesCount; j++)
+                    if (bestPeptides != null)
                     {
-                        if (bestPeptides[j] != null)
+                        int startIndex = 0;
+
+                        if (globalPsms[i] == null)
                         {
-                            int startIndex = 0;
+                            globalPsms[i] = new Psm(bestPeptides[0], bestNotches[0], bestScores, i, thisScan, CommonParameters.ExcelCompatible);
+                            startIndex = 1;
+                        }
 
-                            if (globalPsms[j][i] == null)
-                            {
-                                globalPsms[j][i] = new Psm(bestPeptides[j][0], bestNotches[j][0], bestScores[j], i, thisScan, CommonParameters.ExcelCompatible);
-                                startIndex = 1;
-                            }
-
-                            for (int k = startIndex; k < bestPeptides[j].Count; k++)
-                            {
-                                globalPsms[j][i].AddOrReplace(bestPeptides[j][k], bestScores[j], bestNotches[j][k], CommonParameters.ReportAllAmbiguity);
-                            }
+                        for (int k = startIndex; k < bestPeptides.Count; k++)
+                        {
+                            globalPsms[i].AddOrReplace(bestPeptides[k], bestScores, bestNotches[k], CommonParameters.ReportAllAmbiguity);
                         }
                     }
                 }

@@ -30,7 +30,6 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -40,8 +39,22 @@ namespace TaskLayer
                                 .ToToml(custom => custom.ToString())))
                         .ConfigureType<MassDiffAcceptor>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => MetaMorpheusTask.ParseSearchMode(tmlString.Value))))
+                                .FromToml(tmlString => ParseSearchMode(tmlString.Value))))
+                        .ConfigureType<DotMassDiffAcceptor>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<IntervalMassDiffAcceptor>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<OpenSearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<SingleAbsoluteAroundZeroSearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<SinglePpmAroundZeroSearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())

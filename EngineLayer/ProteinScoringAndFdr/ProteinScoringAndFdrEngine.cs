@@ -8,7 +8,7 @@ namespace EngineLayer
         #region Private Fields
 
         private readonly IEnumerable<Psm> newPsms;
-        private readonly List<MassDiffAcceptor> searchModes;
+        private readonly MassDiffAcceptor searchModes;
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private List<ProteinGroup> proteinGroups;
@@ -17,7 +17,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, List<string> nestedIds) : base(nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, MassDiffAcceptor searchModes, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
