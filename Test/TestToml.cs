@@ -57,14 +57,12 @@ namespace Test
             Assert.AreEqual("Asp-N", f.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
-            
+
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
-            
-          
         }
 
         #endregion Public Methods

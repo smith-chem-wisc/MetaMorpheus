@@ -130,7 +130,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
                     }
 
-
                     for (int j = 0; j < searchModesCount; j++)
                     {
                         if (bestPeptides[j] != null)
@@ -177,7 +176,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 for (int i = localminPeptideLength; i < peptide.NTerminalMasses.Count(); i++)
                 {
                     double theoMass = peptide.NTerminalMasses[i] + waterMonoisotopicMass;
-                    if (searchMode.Accepts(scanPrecursorMass,theoMass)>=0)
+                    if (searchMode.Accepts(scanPrecursorMass, theoMass) >= 0)
                     {
                         return theoMass;
                     }

@@ -177,7 +177,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                     if (localCPtoPWSM.TryGetValue(new CompactPeptide(peptideWithSetModifications, terminusType), out HashSet<PeptideWithSetModifications> v))
                                         v.Add(peptideWithSetModifications);
 
-
                     //Foreach large peptide in localCPtoPWSM, find the precursor masses it's associated with and attempt to find other terminus. Store new compact peptide in local2
                     //CP==CompactPeptide
                     //CPWM==CompactPeptideWithMass (Patched to respresent a double)
@@ -310,8 +309,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 yyy.allModsOneIsNterminus.TryGetValue(oneBasedIndexToLookAt + 1, out residue_variable_mod);
                 if (residue_variable_mod == null)
                 {
-                    foreach(MassDiffAcceptor massDiffAcceptor in massDiffAcceptors)
-                        if (massDiffAcceptor.Accepts(precursorMass,prevMass[0])>=0)
+                    foreach (MassDiffAcceptor massDiffAcceptor in massDiffAcceptors)
+                        if (massDiffAcceptor.Accepts(precursorMass, prevMass[0]) >= 0)
                             return oneBasedIndexToLookAt;
                 }
                 else if (residue_variable_mod.neutralLosses.Count == 1)

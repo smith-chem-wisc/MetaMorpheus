@@ -734,7 +734,7 @@ namespace TaskLayer
                 foreach (FileSpecificSettings fileSpecificSettings in fileSettingsList)
                     fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusType);
             }
-                HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -1275,7 +1275,6 @@ namespace TaskLayer
                 return peptideWithSetModifications.OneBasedEndResidueInProtein;
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
-
 
         private void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {

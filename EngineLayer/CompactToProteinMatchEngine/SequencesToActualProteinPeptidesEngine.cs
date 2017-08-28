@@ -78,7 +78,7 @@ namespace EngineLayer
                     {
                         if (compactPeptideToProteinPeptideMatching.TryGetValue(ye.Key, out HashSet<PeptideWithSetModifications> v))
                             foreach (var huh in ye.Value)
-                                    v.Add(huh);
+                                v.Add(huh);
                     }
                     proteinsSeen += fff.Item2 - fff.Item1;
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
