@@ -113,9 +113,9 @@ namespace EngineLayer.ClassicSearch
                                     if (score > CommonParameters.ScoreCutoff)
                                     {
                                         if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                        else
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, CommonParameters.ExcelCompatible);
+                                        else 
+                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, CommonParameters.ReportAllAmbiguity);
                                     }
                                 }
                             }
@@ -132,7 +132,7 @@ namespace EngineLayer.ClassicSearch
                                     globalPsms[searchModeIndex][i] = psms[searchModeIndex][i];
                                 else
                                 {
-                                    globalPsms[searchModeIndex][i].AddOrReplace(psms[searchModeIndex][i]);
+                                    globalPsms[searchModeIndex][i].AddOrReplace(psms[searchModeIndex][i], CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;

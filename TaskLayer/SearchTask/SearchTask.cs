@@ -624,9 +624,6 @@ namespace TaskLayer
             writer.Close();
         }
 
-        //this method will be used by all tasks
-        
-
         #endregion Public Methods
 
         #region Protected Methods
@@ -724,13 +721,20 @@ namespace TaskLayer
             proseCreatedWhileRunning.Append("parent mass tolerance(s) = {" + String.Join("; ", SearchParameters.MassDiffAcceptors.Select(m => m.ToProseString())) + "}; ");
             proseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + " Da. ");
             proseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count + " total entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            proseCreatedWhileRunning.Append("report all ambiguity = " + CommonParameters.ReportAllAmbiguity + "; ");
 
             ParallelOptions parallelOptions = new ParallelOptions();
             if (CommonParameters.MaxDegreeOfParallelism.HasValue)
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
-            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
+            if (SearchParameters.SearchType == SearchType.NonSpecific)
+            {
+                CommonParameters.DigestionParams.Protease = new Protease(CommonParameters.DigestionParams.Protease, terminusType);
+                foreach (FileSpecificSettings fileSpecificSettings in fileSettingsList)
+                    fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusType);
+            }
+                HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -818,7 +822,7 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
                         if (SearchParameters.SearchType == SearchType.NonSpecific)
-                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, terminusType, thisId).Run();
+                            new NonSpecificEnzymeEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
                         else//if(SearchType==SearchType.Modern)
                             new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, keys, fragmentIndex, ionTypes, currentPartition, combinedParams, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, thisId).Run();
 
@@ -917,7 +921,7 @@ namespace TaskLayer
                 });
                 Status("Grouping by matched ions...", taskId);
                 for (int j = 0; j < allPsms.Length; j++)
-                    allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListPositiveIsMatch>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictPositiveIsMatch)).Select(b => b.First()).ToList();
+                    allPsms[j] = allPsms[j].GroupBy(b => new Tuple<string, int, MatchedIonMassesListOnlyMasses>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictPositiveIsMatch)).Select(b => b.First()).ToList();
             }
 
             new ModificationAnalysisEngine(allPsms, SearchParameters.MassDiffAcceptors.Count, new List<string> { taskId }).Run();

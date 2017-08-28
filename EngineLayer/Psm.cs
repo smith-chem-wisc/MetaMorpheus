@@ -18,6 +18,7 @@ namespace EngineLayer
         private const double tolForScoreDifferentiation = 1e-9;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
+        private bool ExcelCompatible { get; set; }
 
         #endregion Private Fields
 
@@ -35,7 +36,13 @@ namespace EngineLayer
             this.ScanPrecursorCharge = scan.PrecursorCharge;
             this.ScanPrecursorMonoisotopicPeak = scan.PrecursorMonoisotopicPeak;
             this.ScanPrecursorMass = scan.PrecursorMass;
-            AddOrReplace(peptide, score, notch);
+            AddOrReplace(peptide, score, notch, true);
+            this.ExcelCompatible = true;
+        }
+
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible):this(peptide, notch, score, scanIndex, scan)
+        {
+            this.ExcelCompatible = excelCompatible;
         }
 
         #endregion Public Constructors
@@ -74,7 +81,7 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public MatchedIonMassesListPositiveIsMatch MatchedIonDictPositiveIsMatch { get; internal set; }
+        public MatchedIonMassesListOnlyMasses MatchedIonDictPositiveIsMatch { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
 
@@ -136,9 +143,9 @@ namespace EngineLayer
             return sb.ToString();
         }
 
-        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch)
+        public void AddOrReplace(CompactPeptideBase compactPeptide, double score, int notch, bool reportAllAmbiguity)
         {
-            if (score - Score > tolForScoreDifferentiation)
+            if (score - Score > tolForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
                 compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>
                 {
@@ -146,7 +153,7 @@ namespace EngineLayer
                 };
                 Score = score;
             }
-            else if (score - Score > -tolForScoreDifferentiation)
+            else if (score - Score > -tolForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 compactPeptides[compactPeptide] = new Tuple<int, HashSet<PeptideWithSetModifications>>(notch, null);
             }
@@ -317,10 +324,10 @@ namespace EngineLayer
 
         #region Internal Methods
 
-        internal void AddOrReplace(Psm psmParent)
+        internal void AddOrReplace(Psm psmParent, bool reportAllAmbiguity)
         {
             foreach (var kvp in psmParent.compactPeptides)
-                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1);
+                AddOrReplace(kvp.Key, psmParent.Score, kvp.Value.Item1, reportAllAmbiguity);
         }
 
         #endregion Internal Methods
@@ -399,10 +406,7 @@ namespace EngineLayer
             if (notEqual)
             {
                 var possibleReturn = string.Join(" or ", enumerable.Select(b => string.Join(" ", b.Values.Select(c => c.id).OrderBy(c => c))));
-                if (possibleReturn.Length > 32000)
-                    return new Tuple<string, Dictionary<string, int>>("too many", null);
-                else
-                    return new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, Dictionary<string, int>>("(too many)", null) : new Tuple<string, Dictionary<string, int>>(possibleReturn, null);
             }
             else
             {
@@ -420,10 +424,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString("F5", CultureInfo.InvariantCulture)));
-                if (possibleReturn.Length > 32000)
-                    return new Tuple<string, double?>("too many", null);
-                else
-                    return new Tuple<string, double?>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, double?>("(too many)", null) : new Tuple<string, double?>(possibleReturn, null);
             }
         }
 
@@ -438,10 +439,7 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list.Select(b => b.ToString(CultureInfo.InvariantCulture)));
-                if (possibleReturn.Length > 32000)
-                    return new Tuple<string, int?>("too many", null);
-                else
-                    return new Tuple<string, int?>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, int?>("(too many)", null) : new Tuple<string, int?>(possibleReturn, null);
             }
         }
 
@@ -457,13 +455,10 @@ namespace EngineLayer
             else
             {
                 var possibleReturn = string.Join(" or ", list);
-                if (possibleReturn.Length > 32000)
-                    return new Tuple<string, string>("too many", null);
-                else
-                    return new Tuple<string, string>(possibleReturn, null);
+                return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
         }
-
+      
         #endregion Private Methods
     }
 }

@@ -36,9 +36,10 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             TerminusType terminusType = ProductTypeToTerminusType.IdentifyTerminusType(lp);
-            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
+
+            foreach (var ok in allResultingIdentifications)
             {
-                var matchedIonDictPositiveIsMatch = new Dictionary<ProductType, double[]>();
+                var matchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
@@ -47,10 +48,17 @@ namespace EngineLayer
                     Array.Sort(ionMasses);
                     double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
                     MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
-                    matchedIonDictPositiveIsMatch.Add(huh, matchedIonMassesListPositiveIsMatch);
+                    double[] matchedIonMassesOnlyMatches = matchedIonMassesListPositiveIsMatch.Where(m => m > 0).ToArray();
+                    matchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
                 }
 
-                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListPositiveIsMatch(matchedIonDictPositiveIsMatch);
+                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListOnlyMasses(matchedIonDictOnlyMatches);
+            }
+
+            foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
+            {
+                var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
+                double thePrecursorMass = ok.ScanPrecursorMass;
 
                 if (ok.FullSequence == null)
                     continue;
