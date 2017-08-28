@@ -184,7 +184,6 @@ namespace MetaMorpheusGUI
             maxDegreesOfParallelism.Text = task.CommonParameters.MaxDegreeOfParallelism.ToString();
             disposeOfFilesWhenDone.IsChecked = task.SearchParameters.DisposeOfFileWhenDone;
             allAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
-            someAmbiguity.IsChecked = !task.CommonParameters.ReportAllAmbiguity;
             excelCompatible.IsChecked = task.CommonParameters.ExcelCompatible;
             DeconvolutionIntensityRatioTextBox.Text = task.CommonParameters.DeconvolutionIntensityRatio.ToString();
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();

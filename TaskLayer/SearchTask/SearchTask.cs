@@ -770,8 +770,13 @@ namespace TaskLayer
                 parallelOptions.MaxDegreeOfParallelism = CommonParameters.MaxDegreeOfParallelism.Value;
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
-            HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
-            ListOfDigestionParams.ToList().ForEach(d => d.Protease.IsSemiSpecific(SearchParameters.SearchType, terminusType));
+            if (SearchParameters.SearchType == SearchType.NonSpecific)
+            {
+                CommonParameters.DigestionParams.Protease = new Protease(CommonParameters.DigestionParams.Protease, terminusType);
+                foreach (FileSpecificSettings fileSpecificSettings in fileSettingsList)
+                    fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusType);
+            }
+                HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
             int completedFiles = 0;
             object indexLock = new object();
