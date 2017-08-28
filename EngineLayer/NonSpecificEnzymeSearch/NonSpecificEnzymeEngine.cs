@@ -123,11 +123,10 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                     }
                     if (bestPeptides != null)
+                    {
                         foreach (CompactPeptideBase cpb in bestPeptides)
                             (cpb as CompactPeptideWithModifiedMass).SwapMonoisotopicMassWithModifiedMass();
 
-                    if (bestPeptides != null)
-                    {
                         int startIndex = 0;
 
                         if (globalPsms[i] == null)
