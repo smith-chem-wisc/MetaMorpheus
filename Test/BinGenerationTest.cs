@@ -20,7 +20,7 @@ namespace Test
         public static void TestBinGeneration()
         {
             MassDiffAcceptor massDiffAcceptors = new OpenSearchMode();
-            SearchTask st = new SearchTask()
+            SearchTask st = new SearchTask
             {
                 CommonParameters = new CommonParameters
                 {
@@ -58,11 +58,11 @@ namespace Test
 
             var possMod3 = prot3.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
             var pep2_0 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep2_10 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>() { mod }).Last();
+            var pep2_10 = possMod3.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass> { mod }).Last();
 
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
             var possMod4 = prot4.Digest(st.CommonParameters.DigestionParams, new List<ModificationWithMass>()).First();
-            var pep3_10 = possMod4.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass>() { mod }).Last();
+            var pep3_10 = possMod4.GetPeptidesWithSetModifications(st.CommonParameters.DigestionParams, new List<ModificationWithMass> { mod }).Last();
 
             List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(pepsWithSetMods);
