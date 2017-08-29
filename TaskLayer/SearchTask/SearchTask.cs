@@ -661,7 +661,7 @@ namespace TaskLayer
                         + "\t" + (bin.FracWithSingle).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + ((double)bin.Overlapping / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.MedianLength).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + bin.uniprotID);
+                        + "\t" + bin.UniprotID);
                 }
             }
         }

@@ -289,22 +289,7 @@ namespace EngineLayer.Analysis
         {
             foreach (var bin in FinalBins)
             {
-                var ok = new HashSet<string>();
-                var okformula = new HashSet<string>();
-                var okDiff = new HashSet<double>();
-                foreach (var hm in GlobalEngineLevelSettings.UnimodDeserialized)
-                {
-                    var theMod = hm as ModificationWithMassAndCf;
-                    if (Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
-                    {
-                        ok.Add(hm.id);
-                        okformula.Add(theMod.chemicalFormula.Formula);
-                        okDiff.Add(theMod.monoisotopicMass - bin.MassShift);
-                    }
-                }
-                bin.UnimodId = string.Join(" or ", ok);
-                bin.UnimodFormulas = string.Join(" or ", okformula);
-                bin.UnimodDiffs = string.Join(" or ", okDiff);
+                bin.IdentifyUnimodBins(v);
             }
         }
 
@@ -312,13 +297,7 @@ namespace EngineLayer.Analysis
         {
             foreach (var bin in FinalBins)
             {
-                var ok = new HashSet<string>();
-                foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
-                {
-                    if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - bin.MassShift) <= v)
-                        ok.Add(hm.id);
-                }
-                bin.uniprotID = string.Join(" or ", ok);
+                bin.IdentifyUniprotBins(v);
             }
         }
 

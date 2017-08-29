@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,11 +9,7 @@ namespace EngineLayer.Analysis
     {
         #region Public Fields
 
-        public string UnimodId = "-";
         public string psimodID = "-";
-        public string uniprotID = "-";
-        public string UnimodFormulas = "-";
-        public string UnimodDiffs = "-";
         public string AA = "-";
         public string combos = "-";
         public Dictionary<char, int> residueCount;
@@ -37,7 +34,11 @@ namespace EngineLayer.Analysis
 
         #region Public Properties
 
-        public double MassShift { get; private set; }
+        public string UnimodDiffs { get; private set; } = "-";
+        public string UniprotID { get; private set; } = "-";
+        public string UnimodFormulas { get; private set; } = "-";
+        public string UnimodId { get; private set; } = "-";
+        public double MassShift { get; }
 
         public int Count
         {
@@ -84,6 +85,37 @@ namespace EngineLayer.Analysis
         public double ComputeZ(double v)
         {
             return Math.Sqrt(Count) * ((double)CountDecoy / Count - v) / (v * (1 - v));
+        }
+
+        public void IdentifyUniprotBins(double v)
+        {
+            var ok = new HashSet<string>();
+            foreach (var hm in GlobalEngineLevelSettings.UniprotDeseralized)
+            {
+                if (hm is ModificationWithMass theMod && Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
+                    ok.Add(hm.id);
+            }
+            UniprotID = string.Join(" or ", ok);
+        }
+
+        public void IdentifyUnimodBins(double v)
+        {
+            var ok = new HashSet<string>();
+            var okformula = new HashSet<string>();
+            var okDiff = new HashSet<double>();
+            foreach (var hm in GlobalEngineLevelSettings.UnimodDeserialized)
+            {
+                var theMod = hm as ModificationWithMassAndCf;
+                if (Math.Abs(theMod.monoisotopicMass - MassShift) <= v)
+                {
+                    ok.Add(hm.id);
+                    okformula.Add(theMod.chemicalFormula.Formula);
+                    okDiff.Add(theMod.monoisotopicMass - MassShift);
+                }
+            }
+            UnimodId = string.Join(" or ", ok);
+            UnimodFormulas = string.Join(" or ", okformula);
+            UnimodDiffs = string.Join(" or ", okDiff);
         }
 
         #endregion Public Methods
