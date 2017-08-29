@@ -81,6 +81,7 @@ namespace EngineLayer
                             }
                     }
                     break;
+
                 case CleavageSpecificity.FullMaxN:
                 case CleavageSpecificity.FullMaxC:
                     // these are the 1-based residue indices the protease cleaves AFTER
@@ -92,23 +93,16 @@ namespace EngineLayer
                     for (int i = 0; i < oneBasedIndicesToCleaveAfter.Count - maximumMissedCleavages - 1; i++)
                     {
                         // Retain!
-                        if (i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
-                        {
-                            if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength) &&
-                                (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
-                            {
-                                yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
-                            }
-                        }
+                        if ((i != 0 || initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
+                            && (!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] >= minPeptidesLength)
+                            && (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - oneBasedIndicesToCleaveAfter[i] <= maxPeptidesLength))
+                            yield return new PeptideWithPossibleModifications(oneBasedIndicesToCleaveAfter[i] + 1, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi", allKnownFixedModifications);
+
                         // Cleave!
-                        if (i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
-                        {
-                            if ((!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 >= minPeptidesLength) &&
-                                (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 <= maxPeptidesLength))
-                            {
-                                yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi:M cleaved", allKnownFixedModifications);
-                            }
-                        }
+                        if ((i == 0 && initiatorMethionineBehavior != InitiatorMethionineBehavior.Retain && protein[0] == 'M')
+                            && (!minPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 >= minPeptidesLength)
+                            && (!maxPeptidesLength.HasValue || oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1] - 1 <= maxPeptidesLength))
+                            yield return new PeptideWithPossibleModifications(2, oneBasedIndicesToCleaveAfter[i + maximumMissedCleavages + 1], protein, maximumMissedCleavages, "semi:M cleaved", allKnownFixedModifications);
                     }
 
                     int lastIndex = oneBasedIndicesToCleaveAfter.Count - 1;
@@ -142,6 +136,7 @@ namespace EngineLayer
                             yield return new PeptideWithPossibleModifications(proteolysisProduct.OneBasedBeginPosition.Value, proteolysisProduct.OneBasedEndPosition.Value, protein, 0, proteolysisProduct.Type + " start", allKnownFixedModifications);
                         }
                     break;
+
                 case CleavageSpecificity.SingleN:
                     //cleave in one spot
                     for (int index = 1; index <= protein.Length; index++) //position BEFORE the amino acid
@@ -152,6 +147,7 @@ namespace EngineLayer
                         }
                     }
                     break;
+
                 case CleavageSpecificity.SingleC:
                     //cleave in one spot
                     for (int index = 1; index <= protein.Length; index++) //position BEFORE the amino acid
@@ -162,6 +158,7 @@ namespace EngineLayer
                         }
                     }
                     break;
+
                 case CleavageSpecificity.None:
                     if (initiatorMethionineBehavior != InitiatorMethionineBehavior.Cleave || protein[0] != 'M')
                     {
@@ -191,9 +188,10 @@ namespace EngineLayer
                             }
                         }
                     break;
+
                 default:
                     throw new NotImplementedException();
-            }        
+            }
         }
 
         public static string TabSeparatedString(this Protein protein)

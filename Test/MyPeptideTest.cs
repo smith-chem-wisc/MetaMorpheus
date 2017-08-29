@@ -15,7 +15,7 @@ using static Chemistry.PeriodicTable;
 namespace Test
 {
     [TestFixture]
-    public class MyPeptideTest
+    public static class MyPeptideTest
     {
         #region Public Methods
 
@@ -68,8 +68,7 @@ namespace Test
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Psm[][] globalPsms = new Psm[1][];
-            globalPsms[0] = new Psm[1];
+            Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -84,12 +83,12 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 0
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new List<MassDiffAcceptor> { new OpenSearchMode() }, false, CommonParameters, null);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
             cse.Run();
 
-            Assert.Less(globalPsms[0][0].Score, 4);
-            Assert.Greater(globalPsms[0][0].Score, 3);
+            Assert.Less(globalPsms[0].Score, 4);
+            Assert.Greater(globalPsms[0].Score, 3);
         }
 
         [Test]
@@ -112,8 +111,7 @@ namespace Test
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Psm[][] globalPsms = new Psm[1][];
-            globalPsms[0] = new Psm[1];
+            Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -128,11 +126,11 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 0
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new List<MassDiffAcceptor> { new OpenSearchMode() }, false, CommonParameters, null);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
             cse.Run();
-            Assert.Less(globalPsms[0][0].Score, 2);
-            Assert.Greater(globalPsms[0][0].Score, 1);
+            Assert.Less(globalPsms[0].Score, 2);
+            Assert.Greater(globalPsms[0].Score, 1);
         }
 
         [Test]
@@ -155,8 +153,7 @@ namespace Test
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Psm[][] globalPsms = new Psm[1][];
-            globalPsms[0] = new Psm[1];
+            Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -171,11 +168,11 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 0
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new List<MassDiffAcceptor> { new OpenSearchMode() }, false, CommonParameters, null);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
             cse.Run();
-            Assert.Less(globalPsms[0][0].Score, 2);
-            Assert.Greater(globalPsms[0][0].Score, 1);
+            Assert.Less(globalPsms[0].Score, 2);
+            Assert.Greater(globalPsms[0].Score, 1);
         }
 
         [Test]
@@ -197,8 +194,7 @@ namespace Test
             MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
             IMsDataScanWithPrecursor<IMzSpectrum<IMzPeak>> scan = new MzmlScanWithPrecursor(1, massSpectrum, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, 0, null, null, 0, null, DissociationType.Unknown, 1, null, null);
 
-            Psm[][] globalPsms = new Psm[1][];
-            globalPsms[0] = new Psm[1];
+            Psm[] globalPsms = new Psm[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, new MzPeak(0, 0), 0, null) };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -213,10 +209,10 @@ namespace Test
                 ConserveMemory = false,
                 ScoreCutoff = 0
             };
-            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new List<MassDiffAcceptor> { new OpenSearchMode() }, false, CommonParameters, null);
+            ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
             cse.Run();
-            Assert.IsNull(globalPsms[0][0]);
+            Assert.IsNull(globalPsms[0]);
         }
 
         [Test]

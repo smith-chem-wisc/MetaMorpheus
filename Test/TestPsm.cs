@@ -9,7 +9,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class TestPsm
+    public static class TestPsm
     {
         #region Public Methods
 

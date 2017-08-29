@@ -1,10 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace EngineLayer
 {
-    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>
+    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>, IEquatable<MatchedIonMassesListOnlyMasses>
     {
         #region Private Fields
 
@@ -45,12 +46,14 @@ namespace EngineLayer
             return matchedIonDictPositiveIsMatch.GetEnumerator();
         }
 
-        public override bool Equals(object obj)
+        public override int GetHashCode()
         {
-            var kk = obj as MatchedIonMassesListOnlyMatches;
-            if (kk == null)
-                return false;
-            foreach (var hah in kk)
+            return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);
+        }
+
+        public bool Equals(MatchedIonMassesListOnlyMasses other)
+        {
+            foreach (var hah in other)
             {
                 if (!matchedIonDictPositiveIsMatch.TryGetValue(hah.Key, out double[] val))
                     return false;
@@ -59,11 +62,6 @@ namespace EngineLayer
                         return false;
             }
             return true;
-        }
-
-        public override int GetHashCode()
-        {
-            return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);
         }
 
         #endregion Public Methods

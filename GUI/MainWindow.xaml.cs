@@ -227,7 +227,7 @@ namespace MetaMorpheusGUI
 
         private void AddRaw_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog()
+            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = "Spectra Files(*.raw;*.mzML)|*.raw;*.mzML",
                 FilterIndex = 1,
@@ -357,9 +357,11 @@ namespace MetaMorpheusGUI
 
         private void AddMetaMorpheusTaskFolderSuffix_Click(object sender, RoutedEventArgs e)
         {
-            var myDialog = new DialogWindow();
-            myDialog.SizeToContent = SizeToContent.WidthAndHeight;
-            myDialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            var myDialog = new DialogWindow
+            {
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
             myDialog.ShowDialog();
 
             RunAllTasks(myDialog.stringSuffix);

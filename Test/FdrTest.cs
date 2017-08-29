@@ -11,16 +11,15 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class FdrTest
+    public static class FdrTest
     {
         #region Public Methods
 
         [Test]
         public static void FdrTestMethod()
         {
-            List<MassDiffAcceptor> searchModes = new List<MassDiffAcceptor> { new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5)) };
+            MassDiffAcceptor searchModes = new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5));
             List<string> nestedIds = new List<string>();
-            List<Psm>[] newPsms = new List<Psm>[1];
 
             Protein p = new Protein("MNKNNKNNNKNNNNK", null);
             DigestionParams digestionParams = new DigestionParams();
@@ -70,25 +69,25 @@ namespace Test
             psm2.MatchToProteinLinkedPeptides(matching);
             psm3.MatchToProteinLinkedPeptides(matching);
 
-            newPsms[0] = new List<Psm> { psm1, psm2, psm3 };
+            var newPsms = new List<Psm> { psm1, psm2, psm3 };
             FdrAnalysisEngine fdr = new FdrAnalysisEngine(newPsms, searchModes, nestedIds);
 
             fdr.Run();
 
-            Assert.AreEqual(2, searchModes[0].NumNotches);
-            Assert.AreEqual(0, newPsms[0][0].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0][0].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[0][1].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0][1].FdrInfo.cumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[0][2].FdrInfo.cumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0][2].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(2, searchModes.NumNotches);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[1].FdrInfo.cumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[2].FdrInfo.cumulativeTargetNotch);
 
-            Assert.AreEqual(0, newPsms[0][0].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(1, newPsms[0][0].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[0][1].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(2, newPsms[0][1].FdrInfo.cumulativeTarget);
-            Assert.AreEqual(0, newPsms[0][2].FdrInfo.cumulativeDecoy);
-            Assert.AreEqual(3, newPsms[0][2].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[0].FdrInfo.cumulativeDecoy);
+            Assert.AreEqual(1, newPsms[0].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[1].FdrInfo.cumulativeDecoy);
+            Assert.AreEqual(2, newPsms[1].FdrInfo.cumulativeTarget);
+            Assert.AreEqual(0, newPsms[2].FdrInfo.cumulativeDecoy);
+            Assert.AreEqual(3, newPsms[2].FdrInfo.cumulativeTarget);
         }
 
         #endregion Public Methods

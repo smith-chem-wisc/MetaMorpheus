@@ -9,7 +9,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class StefanParsimonyTest
+    public static class StefanParsimonyTest
     {
         #region Public Methods
 
@@ -75,7 +75,6 @@ namespace Test
 
             var newPsms = hah.Item1;
             var compactPeptideToProteinPeptideMatching = hah.Item2;
-            var massDiffAcceptors = hah.Item3;
             var noOneHitWonders = hah.Item4;
             var compactPeptide1 = hah.Item5;
             var compactPeptide2 = hah.Item6;
@@ -166,7 +165,7 @@ namespace Test
 
         #region Private Methods
 
-        private static Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
+        private static Tuple<List<Psm>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase> GetInfo(bool localizeable)
         {
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -233,7 +232,6 @@ namespace Test
             Assert.AreEqual(compactPeptide1, compactPeptideDuplicate);
             CompactPeptide compactPeptide2 = new CompactPeptide(pepWithSetModifications3, TerminusType.None);
 
-            List<Psm>[] newPsms = new List<Psm>[1];
             string fullFilePath = null;
             double intensity = 0;
             double mz = 0;
@@ -251,14 +249,14 @@ namespace Test
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0);
             Psm psm3 = new Psm(compactPeptide2, notch, score, scanIndex, scan);
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0);
-            newPsms[0] = new List<Psm>
+            var newPsms = new List<Psm>
             {
                 psm1,
                 psm2,
                 psm3
             };
 
-            List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            MassDiffAcceptor massDiffAcceptors = new SinglePpmAroundZeroSearchMode(5);
             SequencesToActualProteinPeptidesEngine stappe = new SequencesToActualProteinPeptidesEngine(newPsms, new List<Protein> { protein1, protein2, protein3 }, allKnownFixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>());
 
             var haha = (SequencesToActualProteinPeptidesEngineResults)stappe.Run();
@@ -270,7 +268,7 @@ namespace Test
 
             bool noOneHitWonders = false;
 
-            return new Tuple<List<Psm>[], Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, List<MassDiffAcceptor>, bool, CompactPeptideBase, CompactPeptideBase>
+            return new Tuple<List<Psm>, Dictionary<CompactPeptideBase, HashSet<PeptideWithSetModifications>>, MassDiffAcceptor, bool, CompactPeptideBase, CompactPeptideBase>
             (
                 newPsms, compactPeptideToProteinPeptideMatching, massDiffAcceptors, noOneHitWonders, compactPeptide1, compactPeptide2
             );

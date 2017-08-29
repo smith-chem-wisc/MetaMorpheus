@@ -13,11 +13,11 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     [TestFixture]
-    public class MyTaskTest
+    public static class MyTaskTest
     {
         #region Public Fields
 
-        public static bool hasPrunedRun = false;
+        public static bool hasPrunedRun;
 
         #endregion Public Fields
 

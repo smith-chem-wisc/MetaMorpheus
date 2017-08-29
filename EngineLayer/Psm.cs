@@ -19,7 +19,6 @@ namespace EngineLayer
         private const double tolForScoreDifferentiation = 1e-9;
 
         private Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>> compactPeptides = new Dictionary<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>();
-        private bool ExcelCompatible { get; set; }
 
         #endregion Private Fields
 
@@ -41,7 +40,7 @@ namespace EngineLayer
             this.ExcelCompatible = true;
         }
 
-        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible):this(peptide, notch, score, scanIndex, scan)
+        public Psm(CompactPeptideBase peptide, int notch, double score, int scanIndex, IScan scan, bool excelCompatible) : this(peptide, notch, score, scanIndex, scan)
         {
             this.ExcelCompatible = excelCompatible;
         }
@@ -61,16 +60,11 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; }
         public int ScanIndex { get; }
-
         public IEnumerable<KeyValuePair<CompactPeptideBase, Tuple<int, HashSet<PeptideWithSetModifications>>>> CompactPeptides { get { return compactPeptides.AsEnumerable(); } }
-
         public int NumDifferentCompactPeptides { get { return compactPeptides.Count; } }
-
         public FdrInfo FdrInfo { get; private set; }
         public double Score { get; private set; }
-
         public double QuantIntensity { get; set; }
-
         public ProteinLinkedInfo MostProbableProteinInfo { get; private set; }
         public bool IsDecoy { get; private set; }
         public string FullSequence { get; private set; }
@@ -89,6 +83,12 @@ namespace EngineLayer
         public MatchedIonMassesListOnlyMatches ProductMassErrorPpm { get; internal set; }
 
         #endregion Public Properties
+
+        #region Private Properties
+
+        private bool ExcelCompatible { get; set; }
+
+        #endregion Private Properties
 
         #region Public Methods
 
@@ -328,7 +328,7 @@ namespace EngineLayer
 
         public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
         {
-            FdrInfo = new FdrInfo()
+            FdrInfo = new FdrInfo
             {
                 cumulativeTarget = cumulativeTarget,
                 cumulativeDecoy = cumulativeDecoy,
@@ -477,7 +477,7 @@ namespace EngineLayer
                 return (ExcelCompatible && possibleReturn.Length > 32000) ? new Tuple<string, string>("(too many)", null) : new Tuple<string, string>(possibleReturn, null);
             }
         }
-      
+
         #endregion Private Methods
     }
 }
