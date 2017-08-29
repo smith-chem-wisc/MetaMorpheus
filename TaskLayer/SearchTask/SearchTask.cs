@@ -247,16 +247,16 @@ namespace TaskLayer
             int pe_index = 0;
             int p_index = 0;
             Dictionary<PeptideWithSetModifications, int> peptide_evidence_ids = new Dictionary<PeptideWithSetModifications, int>();
-            Dictionary<string, Tuple<int, HashSet<PeptideWithSetModifications>, HashSet<string>>> peptide_ids = new Dictionary<string, Tuple<int, HashSet<PeptideWithSetModifications>, HashSet<string>>>(); //key is peptide sequence, value is <peptide id for that peptide, peptide evidences>, list of spectra id's
+            Dictionary<string, Tuple<int, HashSet<string>>> peptide_ids = new Dictionary<string, Tuple<int, HashSet<string>>>(); //key is peptide sequence, value is <peptide id for that peptide, peptide evidences>, list of spectra id's
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
             foreach (Psm psm in items)
                 {
                     foreach (PeptideWithSetModifications peptide in psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct())
                     {
                         //if first peptide on list hasn't been added, add peptide and peptide evidence
-                        if (!peptide_ids.TryGetValue(peptide.Sequence, out Tuple<int, HashSet<PeptideWithSetModifications>, HashSet<string>> peptide_id))
+                        if (!peptide_ids.TryGetValue(peptide.Sequence, out Tuple<int, HashSet<string>> peptide_id))
                         {
-                            peptide_id = new Tuple<int, HashSet<PeptideWithSetModifications>, HashSet<string>>(p_index, new HashSet<PeptideWithSetModifications>(), new HashSet<string>());
+                            peptide_id = new Tuple<int, HashSet<string>>(p_index, new HashSet<string>());
                             p_index++;
                             _mzid.SequenceCollection.Peptide[peptide_id.Item1] = new mzIdentML110.Generated.PeptideType
                             {
@@ -295,7 +295,7 @@ namespace TaskLayer
                             peptide_ids.Add(peptide.Sequence, peptide_id);
                         }
 
-                        if (!peptide_ids[peptide.Sequence].Item2.Contains(peptide))
+                        if (!peptide_evidence_ids.ContainsKey(peptide))
                         {
                             _mzid.SequenceCollection.PeptideEvidence[pe_index] = new mzIdentML110.Generated.PeptideEvidenceType()
                             {
@@ -310,7 +310,6 @@ namespace TaskLayer
                                 pre = peptide.PreviousAminoAcid.ToString(),
                                 post = (peptide.OneBasedEndResidueInProtein < peptide.Protein.BaseSequence.Length) ? peptide.Protein[peptide.OneBasedEndResidueInProtein].ToString() : "-",
                             };
-                            peptide_ids[peptide.Sequence].Item2.Add(peptide);
                             peptide_evidence_ids.Add(peptide, pe_index);
                             pe_index++;
                         }
@@ -336,7 +335,7 @@ namespace TaskLayer
                     }
                     foreach (PeptideWithSetModifications p in psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct())
                     {
-                        peptide_ids[p.Sequence].Item3.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
+                        peptide_ids[p.Sequence].Item2.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                     }
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2] = new mzIdentML110.Generated.SpectrumIdentificationItemType()
                     {
@@ -608,7 +607,7 @@ namespace TaskLayer
                                     SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item3.Count],
                                 };
                                 int i = 0;
-                                foreach (string sii in peptide_ids[peptide.Sequence].Item3)
+                                foreach (string sii in peptide_ids[peptide.Sequence].Item2)
                                 {
                                     _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id].SpectrumIdentificationItemRef[i] = new mzIdentML110.Generated.SpectrumIdentificationItemRefType()
                                     {
