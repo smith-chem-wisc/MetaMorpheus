@@ -309,7 +309,7 @@ namespace EngineLayer
 
         public void SetFdrValues(int cumulativeTarget, int cumulativeDecoy, double tempQValue, int cumulativeTargetNotch, int cumulativeDecoyNotch, double tempQValueNotch)
         {
-            FdrInfo = new FdrInfo()
+            FdrInfo = new FdrInfo
             {
                 cumulativeTarget = cumulativeTarget,
                 cumulativeDecoy = cumulativeDecoy,

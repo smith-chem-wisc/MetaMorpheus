@@ -12,7 +12,7 @@ namespace EngineLayer
 
         protected readonly List<ModificationWithMass> fixedModifications;
         protected readonly List<ModificationWithMass> variableModifications;
-        protected readonly List<Psm>[] allPsms;
+        protected readonly List<Psm> allPsms;
         protected readonly List<Protein> proteinList;
         protected readonly TerminusType terminusType;
         protected readonly IEnumerable<DigestionParams> collectionOfDigestionParams;
@@ -21,7 +21,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public SequencesToActualProteinPeptidesEngine(List<Psm>[] allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, IEnumerable<DigestionParams> collectionOfDigestionParams, List<string> nestedIds) : base(nestedIds)
+        public SequencesToActualProteinPeptidesEngine(List<Psm> allPsms, List<Protein> proteinList, List<ModificationWithMass> fixedModifications, List<ModificationWithMass> variableModifications, TerminusType terminusType, IEnumerable<DigestionParams> collectionOfDigestionParams, List<string> nestedIds) : base(nestedIds)
         {
             this.proteinList = proteinList;
             this.allPsms = allPsms;
@@ -44,15 +44,14 @@ namespace EngineLayer
 
             //myAnalysisResults.AddText("Starting compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             //Status("Adding observed peptides to dictionary...", new List<string> { taskId });
-            foreach (var psmListForAspecificSerchMode in allPsms)
-                if (psmListForAspecificSerchMode != null)
-                    foreach (var psm in psmListForAspecificSerchMode)
-                        if (psm != null)
-                        {
-                            foreach (var cp in psm.CompactPeptides)
-                                if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
-                                    compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
-                        }
+
+            foreach (var psm in allPsms)
+                if (psm != null)
+                {
+                    foreach (var cp in psm.CompactPeptides)
+                        if (!compactPeptideToProteinPeptideMatching.ContainsKey(cp.Key))
+                            compactPeptideToProteinPeptideMatching.Add(cp.Key, new HashSet<PeptideWithSetModifications>());
+                }
             //myAnalysisResults.AddText("Ending compactPeptideToProteinPeptideMatching count: " + compactPeptideToProteinPeptideMatching.Count);
             int totalProteins = proteinList.Count;
             int proteinsSeen = 0;
