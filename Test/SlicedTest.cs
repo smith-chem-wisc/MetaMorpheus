@@ -9,7 +9,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class SlicedTest
+    public static class SlicedTest
     {
         #region Public Methods
 

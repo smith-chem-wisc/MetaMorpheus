@@ -14,7 +14,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class RobTest
+    public static class RobTest
     {
         #region Public Methods
 
@@ -183,20 +183,12 @@ namespace Test
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0);
             }
 
-            //Console.WriteLine(psms.Count);
-            //foreach (var ok in psms)
-            //{
-            //    Console.WriteLine(ok);
-            //}
-
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) }, true, false, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, new List<string>());
             var ok = (ProteinScoringAndFdrResults)f.Run();
             proteinGroups = ok.sortedAndScoredProteinGroups;
 
             //prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
-            System.Console.WriteLine("----Initial Dictionary----");
-            System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in initialDictionary)
             {
                 proteinList = new List<Protein>();
@@ -205,16 +197,12 @@ namespace Test
                 {
                     if (!proteinList.Contains(peptide.Protein))
                     {
-                        Console.Write(peptide.Protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.Protein);
                     }
                 }
-                System.Console.WriteLine();
             }
 
             //prints parsimonious dictionary
-            System.Console.WriteLine("----Parsimonious Dictionary----");
-            System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in dictionary)
             {
                 proteinList = new List<Protein>();
@@ -227,15 +215,6 @@ namespace Test
                         proteinList.Add(peptide.Protein);
                     }
                 }
-                System.Console.WriteLine();
-            }
-
-            //prints protein groups after scoring /
-            System.Console.WriteLine();
-            System.Console.WriteLine("ProteinGroups:");
-            foreach (var proteinGroup in proteinGroups)
-            {
-                System.Console.WriteLine(proteinGroup);
             }
 
             // check that correct proteins are in parsimony list
@@ -442,14 +421,14 @@ namespace Test
                 match2,
                 match3
             };
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) }, false, false, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, new List<string>());
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
         }
 
         [Test]
-        public static void TestFlashLFQ()
+        public static void TestFlashLfq()
         {
             FlashLFQEngine e = new FlashLFQEngine();
             Assert.That(e != null);

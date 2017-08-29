@@ -30,7 +30,6 @@ namespace TaskLayer
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
                         .ConfigureType<Tolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())
                                 .FromToml(tmlString => Tolerance.ParseToleranceString(tmlString.Value))))
                         .ConfigureType<PpmTolerance>(type => type
                             .WithConversionFor<TomlString>(convert => convert
@@ -40,8 +39,22 @@ namespace TaskLayer
                                 .ToToml(custom => custom.ToString())))
                         .ConfigureType<MassDiffAcceptor>(type => type
                             .WithConversionFor<TomlString>(convert => convert
-                                .ToToml(custom => custom.ToString())
-                                .FromToml(tmlString => MetaMorpheusTask.ParseSearchMode(tmlString.Value))))
+                                .FromToml(tmlString => ParseSearchMode(tmlString.Value))))
+                        .ConfigureType<DotMassDiffAcceptor>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<IntervalMassDiffAcceptor>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<OpenSearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<SingleAbsoluteAroundZeroSearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
+                        .ConfigureType<SinglePpmAroundZeroSearchMode>(type => type
+                            .WithConversionFor<TomlString>(convert => convert
+                                .ToToml(custom => custom.ToString())))
                         .ConfigureType<Protease>(type => type
                             .WithConversionFor<TomlString>(convert => convert
                                 .ToToml(custom => custom.ToString())
@@ -192,6 +205,43 @@ namespace TaskLayer
             return ye;
         }
 
+        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
+        {
+            if (currentFileSpecificSettings == null)
+                return commonParams;
+
+            CommonParameters returnParams = new CommonParameters
+            {
+                DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
+
+                UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
+
+                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
+
+                DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
+
+                DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
+
+                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
+
+                ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
+
+                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
+
+                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
+            };
+
+            returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
+            returnParams.DigestionParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
+            returnParams.DigestionParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
+            returnParams.DigestionParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
+            returnParams.DigestionParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms;
+            returnParams.DigestionParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease;
+            returnParams.DigestionParams.MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide;
+
+            return returnParams;
+        }
+
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string taskId)
         {
             StartingSingleTask(taskId);
@@ -313,6 +363,19 @@ namespace TaskLayer
                 return ProteinDbLoader.LoadProteinXML(fileName, true, generateDecoys, localizeableModifications, isContaminant, new List<string>(), out um);
         }
 
+        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
+        {
+            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
+            {
+                commonParameters.DigestionParams
+            };
+
+            foreach (var hah in enumerable)
+                okay.Add(hah.DigestionParams);
+
+            return okay;
+        }
+
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
@@ -353,56 +416,6 @@ namespace TaskLayer
         protected void NewCollection(string v, List<string> nestedIds)
         {
             NewCollectionHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
-        }
-
-        public static CommonParameters SetAllFileSpecificCommonParams(CommonParameters commonParams, FileSpecificSettings currentFileSpecificSettings)
-        {
-            if (currentFileSpecificSettings == null)
-                return commonParams;
-
-            CommonParameters returnParams = new CommonParameters
-            {
-                DoPrecursorDeconvolution = currentFileSpecificSettings.DoPrecursorDeconvolution ?? commonParams.DoPrecursorDeconvolution,
-
-                UseProvidedPrecursorInfo = currentFileSpecificSettings.UseProvidedPrecursorInfo ?? commonParams.UseProvidedPrecursorInfo,
-
-                DeconvolutionIntensityRatio = currentFileSpecificSettings.DeconvolutionIntensityRatio ?? commonParams.DeconvolutionIntensityRatio,
-
-                DeconvolutionMaxAssumedChargeState = currentFileSpecificSettings.DeconvolutionMaxAssumedChargeState ?? commonParams.DeconvolutionMaxAssumedChargeState,
-
-                DeconvolutionMassTolerance = currentFileSpecificSettings.DeconvolutionMassTolerance ?? commonParams.DeconvolutionMassTolerance,
-
-                TotalPartitions = currentFileSpecificSettings.TotalPartitions ?? commonParams.TotalPartitions,
-
-                ProductMassTolerance = currentFileSpecificSettings.ProductMassTolerance ?? commonParams.ProductMassTolerance,
-
-                ConserveMemory = currentFileSpecificSettings.ConserveMemory ?? commonParams.ConserveMemory,
-
-                ScoreCutoff = currentFileSpecificSettings.ScoreCutoff ?? commonParams.ScoreCutoff,
-            };
-
-            returnParams.DigestionParams.InitiatorMethionineBehavior = currentFileSpecificSettings.InitiatorMethionineBehavior.Equals(InitiatorMethionineBehavior.Undefined) ? commonParams.DigestionParams.InitiatorMethionineBehavior : currentFileSpecificSettings.InitiatorMethionineBehavior;
-            returnParams.DigestionParams.MaxMissedCleavages = currentFileSpecificSettings.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
-            returnParams.DigestionParams.MinPeptideLength = currentFileSpecificSettings.MinPeptideLength ?? commonParams.DigestionParams.MinPeptideLength;
-            returnParams.DigestionParams.MaxPeptideLength = currentFileSpecificSettings.MaxPeptideLength ?? commonParams.DigestionParams.MaxPeptideLength;
-            returnParams.DigestionParams.MaxModificationIsoforms = currentFileSpecificSettings.MaxModificationIsoforms ?? commonParams.DigestionParams.MaxModificationIsoforms;
-            returnParams.DigestionParams.Protease = currentFileSpecificSettings.Protease ?? commonParams.DigestionParams.Protease;
-            returnParams.DigestionParams.MaxModsForPeptide = currentFileSpecificSettings.Max_mods_for_peptide ?? commonParams.DigestionParams.MaxModsForPeptide;
-
-            return returnParams;
-        }
-
-        protected static HashSet<DigestionParams> GetListOfDistinctDigestionParams(CommonParameters commonParameters, IEnumerable<CommonParameters> enumerable)
-        {
-            HashSet<DigestionParams> okay = new HashSet<DigestionParams>
-            {
-                commonParameters.DigestionParams
-            };
-
-            foreach (var hah in enumerable)
-                okay.Add(hah.DigestionParams);
-
-            return okay;
         }
 
         #endregion Protected Methods

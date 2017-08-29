@@ -83,7 +83,7 @@ namespace TaskLayer
 
         #region Public Properties
 
-        public Protease Protease { get; }
+        public Protease Protease { get; set; }
         public int? Max_mods_for_peptide { get; }
         public bool? DoPrecursorDeconvolution { get; }
         public bool? UseProvidedPrecursorInfo { get; }

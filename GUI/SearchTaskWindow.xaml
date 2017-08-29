@@ -160,6 +160,24 @@
                                     </StackPanel>
                                 </Expander>
                             </GroupBox>
+                            <GroupBox Header="Ambiguity Parameters">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal" Margin="1">
+                                            <CheckBox x:Name="allAmbiguity" Content="Report All Ambiguity (might be slow)" Margin="5" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal" Margin="1">
+                                            <CheckBox x:Name="excelCompatible" Content="Make Results Excel Compatible (crops cells at 32000 chars)" Margin="5" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox>
                             <StackPanel Orientation="Horizontal" Margin="5">
                                 <Label x:Name="ff" Content="MaxDegreeOfParallelism" />
                                 <TextBox x:Name="maxDegreesOfParallelism" PreviewTextInput="PreviewIfInt" Width="45" />

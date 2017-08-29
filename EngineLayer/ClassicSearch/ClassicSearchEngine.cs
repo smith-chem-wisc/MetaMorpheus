@@ -12,7 +12,7 @@ namespace EngineLayer.ClassicSearch
     {
         #region Private Fields
 
-        private readonly List<MassDiffAcceptor> searchModes;
+        private readonly MassDiffAcceptor searchModes;
 
         private readonly List<Protein> proteinList;
 
@@ -20,7 +20,7 @@ namespace EngineLayer.ClassicSearch
 
         private readonly List<ModificationWithMass> variableModifications;
 
-        private readonly Psm[][] globalPsms;
+        private readonly Psm[] globalPsms;
 
         private readonly Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans;
 
@@ -36,7 +36,7 @@ namespace EngineLayer.ClassicSearch
 
         #region Public Constructors
 
-        public ClassicSearchEngine(Psm[][] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, List<MassDiffAcceptor> searchModes, bool addCompIons, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
+        public ClassicSearchEngine(Psm[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans, List<ModificationWithMass> variableModifications, List<ModificationWithMass> fixedModifications, List<Protein> proteinList, List<ProductType> lp, MassDiffAcceptor searchModes, bool addCompIons, CommonParameters CommonParameters, List<string> nestedIds) : base(nestedIds)
         {
             this.globalPsms = globalPsms;
             this.arrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
@@ -71,9 +71,7 @@ namespace EngineLayer.ClassicSearch
             Status("Starting classic search loop...", nestedIds);
             Parallel.ForEach(Partitioner.Create(0, totalProteins), partitionRange =>
             {
-                var psms = new Psm[searchModes.Count][];
-                for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
-                    psms[searchModeIndex] = new Psm[arrayOfSortedMS2Scans.Length];
+                var psms = new Psm[arrayOfSortedMS2Scans.Length];
                 for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                 {
                     var protein = proteinList[i];
@@ -102,21 +100,18 @@ namespace EngineLayer.ClassicSearch
                             Array.Sort(productMasses);
                             double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
-                            for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
+                            var searchMode = searchModes;
+                            foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                             {
-                                var searchMode = searchModes[searchModeIndex];
-                                foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
-                                {
-                                    double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                    var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
+                                double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
+                                var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
 
-                                    if (score > CommonParameters.ScoreCutoff)
-                                    {
-                                        if (psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] == null)
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan);
-                                        else
-                                            psms[searchModeIndex][scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch);
-                                    }
+                                if (score > CommonParameters.ScoreCutoff)
+                                {
+                                    if (psms[scanWithIndexAndNotchInfo.scanIndex] == null)
+                                        psms[scanWithIndexAndNotchInfo.scanIndex] = new Psm(correspondingCompactPeptide, scanWithIndexAndNotchInfo.notch, score, scanWithIndexAndNotchInfo.scanIndex, scanWithIndexAndNotchInfo.theScan, CommonParameters.ExcelCompatible);
+                                    else
+                                        psms[scanWithIndexAndNotchInfo.scanIndex].AddOrReplace(correspondingCompactPeptide, score, scanWithIndexAndNotchInfo.notch, CommonParameters.ReportAllAmbiguity);
                                 }
                             }
                         }
@@ -124,17 +119,16 @@ namespace EngineLayer.ClassicSearch
                 }
                 lock (lockObject)
                 {
-                    for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
-                        for (int i = 0; i < globalPsms[searchModeIndex].Length; i++)
-                            if (psms[searchModeIndex][i] != null)
+                    for (int i = 0; i < globalPsms.Length; i++)
+                        if (psms[i] != null)
+                        {
+                            if (globalPsms[i] == null)
+                                globalPsms[i] = psms[i];
+                            else
                             {
-                                if (globalPsms[searchModeIndex][i] == null)
-                                    globalPsms[searchModeIndex][i] = psms[searchModeIndex][i];
-                                else
-                                {
-                                    globalPsms[searchModeIndex][i].AddOrReplace(psms[searchModeIndex][i]);
-                                }
+                                globalPsms[i].AddOrReplace(psms[i], CommonParameters.ReportAllAmbiguity);
                             }
+                        }
                     proteinsSeen += partitionRange.Item2 - partitionRange.Item1;
                     var new_progress = (int)((double)proteinsSeen / (totalProteins) * 100);
                     if (new_progress > old_progress)
