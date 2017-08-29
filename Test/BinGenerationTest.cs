@@ -19,7 +19,7 @@ namespace Test
         [Test]
         public static void TestBinGeneration()
         {
-            List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
+            MassDiffAcceptor massDiffAcceptors = new OpenSearchMode();
             SearchTask st = new SearchTask()
             {
                 CommonParameters = new CommonParameters
@@ -86,7 +86,7 @@ namespace Test
         [Test]
         public static void TestProteinSplitAcrossFiles()
         {
-            List<MassDiffAcceptor> massDiffAcceptors = new List<MassDiffAcceptor> { new OpenSearchMode() };
+            MassDiffAcceptor massDiffAcceptors = new OpenSearchMode();
             SearchTask st = new SearchTask()
             {
                 CommonParameters = new CommonParameters

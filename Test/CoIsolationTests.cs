@@ -36,7 +36,7 @@ namespace Test
             var fixedModifications = new List<ModificationWithMass>();
             var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             Proteomics.Peptide pep1 = new Proteomics.Peptide("NNNK");
             Proteomics.Peptide pep2 = new Proteomics.Peptide("NDNK");
@@ -71,31 +71,26 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
 
-            // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
-
             // Two matches for this single scan! Corresponding to two co-isolated masses
-            Assert.AreEqual(2, allPsmsArray[0].Length);
+            Assert.AreEqual(2, allPsmsArray.Length);
 
-            Assert.IsTrue(allPsmsArray[0][0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0][0].ScanNumber);
+            Assert.IsTrue(allPsmsArray[0].Score > 1);
+            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
-            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm>[] { new List<Psm> { allPsmsArray[0][0], allPsmsArray[0][1] } }, proteinList, fixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>()).Run();
+            var ojdfkj = (SequencesToActualProteinPeptidesEngineResults)new SequencesToActualProteinPeptidesEngine(new List<Psm> { allPsmsArray[0], allPsmsArray[1] }, proteinList, fixedModifications, variableModifications, TerminusType.None, new List<DigestionParams> { CommonParameters.DigestionParams }, new List<string>()).Run();
 
-            foreach (var huh in allPsmsArray[0])
+            foreach (var huh in allPsmsArray)
             {
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(ojdfkj.CompactPeptideToProteinPeptideMatching);
             }
 
-            Assert.AreEqual("NNNK", allPsmsArray[0][0].BaseSequence);
-            Assert.AreEqual("NDNK", allPsmsArray[0][1].BaseSequence);
+            Assert.AreEqual("NNNK", allPsmsArray[0].BaseSequence);
+            Assert.AreEqual("NDNK", allPsmsArray[1].BaseSequence);
         }
 
         #endregion Public Methods
