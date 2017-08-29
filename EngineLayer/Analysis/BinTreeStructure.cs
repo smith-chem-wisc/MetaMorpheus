@@ -1,7 +1,6 @@
 ﻿using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace EngineLayer.Analysis
@@ -255,32 +254,7 @@ namespace EngineLayer.Analysis
         {
             foreach (Bin bin in FinalBins)
             {
-                bin.residueCount = new Dictionary<char, int>();
-                foreach (var hehe in bin.uniquePSMs.Values.Where(b => b.Item3.LocalizedScores != null))
-                {
-                    double bestScore = hehe.Item3.LocalizedScores.Max();
-                    if (bestScore >= hehe.Item3.Score + 1 && !hehe.Item3.IsDecoy)
-                    {
-                        for (int i = 0; i < hehe.Item1.Count(); i++)
-                            if (bestScore - hehe.Item3.LocalizedScores[i] < 0.5)
-                                if (bin.residueCount.ContainsKey(hehe.Item1[i]))
-                                    bin.residueCount[hehe.Item1[i]]++;
-                                else
-                                    bin.residueCount.Add(hehe.Item1[i], 1);
-                        if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores[0] < 0.5)
-                        {
-                            bin.pepNlocCount++;
-                            if (hehe.Item3.OneBasedStartResidueInProtein.HasValue && hehe.Item3.OneBasedStartResidueInProtein.Value <= 2)
-                                bin.protNlocCount++;
-                        }
-                        if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores.Last() < 0.5)
-                        {
-                            bin.pepClocCount++;
-                            if (hehe.Item3.OneBasedEndResidueInProtein.HasValue && hehe.Item3.ProteinLength.HasValue && hehe.Item3.OneBasedEndResidueInProtein.Value == hehe.Item3.ProteinLength.Value)
-                                bin.protClocCount++;
-                        }
-                    }
-                }
+                bin.IdentifyResidues();
             }
         }
 
@@ -313,11 +287,7 @@ namespace EngineLayer.Analysis
 
             foreach (var bin in FinalBins)
             {
-                var okk = new HashSet<string>();
-                foreach (var hm in ok)
-                    if (Math.Abs(hm.Item1 + hm.Item2 - bin.MassShift) <= v && bin.CountTarget < hm.Item3)
-                        okk.Add("Combo " + Math.Min(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture) + " and " + Math.Max(hm.Item1, hm.Item2).ToString("F3", CultureInfo.InvariantCulture));
-                bin.combos = string.Join(" or ", okk);
+                bin.IdentifyCombos(v, ok);
             }
         }
 
