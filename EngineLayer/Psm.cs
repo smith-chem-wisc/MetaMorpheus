@@ -81,7 +81,7 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public MatchedIonMassesListOnlyMasses MatchedIonDictPositiveIsMatch { get; internal set; }
+        public MatchedIonMassesListOnlyMatches MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
 
@@ -268,12 +268,12 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (MatchedIonDictPositiveIsMatch != null)
+            if (MatchedIonDictOnlyMatches != null)
             {
-                sb.Append('\t' + string.Join(";", MatchedIonDictPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))));
+                sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
 
                 sb.Append('\t' + "[");
-                foreach (var kvp in MatchedIonDictPositiveIsMatch)
+                foreach (var kvp in MatchedIonDictOnlyMatches)
                     sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 sb.Append("]");
             }

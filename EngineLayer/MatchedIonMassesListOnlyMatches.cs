@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class MatchedIonMassesListOnlyMasses : IEnumerable<KeyValuePair<ProductType, double[]>>
+    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>
     {
         #region Private Fields
 
@@ -14,7 +14,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public MatchedIonMassesListOnlyMasses(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch)
+        public MatchedIonMassesListOnlyMatches(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch)
         {
             this.matchedIonDictPositiveIsMatch = matchedIonDictPositiveIsMatch;
         }
@@ -47,7 +47,7 @@ namespace EngineLayer
 
         public override bool Equals(object obj)
         {
-            var kk = obj as MatchedIonMassesListOnlyMasses;
+            var kk = obj as MatchedIonMassesListOnlyMatches;
             if (kk == null)
                 return false;
             foreach (var hah in kk)

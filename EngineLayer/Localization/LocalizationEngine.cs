@@ -52,7 +52,7 @@ namespace EngineLayer
                     matchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
                 }
 
-                ok.MatchedIonDictPositiveIsMatch = new MatchedIonMassesListOnlyMasses(matchedIonDictOnlyMatches);
+                ok.MatchedIonDictOnlyMatches = new MatchedIonMassesListOnlyMatches(matchedIonDictOnlyMatches);
             }
 
             foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
