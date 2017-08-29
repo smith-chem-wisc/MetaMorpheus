@@ -132,6 +132,8 @@ namespace EngineLayer
 
             sb.Append('\t' + "Matched Ion Counts");
             sb.Append('\t' + "Matched Ion Masses");
+            sb.Append('\t' + "Matched Ion Mass Diff (Da)");
+            sb.Append('\t' + "Matched Ion Mass Diff (Ppm)");
 
             sb.Append('\t' + "Localized Scores");
             sb.Append('\t' + "Improvement Possible");
@@ -273,11 +275,25 @@ namespace EngineLayer
 
             if (MatchedIonDictOnlyMatches != null)
             {
+                //Count
                 sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
 
+                //Masses
                 sb.Append('\t' + "[");
                 foreach (var kvp in MatchedIonDictOnlyMatches)
-                    sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
+
+                //Mass error Da
+                sb.Append('\t' + "[");
+                foreach (var kvp in ProductMassErrorDa)
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
+
+                //Mass error ppm
+                sb.Append('\t' + "[");
+                foreach (var kvp in ProductMassErrorPpm)
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 sb.Append("]");
             }
             else
