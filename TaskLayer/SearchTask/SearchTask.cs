@@ -901,7 +901,7 @@ namespace TaskLayer
                 });
                 Status("Grouping by matched ions...", taskId);
 
-                allPsms = allPsms.GroupBy(b => new Tuple<string, int, MatchedIonMassesListOnlyMasses>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictPositiveIsMatch)).Select(b => b.First()).ToList();
+                allPsms = allPsms.GroupBy(b => new Tuple<string, int, MatchedIonMassesListOnlyMatches>(b.FullFilePath, b.ScanNumber, b.MatchedIonDictOnlyMatches)).Select(b => b.First()).ToList();
 
             }
 

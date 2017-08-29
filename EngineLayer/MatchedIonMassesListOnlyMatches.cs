@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>, IEquatable<MatchedIonMassesListOnlyMasses>
+    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>, IEquatable<MatchedIonMassesListOnlyMatches>
     {
         #region Private Fields
 
@@ -51,7 +51,7 @@ namespace EngineLayer
             return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);
         }
 
-        public bool Equals(MatchedIonMassesListOnlyMasses other)
+        public bool Equals(MatchedIonMassesListOnlyMatches other)
         {
             foreach (var hah in other)
             {

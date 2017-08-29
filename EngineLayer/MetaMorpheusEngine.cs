@@ -113,7 +113,6 @@ namespace EngineLayer
                     // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
                     while (currentExperimentalMz > testTheoreticalMz)
                     {
-                        matchedIonMassesList[testTheoreticalIndex] = -currentTheoreticalMass;
                         // Store old info for possible reuse
                         currentTheoreticalMass = testTheoreticalMass;
                         currentTheoreticalMz = testTheoreticalMz;
