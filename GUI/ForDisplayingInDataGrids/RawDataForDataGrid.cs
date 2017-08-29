@@ -1,4 +1,6 @@
-﻿namespace MetaMorpheusGUI
+﻿using System.IO;
+
+namespace MetaMorpheusGUI
 {
     internal class RawDataForDataGrid
     {
@@ -6,7 +8,7 @@
 
         public RawDataForDataGrid(string fileName)
         {
-            FileName = fileName;
+            FileName = Path.GetFileNameWithoutExtension(fileName);
             Use = true;
         }
 
@@ -17,7 +19,7 @@
         public bool Use { get; set; }
         public string FileName { get; }
         public bool InProgress { get; private set; }
-
+        public string Parameters { get; set; }
         #endregion Public Properties
 
         #region Public Methods
