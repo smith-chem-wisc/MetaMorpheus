@@ -166,6 +166,7 @@ namespace EngineLayer.ModernSearch
                 var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
                 GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, listSeenipos);
             }
+            listSeenipos.Clear();
             if (addCompIons)
             {
                 List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
