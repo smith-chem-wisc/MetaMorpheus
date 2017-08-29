@@ -9,7 +9,6 @@ namespace EngineLayer.Analysis
     {
         #region Public Fields
 
-        public string psimodID = "-";
         public string AA = "-";
         public string combos = "-";
         public Dictionary<char, int> residueCount;
@@ -96,6 +95,32 @@ namespace EngineLayer.Analysis
                     ok.Add(hm.id);
             }
             UniprotID = string.Join(" or ", ok);
+        }
+
+        public void IdentifyAA(double v)
+        {
+            var ok = new HashSet<string>();
+            for (char c = 'A'; c <= 'Z'; c++)
+            {
+                if (Residue.TryGetResidue(c, out Residue residue))
+                {
+                    if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
+                        ok.Add("Add " + residue.Name);
+                    if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
+                        ok.Add("Remove " + residue.Name);
+                    for (char cc = 'A'; cc <= 'Z'; cc++)
+                    {
+                        if (Residue.TryGetResidue(cc, out Residue residueCC))
+                        {
+                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
+                                ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
+                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
+                                ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
+                        }
+                    }
+                }
+            }
+            AA = string.Join(" or ", ok);
         }
 
         public void IdentifyUnimodBins(double v)
