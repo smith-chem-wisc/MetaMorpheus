@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MzLibUtil;
 
 namespace EngineLayer
 {
@@ -84,6 +85,8 @@ namespace EngineLayer
         public MatchedIonMassesListOnlyMatches MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
+        public MatchedIonMassesListOnlyMatches ProductMassErrorDa { get; internal set; }
+        public MatchedIonMassesListOnlyMatches ProductMassErrorPpm { get; internal set; }
 
         #endregion Public Properties
 

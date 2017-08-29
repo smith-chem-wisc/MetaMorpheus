@@ -40,19 +40,27 @@ namespace EngineLayer
             foreach (var ok in allResultingIdentifications)
             {
                 var matchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+                var productMassErrorDa = new Dictionary<ProductType, double[]>();
+                var productMassErrorPpm = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
                 {
                     var ionMasses = ok.CompactPeptides.First().Key.ProductMassesMightHaveDuplicatesAndNaNs(new List<ProductType> { huh });
                     Array.Sort(ionMasses);
-                    double[] matchedIonMassesListPositiveIsMatch = new double[ionMasses.Length];
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
-                    double[] matchedIonMassesOnlyMatches = matchedIonMassesListPositiveIsMatch.Where(m => m > 0).ToArray();
+                    List<double> matchedIonMassesList = new List<double>();
+                    List<double> productMassErrorDaList = new List<double>();
+                    List<double> productMassErrorPpmList = new List<double>();
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, this.addCompIons, thePrecursorMass, this.lp);
+                    double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
                     matchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
+                    productMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
+                    productMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
                 }
 
                 ok.MatchedIonDictOnlyMatches = new MatchedIonMassesListOnlyMatches(matchedIonDictOnlyMatches);
+                ok.ProductMassErrorDa = new MatchedIonMassesListOnlyMatches(productMassErrorDa);
+                ok.ProductMassErrorPpm = new MatchedIonMassesListOnlyMatches(productMassErrorPpm);
             }
 
             foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
@@ -72,8 +80,7 @@ namespace EngineLayer
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
-                    double[] matchedIonMassesListPositiveIsMatch = new double[gg.Length];
-                    var score = MatchIons(theScan, fragmentTolerance, gg, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, this.lp);
+                    var score = MatchIons(theScan, fragmentTolerance, gg, new List<double>(),new List<double>(), new List<double>(), this.addCompIons, thePrecursorMass, this.lp);
                     localizedScores.Add(score);
                 }
 

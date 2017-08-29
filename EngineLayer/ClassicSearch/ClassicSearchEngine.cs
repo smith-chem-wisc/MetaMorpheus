@@ -100,7 +100,6 @@ namespace EngineLayer.ClassicSearch
 
                             var productMasses = correspondingCompactPeptide.ProductMassesMightHaveDuplicatesAndNaNs(lp);
                             Array.Sort(productMasses);
-                            double[] matchedIonMassesListPositiveIsMatch = new double[productMasses.Length];
 
                             for (int searchModeIndex = 0; searchModeIndex < searchModes.Count; searchModeIndex++)
                             {
@@ -108,7 +107,7 @@ namespace EngineLayer.ClassicSearch
                                 foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                                 {
                                     double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                    var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, matchedIonMassesListPositiveIsMatch, this.addCompIons, thePrecursorMass, lp);
+                                    var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, new List<double>(), new List<double>(), new List<double>(), this.addCompIons, thePrecursorMass, lp);
 
                                     if (score > CommonParameters.ScoreCutoff)
                                     {
