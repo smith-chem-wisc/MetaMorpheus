@@ -604,7 +604,7 @@ namespace TaskLayer
                                 _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id].ProteinDetectionHypothesis[pag_protein_index].PeptideHypothesis[peptide_id] = new mzIdentML110.Generated.PeptideHypothesisType()
                                 {
                                     peptideEvidence_ref = "PE_" + peptide_evidence_ids[peptide],
-                                    SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item3.Count],
+                                    SpectrumIdentificationItemRef = new mzIdentML110.Generated.SpectrumIdentificationItemRefType[peptide_ids[peptide.Sequence].Item2.Count],
                                 };
                                 int i = 0;
                                 foreach (string sii in peptide_ids[peptide.Sequence].Item2)
