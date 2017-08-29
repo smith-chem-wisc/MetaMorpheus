@@ -105,11 +105,16 @@ namespace EngineLayer
                 }
                 else
                 {
-                    while(experimentalIndex< numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex])
+                    experimentalIndex++;
+                    if (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex])
                     {
-                        experimentalIndex++;
+                        do
+                        {
+                            experimentalIndex++;
+                        } while (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex]);
+                        experimentalIndex--;
                     }
-                    experimentalIndex-=2;
+                    experimentalIndex--;
                 }
             }
         }
@@ -172,11 +177,16 @@ namespace EngineLayer
                 }
                 else
                 {
-                    while (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex])
+                    experimentalIndex++;
+                    if (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex])
                     {
-                        experimentalIndex++;
+                        do
+                        {
+                            experimentalIndex++;
+                        } while (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex]);
+                        experimentalIndex--;
                     }
-                    experimentalIndex -= 2;
+                    experimentalIndex--;
                 }
             }
             return MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent;
