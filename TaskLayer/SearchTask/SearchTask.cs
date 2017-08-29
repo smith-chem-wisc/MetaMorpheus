@@ -103,7 +103,7 @@ namespace TaskLayer
                 uri = "https://github.com/smith-chem-wisc/MetaMorpheus",
                 SoftwareName = new mzIdentML110.Generated.ParamType()
                 {
-                    Item = new mzIdentML110.Generated.CVParamType()
+                    Item = new mzIdentML110.Generated.CVParamType
                     {
                         //using Morpheus's accession until we get MetaMorpheus entered
                         accession = "MS:1002661",
@@ -112,38 +112,38 @@ namespace TaskLayer
                     }
                 }
             }};
-            _mzid.DataCollection = new mzIdentML110.Generated.DataCollectionType()
+            _mzid.DataCollection = new mzIdentML110.Generated.DataCollectionType
             {
                 AnalysisData = new mzIdentML110.Generated.AnalysisDataType()
                 {
                     SpectrumIdentificationList = new mzIdentML110.Generated.SpectrumIdentificationListType[1]
         {
-                        new mzIdentML110.Generated.SpectrumIdentificationListType()
+                        new mzIdentML110.Generated.SpectrumIdentificationListType
                         {
                             id = "SIL",
                             SpectrumIdentificationResult = new mzIdentML110.Generated.SpectrumIdentificationResultType[items.Count()]
                         }
         }
                 },
-                Inputs = new mzIdentML110.Generated.InputsType()
+                Inputs = new mzIdentML110.Generated.InputsType
                 {
                     SearchDatabase = new mzIdentML110.Generated.SearchDatabaseType[databases.Count()],
                     SpectraData = new mzIdentML110.Generated.SpectraDataType[filenames.Count]
                 }
             };
 
-            _mzid.SequenceCollection = new mzIdentML110.Generated.SequenceCollectionType()
+            _mzid.SequenceCollection = new mzIdentML110.Generated.SequenceCollectionType
             {
                 Peptide = new mzIdentML110.Generated.PeptideType[peptides.Count],
                 DBSequence = new mzIdentML110.Generated.DBSequenceType[proteins.Count],
                 PeptideEvidence = new mzIdentML110.Generated.PeptideEvidenceType[peptides.Count]
             };
 
-            _mzid.AnalysisCollection = new mzIdentML110.Generated.AnalysisCollectionType()
+            _mzid.AnalysisCollection = new mzIdentML110.Generated.AnalysisCollectionType
             {
                 SpectrumIdentification = new mzIdentML110.Generated.SpectrumIdentificationType[1]
                 {
-                    new mzIdentML110.Generated.SpectrumIdentificationType()
+                    new mzIdentML110.Generated.SpectrumIdentificationType
                     {
                         id = "SI",
                         spectrumIdentificationList_ref = "SIL",
@@ -161,9 +161,9 @@ namespace TaskLayer
                 {
                     id = "SDB_" + database_index,
                     location = database,
-                    DatabaseName = new mzIdentML110.Generated.ParamType()
+                    DatabaseName = new mzIdentML110.Generated.ParamType
                     {
-                        Item = new mzIdentML110.Generated.CVParamType()
+                        Item = new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1001073",
                             name = "database type amino acid",
@@ -182,7 +182,7 @@ namespace TaskLayer
             int protein_index = 0;
             foreach (Protein protein in proteins)
             {
-                _mzid.SequenceCollection.DBSequence[protein_index] = new mzIdentML110.Generated.DBSequenceType()
+                _mzid.SequenceCollection.DBSequence[protein_index] = new mzIdentML110.Generated.DBSequenceType
                 {
                     id = "DBS_" + protein.Accession,
                     lengthSpecified = true,
@@ -192,7 +192,7 @@ namespace TaskLayer
                     Seq = protein.BaseSequence,
                     cvParam = new mzIdentML110.Generated.CVParamType[1]
                     {
-                        new mzIdentML110.Generated.CVParamType()
+                        new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1001088",
                             name = "protein description",
@@ -221,18 +221,18 @@ namespace TaskLayer
                     id = spectral_data_id,
                     name = Path.GetFileNameWithoutExtension(data_filepath),
                     location = data_filepath,
-                    FileFormat = new mzIdentML110.Generated.FileFormatType()
+                    FileFormat = new mzIdentML110.Generated.FileFormatType
                     {
-                        cvParam = new mzIdentML110.Generated.CVParamType()
+                        cvParam = new mzIdentML110.Generated.CVParamType
                         {
                             accession = thermoRawFile ? "MS:1000563" : "MS:1000584",
                             name = thermoRawFile ? "Thermo RAW format" : "mzML format",
                             cvRef = "PSI-MS"
                         }
                     },
-                    SpectrumIDFormat = new mzIdentML110.Generated.SpectrumIDFormatType()
+                    SpectrumIDFormat = new mzIdentML110.Generated.SpectrumIDFormatType
                     {
-                        cvParam = new mzIdentML110.Generated.CVParamType()
+                        cvParam = new mzIdentML110.Generated.CVParamType
                         {
                             accession = thermoRawFile ? "MS:1000768" : "MS:1001530",
                             name = thermoRawFile ? "Thermo nativeID format" : "mzML unique identifier",
@@ -256,7 +256,7 @@ namespace TaskLayer
                 {
                     peptide_id = new Tuple<int, int, List<string>>(p_index, 0, new List<string>());
                     p_index++;
-                    _mzid.SequenceCollection.Peptide[peptide_id.Item1] = new mzIdentML110.Generated.PeptideType()
+                    _mzid.SequenceCollection.Peptide[peptide_id.Item1] = new mzIdentML110.Generated.PeptideType
                     {
                         PeptideSequence = peptide.BaseSequence,
                         id = "P_" + peptide_id.Item1,
@@ -343,14 +343,14 @@ namespace TaskLayer
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.MostProbableProteinInfo.PeptidesWithSetModifications.Count],
                     cvParam = new mzIdentML110.Generated.CVParamType[2]
                     {
-                        new mzIdentML110.Generated.CVParamType()
+                        new mzIdentML110.Generated.CVParamType
                         {
                             name = "Morpheus:Morpheus score",
                             cvRef = "PSI-MS",
                             accession = "MS:1002662",
                             value = psm.Score.ToString()
                         },
-                        new mzIdentML110.Generated.CVParamType()
+                        new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
@@ -369,7 +369,7 @@ namespace TaskLayer
                 foreach (PeptideWithSetModifications p in psm.MostProbableProteinInfo.PeptidesWithSetModifications)
                 {
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].PeptideEvidenceRef[pe]
-                        = new mzIdentML110.Generated.PeptideEvidenceRefType()
+                        = new mzIdentML110.Generated.PeptideEvidenceRefType
                         {
                             peptideEvidence_ref = "PE_" + peptide_ids[p].Item2
                         };
@@ -381,13 +381,13 @@ namespace TaskLayer
             {
                 SpectrumIdentificationProtocol = new mzIdentML110.Generated.SpectrumIdentificationProtocolType[1]
                 {
-                    new mzIdentML110.Generated.SpectrumIdentificationProtocolType()
+                    new mzIdentML110.Generated.SpectrumIdentificationProtocolType
                     {
                         id = "SIP",
                         analysisSoftware_ref = "AS_MetaMorpheus",
-                        SearchType = new mzIdentML110.Generated.ParamType()
+                        SearchType = new mzIdentML110.Generated.ParamType
                         {
-                            Item = new mzIdentML110.Generated.CVParamType()
+                            Item = new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1001083",
                                 name = "ms-ms search",
@@ -399,13 +399,13 @@ namespace TaskLayer
                             //TODO: ADD SEARCH PARAMS?
                             Items = new mzIdentML110.Generated.AbstractParamType[2]
                             {
-                                new mzIdentML110.Generated.CVParamType()
+                                new mzIdentML110.Generated.CVParamType
                                 {
                                     accession = "MS:1001211",
                                     cvRef = "PSI-MS",
                                     name = "parent mass type mono"
                                 },
-                                new mzIdentML110.Generated.CVParamType()
+                                new mzIdentML110.Generated.CVParamType
                                 {
                                     accession = "MS:1001255",
                                     name = "fragment mass type mono",
@@ -420,7 +420,7 @@ namespace TaskLayer
                         },
                         FragmentTolerance = new mzIdentML110.Generated.CVParamType[2]
                         {
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1001412",
                                 name = "search tolerance plus value",
@@ -429,7 +429,7 @@ namespace TaskLayer
 
                                 unitCvRef = "UO"
                             },
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1001413",
                                 name = "search tolerance minus value",
@@ -442,7 +442,7 @@ namespace TaskLayer
                         },
                         ParentTolerance = new mzIdentML110.Generated.CVParamType[1]
                         {
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS1001411",
                                 name = "search tolerance specification",
@@ -454,7 +454,7 @@ namespace TaskLayer
                         {
                             Items = new mzIdentML110.Generated.CVParamType[1]
                             {
-                                new mzIdentML110.Generated.CVParamType()
+                                new mzIdentML110.Generated.CVParamType
                                 {
                                     accession = "MS:1001448",
                                     name = "pep:FDR threshold",
@@ -481,7 +481,7 @@ namespace TaskLayer
                     {
                         Items = new mzIdentML110.Generated.AbstractParamType[1]
                         {
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = protease.PsiMsAccessionNumber,
                                 name = protease.PsiMsName,
@@ -523,7 +523,7 @@ namespace TaskLayer
                 {
                     Items = new mzIdentML110.Generated.CVParamType[1]
                     {
-                        new mzIdentML110.Generated.CVParamType()
+                        new mzIdentML110.Generated.CVParamType
                         {
                             accession = "MS:1001448",
                             name = "pep:FDR threshold",
@@ -562,27 +562,27 @@ namespace TaskLayer
                             PeptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType[proteinGroup.AllPeptides.Count],
                             cvParam = new mzIdentML110.Generated.CVParamType[4]
                             {
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1002663",
                                 name = "Morpheus:summed Morpheus score",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.ProteinGroupScore.ToString()
                             },
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS1002373",
                                 name = "protein group-level q-value",
                                 value = proteinGroup.QValue.ToString()
                             },
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession =  "MS:1001093",
                                 name = "sequence coverage",
                                 cvRef = "PSI-MS",
                                 value = proteinGroup.SequenceCoveragePercent.First().ToString()
                             },
-                            new mzIdentML110.Generated.CVParamType()
+                            new mzIdentML110.Generated.CVParamType
                             {
                                 accession = "MS:1001097",
                                 name = "distinct peptide sequences",
@@ -650,18 +650,18 @@ namespace TaskLayer
                         + "\t" + bin.UnimodFormulas
                         + "\t" + bin.UnimodDiffs
                         + "\t" + bin.AA
-                        + "\t" + bin.combos
+                        + "\t" + bin.Combos
                         + "\t" + string.Join(",", bin.modsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + ((double)b.Value / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)))
                         + "\t" + string.Join(",", bin.AAsInCommon.OrderByDescending(b => b.Value).Where(b => b.Value > bin.CountTarget / 10.0).Select(b => b.Key + ":" + ((double)b.Value / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)))
                         + "\t" + string.Join(",", bin.residueCount.OrderByDescending(b => b.Value).Select(b => b.Key + ":" + b.Value))
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.protNlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.pepNlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.pepClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.protClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ProtNlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.PepNlocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.PepClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
+                        + "\t" + (bin.LocalizeableTarget == 0 ? double.NaN : (double)bin.ProtClocCount / bin.LocalizeableTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.FracWithSingle).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + ((double)bin.Overlapping / bin.CountTarget).ToString("F3", CultureInfo.InvariantCulture)
                         + "\t" + (bin.MedianLength).ToString("F3", CultureInfo.InvariantCulture)
-                        + "\t" + bin.uniprotID);
+                        + "\t" + bin.UniprotID);
                 }
             }
         }

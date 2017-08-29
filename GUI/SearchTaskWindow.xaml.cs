@@ -42,7 +42,7 @@ namespace MetaMorpheusGUI
 
             this.saveButton.Content = "Add the Search Task";
 
-            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
                 //ModExpanderTitle =
@@ -66,7 +66,7 @@ namespace MetaMorpheusGUI
             TheTask = task;
             UpdateFieldsFromTask(TheTask);
 
-            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow()
+            dataContextForSearchTaskWindow = new DataContextForSearchTaskWindow
             {
                 ExpanderTitle = string.Join(", ", SearchModesForThisTask.Where(b => b.Use).Select(b => b.Name)),
                 //ModExpanderTitle =

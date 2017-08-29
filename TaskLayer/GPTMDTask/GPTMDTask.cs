@@ -157,6 +157,10 @@ namespace TaskLayer
 
             new FdrAnalysisEngine(allPsms, searchModes, new List<string> { taskId }).Run();
 
+            var writtenFile = Path.Combine(OutputFolder, "PSMs.psmtsv");
+            WritePsmsToTsv(allPsms, writtenFile);
+            SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+
             var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, GptmdParameters.PrecursorMassTolerance, new List<string> { taskId }).Run();
 
             if (dbFilenameList.Any(b => !b.IsContaminant))
