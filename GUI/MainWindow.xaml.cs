@@ -24,7 +24,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
         private ObservableCollection<InRunTask> dynamicTasksObservableCollection;
-
+        private readonly ObservableCollection<RawDataForDataGrid> fileNames = new ObservableCollection<RawDataForDataGrid>();
         #endregion Private Fields
 
         #region Public Constructors
@@ -37,6 +37,11 @@ namespace MetaMorpheusGUI
 
             dataGridXMLs.DataContext = proteinDbObservableCollection;
 
+
+            foreach (var fileName in rawDataObservableCollection)
+            {
+                fileNames.Add(fileName);
+            }
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
 
@@ -118,7 +123,7 @@ namespace MetaMorpheusGUI
             {
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
                 huh.SetInProgress(false);
-                huh.Parameters = "asdfasdfasdf";
+                
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -277,6 +282,7 @@ namespace MetaMorpheusGUI
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
+                    //zz.FileName = Path.GetFileName(zz.FileName);
                     break;
 
                 case ".xml":
@@ -352,14 +358,14 @@ namespace MetaMorpheusGUI
                 dynamicTasksObservableCollection.Add(new InRunTask("Task" + (i + 1) + staticTasksObservableCollection[i].metaMorpheusTask.TaskType, staticTasksObservableCollection[i].metaMorpheusTask));
             tasksTreeView.DataContext = dynamicTasksObservableCollection;
 
-            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.FileName).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
+            EverythingRunnerEngine a = new EverythingRunnerEngine(dynamicTasksObservableCollection.Select(b => new Tuple<string, MetaMorpheusTask>(b.Id, b.task)).ToList(), rawDataObservableCollection.Where(b => b.Use).Select(b => b.PathToFile).ToList(), proteinDbObservableCollection.Where(b => b.Use).Select(b => new DbForTask(b.FilePath, b.Contaminant)).ToList(), v);
             var t = new Thread(() => a.Run())
             {
                 IsBackground = true
             };
             t.Start();
         }
-
+        //(Path.GetFullPath(b.FileName)) + Path.GetExtension(b.FileName)
         private void AddMetaMorpheusTaskFolderSuffix_Click(object sender, RoutedEventArgs e)
         {
             var myDialog = new DialogWindow

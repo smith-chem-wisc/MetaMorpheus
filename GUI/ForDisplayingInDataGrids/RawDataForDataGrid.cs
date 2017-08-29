@@ -6,9 +6,10 @@ namespace MetaMorpheusGUI
     {
         #region Public Constructors
 
-        public RawDataForDataGrid(string fileName)
+        public RawDataForDataGrid(string path)
         {
-            FileName = Path.GetFileNameWithoutExtension(fileName);
+            PathToFile = path;
+            FileName = Path.GetFileName(path);
             Use = true;
         }
 
@@ -17,7 +18,8 @@ namespace MetaMorpheusGUI
         #region Public Properties
 
         public bool Use { get; set; }
-        public string FileName { get; }
+        public string FileName { get; set; }
+        public string PathToFile { get; set; }
         public bool InProgress { get; private set; }
         public string Parameters { get; set; }
         #endregion Public Properties
