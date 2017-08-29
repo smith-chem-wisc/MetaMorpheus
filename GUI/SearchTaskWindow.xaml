@@ -152,7 +152,24 @@
                                         </Style>
                                     </Expander.Style>
                                     <StackPanel Margin="5">
-                                        <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single" />
+                                        <DataGrid x:Name="searchModesDataGrid" ItemsSource="{Binding}" AutoGenerateColumns="False" CanUserSortColumns="False" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" Height="150" SelectionMode="Single">
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Header="Use">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <RadioButton Name="rbM" GroupName="CMGrp" IsChecked="{Binding Path=Use, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Name">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Label Content="{Binding Path=Name}" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <TextBox x:Name="newAllowedPrecursorMassDiffsTextBox" Width="300" />
                                             <Button x:Name="addNewAllowedPrecursorMassDiffsButton" Content="Add New Allowed Precursor Mass Diffs" Click="AddNewAllowedPrecursorMassDiffsButton_Click" />
