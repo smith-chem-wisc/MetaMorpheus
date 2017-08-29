@@ -23,7 +23,7 @@ namespace MetaMorpheusGUI
 
         public bool Use { get; set; }
 
-        public string Name { get { return searchMode.FileNameAddition; } }
+        public string Name { get { return searchMode.ToString(); } }
 
         #endregion Public Properties
     }
