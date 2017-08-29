@@ -171,8 +171,8 @@ namespace Test
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<ModificationWithMass>(), new List<ModificationWithMass>(), new List<Protein> { prot }, new List<ProductType> { ProductType.B, ProductType.Y }, new OpenSearchMode(), false, CommonParameters, null);
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 3);
-            Assert.Greater(globalPsms[0].Score, 2);
+            Assert.Less(globalPsms[0].Score, 2);
+            Assert.Greater(globalPsms[0].Score, 1);
         }
 
         [Test]

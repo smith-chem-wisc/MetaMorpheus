@@ -103,7 +103,7 @@ namespace EngineLayer.ClassicSearch
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                             {
                                 double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                var score = MatchIons(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, new List<double>(), new List<double>(), new List<double>(), this.addCompIons, thePrecursorMass, lp);
+                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, this.addCompIons, thePrecursorMass, lp);
 
                                 if (score > CommonParameters.ScoreCutoff)
                                 {

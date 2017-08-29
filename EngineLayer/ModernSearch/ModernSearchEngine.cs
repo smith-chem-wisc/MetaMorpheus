@@ -159,11 +159,12 @@ namespace EngineLayer.ModernSearch
 
         protected void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
+            List<int> listSeenipos = new List<int>();
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
                 var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
                 var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
-                GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores);
+                GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, listSeenipos);
             }
             if (addCompIons)
             {
@@ -192,12 +193,12 @@ namespace EngineLayer.ModernSearch
                 {
                     var theAdd = 1 + experimentalPeak.Intensity / spectrum.TotalIonCurrent;
                     //IMPLEMENT    GeneratePeptideScores(theAdd, experimentalPeak.Mz, peptideScores, expandedFragmentTolerance);
-                    GeneratePeptideScores(theAdd, experimentalPeak.Mz, peptideScores);
+                    GeneratePeptideScores(theAdd, experimentalPeak.Mz, peptideScores, listSeenipos);
                 }
             }
         }
 
-        protected void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores)
+        protected void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores, List<int> listSeenipos)
         {
             float closestPeak;
             var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
@@ -213,8 +214,12 @@ namespace EngineLayer.ModernSearch
                     closestPeak = keys[downIpos];
                     if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
                     {
-                        foreach (var heh in fragmentIndex[downIpos])
-                            peptideScores[heh] += theAdd;
+                        if (!listSeenipos.Contains(downIpos))
+                        {
+                            listSeenipos.Add(downIpos);
+                            foreach (var heh in fragmentIndex[downIpos])
+                                peptideScores[heh] += theAdd;
+                        }
                     }
                     else
                         break;
@@ -230,8 +235,12 @@ namespace EngineLayer.ModernSearch
                     closestPeak = keys[upIpos];
                     if (CommonParameters.ProductMassTolerance.Within(experimentalPeakInDaltons, closestPeak))
                     {
-                        foreach (var heh in fragmentIndex[upIpos])
-                            peptideScores[heh] += theAdd;
+                        if (!listSeenipos.Contains(upIpos))
+                        {
+                            listSeenipos.Add(upIpos);
+                            foreach (var heh in fragmentIndex[upIpos])
+                                peptideScores[heh] += theAdd;
+                        }
                     }
                     else
                         break;
