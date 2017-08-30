@@ -146,20 +146,22 @@ namespace EngineLayer
             int numExperimentalPeaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;
-            double currentTheoreticalMass;
-            do
+            double currentTheoreticalMz;
             {
-                currentTheoreticalIndex++;
-                currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-            } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
+                double currentTheoreticalMass;
+                do
+                {
+                    currentTheoreticalIndex++;
+                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
 
-            if (double.IsNaN(currentTheoreticalMass))
-                return 0;
+                if (double.IsNaN(currentTheoreticalMass))
+                    return 0;
 
-            double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+            }
             int testTheoreticalIndex;
             double testTheoreticalMz;
-            double testTheoreticalMass;
             // Loop over all experimental indices
             for (int experimentalIndex = 0; experimentalIndex < numExperimentalPeaks; experimentalIndex++)
             {
@@ -173,8 +175,7 @@ namespace EngineLayer
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
                 }
                 // Else if for sure passed a theoretical
                 else if (currentExperimentalMz > currentTheoreticalMz)
@@ -183,18 +184,15 @@ namespace EngineLayer
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
                     testTheoreticalMz = currentTheoreticalMz;
-                    testTheoreticalMass = currentTheoreticalMass;
                     // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
                     while (currentExperimentalMz > testTheoreticalMz)
                     {
                         // Store old info for possible reuse
-                        currentTheoreticalMass = testTheoreticalMass;
                         currentTheoreticalMz = testTheoreticalMz;
                         currentTheoreticalIndex = testTheoreticalIndex;
 
@@ -202,8 +200,7 @@ namespace EngineLayer
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
-                        testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
-                        testTheoreticalMz = testTheoreticalMass + Constants.protonMass;
+                        testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.protonMass;
                     }
                     experimentalIndex--;
                 }
