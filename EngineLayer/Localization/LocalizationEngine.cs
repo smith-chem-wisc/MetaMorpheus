@@ -39,9 +39,9 @@ namespace EngineLayer
 
             foreach (var ok in allResultingIdentifications)
             {
-                var matchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
-                var productMassErrorDa = new Dictionary<ProductType, double[]>();
-                var productMassErrorPpm = new Dictionary<ProductType, double[]>();
+                ok.MatchedIonDictOnlyMatches = new Dictionary<ProductType, double[]>();
+                ok.ProductMassErrorDa = new Dictionary<ProductType, double[]>();
+                ok.ProductMassErrorPpm = new Dictionary<ProductType, double[]>();
                 var theScan = myMsDataFile.GetOneBasedScan(ok.ScanNumber);
                 double thePrecursorMass = ok.ScanPrecursorMass;
                 foreach (var huh in lp)
@@ -53,14 +53,10 @@ namespace EngineLayer
                     List<double> productMassErrorPpmList = new List<double>();
                     MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, this.addCompIons, thePrecursorMass, this.lp);
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
-                    matchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
-                    productMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
-                    productMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
+                    ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
+                    ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
+                    ok.ProductMassErrorPpm.Add(huh, productMassErrorPpmList.ToArray());
                 }
-
-                ok.MatchedIonDictOnlyMatches = new MatchedIonMassesListOnlyMatches(matchedIonDictOnlyMatches);
-                ok.ProductMassErrorDa = new MatchedIonMassesListOnlyMatches(productMassErrorDa);
-                ok.ProductMassErrorPpm = new MatchedIonMassesListOnlyMatches(productMassErrorPpm);
             }
 
             foreach (var ok in allResultingIdentifications.Where(b => b.NumDifferentCompactPeptides == 1))
