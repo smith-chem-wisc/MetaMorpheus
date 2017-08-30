@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class MatchedIonMassesListOnlyMasses : IEnumerable<KeyValuePair<ProductType, double[]>>
+    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>
     {
         #region Private Fields
 
