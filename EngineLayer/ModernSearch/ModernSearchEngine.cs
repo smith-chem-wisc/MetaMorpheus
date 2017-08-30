@@ -166,9 +166,9 @@ namespace EngineLayer.ModernSearch
                 var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
                 GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, listSeenipos);
             }
-            listSeenipos.Clear();
             if (addCompIons)
             {
+                listSeenipos.Clear();
                 List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
                 //If HCD
                 if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))

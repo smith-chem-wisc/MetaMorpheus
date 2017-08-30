@@ -54,7 +54,7 @@ namespace EngineLayer
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
 
             if(addComp)
-                AddComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
+                ReplaceObservedWithComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
 
             int numExperimentalPeaks = experimental_mzs.Length;
 
@@ -141,7 +141,7 @@ namespace EngineLayer
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
 
             if (addComp)
-                AddComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
+                ReplaceObservedWithComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
 
             int numExperimentalPeaks = experimental_mzs.Length;
 
@@ -263,7 +263,7 @@ namespace EngineLayer
 
         #region Private Methods
 
-        private static void AddComplementaryPeaks(ref double[] experimental_mzs, ref double[] experimental_intensities, double precursorMass, List<ProductType> lp)
+        private static void ReplaceObservedWithComplementaryPeaks(ref double[] experimental_mzs, ref double[] experimental_intensities, double precursorMass, List<ProductType> lp)
         {
             List<MzPeak> complementaryPeaks = new List<MzPeak>();
 
