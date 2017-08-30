@@ -34,7 +34,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
-                    MassDiffAcceptors = massDiffAcceptors,
+                    MassDiffAcceptor = massDiffAcceptors,
                     SearchDecoy = false,
                     DoParsimony = true,
                     DoQuantification = true
@@ -102,7 +102,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoHistogramAnalysis = true,
-                    MassDiffAcceptors = massDiffAcceptors,
+                    MassDiffAcceptor = massDiffAcceptors,
                     MatchBetweenRuns = true,
                     DoQuantification = true
                 },

@@ -359,7 +359,7 @@ namespace TaskLayer
 
             return ids;
         }
-        
+
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
             var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
