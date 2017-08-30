@@ -12,18 +12,20 @@ namespace EngineLayer
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private List<ProteinGroup> proteinGroups;
+        private readonly bool scoreAndMergeProteinGroups;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, List<string> nestedIds) : base(nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, List<MassDiffAcceptor> searchModes, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool scoreAndMergeProteinGroups, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.searchModes = searchModes;
             this.proteinGroups = proteinGroups;
             this.noOneHitWonders = noOneHitWonders;
             this.treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
+            this.scoreAndMergeProteinGroups = scoreAndMergeProteinGroups;
         }
 
         #endregion Public Constructors
@@ -35,7 +37,8 @@ namespace EngineLayer
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
             Status("Running protein scoring and FDR engine!", nestedIds);
 
-            ScoreProteinGroups(proteinGroups, newPsms);
+            if(scoreAndMergeProteinGroups)
+                ScoreProteinGroups(proteinGroups, newPsms);
             myAnalysisResults.sortedAndScoredProteinGroups = DoProteinFdr(proteinGroups);
 
             return myAnalysisResults;
@@ -113,37 +116,6 @@ namespace EngineLayer
             // calculate sequence coverage
             foreach (var proteinGroup in proteinGroups)
                 proteinGroup.CalculateSequenceCoverage();
-
-            // distribute razor peptides
-            var sharedPepWithProteinGroups = new Dictionary<string, HashSet<ProteinGroup>>();
-            var seqToPeptide = new Dictionary<string, HashSet<PeptideWithSetModifications>>();
-            foreach (var proteinGroup in proteinGroups)
-            {
-                var sharedPeps = proteinGroup.AllPeptides.Except(proteinGroup.UniquePeptides);
-                foreach (var sharedPep in sharedPeps)
-                {
-                    if (sharedPepWithProteinGroups.TryGetValue(sharedPep.Sequence, out HashSet<ProteinGroup> v))
-                        v.Add(proteinGroup);
-                    else
-                        sharedPepWithProteinGroups.Add(sharedPep.Sequence, new HashSet<ProteinGroup> { proteinGroup });
-
-                    if (seqToPeptide.TryGetValue(sharedPep.Sequence, out HashSet<PeptideWithSetModifications> v1))
-                        v1.Add(sharedPep);
-                    else
-                        seqToPeptide.Add(sharedPep.Sequence, new HashSet<PeptideWithSetModifications> { sharedPep });
-                }
-            }
-
-            foreach (var kvp in sharedPepWithProteinGroups)
-            {
-                int i = kvp.Value.Select(p => p.AllPeptides.Select(x => x.BaseSequence).Count()).Max();
-                HashSet<ProteinGroup> t = new HashSet<ProteinGroup>(kvp.Value.Where(p => p.AllPeptides.Select(x => x.BaseSequence).Count() == i));
-                foreach (var proteinGroup in t)
-                {
-                    var peptides = seqToPeptide[kvp.Key];
-                    proteinGroup.RazorPeptides.UnionWith(peptides.Where(p => proteinGroup.Proteins.Contains(p.Protein)));
-                }
-            }
         }
 
         private List<ProteinGroup> DoProteinFdr(List<ProteinGroup> proteinGroups)

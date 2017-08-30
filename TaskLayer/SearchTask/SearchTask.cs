@@ -930,7 +930,7 @@ namespace TaskLayer
             {
                 for (int j = 0; j < SearchParameters.MassDiffAcceptors.Count; j++)
                 {
-                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, new List<string> { taskId }).Run();
+                    var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms[j], SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, true, new List<string> { taskId }).Run();
                     proteinGroupsHere[j] = ressdf.sortedAndScoredProteinGroups;
                 }
             }
@@ -958,7 +958,7 @@ namespace TaskLayer
 
             if (SearchParameters.DoQuantification)
             {
-                // use FlashLFQ to quantify peaks across all files
+                // pass global parameters to FlashLFQ
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
@@ -973,50 +973,99 @@ namespace TaskLayer
                     ))
                     throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
-                var psmsBelowOnePercentFdr = allPsms.SelectMany(v => v).Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy);
-                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.FullSequence != null && b.PeptideMonisotopicMass != null))
-                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, string.Join("|", psm.MostProbableProteinInfo.PeptidesWithSetModifications.Select(v => v.Protein.Accession).Distinct().OrderBy(v => v)));
-
-                FlashLfqEngine.ConstructBinsFromIdentifications();
-
-                Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                // quantify for each search mode
+                for (int j = 0; j < allPsms.Length; j++)
                 {
-                    var origDataFile = currentRawFileList[spectraFileIndex];
-                    Status("Quantifying...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
-                    FlashLfqEngine.Quantify(myMsDataFile, origDataFile);
-                    myFileManager.DoneWithFile(origDataFile);
-                    GC.Collect();
-                    ReportProgress(new ProgressEventArgs(100, "Done quantifying!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
-                });
+                    // get PSMs to pass to FlashLFQ
+                    var unambiguousPsmsBelowOnePercentFdr = allPsms[j].Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && p.FullSequence != null);
 
-                if (FlashLfqEngine.mbr)
-                    FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
-
-                // assign quantities to PSMs
-                Dictionary<string, List<Psm>> baseseqToPsm = new Dictionary<string, List<Psm>>();
-                List<Psm> list;
-                foreach (var psm in psmsBelowOnePercentFdr.Where(b => b.BaseSequence != null))
-                {
-                    if (baseseqToPsm.TryGetValue(psm.BaseSequence, out list))
-                        list.Add(psm);
-                    else
-                        baseseqToPsm.Add(psm.BaseSequence, new List<Psm>() { psm });
-                }
-
-                var summedPeaks = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");
-                foreach (var summedPeak in summedPeaks)
-                {
-                    if (baseseqToPsm.TryGetValue(summedPeak.BaseSequence, out list))
+                    // pass protein group info for each PSM
+                    Dictionary<Psm, List<string>> psmToProteinGroupsString = new Dictionary<Psm, List<string>>();
+                    if(proteinGroupsHere[j] != null)
                     {
-                        var psmsForThisBaseSeqAndFile = list.GroupBy(p => p.FullFilePath);
-                        foreach (var file in psmsForThisBaseSeqAndFile)
+                        Dictionary<Psm, List<ProteinGroup>> psmToProteinGroup = new Dictionary<Psm, List<ProteinGroup>>();
+                        foreach (var proteinGroup in proteinGroupsHere[j])
                         {
-                            int j = Array.IndexOf(FlashLfqEngine.filePaths, file.Key);
+                            proteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
 
-                            foreach (var psm in file)
-                                psm.QuantIntensity = summedPeak.intensitiesByFile[j];
+                            foreach(var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
+                            {
+                                List<ProteinGroup> list;
+
+                                if (psmToProteinGroup.TryGetValue(psm, out list))
+                                    list.Add(proteinGroup);
+                                else
+                                    psmToProteinGroup.Add(psm, new List<ProteinGroup> { proteinGroup });
+                            }
                         }
+                        
+                        foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
+                        {
+                            List<string> proteinGroupsStrings = new List<string>();
+                            List<ProteinGroup> list;
+                            if(psmToProteinGroup.TryGetValue(psm, out list))
+                                foreach (var proteinGroup in list)
+                                    proteinGroupsStrings.Add(string.Join("|", new HashSet<string>(proteinGroup.Proteins.Select(p => p.Accession))));
+
+                            psmToProteinGroupsString.Add(psm, proteinGroupsStrings);
+                        }
+                    }
+                    else
+                    {
+                        // if protein groups were not constructed, just use accession numbers
+                        foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
+                        {
+                            var proteinsAccessionString = psm.CompactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession).Distinct();
+                            psmToProteinGroupsString.Add(psm, proteinsAccessionString.ToList());
+                        }
+                    }
+
+                    foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
+                        FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupsString[psm]);
+                    
+                    // run FlashLFQ
+                    FlashLfqEngine.ConstructBinsFromIdentifications();
+                    
+                    Parallel.For(0, currentRawFileList.Count, parallelOptions, spectraFileIndex =>
+                    {
+                        var origDataFile = currentRawFileList[spectraFileIndex];
+                        Status("Quantifying...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
+                        IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                        FlashLfqEngine.Quantify(myMsDataFile, origDataFile);
+                        myFileManager.DoneWithFile(origDataFile);
+                        GC.Collect();
+                        ReportProgress(new ProgressEventArgs(100, "Done quantifying!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
+                    });
+
+                    Status("Running retention time calibration...", taskId);
+                    if (FlashLfqEngine.mbr)
+                        FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
+
+                    // get protein intensity back from FlashLFQ
+                    if (proteinGroupsHere[j] != null)
+                    {
+                        Status("Quantifying proteins...", taskId);
+                        var flashLfqProteinGroups = FlashLfqEngine.QuantifyProteins();
+
+                        Dictionary<string, ProteinGroup> accessionsToProteinGroup = new Dictionary<string, ProteinGroup>();
+                        foreach (var proteinGroup in proteinGroupsHere[j])
+                        {
+                            var t = string.Join("|", new HashSet<string>(proteinGroup.Proteins.Select(p => p.Accession)));
+                            if(!accessionsToProteinGroup.ContainsKey(t))
+                                accessionsToProteinGroup.Add(t, proteinGroup);
+                        }
+
+                        foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
+                        {
+                            ProteinGroup metamorpheusProteinGroup;
+
+                            if (accessionsToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out metamorpheusProteinGroup))
+                                metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
+                        }
+
+                        foreach (var proteinGroup in proteinGroupsHere[j])
+                            if (proteinGroup.IntensitiesByFile == null)
+                                proteinGroup.IntensitiesByFile = new double[FlashLfqEngine.filePaths.Length];
                     }
                 }
             }
@@ -1086,13 +1135,6 @@ namespace TaskLayer
 
                 if (SearchParameters.DoParsimony)
                 {
-                    // aggregate protein group file
-                    foreach (var pg in proteinGroupsHere[j])
-                    {
-                        if (pg.ProteinGroupScore != 0)
-                            pg.AggregateQuantifyHelper(currentRawFileList);
-                    }
-
                     WriteProteinGroupsToTsv(proteinGroupsHere[j], OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
 
                     // individual protein group files (local protein fdr, global parsimony, global psm fdr)
@@ -1111,11 +1153,10 @@ namespace TaskLayer
                             if (subsetPg.ProteinGroupScore != 0)
                             {
                                 subsetPg.CalculateSequenceCoverage();
-                                subsetPg.Quantify();
                                 subsetProteinGroupsForThisFile.Add(subsetPg);
                             }
                         }
-                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
+                        new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.MassDiffAcceptors, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, false, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
 
                         //Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
@@ -1137,10 +1178,12 @@ namespace TaskLayer
                         WritePeakQuantificationResultsToTsv(peaksForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                     }
 
-                    var summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "BaseSequence");
+                    WritePeakQuantificationResultsToTsv(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p.Select(v => v)).ToList(), OutputFolder, "aggregateQuantifiedPeaks" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
+
+                    var summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), true);
                     WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptides_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
 
-                    summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), "FullSequence");
+                    summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), false);
                     WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq_" + SearchParameters.MassDiffAcceptors[j].FileNameAddition, new List<string> { taskId });
                 }
             }
@@ -1327,7 +1370,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader(FileNames));
+                    output.WriteLine(items.First().GetTabSeparatedHeader());
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
