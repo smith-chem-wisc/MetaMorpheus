@@ -13,10 +13,10 @@ namespace MetaMorpheusGUI
 
         #region Public Constructors
 
-        public ModForTreeView(string toolTip, bool use, string displayName, bool bad, ModTypeForTreeView _parent)
+        public ModForTreeView(string toolTip, bool use, string displayName, bool bad, ModTypeForTreeView parent)
         {
             ToolTipStuff = toolTip;
-            Parent = _parent;
+            Parent = parent;
             Use = use;
             DisplayName = displayName;
             if (bad)
