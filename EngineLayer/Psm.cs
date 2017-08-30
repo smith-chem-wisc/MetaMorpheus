@@ -7,7 +7,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MzLibUtil;
 
 namespace EngineLayer
 {
@@ -76,11 +75,11 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public MatchedIonMassesListOnlyMatches MatchedIonDictOnlyMatches { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
-        public MatchedIonMassesListOnlyMatches ProductMassErrorDa { get; internal set; }
-        public MatchedIonMassesListOnlyMatches ProductMassErrorPpm { get; internal set; }
+        public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
+        public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
         #endregion Public Properties
 
