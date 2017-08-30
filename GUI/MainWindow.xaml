@@ -81,12 +81,14 @@
                                         </Style.Triggers>
                                     </Style>
                                     <Style TargetType="{x:Type DataGridRow}">
+                                        <EventSetter Event="Selected" Handler="AddSelectedRaw" />
+                                        <EventSetter Event="Unselected" Handler="RemoveSelectedRaw" />
                                         <Setter Property="Background" Value="Transparent" />
                                         <Setter Property="BorderBrush" Value="Transparent" />
                                         <Setter Property="Foreground" Value="Black" />
                                         <Style.Triggers>
                                             <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Background" Value="Coral" />
                                                 <Setter Property="BorderBrush" Value="Transparent" />
                                                 <Setter Property="Foreground" Value="Black" />
                                             </Trigger>
@@ -102,6 +104,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
                             <Button x:Name="AddRaw" Content="Add" Click="AddRaw_Click" />
                             <Button x:Name="ClearRaw" Content="Clear" Click="ClearRaw_Click" />
+                            <Button x:Name="ChangeParameters" Content="Change Parameters" Click="ChangeDefautParams_click" />
                         </StackPanel>
                     </Grid>
                 </GroupBox>

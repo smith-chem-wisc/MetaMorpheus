@@ -2,15 +2,15 @@
 
 namespace MetaMorpheusGUI
 {
-    internal class RawDataForDataGrid
+      public class RawDataForDataGrid
     {
         #region Public Constructors
 
         public RawDataForDataGrid(string path)
         {
-            PathToFile = path;
             FileName = Path.GetFileName(path);
             Use = true;
+            FilePath = path;
         }
 
         #endregion Public Constructors
@@ -19,9 +19,9 @@ namespace MetaMorpheusGUI
 
         public bool Use { get; set; }
         public string FileName { get; set; }
-        public string PathToFile { get; set; }
-        public bool InProgress { get; private set; }
         public string Parameters { get; set; }
+        public bool InProgress { get; private set; }
+        public string FilePath { get; set; }
         #endregion Public Properties
 
         #region Public Methods
@@ -33,6 +33,11 @@ namespace MetaMorpheusGUI
         public void SetInProgress(bool inProgress)
         {
             InProgress = inProgress;
+        }
+
+        public void SetParameters(string parameters)
+        {
+            Parameters = parameters;
         }
 
         #endregion Public Methods

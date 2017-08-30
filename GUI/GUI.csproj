@@ -108,6 +108,9 @@
     <Compile Include="DialogWindow.xaml.cs">
       <DependentUpon>DialogWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FileSpecificParamWindow.xaml.cs">
+      <DependentUpon>FileSpecificParamWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ForTreeView.cs" />
     <Compile Include="GlobalSettingsWindow.xaml.cs">
       <DependentUpon>GlobalSettingsWindow.xaml</DependentUpon>
@@ -138,6 +141,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DialogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="FileSpecificParamWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
