@@ -3,8 +3,7 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
-    public class MatchedIonMassesListOnlyMasses : IEnumerable<KeyValuePair<ProductType, double[]>>
-
+    public class MatchedIonMassesListOnlyMatches : IEnumerable<KeyValuePair<ProductType, double[]>>
     {
         #region Private Fields
 
@@ -14,7 +13,7 @@ namespace EngineLayer
 
         #region Public Constructors
 
-        public MatchedIonMassesListOnlyMasses(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch)
+        public MatchedIonMassesListOnlyMatches(Dictionary<ProductType, double[]> matchedIonDictPositiveIsMatch)
         {
             this.matchedIonDictPositiveIsMatch = matchedIonDictPositiveIsMatch;
         }
@@ -44,7 +43,6 @@ namespace EngineLayer
         {
             return matchedIonDictPositiveIsMatch.GetEnumerator();
         }
-
         #endregion Public Methods
 
         #region Internal Methods
