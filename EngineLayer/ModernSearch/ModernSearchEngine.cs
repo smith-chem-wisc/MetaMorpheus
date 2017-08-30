@@ -159,7 +159,7 @@ namespace EngineLayer.ModernSearch
 
         protected void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
-            List<int> listSeenipos = new List<int>();
+            HashSet<int> listSeenipos = new HashSet<int>();
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
                 var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
@@ -199,7 +199,7 @@ namespace EngineLayer.ModernSearch
             }
         }
 
-        protected void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores, List<int> listSeenipos)
+        protected void GeneratePeptideScores(double theAdd, double experimentalPeakInDaltons, double[] peptideScores, HashSet<int> listSeenipos)
         {
             float closestPeak;
             var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
