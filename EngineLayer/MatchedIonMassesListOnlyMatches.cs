@@ -46,6 +46,12 @@ namespace EngineLayer
             return matchedIonDictPositiveIsMatch.GetEnumerator();
         }
 
+        public override bool Equals(object obj)
+        {
+            var kk = obj as MatchedIonMassesListOnlyMatches;
+            return kk != null && Equals(kk);
+        }
+
         public override int GetHashCode()
         {
             return matchedIonDictPositiveIsMatch.SelectMany(b => b.Value).Count(b => b > 0);

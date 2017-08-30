@@ -171,7 +171,7 @@ namespace EngineLayer.ModernSearch
             {
                 List<IMzPeak> experimentalPeaks = new List<IMzPeak>();
                 //If HCD
-                if (lp.Contains(ProductType.B) | lp.Contains(ProductType.Y))
+                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
@@ -179,7 +179,7 @@ namespace EngineLayer.ModernSearch
                     }
                 }
                 //If ETD
-                if (lp.Contains(ProductType.C) | lp.Contains(ProductType.Zdot))
+                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
