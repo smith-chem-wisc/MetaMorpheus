@@ -21,7 +21,7 @@ namespace EngineLayer
             DoLocalizationAnalysis = true;
             WritePrunedDatabase = false;
             KeepAllUniprotMods = true;
-            MassDiffAcceptors = GlobalEngineLevelSettings.SearchModesKnown.First();
+            MassDiffAcceptor = GlobalEngineLevelSettings.SearchModesKnown.First();
         }
 
         #endregion Public Constructors
@@ -38,7 +38,7 @@ namespace EngineLayer
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public bool SearchDecoy { get; set; }
-        public MassDiffAcceptor MassDiffAcceptors { get; set; }
+        public MassDiffAcceptor MassDiffAcceptor { get; set; }
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }

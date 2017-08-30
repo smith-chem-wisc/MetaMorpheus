@@ -75,9 +75,11 @@ namespace EngineLayer
         public double? PeptideMonisotopicMass { get; private set; }
         public int? ProteinLength { get; private set; }
         public List<double> LocalizedScores { get; internal set; }
-        public MatchedIonMassesListOnlyMasses MatchedIonDictPositiveIsMatch { get; internal set; }
+        public Dictionary<ProductType, double[]> MatchedIonDictOnlyMatches { get; internal set; }
         public string ProteinAccesion { get; private set; }
         public Dictionary<string, int> ModsIdentified { get; private set; }
+        public Dictionary<ProductType, double[]> ProductMassErrorDa { get; internal set; }
+        public Dictionary<ProductType, double[]> ProductMassErrorPpm { get; internal set; }
 
         #endregion Public Properties
 
@@ -129,6 +131,8 @@ namespace EngineLayer
 
             sb.Append('\t' + "Matched Ion Counts");
             sb.Append('\t' + "Matched Ion Masses");
+            sb.Append('\t' + "Matched Ion Mass Diff (Da)");
+            sb.Append('\t' + "Matched Ion Mass Diff (Ppm)");
 
             sb.Append('\t' + "Localized Scores");
             sb.Append('\t' + "Improvement Possible");
@@ -268,18 +272,32 @@ namespace EngineLayer
                 sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
-            if (MatchedIonDictPositiveIsMatch != null)
+            if (MatchedIonDictOnlyMatches != null)
             {
-                sb.Append('\t' + string.Join(";", MatchedIonDictPositiveIsMatch.Select(b => b.Value.Count(c => c > 0))));
+                //Count
+                sb.Append('\t' + string.Join(";", MatchedIonDictOnlyMatches.Select(b => b.Value.Count(c => c > 0))));
 
+                //Masses
                 sb.Append('\t' + "[");
-                foreach (var kvp in MatchedIonDictPositiveIsMatch)
-                    sb.Append("[" + string.Join(",", kvp.Value.Where(b => b > 0).Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                foreach (var kvp in MatchedIonDictOnlyMatches)
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
+
+                //Mass error Da
+                sb.Append('\t' + "[");
+                foreach (var kvp in ProductMassErrorDa)
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
+                sb.Append("]");
+
+                //Mass error ppm
+                sb.Append('\t' + "[");
+                foreach (var kvp in ProductMassErrorPpm)
+                    sb.Append("[" + string.Join(",", kvp.Value.Select(b => b.ToString("F5", CultureInfo.InvariantCulture))) + "];");
                 sb.Append("]");
             }
             else
             {
-                sb.Append('\t' + " " + '\t' + " ");
+                sb.Append('\t' + " " + '\t' + " " + '\t' + " " + '\t' + " ");
             }
 
             if (LocalizedScores != null)

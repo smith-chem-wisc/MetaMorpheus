@@ -262,7 +262,7 @@ namespace MetaMorpheusGUI
             foreach (var ye in localizeModTypeForTreeViewObservableCollection)
                 ye.VerifyCheckState();
 
-            SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(task.SearchParameters.MassDiffAcceptors.FileNameAddition)).Use = true;
+            SearchModesForThisTask.First(b => b.searchMode.FileNameAddition.Equals(task.SearchParameters.MassDiffAcceptor.FileNameAddition)).Use = true;
 
             writePrunedDatabaseCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             keepAllUniprotModsCheckBox.IsChecked = task.SearchParameters.KeepAllUniprotMods;
@@ -300,12 +300,12 @@ namespace MetaMorpheusGUI
                     MessageBox.Show("Warning: N-terminal ions were chosen for the C-terminal protease 'singleC'");
                 if (((Protease)proteaseComboBox.SelectedItem).Name.Equals("singleN") && (yCheckBox.IsChecked.Value || zdotCheckBox.IsChecked.Value))
                     MessageBox.Show("Warning: C-terminal ions were chosen for the N-terminal protease 'singleN'");
-                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("non-specific"))
                 {
                     MessageBox.Show("The non-specific protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'singleN' or 'singleC'.");
                     return;
                 }
-                if (!((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
+                if (((Protease)proteaseComboBox.SelectedItem).Name.Contains("semi-trypsin"))
                 {
                     MessageBox.Show("The semi-trypsin protease is designed for classic/modern searches and should not be assigned for the non-specific search. \n Please use 'trypsin'.");
                     return;
@@ -414,7 +414,7 @@ namespace MetaMorpheusGUI
                     TheTask.CommonParameters.ListOfModsLocalize.AddRange(heh.Children.Where(b => b.Use).Select(b => new Tuple<string, string>(b.Parent.DisplayName, b.DisplayName)));
             }
 
-            TheTask.SearchParameters.MassDiffAcceptors = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).First();
+            TheTask.SearchParameters.MassDiffAcceptor = SearchModesForThisTask.Where(b => b.Use).Select(b => b.searchMode).First();
             TheTask.SearchParameters.DoHistogramAnalysis = checkBoxHistogramAnalysis.IsChecked.Value;
 
             TheTask.SearchParameters.WritePrunedDatabase = writePrunedDatabaseCheckBox.IsChecked.Value;

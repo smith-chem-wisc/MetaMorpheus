@@ -121,7 +121,6 @@
     <Compile Include="CrosslinkSearch\PsmCross.cs" />
     <Compile Include="FdrInfo.cs" />
     <Compile Include="Localization\LocalizationEngineResults.cs" />
-    <Compile Include="MatchedIonMassesListOnlyMatches.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisEngine.cs" />
     <Compile Include="ModificationAnalysis\ModificationAnalysisResults.cs" />
     <Compile Include="ProteinParsimony\ProteinGroup.cs" />
