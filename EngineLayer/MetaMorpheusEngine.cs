@@ -148,6 +148,9 @@ namespace EngineLayer
                 return 0;
 
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+            int testTheoreticalIndex;
+            double testTheoreticalMz;
+            double testTheoreticalMass;
             // Loop over all experimental indices
             for (int experimentalIndex = 0; experimentalIndex < numExperimentalPeaks; experimentalIndex++)
             {
@@ -165,7 +168,10 @@ namespace EngineLayer
                     currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
                 }
                 // Else if for sure passed a theoretical
-                else if (currentExperimentalMz > currentTheoreticalMz)
+                else if (currentExperimentalMz < currentTheoreticalMz)
+                {
+                }
+                else
                 {
                     // Move on to next index and never come back!
                     currentTheoreticalIndex++;
@@ -173,18 +179,25 @@ namespace EngineLayer
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
                     currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
-                    experimentalIndex--;
-                }
-                else
-                {
-                    experimentalIndex++;
-                    if (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex])
+
+                    // Start with the current ones
+                    testTheoreticalIndex = currentTheoreticalIndex;
+                    testTheoreticalMz = currentTheoreticalMz;
+                    testTheoreticalMass = currentTheoreticalMass;
+                    // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
+                    while (currentExperimentalMz > testTheoreticalMz)
                     {
-                        do
-                        {
-                            experimentalIndex++;
-                        } while (experimentalIndex < numExperimentalPeaks && currentTheoreticalMz > experimental_mzs[experimentalIndex]);
-                        experimentalIndex--;
+                        // Store old info for possible reuse
+                        currentTheoreticalMass = testTheoreticalMass;
+                        currentTheoreticalMz = testTheoreticalMz;
+                        currentTheoreticalIndex = testTheoreticalIndex;
+
+                        // Update test stuff!
+                        testTheoreticalIndex++;
+                        if (testTheoreticalIndex == TotalProductsHere)
+                            break;
+                        testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
+                        testTheoreticalMz = testTheoreticalMass + Constants.protonMass;
                     }
                     experimentalIndex--;
                 }
