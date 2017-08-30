@@ -13,7 +13,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class AnalysisEngineTests
+    public static class AnalysisEngineTests
     {
         #region Public Methods
 
@@ -53,8 +53,6 @@ namespace Test
                 i++;
             }
 
-            List<Psm>[] newPsms = new List<Psm>[1];
-
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
 
             PeptideWithPossibleModifications modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications).Last();
@@ -89,11 +87,11 @@ namespace Test
             Psm matchB = new Psm(compactPeptide2, 0, 0, 0, scanB);
             Psm matchC = new Psm(compactPeptide3, 0, 0, 0, scanC);
 
-            newPsms[0] = new List<Psm> { matchA, matchB, matchC };
+            var newPsms = new List<Psm> { matchA, matchB, matchC };
 
             IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
             Action<List<Psm>, string, List<string>> action2 = (List<Psm> l, string s, List<string> sdf) => {; };
 
             bool DoPrecursorDeconvolution = true;
@@ -114,7 +112,7 @@ namespace Test
             var res = (SequencesToActualProteinPeptidesEngineResults)sequencesToActualProteinPeptidesEngine.Run();
             var compactPeptideToProteinPeptideMatching = res.CompactPeptideToProteinPeptideMatching;
 
-            foreach (var huh in newPsms[0])
+            foreach (var huh in newPsms)
                 if (huh != null && huh.MostProbableProteinInfo == null)
                     huh.MatchToProteinLinkedPeptides(compactPeptideToProteinPeptideMatching);
 

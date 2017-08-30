@@ -183,6 +183,12 @@ namespace Test
 
         #region Public Methods
 
+        public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
+        {
+            MzmlMzSpectrum massSpectrum = new MzmlMzSpectrum(mz, intensities, false);
+            Scans[0] = new MzmlScan(Scans[0].OneBasedScanNumber, massSpectrum, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime);
+        }
+
         public override IMzmlScan GetOneBasedScan(int scanNumber)
         {
             return Scans[scanNumber - 1];

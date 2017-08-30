@@ -5,7 +5,7 @@ using Proteomics;
 namespace Test
 {
     [TestFixture]
-    public class ModFitsTest
+    public static class ModFitsTest
     {
         #region Public Methods
 

@@ -6,7 +6,7 @@ using System.Text;
 namespace Test
 {
     [TestFixture]
-    public class MyEngineTest
+    public static class MyEngineTest
     {
         #region Public Methods
 

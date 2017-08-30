@@ -360,15 +360,6 @@ namespace TaskLayer
             return ids;
         }
 
-        private int GetOneBasedIndexInProtein(int oneIsNterminus, PeptideWithSetModifications peptideWithSetModifications)
-        {
-            if (oneIsNterminus == 1)
-                return peptideWithSetModifications.OneBasedStartResidueInProtein;
-            if (oneIsNterminus == peptideWithSetModifications.Length + 2)
-                return peptideWithSetModifications.OneBasedEndResidueInProtein;
-            return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
-        }
-
         private string GenerateOutputFolderForIndices(List<DbForTask> dbFilenameList)
         {
             var folder = Path.Combine(Path.GetDirectoryName(dbFilenameList.First().FilePath), DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));

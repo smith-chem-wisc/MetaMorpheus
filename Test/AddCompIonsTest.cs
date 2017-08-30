@@ -13,7 +13,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    internal class AddCompIonsTest
+    internal static class AddCompIonsTest
     {
         #region Public Methods
 
@@ -26,7 +26,7 @@ namespace Test
             var proteinList = new List<Protein> { new Protein("QXQ", null) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
-            var searchModes = new List<MassDiffAcceptor> { new OpenSearchMode() };
+            var searchModes = new OpenSearchMode();
 
             bool DoPrecursorDeconvolution = true;
             bool UseProvidedPrecursorInfo = true;
@@ -36,9 +36,7 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
 
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -52,22 +50,20 @@ namespace Test
                 ScoreCutoff = 1,
             };
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, false, CommonParameters, new List<string>()).Run();
-            Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray[0].Length, allPsmsArray2[0].Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score > 1);
+            Assert.IsTrue(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0][0].ScanNumber, allPsmsArray2[0][0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score < allPsmsArray[0][0].Score * 2 && allPsmsArray2[0][0].Score + 2 > allPsmsArray[0][0].Score * 2);
+            Assert.IsTrue(allPsmsArray2[0].Score < allPsmsArray[0].Score *3 && allPsmsArray2[0].Score + 1 > allPsmsArray[0].Score *3);
         }
 
         [Test]
@@ -94,11 +90,11 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
 
-            var searchModes = new List<MassDiffAcceptor> { new SinglePpmAroundZeroSearchMode(5) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             SearchParameters SearchParameters = new SearchParameters
             {
-                MassDiffAcceptors = searchModes
+                MassDiffAcceptor = searchModes
             };
             CommonParameters CommonParameters = new CommonParameters
             {
@@ -126,28 +122,24 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, DoPrecursorDeconvolution, UseProvidedPrecursorInfo, DeconvolutionIntensityRatio, DeconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Psm[][] allPsmsArray = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray[aede] = new Psm[listOfSortedms2Scans.Length];
-            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>()).Run();
+            Psm[] allPsmsArray = new Psm[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
 
-            Psm[][] allPsmsArray2 = new Psm[searchModes.Count()][];
-            for (int aede = 0; aede < searchModes.Count; aede++)
-                allPsmsArray2[aede] = new Psm[listOfSortedms2Scans.Length];
+            Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
             SearchParameters.AddCompIons = true;
-            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptors, new List<string>()).Run();
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, peptideIndex, keys, fragmentIndex, new List<ProductType> { ProductType.B, ProductType.Y }, 0, CommonParameters, SearchParameters.AddCompIons, SearchParameters.MassDiffAcceptor, new List<string>()).Run();
 
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray[0].Length, allPsmsArray2[0].Length);
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score > 1);
+            Assert.IsTrue(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0][0].ScanNumber, allPsmsArray2[0][0].ScanNumber);
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0][0].Score < allPsmsArray[0][0].Score * 2 && allPsmsArray2[0][0].Score + 2 > allPsmsArray[0][0].Score * 2);
+            Assert.IsTrue(allPsmsArray2[0].Score < allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
         }
 
         [Test]
@@ -157,10 +149,9 @@ namespace Test
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
             double precursorMass = 300;
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
-            double[] matchedIonMassesListPositiveIsMatch = new double[sorted_theoretical_product_masses_for_this_peptide.Count()];
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            double scoreT = MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, true, precursorMass, lp);
-            double scoreF = MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonMassesListPositiveIsMatch, false, precursorMass, lp);
+            double scoreT = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, true, precursorMass, lp);
+            double scoreF = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, false, precursorMass, lp);
             Assert.IsTrue(scoreT < scoreF * 2 && scoreT + 1 > scoreF * 2);
         }
 

@@ -13,11 +13,11 @@ using UsefulProteomicsDatabases;
 namespace Test
 {
     [TestFixture]
-    public class MyTaskTest
+    public static class MyTaskTest
     {
         #region Public Fields
 
-        public static bool hasPrunedRun = false;
+        public static bool hasPrunedRun;
 
         #endregion Public Fields
 
@@ -261,6 +261,87 @@ namespace Test
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName1, mzmlName2 }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
+        }
+
+        [Test]
+        public static void MakeSureFdrDoesntSkip()
+        {
+            MetaMorpheusTask task = new SearchTask
+            {
+                CommonParameters = new CommonParameters
+                {
+                    DigestionParams = new DigestionParams
+                    {
+                        MinPeptideLength = null,
+                    },
+                    ScoreCutoff = 1,
+                    DeconvolutionIntensityRatio = 999,
+                    DeconvolutionMassTolerance = new PpmTolerance(50),
+                },
+                SearchParameters = new SearchParameters
+                {
+                    SearchDecoy = false,
+                    MassDiffAcceptor = new OpenSearchMode(),
+                }
+            };
+
+            string xmlName = "MakeSureFdrDoesntSkip.xml";
+
+            #region Generate protein and write to file
+
+            {
+                Protein theProtein = new Protein("MG", "accession1");
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+            }
+
+            #endregion Generate protein and write to file
+
+            string mzmlName = @"MakeSureFdrDoesntSkip.mzML";
+
+            #region Generate and write the mzml
+
+            {
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, true, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+
+                List<ModificationWithMass> fixedModifications = new List<ModificationWithMass>();
+
+                var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications).ToList();
+
+                var okjhjf = targetDigested[0].GetPeptidesWithSetModifications(task.CommonParameters.DigestionParams, GlobalEngineLevelSettings.AllModsKnown.OfType<ModificationWithMass>().ToList()).ToList();
+                PeptideWithSetModifications targetGood = okjhjf.First();
+
+                TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood }, true);
+
+                var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
+
+                ii.Add(1);
+                ii.Add(1);
+                ii.Add(1);
+                ii.Add(1);
+
+                var intensities = ii.ToArray();
+
+                var mm = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
+
+                var hah = 104.35352;
+                mm.Add(hah);
+                mm.Add(hah + 1);
+                mm.Add(hah + 2);
+
+                var mz = mm.ToArray();
+
+                Array.Sort(mz, intensities);
+
+                myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
+
+                IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            }
+
+            #endregion Generate and write the mzml
+
+            // RUN!
+            var theStringResult = task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
         }
 
         [Test]
@@ -538,20 +619,20 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, null);
             engine.Run();
 
-            List<string> found = new List<string>();
             string line;
 
+            bool foundD = false;
             using (StreamReader file = new StreamReader(Path.Combine(MySetUpClass.outputFolder, "TestUnique", "results.txt")))
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("Unique PSMS within 1% FDR"))
+                    if (line.Contains("Unique peptides within 1% FDR: 4"))
                     {
-                        found.Add(line);
-                        Assert.AreEqual(found[0], "Unique PSMS within 1% FDR: 4");
+                        foundD = true;
                     }
                 }
             }
+            Assert.IsTrue(foundD);
 
             #endregion run
         }

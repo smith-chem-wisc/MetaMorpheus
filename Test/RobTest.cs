@@ -14,7 +14,7 @@ using System.Linq;
 namespace Test
 {
     [TestFixture]
-    public class RobTest
+    public static class RobTest
     {
         #region Public Methods
 
@@ -195,8 +195,6 @@ namespace Test
 
             //prints initial dictionary
             List<Protein> proteinList = new List<Protein>();
-            System.Console.WriteLine("----Initial Dictionary----");
-            System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in initialDictionary)
             {
                 proteinList = new List<Protein>();
@@ -205,16 +203,12 @@ namespace Test
                 {
                     if (!proteinList.Contains(peptide.Protein))
                     {
-                        Console.Write(peptide.Protein.BaseSequence + " ;; ");
                         proteinList.Add(peptide.Protein);
                     }
                 }
-                System.Console.WriteLine();
             }
 
             //prints parsimonious dictionary
-            System.Console.WriteLine("----Parsimonious Dictionary----");
-            System.Console.WriteLine("PEPTIDE\t\t\tPROTEIN");
             foreach (var kvp in dictionary)
             {
                 proteinList = new List<Protein>();
@@ -227,15 +221,6 @@ namespace Test
                         proteinList.Add(peptide.Protein);
                     }
                 }
-                System.Console.WriteLine();
-            }
-
-            //prints protein groups after scoring /
-            System.Console.WriteLine();
-            System.Console.WriteLine("ProteinGroups:");
-            foreach (var proteinGroup in proteinGroups)
-            {
-                System.Console.WriteLine(proteinGroup);
             }
 
             // check that correct proteins are in parsimony list
@@ -449,7 +434,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestFlashLFQ()
+        public static void TestFlashLfq()
         {
             FlashLFQEngine e = new FlashLFQEngine();
             Assert.That(e != null);

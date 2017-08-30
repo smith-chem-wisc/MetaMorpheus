@@ -8,7 +8,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class TestToml
+    public static class TestToml
     {
         #region Public Methods
 
@@ -21,7 +21,7 @@ namespace Test
 
             Assert.AreEqual(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.ProductMassTolerance.ToString(), searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString());
-            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptors[0].FileNameAddition, searchTaskLoaded.SearchParameters.MassDiffAcceptors[0].FileNameAddition);
+            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptor.FileNameAddition, searchTaskLoaded.SearchParameters.MassDiffAcceptor.FileNameAddition);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item1);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item2);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsLocalize, searchTaskLoaded.CommonParameters.ListOfModsLocalize);
@@ -58,7 +58,7 @@ namespace Test
             Assert.AreEqual(InitiatorMethionineBehavior.Undefined, f.InitiatorMethionineBehavior);
             Assert.IsNull(f.MaxMissedCleavages);
 
-            CommonParameters c = SearchTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
             Assert.AreEqual(InitiatorMethionineBehavior.Variable, c.DigestionParams.InitiatorMethionineBehavior);
