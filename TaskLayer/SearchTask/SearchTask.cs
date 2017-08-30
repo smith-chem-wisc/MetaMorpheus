@@ -735,7 +735,8 @@ namespace TaskLayer
             {
                 CommonParameters.DigestionParams.Protease = new Protease(CommonParameters.DigestionParams.Protease, terminusType);
                 foreach (FileSpecificSettings fileSpecificSettings in fileSettingsList)
-                    fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusType);
+                    if(fileSpecificSettings!=null)
+                        fileSpecificSettings.Protease = new Protease(fileSpecificSettings.Protease, terminusType);
             }
             HashSet<DigestionParams> ListOfDigestionParams = GetListOfDistinctDigestionParams(CommonParameters, fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b)));
 
