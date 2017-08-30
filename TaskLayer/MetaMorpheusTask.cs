@@ -114,7 +114,8 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string fullFilePath,
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(
+         IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, string fullFilePath,
          bool doPrecursorDeconvolution,
          bool useProvidedPrecursorInfo,
          double deconvolutionIntensityRatio,

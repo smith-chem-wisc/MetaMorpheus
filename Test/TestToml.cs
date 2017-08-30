@@ -21,7 +21,7 @@ namespace Test
 
             Assert.AreEqual(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString());
             Assert.AreEqual(searchTask.CommonParameters.ProductMassTolerance.ToString(), searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString());
-            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptors.FileNameAddition, searchTaskLoaded.SearchParameters.MassDiffAcceptors.FileNameAddition);
+            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptor.FileNameAddition, searchTaskLoaded.SearchParameters.MassDiffAcceptor.FileNameAddition);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item1);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed[0].Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed[0].Item2);
             Assert.AreEqual(searchTask.CommonParameters.ListOfModsLocalize, searchTaskLoaded.CommonParameters.ListOfModsLocalize);
