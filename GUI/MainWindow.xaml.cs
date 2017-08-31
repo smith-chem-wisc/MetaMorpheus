@@ -19,7 +19,6 @@ namespace MetaMorpheusGUI
     public partial class MainWindow : Window
     {
         #region Private Fields
-
         private readonly ObservableCollection<RawDataForDataGrid> rawDataObservableCollection = new ObservableCollection<RawDataForDataGrid>();
         private readonly ObservableCollection<ProteinDbForDataGrid> proteinDbObservableCollection = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> staticTasksObservableCollection = new ObservableCollection<PreRunTask>();
@@ -38,7 +37,7 @@ namespace MetaMorpheusGUI
             dataGridXMLs.DataContext = proteinDbObservableCollection;
             dataGridDatafiles.DataContext = rawDataObservableCollection;
             tasksTreeView.DataContext = staticTasksObservableCollection;
-            
+
             try
             {
                 foreach (var modFile in Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Mods")))
@@ -117,7 +116,7 @@ namespace MetaMorpheusGUI
             {
                 var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
                 huh.SetInProgress(false);
-                
+
                 dataGridDatafiles.Items.Refresh();
             }
         }
@@ -271,13 +270,12 @@ namespace MetaMorpheusGUI
             var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
             switch (theExtension)
             {
-                
+
                 case ".raw":
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
-                    var commonParams = new CommonParameters();
-                    zz.Parameters = commonParams.DigestionParams.ToString();
+                    zz.Parameters = "default";
                     break;
 
                 case ".xml":
@@ -330,7 +328,7 @@ namespace MetaMorpheusGUI
                     break;
             }
         }
-        
+
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
@@ -394,10 +392,12 @@ namespace MetaMorpheusGUI
                 RemoveLastTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
             }
-            if(SelectedRawFiles.Count == 0)
+            if (SelectedRawFiles.Count == 0)
                 ChangeParameters.IsEnabled = false;
             else
                 ChangeParameters.IsEnabled = true;
+            
+
         }
 
         private void AddSearchTaskButton_Click(object sender, RoutedEventArgs e)
@@ -704,14 +704,28 @@ namespace MetaMorpheusGUI
             var dialog = new FileSpecificParamWindow(SelectedRawFiles);
             if (dialog.ShowDialog() == true)
             {
+                string fullPathofToml = "";
                 int i = 0;
-                foreach(var settings in dialog.FileSpecificSettingsList)
+                foreach (var settings in dialog.FileSpecificSettingsList)
                 {
                     string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
                     string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
-                    string fullPathofToml = Path.Combine(directory, fileName);
+                    fullPathofToml = Path.Combine(directory, fileName);
                     Toml.WriteFile(settings, fullPathofToml + ".toml", MetaMorpheusTask.tomlConfig);
                     i++;
+                }
+
+                foreach (var file in rawDataObservableCollection)
+                {
+                    for (int j = 0; j < SelectedRawFiles.Count(); j++)
+                    {
+                        if (file.FileName.Equals(SelectedRawFiles[j].FileName))
+                        {
+                            file.Parameters = File.ReadAllText(fullPathofToml + ".toml");
+                        }
+                    }
+
+
                 }
                 UpdateTaskGuiStuff();
             }
@@ -720,6 +734,7 @@ namespace MetaMorpheusGUI
         private void AddSelectedRaw(object sender, RoutedEventArgs e)
         {
             DataGridRow obj = (DataGridRow)sender;
+            
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Add(ok);
             UpdateTaskGuiStuff();

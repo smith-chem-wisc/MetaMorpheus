@@ -84,7 +84,7 @@ namespace TaskLayer
         }
 
         #endregion Public Constructors
-
+    
         #region Public Properties
 
         public Protease Protease { get; set; }

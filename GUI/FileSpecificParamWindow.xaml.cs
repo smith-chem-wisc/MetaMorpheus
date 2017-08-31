@@ -42,17 +42,9 @@ namespace MetaMorpheusGUI
 
             foreach (string initiatior_methionine_behavior in Enum.GetNames(typeof(InitiatorMethionineBehavior)))
                 initiatorMethionineBehaviorComboBox.Items.Add(initiatior_methionine_behavior);
-            string path = selectedRaw[0].FilePath;
 
             productMassToleranceComboBox.Items.Add("Absolute");
             productMassToleranceComboBox.Items.Add("Ppm");
-
-        }
-
-        public void WriteTomls(ObservableCollection<RawDataForDataGrid> a)
-        {
-
-
 
         }
 
@@ -117,12 +109,12 @@ namespace MetaMorpheusGUI
         }
 
         //helper methods to return null if field is empty
-        private int? TryParseNullable(string val)
+        static private int? TryParseNullable(string val)
         {
             return int.TryParse(val, out int outValue) ? (int?)outValue : null;
         }
 
-        private double? TryParseNullableDouble(string val)
+        static private double? TryParseNullableDouble(string val)
         {
             return double.TryParse(val, out double outValue) ? (double?)outValue : null;
         }

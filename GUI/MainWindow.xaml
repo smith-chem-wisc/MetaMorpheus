@@ -60,7 +60,7 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="20" />
                         </Grid.RowDefinitions>
-                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top">
+                        <DataGrid x:Name="dataGridDatafiles" ItemsSource="{Binding}" CanUserSortColumns="True" CanUserResizeColumns="False" CanUserReorderColumns="False" DockPanel.Dock="Top" >
                             <DataGrid.Resources>
                                 <ResourceDictionary>
                                     <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
@@ -75,6 +75,10 @@
                                                 <Setter Property="Foreground" Value="Black" />
                                             </Trigger>
                                             <DataTrigger Binding="{Binding InProgress}" Value="True">
+                                                <Setter Property="Foreground" Value="Blue" />
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Parameter}" Value="True">
                                                 <Setter Property="Foreground" Value="Blue" />
                                                 <Setter Property="FontWeight" Value="Bold" />
                                             </DataTrigger>
