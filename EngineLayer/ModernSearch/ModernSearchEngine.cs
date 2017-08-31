@@ -194,10 +194,10 @@ namespace EngineLayer.ModernSearch
             {
                 List<DissociationType> dissociationTypes = new List<DissociationType>();
 
-                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y)) 
+                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
                     dissociationTypes.Add(DissociationType.HCD);
 
-                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot)) 
+                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
                     dissociationTypes.Add(DissociationType.ETD);
 
                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
@@ -208,7 +208,7 @@ namespace EngineLayer.ModernSearch
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
-                        for (int i = spectrum.MassSpectrum.Size-1; i >=0; i--)
+                        for (int i = spectrum.MassSpectrum.Size - 1; i >= 0; i--)
                             complementaryIons[i] = (massShiftForComplementaryConversion - spectrum.MassSpectrum[i].Mz, spectrum.MassSpectrum[i].Intensity);
 
                         //propogation of error from precursor mass and complementary product mass
