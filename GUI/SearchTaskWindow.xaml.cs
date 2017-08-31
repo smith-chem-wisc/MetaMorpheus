@@ -190,6 +190,11 @@ namespace MetaMorpheusGUI
             DeconvolutionMassToleranceInPpmTextBox.Text = task.CommonParameters.DeconvolutionMassTolerance.Value.ToString();
             minScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
 
+            trimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
+            trimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            TopNPeaksCheckBox.Text = task.CommonParameters.TopNpeaks.HasValue ? task.CommonParameters.TopNpeaks.Value.ToString(CultureInfo.InvariantCulture) : "";
+            MinRatioCheckBox.Text = task.CommonParameters.MinRatio.HasValue ? task.CommonParameters.MinRatio.Value.ToString(CultureInfo.InvariantCulture) : "";
+
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
             {
                 var theModType = fixedModTypeForTreeViewObservableCollection.FirstOrDefault(b => b.DisplayName.Equals(mod.Item1));
@@ -347,6 +352,11 @@ namespace MetaMorpheusGUI
             #endregion Check Task Validity
 
             #region Save Parameters
+
+            TheTask.CommonParameters.TrimMs1Peaks = trimMs1.IsChecked.Value;
+            TheTask.CommonParameters.TrimMsMsPeaks = trimMsMs.IsChecked.Value;
+            TheTask.CommonParameters.TopNpeaks = int.TryParse(TopNPeaksCheckBox.Text, out int TopNPeak) ? (int?)TopNPeak : null;
+            TheTask.CommonParameters.MinRatio = double.TryParse(MinRatioCheckBox.Text, out double MinRatio) ? (double?)MinRatio : null;
 
             if (classicSearchRadioButton.IsChecked.Value)
                 TheTask.SearchParameters.SearchType = SearchType.Classic;

@@ -16,6 +16,8 @@
                 <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
                         <StackPanel>
+                        <GroupBox Header="Deisotoping">
+                        <StackPanel>
                             <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" />
                             <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" />
                             <StackPanel Orientation="Horizontal" Margin="5">
@@ -30,6 +32,22 @@
                                 <Label Content="Deconvolution Mass Tolerance in PPM" />
                                 <TextBox x:Name="DeconvolutionMassToleranceInPpmTextBox" Width="45" />
                             </StackPanel>
+                            </StackPanel>
+                            </GroupBox>
+                            <GroupBox Header="Peak Trimming">
+                                <StackPanel>
+                                    <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks" IsChecked="True" />
+                                    <CheckBox x:Name="trimMsMs" Content="Trim MS/MS Peaks" IsChecked="True" />
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label Content="Top N peaks" />
+                                    <TextBox x:Name="TopNPeaksCheckBox" Width="45" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label Content="Minimum ratio" />
+                                    <TextBox x:Name="MinRatioCheckBox" Width="45" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
                             <CheckBox x:Name="disposeOfFilesWhenDone" Content="Dispose of files when done" IsChecked="True" />
                         </StackPanel>
                     </Expander>
