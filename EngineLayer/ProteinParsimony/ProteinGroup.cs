@@ -21,7 +21,7 @@ namespace EngineLayer
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides, HashSet<PeptideWithSetModifications> uniquePeptides)
         {
             Proteins = proteins;
-
+            ProteinGroupName = string.Join("|", new HashSet<string>(Proteins.Select(p => p.Accession)));
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
             AllPsmsBelowOnePercentFDR = new HashSet<Psm>();
@@ -54,10 +54,12 @@ namespace EngineLayer
 
         #region Public Properties
 
-        public double ProteinGroupScore { get; set; }
-
         public HashSet<Protein> Proteins { get; set; }
 
+        public string ProteinGroupName { get; private set; }
+        
+        public double ProteinGroupScore { get; set; }
+        
         public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
 
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
@@ -75,20 +77,20 @@ namespace EngineLayer
         public int CumulativeTarget { get; set; }
 
         public int CumulativeDecoy { get; set; }
-
-        public double[] IntensitiesByFile { get; set; }
-
+        
         public bool DisplayModsOnPeptides { get; set; }
 
         public List<string> ModsInfo { get; private set; }
 
-        public string[] FilesForQuantification { get; set; }
+        public static string[] FilesForQuantification { get; set; }
+
+        public double[] IntensitiesByFile { get; set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public string GetTabSeparatedHeader()
+        public static string GetTabSeparatedHeader(bool fileSpecificHeader)
         {
             var sb = new StringBuilder();
             sb.Append("Protein Accession" + '\t');
@@ -105,8 +107,11 @@ namespace EngineLayer
             sb.Append("Modification Info List" + "\t");
             if (FilesForQuantification != null)
             {
-                for (int i = 0; i < FilesForQuantification.Length; i++)
-                    sb.Append("Intensity_" + Path.GetFileNameWithoutExtension(FilesForQuantification[i]) + '\t');
+                if (!fileSpecificHeader)
+                    for (int i = 0; i < FilesForQuantification.Length; i++)
+                        sb.Append("Intensity_" + Path.GetFileNameWithoutExtension(FilesForQuantification[i]) + '\t');
+                else
+                    sb.Append("Intensity" + '\t');
             }
             sb.Append("Number of PSMs" + '\t');
             sb.Append("Summed Score" + '\t');
@@ -121,7 +126,7 @@ namespace EngineLayer
         {
             var sb = new StringBuilder();
             // list of protein accession numbers
-            sb.Append(string.Join("|", new HashSet<string>(Proteins.Select(p => p.Accession))));
+            sb.Append(ProteinGroupName);
             sb.Append("\t");
 
             // genes
@@ -385,6 +390,7 @@ namespace EngineLayer
             this.UniquePeptides.UnionWith(other.UniquePeptides);
             this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
             other.ProteinGroupScore = 0;
+            ProteinGroupName = string.Join("|", new HashSet<string>(Proteins.Select(p => p.Accession)));
         }
 
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
@@ -398,13 +404,12 @@ namespace EngineLayer
                 AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
                 DisplayModsOnPeptides = this.DisplayModsOnPeptides
             };
-
-            subsetPg.FilesForQuantification = new string[] { fullFilePath };
-
+            
             if (IntensitiesByFile != null)
-                subsetPg.IntensitiesByFile = new double[] { IntensitiesByFile[System.Array.IndexOf(FilesForQuantification, subsetPg.FilesForQuantification[0])] };
+                subsetPg.IntensitiesByFile = new double[] { IntensitiesByFile[System.Array.IndexOf(FilesForQuantification, fullFilePath)] };
             else
                 subsetPg.IntensitiesByFile = new double[1];
+
             return subsetPg;
         }
 

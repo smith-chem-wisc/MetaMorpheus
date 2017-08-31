@@ -884,12 +884,12 @@ namespace TaskLayer
             Status("Running FDR analysis...", taskId);
             var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, SearchParameters.MassDiffAcceptor, new List<string> { taskId }).Run();
 
-            List<ProteinGroup> proteinGroupsHere = null;
+            List<ProteinGroup> proteinGroups = null;
 
             if (SearchParameters.DoParsimony)
             {
-                var ressdf = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, true, new List<string> { taskId }).Run();
-                proteinGroupsHere = ressdf.sortedAndScoredProteinGroups;
+                var proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, allPsms, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, true, new List<string> { taskId }).Run();
+                proteinGroups = proteinScoringAndFdrResults.sortedAndScoredProteinGroups;
             }
 
             if (SearchParameters.DoLocalizationAnalysis)
@@ -912,7 +912,7 @@ namespace TaskLayer
 
             if (SearchParameters.DoQuantification)
             {
-                // pass global parameters to FlashLFQ
+                // pass quantification parameters to FlashLFQ
                 Status("Quantifying...", taskId);
                 FlashLfqEngine.PassFilePaths(currentRawFileList.ToArray());
 
@@ -931,34 +931,22 @@ namespace TaskLayer
                 var unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && p.FullSequence != null);
 
                 // pass protein group info for each PSM
-                Dictionary<Psm, List<string>> psmToProteinGroupsString = new Dictionary<Psm, List<string>>();
-                if (proteinGroupsHere != null)
+                Dictionary<Psm, List<string>> psmToProteinGroupNames = new Dictionary<Psm, List<string>>();
+                if (proteinGroups != null)
                 {
-                    Dictionary<Psm, List<ProteinGroup>> psmToProteinGroup = new Dictionary<Psm, List<ProteinGroup>>();
-                    foreach (var proteinGroup in proteinGroupsHere)
+                    ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
+                    
+                    foreach (var proteinGroup in proteinGroups)
                     {
-                        proteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
-
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
                         {
-                            List<ProteinGroup> list;
+                            List<string> proteinGroupNames;
 
-                            if (psmToProteinGroup.TryGetValue(psm, out list))
-                                list.Add(proteinGroup);
+                            if (psmToProteinGroupNames.TryGetValue(psm, out proteinGroupNames))
+                                proteinGroupNames.Add(proteinGroup.ProteinGroupName);
                             else
-                                psmToProteinGroup.Add(psm, new List<ProteinGroup> { proteinGroup });
+                                psmToProteinGroupNames.Add(psm, new List<string> { proteinGroup.ProteinGroupName });
                         }
-                    }
-
-                    foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
-                    {
-                        List<string> proteinGroupsStrings = new List<string>();
-                        List<ProteinGroup> list;
-                        if (psmToProteinGroup.TryGetValue(psm, out list))
-                            foreach (var proteinGroup in list)
-                                proteinGroupsStrings.Add(string.Join("|", new HashSet<string>(proteinGroup.Proteins.Select(p => p.Accession))));
-
-                        psmToProteinGroupsString.Add(psm, proteinGroupsStrings);
                     }
                 }
                 else
@@ -967,12 +955,19 @@ namespace TaskLayer
                     foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     {
                         var proteinsAccessionString = psm.CompactPeptides.SelectMany(b => b.Value.Item2).Select(b => b.Protein.Accession).Distinct();
-                        psmToProteinGroupsString.Add(psm, proteinsAccessionString.ToList());
+                        psmToProteinGroupNames.Add(psm, proteinsAccessionString.ToList());
                     }
                 }
 
+                // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
+                // the peptides should still be quantified but not considered for protein quantification
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
-                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupsString[psm]);
+                    if (!psmToProteinGroupNames.ContainsKey(psm))
+                        psmToProteinGroupNames.Add(psm, new List<string>() { "" });
+                
+                // pass PSMs to FlashLFQ to quantify identified peptides
+                foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
+                    FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]);
 
                 // run FlashLFQ
                 FlashLfqEngine.ConstructBinsFromIdentifications();
@@ -992,31 +987,28 @@ namespace TaskLayer
                 if (FlashLfqEngine.mbr)
                     FlashLfqEngine.RetentionTimeCalibrationAndErrorCheckMatchedFeatures();
 
-                // get protein intensity back from FlashLFQ
-                if (proteinGroupsHere != null)
+                // run protein quantification and get protein intensity back from FlashLFQ
+                if (proteinGroups != null)
                 {
                     Status("Quantifying proteins...", taskId);
                     var flashLfqProteinGroups = FlashLfqEngine.QuantifyProteins();
 
-                    Dictionary<string, ProteinGroup> accessionsToProteinGroup = new Dictionary<string, ProteinGroup>();
-                    foreach (var proteinGroup in proteinGroupsHere)
-                    {
-                        var t = string.Join("|", new HashSet<string>(proteinGroup.Proteins.Select(p => p.Accession)));
-                        if (!accessionsToProteinGroup.ContainsKey(t))
-                            accessionsToProteinGroup.Add(t, proteinGroup);
-                    }
+                    Dictionary<string, ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, ProteinGroup>();
+                    foreach (var proteinGroup in proteinGroups)
+                        if (!proteinGroupNameToProteinGroup.ContainsKey(proteinGroup.ProteinGroupName))
+                            proteinGroupNameToProteinGroup.Add(proteinGroup.ProteinGroupName, proteinGroup);
 
                     foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
                     {
                         ProteinGroup metamorpheusProteinGroup;
 
-                        if (accessionsToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out metamorpheusProteinGroup))
+                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out metamorpheusProteinGroup))
                             metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
                     }
 
-                    foreach (var proteinGroup in proteinGroupsHere)
+                    foreach (var proteinGroup in proteinGroups)
                         if (proteinGroup.IntensitiesByFile == null)
-                            proteinGroup.IntensitiesByFile = new double[FlashLfqEngine.filePaths.Length];
+                            proteinGroup.IntensitiesByFile = new double[ProteinGroup.FilesForQuantification.Length];
                 }
             }
 
@@ -1080,7 +1072,7 @@ namespace TaskLayer
 
             if (SearchParameters.DoParsimony)
             {
-                WriteProteinGroupsToTsv(proteinGroupsHere, OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
+                WriteProteinGroupsToTsv(proteinGroups, OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
 
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                 foreach (var fullFilePath in currentRawFileList)
@@ -1090,19 +1082,13 @@ namespace TaskLayer
                     var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                     var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
-                    foreach (var pg in proteinGroupsHere)
-                    {
-                        var subsetPg = pg.ConstructSubsetProteinGroup(fullFilePath);
-                        subsetPg.Score();
+                    foreach (var pg in proteinGroups)
+                        subsetProteinGroupsForThisFile.Add(pg.ConstructSubsetProteinGroup(fullFilePath));
 
-                        if (subsetPg.ProteinGroupScore != 0)
-                        {
-                            subsetPg.CalculateSequenceCoverage();
-                            subsetProteinGroupsForThisFile.Add(subsetPg);
-                        }
-                    }
-                    new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, false, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
-                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptor.FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, null);
+                    var subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile, SearchParameters.NoOneHitWonders, SearchParameters.ModPeptidesAreUnique, false, new List<string> { taskId, "Individual Spectra Files", fullFilePath }).Run();
+                    subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.sortedAndScoredProteinGroups;
+
+                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptor.FileNameAddition + "_ProteinGroups", new List<string> { taskId, "Individual Spectra Files", fullFilePath }, new List<string> { fullFilePath });
 
                     Status("Writing mzid...", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                     var mzidFilePath = Path.Combine(OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptor.FileNameAddition + ".mzid");
@@ -1135,8 +1121,7 @@ namespace TaskLayer
 
             if (SearchParameters.WritePrunedDatabase)
             {
-                Status("Writing Pruned Database...", new List<string> { taskId
-    });
+                Status("Writing Pruned Database...", new List<string> { taskId });
 
                 List<Modification> modificationsToAlwaysKeep = new List<Modification>();
                 if (SearchParameters.KeepAllUniprotMods)
@@ -1161,7 +1146,7 @@ namespace TaskLayer
                                 {
                                     if (!modsToWrite.ContainsKey(modd.Key))
                                         modsToWrite.Add(modd.Key, new List<Modification> { mod
-});
+                                        });
                                     else
                                         modsToWrite[modd.Key].Add(mod);
                                 }
@@ -1304,7 +1289,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(items.First().GetTabSeparatedHeader());
+                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader(FileNames.Count == 1));
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }

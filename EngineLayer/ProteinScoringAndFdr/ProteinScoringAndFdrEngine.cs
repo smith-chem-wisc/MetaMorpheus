@@ -11,19 +11,19 @@ namespace EngineLayer
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
         private List<ProteinGroup> proteinGroups;
-        private readonly bool scoreAndMergeProteinGroups;
+        private readonly bool mergeIndistinguishableProteinGroups;
 
         #endregion Private Fields
 
         #region Public Constructors
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool scoreAndMergeProteinGroups, List<string> nestedIds) : base(nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<Psm> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, List<string> nestedIds) : base(nestedIds)
         {
             this.newPsms = newPsms;
             this.proteinGroups = proteinGroups;
             this.noOneHitWonders = noOneHitWonders;
             this.treatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
-            this.scoreAndMergeProteinGroups = scoreAndMergeProteinGroups;
+            this.mergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
         }
 
         #endregion Public Constructors
@@ -34,9 +34,8 @@ namespace EngineLayer
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
             Status("Running protein scoring and FDR engine!", nestedIds);
-
-            if(scoreAndMergeProteinGroups)
-                ScoreProteinGroups(proteinGroups, newPsms);
+            
+            ScoreProteinGroups(proteinGroups, newPsms);
             myAnalysisResults.sortedAndScoredProteinGroups = DoProteinFdr(proteinGroups);
 
             return myAnalysisResults;
@@ -86,23 +85,26 @@ namespace EngineLayer
             foreach (var proteinGroup in proteinGroups)
                 proteinGroup.Score();
 
-            // merge protein groups that are indistinguishable after scoring
-            var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
-            for (int i = 0; i < (pg.Count - 1); i++)
+            if (mergeIndistinguishableProteinGroups)
             {
-                if (pg[i].ProteinGroupScore == pg[i + 1].ProteinGroupScore && pg[i].ProteinGroupScore != 0)
+                // merge protein groups that are indistinguishable after scoring
+                var pg = proteinGroups.OrderByDescending(p => p.ProteinGroupScore).ToList();
+                for (int i = 0; i < (pg.Count - 1); i++)
                 {
-                    var pgsWithThisScore = pg.Where(p => p.ProteinGroupScore == pg[i].ProteinGroupScore).ToList();
-
-                    // check to make sure they have the same peptides, then merge them
-                    foreach (var p in pgsWithThisScore)
+                    if (pg[i].ProteinGroupScore == pg[i + 1].ProteinGroupScore && pg[i].ProteinGroupScore != 0)
                     {
-                        var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
-                        var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
+                        var pgsWithThisScore = pg.Where(p => p.ProteinGroupScore == pg[i].ProteinGroupScore).ToList();
 
-                        if (p != pg[i] && seqs1.SetEquals(seqs2))
+                        // check to make sure they have the same peptides, then merge them
+                        foreach (var p in pgsWithThisScore)
                         {
-                            pg[i].MergeProteinGroupWith(p);
+                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.Sequence));
+                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.Sequence));
+
+                            if (p != pg[i] && seqs1.SetEquals(seqs2))
+                            {
+                                pg[i].MergeProteinGroupWith(p);
+                            }
                         }
                     }
                 }
