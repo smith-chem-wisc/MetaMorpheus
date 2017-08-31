@@ -396,7 +396,6 @@ namespace MetaMorpheusGUI
                 ChangeParameters.IsEnabled = false;
             else
                 ChangeParameters.IsEnabled = true;
-            
 
         }
 
@@ -727,6 +726,7 @@ namespace MetaMorpheusGUI
 
 
                 }
+                dataGridDatafiles.Items.Refresh();
                 UpdateTaskGuiStuff();
             }
         }
@@ -738,6 +738,7 @@ namespace MetaMorpheusGUI
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Add(ok);
             UpdateTaskGuiStuff();
+            
         }
 
         private void RemoveSelectedRaw(object sender, RoutedEventArgs e)

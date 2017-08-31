@@ -70,7 +70,6 @@ namespace MetaMorpheusGUI
             {
 
                 FileSpecificSettingsList[i] = new FileSpecificSettings();
-                FileSpecificSettingsList[i].DeconvolutionIntensityRatio = null;
                 FileSpecificSettingsList[i].ConserveMemory = conserveMemoryCheckBox.IsChecked.Value;
                 FileSpecificSettingsList[i].DeconvolutionIntensityRatio = TryParseNullable(DeconvolutionIntensityRatioTextBox.Text);
                 if (TryParseNullableDouble((DeconvolutionMassToleranceInPpmTextBox.Text)) == null)
