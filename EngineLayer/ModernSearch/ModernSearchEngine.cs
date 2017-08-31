@@ -28,6 +28,11 @@ namespace EngineLayer.ModernSearch
         #region Private Fields
 
         private const double tolForScoreImprovement = 1e-9;
+        private static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
+        {
+            { DissociationType.HCD, Constants.protonMass },
+            { DissociationType.ETD, 2*Constants.protonMass }
+        };
 
         #endregion Private Fields
 
@@ -184,64 +189,61 @@ namespace EngineLayer.ModernSearch
             previousMaxRange = CommonParameters.ProductMassTolerance.GetMaximumValue(previousExperimentalPeakInDaltons);
             FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
 
-
             //generate experimental complementary ions if specified
             if (addCompIons)
             {
+                List<DissociationType> dissociationTypes = new List<DissociationType>();
+
+                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y)) 
+                    dissociationTypes.Add(DissociationType.HCD);
+
+                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot)) 
+                    dissociationTypes.Add(DissociationType.ETD);
+
                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
-                bool HCD = lp.Contains(ProductType.B) || lp.Contains(ProductType.Y);
-                bool ETD = lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot);
-                IMzPeak[][] complimentaryPeaks = new IMzPeak[2][];
+                (double mass, double intensity)[] complementaryIons = new(double mass, double intensity)[spectrum.MassSpectrum.Size];
 
-                if (HCD)
+                foreach (DissociationType dissociationType in dissociationTypes)
                 {
-                    complimentaryPeaks[0] = new IMzPeak[spectrum.MassSpectrum.Size];
-                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
-                        complimentaryPeaks[0][i] = new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass), (spectrum.MassSpectrum[i].Intensity));
-                }
-
-                if (ETD)
-                {
-                    complimentaryPeaks[1] = new IMzPeak[spectrum.MassSpectrum.Size];
-                    for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
-                        complimentaryPeaks[1][i] = new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity));
-                }
-
-                for (int fragmentationTypeIndex = 0; fragmentationTypeIndex < complimentaryPeaks.Length; fragmentationTypeIndex++)
-                {
-                    if (complimentaryPeaks[fragmentationTypeIndex] != null)
+                    if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
-                        double massShiftNeeded = thePrecursorMass + (1 + fragmentationTypeIndex) * Constants.protonMass; //mass shift needed to reobtain the original product ion for calculating tolerance
-                        IMzPeak[] sortedPeaks = complimentaryPeaks[fragmentationTypeIndex].OrderBy(x => x.Mz).ToArray();
+                        double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
+                        for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                            complementaryIons[i] = (massShiftForComplementaryConversion - spectrum.MassSpectrum[i].Mz, spectrum.MassSpectrum[i].Intensity);
+
                         //propogation of error from precursor mass and complementary product mass
                         //IMPLEMENT AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(CommonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
-                        previousTheAdd = 1 + sortedPeaks[0].Intensity / spectrum.TotalIonCurrent;
+                        previousTheAdd = 1 + complementaryIons[0].intensity / spectrum.TotalIonCurrent;
                         //we already subtracted that proton, so don't add it again (unit test should break if you do!)
-                        previousExperimentalPeakInDaltons = sortedPeaks[0].Mz;
+                        previousExperimentalPeakInDaltons = complementaryIons[0].mass;
                         //need to use original tolerance since it's mass based.
-                        double previousOriginalMassInDaltons = massShiftNeeded - previousExperimentalPeakInDaltons;
+                        double previousOriginalMassInDaltons = massShiftForComplementaryConversion - previousExperimentalPeakInDaltons;
                         previousMinRange = previousExperimentalPeakInDaltons - previousOriginalMassInDaltons + CommonParameters.ProductMassTolerance.GetMinimumValue(previousOriginalMassInDaltons);
-                        for (int i = 1; i < sortedPeaks.Length; i++)
+                        for (int i = 1; i < complementaryIons.Length; i++)
                         {
                             //we already subtracted that proton when making comp ions, so don't add it again (unit test should break if you do!)
-                            double experimentalPeakInDaltons = sortedPeaks[i].Mz;
-                            double originalMassInDaltons = massShiftNeeded - experimentalPeakInDaltons;
+                            double experimentalPeakInDaltons = complementaryIons[i].mass;
+                            double originalMassInDaltons = massShiftForComplementaryConversion - experimentalPeakInDaltons;
                             if (CommonParameters.ProductMassTolerance.Within(previousOriginalMassInDaltons, originalMassInDaltons))
                             {
-                                previousTheAdd += sortedPeaks[i].Intensity / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res
+                                previousTheAdd += complementaryIons[i].intensity / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res
                             }
                             else
                             {
                                 previousMaxRange = previousExperimentalPeakInDaltons - previousOriginalMassInDaltons + CommonParameters.ProductMassTolerance.GetMaximumValue(previousOriginalMassInDaltons);
                                 FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
-                                previousTheAdd = 1 + sortedPeaks[i].Intensity / spectrum.TotalIonCurrent;
+                                previousTheAdd = 1 + complementaryIons[i].intensity / spectrum.TotalIonCurrent;
                                 previousMinRange = experimentalPeakInDaltons - originalMassInDaltons + CommonParameters.ProductMassTolerance.GetMinimumValue(originalMassInDaltons);
                             }
                             previousExperimentalPeakInDaltons = experimentalPeakInDaltons;
-                            previousOriginalMassInDaltons = massShiftNeeded - previousExperimentalPeakInDaltons;
+                            previousOriginalMassInDaltons = massShiftForComplementaryConversion - previousExperimentalPeakInDaltons;
                         }
                         previousMaxRange = previousExperimentalPeakInDaltons - previousOriginalMassInDaltons + CommonParameters.ProductMassTolerance.GetMaximumValue(previousOriginalMassInDaltons);
                         FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
                     }
                 }
             }
