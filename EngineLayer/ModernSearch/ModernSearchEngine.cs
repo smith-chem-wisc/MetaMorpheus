@@ -189,8 +189,8 @@ namespace EngineLayer.ModernSearch
             if (addCompIons)
             {
                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
-                bool HCD = lp.Contains(ProductType.B) || lp.Contains(ProductType.Y) ? true : false;
-                bool ETD = lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot) ? true : false;
+                bool HCD = lp.Contains(ProductType.B) || lp.Contains(ProductType.Y);
+                bool ETD = lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot);
                 IMzPeak[][] complimentaryPeaks = new IMzPeak[2][];
 
                 if (HCD)
