@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Title="FileSpecificParamWindow" Height="600" Width="450">
+        Title="FileSpecificParamWindow" Height="600" Width="450" WindowStartupLocation="CenterScreen">
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
@@ -13,6 +13,9 @@
                 <StackPanel Orientation="Horizontal" Margin="5">
                     <Label x:Name="label_Copy" Content="Protease" />
                     <ComboBox x:Name="proteaseComboBox" Width="81" />
+                </StackPanel>
+                <StackPanel Grid.Column="0">
+                    <CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)"  IsEnabled="{Binding IsChecked, ElementName=classicSearchRadioButton}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5">
                     <Label x:Name="lbMaxModNum" Content="Max Mod for Peptides" />
@@ -22,7 +25,7 @@
                     <Label Content="Deconvolution Intensity Ratio " />
                     <TextBox x:Name="DeconvolutionIntensityRatioTextBox" Width="45" />
                 </StackPanel>
-                <CheckBox x:Name="DoPrecursorDeconvolution" Content="DoPrecursor Deconvolution" IsChecked="True" />
+                <CheckBox x:Name="DoPrecursorDeconvolution" Content="Do Precursor Deconvolution" IsChecked="True" />
                 <CheckBox x:Name="UseProvidedPrecursorInfo" Content="Use Provided Precursor Info" IsChecked="True" />
                 <StackPanel Orientation="Horizontal" Margin="5">
                     <Label x:Name="ffdf" Content="Minimum MM score allowed:" />
@@ -66,6 +69,10 @@
                 <StackPanel Orientation="Horizontal" Margin="5">
                     <Label Content="Deconvolution Max Assumed Charge State" />
                     <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="PreviewIfInt" Width="45" />
+                </StackPanel>
+                <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+                    <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15"/>
+                    <Button x:Name="Save" Content="Save File Specific Settings" Click="Save_Click" FontSize="15" />
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

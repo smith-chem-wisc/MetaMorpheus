@@ -704,6 +704,15 @@ namespace MetaMorpheusGUI
             var dialog = new FileSpecificParamWindow(SelectedRawFiles);
             if (dialog.ShowDialog() == true)
             {
+                int i = 0;
+                foreach(var settings in dialog.FileSpecificSettingsList)
+                {
+                    string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
+                    string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
+                    string fullPathofToml = Path.Combine(directory, fileName);
+                    Toml.WriteFile(settings, fullPathofToml + ".toml", MetaMorpheusTask.tomlConfig);
+                    i++;
+                }
                 UpdateTaskGuiStuff();
             }
         }

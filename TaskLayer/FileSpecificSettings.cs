@@ -10,6 +10,10 @@ namespace TaskLayer
     {
         #region Public Constructors
 
+        public FileSpecificSettings()
+        {
+        }
+
         public FileSpecificSettings(Dictionary<string, KeyValuePair<string, TomlObject>> tomlDict)
         {
             if (tomlDict.ContainsKey("DoPrecursorDeconvolution"))
@@ -84,21 +88,21 @@ namespace TaskLayer
         #region Public Properties
 
         public Protease Protease { get; set; }
-        public int? Max_mods_for_peptide { get; }
-        public bool? DoPrecursorDeconvolution { get; }
-        public bool? UseProvidedPrecursorInfo { get; }
-        public double? DeconvolutionIntensityRatio { get; }
-        public double? ScoreCutoff { get; }
-        public bool? ConserveMemory { get; }
-        public Tolerance ProductMassTolerance { get; }
-        public int? TotalPartitions { get; }
-        public int? MaxModificationIsoforms { get; }
-        public int? MaxPeptideLength { get; }
-        public int? MinPeptideLength { get; }
-        public int? MaxMissedCleavages { get; }
-        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; }
-        public Tolerance DeconvolutionMassTolerance { get; }
-        public int? DeconvolutionMaxAssumedChargeState { get; }
+        public int? Max_mods_for_peptide { get; set; }
+        public bool? DoPrecursorDeconvolution { get; set; }
+        public bool? UseProvidedPrecursorInfo { get; set; }
+        public double? DeconvolutionIntensityRatio { get; set; }
+        public double? ScoreCutoff { get; set; }
+        public bool? ConserveMemory { get; set; }
+        public Tolerance ProductMassTolerance { get; set; }
+        public int? TotalPartitions { get; set; }
+        public int? MaxModificationIsoforms { get; set; }
+        public int? MaxPeptideLength { get; set; }
+        public int? MinPeptideLength { get; set; }
+        public int? MaxMissedCleavages { get; set; }
+        public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
+        public Tolerance DeconvolutionMassTolerance { get; set; }
+        public int? DeconvolutionMaxAssumedChargeState { get; set; }
 
         #endregion Public Properties
     }
