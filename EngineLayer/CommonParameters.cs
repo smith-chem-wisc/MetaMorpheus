@@ -12,8 +12,6 @@ namespace EngineLayer
         {
             DigestionParams = new DigestionParams();
 
-            ProductMassTolerance = new PpmTolerance(30);
-
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -41,6 +39,7 @@ namespace EngineLayer
 
             TopNpeaks = 200;
             MinRatio = 0.01;
+            ProductMassTolerance = new PpmTolerance(20);
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
         }

@@ -22,7 +22,12 @@ namespace TaskLayer
 
         public CalibrationTask() : base(MyTask.Calibrate)
         {
-            CommonParameters = new CommonParameters();
+            CommonParameters = new CommonParameters()
+            {
+                ProductMassTolerance = new PpmTolerance(30),
+                TrimMs1Peaks = false,
+                TrimMsMsPeaks = false,
+            };
 
             CalibrationParameters = new CalibrationParameters();
         }
