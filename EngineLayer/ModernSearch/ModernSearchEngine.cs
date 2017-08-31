@@ -208,7 +208,7 @@ namespace EngineLayer.ModernSearch
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
-                        for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
+                        for (int i = spectrum.MassSpectrum.Size-1; i >=0; i--)
                             complementaryIons[i] = (massShiftForComplementaryConversion - spectrum.MassSpectrum[i].Mz, spectrum.MassSpectrum[i].Intensity);
 
                         //propogation of error from precursor mass and complementary product mass
