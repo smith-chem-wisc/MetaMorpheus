@@ -12,9 +12,8 @@ namespace TaskLayer
         #region Private Fields
 
         private readonly bool disposeOfFileWhenDone;
-        private Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>> myMsDataFiles = new Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>>();
-
-        private object fileLoadingLock = new object();
+        private readonly Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>> myMsDataFiles = new Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>>();
+        private readonly object fileLoadingLock = new object();
 
         #endregion Private Fields
 
