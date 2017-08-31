@@ -76,10 +76,25 @@ namespace TaskLayer
             {
                 ScoreCutoff = tomlDict["ScoreCutoff"].Value.Get<double?>();
             }
-            //Don't need to set allmostlsit(is static)
             if (tomlDict.ContainsKey("Max_mods_for_peptide"))
             {
                 Max_mods_for_peptide = tomlDict["Max_mods_for_peptide"].Value.Get<int?>();
+            }
+            if (tomlDict.ContainsKey("TrimMsMsPeaks"))
+            {
+                TrimMsMsPeaks = tomlDict["TrimMsMsPeaks"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("TrimMs1Peaks"))
+            {
+                TrimMs1Peaks = tomlDict["TrimMs1Peaks"].Value.Get<bool?>();
+            }
+            if (tomlDict.ContainsKey("MinRatio"))
+            {
+                MinRatio = tomlDict["MinRatio"].Value.Get<double?>();
+            }
+            if (tomlDict.ContainsKey("TopNpeaks"))
+            {
+                TopNpeaks = tomlDict["TopNpeaks"].Value.Get<int?>();
             }
         }
 
@@ -103,6 +118,11 @@ namespace TaskLayer
         public InitiatorMethionineBehavior InitiatorMethionineBehavior { get; set; }
         public Tolerance DeconvolutionMassTolerance { get; set; }
         public int? DeconvolutionMaxAssumedChargeState { get; set; }
+        public bool? TrimMsMsPeaks { get; set;}
+        public bool? TrimMs1Peaks { get; set;}
+        public double? MinRatio { get; set;}
+        public int? TopNpeaks { get; set;}
+
 
         #endregion Public Properties
     }

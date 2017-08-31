@@ -31,7 +31,7 @@ namespace EngineLayer
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(GetType().Name);
+            sb.AppendLine(MyEngine.GetType().Name);
             sb.AppendLine(MyEngine.GetId());
             sb.Append("Time to run: " + Time);
             return sb.ToString();
