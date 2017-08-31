@@ -183,7 +183,7 @@ namespace Test
                 hm.SetFdrValues(0, 0, 0, 0, 0, 0);
             }
 
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, true, false, true, new List<string>());
             var ok = (ProteinScoringAndFdrResults)f.Run();
             proteinGroups = ok.sortedAndScoredProteinGroups;
 
@@ -310,7 +310,7 @@ namespace Test
                 ))
                 throw new MetaMorpheusException("Quantification error - Could not pass parameters to quantification engine");
 
-            FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, "P34223");
+            FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(mzmlFilePath), "EGFQVADGPLYR", "EGFQVADGPLYR", 1350.65681, 94.12193, 2, new List<string> { "P34223" });
 
             FlashLfqEngine.ConstructBinsFromIdentifications();
 
@@ -421,7 +421,7 @@ namespace Test
                 match2,
                 match3
             };
-            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, new List<string>());
+            ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new List<string>());
             f.Run();
 
             Assert.AreEqual("#aa5[resMod,info:occupancy=0.67(2/3)];", proteinGroups.First().ModsInfo[0]);
