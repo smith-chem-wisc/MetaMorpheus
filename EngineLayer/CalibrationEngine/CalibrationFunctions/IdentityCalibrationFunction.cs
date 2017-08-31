@@ -14,20 +14,16 @@ namespace EngineLayer.Calibration
             return sb.ToString();
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal override double Predict(double[] t)
+        public override double Predict(double[] t)
         {
             return 0;
         }
 
-        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
             // Does nothing because this is the identity calibration function
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
     }
 }

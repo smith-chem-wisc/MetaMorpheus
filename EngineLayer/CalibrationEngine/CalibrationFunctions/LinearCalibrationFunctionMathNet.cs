@@ -37,16 +37,12 @@ namespace EngineLayer.Calibration
             return sb.ToString();
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal override double Predict(double[] t)
+        public override double Predict(double[] t)
         {
             return f(transformFunction.Transform(t));
         }
 
-        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
             double[][] ok = new double[trainingList.Count()][];
             int k = 0;
@@ -67,6 +63,6 @@ namespace EngineLayer.Calibration
             f = Fit.LinearMultiDimFunc(ok, ok2, ye);
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
     }
 }

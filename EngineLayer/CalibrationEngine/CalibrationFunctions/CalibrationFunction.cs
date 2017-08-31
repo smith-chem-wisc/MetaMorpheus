@@ -5,14 +5,14 @@ namespace EngineLayer.Calibration
 {
     public abstract class CalibrationFunction
     {
-        #region Internal Methods
+        #region Public Methods
 
-        internal abstract double Predict(double[] t);
+        public abstract double Predict(double[] t);
 
-        internal abstract void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public abstract void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
             where LabeledDataPoint : IHasInputsAndOutputs;
 
-        internal double GetMSE<LabeledDataPoint>(IEnumerable<LabeledDataPoint> pointList)
+        public double GetMSE<LabeledDataPoint>(IEnumerable<LabeledDataPoint> pointList)
             where LabeledDataPoint : IHasInputsAndOutputs
         {
             double mse = 0;
@@ -25,6 +25,6 @@ namespace EngineLayer.Calibration
             return count == 0 ? 0 : mse / count;
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
     }
 }

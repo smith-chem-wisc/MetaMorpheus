@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.Calibration
 {
-    internal class RandomForestCalibrationFunction : CalibrationFunction
+    public class RandomForestCalibrationFunction : CalibrationFunction
     {
         #region Private Fields
 
@@ -17,13 +17,13 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public RandomForestCalibrationFunction(int numTrees, int splitLimit, bool[] useFeature, Random rand)
+        public RandomForestCalibrationFunction(int numTrees, int doNotSplitIfUnderThis, bool[] useFeature, Random rand)
         {
             RegressionTrees = new RegressionTree[numTrees];
             this.useFeature = useFeature;
             this.rand = rand;
             for (int i = 0; i < numTrees; i++)
-                RegressionTrees[i] = new RegressionTree(splitLimit, 0, useFeature);
+                RegressionTrees[i] = new RegressionTree(doNotSplitIfUnderThis, 0, useFeature);
         }
 
         #endregion Public Constructors
@@ -35,11 +35,7 @@ namespace EngineLayer.Calibration
             return "RandomForestCalibrationFunction" + string.Join(",", useFeature);
         }
 
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
             List<LabeledDataPoint> trainingListHere = trainingList.ToList();
             Parallel.For(0, RegressionTrees.Length, i =>
@@ -54,11 +50,11 @@ namespace EngineLayer.Calibration
             });
         }
 
-        internal override double Predict(double[] t)
+        public override double Predict(double[] t)
         {
             return RegressionTrees.Select(b => b.Predict(t)).Average();
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
     }
 }

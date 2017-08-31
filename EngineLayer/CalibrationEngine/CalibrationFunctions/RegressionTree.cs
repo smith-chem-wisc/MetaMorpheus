@@ -33,9 +33,9 @@ namespace EngineLayer.Calibration
 
         #endregion Public Constructors
 
-        #region Internal Methods
+        #region Public Methods
 
-        internal override double Predict(double[] t)
+        public override double Predict(double[] t)
         {
             if (double.IsNaN(output))
             {
@@ -48,7 +48,7 @@ namespace EngineLayer.Calibration
                 return output;
         }
 
-        internal override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
+        public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
             var trainingPoints = trainingList.ToList();
             var averageOutputs = trainingPoints.Select(b => b.Label).Average();
@@ -59,21 +59,12 @@ namespace EngineLayer.Calibration
             }
             var bestSumSquaredErrors = trainingPoints.Select(b => Math.Pow(averageOutputs - b.Label, 2)).Sum();
 
-            //if (level == 0)
-            //{
-            //    Console.WriteLine("useFeature = " + string.Join(",", useFeature));
-            //    Console.WriteLine("averageOutputs = " + averageOutputs);
-            //    Console.WriteLine("trainingPoints.Count = " + trainingPoints.Count);
-            //    Console.WriteLine("bestSumSquaredErrors = " + bestSumSquaredErrors);
-            //}
             var prunedTrainingPoints = trainingPoints;
 
             // For every variable, try to find the best split
             for (int i = 0; i < useFeature.Length; i++)
                 if (useFeature[i])
                 {
-                    //if (level == 0)
-                    //    Console.WriteLine(" i = " + i);
                     prunedTrainingPoints.Sort(Comparer<LabeledDataPoint>.Create((x, y) => x.Inputs[i].CompareTo(y.Inputs[i])));
                     int num_splits = Math.Min(15, prunedTrainingPoints.Count - 1);
                     for (double j = 0; j < num_splits; j++)
@@ -88,27 +79,12 @@ namespace EngineLayer.Calibration
 
                         var sumSquaredErrors = prunedTrainingPoints.TakeWhile(b => b.Inputs[i] < quantile).Select(b => Math.Pow(averageFirst - b.Label, 2)).Sum() +
                                                prunedTrainingPoints.SkipWhile(b => b.Inputs[i] < quantile).Select(b => Math.Pow(averageLast - b.Label, 2)).Sum();
-                        //if (level == 0)
-                        //{
-                        //    Console.WriteLine("  j = " + j);
-                        //    Console.WriteLine("   quantile = " + quantile);
-                        //    Console.WriteLine("   averageFirst = " + averageFirst);
-                        //    Console.WriteLine("   averageLast = " + averageLast);
-                        //    Console.WriteLine("   sumSquaredErrors = " + sumSquaredErrors);
-                        //}
 
                         if (sumSquaredErrors < bestSumSquaredErrors)
                         {
                             bestSumSquaredErrors = sumSquaredErrors;
                             bestValue = quantile;
                             bestI = i;
-                            //if (level == 0)
-                            //{
-                            //    Console.WriteLine("  replacing!");
-                            //    Console.WriteLine("   bestI = " + bestI);
-                            //    Console.WriteLine("   bestSumSquaredErrors = " + bestSumSquaredErrors);
-                            //    Console.WriteLine("   bestValue = " + bestValue);
-                            //}
                         }
                     }
                 }
@@ -129,6 +105,6 @@ namespace EngineLayer.Calibration
             }
         }
 
-        #endregion Internal Methods
+        #endregion Public Methods
     }
 }
