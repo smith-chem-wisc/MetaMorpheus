@@ -565,7 +565,7 @@ namespace TaskLayer
                             dBSequence_ref = "DBS_" + protein.Accession,
                             passThreshold = proteinGroup.QValue <= threshold,
                             PeptideHypothesis = new mzIdentML110.Generated.PeptideHypothesisType[proteinGroup.AllPeptides.Count],
-                            cvParam = new mzIdentML110.Generated.CVParamType[4]
+                            cvParam = new mzIdentML110.Generated.CVParamType[]
                             {
                             new mzIdentML110.Generated.CVParamType
                             {
