@@ -12,7 +12,8 @@ namespace EngineLayer
         {
             DigestionParams = new DigestionParams();
 
-            ProductMassTolerance = new AbsoluteTolerance(0.01);
+            ProductMassTolerance = new PpmTolerance(30);
+
             BIons = true;
             YIons = true;
             ZdotIons = false;
@@ -38,7 +39,7 @@ namespace EngineLayer
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
 
-            TopNpeaks = 400;
+            TopNpeaks = 200;
             MinRatio = 0.01;
             TrimMs1Peaks = false;
             TrimMsMsPeaks = true;

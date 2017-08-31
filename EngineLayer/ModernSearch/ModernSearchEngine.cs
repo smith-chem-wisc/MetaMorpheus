@@ -251,6 +251,5 @@ namespace EngineLayer.ModernSearch
         }
 
         #endregion Protected Methods
-
     }
 }

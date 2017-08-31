@@ -935,7 +935,7 @@ namespace TaskLayer
                 if (proteinGroups != null)
                 {
                     ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
-                    
+
                     foreach (var proteinGroup in proteinGroups)
                     {
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
@@ -964,7 +964,7 @@ namespace TaskLayer
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     if (!psmToProteinGroupNames.ContainsKey(psm))
                         psmToProteinGroupNames.Add(psm, new List<string>() { "" });
-                
+
                 // pass PSMs to FlashLFQ to quantify identified peptides
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]);
@@ -1118,7 +1118,6 @@ namespace TaskLayer
                 summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), false);
                 WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId });
             }
-
 
             if (SearchParameters.WritePrunedDatabase)
             {
