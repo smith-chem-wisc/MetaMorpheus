@@ -53,7 +53,7 @@ namespace EngineLayer
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
 
-            if(addComp)
+            if (addComp)
                 ReplaceObservedWithComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
 
             int numExperimentalPeaks = experimental_mzs.Length;
@@ -87,14 +87,14 @@ namespace EngineLayer
                     productMassErrorDa.Add(currentExperimentalMz - currentTheoreticalMz);
                     productMassErrorPpm.Add((currentExperimentalMz - currentTheoreticalMz) * 1000000 / currentTheoreticalMz);
 
-                        if (currentTheoreticalIndex == TotalProductsHere)
-                            break;
-                        currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                        currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    if (currentTheoreticalIndex == TotalProductsHere)
+                        break;
+                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
-                { 
+                {
                     // Move on to next index and never come back!
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
@@ -135,7 +135,7 @@ namespace EngineLayer
                 return 0;
             int MatchingProductsHere = 0;
             double MatchingIntensityHere = 0;
-            
+
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
@@ -179,7 +179,7 @@ namespace EngineLayer
                 }
                 // Else if for sure passed a theoretical
                 else if (currentExperimentalMz > currentTheoreticalMz)
-                { 
+                {
                     // Move on to next index and never come back!
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
@@ -211,7 +211,7 @@ namespace EngineLayer
                 addition = CalculateClassicScore(thisScan, productMassTolerance, sortedTheoreticalProductMassesForThisPeptide, false, precursorMass, lp);
             }
 
-            return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent)+addition;
+            return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent) + addition;
         }
 
         public MetaMorpheusEngineResults Run()

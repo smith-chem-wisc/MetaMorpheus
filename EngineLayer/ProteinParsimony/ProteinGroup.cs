@@ -54,12 +54,14 @@ namespace EngineLayer
 
         #region Public Properties
 
+        public static string[] FilesForQuantification { get; set; }
+
         public HashSet<Protein> Proteins { get; set; }
 
         public string ProteinGroupName { get; private set; }
-        
+
         public double ProteinGroupScore { get; set; }
-        
+
         public HashSet<PeptideWithSetModifications> AllPeptides { get; set; }
 
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
@@ -77,13 +79,10 @@ namespace EngineLayer
         public int CumulativeTarget { get; set; }
 
         public int CumulativeDecoy { get; set; }
-        
+
         public bool DisplayModsOnPeptides { get; set; }
 
         public List<string> ModsInfo { get; private set; }
-
-        public static string[] FilesForQuantification { get; set; }
-
         public double[] IntensitiesByFile { get; set; }
 
         #endregion Public Properties
@@ -404,7 +403,7 @@ namespace EngineLayer
                 AllPsmsBelowOnePercentFDR = allPsmsForThisFile,
                 DisplayModsOnPeptides = this.DisplayModsOnPeptides
             };
-            
+
             if (IntensitiesByFile != null)
                 subsetPg.IntensitiesByFile = new double[] { IntensitiesByFile[System.Array.IndexOf(FilesForQuantification, fullFilePath)] };
             else
