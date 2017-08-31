@@ -63,7 +63,7 @@ namespace Test
 
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0].Score < allPsmsArray[0].Score *3 && allPsmsArray2[0].Score + 1 > allPsmsArray[0].Score *3);
+            Assert.IsTrue(allPsmsArray2[0].Score < allPsmsArray[0].Score * 3 && allPsmsArray2[0].Score + 1 > allPsmsArray[0].Score * 3);
         }
 
         [Test]

@@ -12,9 +12,8 @@ namespace TaskLayer
         #region Private Fields
 
         private readonly bool disposeOfFileWhenDone;
-        private Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>> myMsDataFiles = new Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>>();
-
-        private object fileLoadingLock = new object();
+        private readonly Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>> myMsDataFiles = new Dictionary<string, IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>>();
+        private readonly object fileLoadingLock = new object();
 
         #endregion Private Fields
 
@@ -29,7 +28,7 @@ namespace TaskLayer
 
         #region Internal Methods
 
-        internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile)
+        internal IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> LoadFile(string origDataFile, int? topNpeaks, double? minRatio, bool trimMs1Peaks, bool trimMsMsPeaks)
         {
             if (myMsDataFiles.TryGetValue(origDataFile, out IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> value) && value != null)
                 return value;
@@ -37,7 +36,7 @@ namespace TaskLayer
             // By now know that need to load this file!!!
             lock (fileLoadingLock) // Lock because reading is sequential
                 if (Path.GetExtension(origDataFile).Equals(".mzML", StringComparison.InvariantCultureIgnoreCase))
-                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile);
+                    myMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, topNpeaks, minRatio, trimMs1Peaks, trimMsMsPeaks);
                 else
                     myMsDataFiles[origDataFile] = ThermoStaticData.LoadAllStaticData(origDataFile);
 
