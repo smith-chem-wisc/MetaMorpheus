@@ -37,6 +37,11 @@ namespace EngineLayer
             DeconvolutionMassTolerance = new PpmTolerance(5);
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
+
+            TopNpeaks = 400;
+            MinRatio = 0.01;
+            TrimMs1Peaks = false;
+            TrimMsMsPeaks = true;
         }
 
         #endregion Public Constructors
@@ -76,6 +81,10 @@ namespace EngineLayer
         public bool ReportAllAmbiguity { get; set; }
 
         public bool ExcelCompatible { get; set; }
+        public int? TopNpeaks { get; set; }
+        public double? MinRatio { get; set; }
+        public bool TrimMs1Peaks { get; set; }
+        public bool TrimMsMsPeaks { get; set; }
 
         #endregion Public Properties
     }
