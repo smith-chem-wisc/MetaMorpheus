@@ -38,9 +38,9 @@ namespace EngineLayer
             ReportAllAmbiguity = true;
             ExcelCompatible = true;
 
-            TopNpeaks = 100;
+            TopNpeaks = 400;
             MinRatio = 0.01;
-            TrimMs1Peaks = true;
+            TrimMs1Peaks = false;
             TrimMsMsPeaks = true;
         }
 
