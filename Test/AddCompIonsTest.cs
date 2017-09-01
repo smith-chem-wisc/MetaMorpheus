@@ -144,7 +144,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestCompIons_MatchIons()
+        public static void TestCompIons_MatchIonsScore()
         {
             TestDataFile t = new TestDataFile();
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
@@ -154,6 +154,31 @@ namespace Test
             double scoreT = MetaMorpheusEngine.CalculateComplementaryClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD });
             double scoreF = MetaMorpheusEngine.CalculateObservedClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide);
             Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);
+        }
+
+        [Test]
+        public static void TestCompIons_MatchIons()
+        {
+            TestDataFile t = new TestDataFile();
+            Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
+            double precursorMass = 300;
+            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
+            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
+            List<double> matchedIonsT = new List<double>();
+            List<double> matchedDaErrorT = new List<double>();
+            List<double> matchedPpmErrorT = new List<double>();
+            List<double> matchedIonsF = new List<double>();
+            List<double> matchedDaErrorF = new List<double>();
+            List<double> matchedPpmErrorF = new List<double>();
+            MetaMorpheusEngine.MatchComplementaryIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD });
+            MetaMorpheusEngine.MatchObservedIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsF, matchedDaErrorF, matchedPpmErrorF);
+
+            //Test the number of ions is doubled
+            Assert.IsTrue(matchedIonsT.Count == matchedIonsF.Count);
+            //Test the number of da errors is doubled
+            Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count);
+            //test the number of ppm errors is doubled
+            Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count);
         }
 
         #endregion Public Methods

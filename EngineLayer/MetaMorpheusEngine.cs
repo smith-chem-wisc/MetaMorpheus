@@ -342,7 +342,6 @@ namespace EngineLayer
                         double originalExperimentalMass = massShiftForComplementaryConversion - currentExperimentalMass;
                         double minBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMinimumValue(originalExperimentalMass);
                         double maxBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMaximumValue(originalExperimentalMass);
-                        double originalMassInDaltons = massShiftForComplementaryConversion - currentExperimentalMass;
                         // If found match
                         if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                         {
@@ -417,7 +416,7 @@ namespace EngineLayer
 
         #region Protected Methods
 
-        protected List<DissociationType> DetermineDissociationType(List<ProductType> lp)
+        protected static List<DissociationType> DetermineDissociationType(List<ProductType> lp)
         {
             List<DissociationType> dissociationTypes = new List<DissociationType>();
 
