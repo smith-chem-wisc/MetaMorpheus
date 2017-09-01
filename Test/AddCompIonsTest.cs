@@ -3,6 +3,7 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
+using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
@@ -63,7 +64,7 @@ namespace Test
 
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0].Score < allPsmsArray[0].Score * 3 && allPsmsArray2[0].Score + 1 > allPsmsArray[0].Score * 3);
+            Assert.IsTrue(allPsmsArray2[0].Score == allPsmsArray[0].Score * 3 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 2);
         }
 
         [Test]
@@ -150,9 +151,9 @@ namespace Test
             double precursorMass = 300;
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            double scoreT = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, true, precursorMass, lp);
-            double scoreF = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, false, precursorMass, lp);
-            Assert.IsTrue(scoreT < scoreF * 2 && scoreT + 1 > scoreF * 2);
+            double scoreT = MetaMorpheusEngine.CalculateComplementaryClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD });
+            double scoreF = MetaMorpheusEngine.CalculateObservedClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide);
+            Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);
         }
 
         #endregion Public Methods

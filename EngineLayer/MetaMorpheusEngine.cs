@@ -14,6 +14,12 @@ namespace EngineLayer
 
         protected readonly List<string> nestedIds;
 
+        protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
+        {
+            { DissociationType.HCD, Constants.protonMass },
+            { DissociationType.ETD, 2*Constants.protonMass }
+        };
+
         #endregion Protected Fields
 
         #region Protected Constructors
@@ -41,7 +47,7 @@ namespace EngineLayer
 
         #region Public Methods
 
-        public static void MatchIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, bool addComp, double precursorMass, List<ProductType> lp)
+        public static void MatchObservedIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -52,10 +58,6 @@ namespace EngineLayer
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
-
-            if (addComp)
-                ReplaceObservedWithComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
-
             int numExperimentalPeaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;
@@ -124,11 +126,104 @@ namespace EngineLayer
                     experimentalIndex--;
                 }
             }
-            if (addComp)
-                MatchIons(thisScan, productMassTolerance, sortedTheoreticalProductMassesForThisPeptide, matchedIonMassesList, productMassErrorDa, productMassErrorPpm, false, precursorMass, lp);
         }
 
-        public static double CalculateClassicScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, bool addComp, double precursorMass, List<ProductType> lp)
+        public static void MatchComplementaryIons(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, List<double> matchedIonMassesList, List<double> productMassErrorDa, List<double> productMassErrorPpm, double precursorMass, List<DissociationType> dissociationTypes)
+        {
+            var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
+            if (TotalProductsHere == 0)
+                return;
+            int MatchingProductsHere = 0;
+            double MatchingIntensityHere = 0;
+
+            int numComplementaryPeaks = thisScan.MassSpectrum.Size;
+            double[] complementaryMasses = new double[numComplementaryPeaks];
+            double[] complementaryIntensities = new double[numComplementaryPeaks];
+
+            foreach (DissociationType dissociationType in dissociationTypes)
+            {
+                if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
+                {
+                    double massShiftForComplementaryConversion = precursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
+                    for (int i = numComplementaryPeaks - 1; i >= 0; i--)
+                    {
+                        complementaryMasses[numComplementaryPeaks - i - 1] = massShiftForComplementaryConversion - thisScan.MassSpectrum.XArray[i];
+                        complementaryIntensities[numComplementaryPeaks - i - 1] = thisScan.MassSpectrum.YArray[i];
+                    }
+
+                    int currentTheoreticalIndex = -1;
+                    double currentTheoreticalMass;
+                    do
+                    {
+                        currentTheoreticalIndex++;
+                        currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                    } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
+
+                    if (double.IsNaN(currentTheoreticalMass))
+                        return;
+
+                    int testTheoreticalIndex;
+                    double testTheoreticalMass;
+                    // Loop over all experimental indices
+                    for (int experimentalIndex = 0; experimentalIndex < numComplementaryPeaks; experimentalIndex++)
+                    {
+                        double currentExperimentalMass = complementaryMasses[experimentalIndex];
+                        double originalExperimentalMass = massShiftForComplementaryConversion - currentExperimentalMass;
+                        double minBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMinimumValue(originalExperimentalMass);
+                        double maxBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMaximumValue(originalExperimentalMass);
+                        double originalMassInDaltons = massShiftForComplementaryConversion - currentExperimentalMass;
+                        // If found match
+                        if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
+                        {
+                            MatchingProductsHere++;
+                            MatchingIntensityHere += complementaryIntensities[experimentalIndex];
+
+                            matchedIonMassesList.Add(currentTheoreticalMass);
+                            productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
+                            productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
+
+                            currentTheoreticalIndex++;
+                            if (currentTheoreticalIndex == TotalProductsHere)
+                                break;
+                            currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                        }
+                        // Else if for sure passed a theoretical
+                        else if (currentExperimentalMass > currentTheoreticalMass)
+                        {
+                            // Move on to next index and never come back!
+                            currentTheoreticalIndex++;
+                            if (currentTheoreticalIndex == TotalProductsHere)
+                                break;
+                            currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+
+                            // Start with the current ones
+                            testTheoreticalIndex = currentTheoreticalIndex;
+                            testTheoreticalMass = currentTheoreticalMass;
+                            // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
+                            while (currentExperimentalMass > testTheoreticalMass)
+                            {
+                                // Store old info for possible reuse
+                                currentTheoreticalMass = testTheoreticalMass;
+                                currentTheoreticalIndex = testTheoreticalIndex;
+
+                                // Update test stuff!
+                                testTheoreticalIndex++;
+                                if (testTheoreticalIndex == TotalProductsHere)
+                                    break;
+                                testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
+                            }
+                            experimentalIndex--;
+                        }
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
+        public static double CalculateObservedClassicScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide)
         {
             var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
             if (TotalProductsHere == 0)
@@ -139,10 +234,6 @@ namespace EngineLayer
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
             double[] experimental_intensities = thisScan.MassSpectrum.YArray;
-
-            if (addComp)
-                ReplaceObservedWithComplementaryPeaks(ref experimental_mzs, ref experimental_intensities, precursorMass, lp);
-
             int numExperimentalPeaks = experimental_mzs.Length;
 
             int currentTheoreticalIndex = -1;
@@ -205,12 +296,99 @@ namespace EngineLayer
                     experimentalIndex--;
                 }
             }
-            double addition = 0;
-            if (addComp)
-            {
-                addition = CalculateClassicScore(thisScan, productMassTolerance, sortedTheoreticalProductMassesForThisPeptide, false, precursorMass, lp);
-            }
+            return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent);
+        }
 
+        public static double CalculateComplementaryClassicScore(IMsDataScan<IMzSpectrum<IMzPeak>> thisScan, Tolerance productMassTolerance, double[] sortedTheoreticalProductMassesForThisPeptide, double precursorMass, List<DissociationType> dissociationTypes)
+        {
+            var TotalProductsHere = sortedTheoreticalProductMassesForThisPeptide.Length;
+            if (TotalProductsHere == 0)
+                return 0;
+            int MatchingProductsHere = 0;
+            double MatchingIntensityHere = 0;
+
+            int numComplementaryPeaks = thisScan.MassSpectrum.Size;
+            double[] complementaryMasses = new double[numComplementaryPeaks];
+            double[] complementaryIntensities = new double[numComplementaryPeaks];
+
+            foreach (DissociationType dissociationType in dissociationTypes)
+            {
+                if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
+                {
+                    double massShiftForComplementaryConversion = precursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
+                    for (int i = numComplementaryPeaks - 1; i >= 0; i--)
+                    {
+                        complementaryMasses[numComplementaryPeaks - i - 1] = massShiftForComplementaryConversion - thisScan.MassSpectrum.XArray[i];
+                        complementaryIntensities[numComplementaryPeaks - i - 1] = thisScan.MassSpectrum.YArray[i];
+                    }
+
+                    int currentTheoreticalIndex = -1;
+                        double currentTheoreticalMass;
+                        do
+                        {
+                            currentTheoreticalIndex++;
+                            currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                        } while (double.IsNaN(currentTheoreticalMass) && currentTheoreticalIndex < sortedTheoreticalProductMassesForThisPeptide.Length - 1);
+
+                        if (double.IsNaN(currentTheoreticalMass))
+                            return 0;
+
+                    int testTheoreticalIndex;
+                    double testTheoreticalMass;
+                    // Loop over all experimental indices
+                    for (int experimentalIndex = 0; experimentalIndex < numComplementaryPeaks; experimentalIndex++)
+                    {
+                        double currentExperimentalMass = complementaryMasses[experimentalIndex];
+                        double originalExperimentalMass = massShiftForComplementaryConversion - currentExperimentalMass;
+                        double minBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMinimumValue(originalExperimentalMass);
+                        double maxBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMaximumValue(originalExperimentalMass);
+                        double originalMassInDaltons = massShiftForComplementaryConversion - currentExperimentalMass;
+                        // If found match
+                        if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
+                        {
+                            MatchingProductsHere++;
+                            MatchingIntensityHere += complementaryIntensities[experimentalIndex];
+
+                            currentTheoreticalIndex++;
+                            if (currentTheoreticalIndex == TotalProductsHere)
+                                break;
+                            currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                        }
+                        // Else if for sure passed a theoretical
+                        else if (currentExperimentalMass > currentTheoreticalMass)
+                        {
+                            // Move on to next index and never come back!
+                            currentTheoreticalIndex++;
+                            if (currentTheoreticalIndex == TotalProductsHere)
+                                break;
+                            currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+
+                            // Start with the current ones
+                            testTheoreticalIndex = currentTheoreticalIndex;
+                            testTheoreticalMass = currentTheoreticalMass;
+                            // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
+                            while (currentExperimentalMass > testTheoreticalMass)
+                            {
+                                // Store old info for possible reuse
+                                currentTheoreticalMass = testTheoreticalMass;
+                                currentTheoreticalIndex = testTheoreticalIndex;
+
+                                // Update test stuff!
+                                testTheoreticalIndex++;
+                                if (testTheoreticalIndex == TotalProductsHere)
+                                    break;
+                                testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
+                            }
+                            experimentalIndex--;
+                        }
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
+            double addition = CalculateObservedClassicScore(thisScan, productMassTolerance, sortedTheoreticalProductMassesForThisPeptide);
             return (MatchingProductsHere + MatchingIntensityHere / thisScan.TotalIonCurrent) + addition;
         }
 
@@ -239,6 +417,19 @@ namespace EngineLayer
 
         #region Protected Methods
 
+        protected List<DissociationType> DetermineDissociationType(List<ProductType> lp)
+        {
+            List<DissociationType> dissociationTypes = new List<DissociationType>();
+
+            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
+                dissociationTypes.Add(DissociationType.HCD);
+
+            if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
+                dissociationTypes.Add(DissociationType.ETD);
+
+            return dissociationTypes;
+        }
+
         protected void Warn(string v, List<string> nestedIds)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, nestedIds));
@@ -259,39 +450,6 @@ namespace EngineLayer
         #endregion Protected Methods
 
         #region Private Methods
-
-        private static void ReplaceObservedWithComplementaryPeaks(ref double[] experimental_mzs, ref double[] experimental_intensities, double precursorMass, List<ProductType> lp)
-        {
-            List<MzPeak> complementaryPeaks = new List<MzPeak>();
-
-            //If HCD
-            if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
-            {
-                for (int i = 0; i < experimental_mzs.Length; i++)
-                {
-                    complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 2), (experimental_intensities[i] / 100)));
-                }
-            }
-            //If ETD
-            if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
-            {
-                for (int i = 0; i < experimental_mzs.Length; i++)
-                {
-                    complementaryPeaks.Add(new MzPeak((precursorMass - experimental_mzs[i] + Constants.protonMass * 3), (experimental_intensities[i] / 100)));
-                }
-            }
-
-            IEnumerable<MzPeak> sortedPeaksMZ = complementaryPeaks.OrderBy(x => x.Mz);
-            experimental_mzs = new double[sortedPeaksMZ.Count()];
-            experimental_intensities = new double[sortedPeaksMZ.Count()];
-            int index = 0;
-            foreach (MzPeak peak in sortedPeaksMZ)
-            {
-                experimental_mzs[index] = peak.Mz;
-                experimental_intensities[index] = peak.Intensity;
-                index++;
-            }
-        }
 
         private void StartingSingleEngine()
         {
