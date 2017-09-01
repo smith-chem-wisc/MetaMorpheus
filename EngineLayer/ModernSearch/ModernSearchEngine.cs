@@ -165,23 +165,23 @@ namespace EngineLayer.ModernSearch
         protected void CalculatePeptideScores(IMsDataScan<IMzSpectrum<IMzPeak>> spectrum, double[] peptideScores, double thePrecursorMass)
         {
             //create previous variables to determine if peaks can be sequestered
-            double previousTheAdd = 1 + spectrum.MassSpectrum[0].Intensity / spectrum.TotalIonCurrent;
-            double previousExperimentalPeakInDaltons = spectrum.MassSpectrum[0].Mz - Constants.protonMass;
+            double previousTheAdd = 1 + spectrum.MassSpectrum.YArray[0] / spectrum.TotalIonCurrent;
+            double previousExperimentalPeakInDaltons = spectrum.MassSpectrum.XArray[0] - Constants.protonMass;
             double previousMinRange = CommonParameters.ProductMassTolerance.GetMinimumValue(previousExperimentalPeakInDaltons);
             double previousMaxRange;
             //search observed peaks
             for (int i = 1; i < spectrum.MassSpectrum.Size; i++)
             {
-                double experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                double experimentalPeakInDaltons = spectrum.MassSpectrum.XArray[i] - Constants.protonMass;
                 if (CommonParameters.ProductMassTolerance.Within(previousExperimentalPeakInDaltons, experimentalPeakInDaltons))
                 {
-                    previousTheAdd += spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res
+                    previousTheAdd += spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res
                 }
                 else
                 {
                     previousMaxRange = CommonParameters.ProductMassTolerance.GetMaximumValue(previousExperimentalPeakInDaltons);
                     FindPeakMatches(previousTheAdd, previousMinRange, previousMaxRange, peptideScores);
-                    previousTheAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
+                    previousTheAdd = 1 + spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent;
                     previousMinRange = CommonParameters.ProductMassTolerance.GetMinimumValue(experimentalPeakInDaltons);
                 }
                 previousExperimentalPeakInDaltons = experimentalPeakInDaltons;
@@ -209,7 +209,7 @@ namespace EngineLayer.ModernSearch
                     {
                         double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
                         for (int i = spectrum.MassSpectrum.Size - 1; i >= 0; i--)
-                            complementaryIons[i] = (massShiftForComplementaryConversion - spectrum.MassSpectrum[i].Mz, spectrum.MassSpectrum[i].Intensity);
+                            complementaryIons[i] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
 
                         //propogation of error from precursor mass and complementary product mass
                         //IMPLEMENT AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(CommonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
