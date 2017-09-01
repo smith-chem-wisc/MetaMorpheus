@@ -171,7 +171,6 @@ namespace EngineLayer
                         double originalExperimentalMass = massShiftForComplementaryConversion - currentExperimentalMass;
                         double minBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMinimumValue(originalExperimentalMass);
                         double maxBoundary = currentExperimentalMass - originalExperimentalMass + productMassTolerance.GetMaximumValue(originalExperimentalMass);
-                        double originalMassInDaltons = massShiftForComplementaryConversion - currentExperimentalMass;
                         // If found match
                         if (minBoundary < currentTheoreticalMass && maxBoundary > currentTheoreticalMass)
                         {

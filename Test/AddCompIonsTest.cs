@@ -163,7 +163,6 @@ namespace Test
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
             double precursorMass = 300;
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
-            List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             List<double> matchedIonsT = new List<double>();
             List<double> matchedDaErrorT = new List<double>();
             List<double> matchedPpmErrorT = new List<double>();
