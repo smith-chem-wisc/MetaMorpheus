@@ -67,7 +67,6 @@ namespace EngineLayer
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
             int testTheoreticalIndex;
             double testTheoreticalMz;
-            double testTheoreticalMass;
 
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
@@ -87,8 +86,7 @@ namespace EngineLayer
 
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
@@ -97,8 +95,7 @@ namespace EngineLayer
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
@@ -114,8 +111,7 @@ namespace EngineLayer
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
-                        testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
-                        testTheoreticalMz = testTheoreticalMass + Constants.protonMass;
+                        testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.protonMass;
                     }
                     experimentalIndex--;
                 }
@@ -127,6 +123,7 @@ namespace EngineLayer
 
                 foreach (DissociationType dissociationType in dissociationTypes)
                 {
+                    double testTheoreticalMass;
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         currentTheoreticalIndex = -1;
@@ -221,7 +218,6 @@ namespace EngineLayer
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
             int testTheoreticalIndex;
             double testTheoreticalMz;
-            double testTheoreticalMass;
 
             // speed optimizations
             double[] experimental_mzs = thisScan.MassSpectrum.XArray;
@@ -251,8 +247,7 @@ namespace EngineLayer
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
@@ -268,8 +263,7 @@ namespace EngineLayer
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
-                        testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
-                        testTheoreticalMz = testTheoreticalMass + Constants.protonMass;
+                        testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.protonMass;
                     }
                     experimentalIndex--;
                 }
@@ -281,6 +275,7 @@ namespace EngineLayer
 
                 foreach (DissociationType dissociationType in dissociationTypes)
                 {
+                    double testTheoreticalMass;
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         currentTheoreticalIndex = -1;
