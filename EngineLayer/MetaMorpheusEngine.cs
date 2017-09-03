@@ -66,6 +66,7 @@ namespace EngineLayer
 
             double currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
             int testTheoreticalIndex;
+            double testTheoreticalMass;
             double testTheoreticalMz;
 
             // speed optimizations
@@ -86,7 +87,8 @@ namespace EngineLayer
 
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
+                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
@@ -95,10 +97,12 @@ namespace EngineLayer
                     currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
+                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
 
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
+                    testTheoreticalMass = currentTheoreticalMass;
                     testTheoreticalMz = currentTheoreticalMz;
                     // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
                     while (currentExperimentalMz > testTheoreticalMz)
@@ -111,7 +115,8 @@ namespace EngineLayer
                         testTheoreticalIndex++;
                         if (testTheoreticalIndex == TotalProductsHere)
                             break;
-                        testTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex] + Constants.protonMass;
+                        testTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[testTheoreticalIndex];
+                        testTheoreticalMz = testTheoreticalMass + Constants.protonMass;
                     }
                     experimentalIndex--;
                 }
@@ -123,7 +128,6 @@ namespace EngineLayer
 
                 foreach (DissociationType dissociationType in dissociationTypes)
                 {
-                    double testTheoreticalMass;
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         currentTheoreticalIndex = -1;
