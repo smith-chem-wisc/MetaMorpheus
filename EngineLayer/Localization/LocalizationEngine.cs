@@ -53,9 +53,7 @@ namespace EngineLayer
                     List<double> matchedIonMassesList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
-                    MatchObservedIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList);
-                    if (addCompIons)
-                        MatchComplementaryIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes);
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons);
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
                     ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
                     ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
@@ -80,7 +78,7 @@ namespace EngineLayer
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
-                    var score = addCompIons ? CalculateComplementaryClassicScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes) : CalculateObservedClassicScore(theScan, fragmentTolerance, gg);
+                    var score = CalculateClassicScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons);
                     localizedScores.Add(score);
                 }
 

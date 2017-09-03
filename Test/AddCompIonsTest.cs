@@ -54,6 +54,9 @@ namespace Test
             Psm[] allPsmsArray2 = new Psm[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, proteinList, new List<ProductType> { ProductType.B, ProductType.Y }, searchModes, true, CommonParameters, new List<string>()).Run();
 
+            double scoreT = allPsmsArray2[0].Score;
+            double scoreF = allPsmsArray[0].Score;
+
             // Single search mode
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
@@ -151,8 +154,8 @@ namespace Test
             double precursorMass = 300;
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
-            double scoreT = MetaMorpheusEngine.CalculateComplementaryClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD });
-            double scoreF = MetaMorpheusEngine.CalculateObservedClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide);
+            double scoreT = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
+            double scoreF = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
             Assert.IsTrue(scoreT == scoreF * 2 && scoreT > scoreF + 1);
         }
 
@@ -169,15 +172,15 @@ namespace Test
             List<double> matchedIonsF = new List<double>();
             List<double> matchedDaErrorF = new List<double>();
             List<double> matchedPpmErrorF = new List<double>();
-            MetaMorpheusEngine.MatchComplementaryIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD });
-            MetaMorpheusEngine.MatchObservedIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsF, matchedDaErrorF, matchedPpmErrorF);
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsT, matchedDaErrorT, matchedPpmErrorT, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
+            MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonsF, matchedDaErrorF, matchedPpmErrorF, precursorMass, new List<DissociationType> { DissociationType.HCD }, false);
 
             //Test the number of ions is doubled
-            Assert.IsTrue(matchedIonsT.Count == matchedIonsF.Count);
+            Assert.IsTrue(matchedIonsT.Count == matchedIonsF.Count * 2);
             //Test the number of da errors is doubled
-            Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count);
+            Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count * 2);
             //test the number of ppm errors is doubled
-            Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count);
+            Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count * 2);
         }
 
         #endregion Public Methods
