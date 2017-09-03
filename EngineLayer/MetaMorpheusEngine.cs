@@ -103,12 +103,10 @@ namespace EngineLayer
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
                     testTheoreticalMz = currentTheoreticalMz;
-                    testTheoreticalMass = currentTheoreticalMass;
                     // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
                     while (currentExperimentalMz > testTheoreticalMz)
                     {
                         // Store old info for possible reuse
-                        currentTheoreticalMass = testTheoreticalMass;
                         currentTheoreticalMz = testTheoreticalMz;
                         currentTheoreticalIndex = testTheoreticalIndex;
 
@@ -259,12 +257,10 @@ namespace EngineLayer
                     // Start with the current ones
                     testTheoreticalIndex = currentTheoreticalIndex;
                     testTheoreticalMz = currentTheoreticalMz;
-                    testTheoreticalMass = currentTheoreticalMass;
                     // Mark the skipped theoreticals as not found. The last one is not for sure, might be flipped!
                     while (currentExperimentalMz > testTheoreticalMz)
                     {
                         // Store old info for possible reuse
-                        currentTheoreticalMass = testTheoreticalMass;
                         currentTheoreticalMz = testTheoreticalMz;
                         currentTheoreticalIndex = testTheoreticalIndex;
 

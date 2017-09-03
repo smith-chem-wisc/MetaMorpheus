@@ -63,11 +63,11 @@ namespace Test
             // Single ms2 scan
             Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
 
-            Assert.IsTrue(allPsmsArray2[0].Score > 1);
+            Assert.IsTrue(scoreT > 1);
 
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
-            Assert.IsTrue(allPsmsArray2[0].Score == allPsmsArray[0].Score * 3 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 2);
+            Assert.IsTrue(scoreT == scoreF * 3 && scoreT > scoreF + 2);
         }
 
         [Test]
