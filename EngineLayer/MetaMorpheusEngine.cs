@@ -237,8 +237,7 @@ namespace EngineLayer
                     currentTheoreticalIndex++; //prevent multi counting
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
+                    currentTheoreticalMz = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex] + Constants.protonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
