@@ -358,7 +358,7 @@ namespace MetaMorpheusGUI
             };
             t.Start();
         }
-        //(Path.GetFullPath(b.FileName)) + Path.GetExtension(b.FileName)
+
         private void AddMetaMorpheusTaskFolderSuffix_Click(object sender, RoutedEventArgs e)
         {
             var myDialog = new DialogWindow
