@@ -114,7 +114,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.s));
                 huh.SetInProgress(false);
 
                 dataGridDatafiles.Items.Refresh();
@@ -129,7 +129,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                var huh = rawDataObservableCollection.First(b => b.FileName.Equals(s.s));
+                var huh = rawDataObservableCollection.First(b => b.FilePath.Equals(s.s));
                 huh.SetInProgress(true);
                 dataGridDatafiles.Items.Refresh();
             }
@@ -161,7 +161,6 @@ namespace MetaMorpheusGUI
                 foreach (var uu in rawDataObservableCollection)
                 {
                     uu.Use = false;
-                    uu.Parameters = "asdf";
                 }
                 foreach (var newRawData in e.StringList)
                     rawDataObservableCollection.Add(new RawDataForDataGrid(newRawData));
