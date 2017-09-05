@@ -73,19 +73,7 @@ MT   ProteinTermMod
 CF   H2 C2 O1
 //
 ID   Acetyl
-TG   C or T
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O1
-//
-ID   Acetyllysine
-TG   K
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O1
-//
-ID   Acetylserine
-TG   S
+TG   S or K or C or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
