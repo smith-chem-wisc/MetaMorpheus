@@ -53,6 +53,12 @@ PP   Anywhere.
 MT   Mod
 CF   H2 C2 O2
 //
+ID   Carboxylation
+TG   K or D or E
+PP   Anywhere.
+MT   Mod
+CF   C1 O2
+//
 ID   Phospho
 TG   S or T or Y
 PP   Anywhere.
