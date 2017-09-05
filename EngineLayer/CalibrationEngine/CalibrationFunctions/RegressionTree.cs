@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace EngineLayer.Calibration
 {
@@ -18,6 +19,7 @@ namespace EngineLayer.Calibration
         private double output = double.NaN;
 
         private double bestValue;
+
         private int bestI = -1;
 
         #endregion Private Fields
@@ -50,11 +52,20 @@ namespace EngineLayer.Calibration
 
         public override void Train<LabeledDataPoint>(IEnumerable<LabeledDataPoint> trainingList)
         {
+            //Console.WriteLine("        In Train");
+
             var trainingPoints = trainingList.ToList();
+
+            //Console.WriteLine(string.Join(Environment.NewLine, trainingPoints.Select(b => "          " + b.Inputs[0] + " , " + b.Label)));
+
             var averageOutputs = trainingPoints.Select(b => b.Label).Average();
+
+            //Console.WriteLine("          Average outputs: " + averageOutputs);
+
             if (trainingPoints.Count < doNotSplitIfUnderThis)
             {
                 output = averageOutputs;
+                Console.WriteLine("          count too low! output = " + output + " level= " + level);
                 return;
             }
             var bestSumSquaredErrors = trainingPoints.Select(b => Math.Pow(averageOutputs - b.Label, 2)).Sum();
@@ -70,6 +81,9 @@ namespace EngineLayer.Calibration
                     for (double j = 0; j < num_splits; j++)
                     {
                         double quantile = prunedTrainingPoints.Select(b => b.Inputs[i]).Quantile((j + 1) / (num_splits + 1));
+
+                        //Console.WriteLine("quantile: " + quantile + " level = " + level);
+
                         if (double.IsNaN(quantile))
                             break;
                         if (quantile == prunedTrainingPoints.First().Inputs[i] || quantile == prunedTrainingPoints.Last().Inputs[i])
@@ -85,6 +99,7 @@ namespace EngineLayer.Calibration
                             bestSumSquaredErrors = sumSquaredErrors;
                             bestValue = quantile;
                             bestI = i;
+                            Console.WriteLine("bestValue: " + bestValue + " level = " + level);
                         }
                     }
                 }
@@ -94,7 +109,10 @@ namespace EngineLayer.Calibration
                 reachedBottom = true;
 
             if (reachedBottom)
+            {
                 output = trainingPoints.Select(b => b.Label).Average();
+                Console.WriteLine("setting output to equal " + output + " level = " + level);
+            }
             else
             {
                 trainingPoints.Sort(Comparer<LabeledDataPoint>.Create((x, y) => x.Inputs[bestI].CompareTo(y.Inputs[bestI])));
@@ -103,8 +121,33 @@ namespace EngineLayer.Calibration
                 rightTree = new RegressionTree(doNotSplitIfUnderThis, level + 1, useFeature);
                 rightTree.Train(trainingPoints.SkipWhile(b => b.Inputs[bestI] < bestValue).ToList());
             }
+
+            //Console.WriteLine("        Done With Train");
         }
 
         #endregion Public Methods
+
+        #region Internal Methods
+
+        internal string FullTree()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("level: " + level);
+            sb.AppendLine("bestValue: " + bestValue);
+            sb.Append("output: " + output);
+            if (leftTree != null)
+            {
+                sb.AppendLine();
+                sb.Append(leftTree.FullTree());
+            }
+            if (rightTree != null)
+            {
+                sb.AppendLine();
+                sb.Append(rightTree.FullTree());
+            }
+            return sb.ToString();
+        }
+
+        #endregion Internal Methods
     }
 }

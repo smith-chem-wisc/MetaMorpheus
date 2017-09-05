@@ -1,6 +1,7 @@
 ﻿using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
+using Spectra;
 using System;
 
 namespace Test
@@ -123,7 +124,7 @@ namespace Test
             throw new NotImplementedException();
         }
 
-        public void TransformByApplyingFunctionToSpectra(Func<IMzPeak, double> convertorForSpectrum)
+        public void TransformByApplyingFunctionToSpectra(Func<IPeak, double> convertorForSpectrum)
         {
             MassSpectrum.ReplaceXbyApplyingFunction(convertorForSpectrum);
         }

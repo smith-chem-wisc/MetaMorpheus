@@ -3,6 +3,7 @@ using MassSpectrometry;
 using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using Proteomics;
+using Spectra;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,8 @@ namespace EngineLayer.Calibration
         private readonly List<Psm> goodIdentifications;
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Random rnd;
+        private readonly int doNotSplitIfUnderThis;
+        private readonly int numTrees;
         private int numMs1MassChargeCombinationsConsidered;
 
         private int numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -42,7 +45,7 @@ namespace EngineLayer.Calibration
 
         #region Public Constructors
 
-        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<Psm> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, Random rnd, List<string> nestedIds) : base(nestedIds)
+        public CalibrationEngine(IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMSDataFile, Tolerance mzToleranceForMs2Search, List<Psm> goodIdentifications, int minMS1IsotopicPeaksNeededForConfirmedIdentification, int minMS2IsotopicPeaksNeededForConfirmedIdentification, int numFragmentsNeededForEveryIdentification, Tolerance mzToleranceForMs1Search, FragmentTypes fragmentTypesForCalibration, Action<List<LabeledMs1DataPoint>, string> ms1ListAction, Action<List<LabeledMs2DataPoint>, string> ms2ListAction, bool doForestCalibration, Random rnd, List<string> nestedIds, int doNotSplitIfUnderThis, int numTrees) : base(nestedIds)
         {
             this.myMsDataFile = myMSDataFile;
             this.goodIdentifications = goodIdentifications;
@@ -56,6 +59,8 @@ namespace EngineLayer.Calibration
             this.ms2ListAction = ms2ListAction;
             this.doForestCalibration = doForestCalibration;
             this.rnd = rnd;
+            this.doNotSplitIfUnderThis = doNotSplitIfUnderThis;
+            this.numTrees = numTrees;
         }
 
         #endregion Public Constructors
@@ -91,6 +96,7 @@ namespace EngineLayer.Calibration
                 for (int forestCalibrationRound = 1; ; forestCalibrationRound++)
                 {
                     Status("forestCalibrationRound " + forestCalibrationRound, nestedIds);
+                    Console.WriteLine("forestCalibrationRound " + forestCalibrationRound);
                     Tuple<CalibrationFunction, CalibrationFunction> combinedCalibration = CalibrateRF(dataPointAcquisitionResult);
                     result.Add(combinedCalibration.Item1, combinedCalibration.Item2);
                     dataPointAcquisitionResult = GetDataPoints();
@@ -116,18 +122,30 @@ namespace EngineLayer.Calibration
 
         private Tuple<CalibrationFunction, CalibrationFunction> CalibrateRF(DataPointAquisitionResults res)
         {
+            Console.WriteLine("  In CalibrateRF");
             var shuffledMs1TrainingPoints = res.Ms1List.OrderBy(item => rnd.Next()).ToList();
             var shuffledMs2TrainingPoints = res.Ms2List.OrderBy(item => rnd.Next()).ToList();
+
+            Console.WriteLine("  All ms2 Points");
+            Console.WriteLine(string.Join(Environment.NewLine, shuffledMs2TrainingPoints.OrderBy(b => b.mz).Select(b => "      " + b.mz + " " + b.Label)));
 
             var trainList1 = shuffledMs1TrainingPoints.Take((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).ToList();
             var testList1 = shuffledMs1TrainingPoints.Skip((int)(shuffledMs1TrainingPoints.Count * fracForTraining)).ToList();
             var trainList2 = shuffledMs2TrainingPoints.Take((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
+            Console.WriteLine("  train ms2 Points");
+            Console.WriteLine(string.Join(Environment.NewLine, trainList2.OrderBy(b => b.mz).Select(b => "      " + b.mz + " " + b.Label)));
+
             var testList2 = shuffledMs2TrainingPoints.Skip((int)(shuffledMs2TrainingPoints.Count * fracForTraining)).ToList();
+            Console.WriteLine("  testList2 ms2 Points");
+            Console.WriteLine(string.Join(Environment.NewLine, testList2.OrderBy(b => b.mz).Select(b => "      " + b.mz + " " + b.Label)));
 
             CalibrationFunction bestMS1predictor = new IdentityCalibrationFunction();
             CalibrationFunction bestMS2predictor = new IdentityCalibrationFunction();
             double bestMS1MSE = bestMS1predictor.GetMSE(testList1);
             double bestMS2MSE = bestMS2predictor.GetMSE(testList2);
+
+            Console.WriteLine("  bestMS2MSE identity: " + bestMS2MSE);
+
             List<bool[]> boolStuffms1 = new List<bool[]>
             {
                 new bool[] {true, true, false, false, false},
@@ -136,7 +154,7 @@ namespace EngineLayer.Calibration
             if (trainList1.Count > 0)
                 foreach (var boolStuff in boolStuffms1)
                 {
-                    var ms1regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff, rnd);
+                    var ms1regressorRF = new RandomForestCalibrationFunction(numTrees, doNotSplitIfUnderThis, boolStuff, rnd);
                     ms1regressorRF.Train(trainList1);
                     var MS1mse = ms1regressorRF.GetMSE(testList1);
                     if (MS1mse < bestMS1MSE)
@@ -148,16 +166,19 @@ namespace EngineLayer.Calibration
 
             List<bool[]> boolStuffms2 = new List<bool[]>
             {
-                new bool[] {true, true, false, false, false,false},
-                new bool[] {true, true, true, true, true,false},
-                new bool[] {true, true, true, true, true,true},
+                new bool[] {true, false, false, false, false,false},
+                //new bool[] {true, true, false, false, false,false},
+                //new bool[] {true, true, true, true, true,false},
+                //new bool[] {true, true, true, true, true,true},
             };
             if (trainList2.Count > 0)
                 foreach (var boolStuff in boolStuffms2)
                 {
-                    var ms2regressorRF = new RandomForestCalibrationFunction(40, 10, boolStuff, rnd);
+                    var ms2regressorRF = new RandomForestCalibrationFunction(numTrees, doNotSplitIfUnderThis, boolStuff, rnd);
                     ms2regressorRF.Train(trainList2);
                     var MS2mse = ms2regressorRF.GetMSE(testList2);
+                    Console.WriteLine(ms2regressorRF.FullTree());
+                    Console.WriteLine("  " + string.Join(" ", boolStuff) + " rf MS2mse: " + MS2mse);
                     if (MS2mse < bestMS2MSE)
                     {
                         bestMS2MSE = MS2mse;
@@ -171,12 +192,15 @@ namespace EngineLayer.Calibration
 
             CalibrateSpectra(bestCf);
 
+            Console.WriteLine("  Done with CalibrateRF");
+
             return bestCf;
         }
 
         private DataPointAquisitionResults GetDataPoints()
         {
             Status("Extracting data points:", nestedIds);
+            Console.WriteLine("  In GetDataPoints");
             // The final training point list
             DataPointAquisitionResults res = new DataPointAquisitionResults()
             {
@@ -239,6 +263,9 @@ namespace EngineLayer.Calibration
                 res.numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks += numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
             }
             Status("Number of training points: " + res.Count, nestedIds);
+
+            Console.WriteLine("  Done with GetDataPoints");
+
             return res;
         }
 
@@ -348,16 +375,16 @@ namespace EngineLayer.Calibration
                 {
                     var precursorScan = myMsDataFile.GetOneBasedScan(theScan.OneBasedPrecursorScanNumber);
 
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item2.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz });
+                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item2.Predict(new double[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN, theScan.IsolationMz });
 
-                    Func<IMzPeak, double> theFuncForPrecursor = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, precursorScan.RetentionTime, x.Intensity, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
+                    Func<IPeak, double> theFuncForPrecursor = x => x.X - bestCf.Item1.Predict(new double[] { x.X, precursorScan.RetentionTime, x.Y, precursorScan.TotalIonCurrent, precursorScan.InjectionTime ?? double.NaN });
 
                     theScan.TransformMzs(theFunc, theFuncForPrecursor);
                 }
                 else
                 {
-                    Func<IMzPeak, double> theFunc = x => x.Mz - bestCf.Item1.Predict(new double[] { x.Mz, a.RetentionTime, x.Intensity, a.TotalIonCurrent, a.InjectionTime ?? double.NaN });
-                    a.TransformByApplyingFunctionToSpectra(theFunc);
+                    Func<IPeak, double> theFunc = x => x.X - bestCf.Item1.Predict(new double[] { x.X, a.RetentionTime, x.Y, a.TotalIonCurrent, a.InjectionTime ?? double.NaN });
+                    a.MassSpectrum.ReplaceXbyApplyingFunction(theFunc);
                 }
             }
         }
@@ -417,15 +444,15 @@ namespace EngineLayer.Calibration
                             continue;
                         }
 
-                        var closestPeak = fullMS1spectrum.GetClosestPeak(theMZ);
-                        var closestPeakMZ = closestPeak.Mz;
+                        int closestPeakIndex = fullMS1spectrum.GetClosestPeakIndex(theMZ);
+                        var closestPeakMZ = fullMS1spectrum.XArray[closestPeakIndex];
 
                         var theTuple = Tuple.Create(closestPeakMZ, ms1RetentionTime);
                         if (!peaksAddedHashSet.Contains(theTuple))
                         {
                             peaksAddedHashSet.Add(theTuple);
                             highestKnownChargeForThisPeptide = Math.Max(highestKnownChargeForThisPeptide, chargeToLookAt);
-                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, double.NaN, closestPeakMZ - theMZ, null));
+                            trainingPointsToAverage.Add(new LabeledMs1DataPoint(closestPeakMZ, double.NaN, fullMS1spectrum.YArray[closestPeakIndex], double.NaN, double.NaN, closestPeakMZ - theMZ, null));
                         }
                         else
                             break;
@@ -537,12 +564,12 @@ namespace EngineLayer.Calibration
                                 numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks++;
                                 continue;
                             }
-                            var closestPeak = ms2DataScan.MassSpectrum.GetClosestPeak(theMZ);
-                            var closestPeakMZ = closestPeak.Mz;
+                            int closestPeakIndex = ms2DataScan.MassSpectrum.GetClosestPeakIndex(theMZ);
+                            var closestPeakMZ = ms2DataScan.MassSpectrum.XArray[closestPeakIndex];
                             if (!addedPeaks.ContainsKey(closestPeakMZ))
                             {
                                 addedPeaks.Add(closestPeakMZ, Math.Abs(closestPeakMZ - theMZ));
-                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, closestPeak.Intensity, double.NaN, null, double.NaN, closestPeakMZ - theMZ, null));
+                                trainingPointsToAverage.Add(new LabeledMs2DataPoint(closestPeakMZ, double.NaN, ms2DataScan.MassSpectrum.YArray[closestPeakIndex], double.NaN, null, double.NaN, closestPeakMZ - theMZ, null));
                             }
                         }
                         // If started adding and suddnely stopped, go to next one, no need to look at higher charges

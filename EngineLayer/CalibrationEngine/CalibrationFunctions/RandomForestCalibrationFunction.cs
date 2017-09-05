@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace EngineLayer.Calibration
@@ -56,5 +57,23 @@ namespace EngineLayer.Calibration
         }
 
         #endregion Public Methods
+
+        #region Internal Methods
+
+        internal string FullTree()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < RegressionTrees.Length; i++)
+            {
+                Console.WriteLine("Tree " + i );
+                Console.Write(RegressionTrees[i].FullTree());
+
+            }
+
+            return sb.ToString();
+        }
+
+        #endregion Internal Methods
     }
 }

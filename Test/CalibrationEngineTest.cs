@@ -52,14 +52,14 @@ namespace Test
             int numFragmentsNeededForEveryIdentification = 10;
 
             Random rnd = new Random(0);
-            var calibrationEngine = new CalibrationEngine(myMsDataFile, fragmentTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, rnd, new List<string>());
+            var calibrationEngine = new CalibrationEngine(myMsDataFile, fragmentTolerance, identifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, rnd, new List<string>(), 10, 40);
 
             var res = calibrationEngine.Run();
             Assert.IsTrue(res is CalibrationResults);
         }
 
         [Test]
-        public static void TestQuadratic()
+        public static void TestRF()
         {
             DigestionParams digestionParams = new DigestionParams();
             PeptideWithSetModifications pepWithSetMods = new Protein("MQQQQQQQ", null).Digest(digestionParams, new List<ModificationWithMass>()).First().GetPeptidesWithSetModifications(digestionParams, new List<ModificationWithMass>()).First();
@@ -83,7 +83,7 @@ namespace Test
             newPsm.SetFdrValues(1, 0, 0, 1, 0, 0);
 
             Random rnd = new Random(0);
-            var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<Psm> { newPsm }, 3, 2, 10, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, rnd, new List<string>()).Run();
+            var res = new CalibrationEngine(myMsDataFile, fragmentTolerance, new List<Psm> { newPsm }, 3, 2, 10, new PpmTolerance(10), FragmentTypes.b | FragmentTypes.y, (List<LabeledMs1DataPoint> theList, string s) => {; }, (List<LabeledMs2DataPoint> theList, string s) => {; }, true, rnd, new List<string>(), 2, 1).Run();
             Assert.IsTrue(res is CalibrationResults);
         }
 

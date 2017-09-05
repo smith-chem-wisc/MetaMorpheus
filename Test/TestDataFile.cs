@@ -115,9 +115,6 @@ namespace Test
                     var t1 = aok.ToMz(1);
                     var c = 0.0000001;
                     mz2.Add(t1 + c * Math.Pow(t1, 2));
-
-                    Console.WriteLine("orig: " + aok.ToMz(1) + " new: " + (t1 + c * Math.Pow(t1, 2)));
-
                     var t2 = (aok + 1.003).ToMz(1);
                     mz2.Add(t2 + c * Math.Pow(t2, 2));
                     intensities2.Add(1);

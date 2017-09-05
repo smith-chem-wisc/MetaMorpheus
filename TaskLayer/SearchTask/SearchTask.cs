@@ -940,9 +940,8 @@ namespace TaskLayer
                     {
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
                         {
-                            List<string> proteinGroupNames;
 
-                            if (psmToProteinGroupNames.TryGetValue(psm, out proteinGroupNames))
+                            if (psmToProteinGroupNames.TryGetValue(psm, out List<string> proteinGroupNames))
                                 proteinGroupNames.Add(proteinGroup.ProteinGroupName);
                             else
                                 psmToProteinGroupNames.Add(psm, new List<string> { proteinGroup.ProteinGroupName });
@@ -1001,9 +1000,8 @@ namespace TaskLayer
 
                     foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
                     {
-                        ProteinGroup metamorpheusProteinGroup;
 
-                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out metamorpheusProteinGroup))
+                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out ProteinGroup metamorpheusProteinGroup))
                             metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
                     }
 

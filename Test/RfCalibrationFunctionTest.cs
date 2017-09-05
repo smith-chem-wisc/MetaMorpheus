@@ -1,6 +1,8 @@
 ﻿using EngineLayer.Calibration;
+using MassSpectrometry;
 using NUnit.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Test
@@ -196,6 +198,59 @@ namespace Test
             public override string ToString()
             {
                 return "(" + Inputs[0] + ", " + Inputs[1] + ") " + Label;
+            }
+
+            #endregion Public Methods
+        }
+
+        private class CalibTestDataFile : IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>>
+        {
+            #region Private Fields
+
+            private List<TestInputsOutputs2> list;
+
+            #endregion Private Fields
+
+            #region Public Constructors
+
+            public CalibTestDataFile(List<TestInputsOutputs2> list)
+            {
+                this.list = list;
+            }
+
+            #endregion Public Constructors
+
+            #region Public Properties
+
+            public int NumSpectra => throw new NotImplementedException();
+
+            #endregion Public Properties
+
+            #region Public Methods
+
+            public int GetClosestOneBasedSpectrumNumber(double retentionTime)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IEnumerator<IMsDataScan<IMzSpectrum<IMzPeak>>> GetEnumerator()
+            {
+                throw new NotImplementedException();
+            }
+
+            public IEnumerable<IMsDataScan<IMzSpectrum<IMzPeak>>> GetMsScansInTimeRange(double firstRT, double lastRT)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IMsDataScan<IMzSpectrum<IMzPeak>> GetOneBasedScan(int oneBasedScanNumber)
+            {
+                throw new NotImplementedException();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                throw new NotImplementedException();
             }
 
             #endregion Public Methods

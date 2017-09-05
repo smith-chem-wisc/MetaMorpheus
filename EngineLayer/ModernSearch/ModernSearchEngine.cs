@@ -162,8 +162,8 @@ namespace EngineLayer.ModernSearch
             HashSet<int> listSeenipos = new HashSet<int>();
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                var theAdd = 1 + spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = spectrum.MassSpectrum.XArray[i] - Constants.protonMass;
                 GeneratePeptideScores(theAdd, experimentalPeakInDaltons, peptideScores, listSeenipos);
             }
             if (addCompIons)
@@ -175,7 +175,7 @@ namespace EngineLayer.ModernSearch
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
-                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass), (spectrum.MassSpectrum[i].Intensity)));
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum.XArray[i] + Constants.protonMass), (spectrum.MassSpectrum.YArray[i])));
                     }
                 }
                 //If ETD
@@ -183,7 +183,7 @@ namespace EngineLayer.ModernSearch
                 {
                     for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
                     {
-                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum[i].Mz + Constants.protonMass * 2), (spectrum.MassSpectrum[i].Intensity)));
+                        experimentalPeaks.Add(new MzPeak((thePrecursorMass - spectrum.MassSpectrum.XArray[i] + Constants.protonMass * 2), (spectrum.MassSpectrum.YArray[i])));
                     }
                 }
 

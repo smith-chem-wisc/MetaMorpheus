@@ -219,7 +219,7 @@ namespace TaskLayer
                         ms2Action = (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }
 
-                    MetaMorpheusEngineResults theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, false, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                    MetaMorpheusEngineResults theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, false, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }, 10, 40).Run();
 
                     CalibrationResults calibrationResult = theResult as CalibrationResults;
 
@@ -279,7 +279,7 @@ namespace TaskLayer
                         ms2Action = (List<LabeledMs2DataPoint> theList, string s) => WriteMs2DataPoints(theList, OutputFolder, Path.GetFileNameWithoutExtension(origDataFile) + "inNonLinear" + s, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                     }
 
-                    var theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, true, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }).Run();
+                    var theResult = new CalibrationEngine(myMsDataFile, CommonParameters.ProductMassTolerance, goodIdentifications, minMS1isotopicPeaksNeededForConfirmedIdentification, minMS2isotopicPeaksNeededForConfirmedIdentification, numFragmentsNeededForEveryIdentification, CalibrationParameters.PrecursorMassTolerance, fragmentTypesForCalibration, ms1Action, ms2Action, true, rnd, new List<string> { taskId, "Individual Spectra Files", origDataFile }, 10, 1).Run();
                     CalibrationResults calibrationResult = theResult as CalibrationResults;
 
                     if (calibrationResult == null)

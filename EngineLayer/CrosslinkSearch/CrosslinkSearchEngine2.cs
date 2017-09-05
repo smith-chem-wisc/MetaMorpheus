@@ -275,8 +275,8 @@ namespace EngineLayer.CrosslinkSearch
         {
             for (int i = 0; i < spectrum.MassSpectrum.Size; i++)
             {
-                var theAdd = 1 + spectrum.MassSpectrum[i].Intensity / spectrum.TotalIonCurrent;
-                var experimentalPeakInDaltons = spectrum.MassSpectrum[i].Mz - Constants.protonMass;
+                var theAdd = 1 + spectrum.MassSpectrum.YArray[i] / spectrum.TotalIonCurrent;
+                var experimentalPeakInDaltons = spectrum.MassSpectrum.XArray[i] - Constants.protonMass;
                 float closestPeak;
                 var ipos = Array.BinarySearch(keys, (float)experimentalPeakInDaltons);
                 if (ipos < 0)
