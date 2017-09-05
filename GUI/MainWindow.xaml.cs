@@ -814,9 +814,4 @@ namespace MetaMorpheusGUI
 
         #endregion Private Methods
 
-        private void DataGridRow_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-
-        }
-    }
 }
