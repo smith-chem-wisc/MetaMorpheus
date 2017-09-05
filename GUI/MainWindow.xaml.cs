@@ -726,7 +726,7 @@ namespace MetaMorpheusGUI
                         Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
                     }
                     UpdateFileSpecificParamsDisplay(fullPathofToml);
-                    
+
                 }
             }
             else
@@ -814,4 +814,5 @@ namespace MetaMorpheusGUI
 
         #endregion Private Methods
 
+    }
 }
