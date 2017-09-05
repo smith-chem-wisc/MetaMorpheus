@@ -7,7 +7,7 @@ CF   H-1 N-1 O1
 //
 ID   Amidation
 TG   X
-PP   C-Terminal.
+PP   C-terminal.
 MT   ProteinTermMod
 CF   H1 N1 O-1
 //
@@ -225,7 +225,7 @@ CF   H2 C
 //
 ID   Methyl
 TG   X
-PP   N-Terminal.
+PP   N-terminal.
 MT   ProteinTermMod
 CF   H2 C
 //
@@ -237,7 +237,7 @@ CF   H4 C2
 //
 ID   Ethyl
 TG   X
-PP   N-Terminal.
+PP   N-terminal.
 MT   ProteinTermMod
 CF   H4 C2
 //
