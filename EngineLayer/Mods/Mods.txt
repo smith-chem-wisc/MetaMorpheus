@@ -36,7 +36,7 @@ MT   Mod
 CF   O1
 //
 ID   Carbamidomethyl
-TG   K
+TG   K or H or D or E or S or T or Y
 PP   Anywhere.
 MT   Mod
 CF   H3 C2 N1 O1
@@ -52,6 +52,12 @@ TG   C
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O2
+//
+ID   Carboxylation
+TG   K or D or E
+PP   Anywhere.
+MT   Mod
+CF   C1 O2
 //
 ID   Phospho
 TG   S or T or Y
