@@ -86,7 +86,7 @@ namespace EngineLayer
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                   currentTheoreticalIndex++;
+                    currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
@@ -111,6 +111,7 @@ namespace EngineLayer
                     {
                         // Store old info for possible reuse
                         currentTheoreticalMz = testTheoreticalMz;
+                        currentTheoreticalMass = testTheoreticalMass;
                         currentTheoreticalIndex = testTheoreticalIndex;
 
                         // Update test stuff!
