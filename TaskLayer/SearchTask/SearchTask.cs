@@ -1031,17 +1031,23 @@ namespace TaskLayer
             // Now that we are done with fdr analysis and localization analysis, can write the results!
             Status("Writing results...", taskId);
             {
-                var writtenFile = Path.Combine(OutputFolder, "aggregatePSMs_" + SearchParameters.MassDiffAcceptor.FileNameAddition + ".psmtsv");
-                WritePsmsToTsv(allPsms, writtenFile);
-                SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+                if (currentRawFileList.Count > 1)
+                {
+                    var writtenFile = Path.Combine(OutputFolder, "aggregatePSMs_" + SearchParameters.MassDiffAcceptor.FileNameAddition + ".psmtsv");
+                    WritePsmsToTsv(allPsms, writtenFile);
+                    SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+                }
                 myTaskResults.AddNiceText("All target PSMS within 1% FDR: " + allPsms.Count(a => a.FdrInfo.QValue <= .01 && !a.IsDecoy));
             }
 
             var uniquePeptides = allPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
             {
-                var writtenFile = Path.Combine(OutputFolder, "aggregateUniquePeptides_" + SearchParameters.MassDiffAcceptor.FileNameAddition + ".psmtsv");
-                WritePsmsToTsv(uniquePeptides, writtenFile);
-                SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+                if (currentRawFileList.Count > 1)
+                {
+                    var writtenFile = Path.Combine(OutputFolder, "aggregateUniquePeptides_" + SearchParameters.MassDiffAcceptor.FileNameAddition + ".psmtsv");
+                    WritePsmsToTsv(uniquePeptides, writtenFile);
+                    SucessfullyFinishedWritingFile(writtenFile, new List<string> { taskId });
+                }
                 myTaskResults.AddNiceText("Unique peptides within 1% FDR: " + uniquePeptides.Count(a => a.FdrInfo.QValue <= .01 && !a.IsDecoy));
             }
 
@@ -1072,7 +1078,8 @@ namespace TaskLayer
 
             if (SearchParameters.DoParsimony)
             {
-                WriteProteinGroupsToTsv(proteinGroups, OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
+                if(currentRawFileList.Count > 1)
+                    WriteProteinGroupsToTsv(proteinGroups, OutputFolder, "aggregateProteinGroups_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId }, psmsGroupedByFile.Select(b => b.Key).ToList());
 
                 // individual protein group files (local protein fdr, global parsimony, global psm fdr)
                 foreach (var fullFilePath in currentRawFileList)
@@ -1109,7 +1116,8 @@ namespace TaskLayer
                     WritePeakQuantificationResultsToTsv(peaksForThisFile, OutputFolder, strippedFileName + "_" + SearchParameters.MassDiffAcceptor.FileNameAddition + "_QuantifiedPeaks", new List<string> { taskId, "Individual Spectra Files", fullFilePath });
                 }
 
-                WritePeakQuantificationResultsToTsv(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p.Select(v => v)).ToList(), OutputFolder, "aggregateQuantifiedPeaks_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId });
+                if (currentRawFileList.Count > 1)
+                    WritePeakQuantificationResultsToTsv(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p.Select(v => v)).ToList(), OutputFolder, "aggregateQuantifiedPeaks_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId });
 
                 var summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), true);
                 WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByBaseSeq_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId });
