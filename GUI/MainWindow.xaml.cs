@@ -71,7 +71,7 @@ namespace MetaMorpheusGUI
 
             MetaMorpheusEngine.OutProgressHandler += NewoutProgressBar;
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
-
+            UpdateRawFileGuiStuff();
             UpdateTaskGuiStuff();
         }
 
@@ -274,7 +274,7 @@ namespace MetaMorpheusGUI
                 case ".mzml":
                     RawDataForDataGrid zz = new RawDataForDataGrid(draggedFilePath);
                     if (!ExistRaw(rawDataObservableCollection, zz)) { rawDataObservableCollection.Add(zz); }
-                    zz.Parameters = "default";
+                    UpdateFileSpecificParamsDisplayJustAdded(Path.ChangeExtension(draggedFilePath, ".toml"));
                     break;
 
                 case ".xml":
@@ -391,6 +391,12 @@ namespace MetaMorpheusGUI
                 RemoveLastTaskButton.IsEnabled = true;
                 ClearTasksButton.IsEnabled = true;
             }
+
+        }
+
+        private void UpdateRawFileGuiStuff()
+        {
+
             if (SelectedRawFiles.Count == 0)
                 ChangeParameters.IsEnabled = false;
             else
@@ -697,47 +703,79 @@ namespace MetaMorpheusGUI
             UpdateTaskGuiStuff();
         }
 
-        private void ChangeDefautParams_click(object sender, RoutedEventArgs e)
+        private void ChangeFileSpecificParams_click(object sender, RoutedEventArgs e)
         {
-            var dialog = new FileSpecificParamWindow(SelectedRawFiles);
-            if (dialog.ShowDialog() == true)
+            bool selectedAreEqual = true;
+            for (int i = 1; i < SelectedRawFiles.Count(); i++)
             {
-                string fullPathofToml = "";
-                int i = 0;
-                foreach (var settings in dialog.FileSpecificSettingsList)
-                {
-                    string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
-                    string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
-                    fullPathofToml = Path.Combine(directory, fileName);
-                    Toml.WriteFile(settings, fullPathofToml + ".toml", MetaMorpheusTask.tomlConfig);
-                    i++;
-                }
-
-                foreach (var file in rawDataObservableCollection)
-                {
-                    for (int j = 0; j < SelectedRawFiles.Count(); j++)
-                    {
-                        if (file.FileName.Equals(SelectedRawFiles[j].FileName))
-                        {
-                            file.Parameters = File.ReadAllText(fullPathofToml + ".toml");
-                        }
-                    }
-
-
-                }
-                dataGridDatafiles.Items.Refresh();
-                UpdateTaskGuiStuff();
+                if (!SelectedRawFiles[i].Parameters.Equals(SelectedRawFiles[i - 1].Parameters))
+                    selectedAreEqual = false;
             }
+
+            if (selectedAreEqual)
+            {
+                var dialog = new FileSpecificParamWindow(SelectedRawFiles);
+                if (dialog.ShowDialog() == true)
+                {
+                    string[] fullPathofToml = new string[dialog.FileSpecificSettingsList.Count()];
+                    for (int i = 0; i < dialog.FileSpecificSettingsList.Count(); i++)
+                    {
+                        string directory = Directory.GetParent(SelectedRawFiles[i].FilePath).ToString();
+                        string fileName = Path.GetFileNameWithoutExtension(SelectedRawFiles[i].FileName);
+                        fullPathofToml[i] = Path.Combine(directory, fileName);
+                        Toml.WriteFile(dialog.FileSpecificSettingsList[i], fullPathofToml[i] + ".toml", MetaMorpheusTask.tomlConfig);
+                    }
+                    UpdateFileSpecificParamsDisplay(fullPathofToml);
+                    
+                }
+            }
+            else
+            {
+                MessageBox.Show("The Files you have chosen contain different file specific Parameters. Please select files with the same file specific parameters or edit one at a time.", "Different File Specifc Parameters", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        //run if fileSpecificParams are changed from GUI
+        private void UpdateFileSpecificParamsDisplay(string[] tomlLocations)
+        {
+            string[] fullPathofTomls = tomlLocations;
+
+            foreach (var file in SelectedRawFiles)
+            {
+                for (int j = 0; j < fullPathofTomls.Count(); j++)
+                {
+                    if (Path.GetFileNameWithoutExtension(file.FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls[j]))
+                    {
+                        file.Parameters = File.ReadAllText(fullPathofTomls[j] + ".toml");
+                    }
+                }
+
+            }
+            UpdateRawFileGuiStuff();
+            dataGridDatafiles.Items.Refresh();
+        }
+
+        //run if data file has just been added with and checks for Existing fileSpecficParams
+        private void UpdateFileSpecificParamsDisplayJustAdded(string tomlLocations)
+        {
+            string fullPathofTomls = tomlLocations;
+            for (int i = 0; i < rawDataObservableCollection.Count(); i++)
+            {
+                if (File.Exists(fullPathofTomls) && Path.GetFileNameWithoutExtension(rawDataObservableCollection[i].FileName) == Path.GetFileNameWithoutExtension(fullPathofTomls))
+                    rawDataObservableCollection[i].Parameters = File.ReadAllText(fullPathofTomls);
+            }
+            UpdateRawFileGuiStuff();
+            dataGridDatafiles.Items.Refresh();
         }
 
         private void AddSelectedRaw(object sender, RoutedEventArgs e)
         {
             DataGridRow obj = (DataGridRow)sender;
-            
+
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Add(ok);
-            UpdateTaskGuiStuff();
-            
+            UpdateRawFileGuiStuff();
+
         }
 
         private void RemoveSelectedRaw(object sender, RoutedEventArgs e)
@@ -745,7 +783,7 @@ namespace MetaMorpheusGUI
             DataGridRow obj = (DataGridRow)sender;
             RawDataForDataGrid ok = (RawDataForDataGrid)obj.DataContext;
             SelectedRawFiles.Remove(ok);
-            UpdateTaskGuiStuff();
+            UpdateRawFileGuiStuff();
         }
 
 

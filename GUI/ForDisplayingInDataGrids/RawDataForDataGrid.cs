@@ -35,11 +35,6 @@ namespace MetaMorpheusGUI
             InProgress = inProgress;
         }
 
-        public void SetParameters(string parameters)
-        {
-            Parameters = parameters;
-        }
-
         #endregion Public Methods
     }
 }

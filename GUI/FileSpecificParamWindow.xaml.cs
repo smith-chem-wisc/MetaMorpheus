@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
+using Nett;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using TaskLayer;
+using System.IO;
 
 namespace MetaMorpheusGUI
 {
@@ -35,7 +37,16 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             SelectedRaw = selectedRaw;
             FileSpecificSettingsList = new FileSpecificSettings[selectedRaw.Count];
+            string tomlFileName = System.IO.Path.ChangeExtension(SelectedRaw[0].FilePath, ".toml").ToString();
+            var paramFile = Toml.ReadFile(tomlFileName, MetaMorpheusTask.tomlConfig);
+            var tomlSettingsList = paramFile.ToDictionary(p => p.Key);
+            FileSpecificSettings settings = new FileSpecificSettings(tomlSettingsList);
+            UpdateAndPopulateFields(settings);
+        }
 
+        private void UpdateAndPopulateFields(FileSpecificSettings settings)
+        {
+            CommonParameters commonparams = new CommonParameters();
             foreach (Protease protease in GlobalEngineLevelSettings.ProteaseDictionary.Values)
                 proteaseComboBox.Items.Add(protease);
             proteaseComboBox.SelectedIndex = 12;
@@ -46,7 +57,32 @@ namespace MetaMorpheusGUI
             productMassToleranceComboBox.Items.Add("Absolute");
             productMassToleranceComboBox.Items.Add("Ppm");
 
+            DoPrecursorDeconvolution.IsChecked = settings.DoPrecursorDeconvolution ?? commonparams.DoPrecursorDeconvolution;
+            conserveMemoryCheckBox.IsChecked = settings.ConserveMemory ?? commonparams.ConserveMemory; ;
+            UseProvidedPrecursorInfo.IsChecked = settings.UseProvidedPrecursorInfo ?? commonparams.UseProvidedPrecursorInfo;
+            if (settings.DeconvolutionIntensityRatio != null)
+                DeconvolutionIntensityRatioTextBox.Text = settings.DeconvolutionIntensityRatio.ToString();
+            if (settings.DeconvolutionMaxAssumedChargeState != null)
+                DeconvolutionMaxAssumedChargeStateTextBox.Text = settings.DeconvolutionMaxAssumedChargeState.ToString();
+            if (settings.DeconvolutionMassTolerance != null)
+                DeconvolutionMassToleranceInPpmTextBox.Text = settings.DeconvolutionMassTolerance.ToString();
+            initiatorMethionineBehaviorComboBox.SelectedIndex = (int)settings.InitiatorMethionineBehavior;
+            if (settings.MaxMissedCleavages != null)
+                missedCleavagesTextBox.Text = settings.MaxMissedCleavages.ToString();
+            txtMinPeptideLength.Text = settings.MinPeptideLength.HasValue ? settings.MinPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            txtMaxPeptideLength.Text = settings.MaxPeptideLength.HasValue ? settings.MaxPeptideLength.Value.ToString(CultureInfo.InvariantCulture) : "";
+            if (settings.MaxModificationIsoforms != null)
+                maxModificationIsoformsTextBox.Text = settings.MaxModificationIsoforms.ToString();
+            if (settings.TotalPartitions != null)
+                numberOfDatabaseSearchesTextBox.Text = settings.TotalPartitions.ToString();
+            if (settings.Protease != null)
+                proteaseComboBox.SelectedItem = settings.Protease;
+            if (settings.ScoreCutoff != null)
+                minScoreAllowed.Text = settings.ScoreCutoff.ToString();
+            if (settings.Max_mods_for_peptide != null)
+                MaxModsForPeptides.Text = settings.Max_mods_for_peptide.ToString();
         }
+
 
         private void PreviewIfInt(object sender, TextCompositionEventArgs e)
         {
@@ -104,7 +140,7 @@ namespace MetaMorpheusGUI
             }
 
             DialogResult = true;
-        
+
         }
 
         //helper methods to return null if field is empty
