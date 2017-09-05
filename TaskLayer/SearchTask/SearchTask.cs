@@ -753,7 +753,7 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams.DoPrecursorDeconvolution, combinedParams.UseProvidedPrecursorInfo, combinedParams.DeconvolutionIntensityRatio, combinedParams.DeconvolutionMaxAssumedChargeState, combinedParams.DeconvolutionMassTolerance).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -900,7 +900,7 @@ namespace TaskLayer
                     CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Running localization analysis...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     var localizationEngine = new LocalizationEngine(allPsms.Where(b => b.FullFilePath.Equals(origDataFile)).ToList(), ionTypes, myMsDataFile, combinedParams.ProductMassTolerance, new List<string> { taskId, "Individual Spectra Files", origDataFile }, this.SearchParameters.AddCompIons);
                     localizationEngine.Run();
                     myFileManager.DoneWithFile(origDataFile);
@@ -935,7 +935,7 @@ namespace TaskLayer
                 if (proteinGroups != null)
                 {
                     ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
-                    
+
                     foreach (var proteinGroup in proteinGroups)
                     {
                         foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR)
@@ -964,7 +964,7 @@ namespace TaskLayer
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     if (!psmToProteinGroupNames.ContainsKey(psm))
                         psmToProteinGroupNames.Add(psm, new List<string>() { "" });
-                
+
                 // pass PSMs to FlashLFQ to quantify identified peptides
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                     FlashLfqEngine.AddIdentification(Path.GetFileNameWithoutExtension(psm.FullFilePath), psm.BaseSequence, psm.FullSequence, psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroupNames[psm]);
@@ -976,7 +976,8 @@ namespace TaskLayer
                 {
                     var origDataFile = currentRawFileList[spectraFileIndex];
                     Status("Quantifying...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile);
+                    CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
+                    IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams.TopNpeaks, combinedParams.MinRatio, combinedParams.TrimMs1Peaks, combinedParams.TrimMsMsPeaks);
                     FlashLfqEngine.Quantify(myMsDataFile, origDataFile);
                     myFileManager.DoneWithFile(origDataFile);
                     GC.Collect();
@@ -1125,7 +1126,6 @@ namespace TaskLayer
                 summedPeaksByPeptide = FlashLfqEngine.SumFeatures(FlashLfqEngine.allFeaturesByFile.SelectMany(p => p).ToList(), false);
                 WritePeptideQuantificationResultsToTsv(summedPeaksByPeptide.ToList(), OutputFolder, "aggregateQuantifiedPeptidesByFullSeq_" + SearchParameters.MassDiffAcceptor.FileNameAddition, new List<string> { taskId });
             }
-
 
             if (SearchParameters.WritePrunedDatabase)
             {

@@ -10,8 +10,8 @@ namespace EngineLayer
         private readonly IEnumerable<Psm> newPsms;
         private readonly bool noOneHitWonders;
         private readonly bool treatModPeptidesAsDifferentPeptides;
-        private List<ProteinGroup> proteinGroups;
         private readonly bool mergeIndistinguishableProteinGroups;
+        private List<ProteinGroup> proteinGroups;
 
         #endregion Private Fields
 
@@ -34,7 +34,7 @@ namespace EngineLayer
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
             Status("Running protein scoring and FDR engine!", nestedIds);
-            
+
             ScoreProteinGroups(proteinGroups, newPsms);
             myAnalysisResults.sortedAndScoredProteinGroups = DoProteinFdr(proteinGroups);
 

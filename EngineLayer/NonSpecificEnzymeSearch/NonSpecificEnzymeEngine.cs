@@ -1,6 +1,4 @@
 ﻿using Chemistry;
-using MassSpectrometry;
-using MzLibUtil;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -212,8 +210,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 }
             }
             return 0;
-        }     
+        }
 
         #endregion Private Methods
+
     }
 }
