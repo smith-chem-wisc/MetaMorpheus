@@ -5,6 +5,12 @@ PP   Anywhere.
 MT   Mod
 CF   H-1 N-1 O1
 //
+ID   Amidation
+TG   X
+PP   C-terminal.
+MT   ProteinTermMod
+CF   H1 N1 O-1
+//
 ID   Ammonia loss
 TG   Q or C
 PP   Peptide N-terminal.
@@ -175,6 +181,12 @@ PP   Anywhere.
 MT   Mod
 CF   H-2 S-1
 //
+ID   Didehydro
+TG   Y or S
+PP   Anywhere.
+MT   Mod
+CF   H-2
+//
 ID   Formylation
 TG   X
 PP   Peptide N-terminal.
@@ -206,10 +218,28 @@ MT   Metal
 CF   H-2 Fe1
 //
 ID   Methyl
-TG   E or V or H or R or K or Q or N or S or D
+TG   C or H or K or N or Q or R or I or L or D or E or S or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C
+//
+ID   Methyl
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H2 C
+//
+ID   Ethyl
+TG   K or E
+PP   Anywhere.
+MT   Mod
+CF   H4 C2
+//
+ID   Ethyl
+TG   X
+PP   N-terminal.
+MT   ProteinTermMod
+CF   H4 C2
 //
 ID   Oxidation and then loss of oxidized M side chain
 TG   M
@@ -218,7 +248,7 @@ MT   Mod
 CF   H-4 C-1 S-1 O1
 //
 ID   DiMethyl
-TG   A or K or R or N
+TG   K or R or N
 PP   Anywhere.
 MT   Mod
 CF   H4 C2
