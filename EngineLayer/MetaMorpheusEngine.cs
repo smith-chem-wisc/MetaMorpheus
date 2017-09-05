@@ -82,10 +82,11 @@ namespace EngineLayer
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
                     matchedIonMassesList.Add(currentTheoreticalMass);
-                    productMassErrorDa.Add(currentExperimentalMz - currentTheoreticalMz);
-                    productMassErrorPpm.Add((currentExperimentalMz - currentTheoreticalMz) * 1000000 / currentTheoreticalMz);
+                    double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
+                    productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
+                    productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
 
-                    currentTheoreticalIndex++;
+                   currentTheoreticalIndex++;
                     if (currentTheoreticalIndex == TotalProductsHere)
                         break;
                     currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
