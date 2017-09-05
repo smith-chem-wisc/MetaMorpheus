@@ -81,16 +81,16 @@ namespace EngineLayer
                 // If found match
                 if (productMassTolerance.Within(currentExperimentalMz, currentTheoreticalMz))
                 {
-                    currentTheoreticalIndex++;
-                    if (currentTheoreticalIndex == TotalProductsHere)
-                        break;
-                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
-                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
-
                     matchedIonMassesList.Add(currentTheoreticalMass);
                     double currentExperimentalMass = currentExperimentalMz - Constants.protonMass;
                     productMassErrorDa.Add(currentExperimentalMass - currentTheoreticalMass);
                     productMassErrorPpm.Add((currentExperimentalMass - currentTheoreticalMass) * 1000000 / currentTheoreticalMass);
+
+                   currentTheoreticalIndex++;
+                    if (currentTheoreticalIndex == TotalProductsHere)
+                        break;
+                    currentTheoreticalMass = sortedTheoreticalProductMassesForThisPeptide[currentTheoreticalIndex];
+                    currentTheoreticalMz = currentTheoreticalMass + Constants.protonMass;
                 }
                 // Else if for sure did not reach the next theoretical yet
                 else if (currentExperimentalMz > currentTheoreticalMz)
@@ -111,6 +111,7 @@ namespace EngineLayer
                     {
                         // Store old info for possible reuse
                         currentTheoreticalMz = testTheoreticalMz;
+                        currentTheoreticalMass = testTheoreticalMass;
                         currentTheoreticalIndex = testTheoreticalIndex;
 
                         // Update test stuff!
