@@ -36,7 +36,7 @@ MT   Mod
 CF   O1
 //
 ID   Carbamidomethyl
-TG   K
+TG   K or H or D or E or S or T or Y
 PP   Anywhere.
 MT   Mod
 CF   H3 C2 N1 O1
@@ -53,6 +53,12 @@ PP   Anywhere.
 MT   Mod
 CF   H2 C2 O2
 //
+ID   Carboxylation
+TG   K or D or E
+PP   Anywhere.
+MT   Mod
+CF   C1 O2
+//
 ID   Phospho
 TG   S or T or Y
 PP   Anywhere.
@@ -66,14 +72,8 @@ PP   N-terminal.
 MT   ProteinTermMod
 CF   H2 C2 O1
 //
-ID   Acetyllysine
-TG   K
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O1
-//
-ID   Acetylserine
-TG   S
+ID   Acetyl
+TG   S or K or C or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
