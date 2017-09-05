@@ -154,6 +154,7 @@ namespace Test
             TestDataFile t = new TestDataFile();
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
             double precursorMass = 300;
+            //The below theoretical does not accurately represent B-Y ions
             double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<ProductType> lp = new List<ProductType> { ProductType.B, ProductType.Y };
             double scoreT = MetaMorpheusEngine.CalculateClassicScore(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, precursorMass, new List<DissociationType> { DissociationType.HCD }, true);
@@ -166,8 +167,9 @@ namespace Test
         {
             TestDataFile t = new TestDataFile(0.0001);
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
-            double precursorMass = 300;
-            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { precursorMass + (2 * Constants.protonMass) - 275.1350, precursorMass + (2 * Constants.protonMass) - 258.127, precursorMass + (2 * Constants.protonMass) - 257.1244, 50, 60, 70, 147.0764, precursorMass + (2 * Constants.protonMass) - 147.0764, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50, 257.1244, 258.127, 275.1350 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
+            double precursorMass = 402.18629720155;
+            //The below theoretical does not accurately represent B-Y ions
+            double[] sorted_theoretical_product_masses_for_this_peptide = new double[] { 50, 60, 70, 147.0764 - Constants.protonMass, 200, 215, 230, 245, precursorMass + Constants.protonMass - 147.0764, 258.127, 275.1350, precursorMass + (2 * Constants.protonMass) - 70, precursorMass + (2 * Constants.protonMass) - 60, precursorMass + (2 * Constants.protonMass) - 50 }; //{ 50, 60, 70, 147.0764, 257.1244, 258.127, 275.1350 }
             List<double> matchedIonsT = new List<double>();
             List<double> matchedDaErrorT = new List<double>();
             List<double> matchedPpmErrorT = new List<double>();
@@ -183,6 +185,10 @@ namespace Test
             Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count * 2);
             //test the number of ppm errors is doubled
             Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count * 2);
+            foreach (double d in matchedDaErrorF)
+                Assert.IsTrue(d <= 0.01);
+            foreach (double d in matchedDaErrorT)
+                Assert.IsTrue(d <= 0.01);
         }
 
         #endregion Public Methods
