@@ -15,6 +15,7 @@ namespace EngineLayer
         private readonly IMsDataFile<IMsDataScan<IMzSpectrum<IMzPeak>>> myMsDataFile;
         private readonly Tolerance fragmentTolerance;
         private readonly bool addCompIons;
+        private readonly List<DissociationType> dissociationTypes;
 
         #endregion Private Fields
 
@@ -27,6 +28,7 @@ namespace EngineLayer
             this.myMsDataFile = myMsDataFile;
             this.fragmentTolerance = fragmentTolerance;
             this.addCompIons = addCompIons;
+            this.dissociationTypes = DetermineDissociationType(lp);
         }
 
         #endregion Public Constructors
@@ -51,7 +53,7 @@ namespace EngineLayer
                     List<double> matchedIonMassesList = new List<double>();
                     List<double> productMassErrorDaList = new List<double>();
                     List<double> productMassErrorPpmList = new List<double>();
-                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, this.addCompIons, thePrecursorMass, this.lp);
+                    MatchIons(theScan, fragmentTolerance, ionMasses, matchedIonMassesList, productMassErrorDaList, productMassErrorPpmList, thePrecursorMass, dissociationTypes, addCompIons);
                     double[] matchedIonMassesOnlyMatches = matchedIonMassesList.ToArray();
                     ok.MatchedIonDictOnlyMatches.Add(huh, matchedIonMassesOnlyMatches);
                     ok.ProductMassErrorDa.Add(huh, productMassErrorDaList.ToArray());
@@ -76,7 +78,7 @@ namespace EngineLayer
 
                     var gg = localizedPeptide.CompactPeptide(terminusType).ProductMassesMightHaveDuplicatesAndNaNs(lp);
                     Array.Sort(gg);
-                    var score = CalculateClassicScore(theScan, fragmentTolerance, gg, this.addCompIons, thePrecursorMass, this.lp);
+                    var score = CalculateClassicScore(theScan, fragmentTolerance, gg, thePrecursorMass, dissociationTypes, addCompIons);
                     localizedScores.Add(score);
                 }
 
