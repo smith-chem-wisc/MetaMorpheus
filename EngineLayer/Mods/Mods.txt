@@ -72,14 +72,8 @@ PP   N-terminal.
 MT   ProteinTermMod
 CF   H2 C2 O1
 //
-ID   Acetyllysine
-TG   K
-PP   Anywhere.
-MT   Mod
-CF   H2 C2 O1
-//
-ID   Acetylserine
-TG   S
+ID   Acetyl
+TG   S or K or C or T
 PP   Anywhere.
 MT   Mod
 CF   H2 C2 O1
