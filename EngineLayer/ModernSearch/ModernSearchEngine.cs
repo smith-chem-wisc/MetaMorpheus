@@ -22,17 +22,13 @@ namespace EngineLayer.ModernSearch
         protected readonly CommonParameters CommonParameters;
         protected readonly bool addCompIons;
         protected readonly MassDiffAcceptor massDiffAcceptors;
+        protected readonly List<DissociationType> dissociationTypes;
 
         #endregion Protected Fields
 
         #region Private Fields
 
         private const double tolForScoreImprovement = 1e-9;
-        private static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
-        {
-            { DissociationType.HCD, Constants.protonMass },
-            { DissociationType.ETD, 2*Constants.protonMass }
-        };
 
         #endregion Private Fields
 
@@ -50,6 +46,7 @@ namespace EngineLayer.ModernSearch
             this.CommonParameters = CommonParameters;
             this.addCompIons = addCompIons;
             this.massDiffAcceptors = massDiffAcceptors;
+            this.dissociationTypes = DetermineDissociationType(lp);
         }
 
         #endregion Public Constructors
@@ -192,24 +189,17 @@ namespace EngineLayer.ModernSearch
             //generate experimental complementary ions if specified
             if (addCompIons)
             {
-                List<DissociationType> dissociationTypes = new List<DissociationType>();
-
-                if (lp.Contains(ProductType.B) || lp.Contains(ProductType.Y))
-                    dissociationTypes.Add(DissociationType.HCD);
-
-                if (lp.Contains(ProductType.C) || lp.Contains(ProductType.Zdot))
-                    dissociationTypes.Add(DissociationType.ETD);
-
                 //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the mass assuming that they're z=1
-                (double mass, double intensity)[] complementaryIons = new(double mass, double intensity)[spectrum.MassSpectrum.Size];
+                int numCompIons = spectrum.MassSpectrum.Size;
+                (double mass, double intensity)[] complementaryIons = new(double mass, double intensity)[numCompIons];
 
                 foreach (DissociationType dissociationType in dissociationTypes)
                 {
                     if (complementaryIonConversionDictionary.TryGetValue(dissociationType, out double protonMassShift))
                     {
                         double massShiftForComplementaryConversion = thePrecursorMass + protonMassShift; //mass shift needed to reobtain the original product ion for calculating tolerance
-                        for (int i = spectrum.MassSpectrum.Size - 1; i >= 0; i--)
-                            complementaryIons[i] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
+                        for (int i = numCompIons - 1; i >= 0; i--)
+                            complementaryIons[numCompIons-i-1] = (massShiftForComplementaryConversion - spectrum.MassSpectrum.XArray[i], spectrum.MassSpectrum.YArray[i]);
 
                         //propogation of error from precursor mass and complementary product mass
                         //IMPLEMENT AbsoluteTolerance expandedFragmentTolerance = new AbsoluteTolerance(Math.Sqrt(Math.Pow(CommonParameters.ProductMassTolerance.Value, 2) + Math.Pow(thePrecursorMass / 1000000 * precursorTolerance.Value, 2)));
@@ -226,7 +216,7 @@ namespace EngineLayer.ModernSearch
                             double originalMassInDaltons = massShiftForComplementaryConversion - experimentalPeakInDaltons;
                             if (CommonParameters.ProductMassTolerance.Within(previousOriginalMassInDaltons, originalMassInDaltons))
                             {
-                                previousTheAdd += complementaryIons[i].intensity / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res
+                                previousTheAdd += complementaryIons[i].intensity / spectrum.TotalIonCurrent; //open to debate, currently sum intensities of all peaks within tolerance like it was low res. Classic search takes first intensity.
                             }
                             else
                             {
