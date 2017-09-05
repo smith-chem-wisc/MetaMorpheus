@@ -36,7 +36,7 @@ MT   Mod
 CF   O1
 //
 ID   Carbamidomethyl
-TG   K
+TG   K or H or D or E or S or T or Y
 PP   Anywhere.
 MT   Mod
 CF   H3 C2 N1 O1
