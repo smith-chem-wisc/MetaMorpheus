@@ -1,4 +1,5 @@
-﻿using MzLibUtil;
+﻿using MassSpectrometry;
+using MzLibUtil;
 using Proteomics;
 using System;
 using System.Collections.Concurrent;
@@ -32,6 +33,8 @@ namespace EngineLayer.ClassicSearch
 
         private readonly CommonParameters CommonParameters;
 
+        private readonly List<DissociationType> dissociationTypes;
+
         #endregion Private Fields
 
         #region Public Constructors
@@ -47,6 +50,7 @@ namespace EngineLayer.ClassicSearch
             this.searchModes = searchModes;
             this.lp = lp;
             this.addCompIons = addCompIons;
+            this.dissociationTypes = DetermineDissociationType(lp);
             this.CommonParameters = CommonParameters;
         }
 
@@ -103,7 +107,7 @@ namespace EngineLayer.ClassicSearch
                             foreach (ScanWithIndexAndNotchInfo scanWithIndexAndNotchInfo in GetAcceptableScans(correspondingCompactPeptide.MonoisotopicMassIncludingFixedMods, searchMode).ToList())
                             {
                                 double thePrecursorMass = scanWithIndexAndNotchInfo.theScan.PrecursorMass;
-                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, this.addCompIons, thePrecursorMass, lp);
+                                var score = CalculateClassicScore(scanWithIndexAndNotchInfo.theScan.TheScan, CommonParameters.ProductMassTolerance, productMasses, thePrecursorMass, dissociationTypes, addCompIons);
 
                                 if (score > CommonParameters.ScoreCutoff)
                                 {
