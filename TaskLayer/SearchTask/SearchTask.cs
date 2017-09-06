@@ -348,7 +348,7 @@ namespace TaskLayer
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeak.Mz, 5),
                     passThreshold = psm.FdrInfo.QValue <= threshold,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
-                    peptide_ref = "P_" + peptide_ids[psm.CompactPeptides.First().Value.Item2.First().Sequence].Item1,
+                    peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.CompactPeptides.SelectMany(c => c.Value.Item2).Distinct().Count()],
                     cvParam = new mzIdentML110.Generated.CVParamType[2]
                     {
