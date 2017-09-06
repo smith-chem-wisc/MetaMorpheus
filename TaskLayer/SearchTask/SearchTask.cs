@@ -251,7 +251,6 @@ namespace TaskLayer
             Dictionary<Tuple<string, int>, Tuple<int, int>> psm_per_scan = new Dictionary<Tuple<string, int>, Tuple<int, int>>(); //key is <filename, scan numer> value is <scan result id, scan item id #'s (could be more than one ID per scan)>
 
             var unambiguousPsms = items.Where(psm => psm.CompactPeptides.SelectMany(p => p.Value.Item2).Distinct().Count() == 1);
-            //var unambiguousPsms = items;
 
             foreach (Psm psm in unambiguousPsms)
             {
