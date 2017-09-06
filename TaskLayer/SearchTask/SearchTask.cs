@@ -53,7 +53,7 @@ namespace TaskLayer
 
         #region Public Methods
 
-        public static void WriteMzidentml(IEnumerable<Psm> items, List<ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, string searchMode, Tolerance productTolerance, int missedCleavages, string outputPath)
+        public static void WriteMzidentml(IEnumerable<Psm> items, List<EngineLayer.ProteinGroup> groups, List<ModificationWithMass> variableMods, List<ModificationWithMass> fixedMods, List<Protease> proteases, double threshold, string searchMode, Tolerance productTolerance, int missedCleavages, string outputPath)
         {
             List<PeptideWithSetModifications> peptides = items.SelectMany(i => i.CompactPeptides.SelectMany(c => c.Value.Item2)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
@@ -549,7 +549,7 @@ namespace TaskLayer
 
                 int group_id = 0;
                 int protein_id = 0;
-                foreach (ProteinGroup proteinGroup in groups)
+                foreach (EngineLayer.ProteinGroup proteinGroup in groups)
                 {
                     _mzid.DataCollection.AnalysisData.ProteinDetectionList.ProteinAmbiguityGroup[group_id] = new mzIdentML110.Generated.ProteinAmbiguityGroupType()
                     {
@@ -884,7 +884,7 @@ namespace TaskLayer
             Status("Running FDR analysis...", taskId);
             var fdrAnalysisResults = new FdrAnalysisEngine(allPsms, SearchParameters.MassDiffAcceptor, new List<string> { taskId }).Run();
 
-            List<ProteinGroup> proteinGroups = null;
+            List<EngineLayer.ProteinGroup> proteinGroups = null;
 
             if (SearchParameters.DoParsimony)
             {
@@ -934,7 +934,7 @@ namespace TaskLayer
                 Dictionary<Psm, List<string>> psmToProteinGroupNames = new Dictionary<Psm, List<string>>();
                 if (proteinGroups != null)
                 {
-                    ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
+                    EngineLayer.ProteinGroup.FilesForQuantification = FlashLfqEngine.filePaths;
 
                     foreach (var proteinGroup in proteinGroups)
                     {
@@ -992,20 +992,20 @@ namespace TaskLayer
                     Status("Quantifying proteins...", taskId);
                     var flashLfqProteinGroups = FlashLfqEngine.QuantifyProteins();
 
-                    Dictionary<string, ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, ProteinGroup>();
+                    Dictionary<string, EngineLayer.ProteinGroup> proteinGroupNameToProteinGroup = new Dictionary<string, EngineLayer.ProteinGroup>();
                     foreach (var proteinGroup in proteinGroups)
                         if (!proteinGroupNameToProteinGroup.ContainsKey(proteinGroup.ProteinGroupName))
                             proteinGroupNameToProteinGroup.Add(proteinGroup.ProteinGroupName, proteinGroup);
 
                     foreach (var flashLfqProteinGroup in flashLfqProteinGroups)
                     {
-                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out ProteinGroup metamorpheusProteinGroup))
+                        if (proteinGroupNameToProteinGroup.TryGetValue(flashLfqProteinGroup.proteinGroupName, out EngineLayer.ProteinGroup metamorpheusProteinGroup))
                             metamorpheusProteinGroup.IntensitiesByFile = flashLfqProteinGroup.intensitiesByFile;
                     }
 
                     foreach (var proteinGroup in proteinGroups)
                         if (proteinGroup.IntensitiesByFile == null)
-                            proteinGroup.IntensitiesByFile = new double[ProteinGroup.FilesForQuantification.Length];
+                            proteinGroup.IntensitiesByFile = new double[EngineLayer.ProteinGroup.FilesForQuantification.Length];
                 }
             }
 
@@ -1085,7 +1085,7 @@ namespace TaskLayer
 
                     var strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
-                    var subsetProteinGroupsForThisFile = new List<ProteinGroup>();
+                    var subsetProteinGroupsForThisFile = new List<EngineLayer.ProteinGroup>();
                     foreach (var pg in proteinGroups)
                         subsetProteinGroupsForThisFile.Add(pg.ConstructSubsetProteinGroup(fullFilePath));
 
@@ -1285,7 +1285,7 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
-        private void WriteProteinGroupsToTsv(List<ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> items, string outputFolder, string strippedFileName, List<string> nestedIds, List<string> FileNames)
         {
             if (items != null)
             {
@@ -1293,7 +1293,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(ProteinGroup.GetTabSeparatedHeader(FileNames.Count == 1));
+                    output.WriteLine(EngineLayer.ProteinGroup.GetTabSeparatedHeader(FileNames.Count == 1));
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
                 }
@@ -1302,7 +1302,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePeptideQuantificationResultsToTsv(List<FlashLFQ.FlashLFQSummedFeatureGroup> items, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeptideQuantificationResultsToTsv(List<FlashLFQ.Peptide> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (items != null)
             {
@@ -1310,7 +1310,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(FlashLFQ.FlashLFQSummedFeatureGroup.TabSeparatedHeader);
+                    output.WriteLine(FlashLFQ.Peptide.TabSeparatedHeader);
 
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
@@ -1320,7 +1320,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePeakQuantificationResultsToTsv(List<FlashLFQ.FlashLFQFeature> items, string outputFolder, string fileName, List<string> nestedIds)
+        private void WritePeakQuantificationResultsToTsv(List<FlashLFQ.ChromatographicPeak> items, string outputFolder, string fileName, List<string> nestedIds)
         {
             if (items != null)
             {
@@ -1328,7 +1328,7 @@ namespace TaskLayer
 
                 using (StreamWriter output = new StreamWriter(writtenFile))
                 {
-                    output.WriteLine(FlashLFQ.FlashLFQFeature.TabSeparatedHeader);
+                    output.WriteLine(FlashLFQ.ChromatographicPeak.TabSeparatedHeader);
 
                     for (int i = 0; i < items.Count; i++)
                         output.WriteLine(items[i]);
